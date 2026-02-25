@@ -1,6 +1,6 @@
 name: summarization
 
-# available sources: toy (built-in), cnn (CNN/DailyMail), xsum (BBC XSum)
+# available sources: cnn (CNN/DailyMail), xsum (BBC XSum)
 dataset:
   source: xsum
   n_samples: 50

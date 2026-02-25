@@ -1,3 +1,24 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
 """Shared utilities for aggregate.py and report.py."""
 
 import json
@@ -6,25 +27,16 @@ from typing import Any, Dict, Iterable, Optional, Tuple
 
 
 def read_json(path: Path) -> Dict[str, Any]:
-    """Read and parse a JSON file."""
     with path.open("r", encoding="utf-8") as f:
         return json.load(f)
 
 
 def is_run_dir(p: Path) -> bool:
-    """Check if a directory is a valid benchmark run directory."""
     return p.is_dir() and (p / "metrics.json").exists() and (p / "run_config.json").exists()
 
 
 def iter_run_dirs(results_dir: Path) -> list:
-    """
-    Returns run directories that contain metrics.json and run_config.json.
-
-    Supports:
-      results/run_xxx/
-      results/<group>/run_xxx/   (one-level nesting)
-    Avoids duplicates by tracking resolved paths.
-    """
+    """Find run dirs (direct children + one level nesting), deduped."""
     if not results_dir.exists():
         return []
 
@@ -54,10 +66,6 @@ def iter_run_dirs(results_dir: Path) -> list:
 
 
 def manifest_timestamp(run_dir: Path) -> str:
-    """
-    Returns timestamp_utc string from manifest.json if present; else "".
-    Kept as ISO8601 string so CSV stays simple.
-    """
     mpath = run_dir / "manifest.json"
     if not mpath.exists():
         return ""
@@ -70,11 +78,6 @@ def manifest_timestamp(run_dir: Path) -> str:
 
 
 def token_stats(samples_path: Path) -> Tuple[Optional[int], Optional[float], Optional[int], Optional[int]]:
-    """
-    Returns:
-      (total_tokens, avg_tokens, total_input_tokens, total_output_tokens)
-    If not available: (None, None, None, None)
-    """
     if not samples_path.exists():
         return (None, None, None, None)
 
@@ -128,16 +131,7 @@ def token_stats(samples_path: Path) -> Tuple[Optional[int], Optional[float], Opt
 
 
 def ttft_stats(samples_path: Path) -> Tuple[Optional[float], Optional[float]]:
-    """
-    Returns:
-      (ttft_ms_mean, generation_ms_mean)
-    If not available: (None, None)
-
-    Only processes samples that have TTFT metrics (streaming mode).
-    Non-streaming samples are ignored, not treated as zeros.
-
-    Checks both top-level and extra dict for backward compatibility.
-    """
+    """Mean TTFT and generation time from streaming samples only."""
     if not samples_path.exists():
         return (None, None)
 
@@ -157,7 +151,7 @@ def ttft_stats(samples_path: Path) -> Tuple[Optional[float], Optional[float]]:
                 except Exception:
                     continue
 
-                # check top level first (new format), then extra dict (backward compat)
+                # top-level first, fall back to extra dict
                 ttft = obj.get("ttft_ms")
                 gen = obj.get("generation_ms")
 
@@ -167,7 +161,6 @@ def ttft_stats(samples_path: Path) -> Tuple[Optional[float], Optional[float]]:
                     ttft = extra.get("ttft_ms")
                     gen = extra.get("generation_ms")
 
-                # track ttft and gen independently
                 if ttft is not None:
                     total_ttft += float(ttft)
                     ttft_count += 1

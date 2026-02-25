@@ -1,3 +1,24 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
 
 """Generate HTML benchmark report with charts and visualizations."""
 import argparse
@@ -15,7 +36,6 @@ from utils import read_json, iter_run_dirs, manifest_timestamp, token_stats, ttf
 
 
 def cost_stats(samples_path: Path) -> Optional[float]:
-    """Calculate total cost from samples."""
     if not samples_path.exists():
         return None
     total_cost = 0.0
@@ -37,7 +57,7 @@ def cost_stats(samples_path: Path) -> Optional[float]:
                     continue
     except Exception:
         return None
-    # return 0.0 for local backends (they report cost_usd: 0.0)
+    # 0.0 for local backends, None if no cost data at all
     return total_cost if found_any else None
 
 
@@ -83,7 +103,7 @@ def fmt_cost(x: Any) -> str:
     return f"${v:.2f}"
 
 
-# Academic palette (Tableau 10) -- distinct, colorblind-safe, paper-ready
+# Tableau 10 palette
 BACKEND_COLORS = {
     "openai": "#4E79A7",
     "mlx": "#9C755F",
@@ -94,7 +114,6 @@ BACKEND_COLORS = {
     "vllm (Qwen2.5-3B)": "#956B8E",
     "systemds (Mistral-7B)": "#E15759",
     "systemds (Qwen2.5-3B)": "#C94D4F",
-    "systemds c=4 (Qwen2.5-3B)": "#FF8C8C",
 }
 
 
@@ -104,7 +123,7 @@ def generate_grouped_bar_chart_svg(data: Dict[str, Dict[str, float]], title: str
                                     group_colors: Dict[str, str],
                                     width: int = 600, height: int = 350,
                                     value_suffix: str = "") -> str:
-    """Generate grouped bar chart. data = {category: {group: value}}"""
+    """Grouped horizontal bar chart as SVG."""
     if not data:
         return ""
     
@@ -169,7 +188,7 @@ def generate_grouped_bar_chart_svg(data: Dict[str, Dict[str, float]], title: str
 
 
 def _backend_model_key(r: Dict[str, Any]) -> str:
-    """Create a display key like 'vllm (Qwen 3B)' or 'systemds c=4 (Qwen2.5-3B)' for grouping."""
+    """e.g. 'vllm (Qwen2.5-3B)' or just 'openai'."""
     backend = r.get("backend", "")
     model = r.get("backend_model", "")
     if not model or backend in ("openai", "ollama"):
@@ -177,14 +196,10 @@ def _backend_model_key(r: Dict[str, Any]) -> str:
     short = model.split("/")[-1]
     for suffix in ["-Instruct-v0.3", "-Instruct", "-Inst"]:
         short = short.replace(suffix, "")
-    conc = r.get("concurrency")
-    if conc and int(conc) > 1:
-        return f"{backend} c={int(conc)} ({short})"
     return f"{backend} ({short})"
 
 
 def generate_accuracy_comparison_table(rows: List[Dict[str, Any]]) -> str:
-    """Generate accuracy comparison table by workload and backend+model."""
     data: Dict[str, Dict[str, Dict[str, Any]]] = {} 
     
     for r in rows:
@@ -236,7 +251,6 @@ def generate_accuracy_comparison_table(rows: List[Dict[str, Any]]) -> str:
 
 
 def generate_latency_comparison_table(rows: List[Dict[str, Any]]) -> str:
-    """Generate latency comparison table by workload and backend."""
  
     data: Dict[str, Dict[str, Dict[str, Any]]] = {}
     
@@ -283,7 +297,6 @@ def generate_latency_comparison_table(rows: List[Dict[str, Any]]) -> str:
 
 
 def generate_latency_breakdown_table(rows: List[Dict[str, Any]]) -> str:
-    """Generate latency breakdown table showing TTFT vs Generation time (like prefill vs decode)."""
     # only include rows with TTFT data
     data: Dict[str, Dict[str, Dict[str, Any]]] = {}
     
@@ -338,7 +351,6 @@ def generate_latency_breakdown_table(rows: List[Dict[str, Any]]) -> str:
 
 
 def generate_consistency_metrics_table(rows: List[Dict[str, Any]]) -> str:
-    """Generate consistency metrics table showing latency variance across backends."""
     data: Dict[str, Dict[str, Dict[str, Any]]] = {}
     
     for r in rows:
@@ -389,7 +401,6 @@ def generate_consistency_metrics_table(rows: List[Dict[str, Any]]) -> str:
 
 
 def generate_cost_efficiency_table(rows: List[Dict[str, Any]]) -> str:
-    """Generate cost efficiency comparison table (cost per correct answer)."""
   
     data: Dict[str, Dict[str, Dict[str, Any]]] = {}
     
@@ -447,7 +458,6 @@ def generate_cost_efficiency_table(rows: List[Dict[str, Any]]) -> str:
 
 
 def generate_cost_analysis_section(rows: List[Dict[str, Any]]) -> str:
-    """Generate comprehensive cost analysis comparing cloud vs local inference."""
     
 
     openai_costs = []
@@ -530,7 +540,6 @@ def generate_cost_analysis_section(rows: List[Dict[str, Any]]) -> str:
         <div class="cost-stats">
     ''')
     out.append(f'<div class="stat"><span class="label">API Cost:</span> <span class="value">$0</span></div>')
-    # compute total electricity and hardware costs from local runs' metrics
     local_electricity = 0.0
     local_hw_cost = 0.0
     local_compute_total = 0.0
@@ -593,7 +602,6 @@ def generate_cost_analysis_section(rows: List[Dict[str, Any]]) -> str:
 
 
 def generate_summary_section(rows: List[Dict[str, Any]]) -> str:
-    """Generate a clean, minimal summary overview."""
 
     backends = sorted(set(r.get("backend") for r in rows if r.get("backend")))
     workloads = sorted(set(r.get("workload") for r in rows if r.get("workload")))
@@ -647,7 +655,6 @@ def generate_summary_section(rows: List[Dict[str, Any]]) -> str:
 
     out.append('</div>')
 
-    # Compact metadata line
     out.append(f'''
     <div style="background: #f8f9fa; border-radius: 8px; padding: 14px 18px; margin-bottom: 28px; font-size: 13px; color: #555; line-height: 1.7;">
         <b>Models:</b> {", ".join(models)}<br>
@@ -662,7 +669,6 @@ def generate_summary_section(rows: List[Dict[str, Any]]) -> str:
 
 
 def generate_summary_cards(rows: List[Dict[str, Any]]) -> str:
-    """Generate summary section - wrapper for generate_summary_section."""
     return generate_summary_section(rows)
 
 
@@ -706,13 +712,11 @@ def generate_backend_overview_table(rows: List[Dict[str, Any]]) -> str:
         total_cost = d["cost"]
         n_wl = len(d["workloads"])
 
-        # Human-friendly latency
         if avg_lat >= 1000:
             lat_str = f"{avg_lat / 1000:.1f}s"
         else:
             lat_str = f"{avg_lat:.0f}ms"
 
-        # Verdict badges
         badges = []
         if bm == best_acc_key:
             badges.append("Best accuracy")
@@ -940,7 +944,6 @@ def generate_head_to_head_section(rows: List[Dict[str, Any]]) -> str:
         combos = by_model[model_name]
         workloads = sorted(set(wl for wl, _ in combos.keys()))
 
-        # Compute averages for the summary
         overheads = []
         for wl in workloads:
             vr = combos.get((wl, "vllm"))
@@ -952,7 +955,6 @@ def generate_head_to_head_section(rows: List[Dict[str, Any]]) -> str:
                     overheads.append(sl / vl)
         avg_overhead = sum(overheads) / len(overheads) if overheads else 0
 
-        # Find max latency for bar scaling
         max_lat = 1
         for wl in workloads:
             for be in ("vllm", "systemds"):
@@ -1066,44 +1068,24 @@ def fmt_compute_cost(r: Dict[str, Any]) -> str:
 
 
 FULL_TABLE_COLUMNS = [
-    ("run_dir", "Run", lambda r: f'<code>{html.escape(str(r.get("run_dir", ""))[:25])}</code>'),
-    ("ts", "Timestamp (UTC)", lambda r: html.escape((r.get("ts", "") or "")[:19].replace("T", " "))),
     ("backend", "Backend", lambda r: html.escape(r.get("backend", ""))),
-    ("backend_model", "Model", lambda r: html.escape(str(r.get("backend_model", ""))[:20])),
+    ("backend_model", "Model", lambda r: html.escape(str(r.get("backend_model", "")).split("/")[-1][:25])),
     ("workload", "Workload", lambda r: html.escape(r.get("workload", ""))),
     ("n", "n", lambda r: fmt(r.get("n"))),
     ("accuracy", "Accuracy", lambda r: f'{r.get("accuracy_mean", 0)*100:.1f}% ({r.get("accuracy_count", "")})' if r.get("accuracy_mean") is not None else "N/A"),
-    ("rouge1_f", "ROUGE-1 F1", lambda r: f'{r.get("rouge1_f")*100:.1f}%' if r.get("rouge1_f") is not None else ""),
-    ("rouge2_f", "ROUGE-2 F1", lambda r: f'{r.get("rouge2_f")*100:.1f}%' if r.get("rouge2_f") is not None else ""),
-    ("rougeL_f", "ROUGE-L F1", lambda r: f'{r.get("rougeL_f")*100:.1f}%' if r.get("rougeL_f") is not None else ""),
+    ("rougeL_f", "ROUGE-L", lambda r: f'{r.get("rougeL_f")*100:.1f}%' if r.get("rougeL_f") is not None else ""),
     ("cost", "API Cost ($)", fmt_cost_if_real),
-    ("compute_cost", "Compute Cost ($)", fmt_compute_cost),
-    ("cost_per_1m", "$/1M tok", fmt_cost_per_1m_if_real),
-    ("mem_peak", "Mem Peak (MB)", lambda r: fmt_num(r.get("mem_peak"), 1)),
-    ("cpu_avg", "CPU Avg (%)", lambda r: fmt_num(r.get("cpu_avg"), 1)),
-    ("lat_mean", "lat mean (ms)", lambda r: fmt_num(r.get("lat_mean"), 2)),
-    ("lat_p50", "p50 (ms)", lambda r: fmt_num(r.get("lat_p50"), 2)),
-    ("lat_p95", "p95 (ms)", lambda r: fmt_num(r.get("lat_p95"), 2)),
-    ("lat_std", "Lat Std (ms)", lambda r: fmt_num(r.get("lat_std"), 2)),
-    ("lat_cv", "Lat CV (%)", lambda r: fmt_pct(r.get("lat_cv"))),
-    ("lat_min", "Lat Min (ms)", lambda r: fmt_num(r.get("lat_min"), 2)),
-    ("lat_max", "Lat Max (ms)", lambda r: fmt_num(r.get("lat_max"), 2)),
-    ("ttft_mean", "TTFT (ms)", lambda r: fmt_num(r.get("ttft_mean"), 2)),
-    ("gen_mean", "Gen (ms)", lambda r: fmt_num(r.get("gen_mean"), 2)),
-    ("thr", "throughput (req/s)", lambda r: fmt_num(r.get("thr"), 4)),
-    ("total_tokens", "total tok", lambda r: fmt(r.get("total_tokens"))),
-    ("avg_tokens", "avg tok", lambda r: fmt_num(r.get("avg_tokens"), 1)),
-    ("total_input_tokens", "in tok", lambda r: fmt(r.get("total_input_tokens"))),
-    ("total_output_tokens", "out tok", lambda r: fmt(r.get("total_output_tokens"))),
-    ("toks_total", "tok/s (total)", lambda r: fmt_num(r.get("toks_total"), 2)),
-    ("ms_per_tok_total", "ms/tok (total)", lambda r: fmt_num(r.get("ms_per_tok_total"), 2)),
-    ("toks_out", "tok/s (out)", lambda r: fmt_num(r.get("toks_out"), 2)),
-    ("ms_per_tok_out", "ms/tok (out)", lambda r: fmt_num(r.get("ms_per_tok_out"), 2)),
+    ("compute_cost", "Compute ($)", fmt_compute_cost),
+    ("lat_p50", "Latency p50 (ms)", lambda r: fmt_num(r.get("lat_p50"), 1)),
+    ("lat_p95", "Latency p95 (ms)", lambda r: fmt_num(r.get("lat_p95"), 1)),
+    ("ttft_mean", "TTFT (ms)", lambda r: fmt_num(r.get("ttft_mean"), 1)),
+    ("thr", "Throughput (req/s)", lambda r: fmt_num(r.get("thr"), 2)),
+    ("total_tokens", "Tokens", lambda r: fmt(r.get("total_tokens"))),
+    ("toks_out", "tok/s (out)", lambda r: fmt_num(r.get("toks_out"), 1)),
 ]
 
 
 def generate_full_table(title: str, table_rows: List[Dict[str, Any]], table_id: str = "", is_h3: bool = False) -> str:
-    """Generate full results table with all columns."""
     tag = "h3" if is_h3 else "h2"
     out = [f'<div class="table-header">']
     out.append(f'<{tag}>{html.escape(title)}</{tag}>')
@@ -1130,7 +1112,6 @@ def generate_full_table(title: str, table_rows: List[Dict[str, Any]], table_id: 
 
 
 def generate_workload_tables(rows: List[Dict[str, Any]]) -> str:
-    """Generate separate tables for each workload category."""
     
     by_workload: Dict[str, List[Dict[str, Any]]] = {}
     for r in rows:
@@ -1267,7 +1248,7 @@ def main() -> int:
             run_name = run_dir.name
             
             dataset_source = ""
-            known_sources = ["toy", "gsm8k", "boolq", "xsum", "cnn", "logiqa", "ner"]
+            known_sources = ["gsm8k", "boolq", "xsum", "cnn", "logiqa", "ner", "json_struct", "stsb"]
             for src in known_sources:
                 if f"_{src}" in run_name.lower():
                     dataset_source = src
@@ -1664,11 +1645,7 @@ def main() -> int:
     
     {generate_charts_section(rows_sorted)}
     
-    {generate_full_table("Latest Runs", latest_rows, "latest-runs")}
-    
     {generate_full_table("All Runs", rows_sorted, "all-runs")}
-    
-    {generate_workload_tables(rows_sorted)}
     
     {generate_per_sample_results(results_dir)}
     

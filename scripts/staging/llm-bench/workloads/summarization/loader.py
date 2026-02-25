@@ -1,3 +1,24 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
 import logging
 import re
 from dataclasses import dataclass
@@ -14,80 +35,33 @@ class Sample:
     text: str
     reference: str
 
-TOY_SAMPLES = [
-    {
-        "text": "Large language models (LLMs) are widely used in modern applications. They can generate text, summarize documents, and answer questions.",
-        "reference": "LLMs are versatile tools used for text generation, summarization, and question answering.",
-    },
-    {
-        "text": "SystemDS is a machine learning system designed for flexible and scalable analytics. It supports declarative ML programming and optimization.",
-        "reference": "SystemDS enables flexible, scalable machine learning through declarative programming and optimization.",
-    },
-    {
-        "text": "Benchmarking inference systems involves measuring latency, throughput, and quality across tasks and models under controlled conditions.",
-        "reference": "Inference benchmarking measures latency, throughput, and quality under controlled conditions.",
-    },
-    {
-        "text": "Speculative decoding is a technique to accelerate autoregressive generation by using a smaller draft model and verifying with a larger model.",
-        "reference": "Speculative decoding speeds up text generation by drafting with a small model and verifying with a large one.",
-    },
-    {
-        "text": "Reproducible experiments require fixed seeds, versioned configs, and consistent environments across runs.",
-        "reference": "Experiment reproducibility depends on fixed seeds, versioned configs, and consistent environments.",
-    },
-    {
-        "text": "A good benchmark suite includes diverse workloads such as summarization, question answering, and reasoning tasks.",
-        "reference": "Effective benchmarks cover diverse workloads including summarization, QA, and reasoning.",
-    },
-    {
-        "text": "Local inference can reduce cost and improve privacy, but may be limited by hardware constraints and model support.",
-        "reference": "Local inference offers cost and privacy benefits but faces hardware and model limitations.",
-    },
-    {
-        "text": "Hosted APIs offer strong model quality and easy scaling, but introduce network latency and variable cost per token.",
-        "reference": "Cloud APIs provide quality and scalability at the cost of network latency and per-token pricing.",
-    },
-    {
-        "text": "Throughput is typically measured in requests per second or tokens per second, depending on the benchmark design.",
-        "reference": "Throughput metrics include requests per second and tokens per second, depending on benchmark design.",
-    },
-    {
-        "text": "Accuracy for summarization can be approximated with overlap metrics, but human evaluation is often the gold standard.",
-        "reference": "Summarization accuracy uses overlap metrics as a proxy, though human evaluation remains the gold standard.",
-    },
-]
-
 
 def load_samples(cfg: Dict[str, Any]) -> List[Sample]:
     dataset_cfg = cfg.get("dataset", {})
-    source = dataset_cfg.get("source", "toy")
+    source = dataset_cfg.get("source", "xsum")
     n = int(dataset_cfg.get("n_samples", 10))
 
-    if source == "toy":
-        samples = _load_toy_samples(n)
-    elif source == "cnn":
+    if source == "cnn":
         samples = _load_cnn_samples(n)
     elif source == "xsum":
         samples = _load_xsum_samples(n)
     else:
-        raise ValueError(f"summarization supports source: toy, cnn, xsum. Got: {source}")
+        raise ValueError(f"summarization supports source: cnn, xsum. Got: {source}")
 
     if len(samples) < n:
         logger.warning("Requested %d samples but only %d available (source=%s)", n, len(samples), source)
     return samples
 
 
-def _load_toy_samples(n: int) -> List[Sample]:
-    items = TOY_SAMPLES[: max(1, min(n, len(TOY_SAMPLES)))]
-    return [Sample(sid=f"toy-{i}", text=s["text"], reference=s["reference"]) for i, s in enumerate(items)]
-
 
 def _load_cnn_samples(n: int) -> List[Sample]:
     try:
         dataset = load_dataset("abisee/cnn_dailymail", "3.0.0", split="test")
     except Exception as e:
-        logger.warning("CNN/DailyMail download failed (%s), using toy dataset", e)
-        return _load_toy_samples(n)
+        raise RuntimeError(
+            f"Could not load CNN/DailyMail dataset from HuggingFace: {e}. "
+            f"Check your internet connection or install the dataset manually."
+        ) from e
 
     samples: List[Sample] = []
     for i, item in enumerate(dataset):
@@ -104,8 +78,10 @@ def _load_xsum_samples(n: int) -> List[Sample]:
     try:
         dataset = load_dataset("EdinburghNLP/xsum", split="test")
     except Exception as e:
-        logger.warning("XSum download failed (%s), using toy dataset", e)
-        return _load_toy_samples(n)
+        raise RuntimeError(
+            f"Could not load XSum dataset from HuggingFace: {e}. "
+            f"Check your internet connection or install the dataset manually."
+        ) from e
 
     samples: List[Sample] = []
     for i, item in enumerate(dataset):
@@ -128,12 +104,7 @@ def _tokenize(text: str) -> Set[str]:
 
 
 def _compute_rouge(prediction: str, reference: str) -> Dict[str, float]:
-    """Compute ROUGE-1, ROUGE-2, and ROUGE-L scores.
-
-    Uses the ``rouge-score`` package if available; otherwise falls back to
-    a simple unigram-overlap implementation so the benchmark still works
-    without the optional dependency.
-    """
+    """ROUGE scores. Falls back to unigram overlap if rouge-score not installed."""
     try:
         from rouge_score import rouge_scorer
         scorer = rouge_scorer.RougeScorer(["rouge1", "rouge2", "rougeL"], use_stemmer=True)
@@ -163,15 +134,7 @@ def _compute_rouge(prediction: str, reference: str) -> Dict[str, float]:
 
 
 def accuracy_check(prediction: str, reference: str) -> bool:
-    """ROUGE-based accuracy check for summarization.
-
-    A prediction passes if its ROUGE-1 F1 score is >= 0.2 (indicating
-    meaningful overlap with the reference).  This replaces the previous
-    quality-gate heuristic with an actual overlap metric.
-
-    The ROUGE scores are also stored on the function for retrieval by
-    the runner (via the ``last_rouge_scores`` attribute).
-    """
+    """Pass if ROUGE-1 F1 >= 0.2. Stores scores in last_rouge_scores."""
     if not prediction or not reference:
         accuracy_check.last_rouge_scores = {}
         return False

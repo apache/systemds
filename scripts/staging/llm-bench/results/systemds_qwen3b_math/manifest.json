@@ -1,0 +1,45 @@
+{
+  "git_commit_hash": "5d47925ed6a7953871e90ecc5f27c0a0e7f3ac6a",
+  "timestamp_utc": "2026-02-25T16:43:43.522303+00:00",
+  "python_version": "3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]",
+  "platform": {
+    "os": "Linux",
+    "architecture": "x86_64"
+  },
+  "backend": "systemds",
+  "model": "Qwen/Qwen2.5-3B-Instruct",
+  "workload_config_path": "/home/kubraaksu/systemds/scripts/staging/llm-bench/workloads/math/config.yaml",
+  "workload_config_sha256": "e8b1fe2caac04ac57fccfbdc770153ca7bbaf98908765870a39991830abcaac4",
+  "gpu": {
+    "gpu_count": 3,
+    "gpus": [
+      {
+        "index": 0,
+        "name": "NVIDIA H100 PCIe",
+        "memory_total_mb": 81559.0,
+        "memory_used_mb": 17830.625,
+        "memory_free_mb": 63728.375,
+        "gpu_utilization_pct": 0,
+        "memory_utilization_pct": 0
+      },
+      {
+        "index": 1,
+        "name": "NVIDIA H100 PCIe",
+        "memory_total_mb": 81559.0,
+        "memory_used_mb": 81372.1875,
+        "memory_free_mb": 186.8125,
+        "gpu_utilization_pct": 0,
+        "memory_utilization_pct": 0
+      },
+      {
+        "index": 2,
+        "name": "NVIDIA H100 PCIe",
+        "memory_total_mb": 81559.0,
+        "memory_used_mb": 483.0625,
+        "memory_free_mb": 81075.9375,
+        "gpu_utilization_pct": 0,
+        "memory_utilization_pct": 0
+      }
+    ]
+  }
+}

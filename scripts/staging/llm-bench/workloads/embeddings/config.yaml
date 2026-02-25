@@ -1,6 +1,6 @@
 name: embeddings
 
-# available sources: toy (built-in), stsb (STS-Benchmark from HuggingFace)
+# available sources: stsb (STS-Benchmark from HuggingFace)
 # Task: Rate semantic similarity between sentence pairs (0.0-5.0 scale)
 # This tests the same semantic understanding that embedding models capture.
 dataset:

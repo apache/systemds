@@ -1,3 +1,24 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
 import argparse
 import hashlib
 import importlib
@@ -30,7 +51,6 @@ VALID_BACKENDS = {"openai", "ollama", "vllm", "mlx", "systemds"}
 
 
 def validate_config(cfg: Dict[str, Any]) -> None:
-    """Validate workload config against expected schema."""
     missing = REQUIRED_CONFIG_KEYS - set(cfg.keys())
     if missing:
         raise ValueError(f"Config missing required keys: {missing}")
@@ -48,7 +68,6 @@ def validate_config(cfg: Dict[str, Any]) -> None:
 # ---------------------------------------------------------------------------
 
 def create_backend(backend_name: str, model: str, cfg: Dict[str, Any]):
-    """Factory function to create the appropriate backend instance."""
     if backend_name not in VALID_BACKENDS:
         raise ValueError(f"Unknown backend '{backend_name}'. Valid: {VALID_BACKENDS}")
 
@@ -89,7 +108,6 @@ def create_backend(backend_name: str, model: str, cfg: Dict[str, Any]):
 # ---------------------------------------------------------------------------
 
 def gpu_stats() -> Optional[Dict[str, Any]]:
-    """Collect GPU stats via pynvml if available."""
     try:
         import pynvml
         pynvml.nvmlInit()
@@ -217,7 +235,6 @@ def write_manifest(out_dir: Path, workload_path: Path, backend: str, model: str)
 
 
 def _aggregate_tokens(outputs):
-    """Sum real token counts across outputs. Returns (total_in, total_out) or (None, None)."""
     total_in = 0
     total_out = 0
     any_usage = False
@@ -237,14 +254,12 @@ def _aggregate_tokens(outputs):
 # ---------------------------------------------------------------------------
 
 def _generate_single(backend, prompt: str, backend_cfg: Dict[str, Any]) -> Dict[str, Any]:
-    """Generate a single prompt -- used by the concurrent executor."""
     results = backend.generate([prompt], backend_cfg)
     return results[0] if results else {"text": "", "latency_ms": 0.0, "extra": {"error": "empty result"}}
 
 
 def generate_concurrent(backend, prompts: List[str], backend_cfg: Dict[str, Any],
                         concurrency: int) -> List[Dict[str, Any]]:
-    """Run prompts concurrently with up to ``concurrency`` threads."""
     results: List[Optional[Dict[str, Any]]] = [None] * len(prompts)
 
     with ThreadPoolExecutor(max_workers=concurrency) as pool:
@@ -274,15 +289,19 @@ def main():
     parser.add_argument("--model", default="")
     parser.add_argument("--out", required=True)
     parser.add_argument("--gpu-hour-cost", type=float, default=0.0,
-                        help="$/GPU-hour for compute cost estimation (e.g. 2.50 for H100)")
+                        help="$/GPU-hour cloud rental rate (e.g. 2.50 for H100). "
+                             "Mutually exclusive with --power-draw-w and --hardware-cost "
+                             "(rental rate already includes electricity and depreciation).")
     parser.add_argument("--gpu-count", type=int, default=1,
                         help="Number of GPUs used (for compute cost calculation)")
     parser.add_argument("--power-draw-w", type=float, default=0.0,
-                        help="Device power draw in watts for electricity cost (e.g. 50 for MacBook, 350 for H100)")
+                        help="Device power draw in watts for owned-hardware electricity cost "
+                             "(e.g. 50 for MacBook, 350 for H100)")
     parser.add_argument("--electricity-rate", type=float, default=0.30,
                         help="Electricity cost per kWh in USD (default: 0.30, ~EU average)")
     parser.add_argument("--hardware-cost", type=float, default=0.0,
-                        help="Hardware purchase price in USD for amortization (e.g. 2500 for MacBook, 30000 for H100)")
+                        help="Hardware purchase price in USD for owned-hardware depreciation "
+                             "(e.g. 2500 for MacBook, 30000 for H100)")
     parser.add_argument("--hardware-lifetime-hours", type=float, default=15000.0,
                         help="Expected hardware useful lifetime in hours (default: 15000, ~5yr at 8hr/day)")
     parser.add_argument("--concurrency", type=int, default=1,
@@ -352,6 +371,8 @@ def main():
     latencies = []
     check_results = []
     rouge_scores_all = []
+    pred_ref_scores = []  # (predicted, reference) pairs for embeddings Pearson correlation
+    entity_metrics_all = []  # entity-level metrics for NER evaluation
 
     with (out_dir / "samples.jsonl").open("w", encoding="utf-8") as f:
         for s, o in zip(samples, outputs):
@@ -362,6 +383,8 @@ def main():
             ref = getattr(s, "reference", "")
 
             is_correct = None
+            rouge = None
+            ent_m = None
             if accuracy_check_fn is not None and ref:
                 is_correct = accuracy_check_fn(pred, ref)
                 check_results.append(is_correct)
@@ -370,6 +393,19 @@ def main():
                 rouge = getattr(accuracy_check_fn, "last_rouge_scores", None)
                 if rouge:
                     rouge_scores_all.append(dict(rouge))
+
+                # Capture predicted scores for embeddings Pearson correlation
+                pred_score = getattr(accuracy_check_fn, "last_pred_score", None)
+                if pred_score is not None:
+                    try:
+                        pred_ref_scores.append((pred_score, float(ref)))
+                    except (ValueError, TypeError):
+                        pass
+
+                # Capture entity-level metrics for NER
+                ent_m = getattr(accuracy_check_fn, "last_entity_metrics", None)
+                if ent_m is not None and ent_m.get("entities_reference", 0) > 0:
+                    entity_metrics_all.append(dict(ent_m))
 
             extra_data = o.get("extra", {})
             ttft_ms = o.get("ttft_ms") or extra_data.get("ttft_ms")
@@ -388,8 +424,10 @@ def main():
                 rec["ttft_ms"] = float(ttft_ms)
             if gen_ms is not None:
                 rec["generation_ms"] = float(gen_ms)
-            if rouge_scores_all and rouge:
+            if rouge:
                 rec["rouge"] = rouge_scores_all[-1]
+            if entity_metrics_all and ent_m is not None and ent_m.get("entities_reference", 0) > 0:
+                rec["entity_metrics"] = entity_metrics_all[-1]
 
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
@@ -402,10 +440,27 @@ def main():
         metrics["accuracy_mean"] = correct / total if total > 0 else 0.0
         metrics["accuracy_count"] = f"{correct}/{total}"
 
-    # ROUGE averages for summarization
+    # ROUGE averages (denominator = total evaluated, not just successful)
     if rouge_scores_all:
+        n_evaluated = len(check_results) if check_results else len(rouge_scores_all)
         for key in rouge_scores_all[0]:
             vals = [s[key] for s in rouge_scores_all if key in s]
+            if vals:
+                metrics[f"avg_{key}"] = sum(vals) / n_evaluated
+
+    # Pearson r for embeddings
+    if len(pred_ref_scores) >= 2:
+        import numpy as np
+        preds, refs = zip(*pred_ref_scores)
+        r = np.corrcoef(preds, refs)[0, 1]
+        if not np.isnan(r):
+            metrics["pearson_r"] = float(r)
+            metrics["pearson_n"] = len(pred_ref_scores)
+
+    # entity F1 for NER
+    if entity_metrics_all:
+        for key in ("entity_precision", "entity_recall", "entity_f1"):
+            vals = [m[key] for m in entity_metrics_all if key in m]
             if vals:
                 metrics[f"avg_{key}"] = sum(vals) / len(vals)
 
@@ -421,26 +476,38 @@ def main():
     if api_cost > 0:
         metrics["api_cost_usd"] = api_cost
 
-    # compute cost (local backends -- user supplies $/GPU-hour)
-    if args.gpu_hour_cost > 0:
+    # compute cost: rental vs owned-hardware (mutually exclusive)
+    uses_rental = args.gpu_hour_cost > 0
+    uses_owned = args.power_draw_w > 0 or args.hardware_cost > 0
+    if uses_rental and uses_owned:
+        logger.warning(
+            "Both --gpu-hour-cost and --power-draw-w/--hardware-cost specified. "
+            "GPU-hour rental rates already include electricity and depreciation -- "
+            "using only --gpu-hour-cost to avoid double-counting."
+        )
+        # rental only, ignore owned-hw flags
         gpu_hours = (wall_s / 3600.0) * args.gpu_count
         metrics["gpu_hours"] = gpu_hours
         metrics["compute_cost_usd"] = gpu_hours * args.gpu_hour_cost
+    elif uses_rental:
+        gpu_hours = (wall_s / 3600.0) * args.gpu_count
+        metrics["gpu_hours"] = gpu_hours
+        metrics["compute_cost_usd"] = gpu_hours * args.gpu_hour_cost
+    elif uses_owned:
+        # electricity
+        if args.power_draw_w > 0:
+            kwh_used = (args.power_draw_w / 1000.0) * (wall_s / 3600.0)
+            electricity_cost = kwh_used * args.electricity_rate
+            metrics["electricity_kwh"] = kwh_used
+            metrics["electricity_cost_usd"] = electricity_cost
 
-    # electricity cost (based on power draw and wall time)
-    if args.power_draw_w > 0:
-        kwh_used = (args.power_draw_w / 1000.0) * (wall_s / 3600.0)
-        electricity_cost = kwh_used * args.electricity_rate
-        metrics["electricity_kwh"] = kwh_used
-        metrics["electricity_cost_usd"] = electricity_cost
+        # hw depreciation
+        if args.hardware_cost > 0 and args.hardware_lifetime_hours > 0:
+            hourly_depreciation = args.hardware_cost / args.hardware_lifetime_hours
+            hw_cost = hourly_depreciation * (wall_s / 3600.0)
+            metrics["hardware_amortization_usd"] = hw_cost
 
-    # hardware amortization cost (depreciation per hour of use)
-    if args.hardware_cost > 0 and args.hardware_lifetime_hours > 0:
-        hourly_depreciation = args.hardware_cost / args.hardware_lifetime_hours
-        hw_cost = hourly_depreciation * (wall_s / 3600.0)
-        metrics["hardware_amortization_usd"] = hw_cost
-
-    # total compute cost = electricity + hardware amortization + GPU-hour cost
+    # total compute
     compute_parts = [
         metrics.get("electricity_cost_usd", 0.0),
         metrics.get("hardware_amortization_usd", 0.0),

@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.test.functions.jmlc;
 
 import java.util.HashMap;
@@ -6,14 +25,15 @@ import java.util.Map;
 import org.apache.sysds.api.jmlc.Connection;
 import org.apache.sysds.api.jmlc.PreparedScript;
 import org.apache.sysds.api.jmlc.ResultVariables;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * Test LLM inference via the llmPredict built-in function.
- * Requires an OpenAI-compatible server (e.g., llm_server.py) on localhost:8080.
+ * Tests for llmPredict built-in via JMLC.
+ * Needs an OpenAI-compatible server on localhost:8080.
  */
 public class JMLCLLMInferenceTest extends AutomatedTestBase {
 	private final static String TEST_NAME = "JMLCLLMInferenceTest";
@@ -59,10 +79,86 @@ public class JMLCLLMInferenceTest extends AutomatedTestBase {
 			System.out.println("Prompt: " + promptData[0][0]);
 			System.out.println("Generated: " + generated);
 		} catch (Exception e) {
-			System.out.println("Skipping LLM test (server not running):");
 			e.printStackTrace();
 			org.junit.Assume.assumeNoException("LLM server not available", e);
 		} finally {
+			if (conn != null) conn.close();
+		}
+	}
+
+	@Test
+	public void testServerUnreachable() {
+		// should throw DMLRuntimeException, not hang
+		Connection conn = null;
+		try {
+			conn = new Connection();
+			String deadUrl = "http://localhost:19999/v1/completions";
+			Map<String, String> args = new HashMap<>();
+			args.put("$url", deadUrl);
+			args.put("$mt", "20");
+			args.put("$temp", "0.0");
+			args.put("$tp", "0.9");
+			PreparedScript ps = conn.prepareScript(DML_SCRIPT, args,
+				new String[]{"prompts"}, new String[]{"results"});
+
+			String[][] promptData = new String[][]{{"Hello"}};
+			ps.setFrame("prompts", promptData);
+
+			try {
+				ps.executeScript();
+				Assert.fail("Expected DMLRuntimeException for unreachable server");
+			}
+			catch (DMLRuntimeException e) {
+				System.out.println("Correctly caught: " + e.getMessage());
+				Assert.assertTrue("Error should mention connection issue",
+					e.getMessage().contains("connection refused")
+					|| e.getMessage().contains("Connection refused")
+					|| e.getMessage().contains("server is running"));
+			}
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			org.junit.Assume.assumeNoException(
+				"Could not set up negative test", e);
+		}
+		finally {
+			if (conn != null) conn.close();
+		}
+	}
+
+	@Test
+	public void testInvalidUrl() {
+		Connection conn = null;
+		try {
+			conn = new Connection();
+			Map<String, String> args = new HashMap<>();
+			args.put("$url", "not-a-valid-url");
+			args.put("$mt", "20");
+			args.put("$temp", "0.0");
+			args.put("$tp", "0.9");
+			PreparedScript ps = conn.prepareScript(DML_SCRIPT, args,
+				new String[]{"prompts"}, new String[]{"results"});
+
+			String[][] promptData = new String[][]{{"Hello"}};
+			ps.setFrame("prompts", promptData);
+
+			try {
+				ps.executeScript();
+				Assert.fail("Expected DMLRuntimeException for invalid URL");
+			}
+			catch (DMLRuntimeException e) {
+				System.out.println("Correctly caught: " + e.getMessage());
+				Assert.assertTrue("Error should mention invalid URL",
+					e.getMessage().contains("invalid URL")
+					|| e.getMessage().contains("Invalid URL"));
+			}
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			org.junit.Assume.assumeNoException(
+				"Could not set up negative test", e);
+		}
+		finally {
 			if (conn != null) conn.close();
 		}
 	}
@@ -108,7 +204,6 @@ public class JMLCLLMInferenceTest extends AutomatedTestBase {
 				System.out.println("Generated: " + generated + " (" + timeMs + "ms)");
 			}
 		} catch (Exception e) {
-			System.out.println("Skipping batch LLM test (server not running):");
 			e.printStackTrace();
 			org.junit.Assume.assumeNoException("LLM server not available", e);
 		} finally {

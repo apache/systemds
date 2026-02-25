@@ -1,6 +1,0 @@
-{
-  "backend": "ollama",
-  "backend_model": "llama3.2",
-  "workload": "math",
-  "concurrency": 1
-}

@@ -1,3 +1,24 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
 """SystemDS JMLC backend using the native llmPredict built-in."""
 
 import logging
@@ -24,7 +45,6 @@ _DML_SCRIPT = (
 
 
 def _build_classpath(systemds_jar: str, lib_dir: str) -> str:
-    """Build JVM classpath from SystemDS JAR and its dependency directory."""
     jars = [systemds_jar]
     lib_path = Path(lib_dir)
     if lib_path.is_dir():
@@ -68,6 +88,8 @@ class SystemDSBackend:
 
         self._jvm = self._gateway.jvm
         self._connection = self._jvm.org.apache.sysds.api.jmlc.Connection()
+        # cache compiled scripts -- $-args are compile-time, so recompile only when params change
+        self._script_cache: dict = {}
 
         logger.info("SystemDS JMLC backend initialized (model=%s, url=%s)",
                      model, self.inference_url)
@@ -81,47 +103,100 @@ class SystemDSBackend:
 
         jvm = self._jvm
 
-        args = self._gateway.jvm.java.util.HashMap()
-        args.put("$url", self.inference_url)
-        args.put("$mt", str(max_tokens))
-        args.put("$temp", str(temperature))
-        args.put("$tp", str(top_p))
-        args.put("$conc", str(concurrency))
+        t_pipeline_start = time.perf_counter()
 
-        # Prepare DML script with llmPredict built-in
-        inputs = self._gateway.new_array(jvm.java.lang.String, 1)
-        inputs[0] = "prompts"
-        outputs = self._gateway.new_array(jvm.java.lang.String, 1)
-        outputs[0] = "results"
+        script_key = (self.inference_url, max_tokens, temperature, top_p, concurrency)
+        if script_key in self._script_cache:
+            ps = self._script_cache[script_key]
+            logger.debug("Reusing cached PreparedScript for key %s", script_key)
+        else:
+            args = self._gateway.jvm.java.util.HashMap()
+            args.put("$url", self.inference_url)
+            args.put("$mt", str(max_tokens))
+            args.put("$temp", str(temperature))
+            args.put("$tp", str(top_p))
+            args.put("$conc", str(concurrency))
 
-        ps = self._connection.prepareScript(_DML_SCRIPT, args, inputs, outputs)
+            inputs = self._gateway.new_array(jvm.java.lang.String, 1)
+            inputs[0] = "prompts"
+            outputs = self._gateway.new_array(jvm.java.lang.String, 1)
+            outputs[0] = "results"
 
-        # Build prompt frame (n x 1 String[][])
+            ps = self._connection.prepareScript(_DML_SCRIPT, args, inputs, outputs)
+            self._script_cache[script_key] = ps
+            logger.debug("Compiled and cached new PreparedScript for key %s", script_key)
+
+        # n x 1 string frame
         n = len(prompts)
         prompt_data = self._gateway.new_array(jvm.java.lang.String, n, 1)
         for i, p in enumerate(prompts):
             prompt_data[i][0] = p
         ps.setFrame("prompts", prompt_data)
 
-        # Execute through full SystemDS pipeline
-        t0 = time.perf_counter()
-        rv = ps.executeScript()
-        t1 = time.perf_counter()
-        batch_wall_ms = (t1 - t0) * 1000.0
+        t_exec_start = time.perf_counter()
+        try:
+            rv = ps.executeScript()
+        except Exception as e:
+            err_msg = str(e)
+            # unwrap Py4J-wrapped Java exceptions
+            if "java.net.ConnectException" in err_msg:
+                raise RuntimeError(
+                    f"Inference server unreachable at {self.inference_url}. "
+                    "Is the LLM server running?"
+                ) from e
+            if "java.net.SocketTimeoutException" in err_msg:
+                raise RuntimeError(
+                    "Inference server timed out. The server may be overloaded "
+                    "or the read timeout (120 s) was exceeded."
+                ) from e
+            raise RuntimeError(
+                f"SystemDS executeScript failed: {err_msg}"
+            ) from e
+        t_exec_end = time.perf_counter()
 
         frame_block = rv.getFrameBlock("results")
 
-        results = []
+        t_pipeline_end = time.perf_counter()
+
+        exec_wall_ms = (t_exec_end - t_exec_start) * 1000.0
+        pipeline_wall_ms = (t_pipeline_end - t_pipeline_start) * 1000.0
+
+        raw = []
         for i in range(n):
             text = str(frame_block.get(i, 1))
-            per_prompt_ms = int(str(frame_block.get(i, 2)))
+            java_http_ms = int(str(frame_block.get(i, 2)))  # HTTP call time inside Java
             input_tokens = int(str(frame_block.get(i, 3)))
             output_tokens = int(str(frame_block.get(i, 4)))
+            raw.append((text, float(java_http_ms), input_tokens, output_tokens))
 
+        # per-prompt latency = java_http_ms + share of pipeline overhead
+        # with concurrency > 1, HTTP calls overlap so just use pipeline_wall_ms / n
+        total_java_http = sum(r[1] for r in raw)
+        overhead_ms = pipeline_wall_ms - total_java_http
+        use_per_prompt = concurrency <= 1 and overhead_ms >= 0
+        if not use_per_prompt:
+            logger.warning(
+                "Per-prompt latency uses amortised pipeline_wall_ms/n "
+                "(concurrency=%d, overhead=%.1fms). Individual HTTP times "
+                "overlap and cannot be attributed per-prompt.",
+                concurrency, overhead_ms,
+            )
+
+        results = []
+        for text, java_http_ms, input_tokens, output_tokens in raw:
+            if use_per_prompt:
+                lat = java_http_ms + overhead_ms / n
+            else:
+                lat = pipeline_wall_ms / n
             results.append({
                 "text": text,
-                "latency_ms": float(per_prompt_ms),
+                "latency_ms": lat,
                 "extra": {
+                    "java_http_ms": java_http_ms,
+                    "pipeline_wall_ms": pipeline_wall_ms,
+                    "pipeline_overhead_ms": max(0.0, overhead_ms),
+                    "exec_wall_ms": exec_wall_ms / n,
+                    "concurrency": concurrency,
                     "usage": {
                         "input_tokens": input_tokens,
                         "output_tokens": output_tokens,
@@ -130,14 +205,15 @@ class SystemDSBackend:
                 },
             })
 
+        avg_java_http_ms = sum(r["extra"]["java_http_ms"] for r in results) / n
         logger.info(
-            "llmPredict: %d prompts in %.1fms (%.1fms/prompt)",
-            n, batch_wall_ms, batch_wall_ms / n,
+            "llmPredict: %d prompts | pipeline=%.1fms | exec=%.1fms | "
+            "java_http=%.1fms/prompt (avg)",
+            n, pipeline_wall_ms, exec_wall_ms, avg_java_http_ms,
         )
         return results
 
     def close(self):
-        """Shut down the JMLC connection and JVM gateway."""
         try:
             if hasattr(self, "_connection") and self._connection is not None:
                 self._connection.close()

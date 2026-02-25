@@ -1,6 +1,0 @@
-{
-  "backend": "vllm",
-  "backend_model": "Qwen/Qwen2.5-3B-Instruct",
-  "workload": "math",
-  "concurrency": 4
-}

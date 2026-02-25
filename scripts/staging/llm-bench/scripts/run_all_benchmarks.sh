@@ -206,27 +206,22 @@ case "$BACKEND_ARG" in
         run_backend "vllm" "$(resolve_model vllm "$MODEL_ARG")"
         ;;
     systemds)
-        # Run SystemDS with both c=1 (sequential) and c=4 (concurrent)
         local_model="$(resolve_model systemds "$MODEL_ARG")"
-        echo -e "${YELLOW}SystemDS mode: running c=1 and c=4 for ${local_model}${NC}"
-        run_backend "systemds" "$local_model" "" "--concurrency 1"
-        run_backend "systemds" "$local_model" "_c4" "--concurrency 4"
+        run_backend "systemds" "$local_model"
         ;;
     gpu)
         # GPU backends: vLLM + SystemDS with same model for comparison
         local_model="$(resolve_model vllm "$MODEL_ARG")"
         echo -e "${YELLOW}GPU comparison mode: vLLM + SystemDS with ${local_model}${NC}"
         run_backend "vllm" "$local_model"
-        run_backend "systemds" "$local_model" "" "--concurrency 1"
-        run_backend "systemds" "$local_model" "_c4" "--concurrency 4"
+        run_backend "systemds" "$local_model"
         ;;
     all)
         run_backend "openai" "$MODEL_ARG"
         run_backend "ollama" "$(resolve_model ollama "$MODEL_ARG")"
         run_backend "vllm" "$(resolve_model vllm "$MODEL_ARG")"
         local_model="$(resolve_model systemds "$MODEL_ARG")"
-        run_backend "systemds" "$local_model" "" "--concurrency 1"
-        run_backend "systemds" "$local_model" "_c4" "--concurrency 4"
+        run_backend "systemds" "$local_model"
         ;;
     local|*)
         run_backend "ollama" "$(resolve_model ollama "$MODEL_ARG")"

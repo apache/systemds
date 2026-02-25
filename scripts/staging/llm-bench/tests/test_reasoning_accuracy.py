@@ -1,3 +1,24 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
 """Unit tests for reasoning workload accuracy checking."""
 
 import sys
@@ -95,19 +116,11 @@ class TestReasoningAccuracyCheck:
 
 
 # ---------------------------------------------------------------------------
-# load_samples (toy)
+# load_samples
 # ---------------------------------------------------------------------------
 
 class TestLoadSamples:
-    def test_load_toy(self):
-        cfg = {"name": "reasoning", "dataset": {"source": "toy", "n_samples": 5}}
-        samples = load_samples(cfg)
-        assert len(samples) == 5
-        assert all(s.puzzle for s in samples)
-        assert all(s.reference for s in samples)
-        assert all(s.puzzle_type for s in samples)
-
-    def test_load_toy_all(self):
-        cfg = {"name": "reasoning", "dataset": {"source": "toy", "n_samples": 10}}
-        samples = load_samples(cfg)
-        assert len(samples) == 10
+    def test_invalid_source(self):
+        cfg = {"name": "reasoning", "dataset": {"source": "invalid_source", "n_samples": 5}}
+        with pytest.raises(ValueError, match="reasoning supports source"):
+            load_samples(cfg)

@@ -1,3 +1,24 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
 import logging
 import re
 from dataclasses import dataclass
@@ -14,50 +35,30 @@ class Sample:
     question: str
     reference: str
 
-TOY_PROBLEMS = [
-    {"question": "What is 15 + 27?", "answer": "42"},
-    {"question": "A baker has 48 cupcakes. She sells 23. How many are left?", "answer": "25"},
-    {"question": "If a train travels 60 miles per hour for 3 hours, how far does it go?", "answer": "180"},
-    {"question": "Tom has 5 apples. He buys 3 more bags with 4 apples each. How many apples does he have?", "answer": "17"},
-    {"question": "A rectangle has length 8 and width 5. What is the area?", "answer": "40"},
-    {"question": "If 3 notebooks cost $12, how much do 7 notebooks cost?", "answer": "28"},
-    {"question": "Sarah has 100 stickers. She gives 15 to each of her 4 friends. How many does she have left?", "answer": "40"},
-    {"question": "A bus can hold 45 passengers. How many buses are needed for 200 passengers?", "answer": "5"},
-    {"question": "What is 25% of 80?", "answer": "20"},
-    {"question": "If you divide 144 by 12, what do you get?", "answer": "12"},
-]
-
-
 def load_samples(cfg: Dict[str, Any]) -> List[Sample]:
     dataset_cfg = cfg.get("dataset", {})
-    source = dataset_cfg.get("source", "toy")
+    source = dataset_cfg.get("source", "gsm8k")
     n = int(dataset_cfg.get("n_samples", 10))
 
-    if source == "toy":
-        samples = _load_toy_samples(n)
-    elif source == "gsm8k":
+    if source == "gsm8k":
         samples = _load_gsm8k_samples(n)
     else:
-        raise ValueError(f"math supports source: toy, gsm8k. Got: {source}")
+        raise ValueError(f"math supports source: gsm8k. Got: {source}")
 
     if len(samples) < n:
         logger.warning("Requested %d samples but only %d available (source=%s)", n, len(samples), source)
     return samples
 
 
-def _load_toy_samples(n: int) -> List[Sample]:
-    problems = TOY_PROBLEMS[: max(1, min(n, len(TOY_PROBLEMS)))]
-    return [Sample(sid=f"toy-{i}", question=p["question"], reference=p["answer"])
-            for i, p in enumerate(problems)]
-
-
 def _load_gsm8k_samples(n: int) -> List[Sample]:
-    """Load GSM8K grade-school math problems. Falls back to toy if download fails."""
+    """Load GSM8K grade-school math problems."""
     try:
         dataset = load_dataset("openai/gsm8k", "main", split="test")
     except Exception as e:
-        print(f"Warning: GSM8K download failed ({e}), using toy dataset")
-        return _load_toy_samples(n)
+        raise RuntimeError(
+            f"Could not load GSM8K dataset from HuggingFace: {e}. "
+            f"Check your internet connection or install the dataset manually."
+        ) from e
 
     samples: List[Sample] = []
     for i, item in enumerate(dataset):
@@ -78,12 +79,7 @@ def _extract_gsm8k_answer(answer_text: str) -> Optional[str]:
 
 
 def extract_number_from_response(text: str) -> Optional[str]:
-    """Extract the final numerical answer from a model response.
-
-    Tries, in order: explicit answer markers, bold/boxed, '= X', currency,
-    last sentence-ending number, last number anywhere.
-    Stops at follow-up markers (phi-2 generates extra questions).
-    """
+    """Extract the final numerical answer from model output."""
     if not text:
         return None
     text = text.strip()

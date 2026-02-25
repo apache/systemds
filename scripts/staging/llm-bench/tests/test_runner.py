@@ -1,3 +1,24 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
 """Unit tests for runner.py (config validation, factory, helpers)."""
 
 import sys
@@ -15,12 +36,12 @@ from runner import validate_config, json_safe, _aggregate_tokens
 
 class TestValidateConfig:
     def test_valid_config(self):
-        cfg = {"name": "math", "dataset": {"source": "toy", "n_samples": 10}}
+        cfg = {"name": "math", "dataset": {"source": "gsm8k", "n_samples": 10}}
         validate_config(cfg)  # should not raise
 
     def test_missing_name(self):
         with pytest.raises(ValueError, match="missing required keys"):
-            validate_config({"dataset": {"source": "toy"}})
+            validate_config({"dataset": {"source": "gsm8k"}})
 
     def test_invalid_workload(self):
         with pytest.raises(ValueError, match="Unknown workload"):

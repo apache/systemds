@@ -126,7 +126,9 @@ def compute_batch_size(
     return batch_size
 
 
-def get_device():
+def get_device(gpu_id: int = None):
+    if gpu_id is not None:
+        return torch.device(f"cuda:{gpu_id}")
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 

@@ -28,6 +28,7 @@ global_rng = np.random.default_rng(42)
 def get_seed():
     return global_rng.integers(0, 1024)
 
+
 def get_model_size_mb(model: torch.nn.Module) -> float:
     param_bytes = sum(p.numel() * p.element_size() for p in model.parameters())
     buffer_bytes = sum(b.numel() * b.element_size() for b in model.buffers())
@@ -129,5 +130,7 @@ def compute_batch_size(
     return batch_size
 
 
-def get_device():
+def get_device(gpu_id: int = None):
+    if gpu_id is not None:
+        return torch.device(f"cuda:{gpu_id}")
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")

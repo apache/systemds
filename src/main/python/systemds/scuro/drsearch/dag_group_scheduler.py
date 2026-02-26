@@ -36,10 +36,9 @@ def get_peak_memory_from_dag_group(
         prev_stats = modality.get_stats()
         for node in dag.nodes[1:]:
             peak_memory = node.operation().estimate_peak_memory_bytes(prev_stats)
-            print(node.operation().name, peak_memory)
             peak_memory_cpu = max(peak_memory_cpu, peak_memory["cpu_peak_bytes"])
             peak_memory_gpu = max(peak_memory_gpu, peak_memory["gpu_peak_bytes"])
-        prev_stats = node.operation().get_output_shape(prev_stats)
+            prev_stats = node.operation().get_output_shape(prev_stats)
 
     return (peak_memory_cpu + leaf_memory_bytes, peak_memory_gpu)
 

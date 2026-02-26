@@ -18,7 +18,8 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from systemds.scuro.utils.converter import numpy_dtype_to_torch_dtype
+from systemds.scuro.dataloader.image_loader import ImageStats
+from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.utils.torch_dataset import CustomDataset
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
@@ -29,20 +30,25 @@ import torch
 import torchvision.models as models
 import numpy as np
 from systemds.scuro.modality.type import ModalityType
-from systemds.scuro.utils.static_variables import (
-    compute_batch_size,
-    get_device,
-    get_device_for_model,
-)
+from systemds.scuro.utils.static_variables import get_device
 
 
 @register_representation([ModalityType.IMAGE, ModalityType.VIDEO])
 class ResNet(UnimodalRepresentation):
     def __init__(
-        self, model_name="ResNet18", layer="avgpool", output_file=None, params=None
+        self,
+        model_name="ResNet18",
+        layer="avgpool",
+        output_file=None,
+        batch_size=32,
+        params=None,
     ):
-        self.data_type = torch.bfloat16
+        self.data_type = torch.float32
+        self.model = None
+        self.gpu_id = None
+        self.device = get_device()
         self.model_name = model_name
+        self.batch_size = batch_size
         parameters = self._get_parameters()
         super().__init__("ResNet", ModalityType.EMBEDDING, parameters)
 
@@ -59,6 +65,17 @@ class ResNet(UnimodalRepresentation):
         self.model.fc = Identity()
 
     @property
+    def gpu_id(self):
+        return self._gpu_id
+
+    @gpu_id.setter
+    def gpu_id(self, gpu_id):
+        self._gpu_id = gpu_id
+        self.device = get_device(gpu_id)
+        if self.model is not None:
+            self.model = self.model.to(self.device)
+
+    @property
     def model_name(self):
         return self._model_name
 
@@ -67,34 +84,59 @@ class ResNet(UnimodalRepresentation):
         self._model_name = model_name
         if model_name == "ResNet18":
             model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
-            self.device = get_device_for_model(model, memory_factor=1.5)
             self.model = model.to(self.device)
             self.model = self.model.to(self.data_type)
 
         elif model_name == "ResNet34":
             model = models.resnet34(weights=models.ResNet34_Weights.DEFAULT)
-            self.device = get_device_for_model(model, memory_factor=1.5)
             self.model = model.to(self.device)
             self.model = self.model.to(self.data_type)
         elif model_name == "ResNet50":
             model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
-            self.device = get_device_for_model(model, memory_factor=1.5)
             self.model = model.to(self.device)
             self.model = self.model.to(self.data_type)
 
         elif model_name == "ResNet101":
             model = models.resnet101(weights=models.ResNet101_Weights.DEFAULT)
-            self.device = get_device_for_model(model, memory_factor=1.5)
             self.model = model.to(self.device)
             self.model = self.model.to(self.data_type)
 
         elif model_name == "ResNet152":
             model = models.resnet152(weights=models.ResNet152_Weights.DEFAULT)
-            self.device = get_device_for_model(model, memory_factor=1.5)
             self.model = model.to(self.device)
             self.model = self.model.to(self.data_type)
         else:
             raise NotImplementedError
+
+    def estimate_output_memory_bytes(self, input_stats: ImageStats) -> int:
+        return input_stats.num_instances * 512 * self.data_type.itemsize
+
+    def get_output_shape(self, input_stats) -> RepresentationStats:
+        return RepresentationStats(input_stats.num_instances, (512,))
+
+    def estimate_peak_memory_bytes(self, input_stats: ImageStats) -> dict:
+        output_bytes = self.estimate_output_memory_bytes(input_stats)
+        batch_peak_bytes = (
+            self.batch_size * 512 * self.data_type.itemsize
+            + self.batch_size * 224 * 224 * 3 * self.data_type.itemsize
+        )
+
+        param_size = 0
+        for param in self.model.parameters():
+            param_size += param.nelement() * param.element_size()
+
+        buffer_size = 0
+        for buffer in self.model.buffers():
+            buffer_size += buffer.nelement() * buffer.element_size()
+
+        size_all_bytes = param_size + buffer_size
+
+        cpu_peak = size_all_bytes * 2 * self.data_type.itemsize + output_bytes
+        gpu_peak = (
+            size_all_bytes * self.data_type.itemsize * self.batch_size * 0.05
+            + batch_peak_bytes * 2
+        )
+        return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": gpu_peak}
 
     def _get_parameters(self, high_level=True):
         parameters = {"model_name": [], "layer_name": []}
@@ -116,19 +158,18 @@ class ResNet(UnimodalRepresentation):
         return parameters
 
     def transform(self, modality, aggregation=None):
-        self.data_type = torch.float32
         if next(self.model.parameters()).dtype != self.data_type:
             self.model = self.model.to(self.data_type)
 
-        sample = modality.data[0] if modality.data else ""
-        self.batch_size = compute_batch_size(
-            model=self.model,
-            device=self.device,
-            sample_data=sample,
-            tokenizer=None,
-            max_seq_length=None,
-            max_batch_size=128,
-        )
+        # sample = modality.data[0] if modality.data else ""
+        # self.batch_size = compute_batch_size(
+        #     model=self.model,
+        #     device=self.device,
+        #     sample_data=sample,
+        #     tokenizer=None,
+        #     max_seq_length=None,
+        #     max_batch_size=128,
+        # )
         embeddings = {}
         dataset = CustomDataset(modality.data, self.data_type, self.device)
         res5c_output = None
@@ -148,40 +189,53 @@ class ResNet(UnimodalRepresentation):
                     layer.register_forward_hook(get_features(name))
                     break
 
-        for instance in torch.utils.data.DataLoader(dataset):
-            video_id = instance["id"][0]
-            frames = instance["data"][0]
-            embeddings[video_id] = []
-            batch_size = 64
-
-            if modality.modality_type == ModalityType.IMAGE:
-                frames = frames.unsqueeze(0)
-
-            for start_index in range(0, len(frames), batch_size):
-                end_index = min(start_index + batch_size, len(frames))
-                frame_ids_range = range(start_index, end_index)
-                frame_batch = frames[frame_ids_range]
-
-                _ = self.model(frame_batch)
+        if modality.modality_type == ModalityType.IMAGE:
+            embeddings = []
+            for batch in torch.utils.data.DataLoader(
+                dataset, batch_size=self.batch_size
+            ):
+                image_batch = batch["data"]
+                _ = self.model(image_batch)
                 output = res5c_output
-                if len(output.shape) > 2:
-                    output = torch.nn.functional.adaptive_avg_pool2d(output, (1, 1))
-
-                embeddings[video_id].extend(
-                    torch.flatten(output, 1)
-                    .detach()
-                    .cpu()
-                    .float()
-                    .numpy()
-                    .astype(np.float32)
+                embeddings.extend(
+                    output.squeeze().detach().cpu().numpy().astype(modality.data_type)
                 )
+                torch.cuda.empty_cache()
+        else:
+            for instance in torch.utils.data.DataLoader(dataset):
+                video_id = instance["id"][0]
+                frames = instance["data"][0]
+                embeddings[video_id] = []
+                batch_size = 64
 
-            embeddings[video_id] = np.array(embeddings[video_id])
+                if modality.modality_type == ModalityType.IMAGE:
+                    frames = frames.unsqueeze(0)
+
+                for start_index in range(0, len(frames), batch_size):
+                    end_index = min(start_index + batch_size, len(frames))
+                    frame_ids_range = range(start_index, end_index)
+                    frame_batch = frames[frame_ids_range]
+
+                    _ = self.model(frame_batch)
+                    output = res5c_output
+                    if len(output.shape) > 2:
+                        output = torch.nn.functional.adaptive_avg_pool2d(output, (1, 1))
+                    # TODO: check if the dimensions are correct here
+                    embeddings[video_id].extend(
+                        torch.flatten(output, 1)
+                        .detach()
+                        .cpu()
+                        .float()
+                        .numpy()
+                        .astype(np.float32)
+                    )
+
+                embeddings[video_id] = np.array(embeddings[video_id])
 
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )
 
-        transformed_modality.data = list(embeddings.values())
+        transformed_modality.data = list(embeddings)
 
         return transformed_modality

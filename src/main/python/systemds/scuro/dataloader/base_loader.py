@@ -125,6 +125,9 @@ class BaseLoader(ABC):
         return self._load(next_chunk_indices)
 
     def _load(self, indices: List[str]):
+        if self.data is not None and len(self.data) == len(indices):
+            return self.data, self.metadata
+
         file_names = self.get_file_names(indices)
         if isinstance(file_names, str):
             self.extract(file_names, indices)

@@ -70,7 +70,8 @@ class GloVe(UnimodalRepresentation):
 
     def estimate_peak_memory_bytes(self, input_stats: TextStats) -> dict:
         output_bytes = self.estimate_output_memory_bytes(input_stats)
-        glove_dict_bytes = 200 * 1024 * 1024
+
+        glove_dict_bytes = 256 * 1024 * 1024
         return {"cpu_peak_bytes": glove_dict_bytes + output_bytes, "gpu_peak_bytes": 0}
 
     def transform(self, modality, aggregation=None):

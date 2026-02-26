@@ -178,6 +178,7 @@ class RepresentationDag:
         enable_cache=True,
         rep_cache: Dict[Any, TransformedModality] = None,
         consumer_count: Dict[str, int] = None,
+        gpu_id: int = None,
     ) -> Union[Dict[str, TransformedModality], TransformedModality]:
 
         def execute_node(node_id: str, task) -> TransformedModality:
@@ -204,6 +205,8 @@ class RepresentationDag:
                 result = external_cache.get(node_id)
             else:
                 node_operation = node.operation(params=node.parameters)
+                if gpu_id is not None and hasattr(node_operation, "gpu_id"):
+                    node_operation.gpu_id = gpu_id
                 if len(input_mods) == 1:
                     # It's a unimodal operation
                     if isinstance(node_operation, Context):

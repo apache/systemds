@@ -22,8 +22,10 @@
 import numpy as np
 import cv2
 
+from systemds.scuro.dataloader.image_loader import ImageStats
 from systemds.scuro.drsearch.operator_registry import register_representation
 from systemds.scuro.modality.type import ModalityType
+from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.modality.transformed import TransformedModality
 
@@ -47,6 +49,7 @@ class ColorHistogram(UnimodalRepresentation):
         self.normalize = normalize
         self.aggregation = aggregation
         self.output_file = output_file
+        self.data_type = np.float32
 
     def _get_parameters(self):
         return {
@@ -84,6 +87,23 @@ class ColorHistogram(UnimodalRepresentation):
             if hist_sum > 0:
                 hist /= hist_sum
         return hist.astype(np.float32)
+
+    def estimate_output_memory_bytes(self, input_stats: ImageStats) -> int:
+        return (
+            input_stats.num_instances
+            * self.bins
+            * 3
+            * np.dtype(self.data_type).itemsize
+        )
+
+    def get_output_shape(self, input_stats) -> RepresentationStats:
+        return RepresentationStats(input_stats.num_instances, (self.bins * 3,))
+
+    def estimate_peak_memory_bytes(self, input_stats: ImageStats) -> dict:
+        return {
+            "cpu_peak_bytes": self.estimate_output_memory_bytes(input_stats),
+            "gpu_peak_bytes": 0,
+        }
 
     def transform(self, modality, aggregation=None):
         if modality.modality_type == ModalityType.IMAGE:

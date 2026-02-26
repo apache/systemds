@@ -20,9 +20,9 @@
 # -------------------------------------------------------------
 from dataclasses import dataclass
 import json
-
+import os
 import numpy as np
-
+from typing import Tuple
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.dataloader.base_loader import BaseLoader
 from typing import Optional, List, Union
@@ -33,6 +33,7 @@ class JSONStats:
     num_instances: int
     max_length: int
     avg_length: float
+    output_shape: Tuple[int, int]
 
 
 class JSONLoader(BaseLoader):
@@ -70,21 +71,31 @@ class JSONLoader(BaseLoader):
 
     def get_stats(self, source_path: str):
         self.file_sanity_check(source_path)
-        with open(source_path) as f:
-            json_file = json.load(f)
-            num_instances = 0
-            max_length = 0
-            avg_length = 0
+        num_instances = 0
+        max_length = 0
+        avg_length = 0
+        if os.path.isfile(source_path):
+            with open(source_path) as f:
+                for id in self.indices:
+                    try:
+                        text = json_file[id][self.field]
+                    except:
+                        text = json_file[self.field]
 
+                    text = " ".join(text) if isinstance(text, list) else text
+                    num_instances += 1
+                    max_length = max(max_length, len(text))
+                    avg_length += len(text)
+        else:
             for id in self.indices:
-                try:
-                    text = json_file[id][self.field]
-                except:
+                with open(os.path.join(source_path, f"{id}{self._ext}")) as f:
+                    json_file = json.load(f)
                     text = json_file[self.field]
 
-                text = " ".join(text) if isinstance(text, list) else text
-                num_instances += 1
-                max_length = max(max_length, len(text))
-                avg_length += len(text)
+                    text = " ".join(text) if isinstance(text, list) else text
+                    num_instances += 1
+                    max_length = max(max_length, len(text))
+                    avg_length += len(text)
+
             avg_length /= num_instances
-        return JSONStats(num_instances, max_length, avg_length)
+        return JSONStats(num_instances, max_length, avg_length, (max_length,))

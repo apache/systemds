@@ -116,6 +116,7 @@ def _process_dag_group(
             enable_cache=True,
             external_cache=group_cache,
             consumer_count=consumer_count,
+            gpu_id=gpu_id,
         )
 
         for task in tasks:
@@ -412,6 +413,7 @@ class UnimodalOptimizer:
 
         ctx = mp.get_context("spawn")
         max_workers = min(len(dag_groups), mp.cpu_count())
+        max_workers = 1
         modality_pickle = pickle.dumps(modality)
         tasks_pickle = pickle.dumps(self.tasks)
         rep_cache_pickle = pickle.dumps(rep_cache) if rep_cache else None
@@ -790,10 +792,13 @@ class UnimodalOptimizer:
         return dags
 
     def _aggregation_needed(self, dag: RepresentationDag) -> bool:
-        last_stats = self.modalities[dag.nodes[0].modality_id].stats
+        for modality in self.modalities:
+            if modality.modality_id == dag.nodes[0].modality_id:
+                last_stats = modality.stats
+                break
         for node in dag.nodes[1:]:
             last_stats = node.operation().get_output_shape(last_stats)
-        return len(last_stats.output_shape) > 1
+        return len(last_stats.output_shape) > 1 or last_stats.num_instances > 1
 
     def add_aggregation_operator(self, builder, dags):
         new_dags = []
@@ -825,6 +830,7 @@ class UnimodalOptimizer:
             if (
                 modality.modality_type != ModalityType.TEXT
                 and modality.modality_type != ModalityType.VIDEO
+                and modality.modality_type != ModalityType.IMAGE
             ):
                 context_operators = self._get_context_operators(modality.modality_type)
                 for context_op in context_operators:

@@ -31,24 +31,30 @@ import torchvision.models as models
 import numpy as np
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.utils.static_variables import (
-    compute_batch_size,
     get_device,
-    get_device_for_model,
 )
+from systemds.scuro.dataloader.image_loader import ImageStats
+from systemds.scuro.representations.representation import RepresentationStats
 
 
 @register_representation([ModalityType.IMAGE, ModalityType.VIDEO])
 class VGG19(UnimodalRepresentation):
-    def __init__(self, layer="classifier.0", output_file=None, params=None):
+    def __init__(
+        self, layer="classifier.0", output_file=None, params=None, batch_size=32
+    ):
         self.data_type = torch.bfloat16
+        self.model = None
+        self.gpu_id = None
+        self.device = get_device()
         self.model = models.vgg19(weights=models.VGG19_Weights.DEFAULT)
-        self.device = get_device_for_model(self.model, memory_factor=1.5)
         self.model = self.model.to(self.device)
         parameters = self._get_parameters()
         super().__init__("VGG19", ModalityType.EMBEDDING, parameters)
         self.output_file = output_file
         self.layer_name = layer
         self.model.eval()
+        self.batch_size = batch_size
+
         for param in self.model.parameters():
             param.requires_grad = False
 
@@ -57,6 +63,17 @@ class VGG19(UnimodalRepresentation):
                 return input_
 
         self.model.fc = Identity()
+
+    @property
+    def gpu_id(self):
+        return self._gpu_id
+
+    @gpu_id.setter
+    def gpu_id(self, gpu_id):
+        self._gpu_id = gpu_id
+        self.device = get_device(gpu_id)
+        if self.model is not None:
+            self.model = self.model.to(self.device)
 
     def _get_parameters(self):
         parameters = {
@@ -70,20 +87,29 @@ class VGG19(UnimodalRepresentation):
 
         return parameters
 
+    def estimate_output_memory_bytes(self, input_stats: ImageStats) -> int:
+        return input_stats.num_instances * 4096 * self.data_type.itemsize
+
+    def get_output_shape(self, input_stats) -> RepresentationStats:
+        return RepresentationStats(input_stats.num_instances, (4096,))
+
+    def estimate_peak_memory_bytes(self, input_stats: ImageStats) -> dict:
+        batch_size_bytes = 224 * 224 * 3 * self.data_type.itemsize * self.batch_size
+        model = models.vgg19(weights=models.VGG19_Weights.DEFAULT)
+        param_bytes = sum(p.numel() * p.element_size() for p in model.parameters())
+        buffer_bytes = sum(b.numel() * b.element_size() for b in model.buffers())
+        model_size_bytes = param_bytes + buffer_bytes
+        return {
+            "cpu_peak_bytes": self.estimate_output_memory_bytes(input_stats)
+            + model_size_bytes,
+            "gpu_peak_bytes": model_size_bytes + batch_size_bytes,
+        }
+
     def transform(self, modality, aggregation=None):
         self.data_type = torch.float32
         if next(self.model.parameters()).dtype != self.data_type:
             self.model = self.model.to(self.data_type)
 
-        sample = modality.data[0] if modality.data else ""
-        self.batch_size = compute_batch_size(
-            model=self.model,
-            device=self.device,
-            sample_data=sample,
-            tokenizer=None,
-            max_seq_length=None,
-            max_batch_size=128,
-        )
         dataset = CustomDataset(modality.data, self.data_type, self.device)
         embeddings = {}
         activations = {}

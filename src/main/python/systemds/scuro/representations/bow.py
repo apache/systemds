@@ -60,7 +60,7 @@ class BoW(UnimodalRepresentation):
 
     def estimate_peak_memory_bytes(self, input_stats: TextStats) -> dict:
         output_bytes = self.estimate_output_memory_bytes(input_stats)
-        vectorizer_overhead = 50 * 1024 * 1024
+        vectorizer_overhead = 640 * 1024  # 640 KB
         return {
             "cpu_peak_bytes": output_bytes + vectorizer_overhead,
             "gpu_peak_bytes": 0,

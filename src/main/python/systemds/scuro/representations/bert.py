@@ -20,7 +20,6 @@
 # -------------------------------------------------------------
 from dataclasses import dataclass
 import numpy as np
-from systemds.scuro.dataloader.text_loader import TextStats
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
@@ -30,8 +29,7 @@ from systemds.scuro.representations.utils import save_embeddings
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.operator_registry import register_representation
 from systemds.scuro.utils.memory_utility import (
-    get_device_for_model,
-    compute_batch_size,
+    get_device,
 )
 import os
 from torch.utils.data import DataLoader
@@ -63,9 +61,21 @@ class BertFamily(UnimodalRepresentation):
         self.initial_context_length = 350
         self.device = None
         self.batch_size = batch_size
+        self.gpu_id = None
+        self.device = get_device()
+        self.data_type = torch.float32
+
+    @property
+    def gpu_id(self):
+        return self._gpu_id
+
+    @gpu_id.setter
+    def gpu_id(self, gpu_id):
+        self._gpu_id = gpu_id
+        self.device = get_device(gpu_id)
 
     def get_output_shape(self, input_stats) -> RepresentationStats:
-        if isinstance(input_stats, TextStats):
+        if not isinstance(input_stats, RepresentationStats):
             return RepresentationStats(
                 input_stats.num_instances, (self.max_seq_length, 768)
             )
@@ -75,20 +85,60 @@ class BertFamily(UnimodalRepresentation):
                 (input_stats.output_shape[0], self.max_seq_length, 768),
             )
 
-    def estimate_output_memory_bytes(self, input_stats: TextStats):
-        return input_stats.num_instances * self.max_seq_length * 768 * 4
-
-    def estimate_peak_memory_bytes(self, input_stats: TextStats):
-        output_bytes = self.estimate_output_memory_bytes(input_stats)
-        model_bytes = AutoModel.from_pretrained(self.model_name).get_memory_footprint()
-        tokenizer_bytes = 100 * 1024 * 1024  # This is a rough estimate
-        batch_peak_bytes = (
-            self.batch_size * self.max_seq_length * 3 * 8
-            + self.batch_size * self.max_seq_length * 768 * 4 * 4
+    def estimate_output_memory_bytes(self, input_stats):
+        return (
+            input_stats.num_instances
+            * self.max_seq_length
+            * 768
+            * self.data_type.itemsize
         )
-        cpu_peak = model_bytes + tokenizer_bytes + output_bytes
-        gpu_peak = model_bytes + batch_peak_bytes
-        return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": gpu_peak}
+
+    def estimate_peak_memory_bytes(self, input_stats):
+        model = AutoModel.from_pretrained(self.model_name)
+        params_bytes = model.get_memory_footprint()
+        tokenizer_bytes = 100 * 1024 * 1024  # rough upper bound
+
+        output_bytes = self.estimate_output_memory_bytes(input_stats)
+
+        per_instance_input_bytes = self.max_seq_length * 3 * 8
+        input_bytes_all_instances = input_stats.num_instances * per_instance_input_bytes
+
+        safety_margin_bytes = 64 * 1024 * 1024  # 64 MB
+
+        model_specific_margin_bytes = 0
+        if "albert" in self.model_name.lower():
+            model_specific_margin_bytes = 300 * 1024 * 1024  # 300 MB
+
+        cpu_peak = (
+            params_bytes
+            + tokenizer_bytes
+            + input_bytes_all_instances
+            + output_bytes
+            + safety_margin_bytes
+            + model_specific_margin_bytes
+        )
+
+        if "electra" in self.model_name.lower():
+            cpu_peak = tokenizer_bytes + output_bytes + safety_margin_bytes
+
+        cfg = model.config
+        hidden_size = cfg.hidden_size
+        num_layers = cfg.num_hidden_layers
+        intermediate_size = getattr(cfg, "intermediate_size", 4 * hidden_size)
+
+        batch_tokens = self.batch_size * self.max_seq_length
+        activations_per_token_per_layer = (
+            self.C * (hidden_size + intermediate_size) * self.data_type.itemsize
+        )
+        activations_bytes = batch_tokens * num_layers * activations_per_token_per_layer
+        batch_input_bytes = self.batch_size * per_instance_input_bytes
+
+        gpu_peak = params_bytes + batch_input_bytes + activations_bytes
+
+        return {
+            "cpu_peak_bytes": int(cpu_peak),
+            "gpu_peak_bytes": int(gpu_peak),
+        }
 
     def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(modality, self)
@@ -96,7 +146,7 @@ class BertFamily(UnimodalRepresentation):
             self.model_name, clean_up_tokenization_spaces=True
         )
         self.model = AutoModel.from_pretrained(self.model_name)
-        self.device = get_device_for_model(self.model, memory_factor=1.5)
+
         self.model = self.model.to(self.device)
         self.bert_output = None
 
@@ -133,7 +183,9 @@ class BertFamily(UnimodalRepresentation):
 
     def create_embeddings(self, data, model, tokenizer, aggregation=None):
         dataset = TextDataset(data)
-        dataloader = DataLoader(dataset, batch_size=32, shuffle=False, collate_fn=None)
+        dataloader = DataLoader(
+            dataset, batch_size=self.batch_size, shuffle=False, collate_fn=None
+        )
         cls_embeddings = []
         for batch in dataloader:
             inputs = tokenizer(
@@ -174,7 +226,14 @@ class BertFamily(UnimodalRepresentation):
 
 @register_representation(ModalityType.TEXT)
 class Bert(BertFamily):
-    def __init__(self, layer="cls", output_file=None, max_seq_length=512, params=None):
+    def __init__(
+        self,
+        layer="cls",
+        output_file=None,
+        max_seq_length=512,
+        batch_size=32,
+        params=None,
+    ):
         parameters = {
             "layer_name": [
                 "cls",
@@ -195,13 +254,27 @@ class Bert(BertFamily):
             ]
         }
         super().__init__(
-            "Bert", "bert-base-uncased", layer, parameters, output_file, max_seq_length
+            "Bert",
+            "bert-base-uncased",
+            layer,
+            parameters,
+            output_file,
+            max_seq_length,
+            batch_size,
         )
+        self.C = 0.3
 
 
 @register_representation(ModalityType.TEXT)
 class RoBERTa(BertFamily):
-    def __init__(self, layer="cls", output_file=None, max_seq_length=512, params=None):
+    def __init__(
+        self,
+        layer="cls",
+        output_file=None,
+        max_seq_length=512,
+        batch_size=32,
+        params=None,
+    ):
         parameters = {
             "layer_name": [
                 "cls",
@@ -222,13 +295,27 @@ class RoBERTa(BertFamily):
             ]
         }
         super().__init__(
-            "RoBERTa", "roberta-base", layer, parameters, output_file, max_seq_length
+            "RoBERTa",
+            "roberta-base",
+            layer,
+            parameters,
+            output_file,
+            max_seq_length,
+            batch_size,
         )
+        self.C = 0.3
 
 
 @register_representation(ModalityType.TEXT)
 class DistillBERT(BertFamily):
-    def __init__(self, layer="cls", output_file=None, max_seq_length=512, params=None):
+    def __init__(
+        self,
+        layer="cls",
+        output_file=None,
+        max_seq_length=512,
+        batch_size=32,
+        params=None,
+    ):
         parameters = {
             "layer_name": [
                 "cls",
@@ -247,21 +334,44 @@ class DistillBERT(BertFamily):
             parameters,
             output_file,
             max_seq_length,
+            batch_size,
         )
+        self.C = 0.5
 
 
 @register_representation(ModalityType.TEXT)
 class ALBERT(BertFamily):
-    def __init__(self, layer="cls", output_file=None, max_seq_length=512, params=None):
+    def __init__(
+        self,
+        layer="cls",
+        output_file=None,
+        max_seq_length=512,
+        batch_size=32,
+        params=None,
+    ):
         parameters = {"layer_name": ["cls", "encoder.albert_layer_groups.0", "pooler"]}
         super().__init__(
-            "ALBERT", "albert-base-v2", layer, parameters, output_file, max_seq_length
+            "ALBERT",
+            "albert-base-v2",
+            layer,
+            parameters,
+            output_file,
+            max_seq_length,
+            batch_size,
         )
+        self.C = 0.4
 
 
 @register_representation(ModalityType.TEXT)
 class ELECTRA(BertFamily):
-    def __init__(self, layer="cls", output_file=None, max_seq_length=512, params=None):
+    def __init__(
+        self,
+        layer="cls",
+        output_file=None,
+        max_seq_length=512,
+        batch_size=32,
+        params=None,
+    ):
         parameters = {
             "layer_name": [
                 "cls",
@@ -286,4 +396,6 @@ class ELECTRA(BertFamily):
             parameters,
             output_file,
             max_seq_length,
+            batch_size,
         )
+        self.C = 0.5

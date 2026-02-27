@@ -8,11 +8,21 @@ embeddings) with n=50 per workload.
 ## Purpose and Motivation
 
 This project was developed as part of the LDE (Large-Scale Data Engineering)
-course. The `llmPredict` native built-in was added to SystemDS in
-[PR #2430](https://github.com/apache/systemds/pull/2430). This PR
-([#2431](https://github.com/apache/systemds/pull/2431)) contains the
-benchmarking framework that evaluates `llmPredict` against established LLM
-serving solutions, plus the benchmark results.
+course. This PR ([#2431](https://github.com/apache/systemds/pull/2431))
+contains both the `llmPredict` built-in implementation and the benchmarking
+framework. (The original `llmPredict` PR
+[#2430](https://github.com/apache/systemds/pull/2430) has been closed and
+merged into this one.)
+
+**What this PR adds:**
+- `LlmPredictCPInstruction.java` -- dedicated CP instruction class for
+  `llmPredict`, extracted from `ParameterizedBuiltinCPInstruction`
+- Structured error handling: `ConnectException`, `SocketTimeoutException`,
+  `MalformedURLException`, HTTP non-200 with error body readback
+- Negative tests: `testServerUnreachable` and `testInvalidUrl` with message
+  assertions
+- Benchmark framework comparing OpenAI, vLLM, and SystemDS across 5 workloads
+- License headers on all Python files
 
 **Research questions:**
 
@@ -26,9 +36,9 @@ serving solutions, plus the benchmark results.
 - Built a Python benchmarking framework that runs standardized workloads
   against all backends under identical conditions (same prompts, same
   evaluation metrics).
-- The `llmPredict` built-in (from PR #2430) goes through the full DML
-  compilation pipeline (parser -> hops -> lops -> CP instruction) and makes
-  HTTP calls to any OpenAI-compatible inference server.
+- The `llmPredict` built-in goes through the full DML compilation pipeline
+  (parser -> hops -> lops -> CP instruction) and makes HTTP calls to any
+  OpenAI-compatible inference server.
 - GPU backends (vLLM, SystemDS) executed on NVIDIA H100 PCIe (81 GB).
   OpenAI ran on local MacBook calling cloud API.
   All runs used 50 samples per workload, temperature=0.0 for reproducibility.

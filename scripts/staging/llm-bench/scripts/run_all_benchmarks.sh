@@ -4,8 +4,8 @@
 # =============================================================================
 # Usage: ./scripts/run_all_benchmarks.sh [backend] [model] [options]
 #
-#   backend: openai, ollama, vllm, systemds, all, gpu, or local (default: local)
-#   model:   model name/path (required for ollama, vllm, systemds)
+#   backend: openai, vllm, systemds, gpu, or all (default: gpu)
+#   model:   model name/path (required for vllm, systemds)
 #
 # Options (passed after backend and model):
 #   --concurrency N        parallel requests (default: 1)
@@ -14,12 +14,10 @@
 #
 # Examples:
 #   ./scripts/run_all_benchmarks.sh openai
-#   ./scripts/run_all_benchmarks.sh ollama llama3.2
 #   ./scripts/run_all_benchmarks.sh vllm Qwen/Qwen2.5-3B-Instruct
-#   ./scripts/run_all_benchmarks.sh systemds Qwen/Qwen2.5-3B-Instruct  # runs c=1 + c=4
-#   ./scripts/run_all_benchmarks.sh gpu                    # vllm + systemds (c=1 + c=4)
+#   ./scripts/run_all_benchmarks.sh systemds Qwen/Qwen2.5-3B-Instruct
+#   ./scripts/run_all_benchmarks.sh gpu                    # vllm + systemds
 #   ./scripts/run_all_benchmarks.sh all                    # every backend
-#   ./scripts/run_all_benchmarks.sh local                  # ollama only
 # =============================================================================
 
 set -e
@@ -80,7 +78,6 @@ WORKLOADS=("math" "reasoning" "summarization" "json_extraction" "embeddings")
 # Default models per backend
 default_model_for() {
     case "$1" in
-        ollama)    echo "llama3.2" ;;
         vllm)      echo "Qwen/Qwen2.5-3B-Instruct" ;;
         systemds)  echo "Qwen/Qwen2.5-3B-Instruct" ;;
         *)         echo "" ;;
@@ -104,7 +101,7 @@ short_model_name() {
 # Parse arguments
 # ---------------------------------------------------------------------------
 
-BACKEND_ARG="${1:-local}"
+BACKEND_ARG="${1:-gpu}"
 MODEL_ARG="${2:-}"
 EXTRA_FLAGS=""
 
@@ -136,7 +133,7 @@ run_benchmark() {
 
     # Build output directory name: backend_model_workload[_suffix] or backend_workload[_suffix]
     local model_short=""
-    if [ -n "$model" ] && [ "$backend" != "openai" ] && [ "$backend" != "ollama" ]; then
+    if [ -n "$model" ] && [ "$backend" != "openai" ]; then
         model_short="_$(short_model_name "$model")"
     fi
     local output_dir="results/${backend}${model_short}_${workload}${suffix}"
@@ -199,9 +196,6 @@ case "$BACKEND_ARG" in
     openai)
         run_backend "openai" "$MODEL_ARG"
         ;;
-    ollama)
-        run_backend "ollama" "$(resolve_model ollama "$MODEL_ARG")"
-        ;;
     vllm)
         run_backend "vllm" "$(resolve_model vllm "$MODEL_ARG")"
         ;;
@@ -209,22 +203,18 @@ case "$BACKEND_ARG" in
         local_model="$(resolve_model systemds "$MODEL_ARG")"
         run_backend "systemds" "$local_model"
         ;;
-    gpu)
+    all)
+        run_backend "openai" "$MODEL_ARG"
+        run_backend "vllm" "$(resolve_model vllm "$MODEL_ARG")"
+        local_model="$(resolve_model systemds "$MODEL_ARG")"
+        run_backend "systemds" "$local_model"
+        ;;
+    gpu|*)
         # GPU backends: vLLM + SystemDS with same model for comparison
         local_model="$(resolve_model vllm "$MODEL_ARG")"
         echo -e "${YELLOW}GPU comparison mode: vLLM + SystemDS with ${local_model}${NC}"
         run_backend "vllm" "$local_model"
         run_backend "systemds" "$local_model"
-        ;;
-    all)
-        run_backend "openai" "$MODEL_ARG"
-        run_backend "ollama" "$(resolve_model ollama "$MODEL_ARG")"
-        run_backend "vllm" "$(resolve_model vllm "$MODEL_ARG")"
-        local_model="$(resolve_model systemds "$MODEL_ARG")"
-        run_backend "systemds" "$local_model"
-        ;;
-    local|*)
-        run_backend "ollama" "$(resolve_model ollama "$MODEL_ARG")"
         ;;
 esac
 

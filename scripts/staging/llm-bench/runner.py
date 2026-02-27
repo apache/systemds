@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 
 REQUIRED_CONFIG_KEYS = {"name"}
 VALID_WORKLOADS = {"math", "summarization", "reasoning", "json_extraction", "embeddings"}
-VALID_BACKENDS = {"openai", "ollama", "vllm", "mlx", "systemds"}
+VALID_BACKENDS = {"openai", "vllm", "systemds"}
 
 
 def validate_config(cfg: Dict[str, Any]) -> None:
@@ -84,13 +84,7 @@ def create_backend(backend_name: str, model: str, cfg: Dict[str, Any]):
     if not model:
         raise RuntimeError(f"--model is required for {backend_name} backend.")
 
-    if backend_name == "mlx":
-        from backends.mlx_backend import MLXBackend
-        backend = MLXBackend(model)
-    elif backend_name == "ollama":
-        from backends.ollama_backend import OllamaBackend
-        backend = OllamaBackend(model)
-    elif backend_name == "vllm":
+    if backend_name == "vllm":
         from backends.vllm_backend import VLLMBackend
         backend = VLLMBackend(model)
     elif backend_name == "systemds":

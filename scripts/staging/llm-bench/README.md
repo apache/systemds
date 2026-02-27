@@ -5,43 +5,22 @@ OpenAI API, vLLM, and SystemDS JMLC with the native `llmPredict` built-in.
 Evaluated on 5 workloads (math, reasoning, summarization, JSON extraction,
 embeddings) with n=50 per workload.
 
-## Purpose and Motivation
+## Purpose
 
-This project was developed as part of the LDE (Large-Scale Data Engineering)
-course. This PR ([#2431](https://github.com/apache/systemds/pull/2431))
-contains both the `llmPredict` built-in implementation and the benchmarking
-framework. (The original `llmPredict` PR
-[#2430](https://github.com/apache/systemds/pull/2430) has been closed and
-merged into this one.)
-
-**What this PR adds:**
-- `LlmPredictCPInstruction.java` -- dedicated CP instruction class for
-  `llmPredict`, extracted from `ParameterizedBuiltinCPInstruction`
-- Structured error handling: `ConnectException`, `SocketTimeoutException`,
-  `MalformedURLException`, HTTP non-200 with error body readback
-- Negative tests: `testServerUnreachable` and `testInvalidUrl` with message
-  assertions
-- Benchmark framework comparing OpenAI, vLLM, and SystemDS across 5 workloads
-- License headers on all Python files
-
-**Research questions:**
+Developed as part of the LDE (Large-Scale Data Engineering) course to answer:
 
 - How does SystemDS's `llmPredict` built-in compare to dedicated LLM backends
   (OpenAI, vLLM) in terms of accuracy and throughput?
 - What is the cost-performance tradeoff across cloud APIs and GPU-accelerated
   backends?
 
-**Approach:**
-
-- Built a Python benchmarking framework that runs standardized workloads
-  against all backends under identical conditions (same prompts, same
-  evaluation metrics).
-- The `llmPredict` built-in goes through the full DML compilation pipeline
-  (parser -> hops -> lops -> CP instruction) and makes HTTP calls to any
-  OpenAI-compatible inference server.
-- GPU backends (vLLM, SystemDS) executed on NVIDIA H100 PCIe (81 GB).
-  OpenAI ran on local MacBook calling cloud API.
-  All runs used 50 samples per workload, temperature=0.0 for reproducibility.
+The framework runs standardized workloads against all backends under identical
+conditions (same prompts, same evaluation metrics). The `llmPredict` built-in
+goes through the full DML compilation pipeline (parser -> hops -> lops -> CP
+instruction) and makes HTTP calls to any OpenAI-compatible inference server.
+GPU backends (vLLM, SystemDS) were evaluated on NVIDIA H100 PCIe (81 GB).
+OpenAI ran on local MacBook calling cloud API. All runs used 50 samples per
+workload, temperature=0.0 for reproducibility.
 
 ## Quick Start
 
@@ -230,17 +209,36 @@ per-prompt latency. Math: 1924 vs 1911 ms (+0.7%). Embeddings: 46 vs 48 ms
 
 ### Cost
 
-OpenAI total API cost for 246 queries (5 workloads): **$0.047**.
+| Workload | OpenAI API Cost | vLLM Compute Cost | SystemDS Compute Cost |
+|----------|----------------|-------------------|----------------------|
+| math | $0.0223 | $0.0559 | $0.0563 |
+| reasoning | $0.0100 | $0.0307 | $0.0323 |
+| summarization | $0.0075 | $0.0105 | $0.0107 |
+| json_extraction | $0.0056 | $0.0152 | $0.0155 |
+| embeddings | $0.0019 | $0.0014 | $0.0014 |
+| **Total** | **$0.047** | **$0.114** | **$0.116** |
 
-| Workload | API Cost |
-|----------|----------|
-| math | $0.0223 |
-| reasoning | $0.0100 |
-| summarization | $0.0075 |
-| json_extraction | $0.0056 |
-| embeddings | $0.0019 |
+OpenAI cost is the per-token API price. vLLM and SystemDS costs are
+estimated from hardware ownership (electricity + GPU amortization), computed
+from per-run wall time (`latency_ms_mean * n`).
 
-vLLM and SystemDS run on owned GPU hardware (no per-query API cost).
+**Hardware cost assumptions** (NVIDIA H100 PCIe, matching the benchmark GPU):
+
+| Parameter | Value |
+|-----------|-------|
+| GPU power draw | 350 W (H100 PCIe TDP) |
+| Electricity rate | $0.30/kWh (EU average) |
+| Hardware purchase price | $30,000 |
+| Useful lifetime | 15,000 hours (~5 yr at 8 hr/day) |
+
+**Why local GPU appears more expensive here:** The H100 amortizes at
+$2.00/hr regardless of utilization. This benchmark runs only 250 sequential
+queries totaling ~3 minutes of inference — the GPU is idle most of the time.
+OpenAI's per-token pricing only charges for actual usage, which wins at low
+volume. At higher utilization (concurrent requests, continuous serving), the
+H100's per-query cost drops significantly: at full throughput (~21 req/s on
+embeddings), the amortized cost is ~$0.00003/query vs OpenAI's
+~$0.0004/query — making owned hardware ~13x cheaper at scale.
 
 ### ROUGE Scores (Summarization)
 
@@ -262,10 +260,12 @@ vLLM and SystemDS run on owned GPU hardware (no per-query API cost).
    vLLM directly. This confirms that `llmPredict` is a viable integration
    point for LLM inference in SystemDS workflows.
 
-3. **OpenAI leads on accuracy but costs per query**: gpt-4.1-mini achieves
-   the highest accuracy on 4/5 workloads (96% math, 88% reasoning, 86%
-   summarization, 88% embeddings) but at $0.047 for 246 queries. Local GPU
-   inference has no per-query cost.
+3. **Cost tradeoff depends on scale**: For this small benchmark (250
+   sequential queries, ~3 min total inference), OpenAI API ($0.047) is
+   cheaper than local H100 ($0.114 vLLM / $0.116 SystemDS) because hardware
+   amortization ($2.00/hr) dominates at low utilization. At production
+   scale with concurrent requests, owned hardware becomes significantly
+   cheaper per query.
 
 4. **Model quality matters more than serving infrastructure**: The difference
    between OpenAI and Qwen 3B is model quality. The difference between vLLM

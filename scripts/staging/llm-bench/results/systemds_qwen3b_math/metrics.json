@@ -80,5 +80,9 @@
         "memory_utilization_pct": 0
       }
     ]
-  }
+  },
+  "electricity_kwh": 0.009352777777777778,
+  "electricity_cost_usd": 0.0028058333333333334,
+  "hardware_amortization_usd": 0.05344444444444445,
+  "total_compute_cost_usd": 0.05625027777777778
 }

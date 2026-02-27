@@ -116,11 +116,16 @@ def main() -> int:
                 
                 # get cost from metrics.json (runner stores as api_cost_usd)
                 api_cost = metrics.get("api_cost_usd", 0.0)
-                total_tok = metrics.get("total_tokens", 0)
-                cost_per_1m = (api_cost / total_tok * 1_000_000) if api_cost and total_tok else 0.0
                 electricity_cost = metrics.get("electricity_cost_usd", 0.0)
                 hw_cost = metrics.get("hardware_amortization_usd", 0.0)
                 total_compute_cost = metrics.get("total_compute_cost_usd", 0.0)
+
+                # cost_per_1m: use api_cost for cloud, total_compute_cost for local
+                effective_cost = api_cost if api_cost else total_compute_cost
+                total_tok = metrics.get("total_tokens", 0)
+                if not total_tok and total is not None:
+                    total_tok = total  # fallback to token_stats from samples.jsonl
+                cost_per_1m = (effective_cost / total_tok * 1_000_000) if effective_cost and total_tok else 0.0
                 
                 # get resource usage metrics
                 memory_mb_peak = metrics.get("memory_mb_peak")

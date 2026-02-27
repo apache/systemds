@@ -13,9 +13,5 @@ python-dotenv==1.0.1
 # Summarization evaluation
 rouge-score==0.1.2
 
-# Optional backends (install as needed):
-# mlx-lm>=0.20         # MLX backend - requires Apple Silicon
-# vllm>=0.3.0          # vLLM backend - requires NVIDIA GPU
-
-# Optional GPU profiling:
-# pynvml>=11.5.0       # NVIDIA GPU monitoring (requires NVIDIA drivers)
+# GPU profiling
+pynvml>=11.5.0

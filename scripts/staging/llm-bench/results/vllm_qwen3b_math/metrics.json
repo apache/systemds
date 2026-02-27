@@ -13,5 +13,9 @@
   "memory_mb_initial": 149.0,
   "memory_mb_peak": 149.0,
   "memory_mb_avg": 149.0,
-  "cpu_percent_avg": 2.7539267015706805
+  "cpu_percent_avg": 2.7539267015706805,
+  "electricity_kwh": 0.009290558606143652,
+  "electricity_cost_usd": 0.0027871675818430955,
+  "hardware_amortization_usd": 0.053088906320820875,
+  "total_compute_cost_usd": 0.05587607390266397
 }

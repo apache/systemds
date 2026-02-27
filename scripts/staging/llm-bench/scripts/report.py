@@ -106,13 +106,9 @@ def fmt_cost(x: Any) -> str:
 # Tableau 10 palette
 BACKEND_COLORS = {
     "openai": "#4E79A7",
-    "mlx": "#9C755F",
-    "ollama": "#59A14F",
     "vllm": "#B07AA1",
     "systemds": "#E15759",
-    "vllm (Mistral-7B)": "#B07AA1",
     "vllm (Qwen2.5-3B)": "#956B8E",
-    "systemds (Mistral-7B)": "#E15759",
     "systemds (Qwen2.5-3B)": "#C94D4F",
 }
 
@@ -191,7 +187,7 @@ def _backend_model_key(r: Dict[str, Any]) -> str:
     """e.g. 'vllm (Qwen2.5-3B)' or just 'openai'."""
     backend = r.get("backend", "")
     model = r.get("backend_model", "")
-    if not model or backend in ("openai", "ollama"):
+    if not model or backend == "openai":
         return backend
     short = model.split("/")[-1]
     for suffix in ["-Instruct-v0.3", "-Instruct", "-Inst"]:
@@ -480,7 +476,7 @@ def generate_cost_analysis_section(rows: List[Dict[str, Any]]) -> str:
                 "latency": lat,
                 "total_tokens": r.get("total_tokens"),
             })
-        elif backend in ["ollama", "mlx", "vllm", "systemds"]:
+        elif backend in ["vllm", "systemds"]:
             local_runs.append({
                 "backend": backend,
                 "workload": workload,
@@ -832,7 +828,7 @@ def generate_cost_tradeoff_table(rows: List[Dict[str, Any]]) -> str:
             cloud_runs += 1
             if acc is not None:
                 cloud_acc.append(acc)
-        elif backend in ("ollama", "vllm", "systemds"):
+        elif backend in ("vllm", "systemds"):
             local_cost += compute
             local_runs += 1
             if acc is not None:
@@ -850,7 +846,7 @@ def generate_cost_tradeoff_table(rows: List[Dict[str, Any]]) -> str:
     out = ['<h2>Cost vs Accuracy Tradeoff</h2>']
     out.append('<p style="color:#888; font-size:13px; margin-top:-8px;">Cloud API vs local GPU inference. Key tradeoff for deployment decisions.</p>')
     out.append('<table class="comparison-table">')
-    out.append('<thead><tr><th></th><th>Cloud (OpenAI API)</th><th>Local GPU (Ollama + vLLM + SystemDS)</th></tr></thead><tbody>')
+    out.append('<thead><tr><th></th><th>Cloud (OpenAI API)</th><th>Local GPU (vLLM + SystemDS)</th></tr></thead><tbody>')
 
     out.append(f'<tr><td><strong>Avg Accuracy</strong></td>')
     out.append(f'<td><strong>{cloud_avg:.1f}%</strong></td>')
@@ -1610,7 +1606,7 @@ def main() -> int:
   <div class="container">
     <h1 style="margin-bottom: 4px;">LLM Benchmark Report</h1>
     <p style="color: #666; font-size: 14px; margin: 0 0 4px 0;">
-        Compares LLM inference backends (OpenAI API, Ollama, vLLM, SystemDS JMLC)
+        Compares LLM inference backends (OpenAI API, vLLM, SystemDS JMLC)
         across accuracy, latency, throughput, and cost.
     </p>
     <div class="meta">Generated: {gen_ts} | {len(rows)} runs</div>

@@ -135,16 +135,6 @@ def extract_number_from_response(text: str) -> Optional[str]:
     if currency:
         return clean_num(currency[-1])
 
-    # last sentence-ending number
-    matches = re.findall(r'\b([0-9,]+(?:\.[0-9]+)?)\s*[.!?]?\s*$', main, re.MULTILINE)
-    if matches:
-        return clean_num(matches[-1])
-
-    # last number anywhere
-    numbers = re.findall(r'\b([0-9,]+(?:\.[0-9]+)?)\b', main)
-    if numbers:
-        return clean_num(numbers[-1])
-
     return None
 
 

@@ -81,12 +81,15 @@ def _load_stsb_samples(n: int) -> List[Sample]:
 
 
 def _extract_score(text: str) -> float:
-    """Extract a numeric score (0.0-5.0) from model response."""
+    """Extract a numeric score (0.0-5.0) from model response.
+    Returns -1.0 if no valid score found or if score is outside 0-5 range."""
     text = text.strip()
     # try direct float parse first
     try:
         val = float(text)
-        return max(0.0, min(5.0, val))
+        if 0.0 <= val <= 5.0:
+            return val
+        return -1.0  # out of range = extraction failure
     except ValueError:
         pass
     # pick first valid 0-5 number (avoids grabbing "5" from "3.2 out of 5")
@@ -95,9 +98,6 @@ def _extract_score(text: str) -> float:
         val = float(m)
         if 0.0 <= val <= 5.0:
             return val
-    # fallback: try first number even if > 5, clamp it
-    if matches:
-        return max(0.0, min(5.0, float(matches[0])))
     return -1.0
 
 

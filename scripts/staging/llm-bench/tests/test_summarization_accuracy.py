@@ -30,30 +30,8 @@ import pytest
 from workloads.summarization.loader import (
     accuracy_check,
     _compute_rouge,
-    _tokenize,
     load_samples,
 )
-
-
-# ---------------------------------------------------------------------------
-# _tokenize
-# ---------------------------------------------------------------------------
-
-class TestTokenize:
-    def test_removes_stopwords(self):
-        tokens = _tokenize("the cat is on the mat")
-        assert "the" not in tokens
-        assert "cat" in tokens
-        assert "mat" in tokens
-
-    def test_removes_short_words(self):
-        tokens = _tokenize("I am at it")
-        assert len(tokens) == 0
-
-    def test_lowercase(self):
-        tokens = _tokenize("Machine Learning Model")
-        assert "machine" in tokens
-        assert "learning" in tokens
 
 
 # ---------------------------------------------------------------------------

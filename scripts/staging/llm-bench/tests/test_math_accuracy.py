@@ -64,8 +64,8 @@ class TestExtractNumber:
         result = extract_number_from_response("The answer is 1,234")
         assert result == "1234"
 
-    def test_last_number_fallback(self):
-        assert extract_number_from_response("Some text 7 more text 13") == "13"
+    def test_no_answer_marker_returns_none(self):
+        assert extract_number_from_response("Some text 7 more text 13") is None
 
     def test_empty_string(self):
         assert extract_number_from_response("") is None

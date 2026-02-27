@@ -122,11 +122,7 @@ class OpenAIBackend:
         )
         t1 = time.perf_counter()
 
-        text = ""
-        try:
-            text = resp.output_text
-        except Exception:
-            text = str(resp)
+        text = resp.output_text
 
         extra: Dict[str, Any] = {}
         usage = getattr(resp, "usage", None)

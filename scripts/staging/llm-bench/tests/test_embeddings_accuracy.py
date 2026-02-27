@@ -45,11 +45,11 @@ class TestExtractScore:
     def test_with_text(self):
         assert _extract_score("The similarity score is 2.8.") == 2.8
 
-    def test_clamp_high(self):
-        assert _extract_score("6.0") == 5.0
+    def test_reject_out_of_range_high(self):
+        assert _extract_score("6.0") == -1.0
 
-    def test_clamp_low(self):
-        assert _extract_score("-1.0") == 0.0
+    def test_reject_out_of_range_low(self):
+        assert _extract_score("-1.0") == -1.0
 
     def test_zero(self):
         assert _extract_score("0.0") == 0.0

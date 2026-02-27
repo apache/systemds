@@ -77,9 +77,9 @@ class TestExtractAnswer:
         assert result is not None
         assert "Spike" in result
 
-    def test_last_line_fallback(self):
+    def test_no_marker_returns_none(self):
         result = _extract_answer("Some reasoning\nStep 1\nStep 2\n42")
-        assert result == "42"
+        assert result is None
 
 
 # ---------------------------------------------------------------------------

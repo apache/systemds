@@ -134,13 +134,6 @@ def _extract_answer(prediction: str) -> Optional[str]:
     if m:
         return m.group(1).strip()
 
-    # last short standalone line
-    for line in reversed(prediction.strip().split('\n')):
-        line = line.strip()
-        if line and len(line) < 100 and not line.startswith('#'):
-            if re.match(r"^[\w\s\-\',]+$", line) or re.match(r"^\d+$", line):
-                return line
-
     return None
 
 

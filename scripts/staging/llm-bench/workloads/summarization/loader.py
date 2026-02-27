@@ -20,9 +20,8 @@
 #-------------------------------------------------------------
 
 import logging
-import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List
 
 from datasets import load_dataset
 
@@ -94,43 +93,22 @@ def _load_xsum_samples(n: int) -> List[Sample]:
     return samples
 
 
-def _tokenize(text: str) -> Set[str]:
-    text = text.lower()
-    words = re.findall(r'\b[a-z]+\b', text)
-    stop_words = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been',
-                  'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with',
-                  'it', 'this', 'that', 'they', 'can', 'may', 'by', 'as'}
-    return set(w for w in words if w not in stop_words and len(w) > 2)
-
-
 def _compute_rouge(prediction: str, reference: str) -> Dict[str, float]:
-    """ROUGE scores. Falls back to unigram overlap if rouge-score not installed."""
-    try:
-        from rouge_score import rouge_scorer
-        scorer = rouge_scorer.RougeScorer(["rouge1", "rouge2", "rougeL"], use_stemmer=True)
-        scores = scorer.score(reference, prediction)
-        return {
-            "rouge1_f": scores["rouge1"].fmeasure,
-            "rouge1_p": scores["rouge1"].precision,
-            "rouge1_r": scores["rouge1"].recall,
-            "rouge2_f": scores["rouge2"].fmeasure,
-            "rouge2_p": scores["rouge2"].precision,
-            "rouge2_r": scores["rouge2"].recall,
-            "rougeL_f": scores["rougeL"].fmeasure,
-            "rougeL_p": scores["rougeL"].precision,
-            "rougeL_r": scores["rougeL"].recall,
-        }
-    except ImportError:
-        logger.debug("rouge-score not installed, using fallback unigram overlap")
-        pred_tokens = _tokenize(prediction)
-        ref_tokens = _tokenize(reference)
-        if not ref_tokens or not pred_tokens:
-            return {"rouge1_f": 0.0, "rouge1_p": 0.0, "rouge1_r": 0.0}
-        overlap = pred_tokens & ref_tokens
-        precision = len(overlap) / len(pred_tokens)
-        recall = len(overlap) / len(ref_tokens)
-        f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
-        return {"rouge1_f": f1, "rouge1_p": precision, "rouge1_r": recall}
+    """ROUGE scores. Requires rouge-score package (listed in requirements.txt)."""
+    from rouge_score import rouge_scorer
+    scorer = rouge_scorer.RougeScorer(["rouge1", "rouge2", "rougeL"], use_stemmer=True)
+    scores = scorer.score(reference, prediction)
+    return {
+        "rouge1_f": scores["rouge1"].fmeasure,
+        "rouge1_p": scores["rouge1"].precision,
+        "rouge1_r": scores["rouge1"].recall,
+        "rouge2_f": scores["rouge2"].fmeasure,
+        "rouge2_p": scores["rouge2"].precision,
+        "rouge2_r": scores["rouge2"].recall,
+        "rougeL_f": scores["rougeL"].fmeasure,
+        "rougeL_p": scores["rougeL"].precision,
+        "rougeL_r": scores["rougeL"].recall,
+    }
 
 
 def accuracy_check(prediction: str, reference: str) -> bool:

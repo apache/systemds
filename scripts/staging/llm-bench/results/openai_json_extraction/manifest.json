@@ -1,0 +1,13 @@
+{
+  "git_commit_hash": "fa6e09a0f705026e7a08e5609db8450649ba29f7",
+  "timestamp_utc": "2026-02-27T20:18:33.535271+00:00",
+  "python_version": "3.8.10 (default, Dec 21 2023, 20:39:22) \n[Clang 15.0.0 (clang-1500.0.40.1)]",
+  "platform": {
+    "os": "Darwin",
+    "architecture": "arm64"
+  },
+  "backend": "openai",
+  "model": "gpt-4.1-mini",
+  "workload_config_path": "/Users/kub/systemds/scripts/staging/llm-bench/workloads/json_extraction/config.yaml",
+  "workload_config_sha256": "bf3756ba1354d91fc89719a28169287ca96260f62a4fa82457e19195e0c697fd"
+}

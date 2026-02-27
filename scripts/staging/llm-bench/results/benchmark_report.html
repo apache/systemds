@@ -307,7 +307,7 @@
         Compares LLM inference backends (OpenAI API, Ollama, vLLM, SystemDS JMLC)
         across accuracy, latency, throughput, and cost.
     </p>
-    <div class="meta">Generated: 2026-02-25 16:46:10 UTC | 10 runs</div>
+    <div class="meta">Generated: 2026-02-27 20:24:42 UTC | 15 runs</div>
     
     <div style="display: flex; gap: 8px; margin-bottom: 20px;">
       <button class="btn" onclick="window.print()" style="font-size:12px;">Print</button>
@@ -321,39 +321,39 @@
 
         <div style="background: white; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
             <div style="font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Runs</div>
-            <div style="font-size: 28px; font-weight: 700; color: #1a1a2e;">10</div>
-            <div style="font-size: 12px; color: #999; margin-top: 4px;">5 workloads, 2 backends</div>
+            <div style="font-size: 28px; font-weight: 700; color: #1a1a2e;">15</div>
+            <div style="font-size: 12px; color: #999; margin-top: 4px;">5 workloads, 3 backends</div>
         </div>
         
 
         <div style="background: white; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
             <div style="font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Avg Latency</div>
-            <div style="font-size: 28px; font-weight: 700; color: #1a1a2e;">769ms</div>
-            <div style="font-size: 12px; color: #999; margin-top: 4px;">across all 10 runs</div>
+            <div style="font-size: 28px; font-weight: 700; color: #1a1a2e;">1.1s</div>
+            <div style="font-size: 12px; color: #999; margin-top: 4px;">across all 15 runs</div>
         </div>
         
 
         <div style="background: white; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
             <div style="font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Best Accuracy</div>
-            <div style="font-size: 28px; font-weight: 700; color: #1a1a2e;">90%</div>
+            <div style="font-size: 28px; font-weight: 700; color: #1a1a2e;">89%</div>
             <div style="font-size: 12px; color: #999; margin-top: 4px;">embeddings</div>
         </div>
         
 
         <div style="background: white; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
             <div style="font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Total Cost</div>
-            <div style="font-size: 28px; font-weight: 700; color: #1a1a2e;">$0.00</div>
-            <div style="font-size: 12px; color: #999; margin-top: 4px;">$0.00 API + $0.00 compute</div>
+            <div style="font-size: 28px; font-weight: 700; color: #1a1a2e;">$0.05</div>
+            <div style="font-size: 12px; color: #999; margin-top: 4px;">$0.05 API + $0.00 compute</div>
         </div>
         
 </div>
 
     <div style="background: #f8f9fa; border-radius: 8px; padding: 14px 18px; margin-bottom: 28px; font-size: 13px; color: #555; line-height: 1.7;">
-        <b>Models:</b> Qwen/Qwen2.5-3B-Instruct<br>
-        <b>Backends:</b> systemds, vllm<br>
+        <b>Models:</b> Qwen/Qwen2.5-3B-Instruct, gpt-4.1-mini<br>
+        <b>Backends:</b> openai, systemds, vllm<br>
         <b>Workloads:</b> embeddings, json_extraction, math, reasoning, summarization
-        &nbsp;&mdash;&nbsp; easiest: <b>embeddings (90%)</b>,
-        hardest: <b>json_extraction (52%)</b>
+        &nbsp;&mdash;&nbsp; easiest: <b>embeddings (89%)</b>,
+        hardest: <b>json_extraction (55%)</b>
     </div>
     
     
@@ -362,20 +362,28 @@
 <table class="comparison-table">
 <thead><tr><th>Backend</th><th>Workloads</th><th>Avg Accuracy</th><th>Avg Latency (p50)</th><th>Total Cost</th><th>Verdict</th></tr></thead><tbody>
 <tr>
+<td><strong style="color:#4E79A7;">openai</strong></td>
+<td>5</td>
+<td><strong>83.8%</strong></td>
+<td>1.8s</td>
+<td>$0.05</td>
+<td style="font-size:12px;">Best accuracy, Cheapest</td>
+</tr>
+<tr>
 <td><strong style="color:#C94D4F;">systemds (Qwen2.5-3B)</strong></td>
 <td>5</td>
 <td>64.0%</td>
 <td>777ms</td>
 <td>$0</td>
-<td style="font-size:12px;">Cheapest</td>
+<td style="font-size:12px;">-</td>
 </tr>
 <tr>
 <td><strong style="color:#956B8E;">vllm (Qwen2.5-3B)</strong></td>
 <td>5</td>
-<td><strong>67.2%</strong></td>
+<td>67.2%</td>
 <td><strong>761ms</strong></td>
 <td>$0</td>
-<td style="font-size:12px;">Best accuracy, Fastest</td>
+<td style="font-size:12px;">Fastest</td>
 </tr>
 </tbody></table>
     
@@ -397,23 +405,23 @@
 <td style="color:#E15759; font-weight:600;">1.0x slower</td>
 </tr>
 </tbody></table>
-<p style="color:#888; font-size:12px; margin-top:8px;">pp = percentage points. Latency overhead reflects the Py4J bridge cost. Accuracy deltas show SystemDS matches or slightly improves on reasoning/summarization tasks.</p>
+<p style="color:#888; font-size:12px; margin-top:8px;">pp = percentage points. Latency overhead reflects the JMLC overhead. Accuracy deltas show SystemDS matches or slightly improves on reasoning/summarization tasks.</p>
     
     <h2>Cost vs Accuracy Tradeoff</h2>
 <p style="color:#888; font-size:13px; margin-top:-8px;">Cloud API vs local GPU inference. Key tradeoff for deployment decisions.</p>
 <table class="comparison-table">
 <thead><tr><th></th><th>Cloud (OpenAI API)</th><th>Local GPU (Ollama + vLLM + SystemDS)</th></tr></thead><tbody>
 <tr><td><strong>Avg Accuracy</strong></td>
-<td><strong>0.0%</strong></td>
+<td><strong>83.8%</strong></td>
 <td>65.6%</td></tr>
-<tr><td><strong>Total Cost (10 runs)</strong></td>
-<td>$0</td>
+<tr><td><strong>Total Cost (15 runs)</strong></td>
+<td>$0.05</td>
 <td>$0</td></tr>
 <tr><td><strong>Avg Cost / Run</strong></td>
-<td>$0</td>
+<td>$0.0095</td>
 <td>$0</td></tr>
 <tr><td><strong>Projected Cost (1K queries)</strong></td>
-<td>$0</td>
+<td>$9.46</td>
 <td>$0</td></tr>
 <tr><td><strong>Advantage</strong></td>
 <td style="font-size:12px;">Higher accuracy, zero setup</td>
@@ -425,7 +433,7 @@
     <h2 style="margin-bottom: 4px;">Framework Comparison: vLLM vs SystemDS JMLC</h2>
     <p style="color: #666; margin-top: 0; font-size: 14px;">
         Same model, same NVIDIA H100 GPU, same prompts.
-        Isolates the cost of the Py4J bridge in SystemDS.
+        Compares native llmPredict built-in overhead vs direct vLLM.
     </p>
     
 
@@ -570,7 +578,7 @@
     <p style="color: #999; font-size: 12px; margin-top: 8px;">
         <b>Overhead</b> = SystemDS latency / vLLM latency. Same model produces same accuracy;
         small differences are from non-deterministic generation.
-        The overhead measures the Py4J Java-Python bridge cost that SystemDS adds
+        The overhead measures the overhead that the JMLC + llmPredict pipeline adds
         in exchange for Java ecosystem integration.
     </p>
     </div>
@@ -580,26 +588,32 @@
 <p style="color:#888; font-size:13px; margin-top:-8px;">Percentage of correct answers per workload. Bold = 80%+. Hover a cell to see correct/total count.</p>
 <table class="comparison-table">
 <thead><tr><th>Workload</th>
+<th>openai</th>
 <th>systemds (Qwen2.5-3B)</th>
 <th>vllm (Qwen2.5-3B)</th>
 </tr></thead><tbody>
 <tr><td><strong>embeddings</strong></td>
+<td style="font-weight: 600;" title="44/50 correct">88%</td>
 <td style="font-weight: 600;" title="45/50 correct">90%</td>
 <td style="font-weight: 600;" title="45/50 correct">90%</td>
 </tr>
 <tr><td><strong>json_extraction</strong></td>
+<td style="font-weight: 400;" title="28/46 correct">61%</td>
 <td style="font-weight: 400;" title="26/50 correct">52%</td>
 <td style="font-weight: 400;" title="26/50 correct">52%</td>
 </tr>
 <tr><td><strong>math</strong></td>
+<td style="font-weight: 600;" title="48/50 correct">96%</td>
 <td style="font-weight: 400;" title="34/50 correct">68%</td>
 <td style="font-weight: 400;" title="34/50 correct">68%</td>
 </tr>
 <tr><td><strong>reasoning</strong></td>
+<td style="font-weight: 600;" title="44/50 correct">88%</td>
 <td style="font-weight: 400;" title="30/50 correct">60%</td>
 <td style="font-weight: 400;" title="32/50 correct">64%</td>
 </tr>
 <tr><td><strong>summarization</strong></td>
+<td style="font-weight: 600;" title="43/50 correct">86%</td>
 <td style="font-weight: 400;" title="25/50 correct">50%</td>
 <td style="font-weight: 400;" title="31/50 correct">62%</td>
 </tr>
@@ -609,26 +623,32 @@
 <p style="color:#888; font-size:13px; margin-top:-8px;">Median response time per query. Lower is better. p50 = half of all requests completed within this time.</p>
 <table class="comparison-table">
 <thead><tr><th>Workload</th>
+<th>openai</th>
 <th>systemds (Qwen2.5-3B)</th>
 <th>vllm (Qwen2.5-3B)</th>
 </tr></thead><tbody>
 <tr><td><strong>embeddings</strong></td>
+<td>688ms</td>
 <td>44ms</td>
 <td>47ms</td>
 </tr>
 <tr><td><strong>json_extraction</strong></td>
+<td>1.3s</td>
 <td>466ms</td>
 <td>457ms</td>
 </tr>
 <tr><td><strong>math</strong></td>
+<td>4.3s</td>
 <td>1.9s</td>
 <td>1.9s</td>
 </tr>
 <tr><td><strong>reasoning</strong></td>
+<td>1.7s</td>
 <td>1.1s</td>
 <td>1.0s</td>
 </tr>
 <tr><td><strong>summarization</strong></td>
+<td>1.1s</td>
 <td>354ms</td>
 <td>334ms</td>
 </tr>
@@ -638,18 +658,33 @@
 <p style="color:#888; font-size:13px; margin-top:-8px;">TTFT (Time-To-First-Token) = prompt processing. Generation = token decoding. Only available for streaming backends.</p>
 <table class="comparison-table">
 <thead><tr><th>Workload</th><th>Backend</th><th>TTFT (ms)</th><th>Generation (ms)</th><th>Total (ms)</th><th>TTFT %</th></tr></thead><tbody>
+<tr><td>embeddings</td><td>openai</td>
+<td>632ms</td><td>141ms</td><td>773ms</td>
+<td>82%</td></tr>
 <tr><td>embeddings</td><td>vllm (Qwen2.5-3B)</td>
 <td>29ms</td><td>18ms</td><td>48ms</td>
 <td>61%</td></tr>
+<tr><td>json_extraction</td><td>openai</td>
+<td>639ms</td><td>859ms</td><td>1.5s</td>
+<td>43%</td></tr>
 <tr><td>json_extraction</td><td>vllm (Qwen2.5-3B)</td>
 <td>31ms</td><td>488ms</td><td>519ms</td>
 <td>6%</td></tr>
+<tr><td>math</td><td>openai</td>
+<td>779ms</td><td>3.8s</td><td>4.6s</td>
+<td>17%</td></tr>
 <tr><td>math</td><td>vllm (Qwen2.5-3B)</td>
 <td>30ms</td><td>1.9s</td><td>1.9s</td>
 <td>2%</td></tr>
+<tr><td>reasoning</td><td>openai</td>
+<td>550ms</td><td>1.2s</td><td>1.7s</td>
+<td>32%</td></tr>
 <tr><td>reasoning</td><td>vllm (Qwen2.5-3B)</td>
 <td>26ms</td><td>1.0s</td><td>1.1s</td>
 <td>3%</td></tr>
+<tr><td>summarization</td><td>openai</td>
+<td>632ms</td><td>499ms</td><td>1.1s</td>
+<td>56%</td></tr>
 <tr><td>summarization</td><td>vllm (Qwen2.5-3B)</td>
 <td>32ms</td><td>325ms</td><td>357ms</td>
 <td>9%</td></tr>
@@ -659,30 +694,45 @@
 <p style="color:#888; font-size:13px; margin-top:-8px;">How stable is response time across queries? CV (Coefficient of Variation) = std/mean. Lower = more consistent.</p>
 <table class="comparison-table">
 <thead><tr><th>Workload</th><th>Backend</th><th>Mean</th><th>Std</th><th>Min</th><th>Max</th><th>CV</th></tr></thead><tbody>
+<tr><td>embeddings</td><td>openai</td>
+<td>773ms</td><td>274ms</td><td>509ms</td><td>1.8s</td>
+<td style="">35%</td></tr>
 <tr><td>embeddings</td><td>systemds (Qwen2.5-3B)</td>
 <td>46ms</td><td>8ms</td><td>40ms</td><td>93ms</td>
 <td style="">17%</td></tr>
 <tr><td>embeddings</td><td>vllm (Qwen2.5-3B)</td>
 <td>48ms</td><td>3ms</td><td>42ms</td><td>54ms</td>
 <td style="">7%</td></tr>
+<tr><td>json_extraction</td><td>openai</td>
+<td>1.5s</td><td>842ms</td><td>789ms</td><td>5.6s</td>
+<td style="font-weight:600">56%</td></tr>
 <tr><td>json_extraction</td><td>systemds (Qwen2.5-3B)</td>
 <td>528ms</td><td>169ms</td><td>306ms</td><td>983ms</td>
 <td style="">32%</td></tr>
 <tr><td>json_extraction</td><td>vllm (Qwen2.5-3B)</td>
 <td>519ms</td><td>167ms</td><td>297ms</td><td>973ms</td>
 <td style="">32%</td></tr>
+<tr><td>math</td><td>openai</td>
+<td>4.6s</td><td>1.2s</td><td>2.1s</td><td>8.7s</td>
+<td style="">27%</td></tr>
 <tr><td>math</td><td>systemds (Qwen2.5-3B)</td>
 <td>1.9s</td><td>544ms</td><td>746ms</td><td>2.6s</td>
 <td style="">28%</td></tr>
 <tr><td>math</td><td>vllm (Qwen2.5-3B)</td>
 <td>1.9s</td><td>541ms</td><td>729ms</td><td>2.5s</td>
 <td style="">28%</td></tr>
+<tr><td>reasoning</td><td>openai</td>
+<td>1.7s</td><td>619ms</td><td>904ms</td><td>4.9s</td>
+<td style="">36%</td></tr>
 <tr><td>reasoning</td><td>systemds (Qwen2.5-3B)</td>
 <td>1.1s</td><td>325ms</td><td>542ms</td><td>2.1s</td>
 <td style="">29%</td></tr>
 <tr><td>reasoning</td><td>vllm (Qwen2.5-3B)</td>
 <td>1.1s</td><td>280ms</td><td>502ms</td><td>1.6s</td>
 <td style="">27%</td></tr>
+<tr><td>summarization</td><td>openai</td>
+<td>1.1s</td><td>384ms</td><td>723ms</td><td>3.4s</td>
+<td style="">34%</td></tr>
 <tr><td>summarization</td><td>systemds (Qwen2.5-3B)</td>
 <td>367ms</td><td>145ms</td><td>162ms</td><td>661ms</td>
 <td style="">40%</td></tr>
@@ -695,32 +745,87 @@
 <p style="color:#888; font-size:13px; margin-top:-8px;">Cost per correct answer. API cost for OpenAI, compute cost (electricity + HW) for local backends. Lower = better value.</p>
 <table class="comparison-table">
 <thead><tr><th>Workload</th>
+<th>openai</th>
 <th>systemds (Qwen2.5-3B)</th>
 <th>vllm (Qwen2.5-3B)</th>
 </tr></thead><tbody>
 <tr><td><strong>embeddings</strong></td>
+<td>$0.000043</td>
 <td style="color:#bbb;">-</td>
 <td style="color:#bbb;">-</td>
 </tr>
 <tr><td><strong>json_extraction</strong></td>
+<td>$0.0002</td>
 <td style="color:#bbb;">-</td>
 <td style="color:#bbb;">-</td>
 </tr>
 <tr><td><strong>math</strong></td>
+<td>$0.0005</td>
 <td style="color:#bbb;">-</td>
 <td style="color:#bbb;">-</td>
 </tr>
 <tr><td><strong>reasoning</strong></td>
+<td>$0.0002</td>
 <td style="color:#bbb;">-</td>
 <td style="color:#bbb;">-</td>
 </tr>
 <tr><td><strong>summarization</strong></td>
+<td>$0.0002</td>
 <td style="color:#bbb;">-</td>
 <td style="color:#bbb;">-</td>
 </tr>
 </tbody></table>
     
+    <h2>Cost Analysis: Cloud vs Local Inference</h2>
+<p style="color:#888; font-size:13px; margin-top:-8px;">OpenAI API costs vs estimated electricity + hardware amortization for local GPU inference.</p>
+<div class="cost-analysis-grid">
+
+    <div class="cost-card cloud">
+        <h3>Cloud (OpenAI API)</h3>
+        <div class="cost-stats">
     
+<div class="stat"><span class="label">Total Spent:</span> <span class="value">$0.0473</span></div>
+<div class="stat"><span class="label">Runs with Cost:</span> <span class="value">5</span></div>
+<div class="stat"><span class="label">Avg Cost/Run:</span> <span class="value">$0.0095</span></div>
+<div class="stat"><span class="label">Cost/Query:</span> <span class="value">$0.000192</span></div>
+<div class="stat"><span class="label">Cost/1M Tokens:</span> <span class="value">$0.87</span></div>
+
+        </div>
+        <div class="pros-cons">
+            <div class="pros">+ Highest accuracy</div>
+            <div class="pros">+ No hardware needed</div>
+            <div class="cons">- Per-query costs</div>
+            <div class="cons">- Network latency</div>
+        </div>
+    </div>
+    
+
+    <div class="cost-card local">
+        <h3>Local Inference</h3>
+        <div class="cost-stats">
+    
+<div class="stat"><span class="label">API Cost:</span> <span class="value">$0</span></div>
+<div class="stat"><span class="label">Compute Cost:</span> <span class="value">Use --power-draw-w and --hardware-cost flags</span></div>
+<div class="stat"><span class="label">Local Runs:</span> <span class="value">10</span></div>
+<div class="stat"><span class="label">Backends:</span> <span class="value">2</span></div>
+
+        </div>
+        <div class="pros-cons">
+            <div class="pros">+  Zero API cost</div>
+            <div class="pros">+  Privacy (data stays local)</div>
+            <div class="cons">-  Hardware + electricity costs</div>
+            <div class="cons">-  Lower accuracy on complex tasks</div>
+        </div>
+    </div>
+    
+</div>
+<h3>Cost Projection (1,000 queries)</h3>
+<table class="comparison-table">
+<thead><tr><th>Backend</th><th>Est. Cost (1000 queries)</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>OpenAI (API)</td><td>$0.19</td><td>Based on current usage (API cost)</td></tr>
+</tbody></table>
+<p class="muted"><small>Note: Projections based on actual measured compute costs per query from benchmark runs (electricity + hardware amortization via --power-draw-w and --hardware-cost flags).</small></p>
     
     <h2>Throughput</h2>
 <p style="color:#888; font-size:13px; margin-top:-8px;">Requests per second. Higher is better. Measures end-to-end query processing speed.</p>
@@ -729,32 +834,46 @@
 <svg width="600" height="350" xmlns="http://www.w3.org/2000/svg">
 <text x="300" y="25" text-anchor="middle" font-size="14" font-weight="bold">Throughput by Workload (req/s)</text>
 <text x="122" y="74.0" text-anchor="end" font-size="11">embeddings</text>
-<rect x="130" y="55.0" width="387.97094839134945" height="19.0" fill="#C94D4F" rx="2"/>
-<text x="520.9709483913495" y="68.0" font-size="9">18.0 req/s</text>
-<rect x="130" y="76.0" width="450.0" height="19.0" fill="#956B8E" rx="2"/>
-<text x="583.0" y="89.0" font-size="9">20.9 req/s</text>
+<rect x="130" y="55.0" width="27.751288711463147" height="12.666666666666666" fill="#4E79A7" rx="2"/>
+<text x="160.75128871146313" y="65.0" font-size="9">1.3 req/s</text>
+<rect x="130" y="69.66666666666667" width="387.97094839134945" height="12.666666666666666" fill="#C94D4F" rx="2"/>
+<text x="520.9709483913495" y="79.66666666666667" font-size="9">18.0 req/s</text>
+<rect x="130" y="84.33333333333333" width="450.0" height="12.666666666666666" fill="#956B8E" rx="2"/>
+<text x="583.0" y="94.33333333333333" font-size="9">20.9 req/s</text>
 <text x="122" y="122.0" text-anchor="end" font-size="11">json_extraction</text>
-<rect x="130" y="103.0" width="39.812600292364685" height="19.0" fill="#C94D4F" rx="2"/>
-<text x="172.8126002923647" y="116.0" font-size="9">1.9 req/s</text>
-<rect x="130" y="124.0" width="41.44713293533937" height="19.0" fill="#956B8E" rx="2"/>
-<text x="174.44713293533937" y="137.0" font-size="9">1.9 req/s</text>
+<rect x="130" y="103.0" width="14.345822793119252" height="12.666666666666666" fill="#4E79A7" rx="2"/>
+<text x="147.34582279311925" y="113.0" font-size="9">0.7 req/s</text>
+<rect x="130" y="117.66666666666667" width="39.812600292364685" height="12.666666666666666" fill="#C94D4F" rx="2"/>
+<text x="172.8126002923647" y="127.66666666666667" font-size="9">1.9 req/s</text>
+<rect x="130" y="132.33333333333331" width="41.44713293533937" height="12.666666666666666" fill="#956B8E" rx="2"/>
+<text x="174.44713293533937" y="142.33333333333331" font-size="9">1.9 req/s</text>
 <text x="122" y="170.0" text-anchor="end" font-size="11">summarization</text>
-<rect x="130" y="151.0" width="57.140763144480104" height="19.0" fill="#C94D4F" rx="2"/>
-<text x="190.1407631444801" y="164.0" font-size="9">2.7 req/s</text>
-<rect x="130" y="172.0" width="60.113383658093646" height="19.0" fill="#956B8E" rx="2"/>
-<text x="193.11338365809365" y="185.0" font-size="9">2.8 req/s</text>
+<rect x="130" y="151.0" width="19.000139441783777" height="12.666666666666666" fill="#4E79A7" rx="2"/>
+<text x="152.00013944178377" y="161.0" font-size="9">0.9 req/s</text>
+<rect x="130" y="165.66666666666666" width="57.140763144480104" height="12.666666666666666" fill="#C94D4F" rx="2"/>
+<text x="190.1407631444801" y="175.66666666666666" font-size="9">2.7 req/s</text>
+<rect x="130" y="180.33333333333334" width="60.113383658093646" height="12.666666666666666" fill="#956B8E" rx="2"/>
+<text x="193.11338365809365" y="190.33333333333334" font-size="9">2.8 req/s</text>
 <text x="122" y="218.0" text-anchor="end" font-size="11">reasoning</text>
-<rect x="130" y="199.0" width="19.32711319352841" height="19.0" fill="#C94D4F" rx="2"/>
-<text x="152.32711319352842" y="212.0" font-size="9">0.9 req/s</text>
-<rect x="130" y="220.0" width="20.472798752667938" height="19.0" fill="#956B8E" rx="2"/>
-<text x="153.47279875266793" y="233.0" font-size="9">1.0 req/s</text>
+<rect x="130" y="199.0" width="12.383950047732176" height="12.666666666666666" fill="#4E79A7" rx="2"/>
+<text x="145.38395004773218" y="209.0" font-size="9">0.6 req/s</text>
+<rect x="130" y="213.66666666666666" width="19.32711319352841" height="12.666666666666666" fill="#C94D4F" rx="2"/>
+<text x="152.32711319352842" y="223.66666666666666" font-size="9">0.9 req/s</text>
+<rect x="130" y="228.33333333333334" width="20.472798752667938" height="12.666666666666666" fill="#956B8E" rx="2"/>
+<text x="153.47279875266793" y="238.33333333333334" font-size="9">1.0 req/s</text>
 <text x="122" y="266.0" text-anchor="end" font-size="11">math</text>
-<rect x="130" y="247.0" width="11.10910135369334" height="19.0" fill="#C94D4F" rx="2"/>
-<text x="144.10910135369335" y="260.0" font-size="9">0.5 req/s</text>
-<rect x="130" y="268.0" width="11.248273290599077" height="19.0" fill="#956B8E" rx="2"/>
-<text x="144.2482732905991" y="281.0" font-size="9">0.5 req/s</text>
+<rect x="130" y="247.0" width="4.697035352565323" height="12.666666666666666" fill="#4E79A7" rx="2"/>
+<text x="137.69703535256534" y="257.0" font-size="9">0.2 req/s</text>
+<rect x="130" y="261.6666666666667" width="11.10910135369334" height="12.666666666666666" fill="#C94D4F" rx="2"/>
+<text x="144.10910135369335" y="271.6666666666667" font-size="9">0.5 req/s</text>
+<rect x="130" y="276.3333333333333" width="11.248273290599077" height="12.666666666666666" fill="#956B8E" rx="2"/>
+<text x="144.2482732905991" y="286.3333333333333" font-size="9">0.5 req/s</text>
 </svg>
 <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 10px; justify-content: center;">
+<div style="display: flex; align-items: center; gap: 5px;">
+<div style="width: 14px; height: 14px; background: #4E79A7; border-radius: 3px;"></div>
+<span style="font-size: 12px;">openai</span>
+</div>
 <div style="display: flex; align-items: center; gap: 5px;">
 <div style="width: 14px; height: 14px; background: #C94D4F; border-radius: 3px;"></div>
 <span style="font-size: 12px;">systemds (Qwen2.5-3B)</span>
@@ -768,402 +887,6 @@
 </div>
     
     <div class="table-header">
-<h2>Latest Runs</h2>
-<div>
-<button class="btn-small" onclick="printSection('latest-runs')">Print</button>
-<button class="btn-small" onclick="exportTableToCSV('latest-runs', 'latest-runs.csv')">CSV</button>
-<button class="btn-small" onclick="copyTableToClipboard('latest-runs')">Copy</button>
-</div></div>
-<div class="table-wrapper" id="latest-runs">
-<table class="full-table">
-<thead><tr>
-<th>Run</th>
-<th>Timestamp (UTC)</th>
-<th>Backend</th>
-<th>Model</th>
-<th>Workload</th>
-<th>n</th>
-<th>Accuracy</th>
-<th>ROUGE-1 F1</th>
-<th>ROUGE-2 F1</th>
-<th>ROUGE-L F1</th>
-<th>API Cost ($)</th>
-<th>Compute Cost ($)</th>
-<th>$/1M tok</th>
-<th>Mem Peak (MB)</th>
-<th>CPU Avg (%)</th>
-<th>lat mean (ms)</th>
-<th>p50 (ms)</th>
-<th>p95 (ms)</th>
-<th>Lat Std (ms)</th>
-<th>Lat CV (%)</th>
-<th>Lat Min (ms)</th>
-<th>Lat Max (ms)</th>
-<th>TTFT (ms)</th>
-<th>Gen (ms)</th>
-<th>throughput (req/s)</th>
-<th>total tok</th>
-<th>avg tok</th>
-<th>in tok</th>
-<th>out tok</th>
-<th>tok/s (total)</th>
-<th>ms/tok (total)</th>
-<th>tok/s (out)</th>
-<th>ms/tok (out)</th>
-</tr></thead><tbody>
-<tr>
-<td><code>systemds_qwen3b_embedding</code></td>
-<td>2026-02-25 16:45:52</td>
-<td>systemds</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
-<td>embeddings</td>
-<td>50.0</td>
-<td>90.0% (45/50)</td>
-<td></td>
-<td></td>
-<td></td>
-<td>$0</td>
-<td>-</td>
-<td>-</td>
-<td>158.0</td>
-<td>2.3</td>
-<td>46.48</td>
-<td>44.00</td>
-<td>57.10</td>
-<td>7.70</td>
-<td>16.6%</td>
-<td>40.00</td>
-<td>93.00</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>18.0454</td>
-<td>3839</td>
-<td>76.8</td>
-<td>3589</td>
-<td>250</td>
-<td>1651.89</td>
-<td>0.61</td>
-<td>107.57</td>
-<td>9.30</td>
-</tr>
-<tr>
-<td><code>systemds_qwen3b_json_extr</code></td>
-<td>2026-02-25 16:45:36</td>
-<td>systemds</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
-<td>json_extraction</td>
-<td>50.0</td>
-<td>52.0% (26/50)</td>
-<td></td>
-<td></td>
-<td></td>
-<td>$0</td>
-<td>-</td>
-<td>-</td>
-<td>157.0</td>
-<td>0.5</td>
-<td>528.48</td>
-<td>465.50</td>
-<td>797.85</td>
-<td>169.30</td>
-<td>32.0%</td>
-<td>306.00</td>
-<td>983.00</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>1.8518</td>
-<td>10961</td>
-<td>219.2</td>
-<td>5919</td>
-<td>5042</td>
-<td>414.81</td>
-<td>2.41</td>
-<td>190.81</td>
-<td>5.24</td>
-</tr>
-<tr>
-<td><code>systemds_qwen3b_summariza</code></td>
-<td>2026-02-25 16:45:06</td>
-<td>systemds</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
-<td>summarization</td>
-<td>50.0</td>
-<td>50.0% (25/50)</td>
-<td>22.0%</td>
-<td>5.7%</td>
-<td>15.7%</td>
-<td>$0</td>
-<td>-</td>
-<td>-</td>
-<td>160.0</td>
-<td>0.5</td>
-<td>366.52</td>
-<td>354.00</td>
-<td>637.15</td>
-<td>145.11</td>
-<td>39.6%</td>
-<td>162.00</td>
-<td>661.00</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>2.6577</td>
-<td>15701</td>
-<td>314.0</td>
-<td>12242</td>
-<td>3459</td>
-<td>856.76</td>
-<td>1.17</td>
-<td>188.75</td>
-<td>5.30</td>
-</tr>
-<tr>
-<td><code>systemds_qwen3b_reasoning</code></td>
-<td>2026-02-25 16:44:43</td>
-<td>systemds</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
-<td>reasoning</td>
-<td>50.0</td>
-<td>60.0% (30/50)</td>
-<td></td>
-<td></td>
-<td></td>
-<td>$0</td>
-<td>-</td>
-<td>-</td>
-<td>158.0</td>
-<td>0.2</td>
-<td>1104.02</td>
-<td>1097.00</td>
-<td>1641.90</td>
-<td>325.27</td>
-<td>29.5%</td>
-<td>542.00</td>
-<td>2101.00</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>0.8989</td>
-<td>20249</td>
-<td>405.0</td>
-<td>9337</td>
-<td>10912</td>
-<td>366.82</td>
-<td>2.73</td>
-<td>197.68</td>
-<td>5.06</td>
-</tr>
-<tr>
-<td><code>systemds_qwen3b_math</code></td>
-<td>2026-02-25 16:43:43</td>
-<td>systemds</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
-<td>math</td>
-<td>50.0</td>
-<td>68.0% (34/50)</td>
-<td></td>
-<td></td>
-<td></td>
-<td>$0</td>
-<td>-</td>
-<td>-</td>
-<td>158.0</td>
-<td>0.2</td>
-<td>1924.00</td>
-<td>1923.00</td>
-<td>2564.00</td>
-<td>543.79</td>
-<td>28.3%</td>
-<td>746.00</td>
-<td>2568.00</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>0.5167</td>
-<td>23245</td>
-<td>464.9</td>
-<td>4016</td>
-<td>19229</td>
-<td>241.63</td>
-<td>4.14</td>
-<td>199.89</td>
-<td>5.00</td>
-</tr>
-<tr>
-<td><code>vllm_qwen3b_embeddings</code></td>
-<td>2026-02-25 03:46:30</td>
-<td>vllm</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
-<td>embeddings</td>
-<td>50.0</td>
-<td>90.0% (45/50)</td>
-<td></td>
-<td></td>
-<td></td>
-<td>$0</td>
-<td>-</td>
-<td>-</td>
-<td>152.9</td>
-<td>7.6</td>
-<td>47.64</td>
-<td>46.51</td>
-<td>52.69</td>
-<td>3.35</td>
-<td>7.0%</td>
-<td>42.45</td>
-<td>53.91</td>
-<td>29.27</td>
-<td>18.36</td>
-<td>20.9305</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-</tr>
-<tr>
-<td><code>vllm_qwen3b_json_extracti</code></td>
-<td>2026-02-25 03:46:24</td>
-<td>vllm</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
-<td>json_extraction</td>
-<td>50.0</td>
-<td>52.0% (26/50)</td>
-<td></td>
-<td></td>
-<td></td>
-<td>$0</td>
-<td>-</td>
-<td>-</td>
-<td>146.0</td>
-<td>2.1</td>
-<td>518.57</td>
-<td>457.47</td>
-<td>782.07</td>
-<td>167.29</td>
-<td>32.3%</td>
-<td>297.37</td>
-<td>972.98</td>
-<td>30.67</td>
-<td>487.89</td>
-<td>1.9278</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-</tr>
-<tr>
-<td><code>vllm_qwen3b_summarization</code></td>
-<td>2026-02-25 03:45:57</td>
-<td>vllm</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
-<td>summarization</td>
-<td>50.0</td>
-<td>62.0% (31/50)</td>
-<td>22.6%</td>
-<td>5.6%</td>
-<td>15.7%</td>
-<td>$0</td>
-<td>-</td>
-<td>-</td>
-<td>148.0</td>
-<td>2.6</td>
-<td>357.49</td>
-<td>334.44</td>
-<td>653.86</td>
-<td>140.51</td>
-<td>39.3%</td>
-<td>157.27</td>
-<td>660.93</td>
-<td>32.33</td>
-<td>325.16</td>
-<td>2.7960</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-</tr>
-<tr>
-<td><code>vllm_qwen3b_reasoning</code></td>
-<td>2026-02-25 03:45:36</td>
-<td>vllm</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
-<td>reasoning</td>
-<td>50.0</td>
-<td>64.0% (32/50)</td>
-<td></td>
-<td></td>
-<td></td>
-<td>$0</td>
-<td>-</td>
-<td>-</td>
-<td>148.0</td>
-<td>2.5</td>
-<td>1050.01</td>
-<td>1048.19</td>
-<td>1565.71</td>
-<td>280.14</td>
-<td>26.7%</td>
-<td>501.65</td>
-<td>1639.09</td>
-<td>26.41</td>
-<td>1023.60</td>
-<td>0.9522</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-</tr>
-<tr>
-<td><code>vllm_qwen3b_math</code></td>
-<td>2026-02-25 03:44:40</td>
-<td>vllm</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
-<td>math</td>
-<td>50.0</td>
-<td>68.0% (34/50)</td>
-<td></td>
-<td></td>
-<td></td>
-<td>$0</td>
-<td>-</td>
-<td>-</td>
-<td>149.0</td>
-<td>2.8</td>
-<td>1911.20</td>
-<td>1920.49</td>
-<td>2544.02</td>
-<td>541.36</td>
-<td>28.3%</td>
-<td>729.41</td>
-<td>2549.99</td>
-<td>29.76</td>
-<td>1881.44</td>
-<td>0.5232</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-</tr>
-</tbody></table></div>
-    
-    <div class="table-header">
 <h2>All Runs</h2>
 <div>
 <button class="btn-small" onclick="printSection('all-runs')">Print</button>
@@ -1173,964 +896,258 @@
 <div class="table-wrapper" id="all-runs">
 <table class="full-table">
 <thead><tr>
-<th>Run</th>
-<th>Timestamp (UTC)</th>
 <th>Backend</th>
 <th>Model</th>
 <th>Workload</th>
 <th>n</th>
 <th>Accuracy</th>
-<th>ROUGE-1 F1</th>
-<th>ROUGE-2 F1</th>
-<th>ROUGE-L F1</th>
+<th>ROUGE-L</th>
 <th>API Cost ($)</th>
-<th>Compute Cost ($)</th>
-<th>$/1M tok</th>
-<th>Mem Peak (MB)</th>
-<th>CPU Avg (%)</th>
-<th>lat mean (ms)</th>
-<th>p50 (ms)</th>
-<th>p95 (ms)</th>
-<th>Lat Std (ms)</th>
-<th>Lat CV (%)</th>
-<th>Lat Min (ms)</th>
-<th>Lat Max (ms)</th>
+<th>Compute ($)</th>
+<th>Latency p50 (ms)</th>
+<th>Latency p95 (ms)</th>
 <th>TTFT (ms)</th>
-<th>Gen (ms)</th>
-<th>throughput (req/s)</th>
-<th>total tok</th>
-<th>avg tok</th>
-<th>in tok</th>
-<th>out tok</th>
-<th>tok/s (total)</th>
-<th>ms/tok (total)</th>
+<th>Throughput (req/s)</th>
+<th>Tokens</th>
 <th>tok/s (out)</th>
-<th>ms/tok (out)</th>
 </tr></thead><tbody>
 <tr>
-<td><code>systemds_qwen3b_embedding</code></td>
-<td>2026-02-25 16:45:52</td>
+<td>openai</td>
+<td>gpt-4.1-mini</td>
+<td>embeddings</td>
+<td>50.0</td>
+<td>88.0% (44/50)</td>
+<td></td>
+<td>$0.0019</td>
+<td>-</td>
+<td>688.2</td>
+<td>1307.2</td>
+<td>632.1</td>
+<td>1.29</td>
+<td>4135</td>
+<td>5.2</td>
+</tr>
+<tr>
+<td>openai</td>
+<td>gpt-4.1-mini</td>
+<td>json_extraction</td>
+<td>46.0</td>
+<td>60.9% (28/46)</td>
+<td></td>
+<td>$0.0056</td>
+<td>-</td>
+<td>1283.3</td>
+<td>2850.9</td>
+<td>639.0</td>
+<td>0.67</td>
+<td>6728</td>
+<td>35.1</td>
+</tr>
+<tr>
+<td>openai</td>
+<td>gpt-4.1-mini</td>
+<td>summarization</td>
+<td>50.0</td>
+<td>86.0% (43/50)</td>
+<td>20.1%</td>
+<td>$0.0075</td>
+<td>-</td>
+<td>1058.4</td>
+<td>1499.3</td>
+<td>632.1</td>
+<td>0.88</td>
+<td>13832</td>
+<td>29.6</td>
+</tr>
+<tr>
+<td>openai</td>
+<td>gpt-4.1-mini</td>
+<td>reasoning</td>
+<td>50.0</td>
+<td>88.0% (44/50)</td>
+<td></td>
+<td>$0.0100</td>
+<td>-</td>
+<td>1688.0</td>
+<td>2549.2</td>
+<td>550.3</td>
+<td>0.58</td>
+<td>12848</td>
+<td>46.5</td>
+</tr>
+<tr>
+<td>openai</td>
+<td>gpt-4.1-mini</td>
+<td>math</td>
+<td>50.0</td>
+<td>96.0% (48/50)</td>
+<td></td>
+<td>$0.02</td>
+<td>-</td>
+<td>4322.6</td>
+<td>6435.7</td>
+<td>778.7</td>
+<td>0.22</td>
+<td>17069</td>
+<td>56.4</td>
+</tr>
+<tr>
 <td>systemds</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
+<td>Qwen2.5-3B-Instruct</td>
 <td>embeddings</td>
 <td>50.0</td>
 <td>90.0% (45/50)</td>
 <td></td>
-<td></td>
-<td></td>
 <td>$0</td>
 <td>-</td>
-<td>-</td>
-<td>158.0</td>
-<td>2.3</td>
-<td>46.48</td>
-<td>44.00</td>
-<td>57.10</td>
-<td>7.70</td>
-<td>16.6%</td>
-<td>40.00</td>
-<td>93.00</td>
+<td>44.0</td>
+<td>57.1</td>
 <td>N/A</td>
-<td>N/A</td>
-<td>18.0454</td>
+<td>18.05</td>
 <td>3839</td>
-<td>76.8</td>
-<td>3589</td>
-<td>250</td>
-<td>1651.89</td>
-<td>0.61</td>
-<td>107.57</td>
-<td>9.30</td>
+<td>107.6</td>
 </tr>
 <tr>
-<td><code>systemds_qwen3b_json_extr</code></td>
-<td>2026-02-25 16:45:36</td>
 <td>systemds</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
+<td>Qwen2.5-3B-Instruct</td>
 <td>json_extraction</td>
 <td>50.0</td>
 <td>52.0% (26/50)</td>
 <td></td>
-<td></td>
-<td></td>
 <td>$0</td>
 <td>-</td>
-<td>-</td>
-<td>157.0</td>
-<td>0.5</td>
-<td>528.48</td>
-<td>465.50</td>
-<td>797.85</td>
-<td>169.30</td>
-<td>32.0%</td>
-<td>306.00</td>
-<td>983.00</td>
+<td>465.5</td>
+<td>797.9</td>
 <td>N/A</td>
-<td>N/A</td>
-<td>1.8518</td>
+<td>1.85</td>
 <td>10961</td>
-<td>219.2</td>
-<td>5919</td>
-<td>5042</td>
-<td>414.81</td>
-<td>2.41</td>
-<td>190.81</td>
-<td>5.24</td>
+<td>190.8</td>
 </tr>
 <tr>
-<td><code>systemds_qwen3b_summariza</code></td>
-<td>2026-02-25 16:45:06</td>
 <td>systemds</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
+<td>Qwen2.5-3B-Instruct</td>
 <td>summarization</td>
 <td>50.0</td>
 <td>50.0% (25/50)</td>
-<td>22.0%</td>
-<td>5.7%</td>
 <td>15.7%</td>
 <td>$0</td>
 <td>-</td>
-<td>-</td>
-<td>160.0</td>
-<td>0.5</td>
-<td>366.52</td>
-<td>354.00</td>
-<td>637.15</td>
-<td>145.11</td>
-<td>39.6%</td>
-<td>162.00</td>
-<td>661.00</td>
+<td>354.0</td>
+<td>637.1</td>
 <td>N/A</td>
-<td>N/A</td>
-<td>2.6577</td>
+<td>2.66</td>
 <td>15701</td>
-<td>314.0</td>
-<td>12242</td>
-<td>3459</td>
-<td>856.76</td>
-<td>1.17</td>
-<td>188.75</td>
-<td>5.30</td>
+<td>188.7</td>
 </tr>
 <tr>
-<td><code>systemds_qwen3b_reasoning</code></td>
-<td>2026-02-25 16:44:43</td>
 <td>systemds</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
+<td>Qwen2.5-3B-Instruct</td>
 <td>reasoning</td>
 <td>50.0</td>
 <td>60.0% (30/50)</td>
 <td></td>
-<td></td>
-<td></td>
 <td>$0</td>
 <td>-</td>
-<td>-</td>
-<td>158.0</td>
-<td>0.2</td>
-<td>1104.02</td>
-<td>1097.00</td>
-<td>1641.90</td>
-<td>325.27</td>
-<td>29.5%</td>
-<td>542.00</td>
-<td>2101.00</td>
+<td>1097.0</td>
+<td>1641.9</td>
 <td>N/A</td>
-<td>N/A</td>
-<td>0.8989</td>
+<td>0.90</td>
 <td>20249</td>
-<td>405.0</td>
-<td>9337</td>
-<td>10912</td>
-<td>366.82</td>
-<td>2.73</td>
-<td>197.68</td>
-<td>5.06</td>
+<td>197.7</td>
 </tr>
 <tr>
-<td><code>systemds_qwen3b_math</code></td>
-<td>2026-02-25 16:43:43</td>
 <td>systemds</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
+<td>Qwen2.5-3B-Instruct</td>
 <td>math</td>
 <td>50.0</td>
 <td>68.0% (34/50)</td>
 <td></td>
-<td></td>
-<td></td>
 <td>$0</td>
 <td>-</td>
-<td>-</td>
-<td>158.0</td>
-<td>0.2</td>
-<td>1924.00</td>
-<td>1923.00</td>
-<td>2564.00</td>
-<td>543.79</td>
-<td>28.3%</td>
-<td>746.00</td>
-<td>2568.00</td>
+<td>1923.0</td>
+<td>2564.0</td>
 <td>N/A</td>
-<td>N/A</td>
-<td>0.5167</td>
+<td>0.52</td>
 <td>23245</td>
-<td>464.9</td>
-<td>4016</td>
-<td>19229</td>
-<td>241.63</td>
-<td>4.14</td>
-<td>199.89</td>
-<td>5.00</td>
+<td>199.9</td>
 </tr>
 <tr>
-<td><code>vllm_qwen3b_embeddings</code></td>
-<td>2026-02-25 03:46:30</td>
 <td>vllm</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
+<td>Qwen2.5-3B-Instruct</td>
 <td>embeddings</td>
 <td>50.0</td>
 <td>90.0% (45/50)</td>
 <td></td>
-<td></td>
-<td></td>
 <td>$0</td>
 <td>-</td>
-<td>-</td>
-<td>152.9</td>
-<td>7.6</td>
-<td>47.64</td>
-<td>46.51</td>
-<td>52.69</td>
-<td>3.35</td>
-<td>7.0%</td>
-<td>42.45</td>
-<td>53.91</td>
-<td>29.27</td>
-<td>18.36</td>
-<td>20.9305</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
+<td>46.5</td>
+<td>52.7</td>
+<td>29.3</td>
+<td>20.93</td>
 <td>N/A</td>
 <td>N/A</td>
 </tr>
 <tr>
-<td><code>vllm_qwen3b_json_extracti</code></td>
-<td>2026-02-25 03:46:24</td>
 <td>vllm</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
+<td>Qwen2.5-3B-Instruct</td>
 <td>json_extraction</td>
 <td>50.0</td>
 <td>52.0% (26/50)</td>
 <td></td>
-<td></td>
-<td></td>
 <td>$0</td>
 <td>-</td>
-<td>-</td>
-<td>146.0</td>
-<td>2.1</td>
-<td>518.57</td>
-<td>457.47</td>
-<td>782.07</td>
-<td>167.29</td>
-<td>32.3%</td>
-<td>297.37</td>
-<td>972.98</td>
-<td>30.67</td>
-<td>487.89</td>
-<td>1.9278</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
+<td>457.5</td>
+<td>782.1</td>
+<td>30.7</td>
+<td>1.93</td>
 <td>N/A</td>
 <td>N/A</td>
 </tr>
 <tr>
-<td><code>vllm_qwen3b_summarization</code></td>
-<td>2026-02-25 03:45:57</td>
 <td>vllm</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
+<td>Qwen2.5-3B-Instruct</td>
 <td>summarization</td>
 <td>50.0</td>
 <td>62.0% (31/50)</td>
-<td>22.6%</td>
-<td>5.6%</td>
 <td>15.7%</td>
 <td>$0</td>
 <td>-</td>
-<td>-</td>
-<td>148.0</td>
-<td>2.6</td>
-<td>357.49</td>
-<td>334.44</td>
-<td>653.86</td>
-<td>140.51</td>
-<td>39.3%</td>
-<td>157.27</td>
-<td>660.93</td>
-<td>32.33</td>
-<td>325.16</td>
-<td>2.7960</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
+<td>334.4</td>
+<td>653.9</td>
+<td>32.3</td>
+<td>2.80</td>
 <td>N/A</td>
 <td>N/A</td>
 </tr>
 <tr>
-<td><code>vllm_qwen3b_reasoning</code></td>
-<td>2026-02-25 03:45:36</td>
 <td>vllm</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
+<td>Qwen2.5-3B-Instruct</td>
 <td>reasoning</td>
 <td>50.0</td>
 <td>64.0% (32/50)</td>
 <td></td>
-<td></td>
-<td></td>
 <td>$0</td>
 <td>-</td>
-<td>-</td>
-<td>148.0</td>
-<td>2.5</td>
-<td>1050.01</td>
-<td>1048.19</td>
-<td>1565.71</td>
-<td>280.14</td>
-<td>26.7%</td>
-<td>501.65</td>
-<td>1639.09</td>
-<td>26.41</td>
-<td>1023.60</td>
-<td>0.9522</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
+<td>1048.2</td>
+<td>1565.7</td>
+<td>26.4</td>
+<td>0.95</td>
 <td>N/A</td>
 <td>N/A</td>
 </tr>
 <tr>
-<td><code>vllm_qwen3b_math</code></td>
-<td>2026-02-25 03:44:40</td>
 <td>vllm</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
+<td>Qwen2.5-3B-Instruct</td>
 <td>math</td>
 <td>50.0</td>
 <td>68.0% (34/50)</td>
 <td></td>
-<td></td>
-<td></td>
 <td>$0</td>
 <td>-</td>
-<td>-</td>
-<td>149.0</td>
-<td>2.8</td>
-<td>1911.20</td>
-<td>1920.49</td>
-<td>2544.02</td>
-<td>541.36</td>
-<td>28.3%</td>
-<td>729.41</td>
-<td>2549.99</td>
-<td>29.76</td>
-<td>1881.44</td>
-<td>0.5232</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-</tr>
-</tbody></table></div>
-    
-    <h2>Performance by Workload Category</h2>
-<div class="table-header">
-<h3>Embeddings</h3>
-<div>
-<button class="btn-small" onclick="printSection('workload-embeddings')">Print</button>
-<button class="btn-small" onclick="exportTableToCSV('workload-embeddings', 'workload-embeddings.csv')">CSV</button>
-<button class="btn-small" onclick="copyTableToClipboard('workload-embeddings')">Copy</button>
-</div></div>
-<div class="table-wrapper" id="workload-embeddings">
-<table class="full-table">
-<thead><tr>
-<th>Run</th>
-<th>Timestamp (UTC)</th>
-<th>Backend</th>
-<th>Model</th>
-<th>Workload</th>
-<th>n</th>
-<th>Accuracy</th>
-<th>ROUGE-1 F1</th>
-<th>ROUGE-2 F1</th>
-<th>ROUGE-L F1</th>
-<th>API Cost ($)</th>
-<th>Compute Cost ($)</th>
-<th>$/1M tok</th>
-<th>Mem Peak (MB)</th>
-<th>CPU Avg (%)</th>
-<th>lat mean (ms)</th>
-<th>p50 (ms)</th>
-<th>p95 (ms)</th>
-<th>Lat Std (ms)</th>
-<th>Lat CV (%)</th>
-<th>Lat Min (ms)</th>
-<th>Lat Max (ms)</th>
-<th>TTFT (ms)</th>
-<th>Gen (ms)</th>
-<th>throughput (req/s)</th>
-<th>total tok</th>
-<th>avg tok</th>
-<th>in tok</th>
-<th>out tok</th>
-<th>tok/s (total)</th>
-<th>ms/tok (total)</th>
-<th>tok/s (out)</th>
-<th>ms/tok (out)</th>
-</tr></thead><tbody>
-<tr>
-<td><code>systemds_qwen3b_embedding</code></td>
-<td>2026-02-25 16:45:52</td>
-<td>systemds</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
-<td>embeddings</td>
-<td>50.0</td>
-<td>90.0% (45/50)</td>
-<td></td>
-<td></td>
-<td></td>
-<td>$0</td>
-<td>-</td>
-<td>-</td>
-<td>158.0</td>
-<td>2.3</td>
-<td>46.48</td>
-<td>44.00</td>
-<td>57.10</td>
-<td>7.70</td>
-<td>16.6%</td>
-<td>40.00</td>
-<td>93.00</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>18.0454</td>
-<td>3839</td>
-<td>76.8</td>
-<td>3589</td>
-<td>250</td>
-<td>1651.89</td>
-<td>0.61</td>
-<td>107.57</td>
-<td>9.30</td>
-</tr>
-<tr>
-<td><code>vllm_qwen3b_embeddings</code></td>
-<td>2026-02-25 03:46:30</td>
-<td>vllm</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
-<td>embeddings</td>
-<td>50.0</td>
-<td>90.0% (45/50)</td>
-<td></td>
-<td></td>
-<td></td>
-<td>$0</td>
-<td>-</td>
-<td>-</td>
-<td>152.9</td>
-<td>7.6</td>
-<td>47.64</td>
-<td>46.51</td>
-<td>52.69</td>
-<td>3.35</td>
-<td>7.0%</td>
-<td>42.45</td>
-<td>53.91</td>
-<td>29.27</td>
-<td>18.36</td>
-<td>20.9305</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-</tr>
-</tbody></table></div>
-<div class="table-header">
-<h3>Json Extraction</h3>
-<div>
-<button class="btn-small" onclick="printSection('workload-json-extraction')">Print</button>
-<button class="btn-small" onclick="exportTableToCSV('workload-json-extraction', 'workload-json-extraction.csv')">CSV</button>
-<button class="btn-small" onclick="copyTableToClipboard('workload-json-extraction')">Copy</button>
-</div></div>
-<div class="table-wrapper" id="workload-json-extraction">
-<table class="full-table">
-<thead><tr>
-<th>Run</th>
-<th>Timestamp (UTC)</th>
-<th>Backend</th>
-<th>Model</th>
-<th>Workload</th>
-<th>n</th>
-<th>Accuracy</th>
-<th>ROUGE-1 F1</th>
-<th>ROUGE-2 F1</th>
-<th>ROUGE-L F1</th>
-<th>API Cost ($)</th>
-<th>Compute Cost ($)</th>
-<th>$/1M tok</th>
-<th>Mem Peak (MB)</th>
-<th>CPU Avg (%)</th>
-<th>lat mean (ms)</th>
-<th>p50 (ms)</th>
-<th>p95 (ms)</th>
-<th>Lat Std (ms)</th>
-<th>Lat CV (%)</th>
-<th>Lat Min (ms)</th>
-<th>Lat Max (ms)</th>
-<th>TTFT (ms)</th>
-<th>Gen (ms)</th>
-<th>throughput (req/s)</th>
-<th>total tok</th>
-<th>avg tok</th>
-<th>in tok</th>
-<th>out tok</th>
-<th>tok/s (total)</th>
-<th>ms/tok (total)</th>
-<th>tok/s (out)</th>
-<th>ms/tok (out)</th>
-</tr></thead><tbody>
-<tr>
-<td><code>systemds_qwen3b_json_extr</code></td>
-<td>2026-02-25 16:45:36</td>
-<td>systemds</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
-<td>json_extraction</td>
-<td>50.0</td>
-<td>52.0% (26/50)</td>
-<td></td>
-<td></td>
-<td></td>
-<td>$0</td>
-<td>-</td>
-<td>-</td>
-<td>157.0</td>
-<td>0.5</td>
-<td>528.48</td>
-<td>465.50</td>
-<td>797.85</td>
-<td>169.30</td>
-<td>32.0%</td>
-<td>306.00</td>
-<td>983.00</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>1.8518</td>
-<td>10961</td>
-<td>219.2</td>
-<td>5919</td>
-<td>5042</td>
-<td>414.81</td>
-<td>2.41</td>
-<td>190.81</td>
-<td>5.24</td>
-</tr>
-<tr>
-<td><code>vllm_qwen3b_json_extracti</code></td>
-<td>2026-02-25 03:46:24</td>
-<td>vllm</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
-<td>json_extraction</td>
-<td>50.0</td>
-<td>52.0% (26/50)</td>
-<td></td>
-<td></td>
-<td></td>
-<td>$0</td>
-<td>-</td>
-<td>-</td>
-<td>146.0</td>
-<td>2.1</td>
-<td>518.57</td>
-<td>457.47</td>
-<td>782.07</td>
-<td>167.29</td>
-<td>32.3%</td>
-<td>297.37</td>
-<td>972.98</td>
-<td>30.67</td>
-<td>487.89</td>
-<td>1.9278</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-</tr>
-</tbody></table></div>
-<div class="table-header">
-<h3>Math</h3>
-<div>
-<button class="btn-small" onclick="printSection('workload-math')">Print</button>
-<button class="btn-small" onclick="exportTableToCSV('workload-math', 'workload-math.csv')">CSV</button>
-<button class="btn-small" onclick="copyTableToClipboard('workload-math')">Copy</button>
-</div></div>
-<div class="table-wrapper" id="workload-math">
-<table class="full-table">
-<thead><tr>
-<th>Run</th>
-<th>Timestamp (UTC)</th>
-<th>Backend</th>
-<th>Model</th>
-<th>Workload</th>
-<th>n</th>
-<th>Accuracy</th>
-<th>ROUGE-1 F1</th>
-<th>ROUGE-2 F1</th>
-<th>ROUGE-L F1</th>
-<th>API Cost ($)</th>
-<th>Compute Cost ($)</th>
-<th>$/1M tok</th>
-<th>Mem Peak (MB)</th>
-<th>CPU Avg (%)</th>
-<th>lat mean (ms)</th>
-<th>p50 (ms)</th>
-<th>p95 (ms)</th>
-<th>Lat Std (ms)</th>
-<th>Lat CV (%)</th>
-<th>Lat Min (ms)</th>
-<th>Lat Max (ms)</th>
-<th>TTFT (ms)</th>
-<th>Gen (ms)</th>
-<th>throughput (req/s)</th>
-<th>total tok</th>
-<th>avg tok</th>
-<th>in tok</th>
-<th>out tok</th>
-<th>tok/s (total)</th>
-<th>ms/tok (total)</th>
-<th>tok/s (out)</th>
-<th>ms/tok (out)</th>
-</tr></thead><tbody>
-<tr>
-<td><code>systemds_qwen3b_math</code></td>
-<td>2026-02-25 16:43:43</td>
-<td>systemds</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
-<td>math</td>
-<td>50.0</td>
-<td>68.0% (34/50)</td>
-<td></td>
-<td></td>
-<td></td>
-<td>$0</td>
-<td>-</td>
-<td>-</td>
-<td>158.0</td>
-<td>0.2</td>
-<td>1924.00</td>
-<td>1923.00</td>
-<td>2564.00</td>
-<td>543.79</td>
-<td>28.3%</td>
-<td>746.00</td>
-<td>2568.00</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>0.5167</td>
-<td>23245</td>
-<td>464.9</td>
-<td>4016</td>
-<td>19229</td>
-<td>241.63</td>
-<td>4.14</td>
-<td>199.89</td>
-<td>5.00</td>
-</tr>
-<tr>
-<td><code>vllm_qwen3b_math</code></td>
-<td>2026-02-25 03:44:40</td>
-<td>vllm</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
-<td>math</td>
-<td>50.0</td>
-<td>68.0% (34/50)</td>
-<td></td>
-<td></td>
-<td></td>
-<td>$0</td>
-<td>-</td>
-<td>-</td>
-<td>149.0</td>
-<td>2.8</td>
-<td>1911.20</td>
-<td>1920.49</td>
-<td>2544.02</td>
-<td>541.36</td>
-<td>28.3%</td>
-<td>729.41</td>
-<td>2549.99</td>
-<td>29.76</td>
-<td>1881.44</td>
-<td>0.5232</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-</tr>
-</tbody></table></div>
-<div class="table-header">
-<h3>Reasoning</h3>
-<div>
-<button class="btn-small" onclick="printSection('workload-reasoning')">Print</button>
-<button class="btn-small" onclick="exportTableToCSV('workload-reasoning', 'workload-reasoning.csv')">CSV</button>
-<button class="btn-small" onclick="copyTableToClipboard('workload-reasoning')">Copy</button>
-</div></div>
-<div class="table-wrapper" id="workload-reasoning">
-<table class="full-table">
-<thead><tr>
-<th>Run</th>
-<th>Timestamp (UTC)</th>
-<th>Backend</th>
-<th>Model</th>
-<th>Workload</th>
-<th>n</th>
-<th>Accuracy</th>
-<th>ROUGE-1 F1</th>
-<th>ROUGE-2 F1</th>
-<th>ROUGE-L F1</th>
-<th>API Cost ($)</th>
-<th>Compute Cost ($)</th>
-<th>$/1M tok</th>
-<th>Mem Peak (MB)</th>
-<th>CPU Avg (%)</th>
-<th>lat mean (ms)</th>
-<th>p50 (ms)</th>
-<th>p95 (ms)</th>
-<th>Lat Std (ms)</th>
-<th>Lat CV (%)</th>
-<th>Lat Min (ms)</th>
-<th>Lat Max (ms)</th>
-<th>TTFT (ms)</th>
-<th>Gen (ms)</th>
-<th>throughput (req/s)</th>
-<th>total tok</th>
-<th>avg tok</th>
-<th>in tok</th>
-<th>out tok</th>
-<th>tok/s (total)</th>
-<th>ms/tok (total)</th>
-<th>tok/s (out)</th>
-<th>ms/tok (out)</th>
-</tr></thead><tbody>
-<tr>
-<td><code>systemds_qwen3b_reasoning</code></td>
-<td>2026-02-25 16:44:43</td>
-<td>systemds</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
-<td>reasoning</td>
-<td>50.0</td>
-<td>60.0% (30/50)</td>
-<td></td>
-<td></td>
-<td></td>
-<td>$0</td>
-<td>-</td>
-<td>-</td>
-<td>158.0</td>
-<td>0.2</td>
-<td>1104.02</td>
-<td>1097.00</td>
-<td>1641.90</td>
-<td>325.27</td>
-<td>29.5%</td>
-<td>542.00</td>
-<td>2101.00</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>0.8989</td>
-<td>20249</td>
-<td>405.0</td>
-<td>9337</td>
-<td>10912</td>
-<td>366.82</td>
-<td>2.73</td>
-<td>197.68</td>
-<td>5.06</td>
-</tr>
-<tr>
-<td><code>vllm_qwen3b_reasoning</code></td>
-<td>2026-02-25 03:45:36</td>
-<td>vllm</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
-<td>reasoning</td>
-<td>50.0</td>
-<td>64.0% (32/50)</td>
-<td></td>
-<td></td>
-<td></td>
-<td>$0</td>
-<td>-</td>
-<td>-</td>
-<td>148.0</td>
-<td>2.5</td>
-<td>1050.01</td>
-<td>1048.19</td>
-<td>1565.71</td>
-<td>280.14</td>
-<td>26.7%</td>
-<td>501.65</td>
-<td>1639.09</td>
-<td>26.41</td>
-<td>1023.60</td>
-<td>0.9522</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-</tr>
-</tbody></table></div>
-<div class="table-header">
-<h3>Summarization</h3>
-<div>
-<button class="btn-small" onclick="printSection('workload-summarization')">Print</button>
-<button class="btn-small" onclick="exportTableToCSV('workload-summarization', 'workload-summarization.csv')">CSV</button>
-<button class="btn-small" onclick="copyTableToClipboard('workload-summarization')">Copy</button>
-</div></div>
-<div class="table-wrapper" id="workload-summarization">
-<table class="full-table">
-<thead><tr>
-<th>Run</th>
-<th>Timestamp (UTC)</th>
-<th>Backend</th>
-<th>Model</th>
-<th>Workload</th>
-<th>n</th>
-<th>Accuracy</th>
-<th>ROUGE-1 F1</th>
-<th>ROUGE-2 F1</th>
-<th>ROUGE-L F1</th>
-<th>API Cost ($)</th>
-<th>Compute Cost ($)</th>
-<th>$/1M tok</th>
-<th>Mem Peak (MB)</th>
-<th>CPU Avg (%)</th>
-<th>lat mean (ms)</th>
-<th>p50 (ms)</th>
-<th>p95 (ms)</th>
-<th>Lat Std (ms)</th>
-<th>Lat CV (%)</th>
-<th>Lat Min (ms)</th>
-<th>Lat Max (ms)</th>
-<th>TTFT (ms)</th>
-<th>Gen (ms)</th>
-<th>throughput (req/s)</th>
-<th>total tok</th>
-<th>avg tok</th>
-<th>in tok</th>
-<th>out tok</th>
-<th>tok/s (total)</th>
-<th>ms/tok (total)</th>
-<th>tok/s (out)</th>
-<th>ms/tok (out)</th>
-</tr></thead><tbody>
-<tr>
-<td><code>systemds_qwen3b_summariza</code></td>
-<td>2026-02-25 16:45:06</td>
-<td>systemds</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
-<td>summarization</td>
-<td>50.0</td>
-<td>50.0% (25/50)</td>
-<td>22.0%</td>
-<td>5.7%</td>
-<td>15.7%</td>
-<td>$0</td>
-<td>-</td>
-<td>-</td>
-<td>160.0</td>
-<td>0.5</td>
-<td>366.52</td>
-<td>354.00</td>
-<td>637.15</td>
-<td>145.11</td>
-<td>39.6%</td>
-<td>162.00</td>
-<td>661.00</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>2.6577</td>
-<td>15701</td>
-<td>314.0</td>
-<td>12242</td>
-<td>3459</td>
-<td>856.76</td>
-<td>1.17</td>
-<td>188.75</td>
-<td>5.30</td>
-</tr>
-<tr>
-<td><code>vllm_qwen3b_summarization</code></td>
-<td>2026-02-25 03:45:57</td>
-<td>vllm</td>
-<td>Qwen/Qwen2.5-3B-Inst</td>
-<td>summarization</td>
-<td>50.0</td>
-<td>62.0% (31/50)</td>
-<td>22.6%</td>
-<td>5.6%</td>
-<td>15.7%</td>
-<td>$0</td>
-<td>-</td>
-<td>-</td>
-<td>148.0</td>
-<td>2.6</td>
-<td>357.49</td>
-<td>334.44</td>
-<td>653.86</td>
-<td>140.51</td>
-<td>39.3%</td>
-<td>157.27</td>
-<td>660.93</td>
-<td>32.33</td>
-<td>325.16</td>
-<td>2.7960</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
+<td>1920.5</td>
+<td>2544.0</td>
+<td>29.8</td>
+<td>0.52</td>
 <td>N/A</td>
 <td>N/A</td>
 </tr>
@@ -2138,6 +1155,1671 @@
     
     <h2>Per-Sample Results (Debug)</h2>
 <p class="muted">Click to expand individual predictions for each run.</p>
+
+        <details class="sample-details">
+            <summary>
+                <strong>openai_embeddings</strong>
+                <span class="sample-count">44/50 correct</span>
+            </summary>
+            <div class="sample-list">
+        
+
+                <div class="sample-item incorrect">
+                    <div class="sample-header">
+                        <span class="status-icon">✗</span>
+                        <span class="sample-id">stsb-0</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> 4.0...</div>
+                        <div class="reference"><strong>Ref:</strong> 2.50</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">stsb-1</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> 4.5...</div>
+                        <div class="reference"><strong>Ref:</strong> 3.60</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">stsb-2</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> 5.0...</div>
+                        <div class="reference"><strong>Ref:</strong> 5.00</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">stsb-3</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> 4.5...</div>
+                        <div class="reference"><strong>Ref:</strong> 4.20</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">stsb-4</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> 2.0...</div>
+                        <div class="reference"><strong>Ref:</strong> 1.50</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item incorrect">
+                    <div class="sample-header">
+                        <span class="status-icon">✗</span>
+                        <span class="sample-id">stsb-5</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> 3.0...</div>
+                        <div class="reference"><strong>Ref:</strong> 1.80</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">stsb-6</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> 4.0...</div>
+                        <div class="reference"><strong>Ref:</strong> 3.50</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">stsb-7</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> 3.0...</div>
+                        <div class="reference"><strong>Ref:</strong> 2.20</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item incorrect">
+                    <div class="sample-header">
+                        <span class="status-icon">✗</span>
+                        <span class="sample-id">stsb-8</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> 3.5...</div>
+                        <div class="reference"><strong>Ref:</strong> 2.20</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item incorrect">
+                    <div class="sample-header">
+                        <span class="status-icon">✗</span>
+                        <span class="sample-id">stsb-9</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> 3.0...</div>
+                        <div class="reference"><strong>Ref:</strong> 1.71</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item incorrect">
+                    <div class="sample-header">
+                        <span class="status-icon">✗</span>
+                        <span class="sample-id">stsb-10</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> 3.0...</div>
+                        <div class="reference"><strong>Ref:</strong> 1.71</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">stsb-11</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> 5.0...</div>
+                        <div class="reference"><strong>Ref:</strong> 5.00</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">stsb-12</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> 0.0...</div>
+                        <div class="reference"><strong>Ref:</strong> 0.60</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">stsb-13</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> 4.5...</div>
+                        <div class="reference"><strong>Ref:</strong> 4.40</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">stsb-14</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> 3.0...</div>
+                        <div class="reference"><strong>Ref:</strong> 2.00</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item incorrect">
+                    <div class="sample-header">
+                        <span class="status-icon">✗</span>
+                        <span class="sample-id">stsb-15</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> 3.0...</div>
+                        <div class="reference"><strong>Ref:</strong> 1.80</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">stsb-16</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> 4.5...</div>
+                        <div class="reference"><strong>Ref:</strong> 4.40</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">stsb-17</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> 4.0...</div>
+                        <div class="reference"><strong>Ref:</strong> 3.60</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">stsb-18</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> 3.5...</div>
+                        <div class="reference"><strong>Ref:</strong> 3.60</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">stsb-19</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> 1.0...</div>
+                        <div class="reference"><strong>Ref:</strong> 1.20</div>
+                    </div>
+                </div>
+            
+<div class="muted">... and 30 more samples</div>
+</div></details>
+
+        <details class="sample-details">
+            <summary>
+                <strong>openai_json_extraction</strong>
+                <span class="sample-count">28/46 correct</span>
+            </summary>
+            <div class="sample-list">
+        
+
+                <div class="sample-item incorrect">
+                    <div class="sample-header">
+                        <span class="status-icon">✗</span>
+                        <span class="sample-id">conll-0</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [&quot;Japan&quot;, &quot;China&quot;],
+  &quot;misc&quot;: [&quot;Soccer&quot;, &quot;lucky win&quot;, &quot;surprise defeat&quot;]
+}...</div>
+                        <div class="reference"><strong>Ref:</strong> {
+  &quot;persons&quot;: [
+    &quot;CHINA&quot;
+  ],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [
+    &quot;JAPAN&quot;
+  ],
+  &quot;misc&quot;:</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">conll-1</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> {
+  &quot;persons&quot;: [&quot;Nadim Ladki&quot;],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [],
+  &quot;misc&quot;: []
+}...</div>
+                        <div class="reference"><strong>Ref:</strong> {
+  &quot;persons&quot;: [
+    &quot;Nadim Ladki&quot;
+  ],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [],
+  &quot;misc&quot;: []
+}</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">conll-2</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [&quot;AL-AIN&quot;, &quot;United Arab Emirates&quot;],
+  &quot;misc&quot;: [&quot;1996-12-06&quot;]
+}...</div>
+                        <div class="reference"><strong>Ref:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [
+    &quot;AL-AIN&quot;,
+    &quot;United Arab Emirates&quot;
+</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">conll-3</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [&quot;Japan&quot;, &quot;Syria&quot;, &quot;Asia&quot;],
+  &quot;misc&quot;: [&quot;Asian Cup&quot;, &quot;Group C&quot;, &quot;2-1 win&quot;, &quot;championship match&quot;, &quot;Friday&quot;]
+}...</div>
+                        <div class="reference"><strong>Ref:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [
+    &quot;Japan&quot;,
+    &quot;Syria&quot;
+  ],
+  &quot;misc&quot;: [</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">conll-4</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [&quot;China&quot;, &quot;Uzbekistan&quot;],
+  &quot;misc&quot;: [&quot;second match of the group&quot;, &quot;2-0 defeat&quot;, &quot;newcomers&quot;]
+}...</div>
+                        <div class="reference"><strong>Ref:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [
+    &quot;China&quot;,
+    &quot;Uzbekistan&quot;
+  ],
+  &quot;mis</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item incorrect">
+                    <div class="sample-header">
+                        <span class="status-icon">✗</span>
+                        <span class="sample-id">conll-5</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> {
+  &quot;persons&quot;: [&quot;Igor Shkvyrin&quot;],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [&quot;China&quot;, &quot;Uzbek&quot;],
+  &quot;misc&quot;: [&quot;match&quot;, &quot;78th minute&quot;, &quot;misdirected defensive header&quot;, &quot;Chinese keeper&quot;, &quot;empty net&quot;]
+}...</div>
+                        <div class="reference"><strong>Ref:</strong> {
+  &quot;persons&quot;: [
+    &quot;Igor Shkvyrin&quot;
+  ],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [
+    &quot;China&quot;
+  ],
+ </div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item incorrect">
+                    <div class="sample-header">
+                        <span class="status-icon">✗</span>
+                        <span class="sample-id">conll-6</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> {
+  &quot;persons&quot;: [&quot;Oleg Shatskiku&quot;],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [],
+  &quot;misc&quot;: [&quot;injury time&quot;, &quot;left foot shot&quot;, &quot;just outside the area&quot;]
+}...</div>
+                        <div class="reference"><strong>Ref:</strong> {
+  &quot;persons&quot;: [
+    &quot;Oleg Shatskiku&quot;
+  ],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [],
+  &quot;misc&quot;: []
+}</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item incorrect">
+                    <div class="sample-header">
+                        <span class="status-icon">✗</span>
+                        <span class="sample-id">conll-7</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [&quot;Soviet republic&quot;, &quot;Asian Cup&quot;],
+  &quot;misc&quot;: [&quot;finals tie&quot;, &quot;first time&quot;]
+}...</div>
+                        <div class="reference"><strong>Ref:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [],
+  &quot;misc&quot;: [
+    &quot;Soviet&quot;,
+    &quot;Asian Cu</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item incorrect">
+                    <div class="sample-header">
+                        <span class="status-icon">✗</span>
+                        <span class="sample-id">conll-8</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [&quot;Uzbekistan&quot;, &quot;Asian Games&quot;],
+  &quot;misc&quot;: [&quot;finals&quot;, &quot;outsiders&quot;, &quot;title&quot;]
+}...</div>
+                        <div class="reference"><strong>Ref:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [
+    &quot;Uzbekistan&quot;
+  ],
+  &quot;misc&quot;: [
+    &quot;As</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item incorrect">
+                    <div class="sample-header">
+                        <span class="status-icon">✗</span>
+                        <span class="sample-id">conll-9</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [&quot;Japan&quot;, &quot;Syria&quot;],
+  &quot;misc&quot;: [&quot;two goals&quot;, &quot;defensive errors&quot;, &quot;last six minutes&quot;, &quot;all three points&quot;, &quot;opening meeting&quot;]
+}...</div>
+                        <div class="reference"><strong>Ref:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [
+    &quot;Japan&quot;,
+    &quot;Syria&quot;
+  ],
+  &quot;misc&quot;: [</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">conll-10</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> {
+  &quot;persons&quot;: [
+    &quot;Takuya Takagi&quot;,
+    &quot;Hiroshige Yanagimoto&quot;,
+    &quot;Salem Bitar&quot;
+  ],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [
+    &quot;Syrian&quot;
+  ],
+  &quot;misc&quot;: [
+    &quot;88th minute&quot;,
+    &quot;goalkeeper&quot;
+  ]
+}...</div>
+                        <div class="reference"><strong>Ref:</strong> {
+  &quot;persons&quot;: [
+    &quot;Takuya Takagi&quot;,
+    &quot;Hiroshige Yanagimoto&quot;,
+    &quot;Salem Bitar&quot;
+  ],
+  &quot;organiza</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">conll-11</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [&quot;Syria&quot;],
+  &quot;misc&quot;: [&quot;second costly blunder&quot;, &quot;four minutes&quot;]
+}...</div>
+                        <div class="reference"><strong>Ref:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [
+    &quot;Syria&quot;
+  ],
+  &quot;misc&quot;: []
+}</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">conll-12</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> {
+  &quot;persons&quot;: [&quot;Hassan Abbas&quot;, &quot;Bitar&quot;],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [],
+  &quot;misc&quot;: [&quot;84th minute&quot;, &quot;top corner of goal&quot;]
+}...</div>
+                        <div class="reference"><strong>Ref:</strong> {
+  &quot;persons&quot;: [
+    &quot;Hassan Abbas&quot;,
+    &quot;Bitar&quot;
+  ],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [],
+  &quot;m</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">conll-13</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> {
+  &quot;persons&quot;: [&quot;Nader Jokhadar&quot;],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [&quot;Syria&quot;],
+  &quot;misc&quot;: [&quot;seventh minute&quot;, &quot;header&quot;]
+}...</div>
+                        <div class="reference"><strong>Ref:</strong> {
+  &quot;persons&quot;: [
+    &quot;Nader Jokhadar&quot;
+  ],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [
+    &quot;Syria&quot;
+  ],
+</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item incorrect">
+                    <div class="sample-header">
+                        <span class="status-icon">✗</span>
+                        <span class="sample-id">conll-14</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [&quot;Japan&quot;, &quot;Syrian&quot;],
+  &quot;misc&quot;: [&quot;penalty area&quot;, &quot;siege&quot;, &quot;defence&quot;]
+}...</div>
+                        <div class="reference"><strong>Ref:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [
+    &quot;Japan&quot;
+  ],
+  &quot;misc&quot;: [
+    &quot;Syrian&quot;</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">conll-15</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> {
+  &quot;persons&quot;: [&quot;Bitar&quot;],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [],
+  &quot;misc&quot;: []
+}...</div>
+                        <div class="reference"><strong>Ref:</strong> {
+  &quot;persons&quot;: [
+    &quot;Bitar&quot;
+  ],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [],
+  &quot;misc&quot;: []
+}</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item incorrect">
+                    <div class="sample-header">
+                        <span class="status-icon">✗</span>
+                        <span class="sample-id">conll-16</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> {
+  &quot;persons&quot;: [&quot;Shu Kamo&quot;],
+  &quot;organizations&quot;: [&quot;Japan&quot;],
+  &quot;locations&quot;: [&quot;Syria&quot;],
+  &quot;misc&quot;: [&quot;own goal&quot;]
+}...</div>
+                        <div class="reference"><strong>Ref:</strong> {
+  &quot;persons&quot;: [
+    &quot;Shu Kamo&quot;
+  ],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [
+    &quot;Japan&quot;
+  ],
+  &quot;mis</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item incorrect">
+                    <div class="sample-header">
+                        <span class="status-icon">✗</span>
+                        <span class="sample-id">conll-17</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [&quot;Syria&quot;],
+  &quot;misc&quot;: [&quot;long balls&quot;, &quot;played defensively&quot;]
+}...</div>
+                        <div class="reference"><strong>Ref:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [],
+  &quot;misc&quot;: [
+    &quot;Syrians&quot;
+  ]
+}</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">conll-19</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [&quot;FIFA&quot;],
+  &quot;locations&quot;: [&quot;Japan&quot;],
+  &quot;misc&quot;: [&quot;World Cup 2002&quot;, &quot;ranked 20th in the world&quot;, &quot;favourites to regain their title&quot;]
+}...</div>
+                        <div class="reference"><strong>Ref:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [
+    &quot;FIFA&quot;
+  ],
+  &quot;locations&quot;: [
+    &quot;Japan&quot;
+  ],
+  &quot;misc&quot;: </div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">conll-20</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [&quot;UAE&quot;, &quot;Kuwait&quot;, &quot;South Korea&quot;, &quot;Indonesia&quot;],
+  &quot;misc&quot;: [&quot;Group A matches&quot;, &quot;Saturday&quot;]
+}...</div>
+                        <div class="reference"><strong>Ref:</strong> {
+  &quot;persons&quot;: [],
+  &quot;organizations&quot;: [],
+  &quot;locations&quot;: [
+    &quot;UAE&quot;,
+    &quot;Kuwait&quot;,
+    &quot;South Korea</div>
+                    </div>
+                </div>
+            
+<div class="muted">... and 26 more samples</div>
+</div></details>
+
+        <details class="sample-details">
+            <summary>
+                <strong>openai_math</strong>
+                <span class="sample-count">48/50 correct</span>
+            </summary>
+            <div class="sample-list">
+        
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">gsm8k-0</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Let&#x27;s solve the problem step-by-step.
+
+### Given:
+- Janet’s ducks lay 16 eggs per day.
+- She eats 3 eggs for breakfast every morning.
+- She uses 4 eggs daily to bake muffins for her friends.
+- She sel...</div>
+                        <div class="reference"><strong>Ref:</strong> 18</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">gsm8k-1</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Let&#x27;s analyze the problem step-by-step:
+
+1. The robe takes 2 bolts of blue fiber.
+2. It takes half as much white fiber as blue fiber.
+   - Half of 2 bolts = \( \frac{1}{2} \times 2 = 1 \) bolt of whit...</div>
+                        <div class="reference"><strong>Ref:</strong> 3</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">gsm8k-2</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Let&#x27;s solve the problem step-by-step.
+
+### Step 1: Understand the problem
+- Josh buys a house for $80,000.
+- He spends $50,000 on repairs.
+- The repairs increase the value of the house by 150%.
+- We n...</div>
+                        <div class="reference"><strong>Ref:</strong> 70000</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">gsm8k-3</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Let&#x27;s break down the problem step-by-step:
+
+1. **Number of sprints per session:**  
+   James runs 3 sprints each time he runs.
+
+2. **Number of sessions per week:**  
+   He runs 3 times a week.
+
+3. **D...</div>
+                        <div class="reference"><strong>Ref:</strong> 540</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">gsm8k-4</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Let&#x27;s analyze the problem step-by-step:
+
+1. **Identify the total amount of feed each chicken needs per day:**
+
+   Each chicken needs 3 cups of feed per day.
+
+2. **Find the total amount of feed needed ...</div>
+                        <div class="reference"><strong>Ref:</strong> 20</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">gsm8k-5</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Let&#x27;s solve the problem step-by-step.
+
+### Given:
+- Price of one glass = $5
+- Every second glass costs 60% of the original price
+- Kylar wants to buy 16 glasses
+
+### Step 1: Understand the pricing pat...</div>
+                        <div class="reference"><strong>Ref:</strong> 64</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">gsm8k-6</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Let&#x27;s define variables for the number of sheep in each city:
+
+- Let \( S \) = number of sheep in Seattle
+- Let \( C \) = number of sheep in Charleston
+- Let \( T \) = number of sheep in Toulouse
+
+### ...</div>
+                        <div class="reference"><strong>Ref:</strong> 260</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">gsm8k-7</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Let&#x27;s analyze the problem step-by-step.
+
+---
+
+### Given:
+- Total file size = 200 GB
+- Download speed = 2 GB/minute
+- After downloading 40% of the file, Windows forces a restart.
+- Restart takes 20 min...</div>
+                        <div class="reference"><strong>Ref:</strong> 160</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">gsm8k-8</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Let&#x27;s analyze the problem step-by-step.
+
+---
+
+### Step 1: Calculate the distance John drove initially before turning around.
+
+- Speed = 60 mph
+- Time = 3 hours
+
+Distance = Speed × Time = 60 mph × 3 ho...</div>
+                        <div class="reference"><strong>Ref:</strong> 45</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">gsm8k-9</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Let&#x27;s solve the problem step-by-step.
+
+### Given:
+- Regular hourly rate = $10 per hour
+- Regular hours = 40 hours
+- Overtime pay rate = 1.2 times the regular hourly rate
+- Total hours worked = 45 hour...</div>
+                        <div class="reference"><strong>Ref:</strong> 460</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">gsm8k-10</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Let&#x27;s solve the problem step-by-step.
+
+---
+
+### Step 1: Downloads in the first month
+Given:
+- Downloads in the first month = 60
+
+---
+
+### Step 2: Downloads in the second month
+The number of downloads ...</div>
+                        <div class="reference"><strong>Ref:</strong> 366</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">gsm8k-11</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Let&#x27;s solve the problem step-by-step.
+
+### Given:
+- Donuts: 3 dozen at $68 per dozen
+- Mini cupcakes: 2 dozen at $80 per dozen
+- Mini cheesecakes: 6 dozen at $55 per dozen
+
+### Step 1: Calculate the c...</div>
+                        <div class="reference"><strong>Ref:</strong> 694</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item incorrect">
+                    <div class="sample-header">
+                        <span class="status-icon">✗</span>
+                        <span class="sample-id">gsm8k-12</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Let&#x27;s analyze the problem step-by-step.
+
+### Given:
+- Initial cost to plant the tree = $90
+- Each year, the tree produces 7 lemons.
+- Each lemon sells for $1.5.
+- Annual cost to water and feed the tre...</div>
+                        <div class="reference"><strong>Ref:</strong> 13</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">gsm8k-13</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Let&#x27;s define the total number of vacuum cleaners Melanie started with as \( x \).
+
+### Step 1: Sold at the green house
+She sold \(\frac{1}{3}\) of her vacuum cleaners at the green house.
+- Number sold...</div>
+                        <div class="reference"><strong>Ref:</strong> 18</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">gsm8k-14</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Let&#x27;s solve the problem step-by-step.
+
+---
+
+### Step 1: Total number of students
+There are 20 students in total.
+
+---
+
+### Step 2: Number of students enrolled in contemporary dance
+20% of 20 students ...</div>
+                        <div class="reference"><strong>Ref:</strong> 60</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">gsm8k-15</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Let&#x27;s analyze the problem step-by-step.
+
+---
+
+### Given:
+- Jewelry worth = $5,000
+- Electronic gadgets worth = $8,000
+- Jewelry market increase = 2.5%
+- Electronic gadgets market increase = 1.2%
+
+---
+...</div>
+                        <div class="reference"><strong>Ref:</strong> 125</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">gsm8k-16</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Let&#x27;s analyze the problem step-by-step.
+
+### Given:
+- Two trains leave San Rafael at the same time.
+- On the first day, both trains travel westward for 80 miles.
+- On the second day, both trains trave...</div>
+                        <div class="reference"><strong>Ref:</strong> 230</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">gsm8k-17</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Let&#x27;s solve the problem step-by-step.
+
+### Given:
+- Jill&#x27;s pay as a teacher = $20 per hour
+- Jill&#x27;s pay as a cheerleading coach = $30 per hour
+- Weeks worked per year = 50 weeks
+- Hours worked per wee...</div>
+                        <div class="reference"><strong>Ref:</strong> 57500</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">gsm8k-18</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Let&#x27;s solve the problem step-by-step.
+
+**Step 1: Determine how many eggs Claire eats in one day.**  
+Claire makes a 3-egg omelet every morning, so she eats 3 eggs per day.
+
+**Step 2: Determine how man...</div>
+                        <div class="reference"><strong>Ref:</strong> 7</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">gsm8k-19</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Let&#x27;s analyze the problem step-by-step.
+
+---
+
+### Given:
+- Total trail length = 12 miles
+- Time for first 4 miles = 1 hour
+- Time for next 2 miles = 1 hour
+- Desired average speed for the entire 12 mi...</div>
+                        <div class="reference"><strong>Ref:</strong> 6</div>
+                    </div>
+                </div>
+            
+<div class="muted">... and 30 more samples</div>
+</div></details>
+
+        <details class="sample-details">
+            <summary>
+                <strong>openai_reasoning</strong>
+                <span class="sample-count">44/50 correct</span>
+            </summary>
+            <div class="sample-list">
+        
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">boolq-0</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Step-by-step reasoning:
+
+1. The passage states that for corn ethanol, one unit of fossil-fuel energy is required to create 1.3 units of energy from ethanol. This means more energy is produced than con...</div>
+                        <div class="reference"><strong>Ref:</strong> No</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">boolq-1</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Step-by-step reasoning: The passage states that &quot;Property tax or &#x27;house tax&#x27; is a local tax on buildings, along with appurtenant land.&quot; This indicates that the terms &quot;property tax&quot; and &quot;house tax&quot; are...</div>
+                        <div class="reference"><strong>Ref:</strong> Yes</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">boolq-2</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Step-by-step reasoning:  
+- The passage states that phantom pain sensations are perceptions related to a limb or organ that is not physically part of the body.  
+- This implies that pain can be experi...</div>
+                        <div class="reference"><strong>Ref:</strong> Yes</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">boolq-3</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Step-by-step reasoning: The passage explicitly states that &quot;Harry Potter and the Escape from Gringotts is an indoor steel roller coaster.&quot; This directly confirms that it is a roller coaster ride.
+
+Fin...</div>
+                        <div class="reference"><strong>Ref:</strong> Yes</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">boolq-4</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Step-by-step reasoning:  
+- The passage states that hydroxyzine is available in two formulations: pamoate and dihydrochloride/hydrochloride salts.  
+- It lists different brand names for each formulati...</div>
+                        <div class="reference"><strong>Ref:</strong> Yes</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">boolq-5</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Step-by-step reasoning: The passage states that Barq&#x27;s is bottled by the Coca-Cola Company. Pepsi products are associated with PepsiCo, not Coca-Cola. Since Barq&#x27;s is bottled by Coca-Cola, it is not a...</div>
+                        <div class="reference"><strong>Ref:</strong> No</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item incorrect">
+                    <div class="sample-header">
+                        <span class="status-icon">✗</span>
+                        <span class="sample-id">boolq-6</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Step-by-step reasoning:
+
+1. An odd number is an integer that is not divisible by 2.
+2. An even number is an integer that is divisible by 2.
+3. Dividing an odd number by an even number means checking i...</div>
+                        <div class="reference"><strong>Ref:</strong> Yes</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">boolq-7</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Step-by-step reasoning:
+
+1. The passage mentions that there are 71 words in the list.
+2. Out of these, 67 are nouns and most are loanwords.
+3. It specifically states that the only modern-English words...</div>
+                        <div class="reference"><strong>Ref:</strong> Yes</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">boolq-8</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Step-by-step reasoning: The passage states that persons driving into Canada must have their vehicle&#x27;s registration document and proof of insurance. It does not mention any restrictions on the type of ...</div>
+                        <div class="reference"><strong>Ref:</strong> Yes</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">boolq-9</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Step-by-step reasoning: The passage states that a third place play-off was played between the two losing teams of the semi-finals in the knockout stage of the 2018 FIFA World Cup. This indicates that ...</div>
+                        <div class="reference"><strong>Ref:</strong> Yes</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">boolq-10</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Step-by-step reasoning:  
+- The passage states that persons under 21 are prohibited from purchasing or possessing alcohol with the intent to consume, unless the alcohol was given to them by their pare...</div>
+                        <div class="reference"><strong>Ref:</strong> Yes</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">boolq-11</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Step-by-step reasoning: The passage describes Bloodline as a television series created by Todd A. Kessler, Glenn Kessler, and Daniel Zelman. It mentions the show&#x27;s premise about a family with secrets ...</div>
+                        <div class="reference"><strong>Ref:</strong> No</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item incorrect">
+                    <div class="sample-header">
+                        <span class="status-icon">✗</span>
+                        <span class="sample-id">boolq-12</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Step-by-step reasoning:  
+- Shower gels contain milder surfactants than shampoos.  
+- Some shower gels include gentle conditioning agents.  
+- Shower gels can be an effective substitute for shampoo.  ...</div>
+                        <div class="reference"><strong>Ref:</strong> Yes</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">boolq-13</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Step-by-step reasoning:  
+- The excretory system is responsible for removing waste products from the body.  
+- The liver detoxifies and breaks down chemicals, poisons, and toxins, transforming harmful...</div>
+                        <div class="reference"><strong>Ref:</strong> Yes</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">boolq-14</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> The passage states that Fantastic Beasts and Where to Find Them is a spin-off and prequel to the Harry Potter film series. Therefore, it is indeed a prequel.
+
+Final answer: Yes...</div>
+                        <div class="reference"><strong>Ref:</strong> Yes</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">boolq-15</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Step-by-step reasoning: The passage states that The Vampire Diaries was renewed for an eighth season by The CW on March 11, 2016. It also mentions that the eighth season would be the last and would co...</div>
+                        <div class="reference"><strong>Ref:</strong> Yes</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">boolq-16</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> The passage states that writer-director Bryan Bertino was inspired by real-life events such as the Manson family Tate murders, the Keddie Cabin Murders, and break-ins in his own neighborhood. This ind...</div>
+                        <div class="reference"><strong>Ref:</strong> Yes</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">boolq-17</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Step-by-step reasoning: The passage states that in March 2012, it was announced that Durham University would become a member of the Russell Group in August 2012. Therefore, Durham University is part o...</div>
+                        <div class="reference"><strong>Ref:</strong> Yes</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">boolq-18</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Step-by-step reasoning: The passage states that the first season of The Resident officially concluded on May 14, 2018. Since the question is whether the TV show is over for the season, and the first s...</div>
+                        <div class="reference"><strong>Ref:</strong> Yes</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">boolq-19</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Step-by-step reasoning:  
+- The passage states that magnesium citrate is a magnesium preparation in salt form with citric acid in a 1:1 ratio.  
+- This means that magnesium citrate contains citric aci...</div>
+                        <div class="reference"><strong>Ref:</strong> Yes</div>
+                    </div>
+                </div>
+            
+<div class="muted">... and 30 more samples</div>
+</div></details>
+
+        <details class="sample-details">
+            <summary>
+                <strong>openai_summarization</strong>
+                <span class="sample-count">43/50 correct</span>
+            </summary>
+            <div class="sample-list">
+        
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">xsum-1</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Officers recovered firearms, ammunition, and money during searches in Waterfront Park and Colonsay View, leading to the arrest and charging of a 26-year-old man....</div>
+                        <div class="reference"><strong>Ref:</strong> A man has appeared in court after firearms, ammunition and cash were seized by police in Edinburgh.</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">xsum-2</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Four suspects charged with hate crimes and aggravated kidnapping brutally abused an 18-year-old white victim with disabilities in Chicago, sparking a $51,000 fundraiser....</div>
+                        <div class="reference"><strong>Ref:</strong> Four people accused of kidnapping and torturing a mentally disabled man in a &quot;racially motivated&quot; at</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item incorrect">
+                    <div class="sample-header">
+                        <span class="status-icon">✗</span>
+                        <span class="sample-id">xsum-3</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> The former Arsenal goalkeeper played for the Royals for four years and has been West Brom&#x27;s director of football since 2003, helping the club win promotion to the Premier League twice....</div>
+                        <div class="reference"><strong>Ref:</strong> West Brom have appointed Nicky Hammond as technical director, ending his 20-year association with Re</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">xsum-11</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> East Sussex NHS Trust apologized after an external printing company mistakenly sent cancer-related leaflets with 850 hospital appointment letters in March, causing unnecessary anxiety....</div>
+                        <div class="reference"><strong>Ref:</strong> Hospital bosses in Sussex have apologised after about 850 patients were sent leaflets in error sugge</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">xsum-13</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> The National League club sold the Republic of Ireland midfielder for £175,000 with a 15% sell-on clause, but any proceeds from O&#x27;Kane&#x27;s move will go to the financially struggling club, which is seekin...</div>
+                        <div class="reference"><strong>Ref:</strong> Torquay United boss Kevin Nicholson says none of the money from Eunan O&#x27;Kane&#x27;s move to Leeds from Bo</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item incorrect">
+                    <div class="sample-header">
+                        <span class="status-icon">✗</span>
+                        <span class="sample-id">xsum-14</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Iwan Wyn Lewis, who was sectioned and receiving treatment at Ysbyty Gwynedd, likely became more distressed after a police visit without special permission, and was found dead in the Menai Strait short...</div>
+                        <div class="reference"><strong>Ref:</strong> North Wales Police has been criticised at an inquest for sending an officer to speak to a hospital p</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item incorrect">
+                    <div class="sample-header">
+                        <span class="status-icon">✗</span>
+                        <span class="sample-id">xsum-15</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> The 33-year-old Taylor-Fletcher, who scored three goals in 23 games last season, joined the 13th-placed Owls before their Championship game against Norwich City....</div>
+                        <div class="reference"><strong>Ref:</strong> Leicester City striker Gary Taylor-Fletcher has joined Sheffield Wednesday on an initial month-long </div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">xsum-18</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Tiger Woods missed the cut by four shots at Torrey Pines in his first full PGA Tour event in 18 months, while overnight leader Justin Rose leads at eight under....</div>
+                        <div class="reference"><strong>Ref:</strong> Tiger Woods missed the cut at the Farmers Insurance Open, as England&#x27;s Justin Rose maintained a one-</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">xsum-19</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Former footballer Andy Cole, recovering from a kidney transplant, is gradually regaining strength and hopes to play in future legends games, while expressing doubt about English clubs&#x27; chances in the ...</div>
+                        <div class="reference"><strong>Ref:</strong> Former England striker Andy Cole says he faces a &quot;long road ahead&quot; as he recovers from his recent ki</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">xsum-21</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> The 26-year-old Benjamin, injured last week, will likely miss the rest of the season but is expected to fully recover in 8 to 10 weeks, while Sam Harrison has signed a new contract....</div>
+                        <div class="reference"><strong>Ref:</strong> Leicester Tigers winger Miles Benjamin is likely to be out for the rest of the season because of a k</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">xsum-23</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> The floods in India have killed dozens, displaced hundreds of thousands, and prompted government aid and a visit by Prime Minister Modi to Assam to seek a permanent solution....</div>
+                        <div class="reference"><strong>Ref:</strong> Floods in the western Indian state of Gujarat have killed 218 people, government officials have conf</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">xsum-25</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> RBS was fined for inadequate controls following a trader&#x27;s fraud, but the penalty was reduced due to the bank&#x27;s prompt reporting and remediation efforts....</div>
+                        <div class="reference"><strong>Ref:</strong> Royal Bank of Scotland (RBS) has been fined HK$6m (£460,000) by Hong Kong regulators after it failed</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item incorrect">
+                    <div class="sample-header">
+                        <span class="status-icon">✗</span>
+                        <span class="sample-id">xsum-28</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Mandla Hlatshwayo and his friend were shot after confronting robbers in Soweto, with suspects found possessing drugs and an unlicensed gun....</div>
+                        <div class="reference"><strong>Ref:</strong> South African police say four people have been arrested in connection with the murder of former acto</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">xsum-29</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> A targeted gunshot was fired near Anfield Road Primary School, prompting police investigations and safety measures while no injuries have been reported....</div>
+                        <div class="reference"><strong>Ref:</strong> A shot was reportedly fired at a car outside a primary school in Liverpool as parents were taking th</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">xsum-30</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Olympic champion Ennis-Hill is third overall with 5,544 points and on track to qualify for the Rio Olympics in her first heptathlon since 2012....</div>
+                        <div class="reference"><strong>Ref:</strong> Jessica Ennis-Hill has fallen from fourth to eighth place after six events at the Hypo-Meeting in Go</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">xsum-32</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> The upcoming 2 March election will return 90 members to Stormont, with 228 candidates including 70 women, led by the DUP&#x27;s 38 candidates and Sinn Féin&#x27;s 34....</div>
+                        <div class="reference"><strong>Ref:</strong> A total of 228 candidates will contest the Northern Ireland Assembly election next month - 48 fewer </div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">xsum-34</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Zoe Waters, a 19-year-old vintage fan and Newcastle University student, won the Alternative Model of the Year contest judged in Newcastle, inspiring her to pursue a modelling career despite her unconv...</div>
+                        <div class="reference"><strong>Ref:</strong> A philosophy student who wears vintage clothing has won a national contest for alternative models.</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">xsum-35</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> The National Museum of the Royal Navy plans to move the Yomper statue from Eastney to Portsmouth Historic Dockyard despite local opposition and a petition to keep it as a Falklands War memorial at its...</div>
+                        <div class="reference"><strong>Ref:</strong> Plans to move a statue depicting a Royal Marine in the Falklands conflict away from Portsmouth seafr</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">xsum-36</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> A suspect, known as BM, is believed to be the first person charged with breaching a Terrorism Prevention and Investigation Measures (TPim) order for failing to report to authorities twice in January....</div>
+                        <div class="reference"><strong>Ref:</strong> A suspected terrorist has been charged with breaching conditions imposed as part of the government&#x27;s</div>
+                    </div>
+                </div>
+            
+
+                <div class="sample-item correct">
+                    <div class="sample-header">
+                        <span class="status-icon">✓</span>
+                        <span class="sample-id">xsum-37</span>
+                    </div>
+                    <div class="sample-content">
+                        <div class="prediction"><strong>Pred:</strong> Seamer Anyon, retiring due to injury, takes over coaching Sussex women&#x27;s under-19 and under-21 teams, continuing his work with the club....</div>
+                        <div class="reference"><strong>Ref:</strong> Sussex have appointed former player James Anyon as head coach of their women&#x27;s side.</div>
+                    </div>
+                </div>
+            
+<div class="muted">... and 30 more samples</div>
+</div></details>
 
         <details class="sample-details">
             <summary>

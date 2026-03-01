@@ -190,6 +190,10 @@ public final class SparseRowVector extends SparseRow {
 		estimatedNzs = estnnz;
 	}
 
+	public int getEstimatedNzs(){
+		return estimatedNzs;
+	}
+
 	private void recap(int newCap) {
 		if( newCap<=values.length )
 			return;
@@ -314,7 +318,7 @@ public final class SparseRowVector extends SparseRow {
 		
 		//search lt col index (see binary search)
 		index = Math.abs( index+1 );
-		return (index-1 < size) ? index-1 : -1;
+		return (index-1 >= 0) ? index-1 : -1;
 	}
 
 	@Override

@@ -3,6 +3,24 @@ layout: site
 title: Install SystemDS from a Release
 description: Installation guide for SystemDS using release archives
 ---
+<!--
+{% comment %}
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to you under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+{% endcomment %}
+-->
 
 # Install SystemDS from a Release
 
@@ -113,10 +131,10 @@ Verify that the JAR was found correctly:
 echo "Using SystemDS JAR: $SYSTEMDS_JAR_FILE"
 ```
 
-(Optional but recommended) To make SystemDS available in new terminals, add the following lines to your shell configuration (e.g., ~/.bashrc or ~/.profile):
+(Optional but recommended) To make SystemDS available in new terminals, add the following lines to your shell configuration (e.g., `~/.bashrc` or `~/.profile`):
 ```bash
 export SYSTEMDS_ROOT=/absolute/path/to/systemds-<VERSION>
-export SYSTEMDS_JAR_FILE=$(find "$SYSTEMDS_ROOT" -maxdepth 1 -type f -name "systemds-*.jar" | head -n 1)
+export SYSTEMDS_JAR_FILE=/absolute/path/to/systemds-<VERSION>-bin/lib/systemds-<VERSION>.jar
 export PATH="$SYSTEMDS_ROOT/bin:$PATH"
 ```
 
@@ -145,8 +163,6 @@ Expected output:
 ```bash
 Hello World!
 ```
-
-On some Ubuntu setups (including clean Docker images), running SystemDS directly may fail with `Invalid or corrupt jarfile hello.dml` Error. Ensuring that `SYSTEMDS_JAR_FILE`points to the SystemDS JAR shipped with the release resolves this issue.
 
 # 4. Install on macOS
 
@@ -200,4 +216,4 @@ Hello World!
 
 # Next Steps
 
-For running scripts in Spark mode or experimenting with federated workers, see the Execution Guide: [Execute SystemDS](run.html)
+For running scripts in Spark mode or experimenting with federated workers, see the Execution Guide: [Execute SystemDS](run)

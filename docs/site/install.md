@@ -47,7 +47,7 @@ First setup Java and maven to compile the system note the Java version is 17, we
 
 Setup your environment variables with JAVA_HOME and MAVEN_HOME. Using these variables add the JAVA_HOME/bin and MAVEN_HOME/bin to the path environment variable. An example of setting it for Java can be found here: <https://www.thewindowsclub.com/set-java_home-in-windows-10>
 
-To run the system we also have to setup some Hadoop and Spark specific libraries. These can be found in the SystemDS repository. To add this, simply take out the files, or add 'src/test/config/hadoop_bin_windows/bin' to PATH. Just like for JAVA_HOME set a HADOOP_HOME to the environment variable without the bin part, and add the `%HADOOP_HOME%\bin` to path.
+To run the system we also have to setup some Hadoop and Spark specific libraries. These can be found in the SystemDS repository. To add this, simply take out the files, or add 'src/test/config/hadoop_bin_windows/bin' to PATH. Just like for JAVA_HOME set a HADOOP_HOME to the environment variable without the bin part, and add the `%HADOOP_HOME%/bin` to path.
 
 On Windows, cloning large repositories via GitHub Desktop may stall in some environments. If this happens, cloning via the Git command line is a reliable alternative.
 Example:
@@ -120,7 +120,7 @@ sudo apt update
 sudo apt install r-base
 ```
 
-**Ubuntu 22.04**
+**Ubuntu 24.04**
 
 ```bash
 sudo apt install dirmngr gnupg apt-transport-https ca-certificates software-properties-common
@@ -205,7 +205,7 @@ After building SystemDS from source, you can add the `bin` directory to your
 export SYSTEMDS_ROOT=$(pwd)
 export PATH="$SYSTEMDS_ROOT/bin:$PATH"
 ```
-This allows you to run `systemds` from the repository root. For running the freshly built executable JAR (e.g., `target/SystemDS.jar`) on Spark, see the Spark section in [Execute SystemDS](run.html).
+This allows you to run `systemds` from the repository root. For running the freshly built executable JAR (e.g., `target/SystemDS.jar`) on Spark, see the Spark section in [Execute SystemDS](run).
 
 # 5. Run A Component Test
 
@@ -219,4 +219,4 @@ To run other tests simply specify other packages by modifying the test argument 
 
 # 6. Next Steps
 
-Now everything is setup and ready to go! For running scripts in Spark mode or experimenting with federated workers, see the Execution Guide: [Execute SystemDS](run.html)
+Now everything is setup and ready to go! For running scripts in Spark mode or experimenting with federated workers, see the Execution Guide: [Execute SystemDS](run)

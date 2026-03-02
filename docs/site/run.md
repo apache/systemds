@@ -39,8 +39,8 @@ This guide explains how to run SystemDS regardless of whether you installed it f
 This guide assumes that SystemDS has already been installed successfully.
 
 Please make sure you have followed one of the installation guides:
-- [Install SystemDS from a Release](release_install.html)
-- [Install SystemDS from Source](source_install.html)
+- [Install SystemDS from a Release](release_install)
+- [Install SystemDS from Source](source_install)
 
 In particular, ensure that:
 - Java 17 is installed
@@ -73,16 +73,16 @@ Hello, World!
 If you are running MacOS and encounter an error message similar to `realpath: illegal option -- -` when executing `systemds hello.dml`. You may try to replace the system-wide command `realpath` with the homebrew version `grealpath` that comes with the `coreutils`. Alternatively, you may change all occurrences within the script accordingly, i.e., by prepending a `g` to avoid any side effects.
 
 ### (Optional) Ubuntu Note: `Invalid or corrupt jarfile hello.dml`
-On some Ubuntu setups (especially clean environments such as Docker images), running `systemds -f hello.dml` may result in an error like `Invalid or corrupt jarfile hello.dml`. If this happens, the SystemDS launcher may not automatically locate the correct JAR. To fix this, export `SYSTEMDS_JAR_FILE` to point to the JAR shipped with the release. Please refer to the Ubuntu troubleshooting section in the installation guide for a detailed workaround: [Release Installation – Ubuntu Note](release_install.html#35-run-the-script)
+On some Ubuntu setups (especially clean environments such as Docker images), running `systemds -f hello.dml` may result in an error like `Invalid or corrupt jarfile hello.dml`. If this happens, the SystemDS launcher may not automatically locate the correct JAR. To fix this, export `SYSTEMDS_JAR_FILE` to point to the JAR shipped with the release. Please refer to the Ubuntu troubleshooting section in the installation guide for a detailed workaround: [Release Installation – Ubuntu Note](release_install#35-run-the-script)
 
 ### (Optional) Windows Note: `systemds` Command Not Found
 On Windows (e.g., PowerShell), running `systemds -f hello.dml` may fail with an error indicating that `systemds` is not recognized as a command. This is expected, since the `systemds` launcher in `bin/` is implemented as a shell script,
-which cannot be executed natively on Windows. In this case, SystemDS should be invoked directly via the runnable JAR using `java -jar`. For a detailed Windows-specific walkthrough, please refer to the installation guide: [Release Installation – Windows Notes](release_install.html#2-install-on-windows)
+which cannot be executed natively on Windows. In this case, SystemDS should be invoked directly via the runnable JAR using `java -jar`. For a detailed Windows-specific walkthrough, please refer to the installation guide: [Release Installation – Windows Notes](release_install#2-install-on-windows)
 
 
 ### 2.2 Create a Real Example
 
-This example demonstrates local execution of a real script `Univar-stats.dml`. The relevant commands to run this example with SystemDS is described in the DML Language reference guide at [DML Language Reference](dml-language-reference.html).
+This example demonstrates local execution of a real script `Univar-stats.dml`. The relevant commands to run this example with SystemDS is described in the DML Language reference guide at [DML Language Reference](dml-language-reference).
 
 Prepare the data (macOS: use `curl`instead of `wget`):
 ```bash
@@ -252,7 +252,7 @@ This starts a worker on port `8001`.
 
 ### 4.2 Next steps and full examples
 
-For complete, runnable examples of federated execution (including data files, metadata, and Python code), see the official [Federated Environment guide](https://systemds.apache.org/docs/3.3.0/api/python/guide/federated.html)
+For complete, runnable examples of federated execution (including data files, metadata, and Python code), see the official [Federated Environment guide](https://systemds.apache.org/docs/3.3.0/api/python/guide/federated)
 
 ### Using Intel MKL native instructions
 

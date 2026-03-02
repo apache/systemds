@@ -29,7 +29,7 @@ This guide explains how to install and set up SystemDS using the pre-built relea
 - [1. Download a Release](#1-download-a-release)
 - [2. Install on Windows](#2-install-on-windows)
 - [3. Install on Ubuntu 22.04](#3-install-on-ubuntu-2204)
-- [4. Install on macOS](#4-install-on-macos)
+- [4. Install on MacOS](#4-install-on-macos)
 
 ---
 
@@ -37,7 +37,7 @@ This guide explains how to install and set up SystemDS using the pre-built relea
 
 Download the official release archive from the Apache SystemDS website:
 
-https://systemds.apache.org/download
+<https://systemds.apache.org/download/>
 
 After downloading the file `systemds-<VERSION>.tar.gz`, place the file in any directory you choose for installation.
 
@@ -64,7 +64,7 @@ Use Windows built-in extractor.
 
 On Windows, the `systemds`CLI wrapper may not be executable. This is expected because the `bin/systemds`launcher is implemented as a shell script, which Windows cannot execute natively. To verify the installation on Windows, navigate to the bin directory and run the JAR directly. Note that running `systemds -help` without JAR may result in a CommandNotFoundExeption:
 
-```bash
+```ps1
 java -jar systemds-<VERSION>.jar -help
 ```
 
@@ -73,7 +73,7 @@ You should see usage information as an output printed to the console.
 ### 2.3 Create a Simple Script
 
 On Windows, especially when using PowerShell, creating text files via shell redirection (e.g., echo...) may result in unexpected encoding or invisible characters. This can lead to parsing errors when executing the script, even though the file appears correct in an editor. Therefore, you may try creating the file explicitly using PowerShell:
-```bash
+```ps1
 Set-Content -Path .\hello.dml -Value 'print("Hello World!")' -Encoding Ascii
 ```
 
@@ -81,24 +81,24 @@ This ensures the script is stored as plain text without additional encoding meta
 Note: This behavior depends on the shell and environment configuration and may not affect all Windows setups.
 
 Verify the file contents:
-```bash
+```ps1
 Get-Content .\hello.dml
 ```
 
 Expected output:
-```bash
+```ps1
 print("Hello World!")
 ```
 
 ### 2.4 Run the Script
 
 Now run the script:
-```bash
+```ps1
 java -jar systemds-3.3.0.jar -f .\hello.dml
 ```
 
 Expected output:
-```bash
+```ps1
 Hello World!
 SystemDS Statistics:
 Total execution time: 0.012 sec.

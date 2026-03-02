@@ -413,7 +413,6 @@ class UnimodalOptimizer:
 
         ctx = mp.get_context("spawn")
         max_workers = min(len(dag_groups), mp.cpu_count())
-        max_workers = 1
         modality_pickle = pickle.dumps(modality)
         tasks_pickle = pickle.dumps(self.tasks)
         rep_cache_pickle = pickle.dumps(rep_cache) if rep_cache else None

@@ -152,7 +152,7 @@ class CLIPVisual(UnimodalRepresentation):
                     output = self.model.get_image_features(**inputs)
                 if len(output.shape) > 2:
                     output = torch.nn.functional.adaptive_avg_pool2d(output, (1, 1))
-                embeddings.append(
+                embeddings.extend(
                     torch.flatten(output, 1)
                     .detach()
                     .cpu()

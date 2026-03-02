@@ -49,7 +49,7 @@ To run the system we also have to setup some Hadoop and Spark specific libraries
 
 On Windows, cloning large repositories via GitHub Desktop may stall in some environments. If this happens, cloning via the Git command line is a reliable alternative.
 Example:
-```bash
+```ps1
 git clone https://github.com/apache/systemds.git 
 ```
 

@@ -21,8 +21,6 @@ limitations under the License.
 {% endcomment %}
 -->
 
-# Running SystemDS
-
 This guide explains how to run SystemDS regardless of whether you installed it from a Release or built it from Source. All execution modes -local, Spark, and federated- are covered in this document.
 
 ---
@@ -47,6 +45,7 @@ In particular, ensure that:
 - Spark 3.x is available if you plan to run SystemDS on Spark
 - SystemDS is installed following the Release or Source installation guide
 - Required environment variables (`SYSTEMDS_ROOT`, `PATH`, and if applicable `SYSTEMDS_JAR_FILE`) are set
+
 ---
 
 # 2. Run a Simple Script Locally
@@ -190,7 +189,7 @@ SystemDS can be executed on Spark using the main executable JAR. The location of
 - a **Release archive**, or
 - a **Source-build installation** (built with Maven)
 
-### 3.1 Running with a Release installation
+### 3.1 Running with a Release Installation
 
 If you installed SystemDS from a release archive, locate the runnable JAR in the release root directory. It is typically named like `systemds-<version>.jar`.
 
@@ -204,7 +203,7 @@ Run:
 spark-submit "$SYSTEMDS_ROOT/systemds-<version>.jar" -f hello.dml
 ```
 
-### 3.2 Running with a Source-build installation
+### 3.2 Running with a Source-build Installation
 
 If you cloned the SystemDS repository and built it yourself, you must first run Maven to generate the executable JAR.
 
@@ -240,7 +239,7 @@ Federated mode allows SystemDS to execute operations on data located on remote o
 
 Note: The SystemDS documentation provides federated execution examples primarily via the Python API. This Quickstart demonstrates only how to start a federated worker, and refers users to the official Federated Environment guide for complete end-to-end examples.
 
-### 4.1 Start a federated worker
+### 4.1 Start a Federated Worker
 
 Run in a separate terminal:
 
@@ -250,11 +249,11 @@ systemds WORKER 8001
 
 This starts a worker on port `8001`.
 
-### 4.2 Next steps and full examples
+### 4.2 Next Steps and Full Examples
 
 For complete, runnable examples of federated execution (including data files, metadata, and Python code), see the official [Federated Environment guide](https://systemds.apache.org/docs/3.3.0/api/python/guide/federated)
 
-### Using Intel MKL native instructions
+### Using Intel MKL Native Instructions
 
 To use the MKL acceleration download and install the latest supported MKL library (<=2019.5) from [1],
 set the environment variables with the MKL-provided script `. /opt/intel/bin/compilervars.sh intel64` (note the dot and

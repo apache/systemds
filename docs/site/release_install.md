@@ -22,8 +22,6 @@ limitations under the License.
 {% endcomment %}
 -->
 
-# Install SystemDS from a Release
-
 This guide explains how to install and set up SystemDS using the pre-built release archives. 
 
 ---
@@ -164,7 +162,7 @@ Expected output:
 Hello World!
 ```
 
-# 4. Install on macOS
+# 4. Install on MacOS
 
 ### 4.1 Extract the Release
 

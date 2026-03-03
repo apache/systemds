@@ -97,10 +97,13 @@ public class WriterBinaryBlock extends MatrixWriter {
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		final Writer writer = IOUtilFunctions.getSeqWriter(path, job, _replication);
 		try {
-			MatrixIndexes index = new MatrixIndexes(1, 1);
-			MatrixBlock block = new MatrixBlock((int) Math.max(Math.min(rlen, blen), 1),
-				(int) Math.max(Math.min(clen, blen), 1), true);
-			writer.append(index, block);
+			// For 0xN or Nx0, emit a valid sequence file header only (no blocks).
+			if(rlen > 0 && clen > 0) {
+				MatrixIndexes index = new MatrixIndexes(1, 1);
+				MatrixBlock block = new MatrixBlock((int) Math.max(Math.min(rlen, blen), 1),
+					(int) Math.max(Math.min(clen, blen), 1), true);
+				writer.append(index, block);
+			}
 		}
 		finally {
 			IOUtilFunctions.closeSilently(writer);

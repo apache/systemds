@@ -74,6 +74,8 @@ public class AppendOOCInstruction extends BinaryOOCInstruction {
 		MatrixObject in1 = ec.getMatrixObject(input1);
 		MatrixObject in2 = ec.getMatrixObject(input2);
 		validateInput(in1, in2);
+		if(handleZeroDims(in1, in2, ec))
+			return;
 
 		OOCStream<IndexedMatrixValue> qIn1 = in1.getStreamHandle();
 		OOCStream<IndexedMatrixValue> qIn2 = in2.getStreamHandle();
@@ -170,6 +172,26 @@ public class AppendOOCInstruction extends BinaryOOCInstruction {
 				"Append-cbind is not possible for input matrices " + input1.getName() + " and " + input2.getName()
 					+ " with different number of rows: " + m1.getNumRows() + " vs " + m2.getNumRows());
 		}
+	}
+
+	private boolean handleZeroDims(MatrixObject m1, MatrixObject m2, ExecutionContext ec) {
+		long rows = m1.getNumRows();
+		long cols1 = m1.getNumColumns();
+		long cols2 = m2.getNumColumns();
+		if(rows == 0 || (cols1 == 0 && cols2 == 0)) {
+			OOCStream<IndexedMatrixValue> empty = createWritableStream();
+			empty.closeInput();
+			ec.getMatrixObject(output).setStreamHandle(empty);
+		}
+		else if(cols1 == 0) {
+			ec.getMatrixObject(output).setStreamHandle(m2.getStreamHandle());
+		}
+		else if(cols2 == 0) {
+			ec.getMatrixObject(output).setStreamHandle(m1.getStreamHandle());
+		}
+		else return false;
+
+		return true;
 	}
 
 	private static MatrixBlock sliceCols(MatrixBlock in, int colStart, int colEndExclusive) {

@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.ooc.util;
 
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.IndexRange;
 
 import java.util.ArrayList;
@@ -59,5 +60,14 @@ public class OOCUtils {
 			for (long c = cs; c <= ce; c++)
 				list.add(new MatrixIndexes(r, c));
 		return list;
+	}
+
+	public static long getNumBlocks(DataCharacteristics dc) {
+		if (dc != null && dc.dimsKnown() && dc.getBlocksize() > 0) {
+			if(dc.getCols() == 0 || dc.getRows() == 0)
+				return 0;
+			return dc.getNumBlocks();
+		}
+		return -1;
 	}
 }

@@ -75,6 +75,7 @@ class OpenAIBackend:
         model = config.get("model", "gpt-4.1-mini")
         max_output_tokens = int(config.get("max_output_tokens", config.get("max_tokens", 256)))
         temperature = config.get("temperature", 0.0)
+        top_p = float(config.get("top_p", 0.9))
         use_streaming = config.get("streaming", False)
         max_retries = int(config.get("max_retries", 5))
         base_sleep = float(config.get("base_sleep_s", 0.5))
@@ -87,11 +88,11 @@ class OpenAIBackend:
                 try:
                     if use_streaming:
                         result = self._generate_streaming(
-                            prompt, model, max_output_tokens, temperature
+                            prompt, model, max_output_tokens, temperature, top_p
                         )
                     else:
                         result = self._generate_non_streaming(
-                            prompt, model, max_output_tokens, temperature
+                            prompt, model, max_output_tokens, temperature, top_p
                         )
                     
                     results.append(result)
@@ -112,13 +113,14 @@ class OpenAIBackend:
 
         return results
     
-    def _generate_non_streaming(self, prompt: str, model: str, max_output_tokens: int, temperature: float) -> Dict[str, Any]:
+    def _generate_non_streaming(self, prompt: str, model: str, max_output_tokens: int, temperature: float, top_p: float) -> Dict[str, Any]:
         t0 = time.perf_counter()
         resp = self.client.responses.create(
             model=model,
             input=prompt,
             max_output_tokens=max_output_tokens,
             temperature=temperature,
+            top_p=top_p,
         )
         t1 = time.perf_counter()
 
@@ -141,13 +143,14 @@ class OpenAIBackend:
             "extra": extra,
         }
     
-    def _generate_streaming(self, prompt: str, model: str, max_output_tokens: int, temperature: float) -> Dict[str, Any]:
+    def _generate_streaming(self, prompt: str, model: str, max_output_tokens: int, temperature: float, top_p: float) -> Dict[str, Any]:
         t0 = time.perf_counter()
         stream = self.client.responses.create(
             model=model,
             input=prompt,
             max_output_tokens=max_output_tokens,
             temperature=temperature,
+            top_p=top_p,
             stream=True,
         )
         

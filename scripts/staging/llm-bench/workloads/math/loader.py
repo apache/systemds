@@ -110,7 +110,7 @@ def extract_number_from_response(text: str) -> Optional[str]:
 
     # bold / boxed
     for pat in [r'\*\*\$?([0-9,]+(?:\.[0-9]+)?)[^*]*\*\*',
-                r'\\boxed\{([0-9,]+(?:\.[0-9]+)?)\}']:
+                r'\\boxed\{\s*\$?([0-9,]+(?:\.[0-9]+)?)']:
         matches = re.findall(pat, main, re.IGNORECASE)
         if matches:
             return clean_num(matches[0])

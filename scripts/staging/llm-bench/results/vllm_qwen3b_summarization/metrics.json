@@ -1,30 +1,94 @@
 {
   "n": 50.0,
-  "latency_ms_mean": 357.48520554974675,
-  "latency_ms_std": 140.51130489352389,
-  "latency_ms_min": 157.2732850909233,
-  "latency_ms_max": 660.9284409787506,
-  "latency_ms_p50": 334.4448370626196,
-  "latency_ms_p95": 653.8579267216846,
-  "latency_ms_cv": 0.3930548809074301,
-  "throughput_req_per_s": 2.7960121385357626,
-  "accuracy_mean": 0.62,
-  "accuracy_count": "31/50",
-  "avg_rouge1_f": 0.22561204293161857,
-  "avg_rouge1_p": 0.16805959474728246,
-  "avg_rouge1_r": 0.3960055630754561,
-  "avg_rouge2_f": 0.05613126529650811,
-  "avg_rouge2_p": 0.04189195900916775,
-  "avg_rouge2_r": 0.09892790757978488,
-  "avg_rougeL_f": 0.15730631952793084,
-  "avg_rougeL_p": 0.11801396579642426,
-  "avg_rougeL_r": 0.2724012687056738,
-  "memory_mb_initial": 148.0,
-  "memory_mb_peak": 148.0,
-  "memory_mb_avg": 148.0,
-  "cpu_percent_avg": 2.5555555555555554,
-  "electricity_kwh": 0.0017377753047557133,
-  "electricity_cost_usd": 0.0005213325914267139,
-  "hardware_amortization_usd": 0.009930144598604076,
-  "total_compute_cost_usd": 0.01045147719003079
+  "latency_ms_mean": 365.1818828936666,
+  "latency_ms_std": 145.16886848456352,
+  "latency_ms_min": 152.92260283604264,
+  "latency_ms_max": 654.5956467743963,
+  "latency_ms_p50": 346.81198990438133,
+  "latency_ms_p95": 633.1704806885681,
+  "latency_ms_cv": 0.39752483703260183,
+  "throughput_req_per_s": 2.736957873898601,
+  "accuracy_mean": 0.5,
+  "accuracy_count": "25/50",
+  "avg_rouge1_f": 0.21982158261735776,
+  "avg_rouge1_p": 0.16366742942680357,
+  "avg_rouge1_r": 0.3870561513334613,
+  "avg_rouge2_f": 0.05656068176528814,
+  "avg_rouge2_p": 0.041799815937229284,
+  "avg_rouge2_r": 0.10120773098546643,
+  "avg_rougeL_f": 0.1566062476121769,
+  "avg_rougeL_p": 0.11694117759894457,
+  "avg_rougeL_r": 0.27368980733011905,
+  "electricity_kwh": 0.0017761000845025086,
+  "electricity_cost_usd": 0.0005328300253507525,
+  "hardware_amortization_usd": 0.010149143340014335,
+  "total_compute_cost_usd": 0.010681973365365088,
+  "memory_mb_initial": 140.0,
+  "memory_mb_peak": 159.0,
+  "memory_mb_avg": 158.48648648648648,
+  "cpu_percent_avg": 2.7027027027027026,
+  "gpu_info": {
+    "gpu_count": 3,
+    "gpus": [
+      {
+        "index": 0,
+        "name": "NVIDIA H100 PCIe",
+        "memory_total_mb": 81559.0,
+        "memory_used_mb": 30990.6875,
+        "memory_free_mb": 50568.3125,
+        "gpu_utilization_pct": 0,
+        "memory_utilization_pct": 0
+      },
+      {
+        "index": 1,
+        "name": "NVIDIA H100 PCIe",
+        "memory_total_mb": 81559.0,
+        "memory_used_mb": 74773.125,
+        "memory_free_mb": 6785.875,
+        "gpu_utilization_pct": 0,
+        "memory_utilization_pct": 0
+      },
+      {
+        "index": 2,
+        "name": "NVIDIA H100 PCIe",
+        "memory_total_mb": 81559.0,
+        "memory_used_mb": 485.5625,
+        "memory_free_mb": 81073.4375,
+        "gpu_utilization_pct": 0,
+        "memory_utilization_pct": 0
+      }
+    ]
+  },
+  "gpu_after": {
+    "gpu_count": 3,
+    "gpus": [
+      {
+        "index": 0,
+        "name": "NVIDIA H100 PCIe",
+        "memory_total_mb": 81559.0,
+        "memory_used_mb": 30990.6875,
+        "memory_free_mb": 50568.3125,
+        "gpu_utilization_pct": 0,
+        "memory_utilization_pct": 0
+      },
+      {
+        "index": 1,
+        "name": "NVIDIA H100 PCIe",
+        "memory_total_mb": 81559.0,
+        "memory_used_mb": 74773.125,
+        "memory_free_mb": 6785.875,
+        "gpu_utilization_pct": 0,
+        "memory_utilization_pct": 0
+      },
+      {
+        "index": 2,
+        "name": "NVIDIA H100 PCIe",
+        "memory_total_mb": 81559.0,
+        "memory_used_mb": 485.5625,
+        "memory_free_mb": 81073.4375,
+        "gpu_utilization_pct": 0,
+        "memory_utilization_pct": 0
+      }
+    ]
+  }
 }

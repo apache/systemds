@@ -21,7 +21,6 @@
 
 """vLLM backend -- connects to a running vLLM OpenAI-compatible server."""
 
-import json
 import logging
 import os
 import time
@@ -53,63 +52,38 @@ class VLLMBackend:
     def generate(self, prompts: List[str], config: Dict[str, Any]) -> List[Dict[str, Any]]:
         max_tokens = int(config.get("max_tokens", config.get("max_output_tokens", 512)))
         temperature = float(config.get("temperature", 0.0))
+        top_p = float(config.get("top_p", 0.9))
         results = []
         for prompt in prompts:
             try:
-                results.append(self._generate_single(prompt, max_tokens, temperature))
+                results.append(self._generate_single(prompt, max_tokens, temperature, top_p))
             except Exception as e:
                 logger.error("vLLM generation failed: %s", e)
                 results.append({"text": "", "latency_ms": 0.0, "extra": {"error": repr(e)}})
         return results
 
-    def _generate_single(self, prompt: str, max_tokens: int, temperature: float) -> Dict[str, Any]:
+    def _generate_single(self, prompt: str, max_tokens: int, temperature: float, top_p: float) -> Dict[str, Any]:
         payload = {
             "model": self.model,
             "prompt": prompt,
             "max_tokens": max_tokens,
             "temperature": temperature,
-            "stream": True,
+            "top_p": top_p,
+            "stream": False,
         }
 
         t0 = time.perf_counter()
-        t_first = None
-        chunks = []
-        usage_data = None
-
-        with requests.post(
+        resp = requests.post(
             f"{self.base_url}/v1/completions",
             json=payload,
             headers={"Content-Type": "application/json"},
-            stream=True,
-            timeout=300,
-        ) as resp:
-            resp.raise_for_status()
-            for line in resp.iter_lines():
-                if not line:
-                    continue
-                line = line.decode("utf-8")
-                if not line.startswith("data: "):
-                    continue
-                data_str = line[6:]
-                if data_str == "[DONE]":
-                    break
-                try:
-                    chunk = json.loads(data_str)
-                except json.JSONDecodeError:
-                    continue
-
-                choices = chunk.get("choices", [])
-                if choices and t_first is None and choices[0].get("text"):
-                    t_first = time.perf_counter()
-                for choice in choices:
-                    t = choice.get("text", "")
-                    if t:
-                        chunks.append(t)
-                if "usage" in chunk:
-                    usage_data = chunk["usage"]
-
+            timeout=(10, 300),
+        )
         t1 = time.perf_counter()
-        text = "".join(chunks)
+        resp.raise_for_status()
+
+        body = resp.json()
+        text = body["choices"][0]["text"]
         total_ms = (t1 - t0) * 1000.0
 
         result: Dict[str, Any] = {
@@ -118,12 +92,7 @@ class VLLMBackend:
             "extra": {},
         }
 
-        # only report TTFT if we actually measured first-token arrival
-        if t_first is not None:
-            result["ttft_ms"] = (t_first - t0) * 1000.0
-            result["generation_ms"] = (t1 - t_first) * 1000.0
-
-        # only report token counts if the server returned them
+        usage_data = body.get("usage")
         if usage_data:
             result["extra"]["usage"] = {
                 "input_tokens": usage_data.get("prompt_tokens", 0),

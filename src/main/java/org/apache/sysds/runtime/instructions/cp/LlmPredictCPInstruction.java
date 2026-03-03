@@ -58,6 +58,8 @@ public class LlmPredictCPInstruction extends ParameterizedBuiltinCPInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		FrameBlock prompts = ec.getFrameInput(params.get("target"));
 		String url = params.get("url");
+		String model = params.containsKey("model") ?
+			params.get("model") : null;
 		int maxTokens = params.containsKey("max_tokens") ?
 			Integer.parseInt(params.get("max_tokens")) : 512;
 		double temperature = params.containsKey("temperature") ?
@@ -73,7 +75,7 @@ public class LlmPredictCPInstruction extends ParameterizedBuiltinCPInstruction {
 		List<Callable<String[]>> tasks = new ArrayList<>(n);
 		for(int i = 0; i < n; i++) {
 			String prompt = prompts.get(i, 0).toString();
-			tasks.add(() -> callLlmEndpoint(prompt, url, maxTokens, temperature, topP));
+			tasks.add(() -> callLlmEndpoint(prompt, url, model, maxTokens, temperature, topP));
 		}
 
 		try {
@@ -109,7 +111,7 @@ public class LlmPredictCPInstruction extends ParameterizedBuiltinCPInstruction {
 	}
 
 	private static String[] callLlmEndpoint(String prompt, String url,
-			int maxTokens, double temperature, double topP) {
+			String model, int maxTokens, double temperature, double topP) {
 		long t0 = System.nanoTime();
 
 		// validate URL and open connection
@@ -117,7 +119,7 @@ public class LlmPredictCPInstruction extends ParameterizedBuiltinCPInstruction {
 		try {
 			conn = (HttpURLConnection) new URI(url).toURL().openConnection();
 		}
-		catch(URISyntaxException | MalformedURLException e) {
+		catch(URISyntaxException | MalformedURLException | IllegalArgumentException e) {
 			throw new DMLRuntimeException(
 				"llmPredict: invalid URL '" + url + "'. "
 				+ "Expected format: http://host:port/v1/completions", e);
@@ -129,6 +131,8 @@ public class LlmPredictCPInstruction extends ParameterizedBuiltinCPInstruction {
 
 		try {
 			JSONObject req = new JSONObject();
+			if(model != null)
+				req.put("model", model);
 			req.put("prompt", prompt);
 			req.put("max_tokens", maxTokens);
 			req.put("temperature", temperature);
@@ -137,7 +141,7 @@ public class LlmPredictCPInstruction extends ParameterizedBuiltinCPInstruction {
 			conn.setRequestMethod("POST");
 			conn.setRequestProperty("Content-Type", "application/json");
 			conn.setConnectTimeout(10_000);
-			conn.setReadTimeout(120_000);
+			conn.setReadTimeout(300_000);
 			conn.setDoOutput(true);
 
 			try(OutputStream os = conn.getOutputStream()) {

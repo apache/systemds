@@ -38,7 +38,7 @@ _DEFAULT_LIB_DIR = _PROJECT_ROOT / "target" / "lib"
 # DML script that uses the native llmPredict built-in
 _DML_SCRIPT = (
     'prompts = read("prompts", data_type="frame")\n'
-    'results = llmPredict(target=prompts, url=$url, max_tokens=$mt,'
+    'results = llmPredict(target=prompts, url=$url, model=$model, max_tokens=$mt,'
     ' temperature=$temp, top_p=$tp, concurrency=$conc)\n'
     'write(results, "results")'
 )
@@ -105,13 +105,14 @@ class SystemDSBackend:
 
         t_pipeline_start = time.perf_counter()
 
-        script_key = (self.inference_url, max_tokens, temperature, top_p, concurrency)
+        script_key = (self.inference_url, self.model, max_tokens, temperature, top_p, concurrency)
         if script_key in self._script_cache:
             ps = self._script_cache[script_key]
             logger.debug("Reusing cached PreparedScript for key %s", script_key)
         else:
             args = self._gateway.jvm.java.util.HashMap()
             args.put("$url", self.inference_url)
+            args.put("$model", self.model)
             args.put("$mt", str(max_tokens))
             args.put("$temp", str(temperature))
             args.put("$tp", str(top_p))
@@ -147,7 +148,7 @@ class SystemDSBackend:
             if "java.net.SocketTimeoutException" in err_msg:
                 raise RuntimeError(
                     "Inference server timed out. The server may be overloaded "
-                    "or the read timeout (120 s) was exceeded."
+                    "or the read timeout (300 s) was exceeded."
                 ) from e
             raise RuntimeError(
                 f"SystemDS executeScript failed: {err_msg}"

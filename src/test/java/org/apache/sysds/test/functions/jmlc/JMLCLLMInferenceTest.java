@@ -109,11 +109,12 @@ public class JMLCLLMInferenceTest extends AutomatedTestBase {
 				Assert.fail("Expected DMLRuntimeException for unreachable server");
 			}
 			catch (DMLRuntimeException e) {
-				System.out.println("Correctly caught: " + e.getMessage());
+				String fullMsg = getExceptionChainMessage(e);
+				System.out.println("Correctly caught: " + fullMsg);
 				Assert.assertTrue("Error should mention connection issue",
-					e.getMessage().contains("connection refused")
-					|| e.getMessage().contains("Connection refused")
-					|| e.getMessage().contains("server is running"));
+					fullMsg.contains("connection refused")
+					|| fullMsg.contains("Connection refused")
+					|| fullMsg.contains("server is running"));
 			}
 		}
 		catch (Exception e) {
@@ -147,10 +148,11 @@ public class JMLCLLMInferenceTest extends AutomatedTestBase {
 				Assert.fail("Expected DMLRuntimeException for invalid URL");
 			}
 			catch (DMLRuntimeException e) {
-				System.out.println("Correctly caught: " + e.getMessage());
+				String fullMsg = getExceptionChainMessage(e);
+				System.out.println("Correctly caught: " + fullMsg);
 				Assert.assertTrue("Error should mention invalid URL",
-					e.getMessage().contains("invalid URL")
-					|| e.getMessage().contains("Invalid URL"));
+					fullMsg.contains("invalid URL")
+					|| fullMsg.contains("Invalid URL"));
 			}
 		}
 		catch (Exception e) {
@@ -161,6 +163,16 @@ public class JMLCLLMInferenceTest extends AutomatedTestBase {
 		finally {
 			if (conn != null) conn.close();
 		}
+	}
+
+	private static String getExceptionChainMessage(Throwable t) {
+		StringBuilder sb = new StringBuilder();
+		while(t != null) {
+			if(sb.length() > 0) sb.append(" | ");
+			if(t.getMessage() != null) sb.append(t.getMessage());
+			t = t.getCause();
+		}
+		return sb.toString();
 	}
 
 	@Test

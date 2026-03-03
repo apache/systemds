@@ -54,6 +54,10 @@ class TestExtractNumber:
     def test_boxed(self):
         assert extract_number_from_response("\\boxed{99}") == "99"
 
+    def test_boxed_with_latex_text(self):
+        text = "**Final answer:**\n\\[\n\\boxed{25 \\text{ miles}}\n\\]"
+        assert extract_number_from_response(text) == "25"
+
     def test_equals_at_end(self):
         assert extract_number_from_response("5 + 3 = 8") == "8"
 

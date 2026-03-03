@@ -34,7 +34,7 @@ from systemds.scuro.representations.dimensionality_reduction import (
     DimensionalityReduction,
 )
 from systemds.scuro.utils.identifier import get_op_id, get_node_id
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict, defaultdict, deque
 
 
 class LRUCache:
@@ -162,6 +162,65 @@ class RepresentationDag:
 
         return not has_cycle(self.root_node_id, set())
 
+    def _get_node_representation_label(self, node: RepresentationNode) -> str:
+        if not node.operation:
+            if node.representation_index is None:
+                return f"modality={node.modality_id}"
+            return (
+                f"modality={node.modality_id}, "
+                f"representation_index={node.representation_index}"
+            )
+
+        try:
+            operation_instance = node.operation(params=node.parameters)
+            if hasattr(operation_instance, "name"):
+                return str(operation_instance.name)
+        except Exception:
+            pass
+
+        if hasattr(node.operation, "__name__"):
+            return str(node.operation.__name__)
+        return str(node.operation)
+
+    def to_graphviz(self, graph_name: str = "RepresentationDag", rankdir: str = "BT"):
+        try:
+            from graphviz import Digraph
+        except ImportError as exc:
+            raise ImportError(
+                "Graphviz visualization requires the 'graphviz' Python package. "
+                "Install it with 'pip install graphviz' and ensure Graphviz "
+                "binaries are available on your PATH."
+            ) from exc
+
+        graph = Digraph(name=graph_name)
+        graph.attr(rankdir=rankdir)
+
+        for node in self.nodes:
+            node_label = f"{node.node_id}\\n{self._get_node_representation_label(node)}"
+            node_shape = "ellipse" if not node.inputs else "box"
+            node_attributes = {"shape": node_shape}
+            if node.node_id == self.root_node_id:
+                node_attributes["style"] = "bold"
+            graph.node(node.node_id, label=node_label, **node_attributes)
+
+        for node in self.nodes:
+            for input_id in node.inputs:
+                graph.edge(input_id, node.node_id)
+
+        return graph
+
+    def render_graphviz(
+        self,
+        output_path: str,
+        format: str = "png",
+        view: bool = False,
+        cleanup: bool = True,
+    ) -> str:
+        graph = self.to_graphviz()
+        return graph.render(
+            filename=output_path, format=format, view=view, cleanup=cleanup
+        )
+
     def _compute_leaf_signature(self, node) -> Hashable:
         return ("leaf", node.modality_id, node.representation_index)
 
@@ -182,8 +241,10 @@ class RepresentationDag:
     ) -> Union[Dict[str, TransformedModality], TransformedModality]:
 
         def execute_node(node_id: str, task) -> TransformedModality:
-            if external_cache is not None and external_cache.get(node_id) is not None:
-                return external_cache.get(node_id)
+            if external_cache is not None:
+                cached = external_cache.get(node_id)
+                if cached is not None:
+                    return cached
 
             node = self.get_node_by_id(node_id)
 
@@ -197,12 +258,44 @@ class RepresentationDag:
             input_mods = [execute_node(input_id, task) for input_id in node.inputs]
             is_unimodal = len(input_mods) == 1
 
-            if (
-                external_cache is not None
-                and is_unimodal
-                and external_cache.get(node_id) is not None
-            ):
-                result = external_cache.get(node_id)
+            if external_cache is not None and is_unimodal:
+                cached = external_cache.get(node_id)
+                if cached is not None:
+                    result = cached
+                else:
+                    node_operation = node.operation(params=node.parameters)
+                    if gpu_id is not None and hasattr(node_operation, "gpu_id"):
+                        node_operation.gpu_id = gpu_id
+                    if len(input_mods) == 1:
+                        # It's a unimodal operation
+                        if isinstance(node_operation, Context):
+                            result = input_mods[0].context(node_operation)
+                        elif isinstance(node_operation, DimensionalityReduction):
+                            result = input_mods[0].dimensionality_reduction(
+                                node_operation
+                            )
+                        elif isinstance(node_operation, AggregatedRepresentation):
+                            result = node_operation.transform(input_mods[0])
+                        elif isinstance(node_operation, UnimodalRepresentation):
+                            if rep_cache is not None:
+                                result = rep_cache[node_operation.name]
+                            else:
+                                # Compute the representation
+                                result = input_mods[0].apply_representation(
+                                    node_operation
+                                )
+                    else:
+                        # It's a fusion operation
+                        fusion_op = node_operation
+                        if (
+                            hasattr(fusion_op, "needs_training")
+                            and fusion_op.needs_training
+                        ):
+                            result = input_mods[0].combine_with_training(
+                                input_mods[1:], fusion_op, task
+                            )
+                        else:
+                            result = input_mods[0].combine(input_mods[1:], fusion_op)
             else:
                 node_operation = node.operation(params=node.parameters)
                 if gpu_id is not None and hasattr(node_operation, "gpu_id"):
@@ -520,6 +613,71 @@ class CSEAwareDAGBuilder:
         return None
 
 
+def dags_to_graphviz(
+    dags: List[RepresentationDag],
+    graph_name: str = "RepresentationDagGroup",
+    rankdir: str = "BT",
+    show_dag_roots: bool = True,
+):
+    try:
+        from graphviz import Digraph
+    except ImportError as exc:
+        raise ImportError(
+            "Graphviz visualization requires the 'graphviz' Python package. "
+            "Install it with 'pip install graphviz' and ensure Graphviz "
+            "binaries are available on your PATH."
+        ) from exc
+
+    graph = Digraph(name=graph_name)
+    graph.attr(rankdir=rankdir)
+
+    root_ids = {dag.root_node_id for dag in dags}
+    rendered_nodes: Set[str] = set()
+    rendered_edges: Set[Tuple[str, str]] = set()
+
+    for dag_idx, dag in enumerate(dags):
+        if show_dag_roots:
+            dag_node_id = f"dag_{dag_idx}"
+            graph.node(
+                dag_node_id,
+                label=f"DAG {dag_idx}\\nroot={dag.root_node_id}",
+                shape="oval",
+                style="dashed",
+            )
+            graph.edge(dag_node_id, dag.root_node_id, style="dashed")
+
+        for node in dag.nodes:
+            if node.node_id not in rendered_nodes:
+                node_label = (
+                    f"{node.node_id}\\n{dag._get_node_representation_label(node)}"
+                )
+                node_shape = "ellipse" if not node.inputs else "box"
+                node_attributes = {"shape": node_shape}
+                if node.node_id in root_ids:
+                    node_attributes["style"] = "bold"
+                graph.node(node.node_id, label=node_label, **node_attributes)
+                rendered_nodes.add(node.node_id)
+
+            for input_id in node.inputs:
+                edge_key = (input_id, node.node_id)
+                if edge_key not in rendered_edges:
+                    graph.edge(input_id, node.node_id)
+                    rendered_edges.add(edge_key)
+
+    return graph
+
+
+def render_dags_graphviz(
+    dags: List[RepresentationDag],
+    output_path: str,
+    format: str = "png",
+    view: bool = False,
+    cleanup: bool = True,
+) -> str:
+    graph = dags_to_graphviz(dags)
+    return graph.render(filename=output_path, format=format, view=view, cleanup=cleanup)
+
+
 def group_dags_by_dependencies(
     dags: List[RepresentationDag],
 ) -> List[List[RepresentationDag]]:
@@ -568,3 +726,62 @@ def group_dags_by_dependencies(
         groups[root].append(dags[i])
 
     return list(groups.values())
+
+
+def deduplicate_dags(dags: List[RepresentationDag]) -> List[RepresentationDag]:
+    if not dags:
+        return []
+    unique_dags: List[RepresentationDag] = []
+    seen_signatures: Set[Hashable] = set()
+    for dag in dags:
+        dag_sig = dag.compute_full_node_signature(dag.root_node_id)
+        if dag_sig not in seen_signatures:
+            seen_signatures.add(dag_sig)
+            unique_dags.append(dag)
+    return unique_dags
+
+
+def build_node_graph(
+    dags: List[RepresentationDag],
+) -> Tuple[
+    Dict[str, RepresentationNode],
+    Dict[str, Set[str]],
+    Dict[str, Set[str]],
+    Set[str],
+    Set[str],
+    List[str],
+]:
+    dags = deduplicate_dags(dags)
+    node_map: Dict[str, RepresentationNode] = {}
+    children: Dict[str, Set[str]] = defaultdict(set)
+    parents: Dict[str, Set[str]] = defaultdict(set)
+    roots: Set[str] = set()
+    leaves: Set[str] = set()
+
+    for dag in dags:
+        roots.add(dag.root_node_id)
+        for node in dag.nodes:
+            node_map[node.node_id] = node
+            if not node.inputs:
+                leaves.add(node.node_id)
+            for parent_id in node.inputs:
+                parents[node.node_id].add(parent_id)
+                children[parent_id].add(node.node_id)
+
+    indegree = {node_id: len(parents.get(node_id, set())) for node_id in node_map}
+    queue = deque([node_id for node_id, deg in indegree.items() if deg == 0])
+    topo_order: List[str] = []
+    while queue:
+        node_id = queue.popleft()
+        topo_order.append(node_id)
+        for child_id in children.get(node_id, set()):
+            indegree[child_id] -= 1
+            if indegree[child_id] == 0:
+                queue.append(child_id)
+    if len(topo_order) != len(node_map):
+        raise ValueError("Node graph contains a cycle")
+    return node_map, children, parents, roots, leaves, topo_order
+
+
+def compute_parent_refcounts(children: Dict[str, Set[str]]) -> Dict[str, int]:
+    return {node_id: len(child_set) for node_id, child_set in children.items()}

@@ -76,6 +76,7 @@ class JSONLoader(BaseLoader):
         avg_length = 0
         if os.path.isfile(source_path):
             with open(source_path) as f:
+                json_file = json.load(f)
                 for id in self.indices:
                     try:
                         text = json_file[id][self.field]

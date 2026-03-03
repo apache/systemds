@@ -38,6 +38,18 @@ class VideoStats:
     max_num_channels: int
     num_instances: int
 
+    @property
+    def output_shape(self):
+        """
+        Approximate output shape for raw video tensors.
+
+        This is used by generic resource estimation logic which expects
+        a stats object to expose an ``output_shape`` iterable describing
+        the per-instance tensor shape. For videos we approximate this as
+        (max_length, max_height, max_width, max_num_channels).
+        """
+        return (self.max_length, self.max_height, self.max_width, self.max_num_channels)
+
 
 class VideoLoader(BaseLoader):
     def __init__(
@@ -103,6 +115,9 @@ class VideoLoader(BaseLoader):
         max_num_channels = 0
         num_instances = 0
         for file in os.listdir(source_path):
+            file_name = file.split(".")[0]
+            if file_name not in self.indices:
+                continue
             self.file_sanity_check(source_path + file)
             cap = cv2.VideoCapture(source_path + file)
 

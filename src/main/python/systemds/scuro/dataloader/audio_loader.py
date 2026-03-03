@@ -77,6 +77,9 @@ class AudioLoader(BaseLoader):
         avg_length = 0
         num_instances = 0
         for file in os.listdir(source_path):
+            file_name = file.split(".")[0]
+            if file_name not in self.indices:
+                continue
             self.file_sanity_check(source_path + file)
             audio, sr = librosa.load(source_path + file, dtype=self._data_type)
             num_instances += 1

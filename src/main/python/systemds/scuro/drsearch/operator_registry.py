@@ -113,7 +113,7 @@ class Registry:
         return self._context_operators[modality_type]
 
     def get_dimensionality_reduction_operators(self, modality_type):
-        return self._dimensionality_reduction_operators[modality_type]
+        return self._dimensionality_reduction_operators.get(modality_type, [])
 
     def get_fusion_operators(self):
         return self._fusion_operators

@@ -23,16 +23,17 @@ import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
 import multiprocessing as mp
-from typing import List, Any, Optional, Dict
+from typing import List, Any, Optional, Dict, Set, Tuple
 from functools import lru_cache
+
+import torch
 from systemds.scuro import ModalityType
-from systemds.scuro.drsearch.dag_group_scheduler import (
-    DAGGroupScheduler,
-    get_peak_memory_from_dag_group,
+from systemds.scuro.drsearch.node_scheduler import (
+    NodeResourceScheduler,
+    ExternalRefCountCache,
 )
 from systemds.scuro.drsearch.ranking import rank_by_tradeoff
 from systemds.scuro.drsearch.task import PerformanceMeasure
-from systemds.scuro.representations.fusion import Fusion
 from systemds.scuro.representations.concatenation import Concatenation
 from systemds.scuro.representations.hadamard import Hadamard
 from systemds.scuro.representations.sum import Sum
@@ -40,116 +41,66 @@ from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
 from systemds.scuro.modality.modality import Modality
-from systemds.scuro.representations.aggregate import Aggregation
 from systemds.scuro.drsearch.operator_registry import Registry
-from systemds.scuro.utils.schema_helpers import get_shape
 from systemds.scuro.utils.checkpointing import CheckpointManager
 from systemds.scuro.drsearch.representation_dag import (
     RepresentationDag,
     RepresentationNode,
     CSEAwareDAGBuilder,
-    get_consumer_count,
-    group_dags_by_dependencies,
-    pushdown_aggregation,
+    build_node_graph,
+    compute_parent_refcounts,
+    dags_to_graphviz,
+    deduplicate_dags,
 )
 from bisect import bisect_left
 from systemds.scuro.drsearch.representation_dag_visualizer import visualize_dag
-from systemds.scuro.drsearch.representation_dag import LRUCache
+from systemds.scuro.representations.context import Context
+from systemds.scuro.representations.dimensionality_reduction import (
+    DimensionalityReduction,
+)
+from systemds.scuro.representations.unimodal import UnimodalRepresentation
+from systemds.scuro.utils.memory_utility import estimate_modality_bytes
 
 
-def get_representation_chain(node, dag):
-    chain = []
-    if node.operation:
-        chain.append(node.operation)
-    for input_id in node.inputs:
-        input_node = dag.get_node_by_id(input_id)
-        if input_node and input_node.operation:
-            chain.extend(get_representation_chain(input_node, dag))
-    return chain
+def _execute_node_worker(
+    node: RepresentationNode,
+    input_mods: List[Any],
+    task: Any,
+    rep_cache: Optional[Dict[str, Any]],
+    gpu_id: Optional[int],
+):
+    # print(f"Executing node {node.node_id} inputs: {input_mods[0].modality_id}")
+    node_operation = node.operation(params=node.parameters)
+    if gpu_id is not None and hasattr(node_operation, "gpu_id"):
+        node_operation.gpu_id = gpu_id
+
+    if len(input_mods) == 1:
+        if isinstance(node_operation, Context):
+            return input_mods[0].context(node_operation)
+        if isinstance(node_operation, DimensionalityReduction):
+            return input_mods[0].dimensionality_reduction(node_operation)
+        if isinstance(node_operation, AggregatedRepresentation):
+            return node_operation.transform(input_mods[0])
+        if isinstance(node_operation, UnimodalRepresentation):
+            if rep_cache is not None and node_operation.name in rep_cache:
+                return rep_cache[node_operation.name]
+            return input_mods[0].apply_representation(node_operation)
+        return input_mods[0].apply_representation(node_operation)
+
+    fusion_op = node_operation
+    if hasattr(fusion_op, "needs_training") and fusion_op.needs_training:
+        return input_mods[0].combine_with_training(input_mods[1:], fusion_op, task)
+    return input_mods[0].combine(input_mods[1:], fusion_op)
 
 
-def _process_dag_group(
-    dag_group_pickle: bytes,
-    modality_pickle: bytes,
-    tasks_pickle: bytes,
-    rep_cache_pickle: Optional[bytes],
-    modality_id: int,
-    debug: bool,
-    dag_group_idx: int,
-    checkpoint_path: str,
-    gpu_id: int,
-) -> Dict[str, Any]:
-    checkpoint_manager = CheckpointManager(
-        checkpoint_path,
-        f"unimodal_checkpoint_group_{modality_id}_{dag_group_idx}_",
-        checkpoint_every=1,
-        resume=True,
-    )
-    results = []
-    if debug:
-        print(f"Processing modality {modality_id} with {dag_group_idx} dag group")
-
-    # dag_group = pushdown_aggregation(dag_group) # TODO: include this functionality in ther unimodal repreresentations
-
-    # Resume from checkpoint if available
-    skip_count = 0
-    loaded = checkpoint_manager.load_latest()
-    if loaded:
-        loaded_results, meta, _ = loaded
-        results = loaded_results
-        skip_count = len(loaded_results)
-        checkpoint_manager.eval_count = meta.get("eval_count", skip_count)
-        checkpoint_manager.counts_by_key = meta.get("eval_count_by_modality", {})
-        checkpoint_manager._last_checkpoint_eval_count = checkpoint_manager.eval_count
-
-    dag_group = pickle.loads(dag_group_pickle)
-    modality = pickle.loads(modality_pickle)
-    tasks = pickle.loads(tasks_pickle)
-    consumer_count = get_consumer_count(dag_group)
-
-    group_cache = LRUCache(max_size=6)
-    processed_count = 0
-
-    for i, dag in enumerate(dag_group):
-        representation = dag.execute(
-            [modality],
-            enable_cache=True,
-            external_cache=group_cache,
-            consumer_count=consumer_count,
-            gpu_id=gpu_id,
-        )
-
-        for task in tasks:
-            if processed_count < skip_count:
-                processed_count += 1
-                continue
-            processed_count += 1
-
-            start = time.perf_counter()
-            scores = task.run(representation.data)
-            end = time.perf_counter()
-
-            results.append(
-                {
-                    "scores": scores,
-                    "transform_time": representation.transform_time,
-                    "task_name": task.model.name,
-                    "task_time": end - start,
-                    "dag": dag,
-                    "modality_id": modality_id,
-                }
-            )
-
-            checkpoint_manager.increment(modality_id, 1, dag_group_idx=dag_group_idx)
-            checkpoint_manager.checkpoint_if_due(results, "eval_count_by_modality")
-        if debug:
-            print(
-                f"Processed {i} of {len(dag_group)} dag groups for modality {modality_id}"
-            )
-
-        if debug:
-            visualize_dag(dag)
-    return {"results": results}
+def _execute_task_worker(task: Any, data: Any, gpu_id: Optional[int]) -> Dict[str, Any]:
+    # print(f"Executing task {task.model.name} on GPU {gpu_id}")
+    if gpu_id is not None and hasattr(task, "model") and hasattr(task.model, "device"):
+        task.model.device = torch.device(f"cuda:{gpu_id}")
+    start = time.perf_counter()
+    scores = task.run(data)
+    end = time.perf_counter()
+    return {"scores": scores, "task_time": end - start}
 
 
 class UnimodalOptimizer:
@@ -201,6 +152,13 @@ class UnimodalOptimizer:
                 self._tasks_require_same_dims = False
 
         self._combination_operators = [Concatenation(), Hadamard(), Sum()]
+
+    def _create_scheduler(self):
+        manager = mp.Manager()
+        shared_state = manager.dict()
+        lock = manager.Lock()
+
+        return NodeResourceScheduler(shared_state=shared_state, lock=lock)
 
     @lru_cache(maxsize=128)
     def _get_modality_operators(self, modality_type):
@@ -296,9 +254,9 @@ class UnimodalOptimizer:
             n_workers = min(len(self.modalities), mp.cpu_count())
 
         manager = mp.Manager()
-        shared_state = manager.dict()
-        lock = manager.Lock()
-        scheduler = DAGGroupScheduler(shared_state=shared_state, lock=lock)
+        scheduler = NodeResourceScheduler(
+            shared_state=manager.dict(), lock=manager.Lock()
+        )
 
         ctx = mp.get_context("spawn")
         with ProcessPoolExecutor(max_workers=n_workers, mp_context=ctx) as executor:
@@ -358,6 +316,11 @@ class UnimodalOptimizer:
                     ),
                 )
                 self._merge_results(local_result)
+                new_count = self._count_results(local_result.results)
+                self._checkpoint_manager.increment(modality.modality_id, new_count)
+                self._checkpoint_manager.checkpoint_if_due(
+                    self.operator_performance.results, "eval_count_by_modality"
+                )
                 if self.save_all_results:
                     self.store_results(f"{modality.modality_id}_unimodal_results.pkl")
             except Exception as e:
@@ -369,6 +332,226 @@ class UnimodalOptimizer:
                     self.operator_performance.results, "eval_count_by_modality", {}
                 )
                 raise
+
+    def _estimate_node_resources(
+        self, modality, node_map, parents, topo_order
+    ) -> Tuple[Dict[str, tuple[float, float]], Dict[str, float]]:
+        def _bytes_from_stats(stats, default_bytes_per_value: int = 4) -> float:
+            if stats is None:
+                return 0.0
+            output_shape = getattr(stats, "output_shape", None)
+            num_instances = max(1, int(getattr(stats, "num_instances", 1)))
+            if not output_shape:
+                return 0.0
+            try:
+                element_count = 1
+                for dim in output_shape:
+                    element_count *= max(1, int(dim))
+                return float(num_instances * element_count * default_bytes_per_value)
+            except Exception:
+                return 0.0
+
+        def _estimate_output_bytes(op, input_stats, fallback: float) -> float:
+            try:
+                out = float(op.estimate_output_memory_bytes(input_stats))
+                if out > 0:
+                    return out
+            except Exception:
+                pass
+            try:
+                out_stats = op.get_output_shape(input_stats)
+            except Exception:
+                return fallback
+            return max(_bytes_from_stats(out_stats), fallback)
+
+        node_resources: Dict[str, tuple[float, float]] = {}
+        output_stats = {}
+        output_bytes: Dict[str, float] = {}
+        base_stats = modality.get_stats()
+        fallback_cpu = max(float(modality.estimate_memory_bytes()), 1.0)
+
+        for node_id in topo_order:
+            node = node_map[node_id]
+            if not node.inputs:
+                output_stats[node_id] = base_stats
+                output_bytes[node_id] = max(_bytes_from_stats(base_stats), fallback_cpu)
+                node_resources[node_id] = (0.0, 0.0)
+                continue
+
+            if self._is_task_node(node):
+                parent_id = node.inputs[0] if node.inputs else None
+                parent_stats = output_stats.get(parent_id, base_stats)
+                parent_bytes = max(
+                    1.0, float(output_bytes.get(parent_id, fallback_cpu))
+                )
+
+                task_idx = int(node.parameters.get("_task_idx", 0))
+                task_obj = self.tasks[task_idx]
+                model_obj = getattr(task_obj, "model", None)
+
+                output_shape = list(getattr(parent_stats, "output_shape", []) or [])
+                input_dim = int(output_shape[-1]) if output_shape else 1
+                n_train = len(getattr(task_obj, "train_indices", []) or [])
+                n_val = 0
+                if hasattr(task_obj, "cv_val_indices"):
+                    for fold in getattr(task_obj, "cv_val_indices", []) or []:
+                        n_val += len(fold)
+                n_test = len(getattr(task_obj, "test_indices", []) or [])
+                n_labels = 27
+                labels = getattr(task_obj, "labels", None)
+                if labels is not None and len(labels) > 0:
+                    try:
+                        first_label = labels[0]
+                        if hasattr(first_label, "__len__") and not isinstance(
+                            first_label, (str, bytes)
+                        ):
+                            n_labels = max(1, int(len(first_label)))
+                        else:
+                            n_labels = 1
+                    except Exception:
+                        n_labels = 27
+
+                cpu_peak = parent_bytes
+                gpu_peak = 0.0
+
+                if model_obj is not None and hasattr(
+                    model_obj, "estimate_peak_memory_bytes"
+                ):
+                    try:
+                        mem = model_obj.estimate_peak_memory_bytes(
+                            input_dim=input_dim,
+                            n_train_samples=max(1, n_train),
+                            n_labels=max(1, n_labels),
+                            n_val_samples=max(0, n_val),
+                            n_test_samples=max(0, n_test),
+                        )
+                        cpu_peak = float(mem.get("cpu_peak_bytes", cpu_peak))
+                        gpu_peak = float(mem.get("gpu_peak_bytes", gpu_peak))
+
+                        if hasattr(task_obj, "model") and hasattr(
+                            task_obj.model, "device"
+                        ):
+                            dev = str(getattr(task_obj.model, "device", "cpu"))
+                            if dev.startswith("cuda"):
+                                gpu_peak = max(gpu_peak, 1.2 * 1024**3)
+
+                        gpu_peak *= 1.35
+                    except Exception:
+                        pass
+
+                if cpu_peak <= 0:
+                    cpu_peak = parent_bytes * 2.0
+                if gpu_peak < 0:
+                    gpu_peak = 0.0
+
+                output_stats[node_id] = parent_stats
+                output_bytes[node_id] = parent_bytes
+                node_resources[node_id] = (max(1.0, cpu_peak), max(0.0, gpu_peak))
+                continue
+
+            parent_ids = list(parents.get(node_id, set()))
+            parent_stats = [
+                output_stats[parent_id]
+                for parent_id in parent_ids
+                if parent_id in output_stats
+            ]
+            input_stats = parent_stats[0] if parent_stats else base_stats
+            op = node.operation(params=node.parameters)
+            summed_parent_bytes = (
+                float(sum(output_bytes.get(parent_id, 0.0) for parent_id in parent_ids))
+                if parent_ids
+                else fallback_cpu
+            )
+            if summed_parent_bytes <= 0:
+                summed_parent_bytes = fallback_cpu
+
+            cpu_peak = 0.0
+            gpu_peak = 0.0
+            try:
+                peak = op.estimate_peak_memory_bytes(input_stats)
+                cpu_peak = float(peak.get("cpu_peak_bytes", 0.0))
+                gpu_peak = float(peak.get("gpu_peak_bytes", 0.0))
+            except Exception:
+                pass
+
+            try:
+                output_stats[node_id] = op.get_output_shape(input_stats)
+            except Exception:
+                output_stats[node_id] = input_stats
+
+            estimated_output_bytes = _estimate_output_bytes(
+                op,
+                input_stats,
+                max(_bytes_from_stats(output_stats[node_id]), fallback_cpu * 0.1),
+            )
+            output_bytes[node_id] = max(1.0, float(estimated_output_bytes))
+
+            if cpu_peak <= 0:
+                cpu_peak = summed_parent_bytes + output_bytes[node_id]
+            else:
+                cpu_peak = max(cpu_peak, output_bytes[node_id])
+
+            node_resources[node_id] = (cpu_peak, gpu_peak)
+        return node_resources, output_bytes
+
+    @staticmethod
+    def _is_task_node(node: RepresentationNode) -> bool:
+        return bool(getattr(node, "parameters", {}).get("_node_kind") == "task")
+
+    @staticmethod
+    def _is_memory_error(exception: Exception) -> bool:
+        msg = str(exception).lower()
+        if (
+            "cuda error" in msg
+            or "out of memory" in msg
+            or "not enough memory" in msg
+            or "cublas_status_alloc_failed" in msg
+            or "cublascreate" in msg
+            or "cuda error: cublas_status_alloc_failed" in msg
+        ):
+            return True
+        return isinstance(exception, torch.cuda.OutOfMemoryError)
+
+    def _expand_dags_with_task_roots(
+        self, dags: List[RepresentationDag], completed_task_nodes: Set[str]
+    ) -> Tuple[
+        List[RepresentationDag],
+        Dict[str, RepresentationDag],
+        Dict[str, str],
+        Dict[str, Set[str]],
+    ]:
+        expanded_dags: List[RepresentationDag] = []
+        task_node_to_dag: Dict[str, RepresentationDag] = {}
+        task_node_to_root: Dict[str, str] = {}
+        root_to_task_nodes: Dict[str, Set[str]] = {}
+
+        for dag in dags:
+            root_id = dag.root_node_id
+            for task_idx, _ in enumerate(self.tasks):
+                task_node_id = f"task_{root_id}_{task_idx}"
+                if task_node_id in completed_task_nodes:
+                    continue
+
+                task_node = RepresentationNode(
+                    node_id=task_node_id,
+                    operation=None,
+                    inputs=[root_id],
+                    parameters={
+                        "_node_kind": "task",
+                        "_task_idx": task_idx,
+                        "_dag_root_id": root_id,
+                    },
+                )
+
+                task_root_dag = RepresentationDag(
+                    nodes=[*dag.nodes, task_node], root_node_id=task_node_id
+                )
+                expanded_dags.append(task_root_dag)
+                task_node_to_dag[task_node_id] = dag
+                task_node_to_root[task_node_id] = root_id
+                root_to_task_nodes.setdefault(root_id, set()).add(task_node_id)
+
+        return expanded_dags, task_node_to_dag, task_node_to_root, root_to_task_nodes
 
     def _process_modality(self, modality, skip_remaining: int = 0, scheduler=None):
         local_results = UnimodalResults(
@@ -401,71 +584,204 @@ class UnimodalOptimizer:
             )
 
         dags = self.add_aggregation_operator(self.builders[modality.modality_id], dags)
+        dags = deduplicate_dags(dags)
+        dags_to_graphviz(dags).render(
+            filename=f"dags_{modality.modality_id}.png", format="png"
+        )
 
         if skip_remaining > 0:
             dags = dags[skip_remaining:]
 
-        dag_groups = group_dags_by_dependencies(dags)
-
-        rep_cache = None  # TODO: check if we can create this cache per dag group
+        rep_cache = None
         if hasattr(modality, "data_loader") and modality.data_loader.chunk_size:
             rep_cache = modality.apply_representations(operators)
 
-        ctx = mp.get_context("spawn")
-        max_workers = min(len(dag_groups), mp.cpu_count())
-        modality_pickle = pickle.dumps(modality)
-        tasks_pickle = pickle.dumps(self.tasks)
-        rep_cache_pickle = pickle.dumps(rep_cache) if rep_cache else None
+        node_checkpoint = CheckpointManager(
+            self.result_path or ".",
+            f"unimodal_nodes_checkpoint_{modality.modality_id}_",
+            checkpoint_every=self.checkpoint_every,
+            resume=self.resume,
+        )
+        checkpoint_entries = []
+        completed_roots: Set[str] = set()
+        completed_task_nodes: Set[str] = set()
+        loaded = node_checkpoint.load_latest()
+        if loaded:
+            loaded_entries, meta, _ = loaded
+            checkpoint_entries = loaded_entries or []
+            completed_roots = set(meta.get("completed_roots", []))
+            completed_task_nodes = set(meta.get("completed_task_nodes", []))
+            for result_entry in checkpoint_entries:
+                local_results.add_result(
+                    result_entry["scores"],
+                    result_entry["transform_time"],
+                    result_entry["task_name"],
+                    result_entry["task_time"],
+                    result_entry["dag"],
+                    modality.modality_id,
+                )
+            node_checkpoint.eval_count = meta.get("eval_count", len(checkpoint_entries))
+            node_checkpoint._last_checkpoint_eval_count = node_checkpoint.eval_count
+            node_checkpoint.counts_by_key = meta.get(
+                "eval_count_by_modality",
+                {modality.modality_id: len(checkpoint_entries)},
+            )
 
-        group_resources = [
-            get_peak_memory_from_dag_group(dag_group, modality)
-            for dag_group in dag_groups
-        ]
+        dags = [dag for dag in dags if dag.root_node_id not in completed_roots]
+        if completed_task_nodes:
+            pending_dags = []
+            for dag in dags:
+                pending = any(
+                    f"task_{dag.root_node_id}_{task_idx}" not in completed_task_nodes
+                    for task_idx, _ in enumerate(self.tasks)
+                )
+                if pending:
+                    pending_dags.append(dag)
+                else:
+                    completed_roots.add(dag.root_node_id)
+            dags = pending_dags
+        if not dags:
+            return local_results
+
+        expanded_dags, task_node_to_dag, task_node_to_root, root_to_task_nodes = (
+            self._expand_dags_with_task_roots(dags, completed_task_nodes)
+        )
+
+        if not expanded_dags:
+            return local_results
+        node_map, children, parents, roots, leaves, topo_order = build_node_graph(
+            expanded_dags
+        )
+        task_node_ids = set(task_node_to_root.keys())
+        if not task_node_ids:
+            return local_results
+        parent_remaining = compute_parent_refcounts(children)
+        unresolved_parents = {}
+        for node_id in node_map:
+            unresolved_parents[node_id] = sum(
+                1
+                for parent_id in parents.get(node_id, set())
+                if parent_id not in leaves
+            )
+
+        node_resources, estimated_output_bytes = self._estimate_node_resources(
+            modality, node_map, parents, topo_order
+        )
+        max_workers = max(1, min(len(node_map), mp.cpu_count()))
 
         if scheduler is None:
-            scheduler = DAGGroupScheduler()
+            scheduler = NodeResourceScheduler()
 
-        pending_dag_groups = set(range(len(dag_groups)))
-        running_dag_groups = {}
-        all_groups_succeeded = True
+        ready_nodes = [
+            node_id
+            for node_id in topo_order
+            if node_id not in leaves and unresolved_parents.get(node_id, 0) == 0
+        ]
+        running_nodes = {}
+        node_results = {leaf_id: modality for leaf_id in leaves}
+        external_cache = ExternalRefCountCache(scheduler)
+        memory_retry_counts: Dict[str, int] = {}
+        max_memory_retries = 25
+
+        ctx = mp.get_context("spawn")
         with ProcessPoolExecutor(max_workers=max_workers, mp_context=ctx) as executor:
-            while pending_dag_groups or running_dag_groups:
-                pending_resources = [
-                    (i, group_resources[i][0], group_resources[i][1])
-                    for i in pending_dag_groups
-                ]
-                ready_to_execute = scheduler.get_runnable(
-                    pending_resources, max_concurrent=max_workers
-                )
-                for group_id, gpu_id in ready_to_execute:
-                    pending_dag_groups.remove(group_id)
-                    dag_group = dag_groups[group_id]
-                    cpu_mem, gpu_mem = group_resources[group_id]
-                    future = executor.submit(
-                        _process_dag_group,
-                        pickle.dumps(dag_group),
-                        modality_pickle,
-                        tasks_pickle,
-                        rep_cache_pickle,
-                        modality.modality_id,
-                        self.debug,
-                        group_id,
-                        self.result_path,
-                        gpu_id,
-                    )
-                    running_dag_groups[future] = (group_id, cpu_mem, gpu_mem, gpu_id)
-                if not running_dag_groups:
+            while ready_nodes or running_nodes:
+                scheduled_any = False
+                for node_id in list(ready_nodes):
+                    cpu_mem, gpu_mem = node_resources.get(node_id, (1.0, 0.0))
+                    ok, gpu_id = scheduler.reserve_exec(cpu_mem, gpu_mem)
+                    if not ok:
+                        continue
+                    node = node_map[node_id]
+                    input_mods = []
+                    all_available = True
+                    for parent_id in node.inputs:
+                        parent_value = external_cache.get(parent_id)
+                        if parent_value is None:
+                            parent_value = node_results.get(parent_id)
+                        if parent_value is None:
+                            all_available = False
+                            break
+                        input_mods.append(parent_value)
+
+                    if not all_available:
+                        scheduler.release_exec(cpu_mem, gpu_mem, gpu_id)
+                        continue
+
+                    if not scheduler.can_execute_now(cpu_mem, gpu_mem, gpu_id):
+                        scheduler.release_exec(cpu_mem, gpu_mem, gpu_id)
+                        continue
+
+                    if self._is_task_node(node):
+                        task_idx = int(node.parameters.get("_task_idx", 0))
+                        future = executor.submit(
+                            _execute_task_worker,
+                            self.tasks[task_idx],
+                            input_mods[0].data if input_mods else None,
+                            gpu_id,
+                        )
+                    else:
+                        future = executor.submit(
+                            _execute_node_worker,
+                            node,
+                            input_mods,
+                            None,
+                            rep_cache,
+                            gpu_id,
+                        )
+                    running_nodes[future] = (node_id, cpu_mem, gpu_mem, gpu_id)
+                    ready_nodes.remove(node_id)
+                    scheduled_any = True
+
+                if not running_nodes:
                     break
-                done = next(as_completed(running_dag_groups), None)
+
+                done = next(as_completed(running_nodes), None)
                 if done is None:
                     break
-                group_id, cpu_mem, gpu_mem, gpu_id = running_dag_groups.pop(done)
-                scheduler.release(cpu_mem, gpu_mem, gpu_id)
-
+                node_id, cpu_mem, gpu_mem, gpu_id = running_nodes.pop(done)
+                scheduler.release_exec(cpu_mem, gpu_mem, gpu_id)
                 try:
-                    result_dict = future.result()
-
-                    for result_entry in result_dict["results"]:
+                    node = node_map[node_id]
+                    node_children = children.get(node_id, set())
+                    if self._is_task_node(node):
+                        task_payload = done.result()
+                        task_idx = int(node.parameters.get("_task_idx", 0))
+                        task = self.tasks[task_idx]
+                        root_id = task_node_to_root.get(node_id)
+                        dag = task_node_to_dag.get(node_id)
+                        parent_modality = None
+                        if node.inputs:
+                            parent_id = node.inputs[0]
+                            parent_modality = external_cache.get(parent_id)
+                            if parent_modality is None:
+                                parent_modality = node_results.get(parent_id)
+                        result_entry = {
+                            "scores": task_payload["scores"],
+                            "transform_time": getattr(
+                                parent_modality, "transform_time", 0.0
+                            ),
+                            "task_name": task.model.name,
+                            "task_time": task_payload["task_time"],
+                            "dag": dag,
+                            "modality_id": modality.modality_id,
+                        }
+                        checkpoint_entries.append(result_entry)
+                        node_checkpoint.increment(modality.modality_id, 1)
+                        completed_task_nodes.add(node_id)
+                        if root_id and root_id in root_to_task_nodes:
+                            if root_to_task_nodes[root_id].issubset(
+                                completed_task_nodes
+                            ):
+                                completed_roots.add(root_id)
+                        node_checkpoint.checkpoint_if_due(
+                            checkpoint_entries,
+                            "eval_count_by_modality",
+                            {
+                                "completed_roots": list(completed_roots),
+                                "completed_task_nodes": list(completed_task_nodes),
+                            },
+                        )
                         local_results.add_result(
                             result_entry["scores"],
                             result_entry["transform_time"],
@@ -474,54 +790,90 @@ class UnimodalOptimizer:
                             result_entry["dag"],
                             modality.modality_id,
                         )
+                        if (
+                            self.debug
+                            and root_id in completed_roots
+                            and dag is not None
+                        ):
+                            visualize_dag(dag)
+                    else:
+                        result_modality = done.result()
+                        node_results[node_id] = result_modality
+
+                        if len(node_children) > 0:
+                            result_mem = max(
+                                1.0, float(estimate_modality_bytes(result_modality))
+                            )
+                            if result_mem <= 1.0:
+                                result_mem = max(
+                                    1.0,
+                                    float(
+                                        estimated_output_bytes.get(node_id, result_mem)
+                                    ),
+                                )
+                            external_cache.put(
+                                node_id,
+                                result_modality,
+                                len(node_children),
+                                result_mem,
+                                0.0,
+                                gpu_id,
+                            )
+                            if external_cache.get(node_id) is not None:
+                                node_results.pop(node_id, None)
+
+                    for parent_id in node_map[node_id].inputs:
+                        parent_remaining[parent_id] = (
+                            parent_remaining.get(parent_id, 0) - 1
+                        )
+                        if parent_remaining[parent_id] <= 0:
+                            external_cache.evict(parent_id)
+                            node_results.pop(parent_id, None)
+
+                    for child_id in node_children:
+                        unresolved_parents[child_id] -= 1
+                        if unresolved_parents[child_id] == 0:
+                            ready_nodes.append(child_id)
                 except Exception as e:
-                    all_groups_succeeded = False
+                    if self._is_memory_error(e):
+                        retries = memory_retry_counts.get(node_id, 0) + 1
+                        memory_retry_counts[node_id] = retries
+                        if retries <= max_memory_retries:
+                            if node_id not in ready_nodes:
+                                ready_nodes.append(node_id)
+                            time.sleep(0.05)
+                            continue
+                        print(
+                            f"Node {node_id} exceeded memory retries ({max_memory_retries}) "
+                            f"for modality {modality.modality_id}"
+                        )
                     print(
-                        f"Error processing DAG group {group_id} for modality {modality.modality_id}: {e}"
+                        f"Error processing node {node_id} for modality {modality.modality_id}: {e}"
                     )
                     import traceback
 
                     traceback.print_exc()
+                if not scheduled_any and not running_nodes and ready_nodes:
+                    time.sleep(0.01)
 
-        # Clean up individual group checkpoint files on success
-        if all_groups_succeeded:
-            checkpoint_dir = self.result_path or "."
-            CheckpointManager.cleanup_by_prefix(
-                checkpoint_dir,
-                f"unimodal_checkpoint_group_{modality.modality_id}_",
+        if completed_roots or completed_task_nodes:
+            node_checkpoint.save_checkpoint(
+                checkpoint_entries,
+                "eval_count_by_modality",
+                {
+                    "completed_roots": list(completed_roots),
+                    "completed_task_nodes": list(completed_task_nodes),
+                },
             )
-
-        self._checkpoint_manager.checkpoint_if_due(
-            local_results.results[modality.modality_id], f"eval_count_by_modality"
-        )
-        self._checkpoint_manager.increment(
-            modality.modality_id,
-            len(local_results.results[modality.modality_id])
-            - self._checkpoint_manager.eval_count,
-        )
+            node_checkpoint.cleanup()
 
         if self.save_all_results:
             timestr = time.strftime("%Y%m%d-%H%M%S")
             file_name = f"{modality.modality_id}_unimodal_results_{timestr}.pkl"
-
             with open(file_name, "wb") as f:
                 pickle.dump(local_results.results, f)
 
         return local_results
-
-    def _get_representation_chain(
-        self, node: "RepresentationNode", dag: RepresentationDag
-    ) -> List[Any]:
-        representations = []
-        if node.operation:
-            representations.append(node.operation)
-
-        for input_id in node.inputs:
-            input_node = dag.get_node_by_id(input_id)
-            if input_node.operation:
-                representations.extend(self._get_representation_chain(input_node, dag))
-
-        return representations
 
     def _merge_results(self, local_results):
         for modality_id in local_results.results:
@@ -534,135 +886,6 @@ class UnimodalOptimizer:
         #     for task_name in local_results.cache[modality]:
         #         for key, value in local_results.cache[modality][task_name].items():
         #             self.operator_performance.cache[modality][task_name][key] = value
-
-    def _evaluate_local(
-        self,
-        modality,
-        local_results,
-        dag,
-        skip_remaining: int = 0,
-        track_eval: bool = True,
-        modality_id: Any = None,
-    ):
-        if self._tasks_require_same_dims:
-            if self.expected_dimensions == 1 and get_shape(modality.metadata) > 1:
-                builder = self.builders[modality.modality_id]
-                agg_operator = AggregatedRepresentation()
-                rep_node_id = builder.create_operation_node(
-                    agg_operator.__class__,
-                    [dag.root_node_id],
-                    agg_operator.get_current_parameters(),
-                )
-                dag = builder.build(rep_node_id)
-
-                aggregated_modality = agg_operator.transform(modality)
-
-                for task in self.tasks:
-                    if skip_remaining > 0:
-                        skip_remaining -= 1
-                        continue
-                    start = time.perf_counter()
-                    scores = task.run(aggregated_modality.data)
-                    end = time.perf_counter()
-
-                    local_results.add_result(
-                        scores,
-                        aggregated_modality.transform_time,
-                        task.model.name,
-                        end - start,
-                        dag,
-                        modality.modality_id,
-                        modality,
-                    )
-                    if track_eval:
-                        self._checkpoint_manager.increment(modality_id, 1)
-                        self._checkpoint_manager.checkpoint_if_due(
-                            self.operator_performance.results, "eval_count_by_modality"
-                        )
-            else:
-                modality.pad()
-                for task in self.tasks:
-                    if skip_remaining > 0:
-                        skip_remaining -= 1
-                        continue
-                    start = time.perf_counter()
-                    scores = task.run(modality.data)
-                    end = time.perf_counter()
-                    local_results.add_result(
-                        scores,
-                        modality.transform_time,
-                        task.model.name,
-                        end - start,
-                        dag,
-                        modality.modality_id,
-                        modality,
-                    )
-                    if track_eval:
-                        self._checkpoint_manager.increment(modality_id, 1)
-                        self._checkpoint_manager.checkpoint_if_due(
-                            self.operator_performance.results, "eval_count_by_modality"
-                        )
-        else:
-            for task in self.tasks:
-                if task.expected_dim == 1 and get_shape(modality.metadata) > 1:
-                    builder = self.builders[modality.modality_id]
-                    agg_operator = AggregatedRepresentation(Aggregation())
-                    rep_node_id = builder.create_operation_node(
-                        agg_operator.__class__,
-                        [dag.root_node_id],
-                        agg_operator.get_current_parameters(),
-                    )
-                    dag = builder.build(rep_node_id)
-                    start_rep = time.perf_counter()
-                    representations = dag.execute([modality])
-                    end_rep = time.perf_counter()
-                    modality.transform_time += end_rep - start_rep
-                    node_id = list(representations.keys())[-1]
-
-                    if skip_remaining > 0:
-                        skip_remaining -= 1
-                    else:
-                        start = time.perf_counter()
-                        scores = task.run(representations[node_id].data)
-                        end = time.perf_counter()
-                        local_results.add_result(
-                            scores,
-                            modality.transform_time,
-                            task.model.name,
-                            end - start,
-                            dag,
-                            modality.modality_id,
-                            modality,
-                        )
-                        if track_eval:
-                            self._checkpoint_manager.increment(modality_id, 1)
-                            self._checkpoint_manager.checkpoint_if_due(
-                                self.operator_performance.results,
-                                "eval_count_by_modality",
-                            )
-                else:
-                    if skip_remaining > 0:
-                        skip_remaining -= 1
-                    else:
-                        start = time.perf_counter()
-                        scores = task.run(modality.data)
-                        end = time.perf_counter()
-                        local_results.add_result(
-                            scores,
-                            modality.transform_time,
-                            task.model.name,
-                            end - start,
-                            dag,
-                            modality.modality_id,
-                            modality,
-                        )
-                        if track_eval:
-                            self._checkpoint_manager.increment(modality_id, 1)
-                            self._checkpoint_manager.checkpoint_if_due(
-                                self.operator_performance.results,
-                                "eval_count_by_modality",
-                            )
-        return skip_remaining
 
     def add_dimensionality_reduction_operators(self, builder, current_node_id):
         dags = []

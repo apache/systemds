@@ -22,6 +22,7 @@ from torchvision.models.video.swin_transformer import swin3d_t
 
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
+from systemds.scuro.representations.representation import RepresentationStats
 from typing import Callable, Dict, Tuple, Any
 import torch.utils.data
 import torch
@@ -62,6 +63,9 @@ class SwinVideoTransformer(UnimodalRepresentation):
         self.model.eval()
         for param in self.model.parameters():
             param.requires_grad = False
+
+    def get_output_shape(self, input_stats) -> RepresentationStats:
+        return RepresentationStats(input_stats.num_instances, (768,))
 
     def transform(self, modality, aggregation=None):
         embeddings = {}

@@ -19,6 +19,7 @@
 #
 # -------------------------------------------------------------
 import resource
+import sys
 import numpy as np
 import torch
 from typing import Tuple
@@ -153,3 +154,30 @@ def log_memory(operation_name: str, device: torch.device):
     print(
         f"[mem] {operation_name}: CPU={cpu_mb:.1f} MB, GPU={gpu_mb:.1f} MB, Current={current_mb:.1f} MB"
     )
+
+
+def estimate_numpy_like_bytes(data) -> int:
+    if data is None:
+        return 0
+    if isinstance(data, np.ndarray):
+        return int(data.nbytes)
+    if isinstance(data, torch.Tensor):
+        return int(data.numel() * data.element_size())
+    if isinstance(data, memoryview):
+        return int(data.nbytes)
+    if isinstance(data, (bytes, bytearray)):
+        return int(len(data))
+    if isinstance(data, dict):
+        return int(sum(estimate_numpy_like_bytes(v) for v in data.values()))
+    if isinstance(data, (list, tuple)):
+        return int(sum(estimate_numpy_like_bytes(v) for v in data))
+    return int(sys.getsizeof(data))
+
+
+def estimate_modality_bytes(modality) -> int:
+    if modality is None:
+        return 0
+    data_bytes = estimate_numpy_like_bytes(getattr(modality, "data", None))
+    metadata = getattr(modality, "metadata", None)
+    metadata_bytes = estimate_numpy_like_bytes(metadata)
+    return int(data_bytes + metadata_bytes)

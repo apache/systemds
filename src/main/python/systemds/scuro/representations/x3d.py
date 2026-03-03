@@ -26,6 +26,7 @@ from systemds.scuro.utils.static_variables import (
 from systemds.scuro.utils.torch_dataset import CustomDataset
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
+from systemds.scuro.representations.representation import RepresentationStats
 from typing import Tuple, Any
 import torch.utils.data
 import torch
@@ -57,6 +58,9 @@ class X3D(UnimodalRepresentation):
                 return input_
 
         self.model.fc = Identity()
+
+    def get_output_shape(self, input_stats) -> RepresentationStats:
+        return RepresentationStats(input_stats.num_instances, (512,))
 
     @property
     def model_name(self):

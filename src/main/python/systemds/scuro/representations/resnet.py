@@ -236,6 +236,9 @@ class ResNet(UnimodalRepresentation):
             modality, self, self.output_modality_type
         )
 
-        transformed_modality.data = list(embeddings)
+        if isinstance(embeddings, dict):
+            transformed_modality.data = list(embeddings.values())
+        else:
+            transformed_modality.data = embeddings
 
         return transformed_modality

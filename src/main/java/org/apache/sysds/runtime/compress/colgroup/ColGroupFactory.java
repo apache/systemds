@@ -1110,7 +1110,7 @@ public class ColGroupFactory {
 		for(int col = 0; col < numCols; col++) {
 			final int colIdx = colIndexes.get(col);
 			double[] column = PiecewiseLinearUtils.getColumn(in, colIdx);
-			PiecewiseLinearUtils.SegmentedRegression fit = PiecewiseLinearUtils.compressIterativePiecewiseLinear(column,
+			PiecewiseLinearUtils.SegmentedRegression fit = PiecewiseLinearUtils.compressSukzessivePiecewiseLinear(column,
 				cs);
 			breakpointsPerCol[col] = fit.getBreakpoints();
 			interceptsPerCol[col] = fit.getIntercepts();

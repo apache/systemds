@@ -4,7 +4,7 @@
 # =============================================================================
 # Usage: ./scripts/run_all_benchmarks.sh [backend] [model] [options]
 #
-#   backend: openai, vllm, systemds, gpu, or all (default: gpu)
+#   backend: openai, vllm, systemds, gpu, gpu-apc, or all (default: gpu)
 #   model:   model name/path (required for vllm, systemds)
 #
 # Options (passed after backend and model):
@@ -17,6 +17,7 @@
 #   ./scripts/run_all_benchmarks.sh vllm Qwen/Qwen2.5-3B-Instruct
 #   ./scripts/run_all_benchmarks.sh systemds Qwen/Qwen2.5-3B-Instruct
 #   ./scripts/run_all_benchmarks.sh gpu                    # vllm + systemds
+#   ./scripts/run_all_benchmarks.sh gpu-apc                # normal + reverse for APC analysis
 #   ./scripts/run_all_benchmarks.sh all                    # every backend
 # =============================================================================
 
@@ -219,12 +220,23 @@ case "$BACKEND_ARG" in
         local_model="$(resolve_model systemds "$MODEL_ARG")"
         run_backend "systemds" "$local_model"
         ;;
-    gpu|*)
+    gpu)
         # GPU backends: vLLM + SystemDS with same model for comparison
         local_model="$(resolve_model vllm "$MODEL_ARG")"
         echo -e "${YELLOW}GPU comparison mode: vLLM + SystemDS with ${local_model}${NC}"
         run_backend "vllm" "$local_model"
         run_backend "systemds" "$local_model"
+        ;;
+    gpu-apc)
+        # Full APC experiment: normal + reverse order (4 runs)
+        local_model="$(resolve_model vllm "$MODEL_ARG")"
+        echo -e "${YELLOW}APC experiment: normal + reverse order with ${local_model}${NC}"
+        echo -e "${YELLOW}Normal order: vLLM first (cold cache), SystemDS second (warm cache)${NC}"
+        run_backend "vllm" "$local_model"
+        run_backend "systemds" "$local_model"
+        echo -e "${YELLOW}Reverse order: SystemDS first (cold cache), vLLM second (warm cache)${NC}"
+        run_backend "systemds" "$local_model" "_reverse"
+        run_backend "vllm" "$local_model" "_reverse"
         ;;
 esac
 

@@ -815,22 +815,26 @@ def generate_cost_tradeoff_table(rows: List[Dict[str, Any]]) -> str:
     local_acc = []
     local_runs = 0
     cloud_runs = 0
+    cloud_queries = 0
+    local_queries = 0
 
     for r in rows:
         backend = r.get("backend", "")
         acc = r.get("accuracy_mean")
         api = safe_float(r.get("cost")) or 0
         compute = safe_float(r.get("total_compute_cost_usd")) or 0
-        n = safe_float(r.get("n")) or 0
+        n = int(safe_float(r.get("n")) or 0)
 
         if backend == "openai":
             cloud_cost += api
             cloud_runs += 1
+            cloud_queries += n
             if acc is not None:
                 cloud_acc.append(acc)
         elif backend in ("vllm", "systemds"):
             local_cost += compute
             local_runs += 1
+            local_queries += n
             if acc is not None:
                 local_acc.append(acc)
 
@@ -840,8 +844,8 @@ def generate_cost_tradeoff_table(rows: List[Dict[str, Any]]) -> str:
     cloud_avg = (sum(cloud_acc) / len(cloud_acc) * 100) if cloud_acc else 0
     local_avg = (sum(local_acc) / len(local_acc) * 100) if local_acc else 0
 
-    cloud_per_q = cloud_cost / cloud_runs if cloud_runs else 0
-    local_per_q = local_cost / local_runs if local_runs else 0
+    cloud_per_q = (cloud_cost / cloud_queries) if cloud_queries else 0
+    local_per_q = (local_cost / local_queries) if local_queries else 0
 
     out = ['<h2>Cost vs Accuracy Tradeoff</h2>']
     out.append('<p style="color:#888; font-size:13px; margin-top:-8px;">Cloud API vs local GPU inference. Key tradeoff for deployment decisions.</p>')
@@ -856,7 +860,7 @@ def generate_cost_tradeoff_table(rows: List[Dict[str, Any]]) -> str:
     out.append(f'<td>{fmt_cost(cloud_cost)}</td>')
     out.append(f'<td>{fmt_cost(local_cost)}</td></tr>')
 
-    out.append(f'<tr><td><strong>Avg Cost / Run</strong></td>')
+    out.append(f'<tr><td><strong>Avg Cost / Query</strong></td>')
     out.append(f'<td>{fmt_cost(cloud_per_q)}</td>')
     out.append(f'<td>{fmt_cost(local_per_q)}</td></tr>')
 

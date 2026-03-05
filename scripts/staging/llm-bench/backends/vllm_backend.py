@@ -45,6 +45,8 @@ class VLLMBackend:
                 logger.warning("'%s' not on server. Available: %s", model, available)
         except requests.exceptions.ConnectionError:
             raise RuntimeError(f"Cannot connect to vLLM at {self.base_url}")
+        except RuntimeError:
+            raise
         except Exception as e:
             logger.warning("Could not verify vLLM server: %s", e)
         logger.info("vLLM backend initialized with model '%s'", model)

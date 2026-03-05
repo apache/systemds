@@ -351,7 +351,7 @@ def main():
             outputs = backend.generate(prompts, backend_cfg)
     except Exception as e:
         logger.error("Generation failed: %s", e)
-        outputs = [{"text": "", "latency_ms": 0.0, "extra": {"error": repr(e)}} for _ in prompts]
+        raise SystemExit(f"FATAL: generation failed for all {len(prompts)} prompts: {e}")
     t1 = time.perf_counter()
     wall_s = t1 - t0
 
@@ -530,6 +530,13 @@ def main():
         "backend_model": backend_model,
         "workload": cfg.get("name", "unknown"),
         "concurrency": args.concurrency,
+        "max_tokens": backend_cfg.get("max_tokens"),
+        "temperature": backend_cfg.get("temperature"),
+        "top_p": backend_cfg.get("top_p"),
+        "n_samples": len(samples),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "python_version": platform.python_version(),
+        "platform": platform.platform(),
     })
 
     write_manifest(out_dir, Path(args.workload), args.backend, backend_model)

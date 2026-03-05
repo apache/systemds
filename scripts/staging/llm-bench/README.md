@@ -153,10 +153,10 @@ Python and Java identically.
 
 Both backends send identical model parameters (model, temperature,
 top_p, max_tokens, stream=false). Both receive the full JSON response
-at once. The reverse-order experiment (see below) confirmed that
-accuracy differences between vLLM and SystemDS on reasoning and
-summarization are consistent per-backend differences, not caused by
-run order or APC cache state.
+at once. The 4-way reverse-order experiment (see below) showed that
+summarization accuracy follows run position (1st vs 2nd) due to vLLM
+APC, while reasoning varies across server sessions due to GPU
+floating-point non-determinism.
 
 ## Workloads
 
@@ -296,12 +296,18 @@ that returns true/false per sample. The accuracy percentage is
 
 - **SystemDS matches vLLM on math, json_extraction, and embeddings** (68%,
   65%, 90% respectively). Both use the same Qwen2.5-3B model on the same
-  vLLM inference server with temperature=0.0.
-- **Small differences on reasoning (31 vs 33) and summarization (25 vs 31)**
-  are consistent backend-level differences confirmed by the reverse-order
-  experiment: SystemDS always scores 0.62 on summarization and vLLM always
-  scores 0.50, regardless of which backend runs first. See "Reverse-Order
-  Experiment" below.
+  vLLM inference server with temperature=0.0. Predictions are byte-for-byte
+  identical on all samples in these 3 workloads.
+- **Summarization gap (25 vs 31) is caused by vLLM Automatic Prefix Caching
+  (APC).** The 4-way reverse-order experiment proves this: 22/50 samples
+  produce exactly 2 text variants determined by run position (1st vs 2nd),
+  not by backend. The 1st-run variant always scores 25/50; the 2nd-run
+  variant always scores 31/50. See "Reverse-Order Experiment" below.
+- **Reasoning differences (31 vs 33) are GPU floating-point non-determinism.**
+  Across different server sessions, 0/50 predictions are identical — even for
+  the same backend. Within a session, ~60% are identical. The ±2 sample
+  accuracy gap is noise from 50-sample runs. See "Reverse-Order Experiment"
+  below.
 - **OpenAI gpt-4.1-mini leads on 4/5 workloads**, with the largest gap on
   math (96% vs 68%). This is model quality (much larger model), not
   serving infrastructure.
@@ -333,136 +339,131 @@ that returns true/false per sample. The accuracy percentage is
 
 ### Accuracy Gap Analysis (vLLM vs SystemDS)
 
-**Note on backend labels:** The vLLM/SystemDS labels in these examples
-reflect which backend ran first in the CUBLAS experiment (vLLM first,
-SystemDS second). The backend that ran first received the cold-cache
-response; the backend that ran second received the warm-cache response
-from vLLM's Automatic Prefix Caching. In the stream=False re-run
-(reversed order), the same two response texts appear but with swapped
-labels. The outputs themselves are reproducible — it is the server's
-cache state that determines which output a given batch position
-receives, not which client (Python or Java) sends the request.
-
 On 3/5 workloads (math, json_extraction, embeddings), accuracy is
-identical because the output text is byte-for-byte identical. On the
-remaining 2 workloads, vLLM's Automatic Prefix Caching causes the
-two sequential batches to receive different responses from the server,
-which in some cases leads to different evaluation outcomes.
+identical because predictions are byte-for-byte identical. The
+remaining 2 workloads diverge for different reasons:
+
+- **Summarization**: vLLM Automatic Prefix Caching (APC) — proven by
+  the 4-way reverse-order experiment (see below).
+- **Reasoning**: GPU floating-point non-determinism across server
+  sessions — even the same backend produces different text on every run.
+
+**Note on labels:** In the committed results, "vLLM" ran first and
+"SystemDS" ran second. For summarization, these labels correspond to
+"1st-run (cold cache)" and "2nd-run (warm cache)" respectively. The
+reverse-order experiment confirms the outputs follow cache position,
+not the backend.
 
 **Reasoning (31 vs 33, gap = 2 samples):** The evaluation extracts
-yes/no keywords, ignoring all surrounding text. Of 21 samples with
+yes/no keywords, ignoring surrounding text. Of 21 samples with
 different text, 19 had the same yes/no answer (different wording, same
 conclusion). Only 2 had genuinely **opposite conclusions**:
 
 - `boolq-1` ("Is house tax and property tax the same?", reference: Yes):
-  Both backends analysed the same passage about property tax definitions.
-  One chain focused on similarities ("This definition matches the one
-  provided for house tax") and concluded `Final Answer: Yes` (correct).
-  The other chain introduced extra details about constitutional amendments
-  and wealth tax concepts, leading to `**No**. House tax and property tax
-  are not exactly the same` (wrong). The divergence started at bullet
-  point #2, where a different token choice shifted the analysis from
-  "similarities" to "distinctions".
+  Both runs analysed the same passage about property tax definitions.
+  The SystemDS run (2nd) focused on similarities ("This definition
+  matches the one provided for house tax") and concluded
+  `Final Answer: Yes` (correct). The vLLM run (1st) introduced extra
+  details about constitutional amendments and wealth tax concepts,
+  leading to `**No**. House tax and property tax are not exactly the
+  same` (wrong). The divergence started at bullet point #2, where a
+  different token choice shifted the analysis from "similarities" to
+  "distinctions".
 - `boolq-35` ("Is there a next part of Avengers Infinity War?",
-  reference: Yes): Both backends read the passage stating Avengers 4 is
-  "the direct sequel to 2018's Avengers: Infinity War". One chain focused
-  on this explicit statement and concluded `Yes, There is a next part...
-  in the form of Avengers 4` (correct). The other chain added "it does
-  not mention any other Avengers films after Avengers 4" and interpreted
-  this as evidence for `Final Answer: No` (wrong -- the question asks
-  about a sequel to Infinity War, which exists as Avengers 4, not about
-  films after Avengers 4).
+  reference: Yes): Both runs read the passage stating Avengers 4 is
+  "the direct sequel to 2018's Avengers: Infinity War". The SystemDS
+  run (2nd) focused on this explicit statement and concluded
+  `Yes, There is a next part... in the form of Avengers 4` (correct).
+  The vLLM run (1st) added "it does not mention any other Avengers
+  films after Avengers 4" and interpreted this as evidence for
+  `Final Answer: No` (wrong — the question asks about a sequel to
+  Infinity War, which exists as Avengers 4, not about films after
+  Avengers 4).
 
-These are genuine model disagreements, not evaluation errors. The
-evaluator correctly extracted yes/no in all cases. Both backends
-received the same prompt and the same passage — the divergence comes
-from different token selections early in the chain-of-thought because
-the two sequential batches hit the vLLM server in different cache
-states (Automatic Prefix Caching). Which backend gets the correct
-answer depends on run order: in the CUBLAS run (vLLM first), the
-second backend (SystemDS) got these 2 correct; in the swap experiment
-(reversed order), the labels flip.
+These are genuine model disagreements, not evaluation errors. Unlike
+summarization, reasoning differences do NOT follow the APC swap
+pattern. Across different server sessions, the same backend (e.g.,
+vLLM) produces completely different text (0/50 predictions identical
+between original and reverse runs). The ±2 accuracy gap is noise from
+the small sample size (n=50).
 
-**Summarization (31 vs 25, gap = 6 samples):** ROUGE-1 F1 measures
+**Summarization (25 vs 31, gap = 6 samples):** ROUGE-1 F1 measures
 word overlap between prediction and reference, with a pass threshold of
-0.2. In all 6 divergent cases, SystemDS produced longer, more verbose
-output than vLLM. Both texts overlap with similar reference words
-(similar recall), but the extra non-matching words in SystemDS dilute
-precision, pushing F1 below the 0.2 threshold.
+0.2. The 6 samples where accuracy differs are a subset of the 22
+samples where APC produces different text. In these 6 cases, one
+variant passes ROUGE and the other fails.
 
-The verbosity difference is not a systematic property of either backend.
-Both backends send the exact same prompts to the same model on the same
-server. The difference arises because the two sequential batches hit
-the server in different cache states (Automatic Prefix Caching): at
-some early near-tied token, the cold-cache and warm-cache computation
-paths diverge, sending the generation onto a different trajectory. Some
-trajectories happen to be more verbose. The "more verbose" backend is
-simply whichever one ran second — as confirmed by the swap pattern.
+The 4-way reverse-order experiment proves this is APC, not a backend
+difference. For all 22 unstable samples:
+- Original vLLM (1st) = Reverse SystemDS (1st) — same cold-cache text
+- Original SystemDS (2nd) = Reverse vLLM (2nd) — same warm-cache text
 
-Concrete examples from the 6 divergent samples:
+The 1st-run variant always scores 25/50. The 2nd-run variant always
+scores 31/50. Which backend gets which score depends entirely on run
+order.
+
+Concrete examples from the 6 accuracy-divergent samples:
+
+- `xsum-98` ("Hope Solo suspended by US Soccer"):
+  - 1st-run text: "...negatively **impacted** both herself and her
+    team..." (**fail** ROUGE-1 F1)
+  - 2nd-run text: "...negatively **affected** both herself and her
+    team..." (**pass** ROUGE-1 F1)
+  - A single word change ("impacted" → "affected") from APC flips
+    the ROUGE score past the 0.2 threshold.
 
 - `xsum-101` ("ID Systems Ltd plans to create 120 new jobs..."):
   - Reference: "Scottish engineering services company ID Systems Ltd
     has announced plans to create 120 new jobs after securing a
     six-figure investment from UK Steel Enterprise (UKSE)."
-  - vLLM (27 words, **pass F1=0.264**): "UKSE is supporting ID Systems'
-    expansion into Glasgow and Lanarkshire through a loan and equity
-    investment, enabling the company to hire additional staff and grow
-    its workforce."
-  - SystemDS (61 words, **fail F1=0.184**): "UKSE is supporting ID
+  - 2nd-run (27 words, **pass F1=0.264**): "UKSE is supporting ID
+    Systems' expansion into Glasgow and Lanarkshire through a loan and
+    equity investment, enabling the company to hire additional staff
+    and grow its workforce."
+  - 1st-run (61 words, **fail F1=0.184**): "UKSE is supporting ID
     Systems' expansion into Glasgow and Lanarkshire by providing funding
     and a senior management team, while ID Systems secures long-term
     contracts and aims to double its workforce through this investment.
     To summarize concisely: UKSE is financing ID Systems' expansion
     into Glasgow and Lanarkshire, enabling the company to hire more
     staff and secure long-term contracts. (135 words)"
-  - SystemDS matched *more* reference words (8 vs 7) but was penalised
-    for verbosity. It also added meta-text ("To summarize concisely",
-    word count) and speculative details not in the source material.
+  - The 1st-run text matched more reference words (8 vs 7) but was
+    penalised for verbosity (meta-text, speculative details).
 
 - `xsum-11` ("Hospital bosses in Sussex have apologised..."):
   - Reference: "Hospital bosses in Sussex have apologised after about
     850 patients were sent leaflets in error suggesting they might have
     cancer."
-  - vLLM (**pass F1=0.222**): "The trust said it would be reviewing its
-    processes to prevent such errors in future. The East Sussex NHS
-    Trust experienced an administrative error where incorrect patient
-    information leaflets were mistakenly included with hospital
-    appointment letters..."
-  - SystemDS (**fail F1=0.175**): "The trust said it would review its
+  - 2nd-run (**pass F1=0.222**): "The trust said it would be reviewing
+    its processes to prevent such errors in future. The East Sussex NHS
+    Trust experienced an administrative error..."
+  - 1st-run (**fail F1=0.175**): "The trust said it would review its
     processes to prevent such errors in future. The leaflets mistakenly
-    included with hospital appointment letters for patients at East
-    Sussex Healthcare NHS Trust were intended for another individual,
-    potentially causing unnecessary anxiety and confusion..."
-  - Both capture the core fact but SystemDS adds speculative detail
-    ("intended for another individual", "external printing company")
-    that dilutes precision without adding matching reference words.
+    included with hospital appointment letters..."
+  - Both capture the core fact. The 1st-run adds speculative detail
+    that dilutes precision without matching reference words.
 
 - `xsum-36` ("Terrorism charges"):
-  - vLLM (**pass**): Focused on the main news (suspect charged with
+  - 2nd-run (**pass**): Focused on the main news (suspect charged with
     breaching TPim order, first reported instance).
-  - SystemDS (**fail**): Diverged into background about TPim orders
+  - 1st-run (**fail**): Diverged into background about TPim orders
     replacing control orders in 2012, missing the central narrative.
 
 - `xsum-44` ("Cricket Boxing Day Test"):
-  - vLLM (**pass**): Summarised key match events concisely.
-  - SystemDS (**fail**): Added meta-commentary ("The text summarizes
+  - 2nd-run (**pass**): Summarised key match events concisely.
+  - 1st-run (**fail**): Added meta-commentary ("The text summarizes
     the cricket match...") and a redundant summary, plus changed
     "final Test" to "third Test" (factual error).
 
-ROUGE is the standard NLP metric for summarization evaluation, but it
-is a lexical (word overlap) metric, not a semantic one. Two summaries
-that convey the same meaning but use different words can receive
-different ROUGE scores. The 0.2 threshold is lenient (only 20%
-unigram overlap required), but borderline scores can still flip when
-the generation is more verbose. The 6-sample gap reflects Automatic Prefix Caching producing different
-text lengths depending on which batch position the backend occupies,
-not fundamentally different summary quality.
+ROUGE is a lexical (word overlap) metric, not semantic. Two summaries
+conveying the same meaning with different words receive different scores.
+The 0.2 threshold is lenient, but borderline scores flip when APC
+produces slightly different phrasing or verbosity.
 
 ### Text Identity (vLLM vs SystemDS)
 
 On 3/5 workloads, both backends produce byte-for-byte identical output
-text for all 50 samples. This confirms that the SystemDS JMLC pipeline
+text for all samples. This confirms that the SystemDS JMLC pipeline
 (Py4J -> DML -> Java HTTP -> FrameBlock) is a lossless pass-through.
 
 | Workload | Identical | Different | % Identical |
@@ -473,22 +474,16 @@ text for all 50 samples. This confirms that the SystemDS JMLC pipeline
 | reasoning | 29/50 | 21 | 58% |
 | summarization | 28/50 | 22 | 56% |
 
-Numbers from the CUBLAS run where vLLM ran first. In the stream=False
-re-run where SystemDS ran first, the counts are identical — the same
-43 samples diverge, just with backend labels swapped (see Root Cause
-section below). This swap pattern is the key evidence for Automatic
-Prefix Caching (APC) as the root cause.
-
 **Why do 3 workloads match perfectly but 2 don't?** The key factor is
 output constraint level, not output length:
 
 | Workload | Avg output length | Constraint level | % Identical |
 |---|---|---|---|
 | embeddings | 4 chars | Highly constrained (single number) | 100% |
-| json_extraction | 264 chars | Structured (JSON fields from input, n=46) | 100% |
+| json_extraction | 150 chars | Structured (JSON fields from input, n=46) | 100% |
 | math | **1349 chars** | Arithmetic steps (one valid path) | **100%** |
 | summarization | 328 chars | Unconstrained (many valid phrasings) | 56% |
-| reasoning | 943 chars | Unconstrained (many valid phrasings) | 58% |
+| reasoning | 960 chars | Unconstrained (many valid phrasings) | 58% |
 
 Math produces the **longest** outputs (avg 1349 chars) yet achieves
 100% identity. This is because arithmetic is highly constrained: at each
@@ -499,283 +494,151 @@ flip the argmax when the top token has a huge margin over alternatives.
 Summarization produces shorter outputs (avg 328 chars) but only 56%
 identity, because natural language summaries have many equally valid
 phrasings. "The report found..." vs "A report revealed..." vs
-"According to..." -- multiple tokens have similar probabilities (~0.15
-each), so even small differences in server cache state (Automatic
-Prefix Caching) can flip the selection at near-tied positions. For
-example, in xsum-14 the texts diverge after just 15 characters: vLLM
-writes "police visit to a psychiatric ward" while SystemDS writes
-"psychiatric patient's death during a police visit" — same meaning,
-completely different structure.
+"According to..." — multiple tokens have similar probabilities, so
+even small differences in server cache state (APC) or floating-point
+rounding can flip the selection at near-tied positions.
 
-**Investigation: cuBLAS non-determinism (partial fix).** cuBLAS
-(NVIDIA's linear algebra library) uses algorithms where the order of
-floating-point additions varies between runs. Since FP addition is not
-associative, this can produce slightly different logit values. When two
-token candidates have nearly equal logits (e.g., 5.00001 vs 5.00000),
-a tiny rounding change can flip the argmax, causing the generation to
-diverge from that point. This was the initial hypothesis for the
-observed text differences.
+**Two distinct root causes for the 43 divergent samples:**
 
-We tested this by running vLLM with `CUBLAS_WORKSPACE_CONFIG=:4096:8`
-(forces deterministic cuBLAS algorithms) and running both backends
-against the same server on the same GPU. At this point, vLLM used
-`"stream": true` and SystemDS used `"stream": false`. Results:
+**1. Summarization (22 samples): vLLM Automatic Prefix Caching (APC).**
 
-| Workload | Identical | Different | Match Rate |
-|----------|-----------|-----------|------------|
-| math | 50/50 | 0 | **100%** |
-| json_extraction | 46/46 | 0 | **100%** |
-| embeddings | 50/50 | 0 | **100%** |
-| reasoning | 29/50 | 21 | 58% |
-| summarization | 28/50 | 22 | 56% |
-| **Total** | **203/246** | **43** | **82.5%** |
+vLLM 0.15.1 enables APC by default (`enable_prefix_caching=True`). APC
+stores KV cache tensors from previously processed prefixes and reuses
+them for new requests with the same prefix. When the benchmark runs
+two backends sequentially, the 2nd batch reuses cached KV tensors from
+the 1st batch, taking a different code path (skipping prefill) that
+produces slightly different floating-point attention scores — enough to
+flip the argmax at near-tied token positions.
 
-Constrained workloads (math, json_extraction, embeddings) became 100%
-byte-identical with deterministic cuBLAS. Reasoning and summarization
-still diverged in 43 samples (reasoning: 21, summarization: 22). This
-remaining divergence is now fully explained by vLLM Automatic Prefix
-Caching — see below.
-
-**Root cause of remaining divergence: vLLM Automatic Prefix Caching (APC).**
-
-vLLM 0.15.1 enables APC by default. No flag is required — the vLLM
-startup engine config explicitly shows `enable_prefix_caching=True`
-without any `--enable-prefix-caching` flag being passed. APC stores KV
-cache tensors from previously processed prefixes and reuses them for
-new requests with the same prefix.
-
-When the benchmark runs two backends sequentially against the same
-server, the server's cache state differs between them:
-
-- **1st batch (cold cache):** Requests are computed from scratch. KV
-  values are computed fresh and stored in the prefix cache.
-- **2nd batch (warm cache):** Requests for the same prompts hit the
-  cache. The attention computation skips recomputing cached KV values,
-  producing slightly different attention outputs at near-tied token
-  positions — enough to flip the argmax and diverge the generation.
-
-**Server log evidence.** The vLLM server logs record the prefix cache
-hit rate every 10 seconds. Actual timestamps from the stream=False
-re-run (SystemDS first at 16:49, vLLM second at 16:53):
-
-Workload end times are from manifest files written on completion
-(verified from `results_new/*/manifest.json`). Hit rates are from the
-server log lines shared above. The two sources are independent.
-
-| Time (UTC) | Event (manifest end-time source) | Prefix Cache Hit Rate |
-|------------|----------------------------------|----------------------|
-| 16:52:01–16:52:42 | SystemDS reasoning/summarization/json running | 9.3%–12.6% |
-| 16:53:21 | SystemDS embeddings ends; **vLLM starts (math)** | **16.0%** |
-| 16:55:07 | vLLM math ends (manifest); vLLM reasoning starts | ~24% |
-| 16:55:12 | **vLLM reasoning** (4 s in) | **24.2%** |
-| 16:56:10 | vLLM reasoning ends (manifest) | ~37% |
-| 16:56:12 | **vLLM summarization** (2 s in) | **37.5%** |
-| 16:56:34 | vLLM summarization ends (manifest) | ~49% |
-| 16:57:10 | All vLLM batches done (json+embeddings manifests) | ~55% |
-| 16:57:12 | **Final idle** | **55.1%** |
-
-The hit rate climbs from ~9% (SystemDS, cold cache) to 55.1% (end of
-all vLLM batches). The two periods with the steepest sustained rise
-match exactly the two divergent workloads:
-
-- **vLLM math** (16:53:21 → 16:55:07, ~106 s): 16.0% → ~24% (+8pp).
-  Cache hits occur but math has one valid answer path — token
-  selection is identical regardless of cache state.
-- **vLLM reasoning** (16:55:07 → 16:56:10, ~63 s): ~24% → 37.5%
-  (+13pp). BoolQ passages are long → many prefix tokens cached → 21
-  samples diverge.
-- **vLLM summarization** (16:56:10 → 16:56:34, ~24 s): 37.5% → ~49%
-  (+11pp). XSum passages are also long → 22 samples diverge.
-- **vLLM json + embeddings** (16:56:34 → 16:57:10, ~36 s): ~49% →
-  55.1%. Cache hits continue, but outputs are 100% identical.
-
-**Swap pattern proof (43/43 samples, zero exceptions).** The benchmark
-was run twice with reversed order:
-
-- Run 1 (CUBLAS, vLLM first at 06:22, SystemDS second at 06:29)
-- Run 2 (stream=False, SystemDS first at 16:49, vLLM second at 16:53)
-
-For every one of the 43 divergent samples, the 1st-batch output is
-byte-for-byte identical across both runs, and the 2nd-batch output is
-byte-for-byte identical across both runs:
+The 4-way reverse-order experiment proves this conclusively. For ALL 22
+unstable summarization samples:
 
 ```
-Run 1 (vLLM first):    vllm_text = A,  systemds_text = B
-Run 2 (SystemDS first): systemds_text = A, vllm_text = B
-  → old_vllm == new_systemds  (both ran 1st → same cold-cache output)
-  → old_systemds == new_vllm  (both ran 2nd → same warm-cache output)
+Original run (vLLM=1st, SystemDS=2nd):
+  vLLM text = variant A,   SystemDS text = variant B
+
+Reverse run (SystemDS=1st, vLLM=2nd):
+  SystemDS text = variant A,  vLLM text = variant B
+
+  → 1st-run always produces variant A (cold cache)
+  → 2nd-run always produces variant B (warm cache)
+  → The backend label is irrelevant — only position matters
 ```
 
-This holds for all 43 samples with zero exceptions. The outputs are
-not random — they are perfectly reproducible. The same prompt in the
-same cache state always produces the same output.
+This holds for 22/22 samples with zero exceptions.
 
-**Concrete example: boolq-35** ("Is there a next part of Avengers
-Infinity War?", reference: Yes):
+**How APC changes the computation:**
 
-- 1st batch (cold cache): 745-char response concluding "Final Answer: No"
-- 2nd batch (warm cache): 887-char response concluding "Yes, There is a next part"
-
-In Run 1: vLLM (1st batch) got "No", SystemDS (2nd batch) got "Yes".
-In Run 2: SystemDS (1st batch) got "No", vLLM (2nd batch) got "Yes".
-The response texts themselves are identical in both runs — only which
-backend received which cache state changes.
-
-Additional examples showing that factual content — not just phrasing —
-follows cache state:
-
-- **xsum-30** (athletics heptathlon, reference: Jessica Ennis-Hill):
-  Cold-cache response: "...while American **Jessica Ennis-Hill** trails
-  behind with 5,544 points" (correct athlete). Warm-cache response:
-  "...while American **Tiffany Hanks** is third" (hallucinated name —
-  not the athlete in the article). In Run 1: vLLM=correct name,
-  SystemDS=hallucinated name. In Run 2: SystemDS=correct name,
-  vLLM=hallucinated name. The hallucination follows the cache state,
-  not the client.
-
-- **xsum-42** (South Africa minimum wage): Cold-cache: "increase the
-  minimum wage to R25 per hour from **April 2023**". Warm-cache: "from
-  **April 2018**". In Run 1: vLLM=2023, SystemDS=2018. In Run 2:
-  SystemDS=2023, vLLM=2018. Both years are hallucinated (the reference
-  gives no specific date), but which hallucination you get depends on
-  which batch position your request occupies.
-
-- **xsum-89** (boxing, reference: Uzbekistan's Hasanboy Dusmatov):
-  Cold-cache: "Dusmatov secured **gold for Russia** at the Tokyo
-  Olympics" (hallucinated country, hallucinated venue). Warm-cache:
-  "Dusmatov claimed his **maiden Olympic gold** medal" (no country
-  error). In Run 1: vLLM=hallucination, SystemDS=correct. In Run 2:
-  SystemDS=hallucination, vLLM=correct.
-
-**Why these errors appear, and why they swap.**
-
-The model (Qwen2.5-3B) is small. When generating token by token with
-greedy decoding (temperature=0.0), some positions are near-tied: the
-model has similar probability for multiple tokens because it doesn't
-strongly "know" the correct fact.
-
-- xsum-30: the passage names Jessica Ennis-Hill, but the model has
-  residual probability for other athlete names from training data.
-- xsum-42: the passage gives no specific April date — the model
-  invents one. Both "2023" and "2018" are plausible continuations.
-- xsum-89: the passage says Uzbekistan, but the model assigns
-  meaningful probability to "Russia" (another boxing nation).
-
-**The outputs are deterministic, not random.** The warm-cache path for
-xsum-30 always produces "Tiffany Hanks" — not a random wrong name each
-time, always the same one. The cold-cache path always produces "Jessica
-Ennis-Hill". This is because all sources of randomness are eliminated:
-temperature=0 (greedy decoding, no sampling), `CUBLAS_WORKSPACE_CONFIG`
-(deterministic matrix operations), and sequential requests (one at a
-time, no concurrent interference). Given all those fixed factors, same
-prompt + same cache state → same code path → same floating-point
-operations in the same order → same output, every time. This is why
-the counts are identical across runs and why the swap is 43/43 with
-zero exceptions: there are exactly two fixed responses (A and B) per
-divergent sample.
-
-**How APC changes the computation.** A transformer generates one token
-at a time. For each token, it computes attention over all previous
-tokens using Key (K) and Value (V) tensors stored in the KV cache.
-
-- **Cold cache (1st batch):** The prompt arrives with no stored state.
-  vLLM runs the full prefill — it computes KV tensors for every prompt
-  token from scratch. The first generated token is then computed with
-  attention over those freshly-computed KV values running through the
-  prefill kernel.
-
-- **Warm cache (2nd batch):** The same prompt arrives again. APC
-  recognises the prefix and skips the prefill entirely — it loads the
-  stored KV tensors and jumps directly to generation. The first
-  generated token is computed with those loaded KV tensors, but through
-  a **different code path**: different memory access pattern, different
-  kernel configuration for the generation step (no prefill kernel ran
-  for this request at all).
-
-The two code paths produce slightly different floating-point attention
-scores for the first generated token. At a near-tied position, that
-difference is enough to flip the argmax:
+- **Cold cache (1st batch):** vLLM runs full prefill — computes KV
+  tensors from scratch for every prompt token.
+- **Warm cache (2nd batch):** APC recognises the prefix, skips prefill,
+  loads stored KV tensors, and jumps directly to generation. Different
+  memory access pattern and kernel configuration produces slightly
+  different floating-point results.
 
 ```
-Cold cache (full prefill → fresh KV tensors → prefill kernel):
-  P("Jessica") = 0.52, P("Tiffany") = 0.48 → picks "Jessica" (correct)
+Cold cache (full prefill → fresh KV):
+  P("impacted") = 0.51, P("affected") = 0.49 → picks "impacted"
 
-Warm cache (skip prefill → load stored KV tensors → generation kernel directly):
-  P("Jessica") = 0.49, P("Tiffany") = 0.51 → picks "Tiffany" (hallucination)
+Warm cache (load cached KV → skip prefill):
+  P("impacted") = 0.49, P("affected") = 0.51 → picks "affected"
 ```
 
-(Numbers illustrative. The exact probabilities are not measured, but
-the direction is fixed: same cache state always produces the same
-token, not a random one.) From the divergent token, all subsequent
-tokens cascade differently, producing the full alternative response.
+(Numbers illustrative.) From the divergent token, all subsequent tokens
+cascade differently, producing the full alternative response.
 
-**The wrong output is not backend-dependent.** In Run 1 (vLLM first),
-vLLM produced the correct name and SystemDS produced the hallucination.
-In Run 2 (SystemDS first), SystemDS produced the correct name and vLLM
-produced the hallucination. The "wrong" label moved when the run order
-changed — it always follows the warm-cache batch position, never a
-specific client (Python or Java).
+**Server log evidence.** The vLLM prefix cache hit rate climbs from ~9%
+(1st backend running) to 55.1% (end of 2nd backend). The steepest rises
+match the two unconstrained workloads:
 
-**It changes only when the run order changes.** The warm-cache batch
-position always gets the same hallucinated response; the cold-cache
-position always gets the same correct (or less-hallucinated) response.
-Which backend occupies which position depends entirely on which ran
-first against that server instance.
+| Time (UTC) | Event | Prefix Cache Hit Rate |
+|------------|-------|----------------------|
+| 16:52:01–16:52:42 | SystemDS reasoning/summarization/json | 9.3%–12.6% |
+| 16:53:21 | **vLLM starts** | **16.0%** |
+| 16:55:12 | vLLM reasoning (4 s in) | **24.2%** |
+| 16:56:12 | vLLM summarization (2 s in) | **37.5%** |
+| 16:57:12 | Final idle | **55.1%** |
 
-**Implication.** SystemDS and vLLM are functionally identical HTTP
-clients. They produce byte-for-byte identical outputs when queried in
-the same batch position against a server in the same cache state. The
-apparent 42% divergence in reasoning and summarization is entirely an
-artifact of sequential benchmarking against a vLLM server with APC
-enabled. With APC disabled (`--no-enable-prefix-caching`), all 5
-workloads should produce 100% identical outputs.
+**Factual content swaps with cache state (not just phrasing):**
 
-Examples of divergence with deterministic cuBLAS:
+- **xsum-30** (athletics heptathlon): Cold-cache: "**Jessica Ennis-Hill**
+  trails behind" (correct athlete). Warm-cache: "**Tiffany Hanks** is
+  third" (hallucinated name). In Run 1: vLLM=correct, SystemDS=hallucinated.
+  In Run 2: SystemDS=correct, vLLM=hallucinated. The hallucination
+  follows cache state, not the client.
+- **xsum-42** (South Africa minimum wage): Cold-cache: "from **April 2023**".
+  Warm-cache: "from **April 2018**". Labels swap with run order.
+- **xsum-89** (boxing): Cold-cache: "gold for **Russia**" (hallucinated
+  country). Warm-cache: "maiden Olympic gold" (no country error).
+  Labels swap with run order.
 
-- xsum-2: "who they say has been left with" (vLLM) vs "who they
-  believe will never fully" (SystemDS) — diverges at character 72
-- xsum-11: "it would review its processes" (vLLM) vs "it would be
-  reviewing its processes" (SystemDS) — diverges at character 24
-- boolq-20: "incorporated into the street address" (vLLM) vs "part of
-  the street address" (SystemDS) — diverges at character 439
+These are not random — the same cache state always produces the same
+output. With temperature=0, `CUBLAS_WORKSPACE_CONFIG`, and sequential
+requests, same prompt + same cache state → same code path → same output.
 
-All divergences are semantically equivalent alternative phrasings, not
-corruption. The long shared prefixes (up to 439 characters before
-divergence) confirm this is autoregressive cascade from a single
-near-tied token, not a systematic error.
+**2. Reasoning (21 samples): GPU floating-point non-determinism.**
+
+Unlike summarization, reasoning divergences do NOT follow the APC swap
+pattern. The 4-way experiment reveals a completely different behaviour:
+
+```
+4-way prediction matching patterns for reasoning (50 samples):
+  24x  ov=os, rv=rs   (same within session, different across sessions)
+   9x  rv=rs only     (reverse session matches, original partially differs)
+   5x  ov=os only     (original session matches, reverse partially differs)
+  12x  all 4 different (every run produces unique text)
+```
+
+Key evidence:
+- **0/50 predictions identical between original and reverse runs** for
+  the *same* backend (e.g., vLLM original vs vLLM reverse = 0% match)
+- **Divergence starts from the 1st generated token** (43/50 samples
+  diverge within the first 2 characters across sessions)
+- **Within the same session**, 29-33/50 predictions match between
+  vLLM and SystemDS (they share the same server state)
+- Accuracy is unstable: vLLM scores 31 (original) vs 29 (reverse);
+  SystemDS scores 33 (original) vs 29 (reverse)
+
+This is cross-session GPU non-determinism: despite temperature=0 and
+`CUBLAS_WORKSPACE_CONFIG=:4096:8`, the GPU produces different logits
+across server restarts. BoolQ prompts are long passages (high token
+count) that accumulate floating-point rounding differences across
+attention layers, causing divergence from the very first generated
+token. This is a known limitation — `CUBLAS_WORKSPACE_CONFIG` makes
+cuBLAS operations deterministic within a session, but does not
+guarantee bit-identical results across process restarts (different
+memory layouts, kernel launch configurations, etc.).
+
+**Investigation: cuBLAS non-determinism.** cuBLAS uses algorithms where
+the order of floating-point additions varies between runs. Since FP
+addition is not associative, this produces slightly different logit
+values. When two token candidates have nearly equal logits (e.g.,
+5.00001 vs 5.00000), a tiny rounding change can flip the argmax.
+
+We ran vLLM with `CUBLAS_WORKSPACE_CONFIG=:4096:8` (forces deterministic
+cuBLAS algorithms). Constrained workloads (math, json_extraction,
+embeddings) became 100% byte-identical. Reasoning and summarization
+still diverged — cuBLAS determinism helps within a session but does not
+eliminate cross-session or APC-induced divergence.
 
 **Why streaming was investigated (and why it is not the cause).**
 
-The original vLLM backend used `"stream": true` (SSE streaming) while
-SystemDS used `"stream": false`. When text differences were first
-observed, streaming was the only protocol-level difference, so it was
-the natural first thing to check. SSE streaming is a documented source
-of bugs: multi-byte UTF-8 characters split across events, TCP packet
-boundaries splitting JSON, or fixed-size buffers truncating payloads.
-Checking it was the correct first step.
+The original vLLM backend used `"stream": true` while SystemDS used
+`"stream": false`. Streaming was checked first as a potential source
+of byte-level corruption. The 150 byte-identical samples across math,
+json_extraction, and embeddings ruled out SSE corruption. Switching to
+`"stream": false` produced identical divergence counts (same 43
+samples), confirming streaming had no effect. Both backends now use
+non-streaming mode.
 
-The 150 byte-identical samples across math, json_extraction, and
-embeddings proved the SSE pipeline was not corrupting data. The
-differences in reasoning and summarization are coherent alternative
-phrasings (e.g., "it would review" vs "it would be reviewing"), not
-garbled bytes. This ruled out SSE corruption as the cause.
+### Reverse-Order Experiment (4-Way Analysis)
 
-To eliminate the `stream` field as a variable, `vllm_backend.py` was
-updated to use `"stream": false`. The re-run with stream=False produced
-**identical divergence counts**: 29/50 reasoning, 28/50 summarization
-— the same 43 samples, just with backend labels swapped (confirming
-the swap pattern). **Streaming had no effect on which tokens were
-selected.** The true cause is Automatic Prefix Caching (see above).
+To understand why vLLM and SystemDS produce different accuracy, the
+benchmark was re-run with **reversed order**: SystemDS first, vLLM
+second (opposite of original: vLLM first, SystemDS second). This
+creates 4 data points per sample, enabling precise root cause analysis.
 
-Both backends now use non-streaming mode and send byte-for-byte
-identical HTTP requests to the vLLM server.
-
-### Reverse-Order Experiment (APC Hypothesis Test)
-
-To test whether APC causes the accuracy differences between vLLM and
-SystemDS, the benchmark was re-run with **reversed order**: SystemDS
-first, vLLM second (opposite of all previous runs). If APC were the
-cause, swapping the order should swap the accuracy numbers.
+**Accuracy by run:**
 
 | Workload | Orig: vLLM (1st) | Orig: SystemDS (2nd) | Rev: SystemDS (1st) | Rev: vLLM (2nd) |
 |---|---|---|---|---|
@@ -785,25 +648,50 @@ cause, swapping the order should swap the accuracy numbers.
 | json_extraction | 65% (30/46) | 65% (30/46) | 65% (30/46) | 65% (30/46) |
 | embeddings | 90% (45/50) | 90% (45/50) | 90% (45/50) | 90% (45/50) |
 
-**Key finding: APC does NOT cause the accuracy differences.**
+**Prediction identity (how many predictions are byte-for-byte identical):**
 
-- **Summarization** is the clearest evidence: vLLM always scores 50%
-  and SystemDS always scores 62%, regardless of run order. If APC were
-  the cause, SystemDS should score differently when running first vs
-  second — but it doesn't.
-- **Math, json_extraction, embeddings** are identical across all runs
-  and orderings. No APC effect.
-- **Reasoning** shows small shifts (62→58 for vLLM, 66→58 for SystemDS)
-  consistent with GPU floating-point non-determinism on a 50-sample set
-  (±2-3 answers flipping), not an ordering effect.
+| Comparison | math | reasoning | summarization | json_extraction | embeddings |
+|---|---|---|---|---|---|
+| orig vLLM vs orig SystemDS (cross-backend, same session) | 100% | 58% | 56% | 100% | 100% |
+| rev vLLM vs rev SystemDS (cross-backend, same session) | 100% | 66% | 56% | 100% | 100% |
+| orig vLLM vs rev vLLM (same backend, cross-session) | 100% | **0%** | 56% | 100% | 100% |
+| orig SystemDS vs rev SystemDS (same backend, cross-session) | 100% | **0%** | 56% | 100% | 100% |
 
-The summarization accuracy difference (50% vs 62%) is a consistent
-backend-level difference. Despite both backends sending identical HTTP
-requests to the same vLLM server, the ROUGE evaluation of their outputs
-differs. The APC analysis in previous sections correctly identifies that
-the two backends receive different text from the server due to cache
-state, but the reverse-order experiment shows that this text difference
-consistently favours SystemDS on summarization regardless of run order.
+**Key findings:**
+
+**1. Summarization: APC confirmed as root cause.**
+
+The summarization accuracy DOES follow run position. Re-reading the
+table: 1st-run always scores 25/50, 2nd-run always scores 31/50.
+
+```
+Original: vLLM (1st) = 25/50,  SystemDS (2nd) = 31/50
+Reverse:  SystemDS (1st) = 25/50,  vLLM (2nd) = 31/50
+```
+
+This was initially misread as "vLLM always 50%, SystemDS always 62%" —
+but that interpretation is wrong. The numbers actually show: **1st-run
+always 50%, 2nd-run always 62%**. The label that gets 62% changes with
+run order (SystemDS in original, vLLM in reverse), confirming the
+accuracy follows cache position, not the backend.
+
+The prediction-level analysis confirms this: for all 22 unstable
+samples, `orig_vLLM = rev_SystemDS` (both ran 1st) and
+`orig_SystemDS = rev_vLLM` (both ran 2nd).
+
+**2. Reasoning: GPU non-determinism, NOT APC.**
+
+Reasoning shows 0% prediction identity across sessions for the SAME
+backend. Every server restart produces completely different text from
+the very first token. Within a session, backends share ~60% of
+predictions (because they hit the same server state). The ±2 sample
+accuracy shifts are noise from n=50 with non-deterministic generation.
+
+**3. Math, json_extraction, embeddings: fully deterministic.**
+
+100% identical across all 4 runs. Constrained outputs (arithmetic,
+JSON structure, single number) have such peaked probability
+distributions that neither APC nor FP rounding can flip the argmax.
 
 ### Per-Prompt Latency (mean ms, n=50; json_extraction n=46)
 
@@ -851,17 +739,13 @@ Neither backend is meaningfully faster. Both are HTTP clients to the
 same vLLM server. Latency is determined by output token count, which
 varies by sample and run, not by which client sends the request.
 
-**Why output length differs between backends (CUBLAS run with stream mismatch):**
-When two backends diverge at a single token, the two autoregressive
-paths produce responses of different lengths — neither is reliably
-longer. Among the 21 divergent reasoning samples in the CUBLAS run,
-vLLM was longer in 12 cases and SystemDS was longer in 9 cases. The
-largest differences were boolq-24 (vLLM +680 chars) and boolq-42
-(SystemDS +239 chars). On average vLLM was 91 chars longer in reasoning
-only because of a few large outliers — it is not a systematic property.
-When both backends produce the same output (which should happen once
-both use `stream=false`), output lengths will be identical and latency
-differences will approach zero.
+**Why output length differs between backends:**
+When two sequential runs diverge at a single token (due to APC or GPU
+non-determinism), the two autoregressive paths produce responses of
+different lengths — neither is reliably longer. Among the 21 divergent
+reasoning samples, the 1st-run was longer in 12 cases and the 2nd-run
+in 9 cases. On average the 1st-run was 91 chars longer only due to
+outliers — it is not a systematic property of either run position.
 
 ### Throughput (requests/second)
 
@@ -941,41 +825,40 @@ embeddings), the amortized cost is ~$0.00003/query vs OpenAI's
 
 ## Conclusions
 
-1. **SystemDS `llmPredict` produces identical output to vLLM on
-   constrained workloads**: On 3/5 workloads (math, json_extraction,
-   embeddings), every single response is byte-for-byte identical. The
-   JMLC pipeline (Py4J -> DML -> Java HTTP -> FrameBlock) is a lossless
-   pass-through. The remaining 43 divergent samples (reasoning: 21,
-   summarization: 22) are caused by vLLM's **Automatic Prefix Caching
-   (APC)** producing different text for sequential batches. However, the
-   reverse-order experiment showed that the resulting **accuracy
-   differences are consistent per-backend** (e.g., SystemDS always scores
-   62% on summarization regardless of run order), not a simple artifact
-   of which backend ran second.
+1. **SystemDS `llmPredict` is a lossless pass-through**: On 3/5
+   workloads (math, json_extraction, embeddings), every response is
+   byte-for-byte identical between vLLM and SystemDS — 196/246 samples
+   total. The JMLC pipeline (Py4J -> DML -> Java HTTP -> FrameBlock)
+   introduces zero data loss or corruption.
 
-2. **JMLC overhead is negligible**: Latencies between SystemDS and
-   direct vLLM calls are within 1--6% of each other, which is within
-   measurement noise (different output lengths for divergent samples,
-   different server state between runs). Neither backend is meaningfully
-   faster than the other.
+2. **The 43 divergent samples have two distinct root causes**:
+   - **Summarization (22 samples):** vLLM Automatic Prefix Caching (APC).
+     The 4-way experiment proves all 22 follow the `1st-run = variant A,
+     2nd-run = variant B` pattern with zero exceptions. 1st-run scores
+     25/50, 2nd-run scores 31/50, regardless of which backend runs first.
+   - **Reasoning (21 samples):** GPU floating-point non-determinism
+     across server sessions. The same backend produces 0% identical
+     predictions across sessions; divergence starts from the 1st token.
+     The ±2 sample accuracy gap is noise (n=50).
 
-3. **Both backends benefit equally from vLLM server optimizations**:
+3. **JMLC overhead is negligible**: Latencies between SystemDS and
+   direct vLLM calls are within 1--6%, within measurement noise.
+   Neither backend is meaningfully faster.
+
+4. **Both backends benefit equally from vLLM server optimizations**:
    PagedAttention, continuous batching, KV cache, and CUDA kernels all
-   happen server-side. The Python vLLM backend has no inherent advantage
-   over SystemDS -- both are HTTP clients to the same server. With
-   concurrency > 1, both send concurrent HTTP requests that the server
-   batches on the GPU.
+   happen server-side. Both are HTTP clients to the same server.
 
-4. **Cost tradeoff depends on scale**: For this small benchmark (250
+5. **Cost tradeoff depends on scale**: For this small benchmark (250
    sequential queries, ~3 min total inference), OpenAI API ($0.047) is
    cheaper than local H100 ($0.114 vLLM / $0.118 SystemDS) because hardware
    amortization ($2.00/hr) dominates at low utilization. At production
    scale with concurrent requests, owned hardware becomes significantly
    cheaper per query.
 
-5. **Model quality matters more than serving infrastructure**: The difference
-   between OpenAI and Qwen 3B is model quality. The difference between vLLM
-   and SystemDS is zero (same model, same server).
+6. **Model quality matters more than serving infrastructure**: The
+   difference between OpenAI and Qwen 3B is model quality. The
+   difference between vLLM and SystemDS is zero (same model, same server).
 
 ## Output
 

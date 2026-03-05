@@ -4,7 +4,7 @@ name: json_extraction
 #   - json_struct: HuggingFace MasterControlAIML/JSON-Unstructured-Structured
 #   - ner: CoNLL-2003 NER dataset (named entity extraction)
 #
-# note: STRICT accuracy checking (90% exact match required).
+# note: NER mode uses entity-level F1 scoring (threshold >= 0.5).
 # ner uses CoNLL-2003 named entity recognition -- a standard NLP benchmark.
 dataset:
   source: ner

@@ -130,7 +130,7 @@ def _load_ner_samples(n: int) -> List[Sample]:
 
     samples: List[Sample] = []
     for i, item in enumerate(dataset):
-        if i >= n:
+        if len(samples) >= n:
             break
 
         tokens = item["tokens"]

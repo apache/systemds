@@ -102,10 +102,20 @@ short_model_name() {
 # ---------------------------------------------------------------------------
 
 BACKEND_ARG="${1:-gpu}"
-MODEL_ARG="${2:-}"
+MODEL_ARG=""
 EXTRA_FLAGS=""
 
-shift 2 2>/dev/null || true
+# If first arg is a backend, shift it
+if [[ -n "$1" ]]; then
+    shift
+fi
+
+# If next arg is not a flag, it's the model
+if [[ "$1" != --* ]] && [[ -n "$1" ]]; then
+    MODEL_ARG="$1"
+    shift
+fi
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --concurrency)   EXTRA_FLAGS="$EXTRA_FLAGS --concurrency $2"; shift 2 ;;

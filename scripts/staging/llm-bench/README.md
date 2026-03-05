@@ -3,7 +3,7 @@
 Benchmarking framework that compares LLM inference across three backends:
 OpenAI API, vLLM, and SystemDS JMLC with the native `llmPredict` built-in.
 Evaluated on 5 workloads (math, reasoning, summarization, JSON extraction,
-embeddings) with n=50 per workload (46 for json_extraction due to dataset size).
+embeddings) with n=50 per workload (46 for OpenAI json_extraction).
 
 ## Purpose
 
@@ -153,10 +153,11 @@ Python and Java identically.
 
 Both backends send identical model parameters (model, temperature,
 top_p, max_tokens, stream=false). Both receive the full JSON response
-at once. The run-order experiment (see below) showed that
-summarization accuracy follows run position (1st vs 2nd) due to vLLM
-APC, while reasoning varies across server sessions due to GPU
-floating-point non-determinism.
+at once. The run-order experiment (see below) showed that both
+summarization and reasoning text differences follow run position
+(1st vs 2nd) due to vLLM Automatic Prefix Caching (APC). For
+summarization this changes accuracy (25 vs 31); for reasoning the
+text differs but accuracy stays 29/50 in all 4 runs.
 
 ## Workloads
 
@@ -265,6 +266,52 @@ without deploying vLLM. The long-term vision is to replace this external
 server approach entirely with native DML transformer operations that
 run model inference directly inside SystemDS's matrix engine.
 
+### Previous Approach: Py4J Callback (PR #2430)
+
+The initial implementation (closed PR #2430) loaded HuggingFace models
+directly inside a Python worker process and used Py4J callbacks to bridge
+Java and Python:
+
+```
+Python worker (loads model into GPU memory)
+  ^
+  | Py4J callback: generateBatch(prompts)
+  v
+Java JMLC (PreparedScript.generateBatchWithMetrics)
+```
+
+This approach had several drawbacks:
+- **Tight coupling:** Model loading, tokenization, and inference all lived
+  in `llm_worker.py`, requiring Python-side changes for every model config.
+- **No standard API:** Used a custom Py4J callback protocol instead of the
+  OpenAI-compatible `/v1/completions` interface that vLLM and other servers
+  already provide.
+- **Limited optimization:** The Python worker reimplemented batching and
+  tokenization rather than leveraging vLLM's continuous batching, PagedAttention,
+  and KV cache management.
+- **Process lifecycle:** Java had to manage the Python worker process
+  (`loadModel()` / `releaseModel()`) with 300-second timeouts for large models.
+
+The current approach (this PR) replaces the Py4J callback with a native
+DML built-in (`llmPredict`) that issues HTTP requests to any
+OpenAI-compatible server:
+
+```
+DML script: llmPredict(prompts, url=..., model=...)
+  -> LlmPredictCPInstruction (Java HTTP client)
+    -> Any OpenAI-compatible server (vLLM, llm_server.py, etc.)
+```
+
+Benefits of the current approach:
+- **Decoupled:** Inference server is independent — swap vLLM for TGI, Ollama,
+  or any OpenAI-compatible endpoint without changing DML scripts or Java code.
+- **Standard protocol:** Uses the `/v1/completions` API, making benchmarks
+  directly comparable across backends.
+- **Server-side optimization:** vLLM handles batching, KV cache, PagedAttention,
+  and speculative decoding transparently.
+- **Simpler Java code:** `LlmPredictCPInstruction` is a single 216-line class
+  that builds JSON, sends HTTP, and parses the response — no process management.
+
 ## Benchmark Results
 
 ### Evaluation Methodology
@@ -314,13 +361,12 @@ that returns true/false per sample. The accuracy percentage is
 
 **Notes:**
 
-- All three backends now use the same CoNLL-2003 NER dataset (46 samples)
-  for json_extraction with entity-level F1 scoring (threshold >= 0.5).
-  An earlier run used strict 90% field-match scoring, which was the wrong
-  metric for NER evaluation and reported 15% accuracy. The entity F1
-  scorer correctly evaluates partial entity matches across categories
-  (persons, organizations, locations, misc), yielding 65% accuracy for
-  the same model outputs.
+- All three backends use the CoNLL-2003 NER dataset for json_extraction
+  with entity-level F1 scoring (threshold >= 0.5). OpenAI ran with 46
+  samples (earlier dataset version); vLLM and SystemDS ran with 50.
+  The entity F1 scorer evaluates partial entity matches across categories
+  (persons, organizations, locations, misc), yielding 66% accuracy for
+  GPU backends (33/50) and 61% for OpenAI (28/46).
 - The vLLM and SystemDS backends previously sent different `top_p` values
   to the inference server (vLLM: server default 1.0, SystemDS: 0.9). This
   has been fixed -- all backends now explicitly send `top_p=0.9`. At
@@ -334,9 +380,12 @@ that returns true/false per sample. The accuracy percentage is
 ### Accuracy Gap Analysis (vLLM vs SystemDS)
 
 On 4/5 workloads (math, reasoning, json_extraction, embeddings),
-accuracy is identical because predictions are byte-for-byte identical.
-The remaining workload (summarization) diverges due to vLLM Automatic
-Prefix Caching (APC) — proven by the run-order experiment (see below).
+accuracy is identical. On 3 of these (math, json_extraction, embeddings),
+predictions are byte-for-byte identical. On reasoning, 17/50 samples
+produce different text due to APC but accuracy is still 29/50 in all 4
+runs. The remaining workload (summarization) has both different text
+(22/50) and different accuracy (25 vs 31) due to APC — proven by the
+run-order experiment (see below).
 
 **Note on labels:** In the committed results, "vLLM" ran first and
 "SystemDS" ran second. For summarization, these labels correspond to
@@ -436,7 +485,7 @@ text for all samples. This confirms that the SystemDS JMLC pipeline
 | math | 50/50 | 0 | **100%** |
 | json_extraction | 46/46 | 0 | **100%** |
 | embeddings | 50/50 | 0 | **100%** |
-| reasoning | 29/50 | 21 | 58% |
+| reasoning | 33/50 | 17 | 66% |
 | summarization | 28/50 | 22 | 56% |
 
 **Why do 3 workloads match perfectly but 2 don't?** The key factor is
@@ -448,7 +497,7 @@ output constraint level, not output length:
 | json_extraction | 150 chars | Structured (JSON fields from input, n=46) | 100% |
 | math | **1349 chars** | Arithmetic steps (one valid path) | **100%** |
 | summarization | 328 chars | Unconstrained (many valid phrasings) | 56% |
-| reasoning | 960 chars | Unconstrained (many valid phrasings) | 58% |
+| reasoning | 960 chars | Unconstrained (many valid phrasings) | 66% |
 
 Math produces the **longest** outputs (avg 1349 chars) yet achieves
 100% identity. This is because arithmetic is highly constrained: at each
@@ -463,9 +512,14 @@ phrasings. "The report found..." vs "A report revealed..." vs
 even small differences in server cache state (APC) or floating-point
 rounding can flip the selection at near-tied positions.
 
-**Two distinct root causes for the 43 divergent samples:**
+**Root cause for all 39 divergent samples: vLLM Automatic Prefix Caching (APC).**
 
-**1. Summarization (22 samples): vLLM Automatic Prefix Caching (APC).**
+The run-order experiment proves that ALL divergent samples (22 summarization
++ 17 reasoning) follow the same APC pattern: same-position runs are 100%
+identical across sessions, while cross-position runs diverge. The backend
+label is irrelevant — only cache position matters.
+
+**1. Summarization (22 samples):**
 
 vLLM 0.15.1 enables APC by default (`enable_prefix_caching=True`). APC
 stores KV cache tensors from previously processed prefixes and reuses
@@ -541,50 +595,27 @@ These are not random — the same cache state always produces the same
 output. With temperature=0, `CUBLAS_WORKSPACE_CONFIG`, and sequential
 requests, same prompt + same cache state → same code path → same output.
 
-**2. Reasoning (21 samples): GPU floating-point non-determinism.**
+**2. Reasoning (17 samples): also APC.**
 
-Unlike summarization, reasoning divergences do NOT follow the APC swap
-pattern. The run-order experiment reveals a completely different behaviour:
+Reasoning follows the same APC pattern as summarization. Within a
+session, 33/50 (66%) of predictions are byte-for-byte identical between
+1st and 2nd run. The remaining 17 samples diverge due to APC changing
+the KV cache state. Cross-session, same-position runs are 100% identical
+(1st vs 1st, 2nd vs 2nd) — proving position determines output, not the
+backend.
 
-```
-Prediction matching patterns for reasoning (50 samples, S1 vs S3):
-  24x  ov=os, rv=rs   (same within session, different across sessions)
-   9x  rv=rs only     (reverse session matches, original partially differs)
-   5x  ov=os only     (original session matches, reverse partially differs)
-  12x  all 4 different (every run produces unique text)
-```
+Unlike summarization, the accuracy impact is zero: all 4 runs score
+29/50. The 17 divergent samples produce different text but the same
+yes/no answer (or different wrong answers). Reasoning diverges later in
+the response (median divergence point ~400 chars) compared to
+summarization, because BoolQ chain-of-thought reasoning shares more
+common structure before branching.
 
-Key evidence:
-- **0/50 predictions identical between original and reverse runs** for
-  the *same* backend (e.g., vLLM original vs vLLM reverse = 0% match)
-- **Divergence starts from the 1st generated token** (43/50 samples
-  diverge within the first 2 characters across sessions)
-- **Within the same session**, 29-33/50 predictions match between
-  vLLM and SystemDS (they share the same server state)
-- Accuracy is unstable: vLLM scores 31 (original) vs 29 (reverse);
-  SystemDS scores 33 (original) vs 29 (reverse)
-
-This is cross-session GPU non-determinism: despite temperature=0 and
-`CUBLAS_WORKSPACE_CONFIG=:4096:8`, the GPU produces different logits
-across server restarts. BoolQ prompts are long passages (high token
-count) that accumulate floating-point rounding differences across
-attention layers, causing divergence from the very first generated
-token. This is a known limitation — `CUBLAS_WORKSPACE_CONFIG` makes
-cuBLAS operations deterministic within a session, but does not
-guarantee bit-identical results across process restarts (different
-memory layouts, kernel launch configurations, etc.).
-
-**Investigation: cuBLAS non-determinism.** cuBLAS uses algorithms where
-the order of floating-point additions varies between runs. Since FP
-addition is not associative, this produces slightly different logit
-values. When two token candidates have nearly equal logits (e.g.,
-5.00001 vs 5.00000), a tiny rounding change can flip the argmax.
-
-We ran vLLM with `CUBLAS_WORKSPACE_CONFIG=:4096:8` (forces deterministic
-cuBLAS algorithms). Constrained workloads (math, json_extraction,
-embeddings) became 100% byte-identical. Reasoning and summarization
-still diverged — cuBLAS determinism helps within a session but does not
-eliminate cross-session or APC-induced divergence.
+`CUBLAS_WORKSPACE_CONFIG=:4096:8` was used for all runs to force
+deterministic cuBLAS algorithms. The constrained workloads (math,
+json_extraction, embeddings) achieve 100% byte-identity. The
+unconstrained workloads (reasoning, summarization) diverge due to APC
+cache state, not cuBLAS non-determinism.
 
 **Why streaming was investigated (and why it is not the cause).**
 
@@ -592,7 +623,7 @@ The original vLLM backend used `"stream": true` while SystemDS used
 `"stream": false`. Streaming was checked first as a potential source
 of byte-level corruption. The 150 byte-identical samples across math,
 json_extraction, and embeddings ruled out SSE corruption. Switching to
-`"stream": false` produced identical divergence counts (same 43
+`"stream": false` produced identical divergence counts (same 39
 samples), confirming streaming had no effect. Both backends now use
 non-streaming mode.
 
@@ -722,14 +753,11 @@ The accuracy comparison is the apples-to-apples metric since all backends
 process the same prompts with the same parameters.
 
 **SystemDS vs vLLM latency** (same server, same model, CUBLAS
-deterministic run, vLLM used `stream=true` at the time of this
-measurement): Latencies are within 1--6% of each other. These
-differences are within measurement noise for two reasons:
-(1) the runs were 6 minutes apart — server cache state and scheduling
-differ; (2) divergent samples generate different output lengths, and
-latency is dominated by output token count. A sample where vLLM
-generates 91 more characters (observed average in reasoning) simply
-does more work — it is not a sign that SystemDS is faster or slower.
+deterministic, non-streaming HTTP): Latencies are within 0--3% of each
+other for generation workloads. These differences are within measurement
+noise: the runs were ~6 minutes apart and divergent samples generate
+different output lengths. Latency is dominated by output token count —
+a sample where one run generates more tokens simply does more work.
 
 | Workload | vLLM | SystemDS | Difference |
 |----------|------|----------|------------|
@@ -749,12 +777,12 @@ latency is determined by output token count, not by which client sends
 the request.
 
 **Why output length differs between backends:**
-When two sequential runs diverge at a single token (due to APC or GPU
-non-determinism), the two autoregressive paths produce responses of
-different lengths — neither is reliably longer. Among the 21 divergent
-reasoning samples, the 1st-run was longer in 12 cases and the 2nd-run
-in 9 cases. On average the 1st-run was 91 chars longer only due to
-outliers — it is not a systematic property of either run position.
+When two sequential runs diverge at a single token (due to APC), the
+two autoregressive paths produce responses of different lengths — neither
+is reliably longer. Among the 17 divergent reasoning samples, neither
+run position is systematically longer. The difference in latency between
+backends on these samples reflects the output length difference, not a
+performance difference.
 
 ### Throughput (requests/second)
 
@@ -829,30 +857,28 @@ embeddings), the amortized cost is ~$0.00003/query vs OpenAI's
 | Backend | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 |
 |---------|-----------|-----------|-----------|
 | OpenAI | 0.270 | 0.066 | 0.201 |
-| vLLM Qwen 3B | 0.226 | 0.056 | 0.157 |
-| SystemDS Qwen 3B | 0.220 | 0.057 | 0.157 |
+| vLLM Qwen 3B | 0.220 | 0.057 | 0.157 |
+| SystemDS Qwen 3B | 0.226 | 0.056 | 0.157 |
 
 ## Conclusions
 
 1. **SystemDS `llmPredict` is a lossless pass-through**: On 3/5
    workloads (math, json_extraction, embeddings), every response is
-   byte-for-byte identical between vLLM and SystemDS — 196/246 samples
+   byte-for-byte identical between vLLM and SystemDS — 150/150 samples
    total. The JMLC pipeline (Py4J -> DML -> Java HTTP -> FrameBlock)
    introduces zero data loss or corruption.
 
-2. **The 43 divergent samples have two distinct root causes**:
-   - **Summarization (22 samples):** vLLM Automatic Prefix Caching (APC).
-     The run-order experiment proves all 22 follow the `1st-run = variant A,
-     2nd-run = variant B` pattern with zero exceptions. 1st-run scores
-     25/50, 2nd-run scores 31/50, regardless of which backend runs first.
-   - **Reasoning (21 samples):** GPU floating-point non-determinism
-     across server sessions. The same backend produces 0% identical
-     predictions across sessions; divergence starts from the 1st token.
-     The ±2 sample accuracy gap is noise (n=50).
+2. **All 39 divergent samples are caused by vLLM Automatic Prefix
+   Caching (APC)**: The run-order experiment proves that all divergent
+   samples (22 summarization + 17 reasoning) follow the same pattern:
+   same-position runs are 100% byte-identical across sessions, while
+   cross-position runs diverge. For summarization, this changes accuracy
+   (25/50 vs 31/50). For reasoning, the text differs but accuracy
+   remains 29/50 in all 4 runs.
 
 3. **JMLC overhead is negligible**: Latencies between SystemDS and
-   direct vLLM calls are within 1--6%, within measurement noise.
-   Neither backend is meaningfully faster.
+   direct vLLM calls are within 0--3% for generation workloads, within
+   measurement noise. Neither backend is meaningfully faster.
 
 4. **Both backends benefit equally from vLLM server optimizations**:
    PagedAttention, continuous batching, KV cache, and CUDA kernels all
@@ -860,10 +886,10 @@ embeddings), the amortized cost is ~$0.00003/query vs OpenAI's
 
 5. **Cost tradeoff depends on scale**: For this small benchmark (250
    sequential queries, ~3 min total inference), OpenAI API ($0.047) is
-   cheaper than local H100 ($0.114 vLLM / $0.118 SystemDS) because hardware
-   amortization ($2.00/hr) dominates at low utilization. At production
-   scale with concurrent requests, owned hardware becomes significantly
-   cheaper per query.
+   cheaper than local H100 ($0.108 vLLM / $0.109 SystemDS) because
+   hardware amortization ($2.00/hr) dominates at low utilization. At
+   production scale with concurrent requests, owned hardware becomes
+   significantly cheaper per query.
 
 6. **Model quality matters more than serving infrastructure**: The
    difference between OpenAI and Qwen 3B is model quality. The

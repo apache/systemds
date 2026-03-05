@@ -105,8 +105,11 @@ class SystemDSBackend:
 
         t_pipeline_start = time.perf_counter()
 
+        # --- Phase 1: DML compilation (or cache hit) ---
+        t_compile_start = time.perf_counter()
         script_key = (self.inference_url, self.model, max_tokens, temperature, top_p, concurrency)
-        if script_key in self._script_cache:
+        cache_hit = script_key in self._script_cache
+        if cache_hit:
             ps = self._script_cache[script_key]
             logger.debug("Reusing cached PreparedScript for key %s", script_key)
         else:
@@ -126,14 +129,18 @@ class SystemDSBackend:
             ps = self._connection.prepareScript(_DML_SCRIPT, args, inputs, outputs)
             self._script_cache[script_key] = ps
             logger.debug("Compiled and cached new PreparedScript for key %s", script_key)
+        t_compile_end = time.perf_counter()
 
-        # n x 1 string frame
+        # --- Phase 2: Py4J marshalling (prompts -> Java) ---
+        t_marshal_start = time.perf_counter()
         n = len(prompts)
         prompt_data = self._gateway.new_array(jvm.java.lang.String, n, 1)
         for i, p in enumerate(prompts):
             prompt_data[i][0] = p
         ps.setFrame("prompts", prompt_data)
+        t_marshal_end = time.perf_counter()
 
+        # --- Phase 3: Java execution (DML -> llmPredict -> HTTP) ---
         t_exec_start = time.perf_counter()
         try:
             rv = ps.executeScript()
@@ -155,11 +162,17 @@ class SystemDSBackend:
             ) from e
         t_exec_end = time.perf_counter()
 
+        # --- Phase 4: Py4J unmarshalling (Java FrameBlock -> Python) ---
+        t_unmarshal_start = time.perf_counter()
         frame_block = rv.getFrameBlock("results")
+        t_unmarshal_end = time.perf_counter()
 
         t_pipeline_end = time.perf_counter()
 
+        compile_ms = (t_compile_end - t_compile_start) * 1000.0
+        marshal_ms = (t_marshal_end - t_marshal_start) * 1000.0
         exec_wall_ms = (t_exec_end - t_exec_start) * 1000.0
+        unmarshal_ms = (t_unmarshal_end - t_unmarshal_start) * 1000.0
         pipeline_wall_ms = (t_pipeline_end - t_pipeline_start) * 1000.0
 
         raw = []
@@ -203,9 +216,13 @@ class SystemDSBackend:
                 "latency_ms": lat,
                 "extra": {
                     "java_http_ms": java_http_ms,
+                    "compile_ms": compile_ms,
+                    "compile_cache_hit": cache_hit,
+                    "marshal_ms": marshal_ms,
+                    "unmarshal_ms": unmarshal_ms,
+                    "exec_wall_ms": exec_wall_ms / n,
                     "pipeline_wall_ms": pipeline_wall_ms,
                     "pipeline_overhead_ms": max(0.0, overhead_ms),
-                    "exec_wall_ms": exec_wall_ms / n,
                     "concurrency": concurrency,
                     "usage": {
                         "input_tokens": input_tokens,
@@ -217,9 +234,13 @@ class SystemDSBackend:
 
         avg_java_http_ms = sum(r["extra"]["java_http_ms"] for r in results) / n
         logger.info(
-            "llmPredict: %d prompts | pipeline=%.1fms | exec=%.1fms | "
-            "java_http=%.1fms/prompt (avg)",
-            n, pipeline_wall_ms, exec_wall_ms, avg_java_http_ms,
+            "llmPredict: %d prompts | pipeline=%.1fms | "
+            "compile=%.1fms (%s) | marshal=%.1fms | exec=%.1fms | "
+            "unmarshal=%.1fms | java_http=%.1fms/prompt (avg)",
+            n, pipeline_wall_ms,
+            compile_ms, "hit" if cache_hit else "miss",
+            marshal_ms, exec_wall_ms,
+            unmarshal_ms, avg_java_http_ms,
         )
         return results
 

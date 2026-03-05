@@ -153,7 +153,7 @@ Python and Java identically.
 
 Both backends send identical model parameters (model, temperature,
 top_p, max_tokens, stream=false). Both receive the full JSON response
-at once. The 4-way reverse-order experiment (see below) showed that
+at once. The run-order experiment (see below) showed that
 summarization accuracy follows run position (1st vs 2nd) due to vLLM
 APC, while reasoning varies across server sessions due to GPU
 floating-point non-determinism.
@@ -299,7 +299,7 @@ that returns true/false per sample. The accuracy percentage is
   vLLM inference server with temperature=0.0. Predictions are byte-for-byte
   identical on all samples in these 3 workloads.
 - **Summarization gap (25 vs 31) is caused by vLLM Automatic Prefix Caching
-  (APC).** The 4-way reverse-order experiment proves this: 22/50 samples
+  (APC).** The run-order experiment proves this: 22/50 samples
   produce exactly 2 text variants determined by run position (1st vs 2nd),
   not by backend. The 1st-run variant always scores 25/50; the 2nd-run
   variant always scores 31/50. See "Reverse-Order Experiment" below.
@@ -344,7 +344,7 @@ identical because predictions are byte-for-byte identical. The
 remaining 2 workloads diverge for different reasons:
 
 - **Summarization**: vLLM Automatic Prefix Caching (APC) — proven by
-  the 4-way reverse-order experiment (see below).
+  the run-order experiment (see below).
 - **Reasoning**: GPU floating-point non-determinism across server
   sessions — even the same backend produces different text on every run.
 
@@ -393,7 +393,7 @@ word overlap between prediction and reference, with a pass threshold of
 samples where APC produces different text. In these 6 cases, one
 variant passes ROUGE and the other fails.
 
-The 4-way reverse-order experiment proves this is APC, not a backend
+The run-order experiment proves this is APC, not a backend
 difference. For all 22 unstable samples:
 - Original vLLM (1st) = Reverse SystemDS (1st) — same cold-cache text
 - Original SystemDS (2nd) = Reverse vLLM (2nd) — same warm-cache text
@@ -510,7 +510,7 @@ the 1st batch, taking a different code path (skipping prefill) that
 produces slightly different floating-point attention scores — enough to
 flip the argmax at near-tied token positions.
 
-The 4-way reverse-order experiment proves this conclusively. For ALL 22
+The run-order experiment proves this conclusively. For ALL 22
 unstable summarization samples:
 
 ```
@@ -579,10 +579,10 @@ requests, same prompt + same cache state → same code path → same output.
 **2. Reasoning (21 samples): GPU floating-point non-determinism.**
 
 Unlike summarization, reasoning divergences do NOT follow the APC swap
-pattern. The 4-way experiment reveals a completely different behaviour:
+pattern. The run-order experiment reveals a completely different behaviour:
 
 ```
-4-way prediction matching patterns for reasoning (50 samples):
+Prediction matching patterns for reasoning (50 samples, S1 vs S3):
   24x  ov=os, rv=rs   (same within session, different across sessions)
    9x  rv=rs only     (reverse session matches, original partially differs)
    5x  ov=os only     (original session matches, reverse partially differs)
@@ -631,61 +631,69 @@ json_extraction, and embeddings ruled out SSE corruption. Switching to
 samples), confirming streaming had no effect. Both backends now use
 non-streaming mode.
 
-### Reverse-Order Experiment (4-Way Analysis)
+### Run-Order Experiment (2 Sessions, 4-Way Analysis)
 
 To understand why vLLM and SystemDS produce different accuracy, the
 benchmark was re-run with **reversed order**: SystemDS first, vLLM
-second (opposite of original: vLLM first, SystemDS second). This
-creates 4 data points per sample, enabling precise root cause analysis.
+second (opposite of original: vLLM first, SystemDS second). Both
+sessions use the same code and vLLM server configuration, with a
+fresh server restart between them. This creates 4 data points per
+sample, enabling precise root cause analysis.
 
-**Accuracy by run:**
+- **Original order (Mar 4)**: vLLM first, SystemDS second
+- **Reverse order (Mar 5)**: SystemDS first, vLLM second
 
-| Workload | Orig: vLLM (1st) | Orig: SystemDS (2nd) | Rev: SystemDS (1st) | Rev: vLLM (2nd) |
+**Accuracy by session and run position:**
+
+| Workload | Orig: vLLM (1st) | Orig: SysDS (2nd) | Rev: SysDS (1st) | Rev: vLLM (2nd) |
 |---|---|---|---|---|
 | math | 68% (34/50) | 68% (34/50) | 68% (34/50) | 68% (34/50) |
 | reasoning | 62% (31/50) | 66% (33/50) | 58% (29/50) | 58% (29/50) |
-| summarization | 50% (25/50) | 62% (31/50) | **50% (25/50)** | **62% (31/50)** |
+| summarization | **50% (25/50)** | **62% (31/50)** | **50% (25/50)** | **62% (31/50)** |
 | json_extraction | 65% (30/46) | 65% (30/46) | 65% (30/46) | 65% (30/46) |
 | embeddings | 90% (45/50) | 90% (45/50) | 90% (45/50) | 90% (45/50) |
 
-**Prediction identity (how many predictions are byte-for-byte identical):**
+**Prediction identity (byte-for-byte text comparison):**
 
 | Comparison | math | reasoning | summarization | json_extraction | embeddings |
 |---|---|---|---|---|---|
-| orig vLLM vs orig SystemDS (cross-backend, same session) | 100% | 58% | 56% | 100% | 100% |
-| rev vLLM vs rev SystemDS (cross-backend, same session) | 100% | 66% | 56% | 100% | 100% |
-| orig vLLM vs rev vLLM (same backend, cross-session) | 100% | **0%** | 56% | 100% | 100% |
-| orig SystemDS vs rev SystemDS (same backend, cross-session) | 100% | **0%** | 56% | 100% | 100% |
+| Same session, cross-backend (orig: vLLM vs SysDS) | 100% | 58% | 56% | 100% | 100% |
+| Same session, cross-backend (rev: SysDS vs vLLM) | 100% | 66% | 56% | 100% | 100% |
+| Cross-session, same backend (orig vLLM vs rev vLLM) | 100% | **0%** | 56% | 100% | 100% |
+| Cross-session, same backend (orig SysDS vs rev SysDS) | 100% | **0%** | 56% | 100% | 100% |
+| **Cross-session, same position (orig 1st vs rev 1st)** | **100%** | **0%** | **100%** | **100%** | **100%** |
+| **Cross-session, same position (orig 2nd vs rev 2nd)** | **100%** | **0%** | **100%** | **100%** | **100%** |
+
+The last two rows are the key: when comparing runs that occupied the
+**same position** (both 1st or both 2nd), summarization achieves 100%
+text identity — even though different backends produced the text. This
+proves position determines output, not the backend.
 
 **Key findings:**
 
 **1. Summarization: APC confirmed as root cause.**
 
-The summarization accuracy DOES follow run position. Re-reading the
-table: 1st-run always scores 25/50, 2nd-run always scores 31/50.
+The summarization accuracy follows run position perfectly across both
+sessions. 1st-run always scores 25/50, 2nd-run always scores 31/50:
 
 ```
-Original: vLLM (1st) = 25/50,  SystemDS (2nd) = 31/50
-Reverse:  SystemDS (1st) = 25/50,  vLLM (2nd) = 31/50
+Original order: vLLM     (1st) = 25/50,  SystemDS (2nd) = 31/50
+Reverse order:  SystemDS (1st) = 25/50,  vLLM     (2nd) = 31/50
 ```
 
-This was initially misread as "vLLM always 50%, SystemDS always 62%" —
-but that interpretation is wrong. The numbers actually show: **1st-run
-always 50%, 2nd-run always 62%**. The label that gets 62% changes with
-run order (SystemDS in original, vLLM in reverse), confirming the
-accuracy follows cache position, not the backend.
-
-The prediction-level analysis confirms this: for all 22 unstable
-samples, `orig_vLLM = rev_SystemDS` (both ran 1st) and
-`orig_SystemDS = rev_vLLM` (both ran 2nd).
+For all 22 unstable samples, the text output swaps with position:
+`orig_vLLM(1st) == rev_SystemDS(1st)` and
+`orig_SystemDS(2nd) == rev_vLLM(2nd)` — 50/50 byte-for-byte
+identical in each group. Zero exceptions.
 
 **2. Reasoning: GPU non-determinism, NOT APC.**
 
 Reasoning shows 0% prediction identity across sessions for the SAME
 backend. Every server restart produces completely different text from
 the very first token. Within a session, backends share ~60% of
-predictions (because they hit the same server state). The ±2 sample
-accuracy shifts are noise from n=50 with non-deterministic generation.
+predictions (because they hit the same vLLM server state). The
+accuracy varies between sessions: 31/33 (original), 29/29 (reverse)
+— noise from n=50 with non-deterministic generation.
 
 **3. Math, json_extraction, embeddings: fully deterministic.**
 
@@ -709,8 +717,21 @@ each backend:
   Timer runs from POST start to full JSON response received.
 - **SystemDS**: Java `System.nanoTime()` inside `HttpURLConnection`
   round-trip (reads full response with `readAllBytes()`).
-  Reported latency = Java HTTP time + amortized JMLC pipeline overhead
-  (Py4J + DML compilation + FrameBlock marshalling).
+  Reported latency = Java HTTP time + amortized JMLC pipeline overhead.
+  The pipeline overhead is instrumented into 4 phases:
+  1. **DML compilation** (`compile_ms`) — compiling the DML script or
+     cache hit (PreparedScript reuse). First call compiles; subsequent
+     calls with same parameters reuse the cached script (~0 ms).
+  2. **Py4J marshalling** (`marshal_ms`) — transferring prompt strings
+     from Python to Java via Py4J (creating Java String arrays, calling
+     `setFrame()`).
+  3. **Java execution** (`exec_wall_ms`) — `executeScript()` which runs
+     the DML program including the `llmPredict` instruction's HTTP calls.
+  4. **Py4J unmarshalling** (`unmarshal_ms`) — retrieving the Java
+     `FrameBlock` result back to Python via `getFrameBlock()`.
+  Each phase is timed with `time.perf_counter()` in the Python backend.
+  The Java HTTP time per prompt is reported separately by the Java
+  instruction itself (column 2 of the output FrameBlock).
 - **OpenAI**: Python `time.perf_counter()` around OpenAI API call.
   Includes network round-trip to cloud servers.
 
@@ -833,7 +854,7 @@ embeddings), the amortized cost is ~$0.00003/query vs OpenAI's
 
 2. **The 43 divergent samples have two distinct root causes**:
    - **Summarization (22 samples):** vLLM Automatic Prefix Caching (APC).
-     The 4-way experiment proves all 22 follow the `1st-run = variant A,
+     The run-order experiment proves all 22 follow the `1st-run = variant A,
      2nd-run = variant B` pattern with zero exceptions. 1st-run scores
      25/50, 2nd-run scores 31/50, regardless of which backend runs first.
    - **Reasoning (21 samples):** GPU floating-point non-determinism
@@ -870,6 +891,21 @@ Each run produces:
 
 ## Tests
 
+**Python tests** (accuracy checkers, workload loaders):
 ```bash
 python -m pytest tests/ -v
 ```
+
+**Java tests** (`JMLCLLMInferenceTest`):
+- `testSinglePrompt` — end-to-end single prompt via JMLC (requires running LLM server)
+- `testBatchInference` — 3-prompt batch with result validation
+- `testConcurrency` — concurrent execution with `concurrency=2`
+- `testServerUnreachable` — verifies `DMLRuntimeException` for connection refused
+- `testInvalidUrl` — verifies `DMLRuntimeException` for malformed URL
+- `testHttpErrorResponse` — mock server returns HTTP 500, verifies error propagation
+- `testMalformedJsonResponse` — mock server returns invalid JSON, verifies error handling
+- `testMissingChoicesInResponse` — mock server returns JSON without `choices` array
+
+The negative tests (HTTP 500, malformed JSON, missing choices) use Java's built-in
+`HttpServer` to create mock endpoints, so they run without an external LLM server.
+Live tests use `Assume.assumeNoException` to skip gracefully when no server is available.

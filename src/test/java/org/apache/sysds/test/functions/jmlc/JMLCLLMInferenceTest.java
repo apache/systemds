@@ -19,8 +19,13 @@
 
 package org.apache.sysds.test.functions.jmlc;
 
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.sun.net.httpserver.HttpServer;
 
 import org.apache.sysds.api.jmlc.Connection;
 import org.apache.sysds.api.jmlc.PreparedScript;
@@ -210,6 +215,154 @@ public class JMLCLLMInferenceTest extends AutomatedTestBase {
 			e.printStackTrace();
 			org.junit.Assume.assumeNoException("LLM server not available", e);
 		} finally {
+			if (conn != null) conn.close();
+		}
+	}
+
+	@Test
+	public void testHttpErrorResponse() {
+		// mock server that returns HTTP 500
+		HttpServer server = null;
+		Connection conn = null;
+		try {
+			server = HttpServer.create(new InetSocketAddress(0), 0);
+			int port = server.getAddress().getPort();
+			server.createContext("/v1/completions", exchange -> {
+				byte[] resp = "{\"error\": \"internal server error\"}".getBytes(StandardCharsets.UTF_8);
+				exchange.sendResponseHeaders(500, resp.length);
+				try(OutputStream os = exchange.getResponseBody()) {
+					os.write(resp);
+				}
+			});
+			server.start();
+
+			conn = new Connection();
+			Map<String, String> args = new HashMap<>();
+			args.put("$url", "http://localhost:" + port + "/v1/completions");
+			args.put("$mt", "20");
+			args.put("$temp", "0.0");
+			args.put("$tp", "0.9");
+			PreparedScript ps = conn.prepareScript(DML_SCRIPT, args,
+				new String[]{"prompts"}, new String[]{"results"});
+			ps.setFrame("prompts", new String[][]{{"Hello"}});
+
+			try {
+				ps.executeScript();
+				Assert.fail("Expected DMLRuntimeException for HTTP 500");
+			}
+			catch (DMLRuntimeException e) {
+				String fullMsg = getExceptionChainMessage(e);
+				System.out.println("Correctly caught HTTP 500: " + fullMsg);
+				Assert.assertTrue("Error should mention HTTP 500",
+					fullMsg.contains("HTTP 500"));
+			}
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			org.junit.Assume.assumeNoException(
+				"Could not set up mock server", e);
+		}
+		finally {
+			if (server != null) server.stop(0);
+			if (conn != null) conn.close();
+		}
+	}
+
+	@Test
+	public void testMalformedJsonResponse() {
+		// mock server that returns HTTP 200 with invalid JSON
+		HttpServer server = null;
+		Connection conn = null;
+		try {
+			server = HttpServer.create(new InetSocketAddress(0), 0);
+			int port = server.getAddress().getPort();
+			server.createContext("/v1/completions", exchange -> {
+				byte[] resp = "this is not json at all".getBytes(StandardCharsets.UTF_8);
+				exchange.sendResponseHeaders(200, resp.length);
+				try(OutputStream os = exchange.getResponseBody()) {
+					os.write(resp);
+				}
+			});
+			server.start();
+
+			conn = new Connection();
+			Map<String, String> args = new HashMap<>();
+			args.put("$url", "http://localhost:" + port + "/v1/completions");
+			args.put("$mt", "20");
+			args.put("$temp", "0.0");
+			args.put("$tp", "0.9");
+			PreparedScript ps = conn.prepareScript(DML_SCRIPT, args,
+				new String[]{"prompts"}, new String[]{"results"});
+			ps.setFrame("prompts", new String[][]{{"Hello"}});
+
+			try {
+				ps.executeScript();
+				Assert.fail("Expected DMLRuntimeException for malformed JSON");
+			}
+			catch (DMLRuntimeException e) {
+				String fullMsg = getExceptionChainMessage(e);
+				System.out.println("Correctly caught malformed JSON: " + fullMsg);
+				Assert.assertTrue("Error should mention response issue",
+					fullMsg.contains("failed") || fullMsg.contains("response"));
+			}
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			org.junit.Assume.assumeNoException(
+				"Could not set up mock server", e);
+		}
+		finally {
+			if (server != null) server.stop(0);
+			if (conn != null) conn.close();
+		}
+	}
+
+	@Test
+	public void testMissingChoicesInResponse() {
+		// mock server that returns valid JSON but no "choices" array
+		HttpServer server = null;
+		Connection conn = null;
+		try {
+			server = HttpServer.create(new InetSocketAddress(0), 0);
+			int port = server.getAddress().getPort();
+			server.createContext("/v1/completions", exchange -> {
+				byte[] resp = "{\"id\": \"test\", \"object\": \"text_completion\"}"
+					.getBytes(StandardCharsets.UTF_8);
+				exchange.sendResponseHeaders(200, resp.length);
+				try(OutputStream os = exchange.getResponseBody()) {
+					os.write(resp);
+				}
+			});
+			server.start();
+
+			conn = new Connection();
+			Map<String, String> args = new HashMap<>();
+			args.put("$url", "http://localhost:" + port + "/v1/completions");
+			args.put("$mt", "20");
+			args.put("$temp", "0.0");
+			args.put("$tp", "0.9");
+			PreparedScript ps = conn.prepareScript(DML_SCRIPT, args,
+				new String[]{"prompts"}, new String[]{"results"});
+			ps.setFrame("prompts", new String[][]{{"Hello"}});
+
+			try {
+				ps.executeScript();
+				Assert.fail("Expected DMLRuntimeException for missing choices");
+			}
+			catch (DMLRuntimeException e) {
+				String fullMsg = getExceptionChainMessage(e);
+				System.out.println("Correctly caught missing choices: " + fullMsg);
+				Assert.assertTrue("Error should mention missing choices",
+					fullMsg.contains("choices"));
+			}
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			org.junit.Assume.assumeNoException(
+				"Could not set up mock server", e);
+		}
+		finally {
+			if (server != null) server.stop(0);
 			if (conn != null) conn.close();
 		}
 	}

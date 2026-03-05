@@ -1,0 +1,34 @@
+# Benchmark outputs (committed for project submission)
+# results/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment variables
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Reports (committed for project submission)
+# *.html
+!templates/*.html
+
+# Dataset cache
+.cache/

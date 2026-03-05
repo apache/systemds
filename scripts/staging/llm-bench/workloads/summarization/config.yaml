@@ -1,0 +1,20 @@
+name: summarization
+
+# available sources: cnn (CNN/DailyMail), xsum (BBC XSum)
+dataset:
+  source: xsum
+  n_samples: 50
+
+generation:
+  max_tokens: 128
+  temperature: 0.0
+  top_p: 0.9
+
+openai:
+  model: gpt-4.1-mini
+  max_output_tokens: 128
+  temperature: 0.0
+  top_p: 0.9
+  streaming: true 
+  max_retries: 5
+  base_sleep_s: 0.5

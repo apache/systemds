@@ -1,0 +1,21 @@
+{
+  "n": 50.0,
+  "latency_ms_mean": 1735.1548483399995,
+  "latency_ms_std": 619.0180102170242,
+  "latency_ms_min": 904.0949999999981,
+  "latency_ms_max": 4881.407542000005,
+  "latency_ms_p50": 1688.0436875000023,
+  "latency_ms_p95": 2549.1829626499934,
+  "latency_ms_cv": 0.35675087489121265,
+  "throughput_req_per_s": 0.5760060829950922,
+  "accuracy_mean": 0.88,
+  "accuracy_count": "44/50",
+  "total_input_tokens": 8811,
+  "total_output_tokens": 4037,
+  "total_tokens": 12848,
+  "api_cost_usd": 0.009983600000000004,
+  "memory_mb_initial": 147.421875,
+  "memory_mb_peak": 165.96875,
+  "memory_mb_avg": 139.82144147398844,
+  "cpu_percent_avg": 3.094797687861273
+}

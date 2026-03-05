@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -729,12 +730,19 @@ public class ParForProgramBlock extends ForProgramBlock {
 		final LocalTaskQueue<Task> queue = new LocalTaskQueue<>();
 		final Thread[] threads         = new Thread[_numThreads];
 		final LocalParWorker[] workers = new LocalParWorker[_numThreads];
+		@SuppressWarnings("unchecked")
+		final HashMap<String, Data>[] workerBaselines = DMLScript.USE_OOC ? new HashMap[_numThreads] : null;
 		try
 		{
 			// Step 1) create task queue and init workers in parallel
 			// (including preparation of update-in-place variables)
 			IntStream.range(0, _numThreads).forEach(i -> {
 				workers[i] = createParallelWorker( _pwIDs[i], queue, ec, i);
+				if(DMLScript.USE_OOC) {
+					workerBaselines[i] = new HashMap<>();
+					for(Map.Entry<String, Data> e : workers[i].getVariables().entrySet())
+						workerBaselines[i].put(e.getKey(), e.getValue());
+				}
 				threads[i] = new Thread( workers[i] , "PARFOR");
 				threads[i].setPriority(Thread.MAX_PRIORITY);
 			});
@@ -777,11 +785,21 @@ public class ParForProgramBlock extends ForProgramBlock {
 			
 			// Step 4) collecting results from each parallel worker
 			//obtain results and cleanup other intermediates before result merge
-			LocalVariableMap [] localVariables = new LocalVariableMap [_numThreads]; 
+			Set<String> resultVarNames = _resultVars.stream()
+				.map(v -> v._name).collect(Collectors.toSet());
+			LocalVariableMap [] localVariables = new LocalVariableMap [_numThreads];
 			for( int i=0; i<_numThreads; i++ ) {
 				localVariables[i] = workers[i].getVariables();
-				localVariables[i].removeAllNotIn(_resultVars.stream()
-					.map(v -> v._name).collect(Collectors.toSet()));
+				if(DMLScript.USE_OOC) {
+					for(String var : localVariables[i].keySet()) {
+						if(!resultVarNames.contains(var)) {
+							Data current = localVariables[i].get(var);
+							if(current != null && current != workerBaselines[i].get(var))
+								VariableCPInstruction.processRmvarInstruction(workers[i].getExecutionContext(), var);
+						}
+					}
+				}
+				localVariables[i].removeAllNotIn(resultVarNames);
 				numExecutedTasks += workers[i].getExecutedTasks();
 				numExecutedIterations += workers[i].getExecutedIterations();
 			}
@@ -797,6 +815,20 @@ public class ParForProgramBlock extends ForProgramBlock {
 			//consolidate results into global symbol table
 			consolidateAndCheckResults( ec, numIterations, numCreatedTasks,
 				numExecutedIterations, numExecutedTasks, localVariables );
+
+			if(DMLScript.USE_OOC) {
+				// Cleanup remaining variables
+				for(int i = 0; i < workers.length; i++) {
+					if(workers[i].getExecutedTasks() <= 0)
+						continue;
+					for(String var : localVariables[i].keySet()) {
+						Data current = localVariables[i].get(var);
+						if(current != null && current != workerBaselines[i].get(var))
+							VariableCPInstruction.processRmvarInstruction(workers[i].getExecutionContext(), var);
+					}
+				}
+
+			}
 			
 			// Step 5) cleanup local parworkers (e.g., remove created functions)
 			for( int i=0; i<_numThreads; i++ ) {
@@ -1392,11 +1424,19 @@ public class ParForProgramBlock extends ForProgramBlock {
 					CacheableData<?> outNew = USE_PARALLEL_RESULT_MERGE ?
 						rm.executeParallelMerge(_numThreads) :
 						rm.executeSerialMerge();
-					
-					//cleanup existing var
-					Data exdata = ec.removeVariable(var._name);
-					if( exdata != null && exdata != outNew )
-						ec.cleanupDataObject(exdata);
+
+					if(DMLScript.USE_OOC) {
+						//cleanup existing var with rmvar semantics to keep OOC ref counters consistent
+						Data exdata = ec.getVariable(var._name);
+						if( exdata != null && exdata != outNew )
+							VariableCPInstruction.processRmvarInstruction(ec, var._name);
+					}
+					else {
+						//cleanup existing var
+						Data exdata = ec.removeVariable(var._name);
+						if( exdata != null && exdata != outNew )
+							ec.cleanupDataObject(exdata);
+					}
 					
 					//cleanup of intermediate result variables
 					cleanWorkerResultVariables( ec, out, in, true );
@@ -1607,6 +1647,11 @@ public class ParForProgramBlock extends ForProgramBlock {
 						outNew = rm.executeSerialMerge();
 					
 					synchronized( _ec.getVariables() ){
+						if(DMLScript.USE_OOC) {
+							Data exdata = _ec.getVariable(var._name);
+							if(exdata != null && exdata != outNew)
+								VariableCPInstruction.processRmvarInstruction(_ec, var._name);
+						}
 						_ec.getVariables().put( var._name, outNew);
 					}
 		

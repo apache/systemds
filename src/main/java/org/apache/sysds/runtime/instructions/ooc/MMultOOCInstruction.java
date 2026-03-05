@@ -84,7 +84,7 @@ public class MMultOOCInstruction extends ComputationOOCInstruction {
 		int emitAggThreshold = (int)min.getDataCharacteristics().getNumColBlocks();
 
 		groupedReduceOOC(intermediateStream, outStream, (left, right) -> {
-			MatrixBlock mb = ((MatrixBlock)left.getValue()).binaryOperationsInPlace(plus, right.getValue());
+			MatrixBlock mb = ((MatrixBlock)left.getValue()).binaryOperations(plus, right.getValue());
 			left.setValue(mb);
 			return left;
 		}, emitAggThreshold);

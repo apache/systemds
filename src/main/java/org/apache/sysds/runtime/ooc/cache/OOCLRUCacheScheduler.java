@@ -32,28 +32,42 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 	private static final boolean SANITY_CHECKS = false;
 	private static final Log LOG = LogFactory.getLog(OOCLRUCacheScheduler.class.getName());
 	private final OOCIOHandler _ioHandler;
-	private final LinkedHashMap<BlockKey, BlockEntry> _cache;
+	private final HashMap<BlockKey, BlockEntry> _cache;
 	private final HashMap<BlockKey, BlockEntry> _evictionCache;
 	private final DeferredReadQueue _deferredReadRequests;
 	private final Deque<DeferredReadRequest> _processingReadRequests;
 	private final HashMap<BlockKey, BlockReadState> _blockReads;
-	private long _hardLimit;
+	private volatile long _hardLimit;
 	private long _evictionLimit;
+	private long _readBuffer;
 	private final int _callerId;
-	private long _cacheSize;
+	private volatile long _cacheSize;
 	private long _bytesUpForEviction;
+	private long _pinnedBytes;
+	private long _pinnedEvictingBytes;
+	private long _readingReservedBytes;
+	private long _warmPinnedBytes;
 	private volatile boolean _running;
 	private boolean _warnThrottling;
+	private long _lastEvictRun;
+	private volatile int _deferredReadCountHint;
+	private final AtomicBoolean _maintenanceRunning;
+	private final AtomicBoolean _maintenanceRequested;
+	private final AtomicBoolean _maintenanceNeedsIncr;
 
-	public OOCLRUCacheScheduler(OOCIOHandler ioHandler, long evictionLimit, long hardLimit) {
+	public OOCLRUCacheScheduler(OOCIOHandler ioHandler, long evictionLimit, long hardLimit, long readBuffer) {
 		this._ioHandler = ioHandler;
 		this._cache = new LinkedHashMap<>(1024, 0.75f, true);
 		this._evictionCache = new  HashMap<>();
@@ -62,10 +76,20 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 		this._blockReads = new HashMap<>();
 		this._hardLimit = hardLimit;
 		this._evictionLimit = evictionLimit;
+		this._readBuffer = readBuffer;
 		this._cacheSize = 0;
 		this._bytesUpForEviction = 0;
+		this._pinnedEvictingBytes = 0;
+		this._pinnedBytes = 0;
+		this._readingReservedBytes = 0;
+		this._warmPinnedBytes = 0;
+		this._lastEvictRun = System.currentTimeMillis();
+		this._deferredReadCountHint = 0;
 		this._running = true;
 		this._warnThrottling = false;
+		this._maintenanceRunning = new AtomicBoolean(false);
+		this._maintenanceRequested = new AtomicBoolean(false);
+		this._maintenanceNeedsIncr = new AtomicBoolean(false);
 		this._callerId = DMLScript.OOC_LOG_EVENTS ? OOCEventLog.registerCaller("LRUCacheScheduler") : 0;
 
 		if (DMLScript.OOC_LOG_EVENTS) {
@@ -92,7 +116,7 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 
 			synchronized(entry) {
 				if (entry.getState().isAvailable()) {
-					if (entry.pin() == 0)
+					if (pinEntryWithAccounting(entry) == 0)
 						throw new IllegalStateException();
 					couldPin = true;
 				}
@@ -175,7 +199,7 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 			if(allAvailable) {
 				for(BlockEntry entry : entries) {
 					synchronized(entry) {
-						if(entry.pin() == 0)
+						if(pinEntryWithAccounting(entry) == 0)
 							throw new IllegalStateException();
 					}
 				}
@@ -227,11 +251,10 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 		synchronized(this) {
 			double score = 0;
 			int readyCount = 0;
-			for (BlockEntry entry : deferredReadRequest.getEntries()) {
-				synchronized(entry) {
-					if (entry.getState().isAvailable())
-						readyCount++;
-				}
+			for(BlockEntry entry : deferredReadRequest.getEntries()) {
+				// Snapshot for scheduling heuristic only; exact state will be checked when reserving.
+				if(entry.getState().isAvailable())
+					readyCount++;
 				BlockReadState state = _blockReads.get(entry.getKey());
 				if (state != null)
 					score += state.priority;
@@ -241,10 +264,11 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 			if (!deferredReadRequest.getEntries().isEmpty())
 				score += ((double) readyCount) / deferredReadRequest.getEntries().size();
 			deferredReadRequest.setPriorityScore(score);
-
 			_deferredReadRequests.add(deferredReadRequest);
+			_deferredReadCountHint = _deferredReadRequests.size();
 		}
-		onCacheSizeChanged(false); // To schedule deferred reads if possible
+		onCacheSizeChanged(true);  // Apply pressure from deferred read demand.
+		onCacheSizeChanged(false); // Attempt to schedule deferred reads.
 	}
 
 	@Override
@@ -286,6 +310,11 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 			if (avail != null || _evictionCache.containsKey(key))
 				throw new IllegalStateException("Cannot overwrite existing entries: " + key);
 			_cacheSize += size;
+			if(pin) {
+				_pinnedBytes += size;
+				if(entry.getState() == BlockState.WARM)
+					_warmPinnedBytes += entry.getSize();
+			}
 		}
 		onCacheSizeChanged(true);
 		return entry;
@@ -309,9 +338,12 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 					shouldScheduleDeletion = entry.getState().isBackedByDisk()
 						|| entry.getState() == BlockState.EVICTING;
 					cacheSizeDelta = transitionMemState(entry, BlockState.REMOVED);
+					if(entry.isPinned() && entry.getDataUnsafe() != null)
+						_pinnedBytes -= entry.getSize();
+					if(_pinnedBytes < 0)
+						throw new IllegalStateException();
 					entry.setDataUnsafe(null);
 				}
-
 			}
 		}
 		if (cacheSizeDelta != 0)
@@ -322,65 +354,79 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 
 	@Override
 	public void pin(BlockEntry entry) {
-		if (!this._running)
+		if(!this._running)
 			throw new IllegalStateException("Cache scheduler has been shut down.");
+		if(entry.fastPin())
+			return; // Try to avoid using global lock first
 
-		int pinCount = entry.pin();
-		if (pinCount == 0)
-			throw new IllegalStateException("Could not pin the requested entry: " + entry.getKey());
 		synchronized(this) {
+			synchronized(entry) {
+				int pinCount = pinEntryWithAccounting(entry);
+				if (pinCount == 0)
+					throw new IllegalStateException("Could not pin the requested entry: " + entry.getKey());
+			}
 			// Access element in cache for Lru
-			_cache.get(entry.getKey());
+			//_cache.get(entry.getKey());
 		}
 	}
 
 	@Override
 	public void unpin(BlockEntry entry) {
-		boolean couldFree = entry.unpin();
-
-		if (couldFree) {
-			long cacheSizeDelta = 0;
-			boolean shouldCheckEviction = false;
-			synchronized(this) {
+		if(entry.fastUnpin())
+			return; // Try to avoid using global lock first
+		long cacheSizeDelta = 0;
+		boolean shouldCheckEviction = false;
+		synchronized(this) {
+			synchronized(entry) {
+				if(!unpinEntryWithAccounting(entry))
+					return;
 				if (_cacheSize <= _evictionLimit)
 					return; // Nothing to do
+				if (entry.isPinned())
+					return; // Pin state changed so we cannot evict
 
-				synchronized(entry) {
-					if (entry.isPinned())
-						return; // Pin state changed so we cannot evict
-
-					if (entry.getState().isAvailable() && entry.getState().isBackedByDisk()) {
-						if (entry.getRetainHintCount() > 0) {
-							shouldCheckEviction = true;
-						}
-						else {
-							cacheSizeDelta =  transitionMemState(entry, BlockState.COLD);
-							long cleared = entry.clear();
-							if (cleared != entry.getSize())
-								throw new IllegalStateException();
-							_cache.remove(entry.getKey());
-							_evictionCache.put(entry.getKey(), entry);
-						}
-					} else if (entry.getState() == BlockState.HOT) {
-						if (entry.getRetainHintCount() > 0) {
-							shouldCheckEviction = true;
-						}
-						else {
-							cacheSizeDelta = onUnpinnedHotBlockUnderMemoryPressure(entry);
-						}
+				if (entry.getState().isAvailable() && entry.getState().isBackedByDisk()) {
+					if (entry.getRetainHintCount() > 0) {
+						shouldCheckEviction = true;
+					}
+					else {
+						cacheSizeDelta =  transitionMemState(entry, BlockState.COLD);
+						long cleared = entry.clear();
+						if (cleared != entry.getSize())
+							throw new IllegalStateException();
+						_cache.remove(entry.getKey());
+						_evictionCache.put(entry.getKey(), entry);
+					}
+				}
+				else if (entry.getState() == BlockState.HOT) {
+					if (entry.getRetainHintCount() > 0) {
+						shouldCheckEviction = true;
+					}
+					else {
+						cacheSizeDelta = onUnpinnedHotBlockUnderMemoryPressure(entry);
 					}
 				}
 			}
-			if (cacheSizeDelta != 0)
-				onCacheSizeChanged(cacheSizeDelta > 0);
-			else if (shouldCheckEviction)
-				onCacheSizeChanged(true);
 		}
+		if (cacheSizeDelta != 0)
+			onCacheSizeChanged(cacheSizeDelta > 0);
+		else if (shouldCheckEviction)
+			onCacheSizeChanged(true);
 	}
 
 	@Override
 	public synchronized long getCacheSize() {
 		return _cacheSize;
+	}
+
+	@Override
+	public synchronized long getPinnedBytes() {
+		return _pinnedBytes;
+	}
+
+	@Override
+	public synchronized long getHardLimit() {
+		return _hardLimit;
 	}
 
 	@Override
@@ -398,14 +444,25 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 		this._running = false;
 		if(!_cache.isEmpty() || !_evictionCache.isEmpty()) {
 			System.out.println("[WARN] Cache still holds " + _cache.size() + " / " + _evictionCache.size() + " blocks");
+
+			Set<Long> cachedStreams = _cache.keySet().stream().map(BlockKey::getStreamId).collect(Collectors.toSet());
+			Set<Long> evictedStreams = _evictionCache.keySet().stream().map(BlockKey::getStreamId).collect(Collectors.toSet());
+			cachedStreams.addAll(evictedStreams);
+			System.out.println("[WARN] Affected stream IDs: " + cachedStreams + ", Pinned: " + _cache.values().stream().mapToInt(
+				e -> e.isPinned() ? 1 : 0).sum());
 		}
 		_cache.clear();
 		_evictionCache.clear();
 		_processingReadRequests.clear();
 		_deferredReadRequests.clear();
+		_deferredReadCountHint = 0;
 		_blockReads.clear();
 		_cacheSize = 0;
 		_bytesUpForEviction = 0;
+		_pinnedBytes = 0;
+		_pinnedEvictingBytes = 0;
+		_readingReservedBytes = 0;
+		_warmPinnedBytes = 0;
 	}
 
 	@Override
@@ -414,23 +471,60 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 		_hardLimit = hardLimit;
 	}
 
+	@Override
+	public synchronized Collection<BlockEntry> snapshot() {
+		int l = _cache.size() + _evictionCache.size();
+		ArrayList<BlockEntry> out = new ArrayList<>(l);
+		out.addAll(_cache.values());
+		out.addAll(_evictionCache.values());
+		return out;
+	}
+
 	/**
 	 * Must be called while this cache and the corresponding entry are locked
 	 */
 	private long onUnpinnedHotBlockUnderMemoryPressure(BlockEntry entry) {
 		long cacheSizeDelta = transitionMemState(entry, BlockState.EVICTING);
-		evict(entry);
+		evict(entry, true);
 		return cacheSizeDelta;
 	}
 
 	private void onCacheSizeChanged(boolean incr) {
-		if (incr)
-			onCacheSizeIncremented();
-		else {
-			while(onCacheSizeDecremented()) {}
+		if(incr)
+			_maintenanceNeedsIncr.set(true);
+		_maintenanceRequested.set(true);
+		if(!_maintenanceRunning.compareAndSet(false, true))
+			return;
+
+		runMaintenanceLoop();
+	}
+
+	private void runMaintenanceLoop() {
+		while(true) {
+			try {
+				do {
+					_maintenanceRequested.set(false);
+					onCacheSizeChangedInternal(_maintenanceNeedsIncr.getAndSet(false));
+				} while(_maintenanceRequested.get());
+			}
+			finally {
+				_maintenanceRunning.set(false);
+			}
+
+			// Re-check in case a request came in after releasing the running flag.
+			if(!(_maintenanceRequested.get() && _maintenanceRunning.compareAndSet(false, true)))
+				return;
 		}
-		if (DMLScript.OOC_LOG_EVENTS)
-			OOCEventLog.onCacheSizeChangedEvent(_callerId, System.nanoTime(), _cacheSize, _bytesUpForEviction);
+	}
+
+	private void onCacheSizeChangedInternal(boolean incr) {
+		if(incr)
+			onCacheSizeIncremented();
+		else
+			while(onCacheSizeDecremented()) {}
+		if(DMLScript.OOC_LOG_EVENTS)
+			OOCEventLog.onCacheSizeChangedEvent(_callerId, System.nanoTime(), _cacheSize, _bytesUpForEviction,
+				_pinnedBytes, _readingReservedBytes);
 	}
 
 	private synchronized void sanityCheck() {
@@ -454,15 +548,27 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 		int total = 0;
 		long actualCacheSize = 0;
 		long upForEviction = 0;
+		long actualPinnedBytes = 0;
+		long actualPinnedEvictingBytes = 0;
+		long actualWarmPinnedBytes = 0;
+		long actualReadingReservedBytes = 0;
 		for (BlockEntry entry : _cache.values()) {
-			if (entry.isPinned())
+			if (entry.isPinned()) {
 				pinned++;
+				actualPinnedBytes += entry.getSize();
+				if(entry.getState() == BlockState.WARM)
+					actualWarmPinnedBytes += entry.getSize();
+			}
 			if (entry.getState().isBackedByDisk())
 				backedByDisk++;
 			if (entry.getState() == BlockState.EVICTING) {
 				evicting++;
 				upForEviction += entry.getSize();
+				if(entry.isPinned())
+					actualPinnedEvictingBytes += entry.getSize();
 			}
+			if(entry.getState() == BlockState.READING)
+				actualReadingReservedBytes += entry.getSize();
 			if (!entry.getState().isAvailable())
 				throw new IllegalStateException();
 			total++;
@@ -471,13 +577,32 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 		for (BlockEntry entry : _evictionCache.values()) {
 			if (entry.getState().isAvailable())
 				throw new IllegalStateException("Invalid eviction state: " + entry.getState());
+			if (entry.getState() == BlockState.EVICTING && entry.isPinned())
+				actualPinnedEvictingBytes += entry.getSize();
 			if (entry.getState() == BlockState.READING)
 				actualCacheSize += entry.getSize();
+			if (entry.getState() == BlockState.READING)
+				actualReadingReservedBytes += entry.getSize();
+			if (entry.isPinned()) {
+				actualPinnedBytes += entry.getSize();
+				if(entry.getState() == BlockState.WARM)
+					actualWarmPinnedBytes += entry.getSize();
+			}
 		}
 		if (actualCacheSize != _cacheSize)
 			throw new IllegalStateException(actualCacheSize + " != " + _cacheSize);
 		if (upForEviction != _bytesUpForEviction)
 			throw new IllegalStateException(upForEviction + " != " + _bytesUpForEviction);
+		if (actualPinnedBytes != _pinnedBytes)
+			throw new IllegalStateException(actualPinnedBytes + " != " + _pinnedBytes);
+		if (actualPinnedEvictingBytes != _pinnedEvictingBytes)
+			throw new IllegalStateException(actualPinnedEvictingBytes + " != " + _pinnedEvictingBytes);
+		if (_pinnedEvictingBytes > _bytesUpForEviction)
+			throw new IllegalStateException(_pinnedEvictingBytes + " > " + _bytesUpForEviction);
+		if(actualWarmPinnedBytes != _warmPinnedBytes)
+			throw new IllegalStateException(actualWarmPinnedBytes + " != " + _warmPinnedBytes);
+		if (actualReadingReservedBytes != _readingReservedBytes)
+			throw new IllegalStateException(actualReadingReservedBytes + " != " + _readingReservedBytes);
 		System.out.println("==========");
 		System.out.println("Limit: " + _evictionLimit/1000 + "KB");
 		System.out.println("Memory: (" + _cacheSize/1000 + "KB - " + _bytesUpForEviction/1000 + "KB) / " + _hardLimit/1000 + "KB");
@@ -487,43 +612,57 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 	}
 
 	private void onCacheSizeIncremented() {
+		if(System.currentTimeMillis() - _lastEvictRun < 5)
+			return; // Debounce (at least 5ms)
 		long cacheSizeDelta = 0;
-		List<BlockEntry> upForEviction;
+		List<BlockEntry> upForEvictionNeedsWrite;
+		List<BlockEntry> upForEvictionNoWrite;
 		synchronized(this) {
-			if(_cacheSize - _bytesUpForEviction <= _evictionLimit)
+			long pressure = _cacheSize + _readBuffer - _bytesUpForEviction - _warmPinnedBytes;
+			if(pressure <= _evictionLimit)
 				return; // Nothing to do
+
+			long overshoot = Math.max((long)(0.1 * _evictionLimit), 10000000);
+			long lowLimit = _evictionLimit - _readBuffer - overshoot;
+
+			//System.out.println("[CACHE] Claiming " + (pressure + overshoot - _evictionLimit)/1000 + "kB (last claim was " + (System.currentTimeMillis() - _lastEvictRun) + "ms ago)");
 
 			// Scan for values that can be evicted
 			Collection<BlockEntry> entries = _cache.values();
 			List<BlockEntry> toRemove = new ArrayList<>();
-			upForEviction = new ArrayList<>();
+			upForEvictionNeedsWrite = new ArrayList<>();
+			upForEvictionNoWrite = new ArrayList<>();
 
 			for(int pass = 0; pass < 2; pass++) {
 				boolean allowRetainHint = pass == 1;
 				for(BlockEntry entry : entries) {
-					if(_cacheSize - _bytesUpForEviction <= _evictionLimit)
+					if(getEvictionPressure() <= lowLimit)
 						break;
 
 					synchronized(entry) {
-						if(entry.isPinned())
-							continue;
+						//if(entry.isPinned())
+						//	continue;
 						if(!allowRetainHint && entry.getRetainHintCount() > 0)
 							continue;
 						if(entry.getState() == BlockState.COLD || entry.getState() == BlockState.EVICTING)
 							continue;
 
-						if(entry.getState().isBackedByDisk()) {
+						if(entry.getState().isBackedByDisk() && !entry.isPinned()) {
 							cacheSizeDelta += transitionMemState(entry, BlockState.COLD);
 							entry.clear();
 							toRemove.add(entry);
 						}
 						else {
+							boolean needsWrite = !entry.getState().isBackedByDisk();
 							cacheSizeDelta += transitionMemState(entry, BlockState.EVICTING);
-							upForEviction.add(entry);
+							if(needsWrite)
+								upForEvictionNeedsWrite.add(entry);
+							else
+								upForEvictionNoWrite.add(entry);
 						}
 					}
 				}
-				if(_cacheSize - _bytesUpForEviction <= _evictionLimit)
+				if(getEvictionPressure() <= lowLimit)
 					break;
 			}
 
@@ -533,23 +672,31 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 			}
 
 			sanityCheck();
+			_lastEvictRun = System.currentTimeMillis();
 		}
 
-		for (BlockEntry entry : upForEviction) {
-			evict(entry);
-		}
+		for (BlockEntry entry : upForEvictionNeedsWrite)
+			evict(entry, true);
+		for (BlockEntry entry : upForEvictionNoWrite)
+			evict(entry, false);
 
 		if (cacheSizeDelta != 0)
 			onCacheSizeChanged(cacheSizeDelta > 0);
 	}
 
+	private long getEvictionPressure() {
+		return _cacheSize + _readBuffer - _bytesUpForEviction;
+	}
+
 	private boolean onCacheSizeDecremented() {
+		if(_cacheSize + 10000000 >= _hardLimit || _deferredReadCountHint == 0)
+			return false;
 		boolean allReserved = true;
 		boolean reading = false;
 		List<Tuple2<Integer, BlockEntry>> toRead;
 		DeferredReadRequest req;
 		synchronized(this) {
-			if(_cacheSize >= _hardLimit || _deferredReadRequests.isEmpty())
+			if(_cacheSize + 10000000 >= _hardLimit || _deferredReadRequests.isEmpty())
 				return false; // Nothing to do
 
 			// Try to schedule the next disk read
@@ -563,7 +710,7 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 				BlockEntry entry = req.getEntries().get(idx);
 				synchronized(entry) {
 					if(entry.getState().isAvailable()) {
-						if(entry.pin() == 0)
+						if(pinEntryWithAccounting(entry) == 0)
 							throw new IllegalStateException();
 						req.setPinned(idx);
 					}
@@ -589,6 +736,7 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 
 			if(allReserved) {
 				_deferredReadRequests.poll();
+				_deferredReadCountHint = _deferredReadRequests.size();
 				if (!toRead.isEmpty())
 					_processingReadRequests.add(req);
 			}
@@ -606,6 +754,7 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 			synchronized(this) {
 				_processingReadRequests.remove(req);
 				_deferredReadRequests.remove(req);
+				_deferredReadCountHint = _deferredReadRequests.size();
 			}
 			req.getFuture().complete(req.getEntries());
 			return true;
@@ -628,9 +777,10 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 					else {
 						LOG.error("Uncaught CacheError", t);
 					}
+					onCacheSizeChanged(false);
 					return;
 				}
-				java.util.Set<DeferredReadRequest> completedRequests = new java.util.HashSet<>();
+				Set<DeferredReadRequest> completedRequests = new HashSet<>();
 				synchronized(this) {
 					synchronized(r) {
 						transitionMemState(r, BlockState.WARM);
@@ -642,7 +792,7 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 					if(state != null) {
 						for(DeferredReadWaiter waiter : state.waiters) {
 							synchronized(r) {
-								if(r.pin() == 0)
+								if(pinEntryWithAccounting(r) == 0)
 									throw new IllegalStateException();
 								if(waiter.request.setPinned(waiter.index) || waiter.request.isComplete())
 									completedRequests.add(waiter.request);
@@ -655,18 +805,24 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 						_processingReadRequests.remove(done);
 						_deferredReadRequests.remove(done);
 					}
+					_deferredReadCountHint = _deferredReadRequests.size();
 
 					sanityCheck();
 				}
 				for(DeferredReadRequest done : completedRequests)
 					done.getFuture().complete(done.getEntries());
+				onCacheSizeChanged(false);
 			});
 		}
 
 		return false;
 	}
 
-	private void evict(final BlockEntry entry) {
+	private void evict(final BlockEntry entry, boolean needsWrite) {
+		if(!needsWrite) {
+			onEvicted(entry);
+			return;
+		}
 		CompletableFuture<Void> future = _ioHandler.scheduleEviction(entry);
 		future.whenComplete((r, e) -> onEvicted(entry));
 	}
@@ -718,14 +874,19 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 
 		long sz = entry.getSize();
 		long oldCacheSize = _cacheSize;
+		boolean pinned = entry.isPinned();
 
 		// Remove old contribution
 		switch (oldState) {
 			case REMOVED:
 				throw new IllegalStateException();
 			case HOT:
+				_cacheSize -= sz;
+				break;
 			case WARM:
 				_cacheSize -= sz;
+				if(pinned)
+					_warmPinnedBytes -= entry.getSize();
 				break;
 			case EVICTING:
 				_cacheSize -= sz;
@@ -733,6 +894,7 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 				break;
 			case READING:
 				_cacheSize -= sz;
+				_readingReservedBytes -= sz;
 				break;
 			case COLD:
 				break;
@@ -744,8 +906,12 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 			case COLD:
 				break;
 			case HOT:
+				_cacheSize += sz;
+				break;
 			case WARM:
 				_cacheSize += sz;
+				if(pinned)
+					_warmPinnedBytes += entry.getSize();
 				break;
 			case EVICTING:
 				_cacheSize += sz;
@@ -753,11 +919,65 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 				break;
 			case READING:
 				_cacheSize += sz;
+				_readingReservedBytes += sz;
 				break;
 		}
 
+		if(oldState == BlockState.EVICTING && entry.isPinned())
+			_pinnedEvictingBytes -= sz;
+		if(newState == BlockState.EVICTING && entry.isPinned())
+			_pinnedEvictingBytes += sz;
+		if(_pinnedEvictingBytes < 0)
+			throw new IllegalStateException();
+		if(_pinnedEvictingBytes > _bytesUpForEviction)
+			throw new IllegalStateException(_pinnedEvictingBytes + " > " + _bytesUpForEviction);
+
 		entry.setState(newState);
 		return _cacheSize - oldCacheSize;
+	}
+
+	/**
+	 * Requires scheduler lock.
+	 */
+	private int pinEntryWithAccounting(BlockEntry entry) {
+		int pinCount = entry.pin();
+		if(pinCount == 1) {
+			_pinnedBytes += entry.getSize();
+			switch(entry.getState()) {
+				case EVICTING:
+					_pinnedEvictingBytes += entry.getSize();
+					break;
+				case WARM:
+					_warmPinnedBytes += entry.getSize();
+					break;
+			}
+		}
+		return pinCount;
+	}
+
+	/**
+	 * Requires scheduler lock and entry lock.
+	 * @return true if this call transitioned pin count to zero.
+	 */
+	private boolean unpinEntryWithAccounting(BlockEntry entry) {
+		boolean couldFree = entry.unpin();
+		// Second check (entry.getDataUnsafe()...) is needed for potential forget(...) calls
+		if(couldFree && entry.getDataUnsafe() != null) {
+			_pinnedBytes -= entry.getSize();
+			switch(entry.getState()) {
+				case EVICTING:
+					_pinnedEvictingBytes -= entry.getSize();
+					break;
+				case WARM:
+					_warmPinnedBytes -= entry.getSize();
+					break;
+			}
+		}
+		if(_pinnedBytes < 0)
+			throw new IllegalStateException();
+		if(_pinnedEvictingBytes < 0)
+			throw new IllegalStateException();
+		return couldFree;
 	}
 
 	private void registerWaiter(BlockKey key, DeferredReadRequest request, int index) {

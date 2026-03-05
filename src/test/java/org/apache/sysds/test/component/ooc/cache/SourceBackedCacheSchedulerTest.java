@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.ooc.cache;
+package org.apache.sysds.test.component.ooc.cache;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.instructions.ooc.SubscribableTaskQueue;
@@ -25,19 +25,27 @@ import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.io.MatrixWriter;
 import org.apache.sysds.runtime.io.MatrixWriterFactory;
+import org.apache.sysds.runtime.ooc.cache.BlockEntry;
+import org.apache.sysds.runtime.ooc.cache.BlockKey;
+import org.apache.sysds.runtime.ooc.cache.BlockState;
+import org.apache.sysds.runtime.ooc.cache.OOCIOHandler;
+import org.apache.sysds.runtime.ooc.cache.OOCLRUCacheScheduler;
+import org.apache.sysds.runtime.ooc.cache.OOCMatrixIOHandler;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class SourceBackedReadOOCIOHandlerTest extends AutomatedTestBase {
-	private static final String TEST_NAME = "SourceBackedReadOOCIOHandler";
+public class SourceBackedCacheSchedulerTest extends AutomatedTestBase {
+	private static final String TEST_NAME = "SourceBackedCacheScheduler";
 	private static final String TEST_DIR = "functions/ooc/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + SourceBackedReadOOCIOHandlerTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + SourceBackedCacheSchedulerTest.class.getSimpleName() + "/";
 
 	private OOCMatrixIOHandler handler;
+	private OOCLRUCacheScheduler scheduler;
 
 	@Override
 	@Before
@@ -45,23 +53,26 @@ public class SourceBackedReadOOCIOHandlerTest extends AutomatedTestBase {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME));
 		handler = new OOCMatrixIOHandler();
+		scheduler = new OOCLRUCacheScheduler(handler, 0, Long.MAX_VALUE, 40000000);
 	}
 
 	@After
 	public void tearDown() {
+		if (scheduler != null)
+			scheduler.shutdown();
 		if (handler != null)
 			handler.shutdown();
 	}
 
 	@Test
-	public void testSourceBackedScheduleRead() throws Exception {
+	public void testPutSourceBackedAndReload() throws Exception {
 		getAndLoadTestConfiguration(TEST_NAME);
 		final int rows = 4;
 		final int cols = 4;
 		final int blen = 2;
 
-		MatrixBlock src = MatrixBlock.randOperations(rows, cols, 1.0, -1, 1, "uniform", 17);
-		String fname = input("binary_src");
+		MatrixBlock src = MatrixBlock.randOperations(rows, cols, 1.0, -1, 1, "uniform", 23);
+		String fname = input("binary_src_cache");
 		writeBinaryMatrix(src, fname, blen);
 
 		SubscribableTaskQueue<IndexedMatrixValue> target = new SubscribableTaskQueue<>();
@@ -69,20 +80,22 @@ public class SourceBackedReadOOCIOHandlerTest extends AutomatedTestBase {
 			rows, cols, blen, src.getNonZeros(), Long.MAX_VALUE, true, target);
 
 		OOCIOHandler.SourceReadResult res = handler.scheduleSourceRead(req).get();
-		org.junit.Assert.assertFalse(res.blocks.isEmpty());
-
+		IndexedMatrixValue imv = target.dequeue();
 		OOCIOHandler.SourceBlockDescriptor desc = res.blocks.get(0);
-		BlockKey key = new BlockKey(7, 0);
-		handler.registerSourceLocation(key, desc);
 
-		BlockEntry entry = new BlockEntry(key, desc.serializedSize, null);
-		entry.setState(BlockState.COLD);
-		handler.scheduleRead(entry).get();
+		BlockKey key = new BlockKey(11, 0);
+		BlockEntry entry = scheduler.putAndPinSourceBacked(key, imv,
+			((MatrixBlock) imv.getValue()).getExactSerializedSize(), desc);
+		Assert.assertEquals(BlockState.WARM, entry.getState());
 
-		IndexedMatrixValue imv = (IndexedMatrixValue) entry.getDataUnsafe();
-		MatrixBlock readBlock = (MatrixBlock) imv.getValue();
+		scheduler.unpin(entry);
+		Assert.assertEquals(BlockState.COLD, entry.getState());
+		Assert.assertNull(BlockEntryTestAccess.getDataUnsafe(entry));
+
+		BlockEntry reloaded = scheduler.request(key).get();
+		IndexedMatrixValue reloadImv = (IndexedMatrixValue) reloaded.getData();
 		MatrixBlock expected = expectedBlock(src, desc.indexes, blen);
-		TestUtils.compareMatrices(expected, readBlock, 1e-12);
+		TestUtils.compareMatrices(expected, (MatrixBlock) reloadImv.getValue(), 1e-12);
 	}
 
 	private void writeBinaryMatrix(MatrixBlock mb, String fname, int blen) throws Exception {

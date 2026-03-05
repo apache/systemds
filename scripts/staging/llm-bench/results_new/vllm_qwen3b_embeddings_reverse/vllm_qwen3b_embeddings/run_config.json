@@ -1,0 +1,6 @@
+{
+  "backend": "vllm",
+  "backend_model": "Qwen/Qwen2.5-3B-Instruct",
+  "workload": "embeddings",
+  "concurrency": 1
+}

@@ -287,7 +287,7 @@ that returns true/false per sample. The accuracy percentage is
 | Workload | OpenAI gpt-4.1-mini | vLLM Qwen 3B | SystemDS Qwen 3B |
 |----------|---------------------|--------------|------------------|
 | math | **96%** (48/50) | 68% (34/50) | 68% (34/50) |
-| reasoning | **88%** (44/50) | 60% (30/50) | 64% (32/50) |
+| reasoning | **88%** (44/50) | 62% (31/50) | 66% (33/50) |
 | summarization | **86%** (43/50) | 50% (25/50) | 62% (31/50) |
 | json_extraction | **61%** (28/46) | 65% (30/46) | 65% (30/46) |
 | embeddings | 88% (44/50) | **90%** (45/50) | **90%** (45/50) |
@@ -297,7 +297,7 @@ that returns true/false per sample. The accuracy percentage is
 - **SystemDS matches vLLM on math, json_extraction, and embeddings** (68%,
   65%, 90% respectively). Both use the same Qwen2.5-3B model on the same
   vLLM inference server with temperature=0.0.
-- **Small differences on reasoning (30 vs 32) and summarization (25 vs 31)**
+- **Small differences on reasoning (31 vs 33) and summarization (25 vs 31)**
   are consistent backend-level differences confirmed by the reverse-order
   experiment: SystemDS always scores 0.62 on summarization and vLLM always
   scores 0.50, regardless of which backend runs first. See "Reverse-Order
@@ -349,7 +349,7 @@ remaining 2 workloads, vLLM's Automatic Prefix Caching causes the
 two sequential batches to receive different responses from the server,
 which in some cases leads to different evaluation outcomes.
 
-**Reasoning (30 vs 32, gap = 2 samples):** The evaluation extracts
+**Reasoning (31 vs 33, gap = 2 samples):** The evaluation extracts
 yes/no keywords, ignoring all surrounding text. Of 21 samples with
 different text, 19 had the same yes/no answer (different wording, same
 conclusion). Only 2 had genuinely **opposite conclusions**:
@@ -780,7 +780,7 @@ cause, swapping the order should swap the accuracy numbers.
 | Workload | Orig: vLLM (1st) | Orig: SystemDS (2nd) | Rev: SystemDS (1st) | Rev: vLLM (2nd) |
 |---|---|---|---|---|
 | math | 68% (34/50) | 68% (34/50) | 68% (34/50) | 68% (34/50) |
-| reasoning | 60% (30/50) | 64% (32/50) | 58% (29/50) | 58% (29/50) |
+| reasoning | 62% (31/50) | 66% (33/50) | 58% (29/50) | 58% (29/50) |
 | summarization | 50% (25/50) | 62% (31/50) | **50% (25/50)** | **62% (31/50)** |
 | json_extraction | 65% (30/46) | 65% (30/46) | 65% (30/46) | 65% (30/46) |
 | embeddings | 90% (45/50) | 90% (45/50) | 90% (45/50) | 90% (45/50) |
@@ -793,7 +793,7 @@ cause, swapping the order should swap the accuracy numbers.
   second — but it doesn't.
 - **Math, json_extraction, embeddings** are identical across all runs
   and orderings. No APC effect.
-- **Reasoning** shows small shifts (60→58 for vLLM, 64→58 for SystemDS)
+- **Reasoning** shows small shifts (62→58 for vLLM, 66→58 for SystemDS)
   consistent with GPU floating-point non-determinism on a 50-sample set
   (±2-3 answers flipping), not an ordering effect.
 

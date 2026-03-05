@@ -77,6 +77,13 @@ scripts/staging/llm-bench/
 └── tests/                     # Unit tests for accuracy checks + runner
 ```
 
+**Note on committed results:** The `results/` directory is intentionally committed
+to the repository. Since this is a standalone benchmarking project, the raw outputs
+(metrics, samples, manifests) are included for reproducibility, peer review, and
+interpretation. This allows reviewers to verify the numbers reported in this README
+against the actual data. If repository size becomes a concern, these can be moved
+to `.gitignore` and kept locally.
+
 ## Backends
 
 | Backend | Type | Model | Hardware | Inference Path |

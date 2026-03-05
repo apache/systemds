@@ -1,6 +1,6 @@
 {
-  "git_commit_hash": "5d47925ed6a7953871e90ecc5f27c0a0e7f3ac6a",
-  "timestamp_utc": "2026-03-02T06:30:27.949385+00:00",
+  "git_commit_hash": "1f9896385e319af1ee70d3bcc67771008b257f74",
+  "timestamp_utc": "2026-03-05T03:57:53.903655+00:00",
   "python_version": "3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]",
   "platform": {
     "os": "Linux",
@@ -9,7 +9,7 @@
   "backend": "systemds",
   "model": "Qwen/Qwen2.5-3B-Instruct",
   "workload_config_path": "/home/kubraaksu/systemds/scripts/staging/llm-bench/workloads/embeddings/config.yaml",
-  "workload_config_sha256": "53d2b937c9c570df4ca655db0dae09f10fb4023c3997a9f42d4c6134c6eaa628",
+  "workload_config_sha256": "2d1ce87f23c894dd956b4354f78df96dcc271d192ed3d0d6f048eeb72b006c88",
   "gpu": {
     "gpu_count": 3,
     "gpus": [
@@ -17,17 +17,17 @@
         "index": 0,
         "name": "NVIDIA H100 PCIe",
         "memory_total_mb": 81559.0,
-        "memory_used_mb": 30990.6875,
-        "memory_free_mb": 50568.3125,
-        "gpu_utilization_pct": 0,
-        "memory_utilization_pct": 0
+        "memory_used_mb": 483.125,
+        "memory_free_mb": 81075.875,
+        "gpu_utilization_pct": 99,
+        "memory_utilization_pct": 22
       },
       {
         "index": 1,
         "name": "NVIDIA H100 PCIe",
         "memory_total_mb": 81559.0,
-        "memory_used_mb": 74773.125,
-        "memory_free_mb": 6785.875,
+        "memory_used_mb": 74770.6875,
+        "memory_free_mb": 6788.3125,
         "gpu_utilization_pct": 0,
         "memory_utilization_pct": 0
       },
@@ -35,8 +35,8 @@
         "index": 2,
         "name": "NVIDIA H100 PCIe",
         "memory_total_mb": 81559.0,
-        "memory_used_mb": 485.5625,
-        "memory_free_mb": 81073.4375,
+        "memory_used_mb": 483.125,
+        "memory_free_mb": 81075.875,
         "gpu_utilization_pct": 0,
         "memory_utilization_pct": 0
       }

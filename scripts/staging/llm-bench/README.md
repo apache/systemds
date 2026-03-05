@@ -282,28 +282,28 @@ that returns true/false per sample. The accuracy percentage is
 | json_extraction | Entity F1 >= 0.5 (NER) or >= 90% fields match (scalar) | NER: entity-level precision/recall/F1 across all entity categories. Scalar: field-level match with case-insensitive string comparison. |
 | embeddings | Score within 1.0 of reference | Model rates sentence-pair similarity on 0-5 STS scale. Passes if abs(predicted - reference) <= 1.0. |
 
-### Accuracy (% correct, n=50 per workload unless noted)
+### Accuracy (% correct, n=50 per workload)
 
 | Workload | OpenAI gpt-4.1-mini | vLLM Qwen 3B | SystemDS Qwen 3B |
 |----------|---------------------|--------------|------------------|
 | math | **96%** (48/50) | 68% (34/50) | 68% (34/50) |
-| reasoning | **88%** (44/50) | 62% (31/50) | 66% (33/50) |
+| reasoning | **88%** (44/50) | 62% (31/50) | 58% (29/50) |
 | summarization | **86%** (43/50) | 50% (25/50) | 62% (31/50) |
-| json_extraction | **61%** (28/46) | 65% (30/46) | 65% (30/46) |
+| json_extraction | **61%** (28/46) | 65% (30/46) | 66% (33/50) |
 | embeddings | 88% (44/50) | **90%** (45/50) | **90%** (45/50) |
 
 **Key observations:**
 
-- **SystemDS matches vLLM on math, json_extraction, and embeddings** (68%,
-  65%, 90% respectively). Both use the same Qwen2.5-3B model on the same
+- **SystemDS matches vLLM on math and embeddings** (68%, 90%
+  respectively). Both use the same Qwen2.5-3B model on the same
   vLLM inference server with temperature=0.0. Predictions are byte-for-byte
-  identical on all samples in these 3 workloads.
+  identical on all samples in these workloads.
 - **Summarization gap (25 vs 31) is caused by vLLM Automatic Prefix Caching
   (APC).** The run-order experiment proves this: 22/50 samples
   produce exactly 2 text variants determined by run position (1st vs 2nd),
   not by backend. The 1st-run variant always scores 25/50; the 2nd-run
   variant always scores 31/50. See "Reverse-Order Experiment" below.
-- **Reasoning differences (31 vs 33) are GPU floating-point non-determinism.**
+- **Reasoning differences (31 vs 29) are GPU floating-point non-determinism.**
   Across different server sessions, 0/50 predictions are identical — even for
   the same backend. Within a session, ~60% are identical. The ±2 sample
   accuracy gap is noise from 50-sample runs. See "Reverse-Order Experiment"
@@ -701,15 +701,15 @@ accuracy varies between sessions: 31/33 (original), 29/29 (reverse)
 JSON structure, single number) have such peaked probability
 distributions that neither APC nor FP rounding can flip the argmax.
 
-### Per-Prompt Latency (mean ms, n=50; json_extraction n=46)
+### Per-Prompt Latency (mean ms, n=50)
 
 | Workload | OpenAI (MacBook -> Cloud) | vLLM Qwen 3B (H100) | SystemDS Qwen 3B (H100) |
 |----------|--------------------------|----------------------|--------------------------|
-| math | 4577 | 1922 | 1908 |
-| reasoning | 1735 | 1110 | 1063 |
-| summarization | 1131 | 365 | 356 |
-| json_extraction | 1498 | 272 | 261 |
-| embeddings | 773 | 44 | 41 |
+| math | 4577 | 1922 | 1860 |
+| reasoning | 1735 | 1110 | 1106 |
+| summarization | 1131 | 365 | 353 |
+| json_extraction | 1498 | 272 | 265 |
+| embeddings | 773 | 44 | 64 |
 
 **Note on measurement methodology:** Latency is measured differently by
 each backend:
@@ -732,6 +732,24 @@ each backend:
   Each phase is timed with `time.perf_counter()` in the Python backend.
   The Java HTTP time per prompt is reported separately by the Java
   instruction itself (column 2 of the output FrameBlock).
+
+  **SystemDS JMLC pipeline breakdown (ms):**
+
+  | Workload | compile | marshal | exec/prompt | unmarshal | overhead | pipeline |
+  |----------|---------|---------|-------------|-----------|----------|----------|
+  | math | 306 | 50 | 1853 | 1.4 | 415 | 93023 |
+  | reasoning | 312 | 50 | 1099 | 1.4 | 427 | 55300 |
+  | summarization | 300 | 51 | 346 | 0.7 | 407 | 17651 |
+  | json_extraction | 323 | 159 | 255 | 1.0 | 537 | 13236 |
+  | embeddings | 316 | 154 | 54 | 1.2 | 530 | 3185 |
+
+  Observations: DML compilation is ~310 ms (one-time; cached on repeat).
+  Py4J marshalling is 50--160 ms depending on prompt size. Unmarshalling
+  is <2 ms. The exec/prompt column is the per-prompt share of
+  `executeScript()` wall time, which includes all HTTP calls. Pipeline
+  overhead (compile + marshal + unmarshal + scheduling) is amortized
+  across prompts and adds ~8 ms/prompt for n=50.
+
 - **OpenAI**: Python `time.perf_counter()` around OpenAI API call.
   Includes network round-trip to cloud servers.
 
@@ -750,15 +768,20 @@ does more work — it is not a sign that SystemDS is faster or slower.
 
 | Workload | vLLM | SystemDS | Difference |
 |----------|------|----------|------------|
-| math | 1921 ms | 1913 ms | -0.4% |
-| reasoning | 1099 ms | 1064 ms | -3.2% |
-| summarization | 347 ms | 332 ms | -4.3% |
-| json_extraction | 224 ms | 214 ms | -4.9% |
-| embeddings | 43 ms | 40 ms | -7.7% |
+| math | 1922 ms | 1860 ms | -3.2% |
+| reasoning | 1110 ms | 1106 ms | -0.4% |
+| summarization | 365 ms | 353 ms | -3.3% |
+| json_extraction | 272 ms | 265 ms | -2.8% |
+| embeddings | 44 ms | 64 ms | +45.9% |
 
-Neither backend is meaningfully faster. Both are HTTP clients to the
-same vLLM server. Latency is determined by output token count, which
-varies by sample and run, not by which client sends the request.
+For the four generation-heavy workloads (math through json_extraction),
+both backends are within 0--3% of each other — well within measurement
+noise. The embeddings workload shows +46% overhead because the HTTP
+call itself is only ~44 ms, so the fixed JMLC pipeline cost (~10 ms
+per prompt from compile + marshal + unmarshal amortization) becomes a
+significant fraction. Both are HTTP clients to the same vLLM server;
+latency is determined by output token count, not by which client sends
+the request.
 
 **Why output length differs between backends:**
 When two sequential runs diverge at a single token (due to APC or GPU
@@ -772,22 +795,22 @@ outliers — it is not a systematic property of either run position.
 
 | Workload | OpenAI | vLLM Qwen 3B | SystemDS Qwen 3B |
 |----------|--------|--------------|------------------|
-| math | 0.22 | 0.52 | 0.52 |
-| reasoning | 0.58 | 0.95 | 0.90 |
-| summarization | 0.88 | 2.80 | 2.66 |
-| json_extraction | 0.67 | 1.93 | 1.85 |
-| embeddings | 1.29 | 20.93 | 18.05 |
+| math | 0.22 | 0.52 | 0.54 |
+| reasoning | 0.58 | 0.90 | 0.90 |
+| summarization | 0.88 | 2.74 | 2.82 |
+| json_extraction | 0.67 | 3.67 | 3.77 |
+| embeddings | 1.29 | 22.84 | 15.27 |
 
 ### Cost
 
 | Workload | OpenAI API Cost | vLLM Compute Cost | SystemDS Compute Cost |
 |----------|----------------|-------------------|----------------------|
-| math | $0.0223 | $0.0559 | $0.0566 |
-| reasoning | $0.0100 | $0.0307 | $0.0325 |
-| summarization | $0.0075 | $0.0105 | $0.0110 |
-| json_extraction | $0.0056 | $0.0152 | $0.0158 |
-| embeddings | $0.0019 | $0.0014 | $0.0016 |
-| **Total** | **$0.047** | **$0.114** | **$0.118** |
+| math | $0.0223 | $0.0559 | $0.0544 |
+| reasoning | $0.0100 | $0.0307 | $0.0324 |
+| summarization | $0.0075 | $0.0105 | $0.0104 |
+| json_extraction | $0.0056 | $0.0152 | $0.0078 |
+| embeddings | $0.0019 | $0.0014 | $0.0019 |
+| **Total** | **$0.047** | **$0.114** | **$0.107** |
 
 OpenAI cost is the per-token API price. vLLM and SystemDS costs are
 estimated from hardware ownership (electricity + GPU amortization), computed

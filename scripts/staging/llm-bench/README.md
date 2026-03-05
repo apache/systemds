@@ -842,6 +842,12 @@ performance difference.
 | json_extraction | 0.67 | 3.76 | 3.75 |
 | embeddings | 1.29 | 21.30 | 15.88 |
 
+Throughput = `1 / mean_latency` (sequential, c=1). OpenAI numbers are low
+because they include network round-trip (MacBook in Berlin → OpenAI servers
+in the US) and queue wait, not just inference. vLLM and SystemDS call a
+local H100 on the same network. The real comparison is vLLM vs SystemDS,
+which show near-identical throughput.
+
 ### Cost
 
 | Workload | OpenAI API Cost | vLLM Compute Cost | SystemDS Compute Cost |

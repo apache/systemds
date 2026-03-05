@@ -33,6 +33,7 @@ from workloads.json_extraction.loader import (
     extract_json_from_prediction,
     _values_match_strict,
     _normalize_value,
+    _compute_entity_metrics,
     load_samples,
 )
 
@@ -104,7 +105,76 @@ class TestValuesMatchStrict:
 
 
 # ---------------------------------------------------------------------------
-# accuracy_check
+# _compute_entity_metrics (NER)
+# ---------------------------------------------------------------------------
+
+class TestEntityMetrics:
+    def test_perfect_match(self):
+        ref = {"persons": ["John Smith"], "organizations": ["Google"]}
+        pred = {"persons": ["John Smith"], "organizations": ["Google"]}
+        m = _compute_entity_metrics(pred, ref)
+        assert m["entity_f1"] == pytest.approx(1.0)
+        assert m["entities_correct"] == 2
+
+    def test_partial_match(self):
+        ref = {"persons": ["John", "Jane"], "organizations": ["Google"]}
+        pred = {"persons": ["John"], "organizations": ["Google"]}
+        m = _compute_entity_metrics(pred, ref)
+        assert m["entities_correct"] == 2
+        assert m["entities_reference"] == 3
+        assert m["entity_recall"] == pytest.approx(2.0 / 3.0)
+
+    def test_no_match(self):
+        ref = {"persons": ["John"]}
+        pred = {"persons": ["Bob"]}
+        m = _compute_entity_metrics(pred, ref)
+        assert m["entity_f1"] == 0.0
+
+    def test_empty_prediction(self):
+        ref = {"persons": ["John"]}
+        pred = {"persons": []}
+        m = _compute_entity_metrics(pred, ref)
+        assert m["entity_precision"] == 0.0
+        assert m["entity_recall"] == 0.0
+
+    def test_extra_predictions(self):
+        ref = {"persons": ["John"]}
+        pred = {"persons": ["John", "Jane", "Bob"]}
+        m = _compute_entity_metrics(pred, ref)
+        assert m["entity_precision"] == pytest.approx(1.0 / 3.0)
+        assert m["entity_recall"] == 1.0
+
+    def test_non_list_field_ignored(self):
+        ref = {"count": 5, "persons": ["John"]}
+        pred = {"count": 5, "persons": ["John"]}
+        m = _compute_entity_metrics(pred, ref)
+        assert m["entities_reference"] == 1  # only list fields counted
+
+
+# ---------------------------------------------------------------------------
+# NER accuracy_check
+# ---------------------------------------------------------------------------
+
+class TestNerAccuracyCheck:
+    def test_ner_pass(self):
+        ref = json.dumps({"persons": ["John Smith"], "organizations": ["Google"]})
+        pred = '{"persons": ["John Smith"], "organizations": ["Google"]}'
+        assert accuracy_check(pred, ref) is True
+
+    def test_ner_fail_low_f1(self):
+        ref = json.dumps({"persons": ["John", "Jane", "Bob"], "organizations": ["Google", "Apple"]})
+        pred = '{"persons": ["Alice"], "organizations": []}'
+        assert accuracy_check(pred, ref) is False
+
+    def test_ner_f1_exactly_half(self):
+        ref = json.dumps({"persons": ["John", "Jane"]})
+        pred = '{"persons": ["John"]}'
+        # precision=1.0, recall=0.5, F1=0.667 >= 0.5 -> pass
+        assert accuracy_check(pred, ref) is True
+
+
+# ---------------------------------------------------------------------------
+# accuracy_check (scalar path)
 # ---------------------------------------------------------------------------
 
 class TestJsonAccuracyCheck:

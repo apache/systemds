@@ -313,7 +313,13 @@ def main():
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    cfg: Dict[str, Any] = yaml.safe_load(Path(args.workload).read_text(encoding="utf-8"))
+    workload_path = Path(args.workload)
+    if not workload_path.exists():
+        raise FileNotFoundError(
+            f"Workload config not found: {workload_path}. "
+            f"Expected a YAML file, e.g. workloads/math/config.yaml"
+        )
+    cfg: Dict[str, Any] = yaml.safe_load(workload_path.read_text(encoding="utf-8"))
     validate_config(cfg)
 
     workload_name = cfg["name"]
@@ -539,7 +545,7 @@ def main():
         "platform": platform.platform(),
     })
 
-    write_manifest(out_dir, Path(args.workload), args.backend, backend_model)
+    write_manifest(out_dir, workload_path, args.backend, backend_model)
 
     logger.info("OK: wrote %s", out_dir)
     print(f"OK: wrote {out_dir}")

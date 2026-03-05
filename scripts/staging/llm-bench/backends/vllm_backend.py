@@ -42,7 +42,10 @@ class VLLMBackend:
             resp.raise_for_status()
             available = [m["id"] for m in resp.json().get("data", [])]
             if model not in available:
-                logger.warning("'%s' not on server. Available: %s", model, available)
+                raise RuntimeError(
+                    f"Model '{model}' not found on vLLM server. "
+                    f"Available models: {available}"
+                )
         except requests.exceptions.ConnectionError:
             raise RuntimeError(f"Cannot connect to vLLM at {self.base_url}")
         except RuntimeError:

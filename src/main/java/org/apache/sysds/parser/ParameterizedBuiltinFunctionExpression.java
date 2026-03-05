@@ -626,9 +626,29 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		checkInvalidParameters(getOpCode(), getVarParams(), valid);
 		checkDataType(false, "llmPredict", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
 		checkStringParam(false, "llmPredict", "url", conditional);
+
+		// validate numeric parameter types at compile time (when literal)
+		checkNumericScalarParam("llmPredict", "max_tokens", conditional);
+		checkNumericScalarParam("llmPredict", "temperature", conditional);
+		checkNumericScalarParam("llmPredict", "top_p", conditional);
+		checkNumericScalarParam("llmPredict", "concurrency", conditional);
+
 		output.setDataType(DataType.FRAME);
 		output.setValueType(ValueType.STRING);
 		output.setDimensions(-1, -1);
+	}
+
+	private void checkNumericScalarParam(String fname, String pname, boolean conditional) {
+		Expression expr = getVarParam(pname);
+		if(expr == null) return;
+		if(expr instanceof DataIdentifier) {
+			DataIdentifier di = (DataIdentifier) expr;
+			if(di.getDataType() != null && !di.getDataType().isScalar()) {
+				raiseValidateError(
+					String.format("Function %s: parameter '%s' must be a scalar, got %s.",
+						fname, pname, di.getDataType()), conditional);
+			}
+		}
 	}
 
 	// example: A = transformapply(target=X, meta=M, spec=s)

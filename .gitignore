@@ -156,3 +156,4 @@ docker/mountFolder/*.bin
 docker/mountFolder/*.bin.mtd
 
 SEAL-*/
+

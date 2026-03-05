@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import OpenAI, APIError, APIConnectionError, RateLimitError, APITimeoutError
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +98,7 @@ class OpenAIBackend:
                     results.append(result)
                     last_err = None
                     break
-                except Exception as e:
+                except (APIError, APIConnectionError, RateLimitError, APITimeoutError) as e:
                     last_err = e
                     time.sleep(base_sleep * (2**attempt))
 

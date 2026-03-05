@@ -42,6 +42,7 @@ public class JMLCLLMInferenceTest extends AutomatedTestBase {
 
 	private final static String DML_SCRIPT =
 		"prompts = read(\"prompts\", data_type=\"frame\")\n" +
+
 		"results = llmPredict(target=prompts, url=$url, max_tokens=$mt, temperature=$temp, top_p=$tp)\n" +
 		"write(results, \"results\")";
 
@@ -173,6 +174,44 @@ public class JMLCLLMInferenceTest extends AutomatedTestBase {
 			t = t.getCause();
 		}
 		return sb.toString();
+	}
+
+	@Test
+	public void testConcurrency() {
+		Connection conn = null;
+		try {
+			conn = new Connection();
+			String dmlConc =
+				"prompts = read(\"prompts\", data_type=\"frame\")\n" +
+				"results = llmPredict(target=prompts, url=$url, max_tokens=$mt, " +
+				"temperature=$temp, top_p=$tp, concurrency=$conc)\n" +
+				"write(results, \"results\")";
+			Map<String, String> args = new HashMap<>();
+			args.put("$url", LLM_URL);
+			args.put("$mt", "20");
+			args.put("$temp", "0.0");
+			args.put("$tp", "0.9");
+			args.put("$conc", "2");
+			PreparedScript ps = conn.prepareScript(dmlConc, args,
+				new String[]{"prompts"}, new String[]{"results"});
+
+			String[][] promptData = new String[][]{
+				{"Hello world"}, {"Test prompt"}, {"Another test"}
+			};
+			ps.setFrame("prompts", promptData);
+
+			ResultVariables rv = ps.executeScript();
+			FrameBlock result = rv.getFrameBlock("results");
+
+			Assert.assertNotNull("Result should not be null", result);
+			Assert.assertEquals("Should have 3 rows", 3, result.getNumRows());
+			Assert.assertEquals("Should have 5 columns", 5, result.getNumColumns());
+		} catch (Exception e) {
+			e.printStackTrace();
+			org.junit.Assume.assumeNoException("LLM server not available", e);
+		} finally {
+			if (conn != null) conn.close();
+		}
 	}
 
 	@Test

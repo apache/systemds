@@ -68,6 +68,7 @@ public class LlmPredictCPInstruction extends ParameterizedBuiltinCPInstruction {
 			Double.parseDouble(params.get("top_p")) : 0.9;
 		int concurrency = params.containsKey("concurrency") ?
 			Integer.parseInt(params.get("concurrency")) : 1;
+		concurrency = Math.max(1, Math.min(concurrency, 128));
 
 		int n = prompts.getNumRows();
 		String[][] data = new String[n][];
@@ -168,6 +169,11 @@ public class LlmPredictCPInstruction extends ParameterizedBuiltinCPInstruction {
 			}
 
 			JSONObject resp = new JSONObject(body);
+			if(!resp.has("choices") || resp.getJSONArray("choices").length() == 0) {
+				String errMsg = resp.has("error") ? resp.optString("error") : body;
+				throw new DMLRuntimeException(
+					"llmPredict: server response missing 'choices'. Response: " + errMsg);
+			}
 			String text = resp.getJSONArray("choices")
 				.getJSONObject(0).getString("text");
 			long elapsed = (System.nanoTime() - t0) / 1_000_000;

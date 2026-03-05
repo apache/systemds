@@ -30,6 +30,7 @@ import pytest
 from workloads.reasoning.loader import (
     accuracy_check,
     _extract_answer,
+    _extract_boolean,
     _normalize,
     load_samples,
 )
@@ -80,6 +81,46 @@ class TestExtractAnswer:
     def test_no_marker_returns_none(self):
         result = _extract_answer("Some reasoning\nStep 1\nStep 2\n42")
         assert result is None
+
+
+# ---------------------------------------------------------------------------
+# _extract_boolean
+# ---------------------------------------------------------------------------
+
+class TestExtractBoolean:
+    def test_standalone_yes(self):
+        assert _extract_boolean("Yes") == "yes"
+
+    def test_standalone_no(self):
+        assert _extract_boolean("No") == "no"
+
+    def test_yes_on_last_line(self):
+        assert _extract_boolean("Some reasoning\nYes") == "yes"
+
+    def test_no_on_last_line(self):
+        assert _extract_boolean("After analysis\nNo") == "no"
+
+    def test_first_word_yes(self):
+        assert _extract_boolean("Yes, that is correct.") == "yes"
+
+    def test_first_word_no(self):
+        assert _extract_boolean("No, the claim is false.") == "no"
+
+    def test_multiline_takes_last(self):
+        text = "Yes\nSome reasoning\nNo"
+        assert _extract_boolean(text) == "no"
+
+    def test_empty_string(self):
+        assert _extract_boolean("") is None
+
+    def test_no_boolean(self):
+        assert _extract_boolean("The answer is 42") is None
+
+    def test_last_word_yes(self):
+        assert _extract_boolean("Based on the passage, yes") == "yes"
+
+    def test_last_word_no(self):
+        assert _extract_boolean("The claim is not supported, no") == "no"
 
 
 # ---------------------------------------------------------------------------

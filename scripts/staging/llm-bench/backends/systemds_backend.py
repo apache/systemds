@@ -165,9 +165,18 @@ class SystemDSBackend:
         raw = []
         for i in range(n):
             text = str(frame_block.get(i, 1))
-            java_http_ms = int(str(frame_block.get(i, 2)))  # HTTP call time inside Java
-            input_tokens = int(str(frame_block.get(i, 3)))
-            output_tokens = int(str(frame_block.get(i, 4)))
+            try:
+                java_http_ms = int(float(str(frame_block.get(i, 2))))
+            except (ValueError, TypeError):
+                java_http_ms = 0
+            try:
+                input_tokens = int(float(str(frame_block.get(i, 3))))
+            except (ValueError, TypeError):
+                input_tokens = 0
+            try:
+                output_tokens = int(float(str(frame_block.get(i, 4))))
+            except (ValueError, TypeError):
+                output_tokens = 0
             raw.append((text, float(java_http_ms), input_tokens, output_tokens))
 
         # per-prompt latency = java_http_ms + share of pipeline overhead

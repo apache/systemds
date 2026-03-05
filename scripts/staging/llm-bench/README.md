@@ -891,14 +891,131 @@ of whether the GPU is actively processing queries.
 - amortization = $2.00/hr × 0.02655hr = **$0.0531**
 - total = **$0.0559** (matches metrics.json)
 
-**Why local GPU appears more expensive here:** The H100 amortizes at
-$2.00/hr regardless of utilization. This benchmark runs only 250 sequential
-queries totaling ~3 minutes of inference — the GPU is idle most of the time.
-OpenAI's per-token pricing only charges for actual usage, which wins at low
-volume. At higher utilization (concurrent requests, continuous serving), the
-H100's per-query cost drops significantly: at full throughput (~21 req/s on
-embeddings), the amortized cost is ~$0.00003/query vs OpenAI's
-~$0.0004/query — making owned hardware ~13x cheaper at scale.
+#### Per-query cost breakdown
+
+The two pricing models work fundamentally differently:
+- **OpenAI**: Pay per token. Cost scales linearly with number of queries.
+  No cost when idle.
+- **H100**: Pay per hour (amortization + electricity). Cost is fixed
+  regardless of how many queries you run. More queries = lower per-query cost.
+
+Per-query costs from the benchmark (n=50, sequential):
+
+| Workload | OpenAI per query | H100 per query | H100 / OpenAI |
+|----------|-----------------|----------------|---------------|
+| math | $0.000446 | $0.001119 | 2.5× more expensive |
+| reasoning | $0.000200 | $0.000649 | 3.2× more expensive |
+| summarization | $0.000151 | $0.000213 | 1.4× more expensive |
+| json_extraction | $0.000122 | $0.000156 | 1.3× more expensive |
+| embeddings | $0.000038 | $0.000027 | **0.7× (H100 cheaper)** |
+
+At the benchmark scale (50 sequential queries), the H100 is more expensive
+for all generation-heavy workloads. This is because the GPU amortizes at
+$2.00/hr regardless of utilization — with only 50 queries, most of the
+wall-clock time is spent on actual inference, but the fixed hourly cost
+dominates.
+
+Embeddings is the exception: queries are so fast (~47 ms each) that the
+GPU processes all 50 in 2.3 seconds, making the amortized cost per query
+very small.
+
+#### Why OpenAI appears cheaper: the utilization gap
+
+The benchmark runs 50 queries sequentially (c=1). The GPU processes one
+query at a time, leaving most of its capacity unused. Meanwhile, OpenAI
+only charges for the tokens actually consumed — idle time costs nothing.
+
+**Example calculation (math workload):**
+- 50 queries take 95.6 seconds sequentially → throughput = 0.52 req/s
+- H100 hourly cost = $2.105/hr → cost for 95.6s = $0.0560
+- Per query = $0.0560 / 50 = **$0.001119**
+- OpenAI charges $0.40/M input + $1.60/M output → 50 queries = **$0.0223**
+- Per query = $0.0223 / 50 = **$0.000446**
+
+The H100 is 2.5× more expensive per query because it costs $2.105/hr
+whether it runs 1 query or 1000 queries in that hour. At 0.52 req/s, the
+GPU serves only 1,879 queries/hr — far below its potential with batching.
+
+#### Scaling projections
+
+As query volume increases, the H100's fixed hourly cost gets amortized
+across more queries. OpenAI's cost stays linear. Here are projections at
+different daily volumes:
+
+**At 1,000 queries/day (our benchmark is ~50/day):**
+
+| Workload | OpenAI/month | H100/month | Winner |
+|----------|-------------|-----------|--------|
+| math | $13.39 | $33.60 | OpenAI (2.5×) |
+| reasoning | $5.99 | $19.47 | OpenAI (3.2×) |
+| summarization | $4.52 | $6.39 | OpenAI (1.4×) |
+| json_extraction | $3.65 | $4.67 | OpenAI (1.3×) |
+| embeddings | $1.14 | $0.82 | **H100** (0.7×) |
+
+At low volume, OpenAI wins on most workloads because per-token pricing
+avoids paying for idle GPU time.
+
+**At 100,000 queries/day (production scale):**
+
+| Workload | OpenAI/month | H100/month | GPU hr/day needed | Winner |
+|----------|-------------|-----------|-------------------|--------|
+| math | $1,339 | $3,360 | 53.2 hr (needs 3 GPUs) | OpenAI (2.5×) |
+| reasoning | $599 | $1,947 | 30.8 hr (needs 2 GPUs) | OpenAI (3.2×) |
+| summarization | $452 | $639 | 10.1 hr | OpenAI (1.4×) |
+| json_extraction | $365 | $467 | 7.4 hr | OpenAI (1.3×) |
+| embeddings | $114 | $82 | 1.3 hr | **H100** (0.7×) |
+
+Even at 100K queries/day with sequential processing, OpenAI's gpt-4.1-mini
+remains cheaper for generation-heavy workloads. This is because gpt-4.1-mini
+is aggressively priced ($0.40/M input, $1.60/M output) — far below what the
+equivalent compute would cost on owned hardware.
+
+**The key factor: concurrent batching.** The projections above assume
+sequential processing (c=1, one query at a time). In production, vLLM
+uses **continuous batching** — processing many requests simultaneously,
+sharing GPU memory via PagedAttention. A 3B model on H100 can typically
+handle 10-50× higher throughput with batching than sequential processing.
+With batched throughput, the GPU hours/day drops proportionally, shifting
+the cost balance toward owned hardware.
+
+#### When does owned hardware win?
+
+The breakeven point depends on the workload's output length:
+
+| Workload | Sequential throughput | Breakeven utilization | Achievable? |
+|----------|----------------------|----------------------|-------------|
+| math | 0.52 req/s (1,879/hr) | 4,718 req/hr (251% of max) | Only with batching |
+| reasoning | 0.90 req/s (3,244/hr) | 10,542 req/hr (325% of max) | Only with batching |
+| summarization | 2.75 req/s (9,882/hr) | 13,961 req/hr (141% of max) | Only with batching |
+| json_extraction | 3.76 req/s (13,518/hr) | 17,316 req/hr (128% of max) | Only with batching |
+| embeddings | 21.30 req/s (76,691/hr) | 55,570 req/hr (72% of max) | **Yes, sequential** |
+
+Breakeven = queries/hr where H100 monthly cost equals OpenAI monthly cost.
+
+- **Embeddings**: H100 already wins at 72% sequential utilization — no
+  batching needed. At full sequential throughput (21 req/s), the H100
+  costs $0.000027/query vs OpenAI's $0.000038/query.
+- **Generation workloads**: Breakeven requires 128-325% of sequential
+  throughput — impossible without concurrent batching. With vLLM's
+  continuous batching, these throughputs are achievable for a 3B model
+  on H100.
+
+#### Summary
+
+| Scale | Winner | Why |
+|-------|--------|-----|
+| Low volume (<1K queries/day) | OpenAI | Per-token pricing avoids idle GPU cost |
+| Medium volume (1K-50K/day, sequential) | OpenAI | gpt-4.1-mini pricing is below H100 sequential cost for generation workloads |
+| High volume (batched serving) | H100 | Continuous batching multiplies throughput 10-50×, amortizing fixed cost across many more queries |
+| Embeddings (any volume) | H100 | Fast enough that GPU utilization is high even sequentially |
+| Data privacy / no rate limits | H100 | Owned hardware has no data sharing, no API rate limits, no vendor lock-in |
+
+**Bottom line:** OpenAI's gpt-4.1-mini is priced aggressively enough that
+owned H100 hardware only becomes cost-competitive with concurrent batched
+serving. For sequential inference (as in this benchmark), OpenAI is
+1.3-3.2× cheaper per query on generation workloads. The non-cost advantages
+of owned hardware (privacy, no rate limits, custom models, no vendor
+dependency) may justify the premium regardless.
 
 ### ROUGE Scores (Summarization)
 

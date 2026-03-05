@@ -45,68 +45,11 @@ def load_samples(cfg: Dict[str, Any]) -> List[Sample]:
 
     if source == "ner":
         samples = _load_ner_samples(n)
-    elif source == "json_struct":
-        samples = _load_json_struct_samples(n)
     else:
-        raise ValueError(f"json_extraction supports source: ner, json_struct. Got: {source}")
+        raise ValueError(f"json_extraction supports source: ner. Got: {source}")
 
     if len(samples) < n:
         logger.warning("Requested %d samples but only %d available (source=%s)", n, len(samples), source)
-    return samples
-
-
-def _load_json_struct_samples(n: int) -> List[Sample]:
-    try:
-        dataset = load_dataset(
-            "MasterControlAIML/JSON-Unstructured-Structured",
-            split="train"
-        )
-    except Exception as e:
-        raise RuntimeError(
-            f"Could not load JSON-Unstructured-Structured dataset: {e}. "
-            f"Check your internet connection or install the dataset manually."
-        ) from e
-
-    samples: List[Sample] = []
-    for i, item in enumerate(dataset):
-        if len(samples) >= n:
-            break
-
-        try:
-            text = item.get("unstructured_text", item.get("text", ""))
-            structured = item.get("structured_json", item.get("json", ""))
-
-            if not text or not structured:
-                continue
-
-            # parse JSON, use keys as schema
-            if isinstance(structured, str):
-                try:
-                    parsed = json.loads(structured)
-                except json.JSONDecodeError:
-                    continue
-            else:
-                parsed = structured
-
-            if isinstance(parsed, dict):
-                schema = ", ".join(parsed.keys())
-                reference = json.dumps(parsed, indent=2)
-            else:
-                continue
-
-            # skip long texts
-            if len(text) > 500:
-                continue
-
-            samples.append(Sample(
-                sid=f"json-struct-{i}",
-                text=text,
-                schema=schema,
-                reference=reference,
-            ))
-        except Exception:
-            continue
-
     return samples
 
 
@@ -290,7 +233,7 @@ def _compute_entity_metrics(pred_dict: Dict, ref_dict: Dict) -> Dict[str, float]
 
 
 def accuracy_check(prediction: str, reference: str) -> bool:
-    """NER: entity F1 >= 0.5. Scalar: all fields present, 90% match."""
+    """NER: entity F1 >= 0.5 across all entity categories."""
     accuracy_check.last_entity_metrics = None
 
     try:
@@ -302,51 +245,6 @@ def accuracy_check(prediction: str, reference: str) -> bool:
     if pred_dict is None or not isinstance(pred_dict, dict):
         return False
 
-    # entity metrics (only meaningful for list fields)
     entity_metrics = _compute_entity_metrics(pred_dict, ref_dict)
-    has_entities = entity_metrics["entities_reference"] > 0
-
-    if has_entities:
-        # NER path: entity-level F1
-        accuracy_check.last_entity_metrics = entity_metrics
-        return entity_metrics["entity_f1"] >= 0.5
-
-    # scalar path: field-level match
-    required_fields = set(ref_dict.keys())
-    if not required_fields.issubset(set(pred_dict.keys())):
-        return False
-
-    matches = sum(
-        1 for field, ref_val in ref_dict.items()
-        if _values_match_strict(pred_dict.get(field), ref_val)
-    )
-    total = len(ref_dict)
-    return (matches / total) >= 0.90
-
-
-def _values_match_strict(pred_val, ref_val) -> bool:
-    pred_norm = _normalize_value(pred_val)
-    ref_norm = _normalize_value(ref_val)
-
-    if pred_norm == ref_norm:
-        return True
-
-    if isinstance(ref_val, str) and isinstance(pred_val, str):
-        ref_lower = ref_val.lower().strip()
-        pred_lower = pred_val.lower().strip()
-        if ref_lower == pred_lower:
-            return True
-        # handle title prefixes (Dr., Mr., Ms.)
-        if pred_lower.replace("dr. ", "").replace("mr. ", "").replace("ms. ", "") == ref_lower:
-            return True
-        if ref_lower.replace("dr. ", "").replace("mr. ", "").replace("ms. ", "") == pred_lower:
-            return True
-        return False
-
-    if isinstance(ref_val, (int, float)) and isinstance(pred_val, (int, float)):
-        return float(pred_val) == float(ref_val)
-
-    if isinstance(ref_val, bool) and isinstance(pred_val, bool):
-        return ref_val == pred_val
-
-    return False
+    accuracy_check.last_entity_metrics = entity_metrics
+    return entity_metrics["entity_f1"] >= 0.5

@@ -90,6 +90,9 @@ def extract_number_from_response(text: str) -> Optional[str]:
             s = s[:-1]
         return s
 
+    # Strip follow-up questions the model may append after the answer.
+    # Assumption: GSM8K answer text does not contain these markers.
+    # May cause false positives on other datasets (e.g. "He earned a bonus").
     main = text
     for marker in [r'\bFollow-up\b', r'\bBonus\b', r'\bExtra\b', r'\bNow\s+try\b',
                    r'\bPractice\b', r'\bExercise\b', r'\bQuestion\s*\d+[:\s]']:

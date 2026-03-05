@@ -1248,7 +1248,7 @@ def main() -> int:
             run_name = run_dir.name
             
             dataset_source = ""
-            known_sources = ["gsm8k", "boolq", "xsum", "cnn", "logiqa", "ner", "json_struct", "stsb"]
+            known_sources = ["gsm8k", "boolq", "xsum", "cnn", "logiqa", "ner", "stsb"]
             for src in known_sources:
                 if f"_{src}" in run_name.lower():
                     dataset_source = src

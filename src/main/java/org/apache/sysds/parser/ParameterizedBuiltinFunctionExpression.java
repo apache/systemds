@@ -627,7 +627,11 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		checkDataType(false, "llmPredict", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
 		checkStringParam(false, "llmPredict", "url", conditional);
 
-		// validate numeric parameter types at compile time (when literal)
+		// validate numeric parameter types at compile time (when literal).
+		// Note: no range validation -- different LLM servers accept different
+		// ranges (e.g. vLLM allows temperature=0.0, OpenAI requires >0).
+		// Runtime errors from the server are more informative than
+		// compile-time checks locked to one server's rules.
 		checkNumericScalarParam("llmPredict", "max_tokens", conditional);
 		checkNumericScalarParam("llmPredict", "temperature", conditional);
 		checkNumericScalarParam("llmPredict", "top_p", conditional);

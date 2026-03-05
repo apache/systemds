@@ -24,6 +24,7 @@
 import logging
 import os
 import subprocess
+import sys
 import time
 from pathlib import Path
 from typing import Any, Dict, List
@@ -79,8 +80,8 @@ class SystemDSBackend:
             classpath=classpath,
             die_on_exit=True,
             javaopts=["--add-modules=jdk.incubator.vector"],
-            redirect_stdout=subprocess.sys.stdout,
-            redirect_stderr=subprocess.sys.stderr,
+            redirect_stdout=sys.stdout,
+            redirect_stderr=sys.stderr,
         )
         self._gateway = JavaGateway(
             gateway_parameters=GatewayParameters(port=self._gw_port)

@@ -122,6 +122,24 @@ class TestExtractBoolean:
     def test_last_word_no(self):
         assert _extract_boolean("The claim is not supported, no") == "no"
 
+    def test_yes_but_actually_no(self):
+        # Known edge case: first word is "yes" but intent is "no".
+        # Current implementation returns "yes" (first-word fallback).
+        # Documented as a known limitation -- fixing would risk breaking
+        # existing accuracy on measured samples.
+        result = _extract_boolean("Yes, but actually no")
+        assert result == "yes"  # documents current behavior
+
+    def test_no_but_actually_yes(self):
+        # Symmetric edge case
+        result = _extract_boolean("No, but actually yes")
+        assert result == "no"  # documents current behavior
+
+    def test_multiline_contradiction(self):
+        # Last standalone line wins
+        text = "No, this seems wrong.\nAfter more thought:\nYes"
+        assert _extract_boolean(text) == "yes"
+
 
 # ---------------------------------------------------------------------------
 # accuracy_check

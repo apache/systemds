@@ -1,11 +1,7 @@
 name: json_extraction
 
-# available sources:
-#   - json_struct: HuggingFace MasterControlAIML/JSON-Unstructured-Structured
-#   - ner: CoNLL-2003 NER dataset (named entity extraction)
-#
-# note: NER mode uses entity-level F1 scoring (threshold >= 0.5).
-# ner uses CoNLL-2003 named entity recognition -- a standard NLP benchmark.
+# Uses CoNLL-2003 NER dataset (named entity recognition).
+# Entity-level F1 scoring (threshold >= 0.5).
 dataset:
   source: ner
   n_samples: 50

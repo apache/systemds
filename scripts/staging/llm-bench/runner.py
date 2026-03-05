@@ -366,6 +366,9 @@ def main():
     # Snapshot GPU after
     gpu_after = gpu_stats()
 
+    # accuracy_check functions use function attributes (e.g. .last_rouge_scores)
+    # to pass extra data back without changing the shared (str, str) -> bool
+    # signature across all workloads.  Single-threaded only.
     accuracy_check_fn = getattr(loader_module, "accuracy_check", None)
 
     latencies = []
@@ -373,11 +376,21 @@ def main():
     rouge_scores_all = []
     pred_ref_scores = []  # (predicted, reference) pairs for embeddings Pearson correlation
     entity_metrics_all = []  # entity-level metrics for NER evaluation
+    error_count = 0
 
     with (out_dir / "samples.jsonl").open("w", encoding="utf-8") as f:
         for s, o in zip(samples, outputs):
+            # Detect backend errors: latency_ms=0 with empty text and error in extra
+            has_error = "error" in o.get("extra", {})
+            if has_error:
+                error_count += 1
+                logger.warning("Backend error for sample %s: %s",
+                               s.sid, o["extra"]["error"])
+
             lat = float(o.get("latency_ms", 0.0))
-            latencies.append(lat)
+            # Exclude errored samples from latency stats (0ms would skew averages)
+            if not has_error:
+                latencies.append(lat)
 
             pred = o.get("text", "")
             ref = getattr(s, "reference", "")
@@ -431,7 +444,16 @@ def main():
 
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
+    if not latencies:
+        logger.error("All %d samples failed with backend errors", len(outputs))
+        latencies = [0.0]  # avoid empty-list errors in perf_metrics
+
     metrics = perf_metrics(latencies, total_wall_s=wall_s)
+
+    if error_count > 0:
+        metrics["backend_errors"] = error_count
+        logger.warning("%d/%d samples had backend errors (excluded from latency stats)",
+                       error_count, len(outputs))
 
     # accuracy
     if accuracy_check_fn is not None and check_results:

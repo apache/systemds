@@ -326,8 +326,56 @@ that returns true/false per sample. The accuracy percentage is
 | math | Exact numerical match | Extracts the final number from chain-of-thought using regex (####, \boxed{}, last number). Compares against GSM8K reference. |
 | reasoning | Extracted answer match | Extracts yes/no from response using CoT markers ("answer is X", "therefore X"). Compares against BoolQ reference. |
 | summarization | ROUGE-1 F1 >= 0.2 | Computes ROUGE-1 F1 between generated summary and XSum reference with stemming. Predictions shorter than 10 chars rejected. |
-| json_extraction | Entity F1 >= 0.5 (NER) or >= 90% fields match (scalar) | NER: entity-level precision/recall/F1 across all entity categories. Scalar: field-level match with case-insensitive string comparison. |
-| embeddings | Score within 1.0 of reference | Model rates sentence-pair similarity on 0-5 STS scale. Passes if abs(predicted - reference) <= 1.0. |
+| json_extraction | Entity F1 >= 0.5 | Entity-level precision/recall/F1 across all NER categories (persons, organizations, locations, misc). Uses CoNLL-2003 dataset. |
+| embeddings | Score within 1.0 of reference | Model rates sentence-pair similarity on 0-5 STS scale. Passes if abs(predicted - reference) <= 1.0. Pearson r also computed. |
+
+**Threshold rationale:** Thresholds are set to discriminate between "the model
+understood the task" vs "the model produced garbage" for a 3B parameter model
+doing zero-shot inference:
+
+- **ROUGE-1 F1 >= 0.2** (summarization): Seems low, but a 3B model doing
+  zero-shot summarization captures the topic using different words.  A higher
+  threshold (e.g. 0.5) would fail almost every sample and make the metric
+  useless for comparing backends.
+- **Entity F1 >= 0.5** (json_extraction NER): Standard NER evaluation
+  threshold. The model must identify entities AND categorize them correctly.
+- **Score within +-1.0** (embeddings): On a 0-5 scale this is +-20%. A human
+  rates "3.5" and the model says "4.2" — close enough to be useful.  Pearson
+  correlation (also computed) measures ranking consistency independently of
+  absolute values.
+- **Exact number match** (math): No tolerance needed — GSM8K answers are
+  integers.  Float comparison uses 1e-6 tolerance for edge cases only.
+
+### Design Decisions
+
+1. **No retry logic in `llmPredict`**: The Java built-in fails fast on
+   transient HTTP errors.  As a database operator, silent retries with
+   exponential backoff would make execution time unpredictable.  Callers
+   can implement retry at the DML script level.
+
+2. **Error detection in runner**: Backend errors (HTTP failures, timeouts)
+   are detected via the `error` key in `extra` and excluded from latency
+   statistics to avoid skewing averages with 0ms entries.
+
+3. **No parameter range validation at compile time**: Different LLM servers
+   accept different parameter ranges (e.g. vLLM allows temperature=0.0,
+   some OpenAI endpoints require >0).  Compile-time range checks would lock
+   the built-in to one server's rules.  Runtime errors from the server are
+   more informative.
+
+4. **Function attributes for extra data**: Accuracy checkers use the shared
+   `(str, str) -> bool` interface.  Workload-specific data (ROUGE scores,
+   entity metrics, predicted scores) is passed back via function attributes
+   (e.g. `accuracy_check.last_rouge_scores`).  This avoids changing the
+   interface for all 5 workloads but requires single-threaded execution.
+
+5. **Hardcoded OpenAI pricing**: OpenAI does not expose a pricing API —
+   there is no way to fetch per-token rates programmatically.  Every cost
+   tracking tool (LangSmith, Helicone, etc.) uses hardcoded tables for the
+   same reason.  Prices are in `openai_backend.py` with a
+   `PRICING_LAST_UPDATED` timestamp.  To update prices without editing code,
+   place a `pricing.json` file next to `openai_backend.py` — it will be
+   merged at import time.
 
 ### Accuracy (% correct, n=50 per workload)
 
@@ -483,7 +531,7 @@ text for all samples. This confirms that the SystemDS JMLC pipeline
 | Workload | Identical | Different | % Identical |
 |----------|-----------|-----------|-------------|
 | math | 50/50 | 0 | **100%** |
-| json_extraction | 46/46 | 0 | **100%** |
+| json_extraction | 50/50 | 0 | **100%** |
 | embeddings | 50/50 | 0 | **100%** |
 | reasoning | 33/50 | 17 | 66% |
 | summarization | 28/50 | 22 | 56% |

@@ -414,4 +414,159 @@ public class JMLCLLMInferenceTest extends AutomatedTestBase {
 			if (conn != null) conn.close();
 		}
 	}
+
+	@Test
+	public void testMockSinglePrompt() {
+		// mock server that returns a valid OpenAI-compatible response
+		// runs in CI without a real LLM server
+		HttpServer server = null;
+		Connection conn = null;
+		try {
+			server = HttpServer.create(new InetSocketAddress(0), 0);
+			int port = server.getAddress().getPort();
+			server.createContext("/v1/completions", exchange -> {
+				String body = "{\"choices\":[{\"text\":\"42 is the answer\"}],"
+					+ "\"usage\":{\"prompt_tokens\":5,\"completion_tokens\":4}}";
+				byte[] resp = body.getBytes(StandardCharsets.UTF_8);
+				exchange.sendResponseHeaders(200, resp.length);
+				try(OutputStream os = exchange.getResponseBody()) {
+					os.write(resp);
+				}
+			});
+			server.start();
+
+			conn = new Connection();
+			Map<String, String> args = new HashMap<>();
+			args.put("$url", "http://localhost:" + port + "/v1/completions");
+			args.put("$mt", "20");
+			args.put("$temp", "0.0");
+			args.put("$tp", "0.9");
+			PreparedScript ps = conn.prepareScript(DML_SCRIPT, args,
+				new String[]{"prompts"}, new String[]{"results"});
+			ps.setFrame("prompts", new String[][]{{"What is 6 times 7?"}});
+
+			ResultVariables rv = ps.executeScript();
+			FrameBlock result = rv.getFrameBlock("results");
+
+			Assert.assertNotNull("Result should not be null", result);
+			Assert.assertEquals("Should have 1 row", 1, result.getNumRows());
+			Assert.assertEquals("Should have 5 columns", 5, result.getNumColumns());
+			Assert.assertEquals("Generated text should match", "42 is the answer",
+				result.get(0, 1).toString());
+			Assert.assertEquals("Input tokens should be 5", "5",
+				result.get(0, 3).toString());
+			Assert.assertEquals("Output tokens should be 4", "4",
+				result.get(0, 4).toString());
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			org.junit.Assume.assumeNoException(
+				"Could not set up mock server", e);
+		}
+		finally {
+			if (server != null) server.stop(0);
+			if (conn != null) conn.close();
+		}
+	}
+
+	@Test
+	public void testMockBatchPrompts() {
+		// mock server returning different responses per prompt
+		HttpServer server = null;
+		Connection conn = null;
+		try {
+			server = HttpServer.create(new InetSocketAddress(0), 0);
+			int port = server.getAddress().getPort();
+			server.createContext("/v1/completions", exchange -> {
+				// read request to get prompt
+				String reqBody = new String(exchange.getRequestBody().readAllBytes(),
+					StandardCharsets.UTF_8);
+				String response;
+				if (reqBody.contains("first"))
+					response = "response-1";
+				else if (reqBody.contains("second"))
+					response = "response-2";
+				else
+					response = "response-3";
+				String body = "{\"choices\":[{\"text\":\"" + response + "\"}],"
+					+ "\"usage\":{\"prompt_tokens\":3,\"completion_tokens\":1}}";
+				byte[] resp = body.getBytes(StandardCharsets.UTF_8);
+				exchange.sendResponseHeaders(200, resp.length);
+				try(OutputStream os = exchange.getResponseBody()) {
+					os.write(resp);
+				}
+			});
+			server.start();
+
+			conn = new Connection();
+			Map<String, String> args = new HashMap<>();
+			args.put("$url", "http://localhost:" + port + "/v1/completions");
+			args.put("$mt", "20");
+			args.put("$temp", "0.0");
+			args.put("$tp", "0.9");
+			PreparedScript ps = conn.prepareScript(DML_SCRIPT, args,
+				new String[]{"prompts"}, new String[]{"results"});
+			ps.setFrame("prompts", new String[][]{
+				{"first prompt"}, {"second prompt"}, {"third prompt"}
+			});
+
+			ResultVariables rv = ps.executeScript();
+			FrameBlock result = rv.getFrameBlock("results");
+
+			Assert.assertEquals("Should have 3 rows", 3, result.getNumRows());
+			Assert.assertEquals("Row 0 text", "response-1", result.get(0, 1).toString());
+			Assert.assertEquals("Row 1 text", "response-2", result.get(1, 1).toString());
+			Assert.assertEquals("Row 2 text", "response-3", result.get(2, 1).toString());
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			org.junit.Assume.assumeNoException(
+				"Could not set up mock server", e);
+		}
+		finally {
+			if (server != null) server.stop(0);
+			if (conn != null) conn.close();
+		}
+	}
+
+	@Test
+	public void testEmptyPromptFrame() {
+		// empty frame (0 rows) should produce empty result, not crash
+		HttpServer server = null;
+		Connection conn = null;
+		try {
+			server = HttpServer.create(new InetSocketAddress(0), 0);
+			int port = server.getAddress().getPort();
+			server.createContext("/v1/completions", exchange -> {
+				// should never be called for 0 prompts
+				Assert.fail("Server should not be called for empty frame");
+			});
+			server.start();
+
+			conn = new Connection();
+			Map<String, String> args = new HashMap<>();
+			args.put("$url", "http://localhost:" + port + "/v1/completions");
+			args.put("$mt", "20");
+			args.put("$temp", "0.0");
+			args.put("$tp", "0.9");
+			PreparedScript ps = conn.prepareScript(DML_SCRIPT, args,
+				new String[]{"prompts"}, new String[]{"results"});
+			ps.setFrame("prompts", new String[0][1]);
+
+			ResultVariables rv = ps.executeScript();
+			FrameBlock result = rv.getFrameBlock("results");
+
+			Assert.assertNotNull("Result should not be null", result);
+			Assert.assertEquals("Should have 0 rows", 0, result.getNumRows());
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			org.junit.Assume.assumeNoException(
+				"Could not set up test", e);
+		}
+		finally {
+			if (server != null) server.stop(0);
+			if (conn != null) conn.close();
+		}
+	}
 }

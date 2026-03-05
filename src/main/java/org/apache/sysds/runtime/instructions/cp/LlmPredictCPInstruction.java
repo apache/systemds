@@ -111,6 +111,10 @@ public class LlmPredictCPInstruction extends ParameterizedBuiltinCPInstruction {
 		ec.releaseFrameInput(params.get("target"));
 	}
 
+	// No retry logic by design: as a database built-in, llmPredict should
+	// fail fast on transient errors and let the caller (DML script) decide
+	// whether and how to retry.  Silent retries with backoff would make
+	// execution time unpredictable.
 	private static String[] callLlmEndpoint(String prompt, String url,
 			String model, int maxTokens, double temperature, double topP) {
 		long t0 = System.nanoTime();

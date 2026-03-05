@@ -3,7 +3,7 @@
 Benchmarking framework that compares LLM inference across three backends:
 OpenAI API, vLLM, and SystemDS JMLC with the native `llmPredict` built-in.
 Evaluated on 5 workloads (math, reasoning, summarization, JSON extraction,
-embeddings) with n=50 per workload.
+embeddings) with n=50 per workload (46 for json_extraction due to dataset size).
 
 ## Purpose
 
@@ -190,22 +190,54 @@ Python -> Py4J -> JMLC -> DML compilation -> llmPredict instruction -> Java HTTP
 # Build SystemDS
 mvn package -DskipTests
 
-# Start inference server
-python -m vllm.entrypoints.openai.api_server \
-  --model Qwen/Qwen2.5-3B-Instruct --port 8000
+# Start inference server (in a screen session)
+screen -S vllm
+CUDA_VISIBLE_DEVICES=0 CUBLAS_WORKSPACE_CONFIG=:4096:8 \
+  python -m vllm.entrypoints.openai.api_server \
+  --model Qwen/Qwen2.5-3B-Instruct --port 8080
+# Once "Uvicorn running on ..." appears, detach: Ctrl+A, D
 
-# Run benchmark
-export LLM_INFERENCE_URL="http://localhost:8000/v1/completions"
-python runner.py \
+# Run benchmark (in another terminal)
+export LLM_INFERENCE_URL="http://localhost:8080/v1/completions"
+CUBLAS_WORKSPACE_CONFIG=:4096:8 python runner.py \
   --backend systemds --model Qwen/Qwen2.5-3B-Instruct \
   --workload workloads/math/config.yaml \
   --out results/systemds_math
+
+# Stop server when done (important -- GPU memory is not freed until killed)
+screen -r vllm    # reattach
+# Ctrl+C to stop vLLM, then 'exit' to close screen
+# Or kill from outside:
+screen -X -S vllm quit
+```
+
+**Troubleshooting GPU issues:**
+```bash
+# Check GPU status
+nvidia-smi
+
+# If GPU shows high utilization but no processes, kill zombie processes:
+sudo fuser -v /dev/nvidia*    # find processes using GPU
+kill -9 <PID>                 # kill them
+
+# If GPU 0 is busy, use a different GPU:
+CUDA_VISIBLE_DEVICES=1 CUBLAS_WORKSPACE_CONFIG=:4096:8 \
+  python -m vllm.entrypoints.openai.api_server \
+  --model Qwen/Qwen2.5-3B-Instruct --port 8080
+
+# Clean up dead screen sessions
+screen -wipe
 ```
 
 Environment variables:
 - `SYSTEMDS_JAR` -- path to SystemDS.jar (default: auto-detected)
 - `SYSTEMDS_LIB` -- path to lib/ directory (default: `target/lib/`)
 - `LLM_INFERENCE_URL` -- inference server endpoint (default: `http://localhost:8080/v1/completions`)
+- `CUBLAS_WORKSPACE_CONFIG` -- set to `:4096:8` for deterministic cuBLAS (required for reproducible results)
+
+**Note:** The CoNLL-2003 NER dataset (used by json_extraction) requires
+`trust_remote_code=True` when first downloaded. The loader will prompt
+for confirmation.
 
 **Alternative: lightweight server without vLLM.** For testing or
 development without a full vLLM installation, `src/main/python/llm_server.py`
@@ -241,22 +273,22 @@ that returns true/false per sample. The accuracy percentage is
 | json_extraction | >= 90% fields match | Parses JSON from response. Checks required fields present, values compared case-insensitive for strings, exact for numbers. |
 | embeddings | Score within 1.0 of reference | Model rates sentence-pair similarity on 0-5 STS scale. Passes if abs(predicted - reference) <= 1.0. |
 
-### Accuracy (% correct, n=50 per workload)
+### Accuracy (% correct, n=50 per workload unless noted)
 
 | Workload | OpenAI gpt-4.1-mini | vLLM Qwen 3B | SystemDS Qwen 3B |
 |----------|---------------------|--------------|------------------|
 | math | **96%** (48/50) | 68% (34/50) | 68% (34/50) |
-| reasoning | **88%** (44/50) | 66% (33/50) | 62% (31/50) |
-| summarization | **86%** (43/50) | 62% (31/50) | 50% (25/50) |
-| json_extraction | **61%** (28/46)\* | 52% (26/50) | 52% (26/50) |
+| reasoning | **88%** (44/50) | 60% (30/50) | 64% (32/50) |
+| summarization | **86%** (43/50) | 50% (25/50) | 62% (31/50) |
+| json_extraction | **61%** (28/46) | 15% (7/46) | 15% (7/46) |
 | embeddings | 88% (44/50) | **90%** (45/50) | **90%** (45/50) |
 
 **Key observations:**
 
 - **SystemDS matches vLLM on math, json_extraction, and embeddings** (68%,
-  52%, 90% respectively). Both use the same Qwen2.5-3B model on the same
+  15%, 90% respectively). Both use the same Qwen2.5-3B model on the same
   vLLM inference server with temperature=0.0.
-- **Small differences on reasoning (33 vs 31) and summarization (31 vs 25)**
+- **Small differences on reasoning (30 vs 32) and summarization (25 vs 31)**
   are caused by vLLM's Automatic Prefix Caching (APC): the backend that
   ran second hit the warmed prefix cache and received different responses
   from the server. See "Accuracy Gap Analysis" below for concrete
@@ -266,26 +298,26 @@ that returns true/false per sample. The accuracy percentage is
   serving infrastructure.
 - **Qwen 3B beats OpenAI on embeddings** (90% vs 88%), showing that smaller
   models can excel on focused tasks.
+- **json_extraction uses CoNLL-2003 NER** (named entity recognition), a strict
+  task where extracted entities must 90%-match the reference. Qwen 3B scores
+  15% vs GPT-4.1-mini's 61% — this reflects model capability, not backend
+  differences (vLLM and SystemDS produce identical output on all 46 samples).
 
 **Notes:**
 
-- \*OpenAI json_extraction ran on a different dataset (CoNLL-2003 NER, 46
-  samples) than vLLM/SystemDS (JSON-Struct, 50 samples) due to a config
-  change between runs. Cross-backend accuracy comparison for this workload
-  is not valid. The vLLM vs SystemDS comparison (same dataset) remains valid.
+- All three backends now use the same CoNLL-2003 NER dataset (46 samples)
+  for json_extraction. An earlier run had vLLM/SystemDS on a different
+  dataset (JSON-Struct, 50 samples) due to a config change between runs;
+  this has been corrected.
 - The vLLM and SystemDS backends previously sent different `top_p` values
   to the inference server (vLLM: server default 1.0, SystemDS: 0.9). This
   has been fixed -- all backends now explicitly send `top_p=0.9`. At
   temperature=0.0, this difference has no theoretical effect (greedy
   decoding), but it was an uncontrolled variable.
-- The `samples.jsonl` files for reasoning contain stale `"correct":
-  false` entries from an earlier extraction logic. The most notable is
-  `boolq-7`: the model correctly answered "Yes" on its own line, but
-  the old regex `answer[:\s]+([^\n.]+)` matched "the answer **to the
-  question** 'Is there a word with Q without U?'" instead of the actual
-  "Yes" on the next line. This was fixed by adding `_extract_boolean()`
-  which scans for standalone yes/no lines. The stored files were not
-  re-scored after the fix.
+- Reasoning `samples.jsonl` files were re-run after fixing a boolean
+  extraction bug: the old regex `answer[:\s]+([^\n.]+)` matched preamble
+  text instead of standalone yes/no lines. The fix (`_extract_boolean()`)
+  now correctly extracts answers like "Yes" on their own line.
 
 ### Accuracy Gap Analysis (vLLM vs SystemDS)
 
@@ -305,39 +337,39 @@ remaining 2 workloads, vLLM's Automatic Prefix Caching causes the
 two sequential batches to receive different responses from the server,
 which in some cases leads to different evaluation outcomes.
 
-**Reasoning (33 vs 31, gap = 2 samples):** The evaluation extracts
+**Reasoning (30 vs 32, gap = 2 samples):** The evaluation extracts
 yes/no keywords, ignoring all surrounding text. Of 21 samples with
 different text, 19 had the same yes/no answer (different wording, same
 conclusion). Only 2 had genuinely **opposite conclusions**:
 
 - `boolq-1` ("Is house tax and property tax the same?", reference: Yes):
   Both backends analysed the same passage about property tax definitions.
-  vLLM's reasoning chain focused on similarities ("This definition
-  matches the one provided for house tax") and concluded
-  `Final Answer: Yes` (correct). SystemDS's chain introduced extra
-  details about constitutional amendments and wealth tax concepts,
-  leading to `**No**. House tax and property tax are not exactly the
-  same` (wrong). The divergence started at bullet point #2, where a
-  different token choice shifted the analysis from "similarities" to
-  "distinctions".
+  One chain focused on similarities ("This definition matches the one
+  provided for house tax") and concluded `Final Answer: Yes` (correct).
+  The other chain introduced extra details about constitutional amendments
+  and wealth tax concepts, leading to `**No**. House tax and property tax
+  are not exactly the same` (wrong). The divergence started at bullet
+  point #2, where a different token choice shifted the analysis from
+  "similarities" to "distinctions".
 - `boolq-35` ("Is there a next part of Avengers Infinity War?",
   reference: Yes): Both backends read the passage stating Avengers 4 is
-  "the direct sequel to 2018's Avengers: Infinity War". vLLM focused on
-  this explicit statement and concluded `Yes, There is a next part... in
-  the form of Avengers 4` (correct). SystemDS added "it does not mention
-  any other Avengers films after Avengers 4" and interpreted this as
-  evidence for `Final Answer: No` (wrong -- the question asks about a
-  sequel to Infinity War, which exists as Avengers 4, not about films
-  after Avengers 4).
+  "the direct sequel to 2018's Avengers: Infinity War". One chain focused
+  on this explicit statement and concluded `Yes, There is a next part...
+  in the form of Avengers 4` (correct). The other chain added "it does
+  not mention any other Avengers films after Avengers 4" and interpreted
+  this as evidence for `Final Answer: No` (wrong -- the question asks
+  about a sequel to Infinity War, which exists as Avengers 4, not about
+  films after Avengers 4).
 
 These are genuine model disagreements, not evaluation errors. The
 evaluator correctly extracted yes/no in all cases. Both backends
 received the same prompt and the same passage — the divergence comes
 from different token selections early in the chain-of-thought because
 the two sequential batches hit the vLLM server in different cache
-states (Automatic Prefix Caching). The backend that ran first got the
-cold-cache response; the backend that ran second got the warm-cache
-response.
+states (Automatic Prefix Caching). Which backend gets the correct
+answer depends on run order: in the CUBLAS run (vLLM first), the
+second backend (SystemDS) got these 2 correct; in the swap experiment
+(reversed order), the labels flip.
 
 **Summarization (31 vs 25, gap = 6 samples):** ROUGE-1 F1 measures
 word overlap between prediction and reference, with a pass threshold of
@@ -424,7 +456,7 @@ text for all 50 samples. This confirms that the SystemDS JMLC pipeline
 | Workload | Identical | Different | % Identical |
 |----------|-----------|-----------|-------------|
 | math | 50/50 | 0 | **100%** |
-| json_extraction | 50/50 | 0 | **100%** |
+| json_extraction | 46/46 | 0 | **100%** |
 | embeddings | 50/50 | 0 | **100%** |
 | reasoning | 29/50 | 21 | 58% |
 | summarization | 28/50 | 22 | 56% |
@@ -441,7 +473,7 @@ output constraint level, not output length:
 | Workload | Avg output length | Constraint level | % Identical |
 |---|---|---|---|
 | embeddings | 4 chars | Highly constrained (single number) | 100% |
-| json_extraction | 264 chars | Structured (JSON fields from input) | 100% |
+| json_extraction | 264 chars | Structured (JSON fields from input, n=46) | 100% |
 | math | **1349 chars** | Arithmetic steps (one valid path) | **100%** |
 | summarization | 328 chars | Unconstrained (many valid phrasings) | 56% |
 | reasoning | 943 chars | Unconstrained (many valid phrasings) | 58% |
@@ -480,11 +512,11 @@ against the same server on the same GPU. At this point, vLLM used
 | Workload | Identical | Different | Match Rate |
 |----------|-----------|-----------|------------|
 | math | 50/50 | 0 | **100%** |
-| json_extraction | 50/50 | 0 | **100%** |
+| json_extraction | 46/46 | 0 | **100%** |
 | embeddings | 50/50 | 0 | **100%** |
 | reasoning | 29/50 | 21 | 58% |
 | summarization | 28/50 | 22 | 56% |
-| **Total** | **207/250** | **43** | **82.8%** |
+| **Total** | **203/246** | **43** | **82.5%** |
 
 Constrained workloads (math, json_extraction, embeddings) became 100%
 byte-identical with deterministic cuBLAS. Reasoning and summarization
@@ -726,14 +758,14 @@ selected.** The true cause is Automatic Prefix Caching (see above).
 Both backends now use non-streaming mode and send byte-for-byte
 identical HTTP requests to the vLLM server.
 
-### Per-Prompt Latency (mean ms, n=50)
+### Per-Prompt Latency (mean ms, n=50; json_extraction n=46)
 
 | Workload | OpenAI (MacBook -> Cloud) | vLLM Qwen 3B (H100) | SystemDS Qwen 3B (H100) |
 |----------|--------------------------|----------------------|--------------------------|
 | math | 4577 | 1922 | 1908 |
-| reasoning | 1735 | 1092 | 1051 |
+| reasoning | 1735 | 1110 | 1063 |
 | summarization | 1131 | 365 | 356 |
-| json_extraction | 1498 | 520 | 511 |
+| json_extraction | 1498 | 272 | 261 |
 | embeddings | 773 | 44 | 41 |
 
 **Note on measurement methodology:** Latency is measured differently by
@@ -762,11 +794,11 @@ does more work — it is not a sign that SystemDS is faster or slower.
 
 | Workload | vLLM | SystemDS | Difference |
 |----------|------|----------|------------|
-| math | 1922 ms | 1908 ms | -0.7% |
-| reasoning | 1092 ms | 1051 ms | -3.7% |
-| summarization | 365 ms | 356 ms | -2.6% |
-| json_extraction | 520 ms | 511 ms | -1.8% |
-| embeddings | 44 ms | 41 ms | -5.9% |
+| math | 1921 ms | 1913 ms | -0.4% |
+| reasoning | 1099 ms | 1064 ms | -3.2% |
+| summarization | 347 ms | 332 ms | -4.3% |
+| json_extraction | 224 ms | 214 ms | -4.9% |
+| embeddings | 43 ms | 40 ms | -7.7% |
 
 Neither backend is meaningfully faster. Both are HTTP clients to the
 same vLLM server. Latency is determined by output token count, which

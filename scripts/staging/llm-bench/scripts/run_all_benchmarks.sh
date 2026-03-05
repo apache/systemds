@@ -233,5 +233,8 @@ fi
 echo ""
 echo "Generate report:"
 echo "  $PYTHON scripts/report.py --results-dir results/ --out benchmark_report.html"
+echo ""
+echo -e "${YELLOW}Reminder: If you're done benchmarking, stop the vLLM server to free GPU memory:${NC}"
+echo "  screen -X -S vllm quit"
 
 [ "$FAILED_RUNS" -eq 0 ]

@@ -35,7 +35,7 @@ class VLLMBackend:
 
     def __init__(self, model: str, base_url: str = None):
         self.model = model
-        self.base_url = (base_url or os.environ.get("VLLM_BASE_URL", "http://localhost:8000")).rstrip("/")
+        self.base_url = (base_url or os.environ.get("VLLM_BASE_URL", "http://localhost:8080")).rstrip("/")
 
         try:
             resp = requests.get(f"{self.base_url}/v1/models", timeout=10)

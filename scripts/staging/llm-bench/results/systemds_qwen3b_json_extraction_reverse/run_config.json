@@ -1,0 +1,13 @@
+{
+  "backend": "systemds",
+  "backend_model": "Qwen/Qwen2.5-3B-Instruct",
+  "workload": "json_extraction",
+  "concurrency": 1,
+  "max_tokens": 256,
+  "temperature": 0.0,
+  "top_p": 0.9,
+  "n_samples": 50,
+  "timestamp": "2026-03-05T04:39:26.862875+00:00",
+  "python_version": "3.12.3",
+  "platform": "Linux-6.8.0-83-generic-x86_64-with-glibc2.39"
+}

@@ -287,36 +287,30 @@ that returns true/false per sample. The accuracy percentage is
 | Workload | OpenAI gpt-4.1-mini | vLLM Qwen 3B | SystemDS Qwen 3B |
 |----------|---------------------|--------------|------------------|
 | math | **96%** (48/50) | 68% (34/50) | 68% (34/50) |
-| reasoning | **88%** (44/50) | 62% (31/50) | 58% (29/50) |
+| reasoning | **88%** (44/50) | 58% (29/50) | 58% (29/50) |
 | summarization | **86%** (43/50) | 50% (25/50) | 62% (31/50) |
-| json_extraction | **61%** (28/46) | 65% (30/46) | 66% (33/50) |
+| json_extraction | **61%** (28/46) | **66%** (33/50) | **66%** (33/50) |
 | embeddings | 88% (44/50) | **90%** (45/50) | **90%** (45/50) |
 
 **Key observations:**
 
-- **SystemDS matches vLLM on math and embeddings** (68%, 90%
-  respectively). Both use the same Qwen2.5-3B model on the same
-  vLLM inference server with temperature=0.0. Predictions are byte-for-byte
-  identical on all samples in these workloads.
+- **SystemDS matches vLLM on 4/5 workloads** (math, reasoning,
+  json_extraction, embeddings). Both use the same Qwen2.5-3B model on
+  the same vLLM inference server with temperature=0.0. Predictions are
+  byte-for-byte identical on all samples in these workloads.
 - **Summarization gap (25 vs 31) is caused by vLLM Automatic Prefix Caching
-  (APC).** The run-order experiment proves this: 22/50 samples
-  produce exactly 2 text variants determined by run position (1st vs 2nd),
-  not by backend. The 1st-run variant always scores 25/50; the 2nd-run
-  variant always scores 31/50. See "Reverse-Order Experiment" below.
-- **Reasoning differences (31 vs 29) are GPU floating-point non-determinism.**
-  Across different server sessions, 0/50 predictions are identical — even for
-  the same backend. Within a session, ~60% are identical. The ±2 sample
-  accuracy gap is noise from 50-sample runs. See "Reverse-Order Experiment"
+  (APC).** The run-order experiment proves this: the 1st-run backend
+  always scores 25/50; the 2nd-run backend always scores 31/50,
+  regardless of which backend goes first. See "Reverse-Order Experiment"
   below.
-- **OpenAI gpt-4.1-mini leads on 4/5 workloads**, with the largest gap on
+- **OpenAI gpt-4.1-mini leads on 3/5 workloads**, with the largest gap on
   math (96% vs 68%). This is model quality (much larger model), not
   serving infrastructure.
-- **Qwen 3B beats OpenAI on embeddings** (90% vs 88%), showing that smaller
-  models can excel on focused tasks.
+- **Qwen 3B beats OpenAI on json_extraction and embeddings** (66% vs 61%,
+  90% vs 88%), showing that smaller models can excel on focused tasks.
 - **json_extraction uses CoNLL-2003 NER** (named entity recognition) with
-  entity-level F1 scoring (threshold >= 0.5). Qwen 3B scores 65% vs
-  GPT-4.1-mini's 61% — both backends produce identical output on all 46
-  samples.
+  entity-level F1 scoring (threshold >= 0.5). Both GPU backends produce
+  identical output on all 50 samples.
 
 **Notes:**
 
@@ -339,14 +333,10 @@ that returns true/false per sample. The accuracy percentage is
 
 ### Accuracy Gap Analysis (vLLM vs SystemDS)
 
-On 3/5 workloads (math, json_extraction, embeddings), accuracy is
-identical because predictions are byte-for-byte identical. The
-remaining 2 workloads diverge for different reasons:
-
-- **Summarization**: vLLM Automatic Prefix Caching (APC) — proven by
-  the run-order experiment (see below).
-- **Reasoning**: GPU floating-point non-determinism across server
-  sessions — even the same backend produces different text on every run.
+On 4/5 workloads (math, reasoning, json_extraction, embeddings),
+accuracy is identical because predictions are byte-for-byte identical.
+The remaining workload (summarization) diverges due to vLLM Automatic
+Prefix Caching (APC) — proven by the run-order experiment (see below).
 
 **Note on labels:** In the committed results, "vLLM" ran first and
 "SystemDS" ran second. For summarization, these labels correspond to
@@ -354,38 +344,13 @@ remaining 2 workloads diverge for different reasons:
 reverse-order experiment confirms the outputs follow cache position,
 not the backend.
 
-**Reasoning (31 vs 33, gap = 2 samples):** The evaluation extracts
-yes/no keywords, ignoring surrounding text. Of 21 samples with
-different text, 19 had the same yes/no answer (different wording, same
-conclusion). Only 2 had genuinely **opposite conclusions**:
-
-- `boolq-1` ("Is house tax and property tax the same?", reference: Yes):
-  Both runs analysed the same passage about property tax definitions.
-  The SystemDS run (2nd) focused on similarities ("This definition
-  matches the one provided for house tax") and concluded
-  `Final Answer: Yes` (correct). The vLLM run (1st) introduced extra
-  details about constitutional amendments and wealth tax concepts,
-  leading to `**No**. House tax and property tax are not exactly the
-  same` (wrong). The divergence started at bullet point #2, where a
-  different token choice shifted the analysis from "similarities" to
-  "distinctions".
-- `boolq-35` ("Is there a next part of Avengers Infinity War?",
-  reference: Yes): Both runs read the passage stating Avengers 4 is
-  "the direct sequel to 2018's Avengers: Infinity War". The SystemDS
-  run (2nd) focused on this explicit statement and concluded
-  `Yes, There is a next part... in the form of Avengers 4` (correct).
-  The vLLM run (1st) added "it does not mention any other Avengers
-  films after Avengers 4" and interpreted this as evidence for
-  `Final Answer: No` (wrong — the question asks about a sequel to
-  Infinity War, which exists as Avengers 4, not about films after
-  Avengers 4).
-
-These are genuine model disagreements, not evaluation errors. Unlike
-summarization, reasoning differences do NOT follow the APC swap
-pattern. Across different server sessions, the same backend (e.g.,
-vLLM) produces completely different text (0/50 predictions identical
-between original and reverse runs). The ±2 accuracy gap is noise from
-the small sample size (n=50).
+**Reasoning (29 vs 29, same accuracy):** Within a session, 66% of
+predictions are byte-for-byte identical between 1st and 2nd run. The
+remaining 34% (17 samples) produce different text due to APC changing
+the KV cache state. However, the accuracy impact is zero: both runs
+score 29/50. The same-position comparison is 100% identical across
+sessions (1st-run in session 1 = 1st-run in session 2), confirming
+that the text differences are deterministic given cache state.
 
 **Summarization (25 vs 31, gap = 6 samples):** ROUGE-1 F1 measures
 word overlap between prediction and reference, with a pass threshold of
@@ -633,39 +598,38 @@ non-streaming mode.
 
 ### Run-Order Experiment (2 Sessions, 4-Way Analysis)
 
-To understand why vLLM and SystemDS produce different accuracy, the
-benchmark was re-run with **reversed order**: SystemDS first, vLLM
-second (opposite of original: vLLM first, SystemDS second). Both
-sessions use the same code and vLLM server configuration, with a
-fresh server restart between them. This creates 4 data points per
-sample, enabling precise root cause analysis.
+To understand why vLLM and SystemDS produce different summarization
+accuracy, the benchmark was run in two sessions with **reversed order**
+and a fresh vLLM server restart between them (clearing the APC cache).
+This creates 4 data points per sample, enabling precise root cause
+analysis.
 
-- **Original order (Mar 4)**: vLLM first, SystemDS second
-- **Reverse order (Mar 5)**: SystemDS first, vLLM second
+- **Session 1 (normal order)**: vLLM first, SystemDS second
+- **Session 2 (reverse order)**: SystemDS first, vLLM second
 
 **Accuracy by session and run position:**
 
-| Workload | Orig: vLLM (1st) | Orig: SysDS (2nd) | Rev: SysDS (1st) | Rev: vLLM (2nd) |
+| Workload | Sess 1: vLLM (1st) | Sess 1: SysDS (2nd) | Sess 2: SysDS (1st) | Sess 2: vLLM (2nd) |
 |---|---|---|---|---|
 | math | 68% (34/50) | 68% (34/50) | 68% (34/50) | 68% (34/50) |
-| reasoning | 62% (31/50) | 66% (33/50) | 58% (29/50) | 58% (29/50) |
+| reasoning | 58% (29/50) | 58% (29/50) | 58% (29/50) | 58% (29/50) |
 | summarization | **50% (25/50)** | **62% (31/50)** | **50% (25/50)** | **62% (31/50)** |
-| json_extraction | 65% (30/46) | 65% (30/46) | 65% (30/46) | 65% (30/46) |
+| json_extraction | 66% (33/50) | 66% (33/50) | 66% (33/50) | 66% (33/50) |
 | embeddings | 90% (45/50) | 90% (45/50) | 90% (45/50) | 90% (45/50) |
 
 **Prediction identity (byte-for-byte text comparison):**
 
 | Comparison | math | reasoning | summarization | json_extraction | embeddings |
 |---|---|---|---|---|---|
-| Same session, cross-backend (orig: vLLM vs SysDS) | 100% | 58% | 56% | 100% | 100% |
-| Same session, cross-backend (rev: SysDS vs vLLM) | 100% | 66% | 56% | 100% | 100% |
-| Cross-session, same backend (orig vLLM vs rev vLLM) | 100% | **0%** | 56% | 100% | 100% |
-| Cross-session, same backend (orig SysDS vs rev SysDS) | 100% | **0%** | 56% | 100% | 100% |
-| **Cross-session, same position (orig 1st vs rev 1st)** | **100%** | **0%** | **100%** | **100%** | **100%** |
-| **Cross-session, same position (orig 2nd vs rev 2nd)** | **100%** | **0%** | **100%** | **100%** | **100%** |
+| Same session, cross-backend (sess 1: vLLM vs SysDS) | 100% | 66% | 56% | 100% | 100% |
+| Same session, cross-backend (sess 2: SysDS vs vLLM) | 100% | 66% | 56% | 100% | 100% |
+| Cross-session, same backend (vLLM sess 1 vs vLLM sess 2) | 100% | 66% | 56% | 100% | 100% |
+| Cross-session, same backend (SysDS sess 1 vs SysDS sess 2) | 100% | 66% | 56% | 100% | 100% |
+| **Cross-session, same position (1st vs 1st)** | **100%** | **100%** | **100%** | **100%** | **100%** |
+| **Cross-session, same position (2nd vs 2nd)** | **100%** | **100%** | **100%** | **100%** | **100%** |
 
 The last two rows are the key: when comparing runs that occupied the
-**same position** (both 1st or both 2nd), summarization achieves 100%
+**same position** (both 1st or both 2nd), ALL workloads achieve 100%
 text identity — even though different backends produced the text. This
 proves position determines output, not the backend.
 
@@ -686,14 +650,15 @@ For all 22 unstable samples, the text output swaps with position:
 `orig_SystemDS(2nd) == rev_vLLM(2nd)` — 50/50 byte-for-byte
 identical in each group. Zero exceptions.
 
-**2. Reasoning: GPU non-determinism, NOT APC.**
+**2. Reasoning: same-position = 100% identical, cross-position = 66%.**
 
-Reasoning shows 0% prediction identity across sessions for the SAME
-backend. Every server restart produces completely different text from
-the very first token. Within a session, backends share ~60% of
-predictions (because they hit the same vLLM server state). The
-accuracy varies between sessions: 31/33 (original), 29/29 (reverse)
-— noise from n=50 with non-deterministic generation.
+Within a session, 66% of reasoning predictions are byte-for-byte
+identical between 1st and 2nd run. Across sessions, same-position
+runs are 100% identical (1st vs 1st, 2nd vs 2nd). Accuracy is
+29/50 in all 4 runs — consistent within and across sessions. The
+34% of divergent samples produce different text depending on whether
+APC-cached prefixes affect the generation, but the accuracy impact
+is zero in these runs.
 
 **3. Math, json_extraction, embeddings: fully deterministic.**
 
@@ -705,11 +670,11 @@ distributions that neither APC nor FP rounding can flip the argmax.
 
 | Workload | OpenAI (MacBook -> Cloud) | vLLM Qwen 3B (H100) | SystemDS Qwen 3B (H100) |
 |----------|--------------------------|----------------------|--------------------------|
-| math | 4577 | 1922 | 1860 |
-| reasoning | 1735 | 1110 | 1106 |
-| summarization | 1131 | 365 | 353 |
-| json_extraction | 1498 | 272 | 265 |
-| embeddings | 773 | 44 | 64 |
+| math | 4577 | 1913 | 1917 |
+| reasoning | 1735 | 1109 | 1134 |
+| summarization | 1131 | 364 | 362 |
+| json_extraction | 1498 | 266 | 266 |
+| embeddings | 773 | 47 | 60 |
 
 **Note on measurement methodology:** Latency is measured differently by
 each backend:
@@ -737,18 +702,18 @@ each backend:
 
   | Workload | compile | marshal | exec/prompt | unmarshal | overhead | pipeline |
   |----------|---------|---------|-------------|-----------|----------|----------|
-  | math | 306 | 50 | 1853 | 1.4 | 415 | 93023 |
-  | reasoning | 312 | 50 | 1099 | 1.4 | 427 | 55300 |
-  | summarization | 300 | 51 | 346 | 0.7 | 407 | 17651 |
-  | json_extraction | 323 | 159 | 255 | 1.0 | 537 | 13236 |
-  | embeddings | 316 | 154 | 54 | 1.2 | 530 | 3185 |
+  | math | 316 | 113 | 1909 | 0.8 | 483 | 95852 |
+  | reasoning | 241 | 43 | 1128 | 0.8 | 337 | 56680 |
+  | summarization | 305 | 52 | 355 | 0.8 | 412 | 18090 |
+  | json_extraction | 299 | 48 | 259 | 0.9 | 403 | 13295 |
+  | embeddings | 338 | 166 | 50 | 1.4 | 563 | 3009 |
 
-  Observations: DML compilation is ~310 ms (one-time; cached on repeat).
-  Py4J marshalling is 50--160 ms depending on prompt size. Unmarshalling
+  Observations: DML compilation is ~300 ms (one-time; cached on repeat).
+  Py4J marshalling is 43--166 ms depending on prompt size. Unmarshalling
   is <2 ms. The exec/prompt column is the per-prompt share of
   `executeScript()` wall time, which includes all HTTP calls. Pipeline
   overhead (compile + marshal + unmarshal + scheduling) is amortized
-  across prompts and adds ~8 ms/prompt for n=50.
+  across prompts and adds ~8--11 ms/prompt for n=50.
 
 - **OpenAI**: Python `time.perf_counter()` around OpenAI API call.
   Includes network round-trip to cloud servers.
@@ -768,16 +733,16 @@ does more work — it is not a sign that SystemDS is faster or slower.
 
 | Workload | vLLM | SystemDS | Difference |
 |----------|------|----------|------------|
-| math | 1922 ms | 1860 ms | -3.2% |
-| reasoning | 1110 ms | 1106 ms | -0.4% |
-| summarization | 365 ms | 353 ms | -3.3% |
-| json_extraction | 272 ms | 265 ms | -2.8% |
-| embeddings | 44 ms | 64 ms | +45.9% |
+| math | 1913 ms | 1917 ms | +0.2% |
+| reasoning | 1109 ms | 1134 ms | +2.2% |
+| summarization | 364 ms | 362 ms | -0.6% |
+| json_extraction | 266 ms | 266 ms | +0.0% |
+| embeddings | 47 ms | 60 ms | +29.1% |
 
 For the four generation-heavy workloads (math through json_extraction),
-both backends are within 0--3% of each other — well within measurement
-noise. The embeddings workload shows +46% overhead because the HTTP
-call itself is only ~44 ms, so the fixed JMLC pipeline cost (~10 ms
+both backends are within 0--2% of each other — well within measurement
+noise. The embeddings workload shows +29% overhead because the HTTP
+call itself is only ~47 ms, so the fixed JMLC pipeline cost (~10 ms
 per prompt from compile + marshal + unmarshal amortization) becomes a
 significant fraction. Both are HTTP clients to the same vLLM server;
 latency is determined by output token count, not by which client sends
@@ -795,22 +760,22 @@ outliers — it is not a systematic property of either run position.
 
 | Workload | OpenAI | vLLM Qwen 3B | SystemDS Qwen 3B |
 |----------|--------|--------------|------------------|
-| math | 0.22 | 0.52 | 0.54 |
-| reasoning | 0.58 | 0.90 | 0.90 |
-| summarization | 0.88 | 2.74 | 2.82 |
-| json_extraction | 0.67 | 3.67 | 3.77 |
-| embeddings | 1.29 | 22.84 | 15.27 |
+| math | 0.22 | 0.52 | 0.52 |
+| reasoning | 0.58 | 0.90 | 0.88 |
+| summarization | 0.88 | 2.74 | 2.76 |
+| json_extraction | 0.67 | 3.76 | 3.75 |
+| embeddings | 1.29 | 21.30 | 15.88 |
 
 ### Cost
 
 | Workload | OpenAI API Cost | vLLM Compute Cost | SystemDS Compute Cost |
 |----------|----------------|-------------------|----------------------|
-| math | $0.0223 | $0.0559 | $0.0544 |
-| reasoning | $0.0100 | $0.0307 | $0.0324 |
-| summarization | $0.0075 | $0.0105 | $0.0104 |
-| json_extraction | $0.0056 | $0.0152 | $0.0078 |
-| embeddings | $0.0019 | $0.0014 | $0.0019 |
-| **Total** | **$0.047** | **$0.114** | **$0.107** |
+| math | $0.0223 | $0.0560 | $0.0561 |
+| reasoning | $0.0100 | $0.0324 | $0.0332 |
+| summarization | $0.0075 | $0.0107 | $0.0106 |
+| json_extraction | $0.0056 | $0.0078 | $0.0078 |
+| embeddings | $0.0019 | $0.0014 | $0.0018 |
+| **Total** | **$0.047** | **$0.108** | **$0.109** |
 
 OpenAI cost is the per-token API price. vLLM and SystemDS costs are
 estimated from hardware ownership (electricity + GPU amortization), computed

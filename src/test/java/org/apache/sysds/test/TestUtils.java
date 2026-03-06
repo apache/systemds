@@ -3990,4 +3990,21 @@ public class TestUtils {
 			return 2;
 		}
 	}
+
+	public static void compareTensorValues(MatrixBlock actual, MatrixBlock expected, double epsilon) {
+        double[] a = actual.getDenseBlockValues();
+        double[] e = expected.getDenseBlockValues();
+
+        if (a.length != e.length) {
+            throw new AssertionError("Length mismatch: expected " + e.length + " values, but got " + a.length);
+        }
+
+        for (int i = 0; i < e.length; i++) {
+            double diff = Math.abs(e[i] - a[i]);
+            if (diff > epsilon) {
+                throw new AssertionError(
+                        "Mismatch at linear index " + i + ": expected=" + e[i] + ", actual=" + a[i] + ", diff=" + diff);
+            }
+        }
+    }
 }

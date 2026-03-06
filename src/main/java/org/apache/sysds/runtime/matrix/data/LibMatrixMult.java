@@ -1321,6 +1321,65 @@ public class LibMatrixMult
 		}
 	}
 
+//	private static void matrixMultDenseDenseOutSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2,
+//													  int rl, int ru) {
+//		final DenseBlock a = m1.getDenseBlock();
+//		final DenseBlock b = m2.getDenseBlock();
+//		final SparseBlock c = ret.getSparseBlock();
+//		final int m = m1.rlen;  // rows left
+//		final int cd = m1.clen; // common dim
+//		final int n = m2.clen;
+//
+//		final int rl1 = pm2 ? 0 : rl;
+//		final int ru1 = pm2 ? m : ru;
+//		final int rl2 = pm2 ? rl : 0;
+//		final int ru2 = pm2 ? ru : cd;
+//
+//		final int blocksizeK = 32;
+//		final int blocksizeI = 32;
+//
+//		// Dense temp buffer for vectorized accumulation
+//		final double[] tempRow = new double[n];
+//
+//		for(int bi = rl1; bi < ru1; bi += blocksizeI) {
+//			final int bimin = Math.min(ru1, bi + blocksizeI);
+//			for(int i = bi; i < bimin; i++) {
+//				Arrays.fill(tempRow, 0);
+//
+//				final double[] avals = a.values(i);
+//				final int aix = a.pos(i);
+//
+//				for(int bk = rl2; bk < ru2; bk += blocksizeK) {
+//					final int bkmin = Math.min(ru2, bk + blocksizeK);
+//
+//					for(int k = bk; k < bkmin; k++) { // common dimension
+//						final double aval = avals[aix + k];
+//						if(aval == 0) continue;
+//
+//						final DoubleVector aVec = DoubleVector.broadcast(SPECIES, aval);
+//
+//						final double[] bvals = b.values(k);
+//						final int bpos = b.pos(k);
+//
+//						int j = 0;
+//						for(; j <= n - vLen; j += vLen) {
+//							DoubleVector bVec = DoubleVector.fromArray(SPECIES, bvals, bpos + j);
+//							DoubleVector cVec = DoubleVector.fromArray(SPECIES, tempRow, j);
+//							cVec = bVec.fma(aVec, cVec);
+//							cVec.intoArray(tempRow, j);
+//						}
+//
+//						// Scalar tail for remaining elements
+//						for(; j < n; j++) {
+//							tempRow[j] += aval * bvals[bpos + j];
+//						}
+//					}
+//				}
+//
+//				c.setIndexRange(i, 0, n, tempRow, 0, n);
+//			}
+//		}
+//	}
 
 	private static void matrixMultDenseSparseOutSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2,
 		int rl, int ru) {
@@ -1361,6 +1420,69 @@ public class LibMatrixMult
 			}
 		}
 	}
+
+//	private static void matrixMultDenseSparseOutSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2,
+//													   int rl, int ru) {
+//		final DenseBlock a = m1.getDenseBlock();
+//		final SparseBlock b = m2.getSparseBlock();
+//		final SparseBlock c = ret.getSparseBlock();
+//		final int m = m1.rlen;  // rows left
+//		final int cd = m1.clen; // common dim
+//		final int n = m2.clen;
+//
+//		final int rl1 = pm2 ? 0 : rl;
+//		final int ru1 = pm2 ? m : ru;
+//		final int rl2 = pm2 ? rl : 0;
+//		final int ru2 = pm2 ? ru : cd;
+//
+//		final int blocksizeK = 32;
+//		final int blocksizeI = 32;
+//
+//		// Dense temp buffer for vectorized accumulation (one per row)
+//		final double[] tempRow = new double[n];
+//
+//		for(int bi = rl1; bi < ru1; bi += blocksizeI) {
+//			final int bimin = Math.min(ru1, bi + blocksizeI);
+//			for(int i = bi; i < bimin; i++) {
+//
+//				Arrays.fill(tempRow, 0);
+//				final double[] avals = a.values(i);
+//				final int aix = a.pos(i);
+//
+//				for(int bk = rl2; bk < ru2; bk += blocksizeK) {
+//					final int bkmin = Math.min(ru2, bk + blocksizeK);
+//					for(int k = bk; k < bkmin; k++) {
+//
+//						final double aval = avals[aix + k];
+//						if (aval == 0 || b.isEmpty(k)) {
+//							continue;
+//						}
+//
+//						final int[] bIdx = b.indexes(k);
+//						final double[] bVals = b.values(k);
+//						final int bPos = b.pos(k);
+//						final int bLen = b.size(k);
+//
+//						int j = 0;
+//						for (; j <= bLen - vLen; j += vLen) {
+//							DoubleVector bVec = DoubleVector.fromArray(SPECIES, bVals, bPos + j);
+//							DoubleVector scaled = bVec.mul(aval);
+//
+//							for(int lane = 0; lane < vLen; lane++) {
+//								tempRow[bIdx[bPos + j + lane]] += scaled.lane(lane);
+//							}
+//						}
+//
+//						for (; j < bLen; j++) {
+//							tempRow[bIdx[bPos + j]] += aval * bVals[bPos + j];
+//						}
+//					}
+//				}
+//
+//				c.setIndexRange(i, 0, n, tempRow, 0, n);
+//			}
+//		}
+//	}
 
 	private static void matrixMultDenseSparseOutDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2, int rl,
 		int ru) {
@@ -1412,6 +1534,57 @@ public class LibMatrixMult
 				}
 		}
 	}
+
+//	private static void matrixMultDenseSparseOutDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2,
+//													  int rl, int ru) {
+//		DenseBlock a = m1.getDenseBlock();
+//		DenseBlock c = ret.getDenseBlock();
+//		int m = m1.rlen;
+//		int cd = m1.clen;
+//
+//		// MATRIX-MATRIX (VV, MV not applicable here because V always dense)
+//		SparseBlock b = m2.sparseBlock;
+//
+//		if( pm2 && m==1 ) {        //VECTOR-MATRIX
+//			//parallelization over rows in rhs matrix
+//			double[] avals = a.valuesAt(0); //vector
+//			double[] cvals = c.valuesAt(0); //vector
+//			for( int k=rl; k<ru; k++ )
+//				if( avals[k] != 0 && !b.isEmpty(k) ) {
+//					vectMultiplyAddScatter(avals[k], b.values(k), cvals,
+//							b.indexes(k), b.pos(k), 0, b.size(k));
+//				}
+//		}
+//		else {                     //MATRIX-MATRIX
+//			//best effort blocking, without blocking over J because it is
+//			//counter-productive, even with front of current indexes
+//			final int blocksizeK = 32;
+//			final int blocksizeI = 32;
+//
+//			int rl1 = pm2 ? 0 : rl;
+//			int ru1 = pm2 ? m : ru;
+//			int rl2 = pm2 ? rl : 0;
+//			int ru2 = pm2 ? ru : cd;
+//
+//			//blocked execution
+//			for( int bi = rl1; bi < ru1; bi+=blocksizeI )
+//				for( int bk = rl2, bimin = Math.min(ru1, bi+blocksizeI); bk < ru2; bk+=blocksizeK ) {
+//					int bkmin = Math.min(ru2, bk+blocksizeK);
+//					//core sub block matrix multiplication
+//					for(int i = bi; i < bimin; i++) {
+//						double[] avals = a.values(i), cvals = c.values(i);
+//						int aix = a.pos(i), cix = c.pos(i);
+//						for( int k = bk; k < bkmin; k++ ) {
+//							double aval = avals[aix+k];
+//							if( aval == 0 || b.isEmpty(k) )
+//								continue;
+//							vectMultiplyAddScatter(aval, b.values(k), cvals,
+//									b.indexes(k), b.pos(k), cix, b.size(k));
+//						}
+//					}
+//				}
+//		}
+//	}
 
 	private static void matrixMultSparseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2, int rl, int ru) {
 		SparseBlock a = m1.sparseBlock;
@@ -1491,7 +1664,52 @@ public class LibMatrixMult
 			}
 		}
 	}
-	
+
+//	private static void matrixMultSparseDenseMVTallRHS(SparseBlock a, DenseBlock b, DenseBlock c, int cd, long xsp, int rl, int ru) {
+//		final int blocksizeI = 512; //8KB curk+cvals in L1
+//		final int blocksizeK = (int)Math.max(2048, 2048*xsp/32); //~256KB bvals in L2
+//
+//		//short-cut to kernel w/o cache blocking if no benefit
+//		if( blocksizeK >= cd ) {
+//			matrixMultSparseDenseMVShortRHS(a, b, c, cd, rl, ru);
+//			return;
+//		}
+//
+//		//sparse matrix-vector w/ cache blocking (keep front of positions)
+//		double[] bvals = b.valuesAt(0);
+//		double[] cvals = c.valuesAt(0);
+//		int[] curk = new int[blocksizeI];
+//
+//		for( int bi = rl; bi < ru; bi+=blocksizeI ) {
+//			Arrays.fill(curk, 0); //reset positions
+//			for( int bk=0, bimin = Math.min(ru, bi+blocksizeI); bk<cd; bk+=blocksizeK ) {
+//				final int bkmin = bk+blocksizeK;
+//				for( int i=bi; i<bimin; i++) {
+//					if( a.isEmpty(i) ) continue;
+//					int apos = a.pos(i);
+//					int alen = a.size(i);
+//					int[] aix = a.indexes(i);
+//					double[] avals = a.values(i);
+//					int k = curk[i-bi] + apos;
+//
+//					//vectorized inner loop using gather for sparse indexes with FMA accumulation
+//					DoubleVector sumVec = DoubleVector.zero(SPECIES);
+//					for( ; k + vLen <= apos + alen && aix[k + vLen - 1] < bkmin; k += vLen ) {
+//						DoubleVector aVec = DoubleVector.fromArray(SPECIES, avals, k);
+//						DoubleVector bVec = DoubleVector.fromArray(SPECIES, bvals, 0, aix, k);
+//						sumVec = aVec.fma(bVec, sumVec);
+//					}
+//					cvals[i] += sumVec.reduceLanes(VectorOperators.ADD);
+//
+//					//scalar tail for remaining elements
+//					for( ; k<apos+alen && aix[k]<bkmin; k++ )
+//						cvals[i] += avals[k] * bvals[aix[k]];
+//					curk[i-bi] = k - apos;
+//				}
+//			}
+//		}
+//	}
+
 	private static void matrixMultSparseDenseVM(SparseBlock a, DenseBlock b, DenseBlock c, int n, int rl, int ru) {
 		if( a.isEmpty(0) )
 			return;
@@ -3914,6 +4132,32 @@ public class LibMatrixMult
 			c[ ci+bix[j+7] ] += aval * b[ j+7 ];
 		}
 	}
+
+//	private static void vectMultiplyAddScatter(
+//		final double aval,
+//		double[] b,
+//		double[] c,
+//		int[] bix,
+//		final int bi,
+//		final int ci,
+//		final int len
+//	) {
+//		final int bn = len % vLen;
+//
+//		// Scalar tail for remaining elements
+//		for (int j = bi; j < bi + bn; j++)
+//			c[ci + bix[j]] += aval * b[j];
+//
+//		DoubleVector aVec = DoubleVector.broadcast(SPECIES, aval);
+//		for (int j = bi + bn; j < bi + len; j += vLen) {
+//			DoubleVector bVec = DoubleVector.fromArray(SPECIES, b, j);
+//			// Gather current c values at scattered positions
+//			DoubleVector cVec = DoubleVector.fromArray(SPECIES, c, ci, bix, j);
+//			cVec = aVec.fma(bVec, cVec);
+//			// Scatter back to non-contiguous positions in c
+//			cVec.intoArray(c, ci, bix, j);
+//		}
+//	}
 
 	//note: public for use by codegen for consistency
 	public static void vectMultiplyWrite( final double aval, double[] b, double[] c, int bi, int ci, final int len )

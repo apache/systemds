@@ -58,7 +58,7 @@ public class MatrixMultiplyTest {
 			if(self)
 				this.right = left;
 			else 
-				this.right = TestUtils.ceil(TestUtils.generateTestMatrixBlock(j, k, -10, 10, k == 1 && k == 1 ? 1 : s2, 14));
+				this.right = TestUtils.ceil(TestUtils.generateTestMatrixBlock(j, k, -10, 10, k == 1 ? 1 : s2, 14));
 
 			this.exp = multiply(left, right, 1);
 			this.k = p;
@@ -114,6 +114,7 @@ public class MatrixMultiplyTest {
 			
 			tests.add(new Object[]{1000, 1000, 1000, 0.005, 0.6, 6, true});
 
+			tests.add(new Object[]{1000, 4096, 1, 0.02, 0.6, 1, false});
 		}
 		catch(Exception e) {
 			e.printStackTrace();

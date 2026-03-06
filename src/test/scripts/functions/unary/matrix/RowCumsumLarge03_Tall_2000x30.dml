@@ -1,0 +1,44 @@
+# Test-specific focus:
+#   Very tall matrix with moderate width.
+#
+# Why this matters:
+#   Ensures correctness when:
+#     - Many row blocks are involved
+#     - Row-wise operations are distributed across Spark partitions
+#
+# This test verifies that:
+#   - Row-wise independence is preserved
+#   - No cross-row interference occurs during carry propagation
+#
+# Expected result:
+#   Computed via a sequential column-wise loop (trusted reference).
+#
+# Output:
+#   Writes TRUE/FALSE to $1
+#
+# NOTE:
+# - Do NOT call setExecMode() here. Exec mode is controlled by CLI: -exec spark
+
+n = 2000; m = 30;
+ri = matrix(seq(1, n), n, 1);
+cj = matrix(seq(1, m), 1, m);
+
+# X[i,j] = sin(i) + j
+# - sin(i) varies per row (helps detect cross-row interference)
+# - + j ensures a predictable column-wise growth pattern
+X = sin(ri %*% matrix(1, 1, m)) + (matrix(1, n, 1) %*% cj);
+
+# Row-wise cumulative sum (must be supported by your implementation)
+Y = rowcumsum(X);
+
+# Expected via explicit sequential loop over columns
+E = matrix(0, n, m);
+E[,1] = X[,1];
+for (j in 2:m) {
+  E[,j] = E[,j-1] + X[,j];
+}
+
+err  = max(abs(Y - E));
+pass = (err < 1e-9);
+
+write(pass, $1);

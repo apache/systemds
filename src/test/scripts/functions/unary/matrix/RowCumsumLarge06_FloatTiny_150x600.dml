@@ -1,0 +1,33 @@
+fix this only dont give the test :# Test-specific focus:
+#   Floating-point stability with very small values.
+#
+# Why this matters:
+#   Distributed prefix sums can amplify floating-point error if
+#   offsets are applied incorrectly or in the wrong order.
+#
+# Matrix construction:
+#   Values on the order of 1e-6 with mixed signs.
+#
+# Expected behavior:
+#   Numerical error remains within tight tolerance (1e-10).
+
+setExecMode("spark");
+
+n=150; m=600;
+ri = matrix(seq(1,n), n, 1);
+cj = matrix(seq(1,m), 1, m);
+
+# X[i,j] = 1e-6 * (i - j)
+X = 1e-6 * ( (ri %*% matrix(1,1,m)) - (matrix(1,n,1) %*% cj) );
+
+Y = rowCumsum(X);
+
+E = matrix(0, n, m);
+E[,1] = X[,1];
+for(j in 2:m){
+  E[,j] = E[,j-1] + X[,j];
+}
+
+err = max(abs(Y - E));
+pass = (err < 1e-10);  # slightly stricter because values are tiny
+write(pass, $1);

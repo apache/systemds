@@ -43,6 +43,7 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.functional.LinearRegression;
+import org.apache.sysds.runtime.compress.colgroup.functional.PiecewiseLinearUtils;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.insertionsort.AInsertionSorter;
@@ -106,7 +107,7 @@ public class ColGroupFactory {
 
 	/**
 	 * The actual compression method, that handles the logic of compressing multiple columns together.
-	 * 
+	 *
 	 * @param in  The input matrix, that could have been transposed. If it is transposed the compSettings should specify
 	 *            this.
 	 * @param csi The compression information extracted from the estimation, this contains which groups of columns to
@@ -120,7 +121,7 @@ public class ColGroupFactory {
 
 	/**
 	 * The actual compression method, that handles the logic of compressing multiple columns together.
-	 * 
+	 *
 	 * @param in  The input matrix, that could have been transposed. If it is transposed the compSettings should specify
 	 *            this.
 	 * @param csi The compression information extracted from the estimation, this contains which groups of columns to
@@ -135,7 +136,7 @@ public class ColGroupFactory {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param in  The input matrix, that could have been transposed. If it is transposed the compSettings should specify
 	 *            this.
 	 * @param csi The compression information extracted from the estimation, this contains which groups of columns to
@@ -232,8 +233,9 @@ public class ColGroupFactory {
 					time, retType, estC, actC, act.getNumValues(), cols, wanted, warning));
 		}
 		else {
-			LOG.debug(String.format("time[ms]: %10.2f %25s est %10.0f -- act %10.0f distinct:%5d cols:%s wanted:%s",
-				time, retType, estC, actC, act.getNumValues(), cols, wanted));
+			LOG.debug(
+				String.format("time[ms]: %10.2f %25s est %10.0f -- act %10.0f distinct:%5d cols:%s wanted:%s", time,
+					retType, estC, actC, act.getNumValues(), cols, wanted));
 		}
 
 	}
@@ -302,6 +304,12 @@ public class ColGroupFactory {
 			else {
 				return compressLinearFunctional(colIndexes, in, cs);
 			}
+		}
+		else if(ct == CompressionType.PiecewiseLinear) {
+			return compressPiecewiseLinearFunctional(colIndexes, in, cs);
+		}
+		else if(ct == CompressionType.PiecewiseLinearSukzessive) {
+			return compressPiecewiseLinearFunctionalSukzessive(colIndexes, in, cs);
 		}
 		else if(ct == CompressionType.DDCFOR) {
 			AColGroup g = directCompressDDC(colIndexes, cg);
@@ -698,7 +706,7 @@ public class ColGroupFactory {
 		if(cs.scaleFactors != null) {
 			throw new NotImplementedException("Delta encoding with quantization not yet implemented");
 		}
-		
+
 		if(colIndexes.size() > 1) {
 			return directCompressDeltaDDCMultiCol(colIndexes, cg);
 		}
@@ -730,7 +738,7 @@ public class ColGroupFactory {
 
 		if(map.size() == 0)
 			return new ColGroupEmpty(colIndexes);
-		
+
 		final double[] dictValues = map.getDictionary();
 		IDictionary dict = new DeltaDictionary(dictValues, 1);
 
@@ -739,7 +747,8 @@ public class ColGroupFactory {
 		return ColGroupDeltaDDC.create(colIndexes, dict, resData, null);
 	}
 
-	private AColGroup directCompressDeltaDDCMultiCol(IColIndex colIndexes, CompressedSizeInfoColGroup cg) throws Exception {
+	private AColGroup directCompressDeltaDDCMultiCol(IColIndex colIndexes, CompressedSizeInfoColGroup cg)
+		throws Exception {
 		final AMapToData d = MapToFactory.create(nRow, Math.max(Math.min(cg.getNumOffs() + 1, nRow), 126));
 		final int fill = d.getUpperBoundValue();
 		d.fill(fill);
@@ -818,8 +827,8 @@ public class ColGroupFactory {
 		int fill) {
 
 		ReaderColumnSelection reader = (cs.scaleFactors == null) ? ReaderColumnSelection.createReader(in, colIndexes,
-			cs.transposed, rl,
-			ru) : ReaderColumnSelection.createQuantizedReader(in, colIndexes, cs.transposed, rl, ru, cs.scaleFactors);
+			cs.transposed, rl, ru) : ReaderColumnSelection.createQuantizedReader(in, colIndexes, cs.transposed, rl, ru,
+			cs.scaleFactors);
 
 		DblArray cellVals = reader.nextRow();
 		boolean extra = false;
@@ -1064,6 +1073,53 @@ public class ColGroupFactory {
 		double[] coefficients = LinearRegression.regressMatrixBlock(in, colIndexes, cs.transposed);
 		int numRows = cs.transposed ? in.getNumColumns() : in.getNumRows();
 		return ColGroupLinearFunctional.create(colIndexes, coefficients, numRows);
+	}
+
+	public static AColGroup compressPiecewiseLinearFunctional(IColIndex colIndexes, MatrixBlock in,
+		CompressionSettings cs) {
+
+		final int numRows = in.getNumRows();
+		final int numCols = colIndexes.size();
+		int[][] breakpointsPerCol = new int[numCols][];
+		double[][] slopesPerCol = new double[numCols][];
+		double[][] interceptsPerCol = new double[numCols][];
+
+		for(int col = 0; col < numCols; col++) {
+			final int colIdx = colIndexes.get(col);
+			double[] column = PiecewiseLinearUtils.getColumn(in, colIdx);
+			PiecewiseLinearUtils.SegmentedRegression fit = PiecewiseLinearUtils.compressSegmentedLeastSquares(column,
+				cs);
+			breakpointsPerCol[col] = fit.getBreakpoints();
+			interceptsPerCol[col] = fit.getIntercepts();
+			slopesPerCol[col] = fit.getSlopes();
+
+		}
+		return ColGroupPiecewiseLinearCompressed.create(colIndexes, breakpointsPerCol, slopesPerCol, interceptsPerCol,
+			numRows);
+
+	}
+
+	public static AColGroup compressPiecewiseLinearFunctionalSukzessive(IColIndex colIndexes, MatrixBlock in,
+		CompressionSettings cs) {
+		final int numRows = in.getNumRows();
+		final int numCols = colIndexes.size();
+		int[][] breakpointsPerCol = new int[numCols][];
+		double[][] slopesPerCol = new double[numCols][];
+		double[][] interceptsPerCol = new double[numCols][];
+
+		for(int col = 0; col < numCols; col++) {
+			final int colIdx = colIndexes.get(col);
+			double[] column = PiecewiseLinearUtils.getColumn(in, colIdx);
+			PiecewiseLinearUtils.SegmentedRegression fit = PiecewiseLinearUtils.compressSukzessivePiecewiseLinear(column,
+				cs);
+			breakpointsPerCol[col] = fit.getBreakpoints();
+			interceptsPerCol[col] = fit.getIntercepts();
+			slopesPerCol[col] = fit.getSlopes();
+
+		}
+		return ColGroupPiecewiseLinearCompressed.create(colIndexes, breakpointsPerCol, slopesPerCol, interceptsPerCol,
+			numRows);
+
 	}
 
 	private AColGroup compressSDCFromSparseTransposedBlock(IColIndex cols, int nrUniqueEstimate, double tupleSparsity) {

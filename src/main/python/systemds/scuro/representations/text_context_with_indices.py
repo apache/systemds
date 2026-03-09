@@ -153,13 +153,19 @@ class SentenceBoundarySplitIndices(Context):
             "min_words": [10, 20, 30],
         }
         super().__init__("SentenceBoundarySplit", parameters)
-        self.max_words = int(max_words)
-        self.min_words = max(1, int(min_words))
-        self.overlap = overlap
-        self.stride = max(1, int(max_words * (1 - overlap)))
+        if params is not None:
+            self.max_words = int(params.get("max_words", max_words))
+            self.min_words = int(params.get("min_words", min_words))
+            self.overlap = float(params.get("overlap", overlap))
+            self.stride = int(params.get("stride", max_words * (1 - overlap)))
+        else:
+            self.max_words = int(max_words)
+            self.min_words = max(1, int(min_words))
+            self.overlap = overlap
+            self.stride = max(1, int(max_words * (1 - overlap)))
         self.data_type = np.int32
 
-    def get_output_shape(self, input_stats: TextStats) -> RepresentationStats:
+    def get_output_stats(self, input_stats: TextStats) -> RepresentationStats:
         return RepresentationStats(
             input_stats.num_instances,
             (math.ceil(input_stats.max_length / self.max_words), self.max_words),
@@ -167,7 +173,7 @@ class SentenceBoundarySplitIndices(Context):
 
     def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
         output_memory_bytes = 1
-        output_shape = self.get_output_shape(input_stats).output_shape
+        output_shape = self.get_output_stats(input_stats).output_shape
         for dim in output_shape:
             output_memory_bytes *= dim
         return (
@@ -283,7 +289,7 @@ class OverlappingSplitIndices(Context):
         self.stride = stride
         self.data_type = np.int32
 
-    def get_output_shape(self, input_stats: TextStats) -> RepresentationStats:
+    def get_output_stats(self, input_stats: TextStats) -> RepresentationStats:
         return RepresentationStats(
             input_stats.num_instances,
             (
@@ -294,7 +300,7 @@ class OverlappingSplitIndices(Context):
 
     def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
         output_memory_bytes = 1
-        output_shape = self.get_output_shape(input_stats).output_shape
+        output_shape = self.get_output_stats(input_stats).output_shape
         for dim in output_shape:
             output_memory_bytes *= dim
         return (

@@ -31,8 +31,14 @@ import numpy as np
 class AggregatedRepresentation(Representation):
     def __init__(self, aggregation="mean", target_dimensions=None, params=None):
         if params is not None:
-            aggregation = params["aggregation_function_aggregation_function"]
-            target_dimensions = params["target_dimensions"]
+            if "aggregation_function_aggregation_function" in params:
+                aggregation = params["aggregation_function_aggregation_function"]
+            elif "aggregation_function" in params:
+                aggregation = params["aggregation_function"]
+            else:
+                aggregation = params["aggregation"]
+            if "target_dimensions" in params:
+                target_dimensions = params["target_dimensions"]
         parameters = {
             "aggregation": list(Aggregation().get_aggregation_functions()),
         }
@@ -42,7 +48,7 @@ class AggregatedRepresentation(Representation):
         self.target_dimensions = target_dimensions
         self.data_type = np.float32
 
-    def get_output_shape(self, input_stats: RepresentationStats) -> RepresentationStats:
+    def get_output_stats(self, input_stats: RepresentationStats) -> RepresentationStats:
         if len(input_stats.output_shape) == 1 or len(input_stats.output_shape) == 2:
             return RepresentationStats(
                 input_stats.num_instances, (input_stats.output_shape[0],)
@@ -60,7 +66,7 @@ class AggregatedRepresentation(Representation):
 
     def estimate_output_memory_bytes(self, input_stats: RepresentationStats) -> int:
         output_memory_bytes = 1
-        output_shape = self.get_output_shape(input_stats).output_shape
+        output_shape = self.get_output_stats(input_stats).output_shape
         for dim in output_shape:
             output_memory_bytes *= dim
         return (

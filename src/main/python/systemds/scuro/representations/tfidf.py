@@ -40,7 +40,7 @@ class TfIdf(UnimodalRepresentation):
         self.output_file = output_file
         self.data_type = np.float32
 
-    def get_output_shape(self, input_stats: TextStats) -> RepresentationStats:
+    def get_output_stats(self, input_stats: TextStats) -> RepresentationStats:
         vocab_estimate = min(
             100_000, max(1000, input_stats.num_instances * input_stats.max_length)
         )
@@ -49,7 +49,7 @@ class TfIdf(UnimodalRepresentation):
     def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
         return (
             input_stats.num_instances
-            * self.get_output_shape(input_stats).output_shape[0]
+            * self.get_output_stats(input_stats).output_shape[0]
             * np.dtype(self.data_type).itemsize
         )
 

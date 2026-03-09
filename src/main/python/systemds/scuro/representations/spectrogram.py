@@ -24,6 +24,7 @@ import numpy as np
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.transformed import TransformedModality
 
+from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.drsearch.operator_registry import (
     register_representation,
@@ -58,3 +59,25 @@ class Spectrogram(UnimodalRepresentation):
             y=np.array(np.abs(instance)), hop_length=self.hop_length, n_fft=self.n_fft
         )
         return librosa.amplitude_to_db(np.abs(spectrogram)).T
+
+    def get_output_stats(self, input_stats) -> RepresentationStats:
+        num_instances = getattr(input_stats, "num_instances", 0)
+
+        if hasattr(input_stats, "max_length"):
+            signal_length = input_stats.max_length
+        elif hasattr(input_stats, "output_shape") and input_stats.output_shape:
+            signal_length = input_stats.output_shape[0]
+        else:
+            signal_length = 0
+
+        if signal_length <= 0:
+            num_frames = 1
+        else:
+            if signal_length < self.n_fft:
+                num_frames = 1
+            else:
+                num_frames = 1 + (signal_length - self.n_fft) // self.hop_length
+            num_frames = max(int(num_frames), 1)
+
+        num_freq_bins = 1 + self.n_fft // 2
+        return RepresentationStats(num_instances, (num_frames, num_freq_bins))

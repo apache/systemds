@@ -100,7 +100,7 @@ class VideoLoader(BaseLoader):
                 break
             if idx % frame_interval == 0:
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                frame = frame.astype(self._data_type) / 255.0
+                frame = frame.astype(self._data_type, copy=False) / 255.0
                 frames.append(frame)
             idx += 1
 

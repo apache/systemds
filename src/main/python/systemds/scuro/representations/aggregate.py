@@ -83,12 +83,28 @@ class Aggregation:
                     or modality.modality_type == ModalityType.VIDEO
                 ) and instance.ndim > 2:
                     aggregated_data = instance.flatten()
+                elif (
+                    isinstance(instance, np.ndarray)
+                    and instance.ndim == 2
+                    and instance.shape[1] == 1
+                ):
+                    aggregated_data = instance.flatten()
                 else:
                     aggregated_data = self._aggregation_func(instance)
             else:
                 aggregated_data = []
                 for entry in instance:
                     aggregated_data.append(self._aggregation_func(entry))
+
+            if isinstance(aggregated_data, np.generic):
+                aggregated_data = np.array(
+                    [aggregated_data], dtype=aggregated_data.dtype
+                )
+            elif isinstance(aggregated_data, np.ndarray) and aggregated_data.ndim == 0:
+                aggregated_data = aggregated_data.reshape(1)
+            elif not isinstance(aggregated_data, (list, np.ndarray)):
+                aggregated_data = np.array([aggregated_data])
+
             max_len = max(max_len, len(aggregated_data))
             data[i] = aggregated_data
 

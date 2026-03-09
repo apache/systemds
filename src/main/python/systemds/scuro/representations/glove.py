@@ -58,7 +58,7 @@ class GloVe(UnimodalRepresentation):
         self.data_type = np.float32
         self.embedding_dim = 100
 
-    def get_output_shape(self, input_stats: TextStats) -> RepresentationStats:
+    def get_output_stats(self, input_stats: TextStats) -> RepresentationStats:
         return RepresentationStats(input_stats.num_instances, (self.embedding_dim,))
 
     def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:

@@ -26,6 +26,7 @@ from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.utils import pad_sequences
 
 from systemds.scuro.representations.fusion import Fusion
+from systemds.scuro.representations.representation import RepresentationStats
 
 from systemds.scuro.drsearch.operator_registry import register_fusion_operator
 
@@ -55,3 +56,20 @@ class Sum(Fusion):
                 ]["type"],
             )
         return data
+
+    def get_output_stats(self, input_stats_list) -> RepresentationStats:
+        if isinstance(input_stats_list, RepresentationStats):
+            return input_stats_list
+
+        stats_list = list(input_stats_list)
+        if not stats_list:
+            return RepresentationStats(0, (0,))
+
+        def num_elements(stats: RepresentationStats) -> int:
+            n = 1
+            for d in stats.output_shape:
+                n *= d
+            return n
+
+        largest = max(stats_list, key=num_elements)
+        return RepresentationStats(largest.num_instances, largest.output_shape)

@@ -25,6 +25,8 @@ from systemds.scuro.models.model import Model
 import numpy as np
 from sklearn.model_selection import train_test_split
 
+from systemds.scuro.representations.representation import RepresentationStats
+
 
 class PerformanceMeasure:
     def __init__(self, name, metrics, higher_is_better=True):
@@ -97,6 +99,23 @@ class Task:
         self.fusion_train_indices = None
         self._create_cv_splits()
 
+    def get_output_stats(self, input_stats):
+        # TODO: Implement a default estimate of the output stats for the task
+        return RepresentationStats(0, (0,))
+
+    def estimate_peak_memory_bytes(self, input_stats):
+        if hasattr(self.model, "estimate_peak_memory_bytes"):
+            # TODO: Investigate the influence of cv on the memory footprint of the task
+            return self.model.estimate_peak_memory_bytes(
+                input_stats.output_shape[0], len(self.train_indices)
+            )
+        else:
+            # TODO: Implement a default estimate of the peak memory bytes for the task
+            return {
+                "cpu_peak_bytes": 0,
+                "gpu_peak_bytes": 0,
+            }
+
     def _create_cv_splits(self):
         train_labels = [self.labels[i] for i in self.train_indices]
         train_labels_array = np.array(train_labels)
@@ -166,17 +185,17 @@ class Task:
         self._reset_params()
         model = self.create_model()
 
-        test_X = np.array([data[i] for i in self.test_indices])
-        test_y = np.array([self.labels[i] for i in self.test_indices])
+        test_X = self._gather_by_indices(data, self.test_indices)
+        test_y = self._gather_by_indices(self.labels, self.test_indices)
 
         for fold_idx in range(self.kfold):
             fold_train_indices = self.cv_train_indices[fold_idx]
             fold_val_indices = self.cv_val_indices[fold_idx]
 
-            train_X = np.array([data[i] for i in fold_train_indices])
-            train_y = np.array([self.labels[i] for i in fold_train_indices])
-            val_X = np.array([data[i] for i in fold_val_indices])
-            val_y = np.array([self.labels[i] for i in fold_val_indices])
+            train_X = self._gather_by_indices(data, fold_train_indices)
+            train_y = self._gather_by_indices(self.labels, fold_train_indices)
+            val_X = self._gather_by_indices(data, fold_val_indices)
+            val_y = self._gather_by_indices(self.labels, fold_val_indices)
 
             self._run_fold(model, train_X, train_y, val_X, val_y, test_X, test_y)
 
@@ -201,8 +220,12 @@ class Task:
         self.train_scores.add_scores(train_score[0])
         val_score = model.test(val_X, val_y)
         test_start = time.time()
-        test_score = model.test(np.array(test_X), test_y)
+        test_score = model.test(np.asarray(test_X), test_y)
         test_end = time.time()
         self.inference_time.append(test_end - test_start)
         self.val_scores.add_scores(val_score[0])
         self.test_scores.add_scores(test_score[0])
+
+    @staticmethod
+    def _gather_by_indices(values, indices):
+        return [values[i] for i in indices]

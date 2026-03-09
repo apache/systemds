@@ -25,6 +25,7 @@ import torch
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.transformed import TransformedModality
 
+from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.drsearch.operator_registry import register_representation
 
@@ -68,3 +69,8 @@ class Wav2Vec(UnimodalRepresentation):
 
         transformed_modality.data = result
         return transformed_modality
+
+    def get_output_stats(self, input_stats) -> RepresentationStats:
+        num_instances = getattr(input_stats, "num_instances", 0)
+        embedding_dim = 768
+        return RepresentationStats(num_instances, (embedding_dim,))

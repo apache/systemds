@@ -35,6 +35,10 @@ class AudioStats:
     avg_length: float
     num_instances: int
 
+    @property
+    def output_shape(self):
+        return (self.max_length,)
+
 
 class AudioLoader(BaseLoader):
     def __init__(

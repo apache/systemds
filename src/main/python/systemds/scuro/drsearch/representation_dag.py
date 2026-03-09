@@ -68,6 +68,7 @@ class RepresentationNode:
     modality_id: str = None
     representation_index: int = None
     parameters: Dict[str, Any] = field(default_factory=dict)
+    gpu_id: int = None
 
 
 @dataclass
@@ -574,6 +575,7 @@ class CSEAwareDAGBuilder:
             modality_id=modality_id,
             representation_index=representation_index,
             parameters=parameters or {},
+            gpu_id=None,
         )
 
         self.global_nodes.append(node)
@@ -676,112 +678,3 @@ def render_dags_graphviz(
 ) -> str:
     graph = dags_to_graphviz(dags)
     return graph.render(filename=output_path, format=format, view=view, cleanup=cleanup)
-
-
-def group_dags_by_dependencies(
-    dags: List[RepresentationDag],
-) -> List[List[RepresentationDag]]:
-    if not dags:
-        return []
-
-    unique_dags: List[RepresentationDag] = []
-    seen_signatures: set[Hashable] = set()
-
-    for dag in dags:
-        dag_sig = dag.compute_full_node_signature(dag.root_node_id)
-        if dag_sig not in seen_signatures:
-            seen_signatures.add(dag_sig)
-            unique_dags.append(dag)
-
-    dags = unique_dags
-    dag_first_level_sets = []
-    for dag in dags:
-        first_level_nodes = dag.get_first_level_node_set()
-        dag_first_level_sets.append(first_level_nodes)
-
-    n = len(dags)
-    parent = list(range(n))
-
-    def find(x):
-        if parent[x] != x:
-            parent[x] = find(parent[x])
-        return parent[x]
-
-    def union(x, y):
-        root_x = find(x)
-        root_y = find(y)
-        if root_x != root_y:
-            parent[root_y] = root_x
-
-    for i in range(n):
-        for j in range(i + 1, n):
-            if dag_first_level_sets[i] & dag_first_level_sets[j]:
-                union(i, j)
-
-    groups: Dict[int, List[RepresentationDag]] = {}
-    for i in range(n):
-        root = find(i)
-        if root not in groups:
-            groups[root] = []
-        groups[root].append(dags[i])
-
-    return list(groups.values())
-
-
-def deduplicate_dags(dags: List[RepresentationDag]) -> List[RepresentationDag]:
-    if not dags:
-        return []
-    unique_dags: List[RepresentationDag] = []
-    seen_signatures: Set[Hashable] = set()
-    for dag in dags:
-        dag_sig = dag.compute_full_node_signature(dag.root_node_id)
-        if dag_sig not in seen_signatures:
-            seen_signatures.add(dag_sig)
-            unique_dags.append(dag)
-    return unique_dags
-
-
-def build_node_graph(
-    dags: List[RepresentationDag],
-) -> Tuple[
-    Dict[str, RepresentationNode],
-    Dict[str, Set[str]],
-    Dict[str, Set[str]],
-    Set[str],
-    Set[str],
-    List[str],
-]:
-    dags = deduplicate_dags(dags)
-    node_map: Dict[str, RepresentationNode] = {}
-    children: Dict[str, Set[str]] = defaultdict(set)
-    parents: Dict[str, Set[str]] = defaultdict(set)
-    roots: Set[str] = set()
-    leaves: Set[str] = set()
-
-    for dag in dags:
-        roots.add(dag.root_node_id)
-        for node in dag.nodes:
-            node_map[node.node_id] = node
-            if not node.inputs:
-                leaves.add(node.node_id)
-            for parent_id in node.inputs:
-                parents[node.node_id].add(parent_id)
-                children[parent_id].add(node.node_id)
-
-    indegree = {node_id: len(parents.get(node_id, set())) for node_id in node_map}
-    queue = deque([node_id for node_id, deg in indegree.items() if deg == 0])
-    topo_order: List[str] = []
-    while queue:
-        node_id = queue.popleft()
-        topo_order.append(node_id)
-        for child_id in children.get(node_id, set()):
-            indegree[child_id] -= 1
-            if indegree[child_id] == 0:
-                queue.append(child_id)
-    if len(topo_order) != len(node_map):
-        raise ValueError("Node graph contains a cycle")
-    return node_map, children, parents, roots, leaves, topo_order
-
-
-def compute_parent_refcounts(children: Dict[str, Set[str]]) -> Dict[str, int]:
-    return {node_id: len(child_set) for node_id, child_set in children.items()}

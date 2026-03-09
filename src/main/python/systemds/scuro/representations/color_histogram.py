@@ -96,7 +96,7 @@ class ColorHistogram(UnimodalRepresentation):
             * np.dtype(self.data_type).itemsize
         )
 
-    def get_output_shape(self, input_stats) -> RepresentationStats:
+    def get_output_stats(self, input_stats) -> RepresentationStats:
         return RepresentationStats(input_stats.num_instances, (self.bins * 3,))
 
     def estimate_peak_memory_bytes(self, input_stats: ImageStats) -> dict:

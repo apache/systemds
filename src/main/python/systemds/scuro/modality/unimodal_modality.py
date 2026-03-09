@@ -64,7 +64,7 @@ class UnimodalModality(Modality):
     def get_stats(self):
         return self.stats
 
-    def get_output_shape(self):
+    def get_output_stats(self):
         return RepresentationStats(self.stats.num_instances, self.stats.output_shape)
 
     def estimate_memory_bytes(self):
@@ -76,12 +76,23 @@ class UnimodalModality(Modality):
             self.stats.num_instances * memory_bytes * 4
         )  # TODO: check how to meausure str size
 
+    def estimate_peak_memory_bytes(self):
+        return {"cpu_peak_bytes": self.estimate_memory_bytes(), "gpu_peak_bytes": 0.0}
+
     def extract_raw_data(self):
         """
         Uses the data loader to read the raw data from a specified location
         and stores the data in the data location.
         """
         self.data, self.metadata = self.data_loader.load()
+
+    def iter_raw_data_chunks(self, reset: bool = True):
+        for data, metadata, chunk_indices in self.data_loader.iter_loaded_chunks(
+            reset=reset
+        ):
+            self.data = data
+            self.metadata = metadata
+            yield chunk_indices
 
     def join(self, other, join_condition):
         if isinstance(other, UnimodalModality):
@@ -147,9 +158,7 @@ class UnimodalModality(Modality):
             time.time()
         )  # TODO: should be repalced in unimodal_representation.transform
         if self.data_loader.chunk_size:
-            self.data_loader.reset()
-            while self.data_loader.next_chunk < self.data_loader.num_chunks:
-                self.extract_raw_data()
+            for _ in self.iter_raw_data_chunks(reset=True):
                 for representation in representations:
                     transformed_chunk = representation.transform(self)
                     transformed_modalities_per_representation[

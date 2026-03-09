@@ -64,7 +64,7 @@ class SwinVideoTransformer(UnimodalRepresentation):
         for param in self.model.parameters():
             param.requires_grad = False
 
-    def get_output_shape(self, input_stats) -> RepresentationStats:
+    def get_output_stats(self, input_stats) -> RepresentationStats:
         return RepresentationStats(input_stats.num_instances, (768,))
 
     def transform(self, modality, aggregation=None):

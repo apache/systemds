@@ -113,7 +113,7 @@ class WindowAggregation(Window):
         self.window_size = int(window_size)
         self.pad = pad
 
-    def get_output_shape(self, input_stats: RepresentationStats) -> tuple:
+    def get_output_stats(self, input_stats: RepresentationStats) -> tuple:
         if len(input_stats.output_shape) == 1:
             return RepresentationStats(
                 input_stats.num_instances,
@@ -178,7 +178,6 @@ class WindowAggregation(Window):
         if self.pad and not isinstance(windowed_data, np.ndarray):
             target_length = max(original_lengths)
             sample_shape = windowed_data[0].shape
-            is_1d = len(sample_shape) == 1
 
             padded_features = []
             for i, features in enumerate(windowed_data):
@@ -187,13 +186,11 @@ class WindowAggregation(Window):
                 if current_len < target_length:
                     padding_needed = target_length - current_len
 
-                    if is_1d:
-                        padding = np.zeros(padding_needed)
-                        padded = np.concatenate([features, padding])
-                    else:
-                        feature_dim = features.shape[-1]
-                        padding = np.zeros((padding_needed, feature_dim))
-                        padded = np.concatenate([features, padding], axis=0)
+                    # Create padding that matches the feature rank:
+                    # (padding_needed, *features.shape[1:])
+                    pad_shape = (padding_needed,) + features.shape[1:]
+                    padding = np.zeros(pad_shape)
+                    padded = np.concatenate([features, padding], axis=0)
 
                     padded_features.append(padded)
                 else:
@@ -253,7 +250,7 @@ class StaticWindow(Window):
         self.parameters["num_windows"] = [10, num_windows]
         self.num_windows = int(num_windows)
 
-    def get_output_shape(self, input_stats: RepresentationStats) -> tuple:
+    def get_output_stats(self, input_stats: RepresentationStats) -> tuple:
         return RepresentationStats(input_stats.num_instances, (self.num_windows,))
 
     def estimate_output_memory_bytes(self, input_stats: RepresentationStats) -> int:
@@ -314,7 +311,7 @@ class DynamicWindow(Window):
         self.parameters["num_windows"] = [10, num_windows]
         self.num_windows = int(num_windows)
 
-    def get_output_shape(self, input_stats: RepresentationStats) -> tuple:
+    def get_output_stats(self, input_stats: RepresentationStats) -> tuple:
         return RepresentationStats(input_stats.num_instances, (self.num_windows,))
 
     def estimate_output_memory_bytes(self, input_stats: RepresentationStats) -> int:

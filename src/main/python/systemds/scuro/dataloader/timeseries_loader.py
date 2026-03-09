@@ -102,11 +102,11 @@ class TimeseriesLoader(BaseLoader):
             return data
 
     def _load_npy(self, file: str) -> np.ndarray:
-        data = np.load(file).astype(self._data_type)
+        data = np.load(file).astype(self._data_type, copy=False)
         return data
 
     def _load_txt(self, file: str) -> np.ndarray:
-        data = np.loadtxt(file).astype(self._data_type)
+        data = np.loadtxt(file, dtype=self._data_type)
         return data
 
     def _load_txt_with_header(self, file: str) -> np.ndarray:

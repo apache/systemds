@@ -24,6 +24,7 @@ import numpy as np
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.transformed import TransformedModality
 
+from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.drsearch.operator_registry import (
     register_representation,
@@ -34,7 +35,7 @@ from systemds.scuro.drsearch.operator_registry import (
 @register_representation(ModalityType.AUDIO)
 @register_context_representation_operator(ModalityType.AUDIO)
 class MFCC(UnimodalRepresentation):
-    def __init__(self, n_mfcc=12, dct_type=2, n_mels=128, hop_length=512):
+    def __init__(self, n_mfcc=12, dct_type=2, n_mels=128, hop_length=512, params=None):
         parameters = {
             "n_mfcc": [x for x in range(10, 26)],
             "dct_type": [1, 2, 3],
@@ -42,6 +43,14 @@ class MFCC(UnimodalRepresentation):
             "n_mels": [20, 32, 64, 128],
         }  # TODO
         super().__init__("MFCC", ModalityType.TIMESERIES, parameters, False)
+
+        # Allow construction from a parameter dict (used by optimizer)
+        if params is not None:
+            n_mfcc = params.get("n_mfcc", n_mfcc)
+            dct_type = params.get("dct_type", dct_type)
+            n_mels = params.get("n_mels", n_mels)
+            hop_length = params.get("hop_length", hop_length)
+
         self.n_mfcc = int(n_mfcc)
         self.dct_type = int(dct_type)
         self.n_mels = int(n_mels)
@@ -74,3 +83,21 @@ class MFCC(UnimodalRepresentation):
         )
         mfcc = (mfcc - np.mean(mfcc)) / np.std(mfcc)
         return mfcc.T
+
+    def get_output_stats(self, input_stats) -> RepresentationStats:
+        num_instances = getattr(input_stats, "num_instances", 0)
+
+        if hasattr(input_stats, "max_length"):
+            signal_length = input_stats.max_length
+        elif hasattr(input_stats, "output_shape") and input_stats.output_shape:
+            signal_length = input_stats.output_shape[0]
+        else:
+            signal_length = 0
+
+        if signal_length <= 0:
+            num_frames = 1
+        else:
+            num_frames = 1 + max(int((signal_length - 1) // self.hop_length), 0)
+            num_frames = max(int(num_frames), 1)
+
+        return RepresentationStats(num_instances, (num_frames, self.n_mfcc))

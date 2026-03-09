@@ -41,6 +41,9 @@ class Representation:
     def parameters(self):
         return self._parameters
 
+    def get_stats(self):
+        return self.stats
+
     def get_current_parameters(self):
         current_params = {}
         if not self.parameters:
@@ -59,7 +62,7 @@ class Representation:
         return output_memory_bytes
 
     @abc.abstractmethod
-    def get_output_shape(self, input_stats):
+    def get_output_stats(self, input_stats):
         raise NotImplementedError(
-            f"get_output_shape is not implemented for {self.name}"
+            f"get_output_stats is not implemented for {self.name}"
         )

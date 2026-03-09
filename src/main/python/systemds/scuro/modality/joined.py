@@ -231,18 +231,14 @@ class JoinedModality(Modality):
         new_left = Modality(left_modality.modality_type, {})
         new_right = Modality(right_modality.modality_type, {})
 
-        while (
-            left_modality.data_loader.next_chunk < left_modality.data_loader.num_chunks
-        ):
+        for _ in left_modality.iter_raw_data_chunks(reset=True):
             if chunk_right:
                 right_modality.extract_raw_data()
                 starting_idx = 0
             else:
                 starting_idx = (
-                    left_modality.data_loader.next_chunk
-                    * left_modality.data_loader.chunk_size
-                )
-            left_modality.extract_raw_data()
+                    left_modality.data_loader.next_chunk - 1
+                ) * left_modality.data_loader.chunk_size
 
             self.execute(starting_idx)
 

@@ -24,6 +24,7 @@ import numpy as np
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.transformed import TransformedModality
 
+from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.drsearch.operator_registry import (
     register_representation,
@@ -76,6 +77,32 @@ class Spectral(UnimodalRepresentation):
 
         return transformed_modality
 
+    def get_output_stats(self, input_stats) -> RepresentationStats:
+        """
+        Estimate output shape of Spectral features.
+
+        We compute 4 spectral feature sequences (centroid, bandwidth,
+        rolloff, flatness), each over frames of length ``hop_length``.
+        The resulting tensors have shape (num_frames, 4).
+        """
+        num_instances = getattr(input_stats, "num_instances", 0)
+
+        # Try to infer signal length from stats
+        if hasattr(input_stats, "max_length"):
+            signal_length = input_stats.max_length
+        elif hasattr(input_stats, "output_shape") and input_stats.output_shape:
+            signal_length = input_stats.output_shape[0]
+        else:
+            signal_length = 0
+
+        if signal_length <= 0:
+            num_frames = 1
+        else:
+            num_frames = 1 + max(int((signal_length - 1) // self.hop_length), 0)
+            num_frames = max(int(num_frames), 1)
+
+        return RepresentationStats(num_instances, (num_frames, 4))
+
 
 @register_representation(ModalityType.AUDIO)
 class ZeroCrossing(UnimodalRepresentation):
@@ -101,6 +128,32 @@ class ZeroCrossing(UnimodalRepresentation):
         transformed_modality.data = result
 
         return transformed_modality
+
+    def get_output_stats(self, input_stats) -> RepresentationStats:
+        """
+        Estimate output shape of ZeroCrossing features.
+
+        ``librosa.feature.zero_crossing_rate`` returns an array of shape
+        (1, num_frames), so each instance is treated as a sequence of
+        scalar features over frames.
+        """
+        num_instances = getattr(input_stats, "num_instances", 0)
+
+        if hasattr(input_stats, "max_length"):
+            signal_length = input_stats.max_length
+        elif hasattr(input_stats, "output_shape") and input_stats.output_shape:
+            signal_length = input_stats.output_shape[0]
+        else:
+            signal_length = 0
+
+        if signal_length <= 0:
+            num_frames = 1
+        else:
+            num_frames = 1 + max(int((signal_length - 1) // self.hop_length), 0)
+            num_frames = max(int(num_frames), 1)
+
+        # shape (num_frames, 1): one scalar feature per frame
+        return RepresentationStats(num_instances, (num_frames, 1))
 
 
 @register_representation(ModalityType.AUDIO)
@@ -128,6 +181,31 @@ class RMSE(UnimodalRepresentation):
         transformed_modality.data = result
 
         return transformed_modality
+
+    def get_output_stats(self, input_stats) -> RepresentationStats:
+        """
+        Estimate output shape of RMSE features.
+
+        ``librosa.feature.rms`` returns an array of shape (1, num_frames),
+        so each instance is a sequence of scalar RMS values over frames.
+        """
+        num_instances = getattr(input_stats, "num_instances", 0)
+
+        if hasattr(input_stats, "max_length"):
+            signal_length = input_stats.max_length
+        elif hasattr(input_stats, "output_shape") and input_stats.output_shape:
+            signal_length = input_stats.output_shape[0]
+        else:
+            signal_length = 0
+
+        if signal_length <= 0:
+            num_frames = 1
+        else:
+            # librosa.rms uses frame_length and hop_length; approximate
+            num_frames = 1 + max(int((signal_length - 1) // self.hop_length), 0)
+            num_frames = max(int(num_frames), 1)
+
+        return RepresentationStats(num_instances, (num_frames, 1))
 
 
 @register_representation(ModalityType.AUDIO)
@@ -157,3 +235,21 @@ class Pitch(UnimodalRepresentation):
         transformed_modality.data = result
 
         return transformed_modality
+
+    def get_output_stats(self, input_stats) -> RepresentationStats:
+        num_instances = getattr(input_stats, "num_instances", 0)
+
+        if hasattr(input_stats, "max_length"):
+            signal_length = input_stats.max_length
+        elif hasattr(input_stats, "output_shape") and input_stats.output_shape:
+            signal_length = input_stats.output_shape[0]
+        else:
+            signal_length = 0
+
+        if signal_length <= 0:
+            num_frames = 1
+        else:
+            num_frames = 1 + max(int((signal_length - 1) // self.hop_length), 0)
+            num_frames = max(int(num_frames), 1)
+
+        return RepresentationStats(num_instances, (num_frames, 1))

@@ -21,8 +21,9 @@
 import resource
 import sys
 import numpy as np
+from sympy import Dict
 import torch
-from typing import Tuple
+from typing import List, Tuple
 import psutil
 
 
@@ -145,6 +146,16 @@ def get_gpu_memory_mb(device):
         return 0.0
     torch.cuda.synchronize(device)
     return torch.cuda.memory_allocated(device) / (1024**2)
+
+
+def gpu_memory_info():
+    infos = []
+    num_gpus = torch.cuda.device_count()
+    for i in range(num_gpus):
+        torch.cuda.set_device(i)
+        free_b, total_b = torch.cuda.mem_get_info()
+        infos.append(dict(index=i, free_b=free_b, total_b=total_b))
+    return infos
 
 
 def log_memory(operation_name: str, device: torch.device):

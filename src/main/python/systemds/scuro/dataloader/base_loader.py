@@ -20,7 +20,7 @@
 # -------------------------------------------------------------
 import os
 from abc import ABC, abstractmethod
-from typing import List, Optional, Union
+from typing import Iterator, List, Optional, Tuple, Union
 import math
 
 import numpy as np
@@ -97,6 +97,24 @@ class BaseLoader(ABC):
             return self._load_next_chunk()
 
         return self._load(self.indices)
+
+    def iter_loaded_chunks(
+        self, reset: bool = True
+    ) -> Iterator[Tuple[list, dict, List[str]]]:
+        if reset:
+            self.reset()
+
+        if not self._chunk_size:
+            data, metadata = self._load(self.indices)
+            yield data, metadata, self.indices
+            return
+
+        while self._next_chunk < self._num_chunks:
+            chunk_start = self._next_chunk * self._chunk_size
+            chunk_end = (self._next_chunk + 1) * self._chunk_size
+            chunk_indices = self.indices[chunk_start:chunk_end]
+            data, metadata = self._load_next_chunk()
+            yield data, metadata, chunk_indices
 
     def update_chunk_sizes(self, other):
         if not self._chunk_size and not other.chunk_size:

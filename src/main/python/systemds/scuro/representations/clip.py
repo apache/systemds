@@ -66,7 +66,7 @@ class CLIPVisual(UnimodalRepresentation):
     def estimate_output_memory_bytes(self, input_stats) -> int:
         return input_stats.num_instances * 512 * self.data_type.itemsize
 
-    def get_output_shape(self, input_stats) -> RepresentationStats:
+    def get_output_stats(self, input_stats) -> RepresentationStats:
         if not isinstance(input_stats, RepresentationStats):
             return RepresentationStats(input_stats.num_instances, (512,))
         else:
@@ -225,7 +225,7 @@ class CLIPText(UnimodalRepresentation):
     def estimate_output_memory_bytes(self, input_stats) -> int:
         return input_stats.num_instances * 512 * self.data_type.itemsize
 
-    def get_output_shape(self, input_stats) -> RepresentationStats:
+    def get_output_stats(self, input_stats) -> RepresentationStats:
         if not isinstance(input_stats, RepresentationStats):
             return RepresentationStats(input_stats.num_instances, (512,))
         else:

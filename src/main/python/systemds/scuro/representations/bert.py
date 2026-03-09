@@ -74,7 +74,19 @@ class BertFamily(UnimodalRepresentation):
         self._gpu_id = gpu_id
         self.device = get_device(gpu_id)
 
-    def get_output_shape(self, input_stats) -> RepresentationStats:
+    def set_parameters(self, params, max_seq_length, batch_size, layer, output_file):
+        if params is not None:
+            self.max_seq_length = int(params.get("max_seq_length", max_seq_length))
+            self.batch_size = int(params.get("batch_size", batch_size))
+            self.layer_name = params.get("layer_name", layer)
+            self.output_file = params.get("output_file", output_file)
+        else:
+            self.max_seq_length = max_seq_length
+            self.batch_size = batch_size
+            self.layer_name = layer
+            self.output_file = output_file
+
+    def get_output_stats(self, input_stats) -> RepresentationStats:
         if not isinstance(input_stats, RepresentationStats):
             return RepresentationStats(
                 input_stats.num_instances, (self.max_seq_length, 768)
@@ -234,6 +246,8 @@ class Bert(BertFamily):
         batch_size=32,
         params=None,
     ):
+        self.set_parameters(params, max_seq_length, batch_size, layer, output_file)
+
         parameters = {
             "layer_name": [
                 "cls",
@@ -275,6 +289,8 @@ class RoBERTa(BertFamily):
         batch_size=32,
         params=None,
     ):
+        self.set_parameters(params, max_seq_length, batch_size, layer, output_file)
+
         parameters = {
             "layer_name": [
                 "cls",
@@ -316,6 +332,8 @@ class DistillBERT(BertFamily):
         batch_size=32,
         params=None,
     ):
+        self.set_parameters(params, max_seq_length, batch_size, layer, output_file)
+
         parameters = {
             "layer_name": [
                 "cls",
@@ -349,6 +367,7 @@ class ALBERT(BertFamily):
         batch_size=32,
         params=None,
     ):
+        self.set_parameters(params, max_seq_length, batch_size, layer, output_file)
         parameters = {"layer_name": ["cls", "encoder.albert_layer_groups.0", "pooler"]}
         super().__init__(
             "ALBERT",
@@ -389,6 +408,7 @@ class ELECTRA(BertFamily):
                 "encoder.layer.11",
             ]
         }
+        self.set_parameters(params, max_seq_length, batch_size, layer, output_file)
         super().__init__(
             "ELECTRA",
             "google/electra-base-discriminator",

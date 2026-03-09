@@ -59,7 +59,7 @@ class MLPAveraging(DimensionalityReduction):
         self.device = None
         self.data_type = np.float32
 
-    def get_output_shape(self, input_stats: RepresentationStats) -> RepresentationStats:
+    def get_output_stats(self, input_stats: RepresentationStats) -> RepresentationStats:
         return RepresentationStats(input_stats.num_instances, (self.output_dim,))
 
     def estimate_output_memory_bytes(self, input_stats: RepresentationStats) -> int:

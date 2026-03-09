@@ -94,6 +94,8 @@ public class OOCInstructionParser extends InstructionParser {
 				return TSMMOOCInstruction.parseInstruction(str);
 			case Reorg:
 				return ReorgOOCInstruction.parseInstruction(str);
+			case Reshape:
+				return ReorgOOCInstruction.parseInstruction(str);
 			case Tee:
 				return TeeOOCInstruction.parseInstruction(str);
 			case CentralMoment:

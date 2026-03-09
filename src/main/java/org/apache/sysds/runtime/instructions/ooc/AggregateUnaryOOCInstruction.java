@@ -162,7 +162,7 @@ public class AggregateUnaryOOCInstruction extends ComputationOOCInstruction {
 
 			MatrixBlock ltmp;
 			int extra = _aop.correction.getNumRemovedRowsColumns();
-			MatrixBlock ret = new MatrixBlock(1,1+extra,false);
+			MatrixBlock ret = new MatrixBlock(1, 1 + extra, _aop.initialValue);
 			MatrixBlock corr = new MatrixBlock(1,1+extra,false);
 			while((ltmp = qLocal.dequeue()) != LocalTaskQueue.NO_MORE_TASKS) {
 				OperationsOnMatrixValues.incrementalAggregation(

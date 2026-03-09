@@ -80,9 +80,9 @@ public class MapMMChainOOCInstruction extends ComputationOOCInstruction {
 		addOutStream(qOut);
 		ec.getMatrixObject(output).setStreamHandle(qOut);
 
-		OOCStream<IndexedMatrixValue> qInX = min.getStreamHandle();
-		boolean createdCache = !qInX.hasStreamCache();
-		CachingStream xCache = createdCache ? new CachingStream(qInX) : qInX.getStreamCache();
+		OOCStreamable<IndexedMatrixValue> xStreamable = min.getStreamable();
+		boolean createdCache = !xStreamable.hasStreamCache();
+		CachingStream xCache = createdCache ? new CachingStream(min.getStreamHandle()) : xStreamable.getStreamCache();
 
 		long numRowBlocksL = min.getDataCharacteristics().getNumRowBlocks();
 		long numColBlocksL = min.getDataCharacteristics().getNumColBlocks();
@@ -144,7 +144,7 @@ public class MapMMChainOOCInstruction extends ComputationOOCInstruction {
 				}, tmp -> tmp.getIndexes().getColumnIndex(), tmp -> tmp.getIndexes().getRowIndex());
 
 				CompletableFuture<Void> reduceXvFuture = groupedReduceOOC(qPartialXv, qXv, (left, right) -> {
-					MatrixBlock mb = ((MatrixBlock) left.getValue()).binaryOperationsInPlace(plus, right.getValue());
+					MatrixBlock mb = ((MatrixBlock) left.getValue()).binaryOperations(plus, right.getValue());
 					left.setValue(mb);
 					return left;
 				}, numColBlocks);
@@ -159,7 +159,7 @@ public class MapMMChainOOCInstruction extends ComputationOOCInstruction {
 					uFuture = broadcastJoinOOC(qXv, qW, qWeighted, (u, w) -> {
 						MatrixBlock uBlock = (MatrixBlock) u.getValue();
 						MatrixBlock wBlock = (MatrixBlock) w.getValue().getValue();
-						MatrixBlock updated = uBlock.binaryOperationsInPlace(weightOp, wBlock);
+						MatrixBlock updated = uBlock.binaryOperations(weightOp, wBlock);
 						u.setValue(updated);
 						return u;
 					}, tmp -> tmp.getIndexes().getRowIndex(), tmp -> tmp.getIndexes().getRowIndex());

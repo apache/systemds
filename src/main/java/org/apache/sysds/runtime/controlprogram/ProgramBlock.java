@@ -44,6 +44,7 @@ import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObjectFactory;
+import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysds.runtime.lineage.LineageCache;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
@@ -293,8 +294,13 @@ public abstract class ProgramBlock implements ParseInfo {
 				moNew.setFileName(mo.getFileName() + Lop.UPDATE_INPLACE_PREFIX + tid);
 				mo.release();
 				// cleanup old variable (e.g., remove from buffer pool)
-				if(ec.removeVariable(varname) != null)
+				if(DMLScript.USE_OOC) {
+					if(ec.containsVariable(varname))
+						VariableCPInstruction.processRmvarInstruction(ec, varname);
+				}
+				else if(ec.removeVariable(varname) != null) {
 					ec.cleanupCacheableData(mo);
+				}
 				moNew.release(); // after old removal to avoid unnecessary evictions
 				moNew.setUpdateType(UpdateType.INPLACE);
 				ec.setVariable(varname, moNew);

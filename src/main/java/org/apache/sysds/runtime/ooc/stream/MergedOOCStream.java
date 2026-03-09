@@ -218,7 +218,7 @@ public class MergedOOCStream<T> implements OOCStream<T> {
 
 	@Override
 	public void setUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		throw new UnsupportedOperationException();
+		_taskQueue.setUpstreamMessageRelay(relay);
 	}
 
 	@Override

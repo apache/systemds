@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.ooc;
 
-import org.apache.commons.collections4.BidiMap;
-import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
@@ -39,9 +37,11 @@ import org.apache.sysds.runtime.util.IndexRange;
 import shaded.parquet.it.unimi.dsi.fastutil.ints.IntArrayList;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.BitSet;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
@@ -77,7 +77,7 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 
 	// state flags
 	private boolean _cacheInProgress = true; // caching in progress, in the first pass.
-	private BidiMap<MatrixIndexes, Integer> _index;
+	private volatile Map<MatrixIndexes, Integer> _index;
 
 	private DMLRuntimeException _failure;
 
@@ -96,7 +96,7 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 		if(OOCWatchdog.WATCH) {
 			_watchdogId = "CS-" + hashCode();
 			// Capture a short context to help identify origin
-			OOCWatchdog.registerOpen(_watchdogId, "CachingStream@" + hashCode(), getCtxMsg(), this);
+			OOCWatchdog.registerOpen(_watchdogId, toString(), getCtxMsg(), this);
 		}
 		_downstreamRelays = null;
 		source.setSubscriber(tmp -> {
@@ -111,118 +111,125 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 					if(!tmp.isEos()) {
 						if(!_cacheInProgress)
 							throw new DMLRuntimeException("Stream is closed");
-							if(tmp instanceof OOCStream.GroupQueueCallback<?>) {
-								@SuppressWarnings("unchecked")
-								OOCStream.GroupQueueCallback<IndexedMatrixValue> group =
-									(OOCStream.GroupQueueCallback<IndexedMatrixValue>) tmp;
-								groupSize = group.size();
+
+						if(tmp instanceof OOCStream.GroupQueueCallback<?>) {
+							OOCStream.GroupQueueCallback<IndexedMatrixValue> group =
+								(OOCStream.GroupQueueCallback<IndexedMatrixValue>) tmp;
+							groupSize = group.size();
+							for(int gi = 0; gi < groupSize; gi++) {
+								OOCStream.QueueCallback<IndexedMatrixValue> sub = group.getCallback(gi);
+								try(sub) {
+									IndexedMatrixValue imv = sub.get();
+									if(_index != null)
+										_index.put(imv.getIndexes(), _numBlocks + gi);
+								}
+							}
+
+							BlockKey baseKey;
+							boolean ownsEntry = true;
+							if(tmp instanceof OOCCacheManager.CachedGroupCallback<?> cachedGroup) {
+								baseKey = cachedGroup.getBlockKey();
+								ownsEntry = false;
+								if(mSubscribers != null && mSubscribers.length > 0)
+									mCallback = tmp.keepOpen();
+							}
+							else {
+								List<IndexedMatrixValue> values = new ArrayList<>(groupSize);
+								long totalSize = 0;
 								for(int gi = 0; gi < groupSize; gi++) {
 									OOCStream.QueueCallback<IndexedMatrixValue> sub = group.getCallback(gi);
 									try(sub) {
 										IndexedMatrixValue imv = sub.get();
-										if(_index != null)
-											_index.put(imv.getIndexes(), _numBlocks + gi);
+										values.add(imv);
+										totalSize += ((MatrixBlock) imv.getValue()).getExactSerializedSize();
 									}
 								}
 
-								BlockKey baseKey;
-								boolean ownsEntry = true;
-								if(tmp instanceof OOCCacheManager.CachedGroupCallback<?> cachedGroup) {
-									baseKey = cachedGroup.getBlockKey();
-									ownsEntry = false;
-									if(mSubscribers != null && mSubscribers.length > 0)
-										mCallback = tmp.keepOpen();
+								baseKey = new BlockKey(_streamId, _numBlocks);
+								if (_source instanceof SourceOOCStream && tmp instanceof SourceOOCStream.SourceGroupCallback sg) {
+									OOCIOHandler.GroupSourceBlockDescriptor gdesc = sg.getDescriptor();
+									if (mSubscribers == null || mSubscribers.length == 0)
+										OOCCacheManager.putRawSourceBacked(baseKey, values, totalSize, gdesc);
+									else
+										mCallback = OOCCacheManager.putAndPinRawSourceBacked(baseKey, values, totalSize, gdesc);
 								}
 								else {
-									List<IndexedMatrixValue> values = new ArrayList<>(groupSize);
-									long totalSize = 0;
-									for(int gi = 0; gi < groupSize; gi++) {
-										OOCStream.QueueCallback<IndexedMatrixValue> sub = group.getCallback(gi);
-										try(sub) {
-											IndexedMatrixValue imv = sub.get();
-											values.add(imv);
-											totalSize += ((MatrixBlock) imv.getValue()).getExactSerializedSize();
-										}
-									}
-
-									baseKey = new BlockKey(_streamId, _numBlocks);
-									if (_source instanceof SourceOOCStream && tmp instanceof SourceOOCStream.SourceGroupCallback sg) {
-										OOCIOHandler.GroupSourceBlockDescriptor gdesc = sg.getDescriptor();
-										if (mSubscribers == null || mSubscribers.length == 0)
-											OOCCacheManager.putRawSourceBacked(baseKey, values, totalSize, gdesc);
-										else
-											mCallback = OOCCacheManager.putAndPinRawSourceBacked(baseKey, values, totalSize, gdesc);
-									}
-									else {
-										if(mSubscribers == null || mSubscribers.length == 0)
-											OOCCacheManager.putRaw(baseKey, values, totalSize);
-										else
-											mCallback = OOCCacheManager.putAndPinRaw(baseKey, values, totalSize);
-									}
-								}
-
-								blk = _numBlocks;
-								_numBlocks += groupSize;
-								for(int gi = 0; gi < groupSize; gi++) {
-									registerCacheKey(blk + gi,
-										new GroupedBlockKey(baseKey.getStreamId(), (int) baseKey.getSequenceNumber(), gi),
-										ownsEntry);
-									_consumptionCounts.add(0);
-									_groupIndices.add(gi);
-									_groupSizes.add(groupSize);
+									if(mSubscribers == null || mSubscribers.length == 0)
+										OOCCacheManager.putRaw(baseKey, values, totalSize);
+									else
+										mCallback = OOCCacheManager.putAndPinRaw(baseKey, values, totalSize);
 								}
 							}
-							else {
-								final IndexedMatrixValue task = tmp.get();
-								OOCIOHandler.SourceBlockDescriptor descriptor = null;
-								BlockKey blockKey = null;
-								boolean ownsEntry = true;
 
-								if(tmp instanceof OOCCacheManager.CachedQueueCallback<?> cachedQueue) {
-									blockKey = cachedQueue.getBlockKey();
-									ownsEntry = false;
-									if(mSubscribers != null && mSubscribers.length > 0)
-										mCallback = tmp.keepOpen();
-								}
-								else if(tmp instanceof OOCCacheManager.CachedSubCallback<?> cachedSub) {
-									BlockKey parent = cachedSub.getParent().getBlockKey();
-									blockKey = new GroupedBlockKey(parent.getStreamId(), (int) parent.getSequenceNumber(),
-										cachedSub.getGroupIndex());
-									ownsEntry = false;
-									if(mSubscribers != null && mSubscribers.length > 0)
-										mCallback = tmp.keepOpen();
-								}
-
-								if(_source instanceof SourceOOCStream src) {
-									descriptor = src.getDescriptor(task.getIndexes());
-								}
-
-								if(blockKey == null) {
-									ownsEntry = true;
-									blockKey = new BlockKey(_streamId, _numBlocks);
-									if(descriptor == null) {
-										if(mSubscribers == null || mSubscribers.length == 0)
-											OOCCacheManager.put(_streamId, _numBlocks, task);
-										else
-											mCallback = OOCCacheManager.putAndPin(_streamId, _numBlocks, task);
-									}
-									else {
-										if(mSubscribers == null || mSubscribers.length == 0)
-											OOCCacheManager.putSourceBacked(_streamId, _numBlocks, task, descriptor);
-										else
-											mCallback = OOCCacheManager.putAndPinSourceBacked(_streamId, _numBlocks, task,
-												descriptor);
-									}
-								}
-								if(_index != null)
-									_index.put(task.getIndexes(), _numBlocks);
-								blk = _numBlocks;
-								_numBlocks++;
-								registerCacheKey(blk, blockKey, ownsEntry);
+							blk = _numBlocks;
+							_numBlocks += groupSize;
+							for(int gi = 0; gi < groupSize; gi++) {
+								registerCacheKey(blk + gi,
+									new GroupedBlockKey(baseKey.getStreamId(), (int) baseKey.getSequenceNumber(), gi),
+									ownsEntry);
 								_consumptionCounts.add(0);
-								_groupIndices.add(-1);
-								_groupSizes.add(1);
+								_groupIndices.add(gi);
+								_groupSizes.add(groupSize);
+								if(_deletable)
+									tryDeleteBlock(blk + gi);
 							}
+						}
+						else {
+							final IndexedMatrixValue task = tmp.get();
+							OOCIOHandler.SourceBlockDescriptor descriptor = null;
+							BlockKey blockKey = null;
+							boolean ownsEntry = true;
+
+							if(tmp instanceof OOCCacheManager.CachedQueueCallback<?> cachedQueue) {
+								blockKey = cachedQueue.getBlockKey();
+								ownsEntry = false;
+								if(mSubscribers != null && mSubscribers.length > 0)
+									mCallback = tmp.keepOpen();
+							}
+							else if(tmp instanceof OOCCacheManager.CachedSubCallback<?> cachedSub) {
+								BlockKey parent = cachedSub.getParent().getBlockKey();
+								blockKey = new GroupedBlockKey(parent.getStreamId(), (int) parent.getSequenceNumber(),
+									cachedSub.getGroupIndex());
+								ownsEntry = false;
+								if(mSubscribers != null && mSubscribers.length > 0)
+									mCallback = tmp.keepOpen();
+							}
+
+							if(_source instanceof SourceOOCStream src) {
+								descriptor = src.getDescriptor(task.getIndexes());
+							}
+
+							if(blockKey == null) {
+								ownsEntry = true;
+								blockKey = new BlockKey(_streamId, _numBlocks);
+								if(descriptor == null) {
+									if(mSubscribers == null || mSubscribers.length == 0)
+										OOCCacheManager.put(_streamId, _numBlocks, task);
+									else
+										mCallback = OOCCacheManager.putAndPin(_streamId, _numBlocks, task);
+								}
+								else {
+									if(mSubscribers == null || mSubscribers.length == 0)
+										OOCCacheManager.putSourceBacked(_streamId, _numBlocks, task, descriptor);
+									else
+										mCallback = OOCCacheManager.putAndPinSourceBacked(_streamId, _numBlocks, task,
+											descriptor);
+								}
+							}
+
+							if(_index != null)
+								_index.put(task.getIndexes(), _numBlocks);
+
+							blk = _numBlocks;
+							_numBlocks++;
+							registerCacheKey(blk, blockKey, ownsEntry);
+							_consumptionCounts.add(0);
+							_groupIndices.add(-1);
+							_groupSizes.add(1);
+
+							if(_deletable)
+								tryDeleteBlock(blk);
+						}
 
 						notifyAll();
 					}
@@ -308,7 +315,7 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 			return; // Deletion already scheduled
 
 		if (_cacheInProgress && _maxConsumptionCount == 0)
-			throw new DMLRuntimeException("Cannot have a caching stream with no listeners");
+			System.out.println("[WARN] Scheduling deletion for caching stream with no listeners: " + this);
 
 		_deletable = true;
 		for (int i = 0; i < _consumptionCounts.size(); i++) {
@@ -326,13 +333,22 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 			throw new DMLRuntimeException("Cannot have more than " + _maxConsumptionCount + " consumptions.");
 		if(!_ownedCacheKeys.get(i))
 			return;
+
+		int groupIdx = _groupIndices.getInt(i);
+		int groupSize = _groupSizes.getInt(i);
+		if (groupIdx > 0 && groupSize > 1) {
+			// Grouped entries are physically represented by a single base cache entry.
+			// Re-check the base when a member reaches its terminal count.
+			if (cnt == _maxConsumptionCount) {
+				int baseId = i - groupIdx;
+				tryDeleteBlock(baseId);
+			}
+			return;
+		}
+
 		if (cnt == _maxConsumptionCount) {
-			int groupIdx = _groupIndices.getInt(i);
-			int groupSize = _groupSizes.getInt(i);
 			if (groupIdx >= 0 && groupSize > 1) {
 				int baseId = i - groupIdx;
-				if (i != baseId)
-					return;
 				for (int j = 0; j < groupSize; j++) {
 					if (_consumptionCounts.getInt(baseId + j) < _maxConsumptionCount)
 						return;
@@ -396,7 +412,7 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 		}
 	}
 
-	public synchronized int findCachedIndex(MatrixIndexes idx) {
+	public int findCachedIndex(MatrixIndexes idx) {
 		return _index.get(idx);
 	}
 
@@ -465,10 +481,7 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 	 * Finds a cached item asynchronously without counting it as a consumption.
 	 */
 	public void peekCachedAsync(MatrixIndexes idx, Consumer<OOCStream.QueueCallback<IndexedMatrixValue>> callback) {
-		int mIdx;
-		synchronized(this) {
-			mIdx = _index.get(idx);
-		}
+		int mIdx = _index.get(idx);
 		OOCCacheManager.requestBlock(getBlockKey(mIdx)).whenComplete((cb, r) -> callback.accept(cb));
 	}
 
@@ -476,10 +489,7 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 	 * Finds a cached item without counting it as a consumption.
 	 */
 	public OOCStream.QueueCallback<IndexedMatrixValue> peekCached(MatrixIndexes idx) {
-		int mIdx;
-		synchronized(this) {
-			mIdx = _index.get(idx);
-		}
+		int mIdx = _index.get(idx);
 		try {
 			return OOCCacheManager.requestBlock(getBlockKey(mIdx)).get();
 		} catch (InterruptedException | ExecutionException e) {
@@ -516,9 +526,13 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 			throw new IllegalStateException("Invalid cache key registration order");
 	}
 
-	public synchronized void activateIndexing() {
-		if (_index == null)
-			_index = new DualHashBidiMap<>();
+	public void activateIndexing() {
+		if(_index != null)
+			return;
+		synchronized(this) {
+			if(_index == null)
+				_index = new ConcurrentHashMap<>();
+		}
 	}
 
 	@Override
@@ -739,5 +753,9 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 
 		if (_deletable)
 			tryDeleteBlock(i);
+	}
+
+	public void incrProcessingCount(MatrixIndexes idx, int count) {
+		incrProcessingCount(_index.get(idx), count);
 	}
 }

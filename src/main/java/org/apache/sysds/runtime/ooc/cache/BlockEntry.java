@@ -138,6 +138,17 @@ public final class BlockEntry {
 	}
 
 	/**
+	 * Tries to increment pin-count if already pinned. Unpinned entries are not affected
+	 * by this operation. This allows bypassing the global cache lock.
+	 */
+	synchronized boolean fastPin() {
+		if(_pinCount == 0)
+			return false;
+		_pinCount++;
+		return true;
+	}
+
+	/**
 	 * Unpins the underlying data
 	 * @return true if the data is now unpinned
 	 */
@@ -146,6 +157,17 @@ public final class BlockEntry {
 			throw new IllegalStateException("Cannot unpin data if it was not pinned");
 		_pinCount--;
 		return _pinCount == 0;
+	}
+
+	/**
+	 * Tries to unpin but guarantees that it will not
+	 * remove the last pin. This allows bypassing the global cache lock.
+	 */
+	synchronized boolean fastUnpin() {
+		if(_pinCount <= 1)
+			return false;
+		_pinCount--;
+		return true;
 	}
 
 	public String toString() {

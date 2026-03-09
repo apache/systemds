@@ -26,6 +26,8 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.OOCInstructionParser;
+import org.apache.sysds.runtime.instructions.cp.CPInstruction;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
@@ -46,18 +48,21 @@ import scala.Tuple4;
 import scala.Tuple5;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -130,10 +135,19 @@ public abstract class OOCInstruction extends Instruction {
 
 	@Override
 	public Instruction preprocessInstruction(ExecutionContext ec) {
-		if (DMLScript.OOC_LOG_EVENTS)
-			nanoTime = System.nanoTime();
-		// TODO
-		return super.preprocessInstruction(ec);
+		Instruction tmp = super.preprocessInstruction(ec);
+
+		// Keep consistent with CP/SP instruction patching semantics.
+		if(tmp.requiresLabelUpdate()) {
+			String updInst = CPInstruction.updateLabels(tmp.toString(), ec.getVariables());
+			tmp = OOCInstructionParser.parseSingleInstruction(updInst);
+		}
+
+		// Record event start timestamp on the instruction instance that will execute.
+		if (DMLScript.OOC_LOG_EVENTS && tmp instanceof OOCInstruction)
+			((OOCInstruction) tmp).nanoTime = System.nanoTime();
+
+		return tmp;
 	}
 
 	@Override
@@ -191,6 +205,7 @@ public abstract class OOCInstruction extends Instruction {
 		return new MergedOOCStream<>(streams);
 	}
 
+	@SuppressWarnings({"varargs", "unchecked"})
 	protected <T> OOCStream<T> mergeOOCStreams(OOCStream<T>... streams) {
 		return new MergedOOCStream<>(streams);
 	}
@@ -206,6 +221,43 @@ public abstract class OOCInstruction extends Instruction {
 
 	protected <T, R> CompletableFuture<Void> mapOOC(OOCStream<T> qIn, OOCStream<R> qOut, Function<T, R> mapper) {
 		return mapOptionalOOC(qIn, qOut, tmp -> Optional.of(mapper.apply(tmp)));
+	}
+
+	protected <T, R> CompletableFuture<Void> expandOOC(OOCStream<T> qIn, OOCStream<R> qOut, Function<T, Collection<R>> op) {
+		addInStream(qIn);
+		addOutStream(qOut);
+
+		AtomicInteger deferredCtr = new AtomicInteger(1);
+		CompletableFuture<Void> future = new CompletableFuture<>();
+
+		submitOOCTasks(qIn, tmp -> {
+				Collection<R> out;
+				try(tmp) {
+					out = op.apply(tmp.get());
+				}
+				if(!out.isEmpty()) {
+					deferredCtr.getAndIncrement();
+					TaskContext.defer(() -> {
+						out.forEach(qOut::enqueue);
+						if(deferredCtr.decrementAndGet() == 0)
+							future.complete(null);
+					});
+				}
+			})
+			.thenRun(() -> {
+				if(deferredCtr.decrementAndGet() == 0)
+					future.complete(null);
+			})
+			.exceptionally(err -> {
+				future.completeExceptionally(err);
+				return null;
+			});
+
+		return future.thenRun(qOut::closeInput).exceptionally(err -> {
+			DMLRuntimeException dmlErr = DMLRuntimeException.of(err);
+			qOut.propagateFailure(dmlErr);
+			throw dmlErr;
+		});
 	}
 
 	protected <T, R> CompletableFuture<Void> mapOptionalOOC(OOCStream<T> qIn, OOCStream<R> qOut, Function<T, Optional<R>> optionalMapper) {
@@ -358,12 +410,12 @@ public abstract class OOCInstruction extends Instruction {
 
 				try(lValue; bValue) {
 					b.value = bValue.get();
-					leftCache.incrProcessingCount(leftCache.findCachedIndex(lValue.get().getIndexes()), 1);
+					leftCache.incrProcessingCount(lValue.get().getIndexes(), 1);
 					qOut.enqueue(mapper.apply(lValue.get(), b));
 
 					if(b.tryRelease()) {
 						availableBroadcastInput.remove(tpl.get()._1());
-						rightCache.incrProcessingCount(rightCache.findCachedIndex(b.idx), 1); // Correct for incremented subscriber count to allow block deletion
+						rightCache.incrProcessingCount(b.idx, 1); // Correct for incremented subscriber count to allow block deletion
 					}
 				}
 
@@ -381,7 +433,7 @@ public abstract class OOCInstruction extends Instruction {
 		final StreamContext context = _streamContext.copy();
 		return fut.thenRun(() -> {
 			availableBroadcastInput.forEach((k, v) -> {
-				rightCache.incrProcessingCount(rightCache.findCachedIndex(v.idx), 1);
+				rightCache.incrProcessingCount(v.idx, 1);
 			});
 			availableBroadcastInput.clear();
 			qOut.closeInput();
@@ -478,10 +530,10 @@ public abstract class OOCInstruction extends Instruction {
 				int rightCtr = bRight.incrProcessCtrAndGet();
 
 				if(leftCtr == releaseLeftCount)
-					leftCache.incrProcessingCount(leftCache.findCachedIndex(bLeft.idx),
+					leftCache.incrProcessingCount(bLeft.idx,
 						1); // Correct for incremented subscriber count to allow block deletion
 				if(rightCtr == releaseRightCount)
-					rightCache.incrProcessingCount(rightCache.findCachedIndex(bRight.idx), 1);
+					rightCache.incrProcessingCount(bRight.idx, 1);
 			}
 
 			if(waitCtr.decrementAndGet() == 0)
@@ -626,7 +678,7 @@ public abstract class OOCInstruction extends Instruction {
 						else {
 							outList.add(r.get(j).keepOpen());
 						}
-						caches[j].incrProcessingCount(caches[j].findCachedIndex(r.get(j).get().getIndexes()), 1);
+						caches[j].incrProcessingCount(r.get(j).get().getIndexes(), 1);
 					}
 					materialized.enqueue(outList);
 					r.forEach(OOCStream.QueueCallback::close);
@@ -809,6 +861,139 @@ public abstract class OOCInstruction extends Instruction {
 		}, (i, tmp) -> {});
 	}
 
+	protected static final class ScanStep<R, C> {
+		private final R _out;
+		private final C _carry;
+
+		protected ScanStep(R out, C carry) {
+			_out = out;
+			_carry = carry;
+		}
+
+		protected R getOut() {
+			return _out;
+		}
+
+		protected C getCarry() {
+			return _carry;
+		}
+	}
+
+	/**
+	 * Performs a sequential scan in a given order. This method is currently fully in-memory and thus should not yet
+	 * be used for large sequences. TODO
+	 * @param qIn the (unsorted) input stream
+	 * @param qOut the target output stream
+	 * @param seqFn a sequence function to define a unique order
+	 * @param scanner the scanner function that takes the current sequence item and a carry object and returns output and next carry
+	 * @param sequenceSize the sequence size
+	 * @return
+	 * @param <R> the return tile
+	 * @param <C> the carry state
+	 */
+	protected <R, C> CompletableFuture<Void> scanOOC(OOCStream<IndexedMatrixValue> qIn, OOCStream<R> qOut,
+		Function<IndexedMatrixValue, Long> seqFn,
+		BiFunction<IndexedMatrixValue, C, ScanStep<R, C>> scanner, long sequenceSize) {
+		if(sequenceSize <= 0)
+			throw new DMLRuntimeException("Invalid ordered scan size: " + sequenceSize);
+
+		addOutStream(qOut);
+		TreeMap<Long, OOCStream.QueueCallback<IndexedMatrixValue>> pending = new TreeMap<>();
+		long[] expected = new long[] {1L};
+		Object[] carry = new Object[1];
+		AtomicLong processed = new AtomicLong(0);
+
+		CompletableFuture<Void> future = pipeOOC(qIn, cb -> {
+			List<R> ready = new ArrayList<>();
+			List<OOCStream.QueueCallback<IndexedMatrixValue>> processedCallbacks = new ArrayList<>();
+			try {
+				synchronized(pending) {
+					OOCStream.QueueCallback<IndexedMatrixValue> pinned = cb.keepOpen();
+					IndexedMatrixValue item = pinned.get();
+					long seqIx = seqFn.apply(item);
+					if(seqIx < 1 || seqIx > sequenceSize) {
+						pinned.close();
+						throw new DMLRuntimeException("Ordered scan index out of bounds: " + seqIx + "/" + sequenceSize);
+					}
+
+					OOCStream.QueueCallback<IndexedMatrixValue> prior = pending.put(seqIx, pinned);
+					if(prior != null) {
+						pending.put(seqIx, prior);
+						pinned.close();
+						throw new DMLRuntimeException("Duplicate ordered scan item for sequence index " + seqIx + ".");
+					}
+
+					while(pending.containsKey(expected[0])) {
+						OOCStream.QueueCallback<IndexedMatrixValue> curCb = pending.remove(expected[0]);
+						try {
+							IndexedMatrixValue cur = curCb.get();
+							@SuppressWarnings("unchecked")
+							C agg = (C) carry[0];
+							ScanStep<R, C> step = scanner.apply(cur, agg);
+							if(step == null)
+								throw new DMLRuntimeException("Ordered scan step must not be null.");
+							R out = step.getOut();
+							if(out == null)
+								throw new DMLRuntimeException("Ordered scan output must not be null.");
+							carry[0] = step.getCarry();
+							ready.add(out);
+							expected[0]++;
+							processed.incrementAndGet();
+						}
+						finally {
+							processedCallbacks.add(curCb);
+						}
+					}
+				}
+
+				for(R out : ready)
+					qOut.enqueue(out);
+			}
+			finally {
+				processedCallbacks.forEach(OOCStream.QueueCallback::close);
+			}
+		});
+
+		return future.handle((r, err) -> {
+			synchronized(pending) {
+				if(err != null) {
+					pending.values().forEach(OOCStream.QueueCallback::close);
+					pending.clear();
+					throw DMLRuntimeException.of(err);
+				}
+
+				if(processed.get() != sequenceSize || !pending.isEmpty()) {
+					Object pendingKeys = pending.keySet().toString();
+					pending.values().forEach(OOCStream.QueueCallback::close);
+					pending.clear();
+					throw new DMLRuntimeException(
+						"Incomplete ordered scan processing. processed=" + processed.get() + ", expected="
+							+ sequenceSize + ", pendingKeys=" + pendingKeys);
+				}
+
+				if(expected[0] != sequenceSize + 1) {
+					pending.values().forEach(OOCStream.QueueCallback::close);
+					pending.clear();
+					throw new DMLRuntimeException("Missing ordered scan items: expected terminal index="
+						+ (sequenceSize + 1) + ", seen=" + expected[0]);
+				}
+			}
+			qOut.closeInput();
+			return null;
+		});
+	}
+
+	protected <R, C> CompletableFuture<Void> scanOOC(OOCStream<IndexedMatrixValue> qIn, OOCStream<R> qOut,
+		Function<IndexedMatrixValue, Long> seqFn, BiFunction<IndexedMatrixValue, C, R> scanner,
+		Function<R, C> carryFn, long sequenceSize) {
+		return scanOOC(qIn, qOut, seqFn, (IndexedMatrixValue item, C carry) -> {
+			R out = scanner.apply(item, carry);
+			if(out == null)
+				throw new DMLRuntimeException("Ordered scan output must not be null.");
+			return new ScanStep<>(out, carryFn.apply(out));
+		}, sequenceSize);
+	}
+
 	protected <T> CompletableFuture<Void> submitOOCTasks(final List<OOCStream<T>> queues, BiConsumer<Integer, OOCStream.QueueCallback<T>> consumer) {
 		return submitOOCTasks(queues, consumer, null, null);
 	}
@@ -878,7 +1063,7 @@ public abstract class OOCInstruction extends Instruction {
 						COMPUTE_IN_FLIGHT.incrementAndGet();
 						try {
 							Runnable oocTask = oocTask(() -> {
-								long taskStartTime = DMLScript.STATISTICS ? System.nanoTime() : 0;
+								long taskStartTime = DMLScript.STATISTICS || DMLScript.OOC_LOG_EVENTS ? System.nanoTime() : 0;
 								try(pinned) {
 									consumer.accept(k, pinned);
 
@@ -894,9 +1079,9 @@ public abstract class OOCInstruction extends Instruction {
 											Statistics.maintainOOCHeavyHitter(getExtendedOpcode(), _localStatisticsAdder.sum());
 											_localStatisticsAdder.reset();
 										}
-										if (DMLScript.OOC_LOG_EVENTS)
-											OOCEventLog.onComputeEvent(_callerId, taskStartTime, System.nanoTime());
 									}
+									if (DMLScript.OOC_LOG_EVENTS)
+										OOCEventLog.onComputeEvent(_callerId, taskStartTime, System.nanoTime());
 								}
 							}, localFuture, streamContext);
 							COMPUTE_EXECUTOR.submit(oocTask);
@@ -929,7 +1114,7 @@ public abstract class OOCInstruction extends Instruction {
 						COMPUTE_IN_FLIGHT.incrementAndGet();
 						try {
 							Runnable oocTask = oocTask(() -> {
-								long taskStartTime = DMLScript.STATISTICS ? System.nanoTime() : 0;
+								long taskStartTime = DMLScript.STATISTICS || DMLScript.OOC_LOG_EVENTS ? System.nanoTime() : 0;
 								try(pinnedGroup) {
 									for(int idx = 0; idx < pinnedGroup.size(); idx++) {
 										OOCStream.QueueCallback<T> sub = pinnedGroup.getCallback(idx);
@@ -950,9 +1135,9 @@ public abstract class OOCInstruction extends Instruction {
 											Statistics.maintainOOCHeavyHitter(getExtendedOpcode(), _localStatisticsAdder.sum());
 											_localStatisticsAdder.reset();
 										}
-										if (DMLScript.OOC_LOG_EVENTS)
-											OOCEventLog.onComputeEvent(_callerId, taskStartTime, System.nanoTime());
 									}
+									if (DMLScript.OOC_LOG_EVENTS)
+										OOCEventLog.onComputeEvent(_callerId, taskStartTime, System.nanoTime());
 								}
 							}, localFuture, streamContext);
 							COMPUTE_EXECUTOR.submit(oocTask);

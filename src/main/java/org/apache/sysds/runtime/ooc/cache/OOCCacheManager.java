@@ -23,6 +23,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.ooc.OOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
+import org.apache.sysds.runtime.instructions.ooc.TeeOOCInstruction;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.ooc.stats.OOCEventLog;
@@ -55,6 +56,7 @@ public class OOCCacheManager {
 	}
 
 	public static void reset() {
+		TeeOOCInstruction.reset();
 		OOCIOHandler ioHandler = _ioHandler.getAndSet(null);
 		OOCCacheScheduler cacheScheduler = _scheduler.getAndSet(null);
 		if (ioHandler != null)
@@ -94,13 +96,21 @@ public class OOCCacheManager {
 				return scheduler;
 
 			OOCIOHandler ioHandler = new OOCMatrixIOHandler();
-			scheduler = new OOCLRUCacheScheduler(ioHandler, _evictionLimit, _hardLimit);
+			scheduler = new OOCLRUCacheScheduler(ioHandler, _evictionLimit, _hardLimit, Math.max(40000000, (long)((_hardLimit - _evictionLimit) * 0.1)));
 
 			if(_scheduler.compareAndSet(null, scheduler)) {
 				_ioHandler.set(ioHandler);
 				return scheduler;
 			}
 		}
+	}
+
+	/**
+	 * Returns the current cache scheduler if already initialized, otherwise null.
+	 * This method does not trigger lazy initialization.
+	 */
+	public static OOCCacheScheduler getCacheIfInitialized() {
+		return _scheduler.get();
 	}
 
 	public static OOCIOHandler getIOHandler() {

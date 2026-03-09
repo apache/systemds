@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.instructions.ooc;
 
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -75,8 +74,26 @@ public class BinaryOOCInstruction extends ComputationOOCInstruction {
 			qIn2.messageUpstream(msg.split());
 		});
 
-		if (m1.getNumRows() < 0 || m1.getNumColumns() < 0 || m2.getNumRows() < 0 || m2.getNumColumns() < 0)
-			throw new DMLRuntimeException("Cannot process (matrix, matrix) BinaryOOCInstruction with unknown dimensions.");
+		final boolean known1 = (m1.getNumRows() >= 0 && m1.getNumColumns() >= 0);
+		final boolean known2 = (m2.getNumRows() >= 0 && m2.getNumColumns() >= 0);
+
+		// If dimensions are unknown, we cannot safely detect broadcasting.
+		// Fall back to strict key-based join and let downstream operators validate as needed.
+		if(!known1 || !known2) {
+			if(LOG.isWarnEnabled()) {
+				LOG.warn("Falling back to key-wise OOC binary join for opcode '" + getOpcode()
+					+ "' due to unknown matrix dimensions: " + input1.getName() + "=" + m1.getNumRows() + "x"
+					+ m1.getNumColumns() + ", " + input2.getName() + "=" + m2.getNumRows() + "x"
+					+ m2.getNumColumns());
+			}
+			joinOOC(qIn1, qIn2, qOut, (tmp1, tmp2) -> {
+				IndexedMatrixValue tmpOut = new IndexedMatrixValue();
+				tmpOut.set(tmp1.getIndexes(),
+					tmp1.getValue().binaryOperations((BinaryOperator)_optr, tmp2.getValue(), tmpOut.getValue()));
+				return tmpOut;
+			}, IndexedMatrixValue::getIndexes);
+			return;
+		}
 
 		boolean isColBroadcast = m1.getNumColumns() > 1 && m2.getNumColumns() == 1;
 		boolean isRowBroadcast = m1.getNumRows() > 1 && m2.getNumRows() == 1;

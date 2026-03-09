@@ -52,6 +52,13 @@ public abstract class IndexingOOCInstruction extends UnaryOOCInstruction {
 				throw new NotImplementedException();
 			}
 		}
+		else if(opcode.equalsIgnoreCase(Opcodes.LEFT_INDEX.toString())) {
+			if(!cpInst.input1.getDataType().isMatrix())
+				throw new NotImplementedException();
+			return new MatrixIndexingOOCInstruction(cpInst.input1, cpInst.input2, cpInst.getRowLower(),
+				cpInst.getRowUpper(), cpInst.getColLower(), cpInst.getColUpper(), cpInst.output, cpInst.getOpcode(),
+				cpInst.getInstructionString());
+		}
 
 		throw new NotImplementedException();
 	}

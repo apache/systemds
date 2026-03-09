@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.ooc;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -35,10 +36,13 @@ import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstructio
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObjectFactory;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
+import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -72,6 +76,10 @@ public class ParameterizedBuiltinOOCInstruction extends ComputationOOCInstructio
 		}
 		else if(opcode.equalsIgnoreCase(Opcodes.CONTAINS.toString())) {
 			return new ParameterizedBuiltinOOCInstruction(null, paramsMap, out, opcode, str);
+		}
+		else if(opcode.equalsIgnoreCase(Opcodes.REXPAND.toString())) {
+			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
+			return new ParameterizedBuiltinOOCInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 		}
 		else
 			throw new NotImplementedException(); // TODO
@@ -132,6 +140,32 @@ public class ParameterizedBuiltinOOCInstruction extends ComputationOOCInstructio
 			}
 
 			ec.setScalarOutput(output.getName(), new BooleanObject(ret));
+			}
+			else if(instOpcode.equalsIgnoreCase(Opcodes.REXPAND.toString())) {
+				MatrixObject targetObj = ec.getMatrixObject(params.get("target"));
+				OOCStream<IndexedMatrixValue> qIn = targetObj.getStreamHandle();
+				OOCStream<IndexedMatrixValue> qOut = createWritableStream();
+				ec.getMatrixObject(output).setStreamHandle(qOut);
+
+				String maxValName = params.get("max");
+				long lmaxVal = maxValName.startsWith(Lop.SCALAR_VAR_NAME_PREFIX) ?
+					ec.getScalarInput(maxValName, Types.ValueType.FP64, false).getLongValue() :
+					UtilFunctions.toLong(Double.parseDouble(maxValName));
+				boolean dirRows = params.get("dir").equals("rows");
+				boolean cast = Boolean.parseBoolean(params.get("cast"));
+				boolean ignore = Boolean.parseBoolean(params.get("ignore"));
+				long blen = targetObj.getBlocksize();
+
+				qIn.setDownstreamMessageRelay(qOut::messageDownstream);
+				qOut.setUpstreamMessageRelay(qIn::messageUpstream);
+
+				expandOOC(qIn, qOut, tmp -> {
+					ArrayList<IndexedMatrixValue> out = new ArrayList<>();
+					LibMatrixReorg.rexpand(tmp, lmaxVal, dirRows, cast, ignore, blen, out);
+					return out;
+				});
+			}
+			else
+				throw new NotImplementedException();
 		}
 	}
-}

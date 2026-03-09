@@ -61,7 +61,18 @@ class MemoryAwareNodeScheduler:
         }
 
     def get_runnable(self) -> List[RepresentationNode]:
-        # TODO: prioritize task nodes over representation nodes to free up memory in cache if possible
+        runnable_nodes = self._get_runnable_nodes()
+
+        for node in runnable_nodes:
+            ok, gpu_id = self._check_memory_constraints(node)
+            if ok:
+                self.mapping[node].gpu_id = gpu_id
+                self.ready_nodes.append(node)
+                self._reserve_memory(node, gpu_id)
+        return self.ready_nodes
+
+    def _get_runnable_nodes(self) -> List[str]:
+        runnable_nodes = []
         for node in self.topo_order:
             if (
                 node not in self.leaves
@@ -70,12 +81,9 @@ class MemoryAwareNodeScheduler:
                 and node not in self.completed_nodes
                 and node not in self.ready_nodes
             ):
-                ok, gpu_id = self._check_memory_constraints(node)
-                if ok:
-                    self.mapping[node].gpu_id = gpu_id
-                    self.ready_nodes.append(node)
-                    self._reserve_memory(node, gpu_id)
-        return self.ready_nodes
+                runnable_nodes.append(node)
+        runnable_nodes.sort(key=lambda x: (x not in self.roots))
+        return runnable_nodes
 
     def add_failed_node(self, node_id: str):
         self.failed_nodes.append(node_id)
@@ -142,7 +150,7 @@ class MemoryAwareNodeScheduler:
                 self.blocked_memory_nodes_perm.append(node_id)
             return False, None
 
-        if gpu_mem > 0.0:
+        if gpu_mem > 0.0 and self.n_gpu > 0:
             for i in range(self.n_gpu):
                 if (
                     gpu_mem

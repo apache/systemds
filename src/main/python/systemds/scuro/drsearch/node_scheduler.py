@@ -63,7 +63,13 @@ class MemoryAwareNodeScheduler:
     def get_runnable(self) -> List[RepresentationNode]:
         # TODO: prioritize task nodes over representation nodes to free up memory in cache if possible
         for node in self.topo_order:
-            if node not in self.leaves and self.unresolved_parents[node] == 0:
+            if (
+                node not in self.leaves
+                and self.unresolved_parents[node] == 0
+                and node not in self.running_nodes
+                and node not in self.completed_nodes
+                and node not in self.ready_nodes
+            ):
                 ok, gpu_id = self._check_memory_constraints(node)
                 if ok:
                     self.mapping[node].gpu_id = gpu_id

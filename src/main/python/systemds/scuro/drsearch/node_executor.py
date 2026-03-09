@@ -1,4 +1,4 @@
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, as_completed, wait
 from dataclasses import dataclass
 from systemds.scuro import Modality
 from systemds.scuro.drsearch.node_scheduler import MemoryAwareNodeScheduler
@@ -95,7 +95,7 @@ def _execute_task_worker(task: Any, data: Any, gpu_id: Optional[int]) -> Dict[st
     return {"scores": scores, "task_time": end - start}
 
 
-class NodeExecuter:
+class NodeExecutor:
     def __init__(
         self,
         dags: List[RepresentationDag],
@@ -119,10 +119,87 @@ class NodeExecuter:
 
     def run(self) -> None:
         task_results = {}
-        while not self.scheduler.is_finished():
-            runnable_nodes = self.scheduler.get_runnable().copy()
-            results = self._execute_batch(runnable_nodes)
-            task_results.update(results)
+        ctx = mp.get_context("spawn")
+        with ProcessPoolExecutor(
+            max_workers=self.max_num_workers, mp_context=ctx
+        ) as executor:
+            future_to_node_id = {}
+
+            def submit_node(node_id: str):
+                node = self.scheduler.mapping[node_id]
+                gpu_id = node.gpu_id
+                parent_result = None
+                parent_node_id = self.scheduler.get_valid_parent(node_id)
+                if parent_node_id is not None:
+                    parent_result = self.result_cache.get(parent_node_id)
+                if self._is_task_node(node):
+                    task_result = ResultEntry(
+                        dag=self._get_dag_from_node_ids(node_id),
+                        representation_time=parent_result.transform_time,
+                    )
+                    task_results[node_id] = task_result
+                    task_idx = int(node.parameters.get("_task_idx", 0))
+                    future = executor.submit(
+                        _execute_task_worker,
+                        self.tasks[task_idx],
+                        (
+                            self.modalities[0].data
+                            if parent_result is None
+                            else parent_result.data
+                        ),
+                        gpu_id,
+                    )
+                else:
+                    future = executor.submit(
+                        _execute_node_worker,
+                        node,
+                        self.modalities if parent_result is None else [parent_result],
+                        None,
+                        None,
+                        gpu_id,
+                    )
+                self.scheduler.move_to_running(node_id)
+                future_to_node_id[future] = node_id
+
+            def submit_new_ready_nodes():
+                for node_id in self.scheduler.get_runnable().copy():
+                    submit_node(node_id)
+
+            submit_new_ready_nodes()
+
+            while future_to_node_id or not self.scheduler.is_finished():
+                if not future_to_node_id:
+                    submit_new_ready_nodes()
+                    continue
+
+                done, _ = wait(
+                    set(future_to_node_id.keys()), return_when=FIRST_COMPLETED
+                )
+
+                for future in done:
+                    node_id = future_to_node_id.pop(future)
+                    try:
+                        result = future.result()
+                    except Exception as e:
+                        print(f"Error executing node {node_id}: {e}")
+                        self.scheduler.add_failed_node(node_id)
+                        continue
+
+                    self.scheduler.complete_node(node_id)
+                    self._manage_result_cache(node_id, result)
+                    node = self.scheduler.mapping[node_id]
+                    if self._is_task_node(node):
+                        task_results[node_id].task_time = result["task_time"]
+                        task_results[node_id].train_score = result["scores"][
+                            0
+                        ].average_scores
+                        task_results[node_id].val_score = result["scores"][
+                            1
+                        ].average_scores
+                        task_results[node_id].test_score = result["scores"][
+                            2
+                        ].average_scores
+                    submit_new_ready_nodes()
 
         return list(task_results.values())
 

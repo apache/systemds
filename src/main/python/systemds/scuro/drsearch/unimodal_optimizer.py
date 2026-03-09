@@ -28,7 +28,7 @@ from typing import List, Any, Optional, Dict
 from functools import lru_cache
 
 from systemds.scuro import ModalityType
-from systemds.scuro.drsearch.node_executer import NodeExecuter, ResultEntry
+from systemds.scuro.drsearch.node_executor import NodeExecutor, ResultEntry
 from systemds.scuro.drsearch.ranking import rank_by_tradeoff
 from systemds.scuro.drsearch.task import PerformanceMeasure
 from systemds.scuro.representations.concatenation import Concatenation
@@ -335,10 +335,10 @@ class UnimodalOptimizer:
 
         expanded_dags = self._expand_dags_with_task_roots(dags)
 
-        node_executer = NodeExecuter(
+        node_executor = NodeExecutor(
             expanded_dags, [modality], self.tasks, self.max_num_workers
         )
-        task_results = node_executer.run()
+        task_results = node_executor.run()
 
         for task_result in task_results:
             local_results.add_task_result(task_result)

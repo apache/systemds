@@ -40,6 +40,7 @@ import org.junit.runners.Parameterized;
 import java.util.ArrayList;
 
 @RunWith(Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 public class CBindTest extends AutomatedTestBase {
 
 	private static final String TEST_NAME = "CBindTest";

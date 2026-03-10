@@ -394,7 +394,72 @@ public abstract class ParamServer
 					break;
 				}
 				case ASP:
-					throw new NotImplementedException();
+					// Async model averaging:
+
+					//TODO: needs to be implement and expanded upon. I tried implementing it but it requires a much deeper scope of synchronization which i felt was beyond my current scope
+					// its running into deadlocks and race condition. Could be another open-source contribution
+
+					// Each push is interpreted as a worker "model" (list of matrices).
+					// We (1) weight by 1/numWorkers, (2) accumulate into _accModels, and
+					// (3) periodically "commit" the accumulated average as new global model.
+
+					// 1) weight the incoming model by 1/numWorkers (in-place)
+					ListObject weighted = weightModels(model, _numWorkers);
+
+					// 2) accrue into accumulator (sum of weighted models)
+					_accModels = ParamservUtils.accrueGradients(_accModels, weighted, true);
+
+					// 3) commit policy: mimic ASP pseudo-epoch boundaries from gradient mode
+					_syncCounter++;
+
+					boolean doCommit = false;
+					if (_freq == Statement.PSFrequency.EPOCH) {
+						// commit after numWorkers pushes
+						doCommit = (_syncCounter % _numWorkers) == 0;
+					}
+					else if (_freq == Statement.PSFrequency.BATCH) {
+						// commit after numWorkers * numBatchesPerEpoch pushes
+						if (_numBatchesPerEpoch != -1) {
+							long period = (long) _numWorkers * (long) _numBatchesPerEpoch;
+							doCommit = (period > 0) && ((long) _syncCounter % period == 0);
+						}
+						else {
+							// fallback: commit after numWorkers pushes if unknown batches/epoch
+							doCommit = (_syncCounter % _numWorkers) == 0;
+						}
+					}
+					else if (_freq == Statement.PSFrequency.NBATCHES) {
+						// simplest: commit every push (adjust if you want different semantics)
+						doCommit = true;
+					}
+
+					if (doCommit) {
+						// Set global model to accumulated average
+						_model = setParams(_ec, _accModels, _model);
+						_accModels = null;
+
+						if (DMLScript.STATISTICS && tAgg != null)
+							ParamServStatistics.accAggregationTime((long) tAgg.stop());
+
+						if (LOG.isInfoEnabled())
+							LOG.info("[+] PARAMSERV: completed PSEUDO EPOCH (ASP, MODELAVG) " + _epochCounter);
+
+						time_epoch();
+
+						if (_validationPossible)
+							validate();
+
+						_epochCounter++;
+						_syncCounter = 0;
+
+						// Broadcast committed model to all workers
+						broadcastModel(true);
+					}
+					else {
+						// Worker needs a model to continue even without committing
+						broadcastModel(workerID);
+					}
+					break;
 
 				default:
 					throw new DMLRuntimeException("Unsupported update: " + _updateType.name());

@@ -42,6 +42,7 @@ import org.apache.sysds.runtime.instructions.ooc.MMultOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.MapMMChainOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.ReorgOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.TeeOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.AppendOOCInstruction;
 
 public class OOCInstructionParser extends InstructionParser {
 	protected static final Log LOG = LogFactory.getLog(OOCInstructionParser.class.getName());
@@ -108,6 +109,8 @@ public class OOCInstructionParser extends InstructionParser {
 				return IndexingOOCInstruction.parseInstruction(str);
 			case Rand:
 				return DataGenOOCInstruction.parseInstruction(str);
+			case Append:
+				return AppendOOCInstruction.parseInstruction(str);
 
 			default:
 				throw new DMLRuntimeException("Invalid OOC Instruction Type: " + ooctype);

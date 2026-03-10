@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.ooc.cache.OOCCacheManager;
 import org.apache.sysds.runtime.ooc.stream.SourceOOCStream;
 import org.apache.sysds.runtime.ooc.stream.message.OOCGetStreamTypeMessage;
 import org.apache.sysds.runtime.ooc.stream.message.OOCStreamMessage;
+import org.apache.sysds.runtime.ooc.util.OOCUtils;
 import org.apache.sysds.runtime.util.IndexRange;
 import shaded.parquet.it.unimi.dsi.fastutil.ints.IntArrayList;
 
@@ -469,7 +470,7 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 	private void validateBlockCountOnClose() {
 		DataCharacteristics dc = _source.getDataCharacteristics();
 		if (dc != null && dc.dimsKnown() && dc.getBlocksize() > 0) {
-			long expected = dc.getNumBlocks();
+			long expected = OOCUtils.getNumBlocks(dc);
 			if (expected >= 0 && _numBlocks != expected) {
 				throw new DMLRuntimeException("CachingStream block count mismatch: expected "
 					+ expected + " but saw " + _numBlocks + " (" + dc.getRows() + "x" + dc.getCols() + ")");

@@ -220,7 +220,7 @@ class UnimodalOptimizer:
                             modality.modality_id, new_count
                         )
                         self._checkpoint_manager.checkpoint_if_due(
-                            self.operator_performance.results, "eval_count_by_modality"
+                            self.operator_performance.results,
                         )
                     except Exception as e:
                         print(f"Error processing modality {modality.modality_id}: {e}")
@@ -229,7 +229,6 @@ class UnimodalOptimizer:
                         traceback.print_exc()
                         self._checkpoint_manager.save_checkpoint(
                             self.operator_performance.results,
-                            "eval_count_by_modality",
                             {},
                         )
                         continue
@@ -259,7 +258,7 @@ class UnimodalOptimizer:
                 new_count = self._count_results(local_result.results)
                 self._checkpoint_manager.increment(modality.modality_id, new_count)
                 self._checkpoint_manager.checkpoint_if_due(
-                    self.operator_performance.results, "eval_count_by_modality"
+                    self.operator_performance.results
                 )
                 if self.save_all_results:
                     self.store_results(f"{modality.modality_id}_unimodal_results.pkl")
@@ -269,7 +268,7 @@ class UnimodalOptimizer:
 
                 traceback.print_exc()
                 self._checkpoint_manager.save_checkpoint(
-                    self.operator_performance.results, "eval_count_by_modality", {}
+                    self.operator_performance.results, {}
                 )
                 raise
 
@@ -336,7 +335,11 @@ class UnimodalOptimizer:
         expanded_dags = self._expand_dags_with_task_roots(dags)
 
         node_executor = NodeExecutor(
-            expanded_dags, [modality], self.tasks, self.max_num_workers
+            expanded_dags,
+            [modality],
+            self.tasks,
+            self._checkpoint_manager,
+            self.max_num_workers,
         )
         task_results = node_executor.run()
 

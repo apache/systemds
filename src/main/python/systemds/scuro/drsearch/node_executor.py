@@ -1,5 +1,6 @@
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, as_completed, wait
 from dataclasses import dataclass
+import os
 from systemds.scuro import Modality
 from systemds.scuro.drsearch.node_scheduler import MemoryAwareNodeScheduler
 from systemds.scuro.drsearch.representation_dag import (
@@ -20,6 +21,8 @@ from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
+from systemds.scuro.utils.checkpointing import CheckpointManager
+from pympler import asizeof
 
 
 class RefCountResultCache:
@@ -95,18 +98,27 @@ def _execute_task_worker(task: Any, data: Any, gpu_id: Optional[int]) -> Dict[st
     return {"scores": scores, "task_time": end - start}
 
 
+# TODO: add a checkpoint manager only to the node executor, maybe get the name from outside to distinguish between unimodal and multimodal checkpoint managers
+# we can exclude all dag nodes that are loaded through an existing checkpoint and therefore speedup the further execution
 class NodeExecutor:
     def __init__(
         self,
         dags: List[RepresentationDag],
         modalities: List[Modality],
         tasks: List[Any],
+        checkpoint_manager: Optional[CheckpointManager] = None,
         max_num_workers: int = -1,
     ):
         available_total_cpu = float(psutil.virtual_memory().available)
         self.dags = dags
         self.scheduler = MemoryAwareNodeScheduler(
             dags, modalities, tasks, available_total_cpu
+        )
+        self.checkpoint_manager = CheckpointManager(
+            checkpoint_dir=os.getcwd(),
+            prefix="node_executor_checkpoint_",
+            checkpoint_every=1,
+            resume=False,
         )
         self.max_num_workers = (
             min(mp.cpu_count(), max_num_workers)
@@ -185,8 +197,12 @@ class NodeExecutor:
                         self.scheduler.add_failed_node(node_id)
                         continue
 
-                    self.scheduler.complete_node(node_id)
+                    before_bytes = self._result_cache_size_bytes()
                     self._manage_result_cache(node_id, result)
+                    after_bytes = self._result_cache_size_bytes()
+                    self.scheduler.update_cpu_memory_in_use(after_bytes - before_bytes)
+                    self.scheduler.complete_node(node_id)
+
                     node = self.scheduler.mapping[node_id]
                     if self._is_task_node(node):
                         task_results[node_id].task_time = result["task_time"]
@@ -199,9 +215,16 @@ class NodeExecutor:
                         task_results[node_id].test_score = result["scores"][
                             2
                         ].average_scores
+                        self.checkpoint_manager.increment(node_id)
+                        self.checkpoint_manager.checkpoint_if_due(task_results)
                     submit_new_ready_nodes()
 
         return list(task_results.values())
+
+    def _result_cache_size_bytes(self) -> int:
+        return asizeof.asizeof(self.result_cache.cache) + asizeof.asizeof(
+            self.result_cache.ref_count
+        )
 
     def _manage_result_cache(self, node_id: str, result: Any):
         parent_node_id = self.scheduler.get_valid_parent(node_id)

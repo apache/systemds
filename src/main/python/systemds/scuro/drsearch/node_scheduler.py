@@ -53,12 +53,15 @@ class MemoryAwareNodeScheduler:
             torch.cuda.device_count() if torch and torch.cuda.is_available() else 0
         )
         self.memory_stats = {
-            "cpu_in_use": 0.0,
+            "cpu_in_use": sum([self.node_resources[node][0] for node in self.leaves]),
             "gpu_in_use": {
                 info["index"]: int(info["total_b"] - info["free_b"])
                 for info in self.gpu_memory_info
             },
         }
+
+    def update_cpu_memory_in_use(self, delta_bytes: int):
+        self.memory_stats["cpu_in_use"] += delta_bytes
 
     def get_runnable(self) -> List[RepresentationNode]:
         runnable_nodes = self._get_runnable_nodes()
@@ -173,7 +176,14 @@ class MemoryAwareNodeScheduler:
 
     def _reserve_memory(self, node_id: str, gpu_id: int) -> bool:
         cpu_mem, gpu_mem = self.node_resources[node_id]
-
+        print(
+            f"Reserving memory for node {node_id}: CPU {cpu_mem} , GPU {gpu_mem} - Total CPU {self.memory_stats['cpu_in_use']}"
+            + (
+                f" , Total GPU {self.memory_stats['gpu_in_use'][gpu_id]}"
+                if gpu_id is not None
+                else ""
+            )
+        )
         self.memory_stats["cpu_in_use"] += cpu_mem
         if gpu_id is not None:
             self.memory_stats["gpu_in_use"][gpu_id] += gpu_mem

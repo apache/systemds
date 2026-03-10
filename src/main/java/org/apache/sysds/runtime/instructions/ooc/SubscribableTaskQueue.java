@@ -25,6 +25,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.ooc.stream.message.OOCGetStreamTypeMessage;
 import org.apache.sysds.runtime.ooc.stream.message.OOCStreamMessage;
+import org.apache.sysds.runtime.ooc.util.OOCUtils;
 import org.apache.sysds.runtime.util.IndexRange;
 
 import java.util.LinkedList;
@@ -166,7 +167,7 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 	private void validateBlockCountOnClose() {
 		DataCharacteristics dc = getDataCharacteristics();
 		if (dc != null && dc.dimsKnown() && dc.getBlocksize() > 0) {
-			long expected = dc.getNumBlocks();
+			long expected = OOCUtils.getNumBlocks(dc);
 			if (expected >= 0 && _blockCount.get() != expected) {
 				throw new DMLRuntimeException("OOCStream block count mismatch: expected "
 					+ expected + " but saw " + _blockCount.get() + " (" + dc.getRows() + "x" + dc.getCols() + ")");
@@ -180,6 +181,7 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 			throw new IllegalArgumentException("Cannot set subscriber to null");
 
 		LinkedList<T> data;
+		boolean needsEos;
 
 		synchronized(this) {
 			if(_subscriber != null)
@@ -189,12 +191,20 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 				throw _failure;
 			data = _data;
 			_data = new LinkedList<>();
+			// If this stream was already closed with no buffered data, no further
+			// onDeliveryFinished() call will happen, so emit EOS immediately.
+			needsEos = _closed.get() && data.isEmpty() && _availableCtr.get() == 0;
+			if(needsEos)
+				_availableCtr.incrementAndGet(); // route terminal emission via onDeliveryFinished
 		}
 
 		for (T t : data) {
 			subscriber.accept(new SimpleQueueCallback<>(t, _failure));
 			onDeliveryFinished();
 		}
+
+		if(needsEos)
+			onDeliveryFinished();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -214,6 +224,9 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 
 	@Override
 	public synchronized void propagateFailure(DMLRuntimeException re) {
+		// Ignore late failures
+		if(_closed.get() && _availableCtr.get() == 0)
+			return;
 		super.propagateFailure(re);
 		Consumer<QueueCallback<T>> s = _subscriber;
 		if(s != null)

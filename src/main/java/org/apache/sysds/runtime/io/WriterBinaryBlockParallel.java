@@ -95,6 +95,16 @@ public class WriterBinaryBlockParallel extends WriterBinaryBlock
 	public long writeMatrixFromStream(String fname, OOCStream<IndexedMatrixValue> stream, long rlen, long clen, int blen)
 		throws IOException {
 		Path path = new Path(fname);
+
+		// For empty dimensions, no stream tiles are expected but the output must still exist.
+		if(rlen <= 0 || clen <= 0) {
+			while(stream.dequeue() != LocalTaskQueue.NO_MORE_TASKS) {
+				// Drain any unexpected records to keep stream producers unblocked.
+			}
+			writeEmptyMatrixToHDFS(fname, rlen, clen, blen);
+			return 0;
+		}
+
 		long nnz = -1;
 		DataCharacteristics dc = stream.getDataCharacteristics();
 		if(dc != null)

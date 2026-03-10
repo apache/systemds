@@ -85,6 +85,17 @@ public class MergedOOCStream<T> implements OOCStream<T> {
 						if(_failed.get())
 							return;
 
+						if(cb instanceof OOCStream.GroupQueueCallback<?>) {
+							OOCStream.GroupQueueCallback<T> group = (OOCStream.GroupQueueCallback<T>) cb;
+							for(int i = 0; i < group.size(); i++) {
+								OOCStream.QueueCallback<T> sub = group.getCallback(i);
+								try(sub) {
+									_taskQueue.enqueue(sub.keepOpen());
+								}
+							}
+							return;
+						}
+
 						_taskQueue.enqueue(cb.keepOpen());
 					}
 				}

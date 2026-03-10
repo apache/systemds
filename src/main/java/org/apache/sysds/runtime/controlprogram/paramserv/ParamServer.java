@@ -30,8 +30,6 @@ import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.parser.DMLProgram;
@@ -48,12 +46,13 @@ import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
+import org.apache.sysds.utils.ParameterizedLogger;
 import org.apache.sysds.utils.stats.ParamServStatistics;
 import org.apache.sysds.utils.stats.Timing;
 
 public abstract class ParamServer
 {
-	protected static final Log LOG = LogFactory.getLog(ParamServer.class.getName());
+	protected static final ParameterizedLogger LOG = ParameterizedLogger.getLogger(ParamServer.class);
 	protected static final boolean ACCRUE_BSP_GRADIENTS = true;
 
 	// worker input queues and global model
@@ -203,10 +202,8 @@ public abstract class ParamServer
 
 	protected synchronized void updateGlobalGradients(int workerID, ListObject gradients) {
 		try {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug(String.format("Successfully pulled the gradients [size:%d kb] of worker_%d.",
-					gradients.getDataSize() / 1024, workerID));
-			}
+			LOG.debug("Successfully pulled the gradients [size:{} kb] of worker_{}.",
+				gradients.getDataSize() / 1024, workerID);
 
 			switch(_updateType) {
 				case BSP: {
@@ -230,8 +227,7 @@ public abstract class ParamServer
 						((_freq == Statement.PSFrequency.EPOCH && ((float) ++_syncCounter % _numWorkers) == 0) ||
 						(_freq == Statement.PSFrequency.BATCH && ((float) ++_syncCounter / _numWorkers) % _numBatchesPerEpoch == 0)) ||
 						(_freq == Statement.PSFrequency.NBATCHES)) {
-						if(LOG.isInfoEnabled())
-							LOG.info("[+] PARAMSERV: completed PSEUDO EPOCH (ASP) " + _epochCounter);
+						LOG.info("[+] PARAMSERV: completed PSEUDO EPOCH (ASP) {}", _epochCounter);
 
 						time_epoch();
 
@@ -283,8 +279,7 @@ public abstract class ParamServer
 		}
 
 		if(finishedEpoch()) {
-			if(LOG.isInfoEnabled())
-				LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
+			LOG.info("[+] PARAMSERV: completed EPOCH {}", _epochCounter);
 
 			time_epoch();
 
@@ -298,8 +293,7 @@ public abstract class ParamServer
 		// Broadcast the updated model
 		broadcastModel(_finishedStates);
 		resetFinishedStates();
-		if(LOG.isDebugEnabled())
-			LOG.debug("Global parameter is broadcasted successfully.");
+		LOG.debug("Global parameter is broadcasted successfully.");
 	}
 
 	private void tagStragglers() {
@@ -353,10 +347,8 @@ public abstract class ParamServer
 
 	protected synchronized void updateAverageModel(int workerID, ListObject model) {
 		try {
-			if(LOG.isDebugEnabled()) {
-				LOG.debug(String.format("Successfully pulled the models [size:%d kb] of worker_%d.",
-					model.getDataSize() / 1024, workerID));
-			}
+			LOG.debug("Successfully pulled the models [size:{} kb] of worker_{}.",
+				model.getDataSize() / 1024, workerID);
 			Timing tAgg = DMLScript.STATISTICS ? new Timing(true) : null;
 
 			switch(_updateType) {
@@ -429,8 +421,7 @@ public abstract class ParamServer
 		if(_numBatchesPerEpoch != -1 && (_freq == Statement.PSFrequency.EPOCH ||
 			(_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0))) {
 
-			if(LOG.isInfoEnabled())
-				LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
+			LOG.info("[+] PARAMSERV: completed EPOCH {}", _epochCounter);
 			time_epoch();
 			if(_validationPossible) {
 				validate();
@@ -443,8 +434,7 @@ public abstract class ParamServer
 			broadcastModel(true);
 		else
 			broadcastModel(workerBroadcastMask);
-		if(LOG.isDebugEnabled())
-			LOG.debug("Global parameter is broadcasted successfully ");
+		LOG.debug("Global parameter is broadcasted successfully");
 	}
 
 	protected ListObject weightModels(ListObject params, int numWorkers) {
@@ -550,11 +540,10 @@ public abstract class ParamServer
 			double current_total_validation_time = ParamServStatistics.getValidationTime();
 			double time_to_epoch = current_total_execution_time - current_total_validation_time;
 
-			if (LOG.isInfoEnabled())
-				if(_validationPossible)
-					LOG.info("[+] PARAMSERV: epoch timer (excl. validation): " + time_to_epoch / 1000 + " secs.");
-				else
-					LOG.info("[+] PARAMSERV: epoch timer: " + time_to_epoch / 1000 + " secs.");
+			if(_validationPossible)
+				LOG.info("[+] PARAMSERV: epoch timer (excl. validation): {} secs.", time_to_epoch / 1000);
+			else
+				LOG.info("[+] PARAMSERV: epoch timer: {} secs.", time_to_epoch / 1000);
 		}
 	}
 
@@ -576,8 +565,7 @@ public abstract class ParamServer
 		ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
 
 		// Log validation results
-		if (LOG.isInfoEnabled())
-			LOG.info("[+] PARAMSERV: validation-loss: " + loss + " validation-accuracy: " + accuracy);
+		LOG.info("[+] PARAMSERV: validation-loss: {} validation-accuracy: {}", loss, accuracy);
 
 		if(tValidate != null)
 			ParamServStatistics.accValidationTime((long) tValidate.stop());

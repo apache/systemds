@@ -39,8 +39,7 @@ import java.util.Scanner;
 import org.apache.commons.cli.AlreadySelectedException;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.utils.ParameterizedLogger;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.common.Types.ExecMode;
@@ -178,7 +177,7 @@ public class DMLScript
 	public static boolean VALIDATOR_IGNORE_ISSUES = false;
 
 	public static String _uuid = IDHandler.createDistributedUniqueID();
-	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
+	private static final ParameterizedLogger LOG = ParameterizedLogger.getLogger(DMLScript.class);
 
 	///////////////////////////////
 	// public external interface
@@ -621,14 +620,9 @@ public class DMLScript
 	}
 	
 	private static void printStartExecInfo(String dmlScriptString) {
-		boolean info = LOG.isInfoEnabled();
-		boolean debug = LOG.isDebugEnabled();
-		if(info)
-			LOG.info("BEGIN DML run " + getDateTime());
-		if(debug)
-			LOG.debug("DML script: \n" + dmlScriptString);
-		if(info)
-			LOG.info("Process id:  " + IDHandler.getProcessID());
+		LOG.info("BEGIN DML run {}", getDateTime());
+		LOG.debug("DML script: \n{}", dmlScriptString);
+		LOG.info("Process id:  {}", IDHandler.getProcessID());
 	}
 
 	private static void registerForMonitoring() {

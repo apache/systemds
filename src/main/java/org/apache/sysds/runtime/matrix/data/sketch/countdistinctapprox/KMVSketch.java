@@ -20,8 +20,6 @@
 package org.apache.sysds.runtime.matrix.data.sketch.countdistinctapprox;
 
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.data.DenseBlock;
@@ -32,6 +30,7 @@ import org.apache.sysds.runtime.matrix.data.sketch.CountDistinctSketch;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperatorTypes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.utils.Hash;
+import org.apache.sysds.utils.ParameterizedLogger;
 
 /**
  * KMV synopsis(for k minimum values) Distinct-Value Estimation
@@ -45,7 +44,7 @@ import org.apache.sysds.utils.Hash;
  */
 public class KMVSketch extends CountDistinctSketch {
 
-	private static final Log LOG = LogFactory.getLog(KMVSketch.class.getName());
+	private static final ParameterizedLogger LOG = ParameterizedLogger.getLogger(KMVSketch.class);
 
 	public KMVSketch(Operator op) {
 		super(op);
@@ -73,13 +72,10 @@ public class KMVSketch extends CountDistinctSketch {
 
 			SmallestPriorityQueue spq = getKSmallestHashes(blkIn, k, M);
 
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("M not forced to int size: " + tmp);
-				LOG.debug("M: " + M);
-				LOG.debug("M: " + M);
-				LOG.debug("kth smallest hash:" + spq.peek());
-				LOG.debug("spq: " + spq);
-			}
+			LOG.debug("M not forced to int size: {}", tmp);
+			LOG.debug("M: {}", M);
+			LOG.debug("kth smallest hash: {}", spq.peek());
+			LOG.debug("spq: {}", spq);
 
 
 			long res = countDistinctValuesKMV(spq, k, M, D);
@@ -197,11 +193,9 @@ public class KMVSketch extends CountDistinctSketch {
 			double estimate = (k - 1) / U_k;
 			double ceilEstimate = Math.min(estimate, D);
 
-			if(LOG.isDebugEnabled()) {
-				LOG.debug("U_k : " + U_k);
-				LOG.debug("Estimate: " + estimate);
-				LOG.debug("Ceil worst case: " + D);
-			}
+			LOG.debug("U_k : {}", U_k);
+			LOG.debug("Estimate: {}", estimate);
+			LOG.debug("Ceil worst case: {}", D);
 			res = Math.round(ceilEstimate);
 		}
 

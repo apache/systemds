@@ -34,8 +34,7 @@ import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.utils.ParameterizedLogger;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.Statement;
@@ -77,7 +76,7 @@ import org.apache.sysds.utils.stats.Timing;
 
 public class FederatedPSControlThread extends PSWorker implements Callable<Void> {
 	private static final long serialVersionUID = 6846648059569648791L;
-	protected static final Log LOG = LogFactory.getLog(ParamServer.class.getName());
+	protected static final ParameterizedLogger LOG = ParameterizedLogger.getLogger(ParamServer.class);
 
 	private FederatedData _featuresData;
 	private FederatedData _labelsData;
@@ -147,11 +146,9 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		if(_runtimeBalancing == PSRuntimeBalancing.BASELINE)
 			_cycleStartAt0 = true;
 
-		if( LOG.isInfoEnabled() ) {
-			LOG.info("Setup config for worker " + this.getWorkerName());
-			LOG.info("Batch size: " + _batchSize + " possible batches: " + _possibleBatchesPerLocalEpoch
-					+ " batches to run: " + _numBatchesPerEpoch + " weighting factor: " + _weightingFactor);
-		}
+		LOG.info("Setup config for worker {}", this.getWorkerName());
+		LOG.info("Batch size: {} possible batches: {} batches to run: {} weighting factor: {}",
+			_batchSize, _possibleBatchesPerLocalEpoch, _numBatchesPerEpoch, _weightingFactor);
 
 		// serialize program
 		// create program blocks for the instruction filtering

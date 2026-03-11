@@ -82,22 +82,22 @@ class ImageLoader(BaseLoader):
 
         for file in self.indices:
             path = os.path.join(source_path, f"{file}{self._ext}")
-            if self.chunk_size is None:
-                self.extract(path)
-                md = self.metadata[path]
-                max_width = max(max_width, md["width"])
-                max_height = max(max_height, md["height"])
-                max_channels = max(max_channels, md["num_channels"])
-                num_instances += 1
-            else:
-                self.file_sanity_check(path)
-                image = cv2.imread(path, cv2.IMREAD_COLOR)
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                height, width, channels = image.shape
-                max_width = max(max_width, width)
-                max_height = max(max_height, height)
-                max_channels = max(max_channels, channels)
-                num_instances += 1
+            # if self.chunk_size is None:
+            #     self.extract(path)
+            #     md = self.metadata[path]
+            #     max_width = max(max_width, md["width"])
+            #     max_height = max(max_height, md["height"])
+            #     max_channels = max(max_channels, md["num_channels"])
+            #     num_instances += 1
+            # else:
+            self.file_sanity_check(path)
+            image = cv2.imread(path, cv2.IMREAD_COLOR)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            height, width, channels = image.shape
+            max_width = max(max_width, width)
+            max_height = max(max_height, height)
+            max_channels = max(max_channels, channels)
+            num_instances += 1
         return ImageStats(
             max_width,
             max_height,

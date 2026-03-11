@@ -50,6 +50,8 @@ class DAGGroupScheduler:
         gpu_margin: float = 0.8,
         shared_state: Optional[Dict[str, Any]] = None,
         lock=None,
+        dag_groups: List[List[RepresentationDag]] = None,
+        modality: Modality = None,
     ):
         self._margin = (cpu_margin, gpu_margin)
         self._n_gpu = (
@@ -65,6 +67,10 @@ class DAGGroupScheduler:
         else:
             self._shared.setdefault("cpu_in_use", 0.0)
             self._shared.setdefault("gpu_in_use", {})
+        self.group_resources = []
+        for dag_group in dag_groups:
+            cpu_mem, gpu_mem = get_peak_memory_from_dag_group(dag_group, modality)
+            self.group_resources.append((cpu_mem, gpu_mem))
 
     def _avail_cpu(self) -> float:
         available_memory = (psutil.virtual_memory().available) if psutil else 4096.0

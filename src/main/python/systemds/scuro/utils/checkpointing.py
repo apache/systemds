@@ -100,14 +100,12 @@ class CheckpointManager:
             return None
         return checkpoint_path
 
-    def save_checkpoint(self, results: Any, count_key: str, extra_meta: Dict[str, Any]):
-        meta = {"eval_count": self.eval_count, count_key: self.counts_by_key}
-        meta.update(extra_meta or {})
+    def save_checkpoint(self, results: Any, extra_meta: Dict[str, Any] = {}):
+        meta = {"eval_count": self.eval_count}
+        # meta.update(extra_meta or {})
         self.save(results, meta)
 
-    def checkpoint_if_due(
-        self, results: Any, count_key: str, extra_meta: Dict[str, Any] = None
-    ):
+    def checkpoint_if_due(self, results: Any, extra_meta: Dict[str, Any] = None):
         if not self.checkpoint_every:
             return
         if self.eval_count <= 0:
@@ -116,7 +114,7 @@ class CheckpointManager:
             return
         if self.eval_count % self.checkpoint_every == 0:
             self._last_checkpoint_eval_count = self.eval_count
-            self.save_checkpoint(results, count_key, extra_meta or {})
+            self.save_checkpoint(results, extra_meta or {})
 
     def cleanup(self):
         """Remove the checkpoint and meta files managed by this instance."""

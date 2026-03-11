@@ -615,6 +615,56 @@ class CSEAwareDAGBuilder:
         return None
 
 
+def group_dags_by_dependencies(
+    dags: List[RepresentationDag],
+) -> List[List[RepresentationDag]]:
+    if not dags:
+        return []
+
+    unique_dags: List[RepresentationDag] = []
+    seen_signatures: set[Hashable] = set()
+
+    for dag in dags:
+        dag_sig = dag.compute_full_node_signature(dag.root_node_id)
+        if dag_sig not in seen_signatures:
+            seen_signatures.add(dag_sig)
+            unique_dags.append(dag)
+
+    dags = unique_dags
+    dag_first_level_sets = []
+    for dag in dags:
+        first_level_nodes = dag.get_first_level_node_set()
+        dag_first_level_sets.append(first_level_nodes)
+
+    n = len(dags)
+    parent = list(range(n))
+
+    def find(x):
+        if parent[x] != x:
+            parent[x] = find(parent[x])
+        return parent[x]
+
+    def union(x, y):
+        root_x = find(x)
+        root_y = find(y)
+        if root_x != root_y:
+            parent[root_y] = root_x
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            if dag_first_level_sets[i] & dag_first_level_sets[j]:
+                union(i, j)
+
+    groups: Dict[int, List[RepresentationDag]] = {}
+    for i in range(n):
+        root = find(i)
+        if root not in groups:
+            groups[root] = []
+        groups[root].append(dags[i])
+
+    return list(groups.values())
+
+
 def dags_to_graphviz(
     dags: List[RepresentationDag],
     graph_name: str = "RepresentationDagGroup",

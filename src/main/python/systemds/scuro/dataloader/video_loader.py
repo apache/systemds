@@ -133,3 +133,19 @@ class VideoLoader(BaseLoader):
         return VideoStats(
             fps, max_length, max_width, max_height, max_num_channels, num_instances
         )
+
+    def estimate_peak_memory_bytes(self) -> dict:
+        s = self.stats
+        if self.chunk_size is not None:
+            n = self.chunk_size
+        else:
+            n = s.num_instances
+        return {
+            "cpu_peak_bytes": n
+            * s.output_shape[0]
+            * s.output_shape[1]
+            * s.output_shape[2]
+            * s.output_shape[3]
+            * 4,
+            "gpu_peak_bytes": 0,
+        }

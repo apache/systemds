@@ -95,8 +95,33 @@ class JSONLoader(BaseLoader):
 
                     text = " ".join(text) if isinstance(text, list) else text
                     num_instances += 1
-                    max_length = max(max_length, len(text))
+                    max_length = max(max_length, len(text))  # number of characters
                     avg_length += len(text)
 
             avg_length /= num_instances
         return JSONStats(num_instances, max_length, avg_length, (max_length,))
+
+    def estimate_peak_memory_bytes(self) -> dict:
+        s = self.stats
+        n = max(1, s.num_instances)
+
+        avg_len = s.avg_length / n if s.avg_length > s.max_length else s.avg_length
+        avg_len = max(1.0, avg_len)
+
+        bytes_per_char = 2
+        str_overhead = 49
+        ptr_size = 8
+        list_header = 56
+        list_overalloc = 1.125
+        metadata_per_instance = 192
+
+        resident_strings = n * (str_overhead + bytes_per_char * avg_len)
+        resident_list = list_header + int(ptr_size * n * list_overalloc)
+        resident_metadata = n * metadata_per_instance
+        resident_total = resident_strings + resident_list + resident_metadata
+
+        parse_factor = 2.0
+        transient_parse = parse_factor * (n * bytes_per_char * avg_len)
+
+        cpu_peak = int(resident_total + transient_parse)
+        return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}

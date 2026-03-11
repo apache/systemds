@@ -760,6 +760,8 @@
 								<exclude>scripts/tutorials/federated/tmp/**</exclude>
 								<!-- Perftest requirement file -->
 								<exclude>scripts/perftest/python/requirements.txt</exclude>
+								<!-- LLM benchmark staging files -->
+								<exclude>scripts/staging/**</exclude>
 								<!-- external sources -->
 								<exclude>src/main/cuda/ext/**</exclude>
 								<exclude>src/main/cuda/.idea/</exclude>

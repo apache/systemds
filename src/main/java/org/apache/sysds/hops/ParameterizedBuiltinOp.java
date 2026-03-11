@@ -187,6 +187,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 			case LOWER_TRI:
 			case UPPER_TRI:
 			case TOKENIZE:
+			case LLMPREDICT:
 			case TRANSFORMAPPLY:
 			case TRANSFORMDECODE:
 			case TRANSFORMCOLMAP:
@@ -758,7 +759,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 		if (_op == ParamBuiltinOp.TRANSFORMCOLMAP || _op == ParamBuiltinOp.TRANSFORMMETA
 				|| _op == ParamBuiltinOp.TOSTRING || _op == ParamBuiltinOp.LIST
 				|| _op == ParamBuiltinOp.CDF || _op == ParamBuiltinOp.INVCDF
-				|| _op == ParamBuiltinOp.PARAMSERV) {
+				|| _op == ParamBuiltinOp.PARAMSERV || _op == ParamBuiltinOp.LLMPREDICT) {
 			_etype = ExecType.CP;
 		}
 
@@ -768,7 +769,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 			switch(_op) {
 				case CONTAINS:
 					if(getTargetHop().optFindExecType() == ExecType.SPARK)
-						_etype = ExecType.SPARK;
+						_etype = ExecType.SPARK;		
 					break;
 				default:
 					// Do not change execution type.

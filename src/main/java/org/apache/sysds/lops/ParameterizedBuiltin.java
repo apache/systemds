@@ -176,6 +176,7 @@ public class ParameterizedBuiltin extends Lop
 			case CONTAINS:
 			case REPLACE:
 			case TOKENIZE:
+			case LLMPREDICT:
 			case TRANSFORMAPPLY:
 			case TRANSFORMDECODE:
 			case TRANSFORMCOLMAP:

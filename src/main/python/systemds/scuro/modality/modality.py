@@ -46,8 +46,6 @@ class Modality:
         self.metadata = metadata
         self.data = []
         self.data_type = data_type
-        self.cost = None
-        self.shape = None
         self.modality_id = modality_id
         self.transform_time = transform_time if transform_time else 0
         self.stats = RepresentationStats(0, ())

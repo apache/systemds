@@ -25,7 +25,7 @@ from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.window_aggregation import WindowAggregation
 import time
-import copy
+import sys
 
 
 class TransformedModality(Modality):
@@ -56,7 +56,7 @@ class TransformedModality(Modality):
         )
         if set_data:
             self.data = modality.data
-        self.transformation = None
+
         self.self_contained = (
             self_contained and transformation.self_contained
             if isinstance(transformation, TransformedModality)
@@ -84,8 +84,28 @@ class TransformedModality(Modality):
     #         )
     #     self.transformation.append(transformation)
 
-    def copy_from_instance(self):
-        return type(self)(self, self.transformation)
+    def calculate_memory_usage(self):
+        data_bytes = 0
+        for instance in self.data:
+            data_bytes += self._estimate_data_bytes(instance)
+
+        md_bytes = 0
+        for key, value in self.metadata.items():
+            md_bytes += self._estimate_data_bytes(key)
+            md_bytes += self._estimate_data_bytes(value)
+
+        total_bytes = (
+            data_bytes
+            + md_bytes
+            + sys.getsizeof(self.data_type)
+            + sys.getsizeof(self.modality_id)
+            + sys.getsizeof(self.schema)
+            + sys.getsizeof(self.stats)
+            + sys.getsizeof(self.self_contained)
+            + sys.getsizeof(self.transform_time)
+            + sys.getsizeof(self.modality_type)
+        )
+        return total_bytes
 
     def join(self, right, join_condition):
         chunked_execution = False
@@ -225,3 +245,13 @@ class TransformedModality(Modality):
             all_outputs.append(out)
             start = end
         return np.concatenate(all_outputs, axis=0)
+
+    def _estimate_data_bytes(self, instance):
+        if isinstance(instance, np.ndarray):
+            return instance.nbytes
+        elif isinstance(instance, list):
+            return sum(self._estimate_data_bytes(item) for item in instance)
+        elif isinstance(instance, dict):
+            return sum(self._estimate_data_bytes(item) for item in instance.values())
+        else:
+            return sys.getsizeof(instance)

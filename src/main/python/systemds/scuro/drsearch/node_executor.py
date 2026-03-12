@@ -51,12 +51,17 @@ class RefCountResultCache:
     def __init__(self):
         self.cache = {}
         self.ref_count = {}
+        self.memory_usage_per_node = {}
 
     def get(self, node_id: str) -> Any:
         return self.cache[node_id]
 
     def add_result(self, node_id: str, result: Any):
         self.cache[node_id] = result
+        self.memory_usage_per_node[node_id] = result.calculate_memory_usage()
+        print(
+            f"Node {node_id} has a CPU memory usage of {self.memory_usage_per_node[node_id]/1024**3:.5f} GB"
+        )
 
     def inc_ref(self, node_id: str):
         if node_id not in self.ref_count:
@@ -68,6 +73,7 @@ class RefCountResultCache:
         if self.ref_count[node_id] == 0:
             del self.cache[node_id]
             del self.ref_count[node_id]
+            del self.memory_usage_per_node[node_id]
 
     def clear(self, node_id: str):
         del self.cache[node_id]
@@ -75,6 +81,9 @@ class RefCountResultCache:
 
     def __len__(self):
         return len(self.cache)
+
+    def get_memory_total_memory_usage(self):
+        return sum(self.memory_usage_per_node.values())
 
 
 def _execute_node_worker(
@@ -84,6 +93,9 @@ def _execute_node_worker(
     rep_cache: Optional[Dict[str, Any]],
     gpu_id: Optional[int],
 ):
+    proc = psutil.Process(os.getpid())
+    before = proc.memory_info().rss  # bytes
+
     if gpu_id is not None:
         device = torch.device(f"cuda:{gpu_id}")
         torch.cuda.set_device(device)
@@ -92,9 +104,9 @@ def _execute_node_worker(
     result = None
     node_operation = node.operation(params=node.parameters)
     operation_name = node_operation.name
-    print(
-        f"Executing node {node.node_id} inputs: {input_mods[0].modality_id}, gpu: {gpu_id}, operation: {operation_name}"
-    )
+    # print(
+    #     f"Executing node {node.node_id} inputs: {input_mods[0].modality_id}, gpu: {gpu_id}, operation: {operation_name}"
+    # )
     if gpu_id is not None and hasattr(node_operation, "gpu_id"):
         node_operation.gpu_id = gpu_id
 
@@ -120,13 +132,14 @@ def _execute_node_worker(
             )
         else:
             result = input_mods[0].combine(input_mods[1:], fusion_op)
-    peak_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    delta_bytes = proc.memory_info().rss - before
     gpu_peak_bytes = (
         torch.cuda.max_memory_allocated(device) if gpu_id is not None else 0
     )
+    # print(f"Node {node.node_id}: {operation_name} has a CPU peak memory usage of {delta_bytes/1024**3:.2f} GB, and a GPU peak memory usage of {gpu_peak_bytes/1024**3:.2f} GB")
     return {
         "result": result,
-        "peak_bytes": peak_kb * 1024,
+        "peak_bytes": delta_bytes,
         "gpu_peak_bytes": gpu_peak_bytes,
         "operation_name": operation_name,
     }
@@ -135,7 +148,10 @@ def _execute_node_worker(
 def _execute_task_worker(
     task_node_id: str, task: Any, data: Any, gpu_id: Optional[int]
 ) -> Dict[str, Any]:
-    print(f"Executing task {task_node_id} on GPU {gpu_id}")
+    proc = psutil.Process(os.getpid())
+    before = proc.memory_info().rss  # bytes
+
+    # print(f"Executing task {task_node_id} on GPU {gpu_id}")
     if gpu_id is not None:
         device = torch.device(f"cuda:{gpu_id}")
         torch.cuda.set_device(device)
@@ -146,14 +162,15 @@ def _execute_task_worker(
     start = time.perf_counter()
     scores = task.run(data)
     end = time.perf_counter()
-    peak_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    delta_bytes = proc.memory_info().rss - before
     gpu_peak_bytes = (
         torch.cuda.max_memory_allocated(device) if gpu_id is not None else 0
     )
+    # print(f"Task {task_node_id} has a CPU peak memory usage of {delta_bytes/1024**3:.2f} GB, and a GPU peak memory usage of {gpu_peak_bytes/1024**3:.2f} GB")
     return {
         "scores": scores,
         "task_time": end - start,
-        "peak_bytes": peak_kb * 1024,
+        "peak_bytes": delta_bytes,
         "gpu_peak_bytes": gpu_peak_bytes,
     }
 
@@ -290,6 +307,8 @@ class NodeExecutor:
                             "task",
                             memory_usage_data,
                         )
+                        self.scheduler.complete_node(node_id)
+
                     else:
                         transformed_modality = result["result"]
                         self._checkpoint_memory_usage(
@@ -299,9 +318,9 @@ class NodeExecutor:
                             result["operation_name"],
                             memory_usage_data,
                         )
-                        before_bytes = self._result_cache_size_bytes()
+                        before_bytes = self.result_cache.get_memory_total_memory_usage()
                         self._manage_result_cache(node_id, transformed_modality)
-                        after_bytes = self._result_cache_size_bytes()
+                        after_bytes = self.result_cache.get_memory_total_memory_usage()
                         self.scheduler.update_cpu_memory_in_use(
                             after_bytes - before_bytes
                         )
@@ -327,6 +346,9 @@ class NodeExecutor:
             "estimated_cpu_bytes": self.scheduler.node_resources[node_id][0],
             "estimated_gpu_bytes": self.scheduler.node_resources[node_id][1],
         }
+        print(
+            f"Node {node_id}: {operation_name} has a CPU peak memory usage of {peak_bytes/1024**3:.2f}/{self.scheduler.node_resources[node_id][0]/1024**3:.2f} GB estimated, and a GPU peak memory usage of {gpu_peak_bytes/1024**3:.2f}/{self.scheduler.node_resources[node_id][1]/1024**3:.2f} GB estimated "
+        )
         self.memory_usage_checkpoint.checkpoint_if_due(data)
 
     def _result_cache_size_bytes(self) -> int:
@@ -357,10 +379,10 @@ class NodeExecutor:
             self.result_cache.add_result(node_id, result)
 
         if (
-            node_id in self.result_cache.ref_count
-            and self.result_cache.ref_count[node_id] == 0
+            parent_node_id in self.result_cache.ref_count
+            and self.result_cache.ref_count[parent_node_id] == 0
         ):
-            self.result_cache.clear(node_id)
+            self.result_cache.clear(parent_node_id)
 
     def _get_nodes_by_ids(self, nodes_ids: List[str]) -> List[RepresentationNode]:
         return [self.scheduler.mapping[node_id] for node_id in nodes_ids]

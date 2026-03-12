@@ -24,7 +24,7 @@ from typing import List
 from systemds.scuro.models.model import Model
 import numpy as np
 from sklearn.model_selection import train_test_split
-
+import sys
 from systemds.scuro.representations.representation import RepresentationStats
 
 
@@ -104,15 +104,53 @@ class Task:
         return RepresentationStats(0, (0,))
 
     def estimate_peak_memory_bytes(self, input_stats):
-        if hasattr(self.model, "estimate_peak_memory_bytes"):
-            # TODO: Investigate the influence of cv on the memory footprint of the task
-            return self.model.estimate_peak_memory_bytes(
-                input_stats.output_shape[0], len(self.train_indices)
+        label_bytes = self.labels.nbytes * 3  # should be a np array
+        train_indices_bytes = sum([sys.getsizeof(i) for i in self.train_indices]) * 2
+        test_indices_bytes = sum([sys.getsizeof(i) for i in self.test_indices]) * 2
+        cv_train_indices_bytes = (
+            sum(
+                [
+                    sum([sys.getsizeof(i) for i in fold])
+                    for fold in self.cv_train_indices
+                ]
             )
+            * 2
+        )
+        cv_val_indices_bytes = (
+            sum([sum([sys.getsizeof(i) for i in fold]) for fold in self.cv_val_indices])
+            * 2
+        )
+        fusion_train_indices_bytes = (
+            sum([sys.getsizeof(i) for i in self.fusion_train_indices]) * 2
+        )
+        input_data = input_stats.num_instances * input_stats.output_shape[0] * 4 * 3
+
+        total_bytes = (
+            input_data
+            + label_bytes
+            + train_indices_bytes
+            + test_indices_bytes
+            + cv_train_indices_bytes
+            + cv_val_indices_bytes
+            + fusion_train_indices_bytes
+        )
+        input_stats_bytes = input_stats.num_instances * input_stats.output_shape[0] * 4
+        if hasattr(self.model, "estimate_peak_memory_bytes"):
+            model_peak_memory_cpu, model_peak_memory_gpu = (
+                self.model.estimate_peak_memory_bytes(
+                    input_stats.output_shape[0], len(self.train_indices)
+                )
+            )
+            return {
+                "cpu_peak_bytes": model_peak_memory_cpu
+                + total_bytes
+                + input_stats_bytes,
+                "gpu_peak_bytes": model_peak_memory_gpu,
+            }
         else:
             # TODO: Implement a default estimate of the peak memory bytes for the task
             return {
-                "cpu_peak_bytes": 0,
+                "cpu_peak_bytes": total_bytes + input_stats_bytes,
                 "gpu_peak_bytes": 0,
             }
 

@@ -308,8 +308,8 @@ public class ColGroupFactory {
 		else if(ct == CompressionType.PiecewiseLinear) {
 			return compressPiecewiseLinearFunctional(colIndexes, in, cs);
 		}
-		else if(ct == CompressionType.PiecewiseLinearSukzessive) {
-			return compressPiecewiseLinearFunctionalSukzessive(colIndexes, in, cs);
+		else if(ct == CompressionType.PiecewiseLinearSuccessive) {
+			return compressPiecewiseLinearFunctionalSuccessive(colIndexes, in, cs);
 		}
 		else if(ct == CompressionType.DDCFOR) {
 			AColGroup g = directCompressDDC(colIndexes, cg);
@@ -1075,6 +1075,17 @@ public class ColGroupFactory {
 		return ColGroupLinearFunctional.create(colIndexes, coefficients, numRows);
 	}
 
+	/**
+	 * This method is the entry point to compress a matrix with piecewise linear compression The first method uses a
+	 * segmented least squares with dynamic programming to compress the columns The second method uses a successive
+	 * compression method, which compares each values in linear time and checks if the targetloss exceeded
+	 *
+	 * @param colIndexes the column indices to compress
+	 * @param in         the input Matrixblock containing the data
+	 * @param cs         compression settings to define the target loss, which should be considered
+	 * @return a piecewise linear compressed column group
+	 */
+
 	public static AColGroup compressPiecewiseLinearFunctional(IColIndex colIndexes, MatrixBlock in,
 		CompressionSettings cs) {
 
@@ -1099,7 +1110,7 @@ public class ColGroupFactory {
 
 	}
 
-	public static AColGroup compressPiecewiseLinearFunctionalSukzessive(IColIndex colIndexes, MatrixBlock in,
+	public static AColGroup compressPiecewiseLinearFunctionalSuccessive(IColIndex colIndexes, MatrixBlock in,
 		CompressionSettings cs) {
 		final int numRows = in.getNumRows();
 		final int numCols = colIndexes.size();
@@ -1110,8 +1121,8 @@ public class ColGroupFactory {
 		for(int col = 0; col < numCols; col++) {
 			final int colIdx = colIndexes.get(col);
 			double[] column = PiecewiseLinearUtils.getColumn(in, colIdx);
-			PiecewiseLinearUtils.SegmentedRegression fit = PiecewiseLinearUtils.compressSukzessivePiecewiseLinear(column,
-				cs);
+			PiecewiseLinearUtils.SegmentedRegression fit = PiecewiseLinearUtils.compressSuccessivePiecewiseLinear(
+				column, cs);
 			breakpointsPerCol[col] = fit.getBreakpoints();
 			interceptsPerCol[col] = fit.getIntercepts();
 			slopesPerCol[col] = fit.getSlopes();

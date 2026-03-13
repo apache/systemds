@@ -131,18 +131,12 @@ class WindowAggregation(Window):
             raise ValueError(f"Invalid output shape: {input_stats.output_shape}")
 
     def estimate_output_memory_bytes(self, input_stats: RepresentationStats) -> int:
-        seq_len = int(input_stats.output_shape[0])
-        feature_dim = (
-            int(input_stats.output_shape[1])
-            if len(input_stats.output_shape) == 2
-            else 1
-        )
-        new_len = math.ceil(seq_len / self.window_size)
+        output_bytes = 1
+        for dim in input_stats.output_shape[1:]:
+            output_bytes *= dim
+        output_bytes *= math.ceil(input_stats.output_shape[0] / self.window_size)
         return (
-            input_stats.num_instances
-            * new_len
-            * feature_dim
-            * np.dtype(self.data_type).itemsize
+            input_stats.num_instances * output_bytes * np.dtype(self.data_type).itemsize
         )
 
     def estimate_peak_memory_bytes(self, input_stats: RepresentationStats) -> dict:
@@ -154,9 +148,14 @@ class WindowAggregation(Window):
             else 1
         )
         one_instance_bytes = (
-            seq_len * feature_dim * np.dtype(self.data_type).itemsize
+            input_stats.num_instances
+            * seq_len
+            * feature_dim
+            * np.dtype(self.data_type).itemsize
         )  # because we copy the data
-        cpu_peak = output_bytes + one_instance_bytes
+        cpu_peak = (
+            output_bytes * 5 + one_instance_bytes * 5 + 1024 * 1024 * 2
+        )  # 2MB safety margin
         return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}
 
     def execute(self, modality):
@@ -254,16 +253,12 @@ class StaticWindow(Window):
         return RepresentationStats(input_stats.num_instances, (self.num_windows,))
 
     def estimate_output_memory_bytes(self, input_stats: RepresentationStats) -> int:
-        feature_dim = (
-            int(input_stats.output_shape[1])
-            if len(input_stats.output_shape) == 2
-            else 1
-        )
+        output_bytes = 1
+        for dim in input_stats.output_shape[1:]:
+            output_bytes *= dim
+        output_bytes *= self.num_windows
         return (
-            input_stats.num_instances
-            * self.num_windows
-            * feature_dim
-            * np.dtype(self.data_type).itemsize
+            input_stats.num_instances * output_bytes * np.dtype(self.data_type).itemsize
         )
 
     def estimate_peak_memory_bytes(self, input_stats: RepresentationStats) -> dict:
@@ -275,7 +270,11 @@ class StaticWindow(Window):
             else 1
         )
         one_instance_bytes = seq_len * feature_dim * np.dtype(self.data_type).itemsize
-        cpu_peak = output_bytes + one_instance_bytes
+        cpu_peak = (
+            output_bytes * 4
+            + (one_instance_bytes * input_stats.num_instances) * 5
+            + 1024 * 1024 * 2
+        )  # 2MB safety margin
         return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}
 
     def execute(self, modality):
@@ -315,16 +314,12 @@ class DynamicWindow(Window):
         return RepresentationStats(input_stats.num_instances, (self.num_windows,))
 
     def estimate_output_memory_bytes(self, input_stats: RepresentationStats) -> int:
-        feature_dim = (
-            int(input_stats.output_shape[1])
-            if len(input_stats.output_shape) == 2
-            else 1
-        )
+        output_bytes = 1
+        for dim in input_stats.output_shape[1:]:
+            output_bytes *= dim
+        output_bytes *= self.num_windows
         return (
-            input_stats.num_instances
-            * self.num_windows
-            * feature_dim
-            * np.dtype(self.data_type).itemsize
+            input_stats.num_instances * output_bytes * np.dtype(self.data_type).itemsize
         )
 
     def estimate_peak_memory_bytes(self, input_stats: RepresentationStats) -> dict:
@@ -336,7 +331,11 @@ class DynamicWindow(Window):
             else 1
         )
         one_instance_bytes = seq_len * feature_dim * np.dtype(self.data_type).itemsize
-        cpu_peak = output_bytes + one_instance_bytes
+        cpu_peak = (
+            output_bytes * 4
+            + (one_instance_bytes * input_stats.num_instances) * 5
+            + 1024 * 1024 * 2
+        )  # 2MB safety margin
         return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}
 
     def execute(self, modality):

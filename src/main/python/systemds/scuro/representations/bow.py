@@ -52,10 +52,12 @@ class BoW(UnimodalRepresentation):
         return RepresentationStats(input_stats.num_instances, (vocab_estimate,))
 
     def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
+        output_bytes = 1
+        output_shape = self.get_output_stats(input_stats).output_shape
+        for dim in output_shape:
+            output_bytes *= dim
         return (
-            input_stats.num_instances
-            * self.get_output_stats(input_stats).output_shape[0]
-            * np.dtype(self.data_type).itemsize
+            input_stats.num_instances * output_bytes * np.dtype(self.data_type).itemsize
         )
 
     def estimate_peak_memory_bytes(self, input_stats: TextStats) -> dict:

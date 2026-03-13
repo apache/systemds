@@ -98,12 +98,8 @@ class BertFamily(UnimodalRepresentation):
             )
 
     def estimate_output_memory_bytes(self, input_stats):
-        return (
-            input_stats.num_instances
-            * self.max_seq_length
-            * 768
-            * self.data_type.itemsize
-        )
+        output_stats = self.get_output_stats(input_stats).output_shape
+        return int(input_stats.num_instances * np.prod(output_stats) * 8)
 
     def estimate_peak_memory_bytes(self, input_stats):
         model = AutoModel.from_pretrained(self.model_name)
@@ -112,7 +108,7 @@ class BertFamily(UnimodalRepresentation):
 
         output_bytes = self.estimate_output_memory_bytes(input_stats)
 
-        per_instance_input_bytes = self.max_seq_length * 3 * 8
+        per_instance_input_bytes = int(np.prod(input_stats.output_shape)) * 8
         input_bytes_all_instances = input_stats.num_instances * per_instance_input_bytes
 
         safety_margin_bytes = 64 * 1024 * 1024  # 64 MB

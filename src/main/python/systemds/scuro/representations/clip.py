@@ -223,7 +223,12 @@ class CLIPText(UnimodalRepresentation):
         self.device = get_device(gpu_id)
 
     def estimate_output_memory_bytes(self, input_stats) -> int:
-        return input_stats.num_instances * 512 * self.data_type.itemsize
+        output_stats = self.get_output_stats(input_stats)
+        output_bytes = 1
+        for dim in output_stats.output_shape:
+            output_bytes *= dim
+
+        return input_stats.num_instances * output_bytes * self.data_type.itemsize
 
     def get_output_stats(self, input_stats) -> RepresentationStats:
         if not isinstance(input_stats, RepresentationStats):

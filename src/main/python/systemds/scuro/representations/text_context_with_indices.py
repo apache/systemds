@@ -184,7 +184,7 @@ class SentenceBoundarySplitIndices(Context):
 
     def estimate_peak_memory_bytes(self, input_stats: TextStats) -> dict:
         return {
-            "cpu_peak_bytes": self.estimate_output_memory_bytes(input_stats),
+            "cpu_peak_bytes": self.estimate_output_memory_bytes(input_stats) * 2,
             "gpu_peak_bytes": 0,
         }
 
@@ -311,7 +311,7 @@ class OverlappingSplitIndices(Context):
 
     def estimate_peak_memory_bytes(self, input_stats: TextStats) -> dict:
         return {
-            "cpu_peak_bytes": self.estimate_output_memory_bytes(input_stats),
+            "cpu_peak_bytes": self.estimate_output_memory_bytes(input_stats) * 2,
             "gpu_peak_bytes": 0,
         }
 

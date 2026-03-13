@@ -45,6 +45,35 @@ from systemds.scuro.representations.aggregated_representation import (
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.utils.checkpointing import CheckpointManager
 import sys
+import threading
+import time
+import psutil
+import os
+
+
+def measure_peak_rss_during(fn, *args, sample_s=0.01, **kwargs):
+    proc = psutil.Process(os.getpid())
+    baseline = proc.memory_info().rss
+    peak = baseline
+    stop = threading.Event()
+
+    def sampler():
+        nonlocal peak
+        while not stop.is_set():
+            rss = proc.memory_info().rss
+            if rss > peak:
+                peak = rss
+            time.sleep(sample_s)
+
+    t = threading.Thread(target=sampler, daemon=True)
+    t.start()
+    try:
+        out = fn(*args, **kwargs)
+    finally:
+        stop.set()
+        t.join()
+
+    return out, (peak - baseline), peak
 
 
 class RefCountResultCache:
@@ -86,60 +115,52 @@ class RefCountResultCache:
         return sum(self.memory_usage_per_node.values())
 
 
-def _execute_node_worker(
-    node: RepresentationNode,
-    input_mods: List[Any],
-    task: Any,
-    rep_cache: Optional[Dict[str, Any]],
-    gpu_id: Optional[int],
-):
-    proc = psutil.Process(os.getpid())
-    before = proc.memory_info().rss  # bytes
-
+def _execute_node_worker(node, input_mods, task, rep_cache, gpu_id):
     if gpu_id is not None:
         device = torch.device(f"cuda:{gpu_id}")
         torch.cuda.set_device(device)
         torch.cuda.reset_peak_memory_stats(device)
 
-    result = None
     node_operation = node.operation(params=node.parameters)
     operation_name = node_operation.name
-    # print(
-    #     f"Executing node {node.node_id} inputs: {input_mods[0].modality_id}, gpu: {gpu_id}, operation: {operation_name}"
-    # )
+
     if gpu_id is not None and hasattr(node_operation, "gpu_id"):
         node_operation.gpu_id = gpu_id
 
-    if len(input_mods) == 1:
-        if isinstance(node_operation, Context):
-            result = input_mods[0].context(node_operation)
-        elif isinstance(node_operation, DimensionalityReduction):
-            result = input_mods[0].dimensionality_reduction(node_operation)
-        elif isinstance(node_operation, AggregatedRepresentation):
-            result = node_operation.transform(input_mods[0])
-        elif isinstance(node_operation, UnimodalRepresentation):
-            if rep_cache is not None and node_operation.name in rep_cache:
-                result = rep_cache[node_operation.name]
-            else:
-                result = input_mods[0].apply_representation(node_operation)
+    def _run_node_op():
+        if len(input_mods) == 1:
+            if isinstance(node_operation, Context):
+                return input_mods[0].context(node_operation)
+            elif isinstance(node_operation, DimensionalityReduction):
+                return input_mods[0].dimensionality_reduction(node_operation)
+            elif isinstance(node_operation, AggregatedRepresentation):
+                return node_operation.transform(input_mods[0])
+            elif isinstance(node_operation, UnimodalRepresentation):
+                if rep_cache is not None and node_operation.name in rep_cache:
+                    return rep_cache[node_operation.name]
+                return input_mods[0].apply_representation(node_operation)
+            return input_mods[0].apply_representation(node_operation)
         else:
-            result = input_mods[0].apply_representation(node_operation)
-    else:
-        fusion_op = node_operation
-        if hasattr(fusion_op, "needs_training") and fusion_op.needs_training:
-            result = input_mods[0].combine_with_training(
-                input_mods[1:], fusion_op, task
-            )
-        else:
-            result = input_mods[0].combine(input_mods[1:], fusion_op)
-    delta_bytes = proc.memory_info().rss - before
+            fusion_op = node_operation
+            if hasattr(fusion_op, "needs_training") and fusion_op.needs_training:
+                return input_mods[0].combine_with_training(
+                    input_mods[1:], fusion_op, task
+                )
+            return input_mods[0].combine(input_mods[1:], fusion_op)
+
+    result, peak_delta_bytes, peak_abs_rss = measure_peak_rss_during(
+        _run_node_op,
+        sample_s=0.01,
+    )
+
     gpu_peak_bytes = (
         torch.cuda.max_memory_allocated(device) if gpu_id is not None else 0
     )
-    # print(f"Node {node.node_id}: {operation_name} has a CPU peak memory usage of {delta_bytes/1024**3:.2f} GB, and a GPU peak memory usage of {gpu_peak_bytes/1024**3:.2f} GB")
+
     return {
         "result": result,
-        "peak_bytes": delta_bytes,
+        "peak_bytes": peak_delta_bytes,  # per-call CPU peak over baseline
+        "peak_abs_rss_bytes": peak_abs_rss,  # optional
         "gpu_peak_bytes": gpu_peak_bytes,
         "operation_name": operation_name,
     }
@@ -148,8 +169,6 @@ def _execute_node_worker(
 def _execute_task_worker(
     task_node_id: str, task: Any, data: Any, gpu_id: Optional[int]
 ) -> Dict[str, Any]:
-    proc = psutil.Process(os.getpid())
-    before = proc.memory_info().rss  # bytes
 
     # print(f"Executing task {task_node_id} on GPU {gpu_id}")
     if gpu_id is not None:
@@ -159,18 +178,25 @@ def _execute_task_worker(
 
     if gpu_id is not None and hasattr(task, "model") and hasattr(task.model, "device"):
         task.model.device = torch.device(f"cuda:{gpu_id}")
-    start = time.perf_counter()
-    scores = task.run(data)
-    end = time.perf_counter()
-    delta_bytes = proc.memory_info().rss - before
+
+    def _run_task():
+        start = time.perf_counter()
+        scores = task.run(data)
+        end = time.perf_counter()
+        return scores, end - start
+
     gpu_peak_bytes = (
         torch.cuda.max_memory_allocated(device) if gpu_id is not None else 0
     )
+    result, peak_delta_bytes, peak_abs_rss = measure_peak_rss_during(
+        _run_task,
+        sample_s=0.01,
+    )
     # print(f"Task {task_node_id} has a CPU peak memory usage of {delta_bytes/1024**3:.2f} GB, and a GPU peak memory usage of {gpu_peak_bytes/1024**3:.2f} GB")
     return {
-        "scores": scores,
-        "task_time": end - start,
-        "peak_bytes": delta_bytes,
+        "scores": result[0],
+        "task_time": result[1],
+        "peak_bytes": peak_delta_bytes,
         "gpu_peak_bytes": gpu_peak_bytes,
     }
 

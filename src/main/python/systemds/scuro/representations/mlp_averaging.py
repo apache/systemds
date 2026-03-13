@@ -58,22 +58,73 @@ class MLPAveraging(DimensionalityReduction):
         self.batch_size = batch_size
         self.device = None
         self.data_type = np.float32
+        self.gpu_id = None
+
+    @property
+    def gpu_id(self):
+        return self._gpu_id
+
+    @gpu_id.setter
+    def gpu_id(self, gpu_id):
+        self._gpu_id = gpu_id
+        self.device = get_device(gpu_id)
 
     def get_output_stats(self, input_stats: RepresentationStats) -> RepresentationStats:
         return RepresentationStats(input_stats.num_instances, (self.output_dim,))
 
     def estimate_output_memory_bytes(self, input_stats: RepresentationStats) -> int:
+        output_bytes = 1
+        for dim in input_stats.output_shape:
+            output_bytes *= dim
         return (
-            input_stats.num_instances
-            * self.output_dim
-            * np.dtype(self.data_type).itemsize
+            input_stats.num_instances * output_bytes * np.dtype(self.data_type).itemsize
         )
 
     def estimate_peak_memory_bytes(self, input_stats: RepresentationStats) -> dict:
-        return {
-            "cpu_peak_bytes": self.estimate_output_memory_bytes(input_stats),
-            "gpu_peak_bytes": 0,
-        }
+        n = int(input_stats.num_instances)
+        input_dim = (
+            int(np.prod(input_stats.output_shape)) if input_stats.output_shape else 0
+        )
+        elem_size = np.dtype(self.data_type).itemsize
+
+        if input_dim < self.output_dim or n == 0 or input_dim == 0:
+            input_bytes = n * input_dim * elem_size
+            cpu_peak = int(input_bytes * 1.05 + 8 * 1024**2)  # small safety margin
+            return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}
+
+        out_dim = int(self.output_dim)
+        batch = int(max(1, min(self.batch_size, n)))
+
+        input_bytes = n * input_dim * elem_size
+        output_bytes = n * out_dim * elem_size
+        weight_bytes = out_dim * input_dim * elem_size
+
+        batch_input_bytes = batch * input_dim * elem_size
+        batch_output_bytes = batch * out_dim * elem_size
+
+        num_batches = (n + batch - 1) // batch
+        python_overhead = num_batches * 1024 
+
+        cpu_working = (
+            input_bytes
+            + 2 * output_bytes
+            + weight_bytes
+            + batch_input_bytes
+            + batch_output_bytes
+            + python_overhead
+        )
+        cpu_peak = int(
+            cpu_working * 1.20 + 64 * 1024**2
+        ) 
+
+        device_type = getattr(self.device, "type", "cpu")
+        if device_type == "cuda":
+            gpu_working = weight_bytes + batch_input_bytes + batch_output_bytes
+            gpu_peak = int(gpu_working * 1.35 + 64 * 1024**2)
+        else:
+            gpu_peak = 0
+
+        return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": gpu_peak}
 
     def execute(self, data):
         set_random_seeds(42)
@@ -86,19 +137,8 @@ class MLPAveraging(DimensionalityReduction):
             return data
 
         dim_reduction_model = AggregationMLP(input_dim, self.output_dim)
-        self.device = get_device_for_model(dim_reduction_model, memory_factor=1.5)
         dim_reduction_model = dim_reduction_model.to(self.device)
         dim_reduction_model.eval()
-
-        # sample = data[0] if data else ""
-        # self.batch_size = compute_batch_size(
-        #     model=dim_reduction_model,
-        #     device=self.device,
-        #     sample_data=sample,
-        #     tokenizer=None,
-        #     max_seq_length=None,
-        #     max_batch_size=self.batch_size,
-        # )
 
         tensor_data = torch.from_numpy(data).float()
 

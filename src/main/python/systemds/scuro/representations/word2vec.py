@@ -65,7 +65,12 @@ class W2V(UnimodalRepresentation):
         )
 
     def estimate_peak_memory_bytes(self, input_stats: TextStats) -> dict:
-        output_bytes = self.estimate_output_memory_bytes(input_stats)
+        output_bytes = (
+            self.estimate_output_memory_bytes(input_stats)
+            + input_stats.num_instances
+            * input_stats.max_length
+            * np.dtype(self.data_type).itemsize
+        ) * 2
         model_estimate = 100 * 1024 * 1024
         return {"cpu_peak_bytes": model_estimate + output_bytes, "gpu_peak_bytes": 0}
 

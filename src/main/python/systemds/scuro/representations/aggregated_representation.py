@@ -49,35 +49,31 @@ class AggregatedRepresentation(Representation):
         self.data_type = np.float32
 
     def get_output_stats(self, input_stats: RepresentationStats) -> RepresentationStats:
-        if len(input_stats.output_shape) == 1 or len(input_stats.output_shape) == 2:
-            return RepresentationStats(
-                input_stats.num_instances, (input_stats.output_shape[0],)
-            )
-        elif len(input_stats.output_shape) == 3:
-            return RepresentationStats(
-                input_stats.num_instances,
-                (
-                    input_stats.output_shape[0],
-                    input_stats.output_shape[1],
-                ),
-            )
+        if len(input_stats.output_shape) == 0:
+            out_shape = (1,)
+        elif len(input_stats.output_shape) == 1:
+            out_shape = (1,)
         else:
-            raise ValueError(f"Invalid output shape: {input_stats.output_shape}")
+            out_shape = input_stats.output_shape[:-1]
+        return RepresentationStats(input_stats.num_instances, out_shape)
 
     def estimate_output_memory_bytes(self, input_stats: RepresentationStats) -> int:
-        output_memory_bytes = 1
-        output_shape = self.get_output_stats(input_stats).output_shape
-        for dim in output_shape:
-            output_memory_bytes *= dim
-        return (
-            input_stats.num_instances
-            * output_memory_bytes
-            * np.dtype(self.data_type).itemsize
-        )
+        out_shape = self.get_output_stats(input_stats).output_shape
+        out_numel = int(np.prod(out_shape)) if len(out_shape) > 0 else 1
+        dtype_size = 8
+        return int(input_stats.num_instances * out_numel * dtype_size)
 
     def estimate_peak_memory_bytes(self, input_stats: RepresentationStats) -> dict:
+        dtype_size = np.dtype(self.data_type).itemsize
+        in_shape = tuple(input_stats.output_shape)
+        in_numel = int(np.prod(in_shape)) if len(in_shape) > 0 else 1
+        input_bytes = int(input_stats.num_instances * in_numel * dtype_size)
+        output_bytes = self.estimate_output_memory_bytes(input_stats)
+        safety = 1.2
+        cpu_peak = input_bytes * 2 + output_bytes * 2
+
         return {
-            "cpu_peak_bytes": self.estimate_output_memory_bytes(input_stats),
+            "cpu_peak_bytes": int(cpu_peak * safety),
             "gpu_peak_bytes": 0,
         }
 

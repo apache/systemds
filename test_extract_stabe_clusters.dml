@@ -1,0 +1,136 @@
+source("scripts/builtin/hdbscan.dml") as hdb
+
+# 6 point example with clear cluster structure
+# 1,2,3 form tight cluster A, 4,5,6 form tight cluster B, A and B are far apart (10)
+
+n = 6
+distances = matrix(10, rows=n, cols=n)
+
+# points 1,2,3 (cluster A)
+distances[1,2] = 1
+distances[2,1] = 1
+
+distances[1,3] = 2
+distances[3,1] = 2
+
+distances[2,3] = 1
+distances[3,2] = 1
+
+# points 4,5,6 (cluster B)
+distances[4,5] = 1
+distances[5,4] = 1
+
+distances[4,6] = 2
+distances[6,4] = 2
+
+distances[5,6] = 1
+distances[6,5] = 1
+
+# zero diagonal (to self)
+for(i in 1:n) {
+    distances[i,i] = 0
+}
+
+
+print("\nBuilding MST")
+expected_edges = matrix("2 1  3 2  6 3  5 6  4 5", rows=5, cols=2)
+expected_weights = matrix("1 1 10 1 1", rows=5, cols=1)
+[edges, weights] = hdb::buildMST(distances, n)
+edges_match = (min(edges == expected_edges) == 1)
+weights_match = (min(weights == expected_weights) == 1)
+if (edges_match) {
+    print("Pass: edges match.")
+} else {
+    print("Fail: edges don't match.")
+}
+if (weights_match) {
+    print("Pass: weights match.")
+} else {
+    print("Fail: weights don't match.")
+}
+print("MST edges:\n" + toString(edges))
+print("MST weights:\n " + toString(weights))
+
+
+print("\nBuilding hierarchy")
+[hierarchy, sizes] = hdb::buildHierarchy(edges, weights, n)
+expected_hierarchy = matrix("2 1 1  3 7 1  5 6 1  4 9 1  10 8 10", rows=5, cols=3)
+expected_sizes = matrix("2 3 2 3 6", rows=5, cols=1)
+hierachy_match = (min(hierarchy == expected_hierarchy) == 1)
+sizes_match = (min(sizes == expected_sizes) == 1)
+if (hierachy_match) {
+    print("Pass: hierachy mathes.")
+} else {
+    print("Fail: hierarchy doesn't match.")
+}
+if (sizes_match) {
+    print("Pass: sizes match.")
+} else {
+    print("Fail: sizes don't match.")
+}
+print("Hierarchy:\n" + toString(hierarchy))
+print("Sizes:\n" + toString(sizes))
+
+
+print("\nExtracting stable clusters with minClSize=2")
+[labels, stabilities] = hdb::extractStableClusters(hierarchy, weights, n, 2)
+expected_labels = matrix("1 1 1 2 2 2", rows=6, cols=1)
+expected_stabilites = matrix("0 0 0 0 0 0 0 2.7 0 2.7 0.6", rows=n*2-1, cols=1)
+labels_match = (min(labels == expected_labels) == 1)
+tolerance = 1e-10
+stabilities_match = max(abs(stabilities - expected_stabilites)) < tolerance
+if (labels_match) {
+    print("Pass: labels match.")
+} else {
+    print("Fail: labels don't match.")
+}
+if (stabilities_match) {
+    print("Pass: stabilities match.")
+} else {
+    print("Fail: stabilities don't match.")
+}
+print("Cluster labels:\n" + toString(labels))
+print("Top stabilities:\n" + toString(stabilities))
+
+
+
+# check results (we have some duplicate logic here, but anyway)
+num_clusters = max(labels)
+num_noise = sum(labels == -1)
+
+print("\nNumber of clusters found: " + num_clusters)
+print("Number of noise points: " + num_noise)
+
+# should find 2 clusters
+test1 = (num_clusters == 2)
+print("Found 2 clusters: " + test1)
+
+# no points should be noise
+test2 = (num_noise == 0)
+print("No noise points: " + test2)
+
+# points 1,2,3 should be in same cluster
+label1 = as.scalar(labels[1])
+label2 = as.scalar(labels[2])
+label3 = as.scalar(labels[3])
+test3 = (label1 == label2) & (label2 == label3) & (label1 > 0)
+print("points 1,2,3 in same cluster: " + test3)
+
+# points 4,5,6 should be in same
+label4 = as.scalar(labels[4])
+label5 = as.scalar(labels[5])
+label6 = as.scalar(labels[6])
+test4 = (label4 == label5) & (label5 == label6) & (label4 > 0)
+print("Points 4,5,6 in same cluster: " + test4)
+
+# clusters A and B should be different
+test5 = (label1 != label4)
+print("Two clusters are different: " + test5)
+
+test_pass = edges_match & weights_match & hierachy_match & sizes_match & labels_match & stabilities_match & test1 & test2 & test3 & test4 & test5
+
+if(test_pass) {
+    print("\nAll tests passed\n")
+} else {
+    print("\nTests failed\n")
+}

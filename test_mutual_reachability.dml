@@ -1,0 +1,26 @@
+source("scripts/builtin/hdbscan.dml") as hdb
+
+distances = matrix("0 1 5 1 0 4 5 4 0", rows=3, cols=3)
+coreDistances = matrix("1 1 4", rows=3, cols=1)
+
+mutualReach = hdb::computeMutualReachability(distances, coreDistances)
+
+diagSum = sum(diag(mutualReach))
+
+val_AB = as.scalar(mutualReach[1,2])
+val_AC = as.scalar(mutualReach[1,3])
+val_BC = as.scalar(mutualReach[2,3])
+
+sym_AB = as.scalar(mutualReach[2,1])
+sym_AC = as.scalar(mutualReach[3,1])
+sym_BC = as.scalar(mutualReach[3,2])
+
+test1_pass = (val_AB == 1) & (val_AC == 5) & (val_BC == 4) & 
+             (diagSum == 0) & 
+             (val_AB == sym_AB) & (val_AC == sym_AC) & (val_BC == sym_BC)
+
+if(test1_pass) {
+    print("Passed")
+} else {
+    print("Failed")
+}

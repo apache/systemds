@@ -1,0 +1,129 @@
+source("scripts/builtin/hdbscan.dml") as hdb
+
+# 3 clear clusters
+# A: points around (0, 0)
+# B: points around (10, 10)
+# C: points around (20, 0)
+
+n = 12
+d = 2
+X = matrix(0, rows=n, cols=d)
+
+# A
+X[1,] = matrix("0.0 0.0", rows=1, cols=2)
+X[2,] = matrix("0.5 0.5", rows=1, cols=2)
+X[3,] = matrix("-0.5 0.5", rows=1, cols=2)
+X[4,] = matrix("0.0 -0.5", rows=1, cols=2)
+
+# B
+X[5,] = matrix("10.0 10.0", rows=1, cols=2)
+X[6,] = matrix("10.5 10.5", rows=1, cols=2)
+X[7,] = matrix("9.5 10.5", rows=1, cols=2)
+X[8,] = matrix("10.0 9.5", rows=1, cols=2)
+
+# C
+X[9,] = matrix("20.0 0.0", rows=1, cols=2)
+X[10,] = matrix("20.5 0.5", rows=1, cols=2)
+X[11,] = matrix("19.5 0.5", rows=1, cols=2)
+X[12,] = matrix("20.0 -0.5", rows=1, cols=2)
+
+print(toString(X))
+
+
+# get distances
+distances = hdb::dist(X)
+
+
+# get core distances
+minPts = 3
+coreDistances = matrix(0, rows=n, cols=1)
+for(i in 1:n) {
+    kthDist = hdb::computeKthSmallest(t(distances[i,]), minPts)
+    coreDistances[i] = kthDist
+}
+
+
+# get mutual reachability
+mutualReach = hdb::computeMutualReachability(distances, coreDistances)
+
+
+# get MST
+[edges, weights] = hdb::buildMST(mutualReach, n)
+
+
+# get hierarchy
+[hierarchy, sizes] = hdb::buildHierarchy(edges, weights, n)
+
+
+# get stable clusters
+minClSize = 3
+[labels, stabilities, clusterToNode] = hdb::extractStableClusters(hierarchy, weights, n, minClSize)
+expected_labels = matrix("1 1 1 1 2 2 2 2 3 3 3 3", rows=12, cols=1)
+labels_match = (min(labels == expected_labels) == 1)
+if (labels_match) {
+    print("Pass: labels match.")
+} else {
+    print("Fail: labels don't match.")
+}
+print("Cluster labels:")
+print(toString(labels))
+
+
+# get cluster model
+[centroids, clusterInfo] = hdb::buildClusterModel(X, labels, stabilities, clusterToNode)
+
+print("\nCentroids:")
+print(toString(centroids))
+
+print("\nInfo [size, stability]:")
+print(toString(clusterInfo))
+
+
+# check results
+numClusters = nrow(centroids)
+print("\nNumber of clusters found: " + numClusters)
+
+
+# should find 3 clusters
+test1 = (numClusters == 3)
+print("Found 3 clusters: " + test1)
+
+
+# each cluster should have 4 points
+allSizesFour = TRUE
+for(c in 1:numClusters) {
+    size = as.scalar(clusterInfo[c,1])
+    allSizesFour = allSizesFour & (size == 4)
+}
+print("All clusters have size 4: " + allSizesFour)
+
+
+test_A = min(sqrt(rowSums((centroids - matrix("0 0.125", 1, 2))^2))) < 0.001
+test_B = min(sqrt(rowSums((centroids - matrix("10 10.125", 1, 2))^2))) < 0.001
+test_C = min(sqrt(rowSums((centroids - matrix("20 0.125", 1, 2))^2))) < 0.001
+all_found = test_A & test_B & test_C
+print("Expected centroids near expected positions: " + all_found)
+
+
+# no noise (all assigned to clusters)
+numNoise = sum(labels == -1)
+test4 = (numNoise == 0)
+print("No noise points: " + test4)
+
+
+# stabilities are populated (not 0)
+test_stability = TRUE
+for(c in 1:numClusters) {
+    stab = as.scalar(clusterInfo[c,2])
+    test_stability = test_stability & (stab > 0)
+}
+print("Stabilities populated: " + test_stability)
+
+
+test_pass = test1 & allSizesFour & all_found & test4 & test_stability
+
+if(test_pass) {
+    print("\nAll tests passed")
+} else {
+    print("\nTests failed")
+}

@@ -40,6 +40,8 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.estim.ComEstExact;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Equals;
@@ -59,6 +61,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -1192,5 +1195,44 @@ public class ColGroupDDCLZWTest {
 
 		assertMatrixEquals(data, mbLZW);
 		assertMatrixEquals(data, mbDDC);
+	}
+
+	@Test
+	public void testDecompressToSparseBlockTransposedSparseDictionaryUsesCorrectSparseValues() throws Exception {
+		final IColIndex colIndexes = ColIndexFactory.create(new int[] {0, 1, 2});
+		final Dictionary dict = Dictionary.create(new double[] {0, 7, 9, 0, 11, 13});
+
+		final AMapToData data = MapToFactory.create(2, 2);
+		data.set(0, 0);
+		data.set(1, 1);
+
+		final AColGroup cg = ColGroupDDCLZW.create(colIndexes, dict, data, null);
+		assertTrue(cg instanceof ColGroupDDCLZW);
+		final ColGroupDDCLZW lzw = (ColGroupDDCLZW) cg;
+
+		final MatrixBlock dictMb = new MatrixBlock(2, 3, true);
+		dictMb.allocateSparseRowsBlock();
+		dictMb.set(0, 1, 7);
+		dictMb.set(0, 2, 9);
+		dictMb.set(1, 1, 11);
+		dictMb.set(1, 2, 13);
+		final SparseBlock sb = dictMb.getSparseBlock();
+
+		final MatrixBlock out = new MatrixBlock(3, 2, true);
+		out.allocateSparseRowsBlock();
+		final SparseBlockMCSR sbr = (SparseBlockMCSR) out.getSparseBlock();
+
+		final Method m = ColGroupDDCLZW.class.getDeclaredMethod("decompressToSparseBlockTransposedSparseDictionary",
+			SparseBlockMCSR.class, SparseBlock.class, int.class);
+		m.setAccessible(true);
+		m.invoke(lzw, sbr, sb, 3);
+
+		assertEquals(0.0, out.get(0, 0), 0.0);
+		assertEquals(7.0, out.get(1, 0), 0.0);
+		assertEquals(9.0, out.get(2, 0), 0.0);
+
+		assertEquals(0.0, out.get(0, 1), 0.0);
+		assertEquals(11.0, out.get(1, 1), 0.0);
+		assertEquals(13.0, out.get(2, 1), 0.0);
 	}
 }

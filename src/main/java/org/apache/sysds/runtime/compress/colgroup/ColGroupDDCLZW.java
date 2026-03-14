@@ -619,7 +619,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 			final double[] aval = sb.values(di);
 
 			for(int j = apos; j < alen; j++) {
-				sbr.append(_colIndexes.get(aix[j]), i, aval[apos]);
+				sbr.append(_colIndexes.get(aix[j]), i, aval[j]);
 			}
 		}
 	}

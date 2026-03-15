@@ -334,7 +334,12 @@ public class OptimizerUtils
 
 	public static boolean AUTO_GPU_CACHE_EVICTION = true;
 
-	//////////////////////
+    /**
+     * Boolean specifying if relational algebra rewrites are allowed (e.g. Selection Pushdowns).
+     */
+    public static boolean ALLOW_RA_REWRITES = false;
+
+    //////////////////////
 	// Optimizer levels //
 	//////////////////////
 

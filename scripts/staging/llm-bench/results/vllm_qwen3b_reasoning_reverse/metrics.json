@@ -1,0 +1,88 @@
+{
+  "n": 50.0,
+  "latency_ms_mean": 1129.0238856850192,
+  "latency_ms_std": 409.38811219284696,
+  "latency_ms_min": 600.8955880533904,
+  "latency_ms_max": 2537.0467379689217,
+  "latency_ms_p50": 1021.7445635935292,
+  "latency_ms_p95": 1804.2853968217964,
+  "latency_ms_cv": 0.3626035882708155,
+  "throughput_req_per_s": 0.8853528380534068,
+  "accuracy_mean": 0.58,
+  "accuracy_count": "29/50",
+  "total_input_tokens": 8737,
+  "total_output_tokens": 11278,
+  "total_tokens": 20015,
+  "electricity_kwh": 0.0054905918885391055,
+  "electricity_cost_usd": 0.0016471775665617317,
+  "hardware_amortization_usd": 0.03137481079165203,
+  "total_compute_cost_usd": 0.033021988358213766,
+  "memory_mb_initial": 138.0,
+  "memory_mb_peak": 158.0,
+  "memory_mb_avg": 157.8230088495575,
+  "cpu_percent_avg": 0.672566371681416,
+  "gpu_info": {
+    "gpu_count": 3,
+    "gpus": [
+      {
+        "index": 0,
+        "name": "NVIDIA H100 PCIe",
+        "memory_total_mb": 81559.0,
+        "memory_used_mb": 483.125,
+        "memory_free_mb": 81075.875,
+        "gpu_utilization_pct": 99,
+        "memory_utilization_pct": 22
+      },
+      {
+        "index": 1,
+        "name": "NVIDIA H100 PCIe",
+        "memory_total_mb": 81559.0,
+        "memory_used_mb": 74730.6875,
+        "memory_free_mb": 6828.3125,
+        "gpu_utilization_pct": 0,
+        "memory_utilization_pct": 0
+      },
+      {
+        "index": 2,
+        "name": "NVIDIA H100 PCIe",
+        "memory_total_mb": 81559.0,
+        "memory_used_mb": 483.125,
+        "memory_free_mb": 81075.875,
+        "gpu_utilization_pct": 0,
+        "memory_utilization_pct": 0
+      }
+    ]
+  },
+  "gpu_after": {
+    "gpu_count": 3,
+    "gpus": [
+      {
+        "index": 0,
+        "name": "NVIDIA H100 PCIe",
+        "memory_total_mb": 81559.0,
+        "memory_used_mb": 483.125,
+        "memory_free_mb": 81075.875,
+        "gpu_utilization_pct": 99,
+        "memory_utilization_pct": 22
+      },
+      {
+        "index": 1,
+        "name": "NVIDIA H100 PCIe",
+        "memory_total_mb": 81559.0,
+        "memory_used_mb": 74730.6875,
+        "memory_free_mb": 6828.3125,
+        "gpu_utilization_pct": 46,
+        "memory_utilization_pct": 36
+      },
+      {
+        "index": 2,
+        "name": "NVIDIA H100 PCIe",
+        "memory_total_mb": 81559.0,
+        "memory_used_mb": 483.125,
+        "memory_free_mb": 81075.875,
+        "gpu_utilization_pct": 0,
+        "memory_utilization_pct": 0
+      }
+    ]
+  }
+}

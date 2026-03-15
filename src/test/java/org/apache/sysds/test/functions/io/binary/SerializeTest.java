@@ -25,6 +25,8 @@ import org.apache.sysds.runtime.data.DenseBlockFP64DEDUP;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderComposite;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderUDF;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -46,6 +48,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.util.HashMap;
+import java.util.Collections;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 
 public class SerializeTest extends AutomatedTestBase
 {
@@ -111,6 +116,11 @@ public class SerializeTest extends AutomatedTestBase
 	@Test
 	public void testWEEncoderSerialization(){
 		runSerializeWEEncoder();
+	}
+
+	@Test
+	public void testUDFEncoderSerialization(){
+		runSerializeUDFEncoder();
 	}
 
 	private void runSerializeTest( int rows, int cols, double sparsity ) 
@@ -184,6 +194,63 @@ public class SerializeTest extends AutomatedTestBase
 			e.printStackTrace();
 			throw new RuntimeException(e);
 		} catch (ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private void runSerializeUDFEncoder(){
+		try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			 ObjectOutput out = new ObjectOutputStream(bos)) {
+			final String udfName = "dummyUdf";
+			final int colId = 2;
+			final int domainSize = 5;
+
+			ColumnEncoderUDF udf = createUdf(colId, udfName, domainSize);
+			ColumnEncoderComposite composite = new ColumnEncoderComposite(Collections.singletonList(udf));
+			MultiColumnEncoder encoder = new MultiColumnEncoder(Collections.singletonList(composite));
+
+			encoder.writeExternal(out);
+			out.flush();
+
+			ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+			ObjectInput in = new ObjectInputStream(bis);
+			MultiColumnEncoder encoderSer = new MultiColumnEncoder();
+			encoderSer.readExternal(in);
+			in.close();
+
+			ColumnEncoderComposite decodedComposite = encoderSer.getColumnEncoders().get(0);
+			ColumnEncoderUDF decodedUdf = decodedComposite.getEncoder(ColumnEncoderUDF.class);
+
+			Assert.assertNotNull(decodedUdf);
+			Assert.assertEquals(colId, decodedUdf.getColID());
+			Assert.assertEquals(domainSize, decodedUdf._domainSize);
+			Assert.assertEquals(udfName, getUdfName(decodedUdf));
+		}
+		catch(IOException | ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private ColumnEncoderUDF createUdf(int colId, String name, int domainSize) {
+		try {
+			Constructor<ColumnEncoderUDF> ctor = ColumnEncoderUDF.class.getDeclaredConstructor(int.class, String.class);
+			ctor.setAccessible(true);
+			ColumnEncoderUDF udf = ctor.newInstance(colId, name);
+			udf._domainSize = domainSize;
+			return udf;
+		}
+		catch(Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private String getUdfName(ColumnEncoderUDF udf) {
+		try {
+			Field f = ColumnEncoderUDF.class.getDeclaredField("_fName");
+			f.setAccessible(true);
+			return (String) f.get(udf);
+		}
+		catch(Exception e) {
 			throw new RuntimeException(e);
 		}
 	}

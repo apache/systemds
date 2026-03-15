@@ -226,6 +226,7 @@ public enum Builtins {
 	LMDS("lmDS", true),
 	LMPREDICT("lmPredict", true),
 	LMPREDICT_STATS("lmPredictStats", true),
+	LLMPREDICT("llmPredict", false, true),
 	LOCAL("local", false),
 	LOG("log", false),
 	LOGSUMEXP("logSumExp", true),

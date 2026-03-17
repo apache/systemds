@@ -112,7 +112,7 @@ public class CompressedSizeInfoColGroup {
 
 	/**
 	 * Create empty or const.
-	 * 
+	 *
 	 * @param columns columns
 	 * @param nRows   number of rows
 	 * @param ct      The type intended either Empty or Const
@@ -170,7 +170,7 @@ public class CompressedSizeInfoColGroup {
 
 	/**
 	 * Note cardinality is the same as number of distinct values.
-	 * 
+	 *
 	 * @return cardinality or number of distinct values.
 	 */
 	public int getNumVals() {
@@ -179,7 +179,7 @@ public class CompressedSizeInfoColGroup {
 
 	/**
 	 * Number of offsets, or number of non zero values.
-	 * 
+	 *
 	 * @return Number of non zeros or number of values.
 	 */
 	public int getNumOffs() {
@@ -261,6 +261,11 @@ public class CompressedSizeInfoColGroup {
 				return ColGroupSizes.estimateInMemorySizeDDC(numCols, contiguousColumns, nv, fact.numRows,
 					fact.tupleSparsity, fact.lossy);
 			case DDC:
+				nv = fact.numVals + (fact.numOffs < fact.numRows ? 1 : 0);
+				return ColGroupSizes.estimateInMemorySizeDDC(numCols, contiguousColumns, nv, fact.numRows,
+					fact.tupleSparsity, fact.lossy);
+			case DDCLZW:
+				// DDCLZW uses a DDC-like structure (dictionary + mapping). We estimate it as DDC for now.
 				nv = fact.numVals + (fact.numOffs < fact.numRows ? 1 : 0);
 				return ColGroupSizes.estimateInMemorySizeDDC(numCols, contiguousColumns, nv, fact.numRows,
 					fact.tupleSparsity, fact.lossy);

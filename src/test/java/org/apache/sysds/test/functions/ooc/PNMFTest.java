@@ -21,12 +21,16 @@ package org.apache.sysds.test.functions.ooc;
 
 import java.io.IOException;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class PNMFTest extends AutomatedTestBase {
 	private static final String TEST_NAME = "PNMF";
@@ -44,6 +48,7 @@ public class PNMFTest extends AutomatedTestBase {
 	private static final int RANK = 20;
 	private static final int MAX_ITER = 10;
 	private static final int BLOCK_SIZE = 1000;
+	private static final int SEED = 7;
 
 	private static final double SPARSITY = 0.7;
 	private static final double EPS = 1e-6;
@@ -54,7 +59,7 @@ public class PNMFTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME));
 	}
 
-	//@Test
+	@Test
 	public void testPNMFOOCVsCP() {
 		runPNMFTest();
 	}
@@ -71,13 +76,16 @@ public class PNMFTest extends AutomatedTestBase {
 			double[][] xData = getRandomMatrix(ROWS, COLS, 1, 10, SPARSITY, 7);
 			writeBinaryWithMTD(INPUT_X, DataConverter.convertToMatrixBlock(xData));
 
-			programArgs = new String[] {"-explain", "-stats", "-seed", "7", "-ooc", "-args",
-				input(INPUT_X), String.valueOf(RANK), String.valueOf(MAX_ITER),
+			programArgs = new String[] {"-explain", "-stats", "-ooc", "-args",
+				input(INPUT_X), String.valueOf(RANK), String.valueOf(MAX_ITER), String.valueOf(SEED),
 				output(OUTPUT_W_OOC), output(OUTPUT_H_OOC)};
 			runTest(true, false, null, -1);
 
-			programArgs = new String[] {"-explain", "-stats", "-seed", "7", "-args",
-				input(INPUT_X), String.valueOf(RANK), String.valueOf(MAX_ITER),
+			Assert.assertTrue("OOC wasn't used for pnmf",
+				heavyHittersContainsString(Instruction.OOC_INST_PREFIX + Opcodes.WEIGHTEDDIVMM));
+
+			programArgs = new String[] {"-explain", "-stats", "-args",
+				input(INPUT_X), String.valueOf(RANK), String.valueOf(MAX_ITER), String.valueOf(SEED),
 				output(OUTPUT_W_CP), output(OUTPUT_H_CP)};
 			runTest(true, false, null, -1);
 

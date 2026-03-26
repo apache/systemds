@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.ooc.cache;
 
+import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
@@ -291,6 +292,18 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 		return put(key, data, size, true, descriptor);
 	}
 
+	@Override
+	public void addReference(BlockKey key) {
+		synchronized(this) {
+			BlockEntry entry = _cache.get(key);
+			if(entry == null)
+				entry = _evictionCache.get(key);
+			if(entry == null)
+				throw new IllegalArgumentException("Could not find requested block with key " + key);
+			entry.addReference();
+		}
+	}
+
 	private BlockEntry put(BlockKey key, Object data, long size, boolean pin, OOCIOHandler.SourceBlockDescriptor descriptor) {
 		if (!this._running)
 			throw new IllegalStateException();
@@ -324,14 +337,34 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 	public void forget(BlockKey key) {
 		if (!this._running)
 			return;
+		final MutableObject<BlockEntry> mEntry = new MutableObject<>();
 		BlockEntry entry;
 		boolean shouldScheduleDeletion = false;
 		long cacheSizeDelta = 0;
 		synchronized(this) {
-			entry = _cache.remove(key);
+			_cache.compute(key, (k, e) -> {
+				if(e == null)
+					return null;
+				if(e.forget() == 0) {
+					mEntry.setValue(e);
+					return null;
+				}
+				return e;
+			});
 
-			if (entry == null)
-				entry = _evictionCache.remove(key);
+			if (mEntry.getValue() == null) {
+				_evictionCache.compute(key, (k, e) -> {
+					if(e == null)
+						return null;
+					if(e.forget() == 0) {
+						mEntry.setValue(e);
+						return null;
+					}
+					return e;
+				});
+			}
+
+			entry = mEntry.getValue();
 
 			if (entry != null) {
 				synchronized(entry) {

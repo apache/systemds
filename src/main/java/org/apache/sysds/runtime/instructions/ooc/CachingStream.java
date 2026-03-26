@@ -130,6 +130,7 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 							boolean ownsEntry = true;
 							if(tmp instanceof OOCCacheManager.CachedGroupCallback<?> cachedGroup) {
 								baseKey = cachedGroup.getBlockKey();
+								ensureReferencedOrRematerialize(baseKey, cachedGroup);
 								ownsEntry = false;
 								if(mSubscribers != null && mSubscribers.length > 0)
 									mCallback = tmp.keepOpen();
@@ -183,12 +184,14 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 
 							if(tmp instanceof OOCCacheManager.CachedQueueCallback<?> cachedQueue) {
 								blockKey = cachedQueue.getBlockKey();
+								ensureReferencedOrRematerialize(blockKey, task);
 								ownsEntry = false;
 								if(mSubscribers != null && mSubscribers.length > 0)
 									mCallback = tmp.keepOpen();
 							}
 							else if(tmp instanceof OOCCacheManager.CachedSubCallback<?> cachedSub) {
 								BlockKey parent = cachedSub.getParent().getBlockKey();
+								ensureReferencedOrRematerialize(parent, cachedSub.getParent());
 								blockKey = new GroupedBlockKey(parent.getStreamId(), (int) parent.getSequenceNumber(),
 									cachedSub.getGroupIndex());
 								ownsEntry = false;
@@ -295,6 +298,49 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 				}
 			}
 		});
+	}
+
+
+	private void ensureReferencedOrRematerialize(BlockKey key, IndexedMatrixValue value) {
+		try {
+			OOCCacheManager.getCache().addReference(key);
+		}
+		catch(IllegalArgumentException ex) {
+			try {
+				OOCCacheManager.putRaw(key, value, ((MatrixBlock) value.getValue()).getExactSerializedSize());
+			}
+			catch(IllegalStateException putEx) {
+				// Another downstream stream may have re-materialized the same entry first.
+				OOCCacheManager.getCache().addReference(key);
+			}
+		}
+	}
+
+	private void ensureReferencedOrRematerialize(BlockKey key, OOCCacheManager.CachedGroupCallback<?> group) {
+		try {
+			OOCCacheManager.getCache().addReference(key);
+		}
+		catch(IllegalArgumentException ex) {
+			try {
+				List<IndexedMatrixValue> values = new ArrayList<>(group.size());
+				long totalSize = 0;
+				for(int gi = 0; gi < group.size(); gi++) {
+					@SuppressWarnings("unchecked")
+					OOCStream.QueueCallback<IndexedMatrixValue> sub =
+						(OOCStream.QueueCallback<IndexedMatrixValue>) group.getCallback(gi);
+					try(sub) {
+						IndexedMatrixValue imv = sub.get();
+						values.add(imv);
+						totalSize += ((MatrixBlock) imv.getValue()).getExactSerializedSize();
+					}
+				}
+				OOCCacheManager.putRaw(key, values, totalSize);
+			}
+			catch(IllegalStateException putEx) {
+				// Another downstream stream may have re-materialized the same entry first.
+				OOCCacheManager.getCache().addReference(key);
+			}
+		}
 	}
 
 	private String getCtxMsg() {
@@ -687,7 +733,7 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 			if(groupIdx > 0)
 				continue; // only replay grouped blocks once at the base index
 
-			BlockKey replayKey = (groupSize > 1 && groupIdx == 0) ? new BlockKey(_streamId, idx) : getBlockKey(i);
+			BlockKey replayKey = (groupSize > 1 && groupIdx == 0) ? getEntryBlockKey(idx) : getBlockKey(i);
 			OOCCacheManager.requestBlock(replayKey).whenComplete((cb, r) -> {
 				if(r != null) {
 					subscriber.accept(OOCStream.eos(DMLRuntimeException.of(r)));
@@ -697,7 +743,6 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 					synchronized(CachingStream.this) {
 						if(_index != null) {
 							if(cb instanceof OOCStream.GroupQueueCallback<?> && groupSize > 1) {
-								@SuppressWarnings("unchecked")
 								OOCStream.GroupQueueCallback<IndexedMatrixValue> group =
 									(OOCStream.GroupQueueCallback<IndexedMatrixValue>) cb;
 								for(int gi = 0; gi < groupSize; gi++) {

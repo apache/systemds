@@ -104,6 +104,14 @@ public interface OOCCacheScheduler {
 		OOCIOHandler.SourceBlockDescriptor descriptor);
 
 	/**
+	 * Notifies the cache that there is another reference to the same block key.
+	 * This will prevent forget(key) from removing the block from cache.
+	 * A block will only be forgotten after all referencing instances called forget(key).
+	 * @param key
+	 */
+	void addReference(BlockKey key);
+
+	/**
 	 * Forgets a block from the cache.
 	 * @param key the associated key of the block
 	 */

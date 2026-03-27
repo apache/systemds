@@ -30,6 +30,7 @@ public final class BlockEntry {
 	private volatile BlockState _state;
 	private Object _data;
 	private int _retainHintCount;
+	private int _referenceCount; // The number of references from different managing instances (e.g. CachingStream)
 
 	BlockEntry(BlockKey key, long size, Object data) {
 		this._key = key;
@@ -38,6 +39,7 @@ public final class BlockEntry {
 		this._state = BlockState.HOT;
 		this._data = data;
 		this._retainHintCount = 0;
+		this._referenceCount = 1;
 	}
 
 	public BlockKey getKey() {
@@ -82,6 +84,14 @@ public final class BlockEntry {
 
 	public boolean isPinned() {
 		return _pinCount > 0;
+	}
+
+	synchronized int addReference() {
+		return ++_referenceCount;
+	}
+
+	synchronized int forget() {
+		return --_referenceCount;
 	}
 
 	synchronized void setState(BlockState state) {

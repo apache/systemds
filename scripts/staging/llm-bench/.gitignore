@@ -1,5 +1,7 @@
-# Benchmark outputs (committed for project submission)
-# results/
+# Benchmark outputs (metrics, prompts, samples — reproduce locally)
+results/
+*.html
+!templates/*.html
 
 # Python
 __pycache__/
@@ -25,10 +27,6 @@ env/
 # OS
 .DS_Store
 Thumbs.db
-
-# Reports (committed for project submission)
-# *.html
-!templates/*.html
 
 # Dataset cache
 .cache/

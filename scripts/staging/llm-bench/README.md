@@ -13,15 +13,18 @@ embeddings) with n=50 per workload.
   backends?
 
 The framework runs standardized workloads against all backends under identical
-conditions (same prompts, same evaluation metrics). GPU backends (vLLM,
-SystemDS) were evaluated on NVIDIA H100 PCIe (81 GB). All runs used 50
-samples per workload, temperature=0.0 for reproducibility.
+conditions (same prompts, same evaluation metrics). Default workload configs
+use `n_samples: 50` and `temperature: 0.0` for reproducibility; hardware and
+cloud settings are up to you when you run the suite locally.
 
 ## Quick Start
 
 ```bash
 cd scripts/staging/llm-bench
 pip install -r requirements.txt
+
+# Optional: download HuggingFace datasets into the local cache (needs network once)
+python scripts/prefetch_datasets.py
 
 # Set OpenAI API key (required for openai backend)
 export OPENAI_API_KEY="sk-..."
@@ -67,8 +70,9 @@ scripts/staging/llm-bench/
 ├── scripts/
 │   ├── report.py              # HTML report generator
 │   ├── aggregate.py           # Cross-run aggregation
+│   ├── prefetch_datasets.py   # HuggingFace dataset prefetch (offline-friendly)
 │   └── run_all_benchmarks.sh  # Batch automation
-├── results/                   # Benchmark outputs (metrics.json per run)
+├── results/                   # Created locally when you run benchmarks (gitignored)
 └── tests/                     # Unit tests for accuracy checks + runner
 ```
 
@@ -124,105 +128,61 @@ Environment variables:
 - `LLM_INFERENCE_URL` -- inference server endpoint (default: `http://localhost:8080/v1/completions`)
 - `CUBLAS_WORKSPACE_CONFIG` -- set to `:4096:8` for deterministic cuBLAS
 
-## Benchmark Results
+## Reproducibility and reports
 
-### Accuracy (% correct, n=50 per workload)
+Per-run metrics, prompts, and predictions are **not** committed to the
+repository. After you run `runner.py` (or `scripts/run_all_benchmarks.sh`),
+outputs land under `results/` (gitignored). Aggregate them and build an HTML
+summary with:
 
-| Workload | OpenAI gpt-4.1-mini | vLLM Qwen 3B | SystemDS Qwen 3B |
-|----------|---------------------|--------------|------------------|
-| math | **96%** (48/50) | 68% (34/50) | 68% (34/50) |
-| reasoning | **88%** (44/50) | 58% (29/50) | 58% (29/50) |
-| summarization | **86%** (43/50) | 50% (25/50) | 62% (31/50) |
-| json_extraction | **61%** (28/46) | **66%** (33/50) | **66%** (33/50) |
-| embeddings | 88% (44/50) | **90%** (45/50) | **90%** (45/50) |
+```bash
+python scripts/report.py --results-dir results/ --out results/report.html
+```
 
-SystemDS matches vLLM on 4/5 workloads. The summarization gap (25 vs 31) is
-caused by vLLM Automatic Prefix Caching (APC), not the SystemDS pipeline. A
-reverse-order experiment confirmed this: the 1st-run backend always scores
-25/50 and the 2nd-run backend always scores 31/50, regardless of which
-backend runs first. See `benchmark_report.md` for the full APC analysis.
+Use `scripts/aggregate.py` when you want cross-run summaries from multiple
+backend directories.
 
-### Text Identity (vLLM vs SystemDS)
+## `runner.py` CLI: cost, concurrency, logging
 
-| Workload | Identical | % Identical |
-|----------|-----------|-------------|
-| math | 50/50 | **100%** |
-| json_extraction | 50/50 | **100%** |
-| embeddings | 50/50 | **100%** |
-| reasoning | 33/50 | 66% |
-| summarization | 28/50 | 56% |
+| Flag | Meaning |
+|------|---------|
+| `--backend` | `openai`, `vllm`, or `systemds` (required) |
+| `--workload` | Path to a workload `config.yaml` (required) |
+| `--model` | Backend-specific model id or path |
+| `--out` | Output directory for `samples.jsonl`, `metrics.json`, etc. (required) |
+| `--concurrency` | Parallel requests (default `1`; SystemDS uses Java-side concurrency when greater than 1) |
+| `--log-level` | `DEBUG`, `INFO`, `WARNING`, `ERROR` (default `INFO`) |
 
-On 3/5 workloads, predictions are byte-for-byte identical, confirming that
-the JMLC pipeline is a lossless pass-through. The 39 divergent samples across
-reasoning and summarization are all caused by APC cache state, proven by the
-4-run reverse-order experiment (same-position = 100% identical across sessions).
+**Cloud GPU rental (mutually exclusive with owned-hardware electricity/amortization below):**
 
-### Per-Prompt Latency (mean ms, n=50)
+| Flag | Meaning |
+|------|---------|
+| `--gpu-hour-cost` | USD per GPU-hour (e.g. cloud H100 rate). Rental already bundles energy and depreciation, so do not combine with `--power-draw-w` / `--hardware-cost`. |
+| `--gpu-count` | GPUs used for wall-clock → GPU-hour conversion (default `1`). |
 
-| Workload | OpenAI (Cloud) | vLLM Qwen 3B (H100) | SystemDS Qwen 3B (H100) |
-|----------|----------------|----------------------|--------------------------|
-| math | 4577 | 1913 | 1917 (+0.2%) |
-| reasoning | 1735 | 1109 | 1134 (+2.2%) |
-| summarization | 1131 | 364 | 362 (-0.6%) |
-| json_extraction | 1498 | 266 | 266 (+0.0%) |
-| embeddings | 773 | 47 | 60 (+29.1%) |
+If both rental and owned flags are set, `runner.py` logs a warning and **uses
+only the rental path** (`--gpu-hour-cost`) to avoid double-counting.
 
-SystemDS adds <3% overhead for generation workloads. The embeddings +29% is
-because the HTTP call itself is only ~47 ms, so fixed JMLC pipeline cost
-(~10 ms/prompt) becomes a significant fraction.
+**Owned hardware (electricity + amortization):**
 
-**SystemDS JMLC pipeline breakdown (ms):**
+| Flag | Meaning |
+|------|---------|
+| `--power-draw-w` | Average power draw in watts (for electricity cost). |
+| `--electricity-rate` | USD per kWh (default `0.30`). |
+| `--hardware-cost` | Purchase price in USD (for straight-line amortization over lifetime). |
+| `--hardware-lifetime-hours` | Useful life in hours (default `15000`). |
 
-| Workload | compile | marshal | exec/prompt | unmarshal | overhead |
-|----------|---------|---------|-------------|-----------|----------|
-| math | 316 | 113 | 1909 | 0.8 | 483 |
-| reasoning | 241 | 43 | 1128 | 0.8 | 337 |
-| summarization | 305 | 52 | 355 | 0.8 | 412 |
-| json_extraction | 299 | 48 | 259 | 0.9 | 403 |
-| embeddings | 338 | 166 | 50 | 1.4 | 563 |
+**How costs are computed** (see `runner.py` after the benchmark wall time `wall_s`):
 
-### Throughput (requests/second)
-
-| Workload | OpenAI | vLLM Qwen 3B | SystemDS Qwen 3B |
-|----------|--------|--------------|------------------|
-| math | 0.22 | 0.52 | 0.52 |
-| reasoning | 0.58 | 0.90 | 0.88 |
-| summarization | 0.88 | 2.74 | 2.76 |
-| json_extraction | 0.67 | 3.76 | 3.75 |
-| embeddings | 1.29 | 21.30 | 15.88 |
-
-### Cost
-
-| Workload | OpenAI API Cost | vLLM Compute Cost | SystemDS Compute Cost |
-|----------|----------------|-------------------|----------------------|
-| math | $0.0223 | $0.0560 | $0.0561 |
-| reasoning | $0.0100 | $0.0324 | $0.0332 |
-| summarization | $0.0075 | $0.0107 | $0.0106 |
-| json_extraction | $0.0056 | $0.0078 | $0.0078 |
-| embeddings | $0.0019 | $0.0014 | $0.0018 |
-| **Total** | **$0.047** | **$0.108** | **$0.109** |
-
-OpenAI is cheaper for this small sequential benchmark because GPU hardware
-amortization ($2.00/hr) dominates at low utilization. With vLLM continuous
-batching (10x+ throughput), the H100 becomes 3-14x cheaper per query than
-OpenAI across all workloads. See `benchmark_report.md` for the full cost
-analysis with breakeven calculations.
-
-## Conclusions
-
-1. **SystemDS `llmPredict` is a lossless pass-through**: 150/150 samples
-   are byte-for-byte identical on constrained workloads (math,
-   json_extraction, embeddings). The 39 divergent samples on unconstrained
-   workloads are caused by vLLM APC, not the SystemDS pipeline.
-
-2. **JMLC overhead is negligible**: <3% for generation workloads, within
-   measurement noise.
-
-3. **Cost tradeoff depends on scale**: OpenAI is cheaper at low sequential
-   volume. Owned GPU hardware is cheaper at production scale with batching.
-
-4. **Model quality matters more than serving infrastructure**: OpenAI vs
-   Qwen 3B is model quality. vLLM vs SystemDS is zero difference.
+- **Rental:** `gpu_hours = (wall_s / 3600) * gpu_count`, then
+  `compute_cost_usd = gpu_hours * gpu_hour_cost` (stored in `metrics.json`).
+- **Electricity (owned):** `kwh = (power_draw_w / 1000) * (wall_s / 3600)`,
+  `electricity_cost_usd = kwh * electricity_rate`.
+- **Amortization (owned):** `hourly_depreciation = hardware_cost / hardware_lifetime_hours`,
+  `hardware_amortization_usd = hourly_depreciation * (wall_s / 3600)`.
+- **Total compute:** `total_compute_cost_usd` is the sum of whichever of the
+  above components apply; OpenAI API usage may also set `api_cost_usd` from
+  per-request billing metadata.
 
 ## Output
 

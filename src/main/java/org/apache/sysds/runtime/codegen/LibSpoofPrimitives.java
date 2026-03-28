@@ -104,7 +104,7 @@ public class LibSpoofPrimitives
 	}
 
 	// not in use: vector api implementation slower than scalar loop version
-	public static double rowMaxsVectMult_vector_api(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
+	public static double rowMaxsVectMultVectorAPI(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
 		double scalarMax = Double.NEGATIVE_INFINITY;
 
 		int i = 0;
@@ -366,33 +366,33 @@ public class LibSpoofPrimitives
 		for( int i = ai+bn; i < ai+len; i+=8 ) {
 			//read 64B cacheline of a, compute cval' = sum(a) + cval
 			val += a[ i+0 ] + a[ i+1 ] + a[ i+2 ] + a[ i+3 ]
-			     + a[ i+4 ] + a[ i+5 ] + a[ i+6 ] + a[ i+7 ];
+				 + a[ i+4 ] + a[ i+5 ] + a[ i+6 ] + a[ i+7 ];
 		}
 		
 		//scalar result
 		return val; 
 	} 
 	// not in use: vector api implementation slower than scalar loop version
-	public static double vectSum_vector_api(double[] a, int ai, int len) {
-        double sum = 0d;
-        int i = 0;
+	public static double vectSumVectorAPI(double[] a, int ai, int len) {
+		double sum = 0d;
+		int i = 0;
 
-        DoubleVector acc = DoubleVector.zero(SPECIES);
-        int upperBound = SPECIES.loopBound(len);
+		DoubleVector acc = DoubleVector.zero(SPECIES);
+		int upperBound = SPECIES.loopBound(len);
 
 		//unrolled vLen-block  (for better instruction-level parallelism)
-        for (; i < upperBound; i += SPECIES.length()) {
-            DoubleVector v = DoubleVector.fromArray(SPECIES, a, ai + i);
-            acc = acc.add(v);
-        }
-        sum += acc.reduceLanes(VectorOperators.ADD);
+		for (; i < upperBound; i += SPECIES.length()) {
+			DoubleVector v = DoubleVector.fromArray(SPECIES, a, ai + i);
+			acc = acc.add(v);
+		}
+		sum += acc.reduceLanes(VectorOperators.ADD);
 
-        //rest, not aligned to vLen-blocks
-        for (; i < len; i++) {
-            sum += a[ai + i];
-        }
-        return sum;
-    }
+		//rest, not aligned to vLen-blocks
+		for (; i < len; i++) {
+			sum += a[ai + i];
+		}
+		return sum;
+	}
 	
 	public static double vectSum(double[] avals, int[] aix, int ai, int alen, int len) {
 		//forward to dense as column indexes not required here
@@ -544,7 +544,7 @@ public class LibSpoofPrimitives
 	}
 
 	// not in use: vector api implementation slower than scalar loop version
-	public static void vectDivAdd_vector_api(double[] a, double bval, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+	public static void vectDivAddVectorAPI(double[] a, double bval, double[] c, int[] aix, int ai, int ci, int alen, int len) {
 
 		final double inv = 1.0 / bval;
 		int i = 0;
@@ -576,7 +576,7 @@ public class LibSpoofPrimitives
 	}
 
 	// not in use: vector api implementation slower than scalar loop version
-	public static void vectDivAdd_vector_api(double bval, double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+	public static void vectDivAddVectorAPI(double bval, double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
 		int i = 0;
 		int upperBound = SPECIES.loopBound(alen);
 		DoubleVector vb = DoubleVector.broadcast(SPECIES, bval);
@@ -607,7 +607,7 @@ public class LibSpoofPrimitives
 	}
 
 	// not in use: vector api implementation slower than scalar loop version
-	public static double[] vectDivWrite_vector_api(double[] a, double bval, int ai, int len) {
+	public static double[] vectDivWriteVectorAPI(double[] a, double bval, int ai, int len) {
 		double[] c = allocVector(len, false);
 		final double inv = 1.0 / bval;
 		final DoubleVector vinv = DoubleVector.broadcast(SPECIES, inv);
@@ -636,7 +636,7 @@ public class LibSpoofPrimitives
 	}
 
 	// not in use: vector api implementation slower than scalar loop version
-	public static double[] vectDivWrite_vector_api(double bval, double[] a, int ai, int len) {
+	public static double[] vectDivWriteVectorAPI(double bval, double[] a, int ai, int len) {
 		double[] c = allocVector(len, false);
 		final DoubleVector vb = DoubleVector.broadcast(SPECIES, bval);
 		int i = 0;
@@ -663,7 +663,7 @@ public class LibSpoofPrimitives
 	}
 
 	// not in use: vector api implementation slower than scalar loop version
-	public static double[] vectDivWrite_vector_api(double[] a, double[] b, int ai, int bi, int len) {
+	public static double[] vectDivWriteVectorAPI(double[] a, double[] b, int ai, int bi, int len) {
 		double[] c = allocVector(len, false);
 		int i = 0;
 		int upper = SPECIES.loopBound(len);
@@ -1163,7 +1163,7 @@ public class LibSpoofPrimitives
 
 	public static double[] vectExpWrite(double[] a, int[] aix, int ai, int alen, int len) {
 		double[] c = allocVector(len, true, 1); //exp(0)=1
-		for( int j = ai; j < ai+alen; j++ )    //overwrite
+		for( int j = ai; j < ai+alen; j++ )	//overwrite
 			c[aix[j]] = FastMath.exp(a[j]);
 		return c;
 	}
@@ -1925,28 +1925,28 @@ public class LibSpoofPrimitives
 	
 
 	public static double[] vectEqualWrite(double[] a, double[] b, int ai, int bi, int len) {
-        double[] c = allocVector(len, false);
-        final DoubleVector ones  = DoubleVector.broadcast(SPECIES, 1.0);
-        final DoubleVector zeros = DoubleVector.zero(SPECIES);
-        int i = 0;
-        int upper = SPECIES.loopBound(len);
+		double[] c = allocVector(len, false);
+		final DoubleVector ones  = DoubleVector.broadcast(SPECIES, 1.0);
+		final DoubleVector zeros = DoubleVector.zero(SPECIES);
+		int i = 0;
+		int upper = SPECIES.loopBound(len);
 
-        //unrolled vLen-block  (for better instruction-level parallelism)
-        for (; i < upper; i += vLen) {
-            DoubleVector aVec = DoubleVector.fromArray(SPECIES, a, ai + i);
-            DoubleVector bVec = DoubleVector.fromArray(SPECIES, b, bi + i);
-            VectorMask<Double> eq = aVec.compare(VectorOperators.EQ, bVec);
-            DoubleVector out = zeros.blend(ones, eq);
+		//unrolled vLen-block  (for better instruction-level parallelism)
+		for (; i < upper; i += vLen) {
+			DoubleVector aVec = DoubleVector.fromArray(SPECIES, a, ai + i);
+			DoubleVector bVec = DoubleVector.fromArray(SPECIES, b, bi + i);
+			VectorMask<Double> eq = aVec.compare(VectorOperators.EQ, bVec);
+			DoubleVector out = zeros.blend(ones, eq);
 
-            out.intoArray(c, i);
-        }
+			out.intoArray(c, i);
+		}
 
-       	//rest, not aligned to vLen-blocks
-        for (; i < len; i++) {
-            c[i] = (a[ai + i] == b[bi + i]) ? 1.0 : 0.0;
-        }
-        return c;
-    }
+	   	//rest, not aligned to vLen-blocks
+		for (; i < len; i++) {
+			c[i] = (a[ai + i] == b[bi + i]) ? 1.0 : 0.0;
+		}
+		return c;
+	}
 
 	public static double[] vectEqualWrite(double[] a, double bval, int[] aix, int ai, int alen, int len) {
 		double init = (bval == 0) ? 1 : 0;
@@ -2019,29 +2019,29 @@ public class LibSpoofPrimitives
 	}
 
 	public static double[] vectNotequalWrite(double[] a, double bval, int ai, int len) {
-        double[] c = allocVector(len, false);
-        final DoubleVector bVec  = DoubleVector.broadcast(SPECIES, bval);
-        final DoubleVector ones  = DoubleVector.broadcast(SPECIES, 1.0);
-        final DoubleVector zeros = DoubleVector.zero(SPECIES);
+		double[] c = allocVector(len, false);
+		final DoubleVector bVec  = DoubleVector.broadcast(SPECIES, bval);
+		final DoubleVector ones  = DoubleVector.broadcast(SPECIES, 1.0);
+		final DoubleVector zeros = DoubleVector.zero(SPECIES);
 
-        int i = 0;
-        int upper = SPECIES.loopBound(len);
+		int i = 0;
+		int upper = SPECIES.loopBound(len);
 
 		//unrolled vLen-block  (for better instruction-level parallelism)
-        for (; i < upper; i += vLen) {
-            DoubleVector aVec = DoubleVector.fromArray(SPECIES, a, ai + i);
-            VectorMask<Double> ne = aVec.compare(VectorOperators.NE, bVec);
-            DoubleVector out = zeros.blend(ones, ne);
+		for (; i < upper; i += vLen) {
+			DoubleVector aVec = DoubleVector.fromArray(SPECIES, a, ai + i);
+			VectorMask<Double> ne = aVec.compare(VectorOperators.NE, bVec);
+			DoubleVector out = zeros.blend(ones, ne);
 
-            out.intoArray(c, i);
-        }
+			out.intoArray(c, i);
+		}
 
 		//rest, not aligned to vLen-blocks
-        for (; i < len; i++) {
-            c[i] = (a[ai + i] != bval) ? 1.0 : 0.0;
-        }
-        return c;
-    }
+		for (; i < len; i++) {
+			c[i] = (a[ai + i] != bval) ? 1.0 : 0.0;
+		}
+		return c;
+	}
 	
 	public static double[] vectNotequalWrite(double bval, double[] a, int ai, int len) {
 		return vectNotequalWrite(a, bval, ai, len);
@@ -2055,7 +2055,7 @@ public class LibSpoofPrimitives
 	}
 
 	// not in use: vector api implementation slower than scalar loop version
-	public static double[] vectNotequalWrite_vector_api(double[] a, double[] b, int ai, int bi, int len) {
+	public static double[] vectNotequalWriteVectorAPI(double[] a, double[] b, int ai, int bi, int len) {
 		double[] c = allocVector(len, false);
 		final DoubleVector ones  = DoubleVector.broadcast(SPECIES, 1.0);
 		final DoubleVector zeros = DoubleVector.zero(SPECIES);
@@ -2151,31 +2151,31 @@ public class LibSpoofPrimitives
 	}
 
 	public static double[] vectLessWrite(double[] a, double bval, int ai, int len) {
-        double[] c = allocVector(len, false);
-        final DoubleVector bVec  = DoubleVector.broadcast(SPECIES, bval);
-        final DoubleVector ones  = DoubleVector.broadcast(SPECIES, 1.0);
-        final DoubleVector zeros = DoubleVector.zero(SPECIES);
+		double[] c = allocVector(len, false);
+		final DoubleVector bVec  = DoubleVector.broadcast(SPECIES, bval);
+		final DoubleVector ones  = DoubleVector.broadcast(SPECIES, 1.0);
+		final DoubleVector zeros = DoubleVector.zero(SPECIES);
 
-        int i = 0;
-        int upper = SPECIES.loopBound(len);
+		int i = 0;
+		int upper = SPECIES.loopBound(len);
 
 		//unrolled vLen-block  (for better instruction-level parallelism)
-        for (; i < upper; i += vLen) {
-            DoubleVector aVec = DoubleVector.fromArray(SPECIES, a, ai + i);
+		for (; i < upper; i += vLen) {
+			DoubleVector aVec = DoubleVector.fromArray(SPECIES, a, ai + i);
 
-            VectorMask<Double> lt = aVec.compare(VectorOperators.LT, bVec);
-            DoubleVector out = zeros.blend(ones, lt);
+			VectorMask<Double> lt = aVec.compare(VectorOperators.LT, bVec);
+			DoubleVector out = zeros.blend(ones, lt);
 
-            out.intoArray(c, i);
-        }
+			out.intoArray(c, i);
+		}
 
 		//rest, not aligned to vLen-blocks
-        for (; i < len; i++) {
-            c[i] = (a[ai + i] < bval) ? 1.0 : 0.0;
-        }
+		for (; i < len; i++) {
+			c[i] = (a[ai + i] < bval) ? 1.0 : 0.0;
+		}
 
-        return c;
-    }
+		return c;
+	}
 
 	
 	public static double[] vectLessWrite(double bval, double[] a, int ai, int len) {
@@ -2281,31 +2281,31 @@ public class LibSpoofPrimitives
 	}
 	
 	public static double[] vectLessequalWrite(double[] a, double bval, int ai, int len) {
-        double[] c = allocVector(len, false);
-        final DoubleVector bVec  = DoubleVector.broadcast(SPECIES, bval);
-        final DoubleVector ones  = DoubleVector.broadcast(SPECIES, 1.0);
-        final DoubleVector zeros = DoubleVector.zero(SPECIES);
+		double[] c = allocVector(len, false);
+		final DoubleVector bVec  = DoubleVector.broadcast(SPECIES, bval);
+		final DoubleVector ones  = DoubleVector.broadcast(SPECIES, 1.0);
+		final DoubleVector zeros = DoubleVector.zero(SPECIES);
 
-        int i = 0;
-        int upper = SPECIES.loopBound(len);
+		int i = 0;
+		int upper = SPECIES.loopBound(len);
 
 		//unrolled vLen-block  (for better instruction-level parallelism)
-        for (; i < upper; i += vLen) {
-            DoubleVector aVec = DoubleVector.fromArray(SPECIES, a, ai + i);
+		for (; i < upper; i += vLen) {
+			DoubleVector aVec = DoubleVector.fromArray(SPECIES, a, ai + i);
 
-            VectorMask<Double> le = aVec.compare(VectorOperators.LE, bVec);
-            DoubleVector out = zeros.blend(ones, le);
+			VectorMask<Double> le = aVec.compare(VectorOperators.LE, bVec);
+			DoubleVector out = zeros.blend(ones, le);
 
-            out.intoArray(c, i);
-        }
+			out.intoArray(c, i);
+		}
 
 		//rest, not aligned to vLen-blocks
-        for (; i < len; i++) {
-            c[i] = (a[ai + i] <= bval) ? 1.0 : 0.0;
-        }
+		for (; i < len; i++) {
+			c[i] = (a[ai + i] <= bval) ? 1.0 : 0.0;
+		}
 
-        return c;
-    }
+		return c;
+	}
 	
 	public static double[] vectLessequalWrite(double bval, double[] a, int ai, int len) {
 		return vectGreaterWrite(a, bval, ai, len);
@@ -2410,30 +2410,30 @@ public class LibSpoofPrimitives
 	}
 	
 	public static double[] vectGreaterWrite(double[] a, double bval, int ai, int len) {
-        double[] c = allocVector(len, false);
-        final DoubleVector bVec  = DoubleVector.broadcast(SPECIES, bval);
-        final DoubleVector ones  = DoubleVector.broadcast(SPECIES, 1.0);
-        final DoubleVector zeros = DoubleVector.zero(SPECIES);
+		double[] c = allocVector(len, false);
+		final DoubleVector bVec  = DoubleVector.broadcast(SPECIES, bval);
+		final DoubleVector ones  = DoubleVector.broadcast(SPECIES, 1.0);
+		final DoubleVector zeros = DoubleVector.zero(SPECIES);
 
-        int i = 0;
-        int upper = SPECIES.loopBound(len);
+		int i = 0;
+		int upper = SPECIES.loopBound(len);
 
 		//unrolled vLen-block  (for better instruction-level parallelism)
-        for (; i < upper; i += vLen) {
-            DoubleVector aVec = DoubleVector.fromArray(SPECIES, a, ai + i);
+		for (; i < upper; i += vLen) {
+			DoubleVector aVec = DoubleVector.fromArray(SPECIES, a, ai + i);
 
-            VectorMask<Double> gt = aVec.compare(VectorOperators.GT, bVec);
-            DoubleVector out = zeros.blend(ones, gt);
+			VectorMask<Double> gt = aVec.compare(VectorOperators.GT, bVec);
+			DoubleVector out = zeros.blend(ones, gt);
 
-            out.intoArray(c, i);
-        }
+			out.intoArray(c, i);
+		}
 
 		//rest, not aligned to vLen-blocks
-        for (; i < len; i++) {
-            c[i] = (a[ai + i] > bval) ? 1.0 : 0.0;
+		for (; i < len; i++) {
+			c[i] = (a[ai + i] > bval) ? 1.0 : 0.0;
 		}
-        return c;
-    }
+		return c;
+	}
 	
 	public static double[] vectGreaterWrite(double bval, double[] a, int ai, int len) {
 		return vectLessWrite(a, bval, ai, len);
@@ -2447,7 +2447,7 @@ public class LibSpoofPrimitives
 	}
 
 	// not in use: vector api implementation slower than scalar loop version
-	public static double[] vectGreaterWrite_vector_api(double[] a, double[] b, int ai, int bi, int len) {
+	public static double[] vectGreaterWriteVectorAPI(double[] a, double[] b, int ai, int bi, int len) {
 		double[] c = allocVector(len, false);
 		final DoubleVector ones  = DoubleVector.broadcast(SPECIES, 1.0);
 		final DoubleVector zeros = DoubleVector.zero(SPECIES);

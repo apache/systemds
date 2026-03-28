@@ -4037,7 +4037,7 @@ public class LibMatrixMult
 	
 		return c;
 	}
-	public static double[] vectMult2Write_dedicated_2(double[] a, double[] c, int ai, int len) {
+	public static double[] vectMult2WriteDedicated2(double[] a, double[] c, int ai, int len) {
 		
 		final int bn = len % vLen;
 	

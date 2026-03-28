@@ -39,6 +39,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.io.FileUtils;
@@ -1236,15 +1241,39 @@ public abstract class AutomatedTestBase {
 			}
 			Process child = Runtime.getRuntime().exec(cmd);
 
-			outputR = IOUtils.toString(child.getInputStream(), Charset.defaultCharset());
-			errorString = IOUtils.toString(child.getErrorStream(), Charset.defaultCharset());
-			
-			//
-			// To give any stream enough time to print all data, otherwise there
-			// are situations where the test case fails, even before everything
-			// has been printed
-			//
-			child.waitFor();
+			// Drain stdout and stderr concurrently. Reading one stream to EOF before
+			// the other can deadlock the child process: if it fills the unread pipe
+			// (often 64 KiB), it blocks until that pipe is drained — so MLContext and
+			// other R-based tests flake in CI when R is chatty on stderr.
+			ExecutorService pool = Executors.newFixedThreadPool(2);
+			try {
+				Future<String> outFuture = pool.submit(
+					() -> IOUtils.toString(child.getInputStream(), Charset.defaultCharset()));
+				Future<String> errFuture = pool.submit(
+					() -> IOUtils.toString(child.getErrorStream(), Charset.defaultCharset()));
+				child.waitFor();
+				outputR = outFuture.get();
+				errorString = errFuture.get();
+			} catch(InterruptedException ie) {
+				Thread.currentThread().interrupt();
+				throw new RuntimeException(ie);
+			} catch(ExecutionException ee) {
+				Throwable c = ee.getCause();
+				if(c instanceof RuntimeException) {
+					throw (RuntimeException) c;
+				}
+				throw new RuntimeException(c);
+			} finally {
+				pool.shutdown();
+				try {
+					if(!pool.awaitTermination(60, TimeUnit.SECONDS)) {
+						pool.shutdownNow();
+					}
+				} catch(InterruptedException ie) {
+					pool.shutdownNow();
+					Thread.currentThread().interrupt();
+				}
+			}
 			try {
 				if(child.exitValue() != 0) {
 					throw new Exception(

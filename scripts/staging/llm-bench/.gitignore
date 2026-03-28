@@ -1,7 +1,5 @@
 # Benchmark outputs (metrics, prompts, samples — reproduce locally)
 results/
-*.html
-!templates/*.html
 
 # Python
 __pycache__/

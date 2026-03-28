@@ -77,6 +77,7 @@ public class ProgramRewriter{
 			//add static HOP DAG rewrite rules
 			_dagRuleSet.add(     new RewriteRemoveReadAfterWrite()               ); //dependency: before blocksize
 			_dagRuleSet.add(     new RewriteBlockSizeAndReblock()                );
+	
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
 				_dagRuleSet.add( new RewriteRemoveUnnecessaryCasts()             );
 			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )
@@ -92,7 +93,6 @@ public class ProgramRewriter{
 			_dagRuleSet.add( new RewriteInjectSparkPReadCheckpointing()          ); //dependency: reblock
 			if( OptimizerUtils.ALLOW_QUANTIZE_COMPRESS_REWRITE )
 				_dagRuleSet.add( new RewriteQuantizationFusedCompression()  	 );
-
 
 			//add statement block rewrite rules
 			if( OptimizerUtils.ALLOW_BRANCH_REMOVAL )
@@ -119,6 +119,8 @@ public class ProgramRewriter{
  				_sbRuleSet.add(  new MarkForLineageReuse()                       );
  			_sbRuleSet.add(      new RewriteRemoveTransformEncodeMeta()          );
  			_dagRuleSet.add( new RewriteNonScalarPrint()                         );
+			if( OptimizerUtils.ALLOW_JOIN_REORDERING_REWRITE )
+				_sbRuleSet.add( new RewriteJoinReordering() );
  		}
 		
 		// DYNAMIC REWRITES (which do require size information)

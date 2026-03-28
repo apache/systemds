@@ -40,8 +40,12 @@
 
 	<properties>
 		<hadoop.version>3.3.6</hadoop.version>
+		<!-- Securitiy fix: io.netty/netty@3.10.6.Final -->
+		<hadoop-hdfs.version>3.4.2</hadoop-hdfs.version>
+		<!-- low 2.0: CVE-2024-23454 Improper Privilege Management -->
+		<hadoop-common.version>3.4.2</hadoop-common.version>
 		<antlr.version>4.8</antlr.version>
-		<protobuf.version>3.23.4</protobuf.version>
+		<protobuf.version>3.25.5</protobuf.version>  <!-- CVE-2024-7254 -->
 		<spark.version>3.5.0</spark.version>
 		<scala.version>2.12.18</scala.version>
 		<scala.binary.version>2.12</scala.binary.version>
@@ -52,6 +56,12 @@
 		<jcuda.version>12.6.0</jcuda.version>
 		<slf4j.version>2.0.11</slf4j.version>
 		<log4j.version>2.22.1</log4j.version>
+		<!-- Security fix: CVE-2025-68161 - pin log4j-core to 2.25.3 -->
+		<log4j-core.version>2.25.3</log4j-core.version>
+		<!-- Security fix: CVE-2024-47561 - pin avro to 1.11.4 -->
+		<avro.version>1.11.4</avro.version>
+		<!-- Security fix: CVE-2023-25613 - pin kerby to 2.0.3 -->
+		<kerby.version>2.0.3</kerby.version>
 		<maven-clean-plugin.version>3.2.0</maven-clean-plugin.version>
 		<maven-surefire-plugin.version>3.0.0</maven-surefire-plugin.version>
         <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
@@ -69,7 +79,7 @@
 		<!-- aws-java-sdk-bundle.version>1.12.367</aws-java-sdk-bundle.version -->
 		<!-- Set java compile level via argument, ex: 1.8 1.9 10 11-->
 		<java.level>17</java.level>
-		<java.version>{java.level}</java.version>
+		<java.version>${java.level}</java.version>
 		<!-->Testing settings<!-->
 		<maven.test.skip>false</maven.test.skip>
 		<test>org.apache.sysds.test.usertest.**</test>
@@ -87,15 +97,32 @@
 
 		<!-- Dependent on Spark open to access deprecated api components from <= Java 11. Should be removed once Spark updates fully to Java 17 -->
 		<jvm.addopens>
-			--add-opens=java.base/java.nio=ALL-UNNAMED 
-			--add-opens=java.base/java.io=ALL-UNNAMED 
-			--add-opens=java.base/java.util=ALL-UNNAMED 
-			--add-opens=java.base/java.lang=ALL-UNNAMED 
+			--add-opens=java.base/java.nio=ALL-UNNAMED
+			--add-opens=java.base/java.io=ALL-UNNAMED
+			--add-opens=java.base/java.util=ALL-UNNAMED
+			--add-opens=java.base/java.lang=ALL-UNNAMED
 			--add-opens=java.base/java.lang.ref=ALL-UNNAMED
 			--add-opens=java.base/java.util.concurrent=ALL-UNNAMED
 			--add-opens=java.base/sun.nio.ch=ALL-UNNAMED
 			--add-modules=jdk.incubator.vector
 		</jvm.addopens>
+
+		<!-- Security fixes for high-severity CVEs (transitive dependencies) -->
+		<commons-io.version>2.14.0</commons-io.version>          <!-- CVE-2024-47554 -->
+		<jettison.version>1.5.4</jettison.version>               <!-- CVE-2023-1436 -->
+		<snappy-java.version>1.1.10.4</snappy-java.version>      <!-- CVE-2023-43642, CVE-2023-34453/4/5 -->
+		<logback.version>1.2.13</logback.version>                <!-- CVE-2023-6378 -->
+		<jackson.version>2.15.0</jackson.version>                <!-- CVE-2025-52999 -->
+		<json-smart.version>2.4.9</json-smart.version>           <!-- CVE-2023-1370 -->
+		<nimbus-jose-jwt.version>9.37.4</nimbus-jose-jwt.version><!-- CVE-2023-52428, CVE-2025-53864 -->
+		<aircompressor.version>0.27</aircompressor.version>      <!-- CVE-2024-36114 -->
+		<netty.version>4.1.124.Final</netty.version>             <!-- CVE-2025-55163, CVE-2023-44487 -->
+		<netty-codec.version>4.1.129.Final</netty-codec.version> <!-- CVE-2025-67735, CVE-2025-58056, CVE-2025-58057, CVE-2025-59419 -->
+		<jetty.version>9.4.57.v20241219</jetty.version>          <!-- CVE-2024-6763 -->
+		<jetty-http.version>12.0.12</jetty-http.version>         <!-- CVE-2024-6763 -->
+		<xnio.version>3.8.14.Final</xnio.version>                <!-- CVE-2023-5685 -->
+		<commons-beanutils.version>1.11.0</commons-beanutils.version>  <!-- CVE-2025-48734 -->
+		<dnsjava.version>3.6.0</dnsjava.version>                 <!-- CVE-2024-25638 -->
 	</properties>
 
 	<repositories>
@@ -107,6 +134,198 @@
 			</releases>
 		</repository>
 	</repositories>
+
+	<!-- Dependency management to pin transitive dependencies for security fixes -->
+	<dependencyManagement>
+		<dependencies>
+			<!-- CVE-2024-47554: Denial of service in Commons IO -->
+			<dependency>
+				<groupId>commons-io</groupId>
+				<artifactId>commons-io</artifactId>
+				<version>${commons-io.version}</version>
+			</dependency>
+			<!-- CVE-2023-1436: Stack overflow in Jettison -->
+			<dependency>
+				<groupId>org.codehaus.jettison</groupId>
+				<artifactId>jettison</artifactId>
+				<version>${jettison.version}</version>
+			</dependency>
+			<!-- CVE-2023-43642, CVE-2023-34453/4/5: Multiple vulnerabilities in snappy-java -->
+			<dependency>
+				<groupId>org.xerial.snappy</groupId>
+				<artifactId>snappy-java</artifactId>
+				<version>${snappy-java.version}</version>
+			</dependency>
+			<!-- CVE-2023-6378: Deserialization vulnerability in Logback -->
+			<dependency>
+				<groupId>ch.qos.logback</groupId>
+				<artifactId>logback-core</artifactId>
+				<version>${logback.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>ch.qos.logback</groupId>
+				<artifactId>logback-classic</artifactId>
+				<version>${logback.version}</version>
+			</dependency>
+			<!-- CVE-2025-52999: Stack overflow in Jackson -->
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-core</artifactId>
+				<version>${jackson.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-databind</artifactId>
+				<version>${jackson.version}</version>
+			</dependency>
+			<!-- CVE-2023-1370: Stack overflow in json-smart -->
+			<dependency>
+				<groupId>net.minidev</groupId>
+				<artifactId>json-smart</artifactId>
+				<version>${json-smart.version}</version>
+			</dependency>
+			<!-- CVE-2023-52428: Resource consumption in nimbus-jose-jwt -->
+			<dependency>
+				<groupId>com.nimbusds</groupId>
+				<artifactId>nimbus-jose-jwt</artifactId>
+				<version>${nimbus-jose-jwt.version}</version>
+			</dependency>
+			<!-- CVE-2024-36114: Out-of-bounds read in aircompressor -->
+			<dependency>
+				<groupId>io.airlift</groupId>
+				<artifactId>aircompressor</artifactId>
+				<version>${aircompressor.version}</version>
+			</dependency>
+			<!-- CVE-2024-47561: Deserialization vulnerability in Apache Avro -->
+			<dependency>
+				<groupId>org.apache.avro</groupId>
+				<artifactId>avro</artifactId>
+				<version>${avro.version}</version>
+			</dependency>
+			<!-- CVE-2023-25613: LDAP Injection vulnerability in Apache Kerby -->
+			<dependency>
+				<groupId>org.apache.kerby</groupId>
+				<artifactId>kerb-admin</artifactId>
+				<version>${kerby.version}</version>
+			</dependency>
+			<!-- CVE-2025-55163, CVE-2023-44487: HTTP/2 vulnerabilities in Netty -->
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-codec-http2</artifactId>
+				<version>${netty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-codec-http</artifactId>
+				<version>${netty-codec.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-codec-smtp</artifactId>
+				<version>${netty-codec.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-codec</artifactId>
+				<version>${netty-codec.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-common</artifactId>
+				<version>${netty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-handler</artifactId>
+				<version>${netty.version}</version>
+			</dependency>
+			<!-- CVE-2024-6763: HTTP request smuggling in Jetty -->
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-server</artifactId>
+				<version>${jetty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-http</artifactId>
+				<version>${jetty-http.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-webapp</artifactId>
+				<version>${jetty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-xml</artifactId>
+				<version>${jetty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-servlets</artifactId>
+				<version>${jetty.version}</version>
+			</dependency>
+			<!-- CVE-2023-5685: Resource consumption in XNIO -->
+			<dependency>
+				<groupId>org.jboss.xnio</groupId>
+				<artifactId>xnio-api</artifactId>
+				<version>${xnio.version}</version>
+			</dependency>
+			<!-- CVE-2025-48734: Access control in Commons BeanUtils -->
+			<dependency>
+				<groupId>commons-beanutils</groupId>
+				<artifactId>commons-beanutils</artifactId>
+				<version>${commons-beanutils.version}</version>
+			</dependency>
+			<!-- CVE-2024-25638: DNS response validation in dnsjava -->
+			<dependency>
+				<groupId>dnsjava</groupId>
+				<artifactId>dnsjava</artifactId>
+				<version>${dnsjava.version}</version>
+			</dependency>
+			<!-- CVE-2024-7254: Stack overflow in protobuf-java (transitive override) -->
+			<dependency>
+				<groupId>com.google.protobuf</groupId>
+				<artifactId>protobuf-java</artifactId>
+				<version>${protobuf.version}</version>
+			</dependency>
+			<!-- CVE-2024-26308, CVE-2024-25710, CVE-2023-42503 -->
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-compress</artifactId>
+				<version>1.26.0</version>
+			</dependency>
+			<!-- CVE-2024-29133, CVE-2024-29131 -->
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-configuration2</artifactId>
+				<version>2.10.1</version>
+			</dependency>
+			<!-- CVE-2023-2976, CVE-2020-8908 -->
+			<dependency>
+				<groupId>org.apache.hadoop.thirdparty</groupId>
+				<artifactId>hadoop-shaded-guava</artifactId>
+				<version>1.5.0</version>
+			</dependency>
+			<dependency>
+				<groupId>com.google.guava</groupId>
+				<artifactId>guava</artifactId>
+				<version>33.5.0-jre</version>
+			</dependency>
+			<!-- CVE-2025-48924: Uncontrolled Recursion -->
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-lang3</artifactId>
+				<version>3.18.0</version>
+			</dependency>
+			<!-- CVE-2025-55039: Inadequate Encryption Strength -->
+			<dependency>
+				<groupId>org.apache.spark</groupId>
+				<artifactId>spark-network-common_2.12</artifactId>
+				<version>3.5.2</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
 	<scm>
 		<developerConnection>scm:git:https://github.com/apache/systemds.git</developerConnection>
@@ -394,7 +613,7 @@
                 </configuration>
             </plugin>
 
-            <plugin>
+			<plugin>
 				<!-- unit tests -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
@@ -547,7 +766,6 @@
 				</executions>
 			</plugin>
 		</plugins>
-
 	</build>
 
 	<profiles>
@@ -827,7 +1045,6 @@
 					</plugin>
 				</plugins>
 			</build>
-
 		</profile>
 
 		<profile>
@@ -969,7 +1186,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcublas</artifactId>
@@ -983,7 +1199,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusparse</artifactId>
@@ -997,7 +1212,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusolver</artifactId>
@@ -1011,7 +1225,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcudnn</artifactId>
@@ -1025,7 +1238,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<!-- for all platforms, to be included in the extra jar -->
 		<dependency>
 			<groupId>org.jcuda</groupId>
@@ -1034,7 +1246,6 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcublas-natives</artifactId>
@@ -1042,7 +1253,6 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusparse-natives</artifactId>
@@ -1050,7 +1260,6 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusolver-natives</artifactId>
@@ -1058,7 +1267,6 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcudnn-natives</artifactId>
@@ -1066,7 +1274,6 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcuda-natives</artifactId>
@@ -1074,7 +1281,6 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcublas-natives</artifactId>
@@ -1082,7 +1288,6 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusparse-natives</artifactId>
@@ -1090,7 +1295,6 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusolver-natives</artifactId>
@@ -1098,13 +1302,28 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcudnn-natives</artifactId>
 			<classifier>linux-x86_64</classifier>
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-handler</artifactId>
+			<version>${netty.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.zookeeper</groupId>
+			<artifactId>zookeeper</artifactId>
+			<version>3.9.4</version>
+			<exclusions>
+				<exclusion>
+					<groupId>io.netty</groupId>
+					<artifactId>netty-handler</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.spark</groupId>
@@ -1171,9 +1390,39 @@
 					<groupId>com.google.protobuf</groupId>
 					<artifactId>protobuf-java</artifactId>
 				</exclusion>
+				<exclusion>
+					<groupId>org.apache.zookeeper</groupId>
+					<artifactId>zookeeper</artifactId>
+				</exclusion>
+				<!-- Exclude old guava to use managed version -->
+				<exclusion>
+					<groupId>com.google.guava</groupId>
+					<artifactId>guava</artifactId>
+				</exclusion>
+				<!-- Exclude old jackson to use managed version -->
+				<exclusion>
+					<groupId>com.fasterxml.jackson.core</groupId>
+					<artifactId>jackson-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>com.fasterxml.jackson.core</groupId>
+					<artifactId>jackson-databind</artifactId>
+				</exclusion>
+				<!-- Exclude old jetty to use managed version -->
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-server</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-http</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-servlets</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-sql_${scala.binary.version}</artifactId>
@@ -1215,9 +1464,35 @@
 					<groupId>org.slf4j</groupId>
 					<artifactId>jul-to-slf4j</artifactId>
 				</exclusion>
+				<!-- Exclude old guava to use managed version -->
+				<exclusion>
+					<groupId>com.google.guava</groupId>
+					<artifactId>guava</artifactId>
+				</exclusion>
+				<!-- Exclude old jackson to use managed version -->
+				<exclusion>
+					<groupId>com.fasterxml.jackson.core</groupId>
+					<artifactId>jackson-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>com.fasterxml.jackson.core</groupId>
+					<artifactId>jackson-databind</artifactId>
+				</exclusion>
+				<!-- Exclude old jetty to use managed version -->
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-server</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-http</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-servlets</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-mllib_${scala.binary.version}</artifactId>
@@ -1259,13 +1534,39 @@
 					<groupId>org.slf4j</groupId>
 					<artifactId>jul-to-slf4j</artifactId>
 				</exclusion>
+				<!-- Exclude old guava to use managed version -->
+				<exclusion>
+					<groupId>com.google.guava</groupId>
+					<artifactId>guava</artifactId>
+				</exclusion>
+				<!-- Exclude old jackson to use managed version -->
+				<exclusion>
+					<groupId>com.fasterxml.jackson.core</groupId>
+					<artifactId>jackson-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>com.fasterxml.jackson.core</groupId>
+					<artifactId>jackson-databind</artifactId>
+				</exclusion>
+				<!-- Exclude old jetty to use managed version -->
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-server</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-http</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-servlets</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-common</artifactId>
-			<version>${hadoop.version}</version>
+			<version>${hadoop-common.version}</version>
 			<exclusions>
 				<exclusion>
 					<groupId>javax.servlet</groupId>
@@ -1295,13 +1596,43 @@
 					<groupId>org.slf4j</groupId>
 					<artifactId>jul-to-slf4j</artifactId>
 				</exclusion>
+				<exclusion>
+					<groupId>org.apache.zookeeper</groupId>
+					<artifactId>zookeeper</artifactId>
+				</exclusion>
+				<!-- Exclude old guava to use managed version -->
+				<exclusion>
+					<groupId>com.google.guava</groupId>
+					<artifactId>guava</artifactId>
+				</exclusion>
+				<!-- Exclude old jackson to use managed version -->
+				<exclusion>
+					<groupId>com.fasterxml.jackson.core</groupId>
+					<artifactId>jackson-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>com.fasterxml.jackson.core</groupId>
+					<artifactId>jackson-databind</artifactId>
+				</exclusion>
+				<!-- Exclude old jetty to use managed version -->
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-server</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-http</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-servlets</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-hdfs</artifactId>
-			<version>${hadoop.version}</version>
+			<version>${hadoop-hdfs.version}</version>
 			<exclusions>
 				<exclusion>
 					<groupId>javax.servlet</groupId>
@@ -1331,9 +1662,35 @@
 					<groupId>org.slf4j</groupId>
 					<artifactId>jul-to-slf4j</artifactId>
 				</exclusion>
+				<!-- Exclude old guava to use managed version -->
+				<exclusion>
+					<groupId>com.google.guava</groupId>
+					<artifactId>guava</artifactId>
+				</exclusion>
+				<!-- Exclude old jackson to use managed version -->
+				<exclusion>
+					<groupId>com.fasterxml.jackson.core</groupId>
+					<artifactId>jackson-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>com.fasterxml.jackson.core</groupId>
+					<artifactId>jackson-databind</artifactId>
+				</exclusion>
+				<!-- Exclude old jetty to use managed version -->
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-server</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-http</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-servlets</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-client</artifactId>
@@ -1367,9 +1724,35 @@
 					<groupId>org.slf4j</groupId>
 					<artifactId>jul-to-slf4j</artifactId>
 				</exclusion>
+				<!-- Exclude old guava to use managed version -->
+				<exclusion>
+					<groupId>com.google.guava</groupId>
+					<artifactId>guava</artifactId>
+				</exclusion>
+				<!-- Exclude old jackson to use managed version -->
+				<exclusion>
+					<groupId>com.fasterxml.jackson.core</groupId>
+					<artifactId>jackson-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>com.fasterxml.jackson.core</groupId>
+					<artifactId>jackson-databind</artifactId>
+				</exclusion>
+				<!-- Exclude old jetty to use managed version -->
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-server</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-http</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-servlets</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<!--dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-aws</artifactId>
@@ -1381,7 +1764,6 @@
 			<artifactId>aws-java-sdk-bundle</artifactId>
 			<version>${aws-java-sdk-bundle.version}</version>
 		</dependency-->
-
 		<dependency>
 			<groupId>commons-logging</groupId>
 			<artifactId>commons-logging</artifactId>
@@ -1409,46 +1791,39 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-math3</artifactId>
 			<version>3.4.1</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.wink</groupId>
 			<artifactId>wink-json4j</artifactId>
 			<version>1.4</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 			<version>2.15.2</version>
 		</dependency>
-
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.13.1</version>
 			<scope>provided</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.openjdk.jol</groupId>
 			<artifactId>jol-core</artifactId>
 			<version>0.10</version>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
 			<version>5.1.0</version>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
 			<!--Used for annotations in tests to execute tests in thread safe manner-->
 			<groupId>com.github.stephenc.jcip</groupId>
@@ -1456,7 +1831,6 @@
 			<version>1.0-1</version>
 			<scope>test</scope>
 		</dependency>
-
 		<!-- fast java compiler for codegen, consistent version w/ spark -->
 		<dependency>
 			<groupId>org.codehaus.janino</groupId>
@@ -1464,7 +1838,6 @@
 			<version>3.1.9</version>
 			<scope>provided</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.antlr</groupId>
 			<artifactId>antlr4</artifactId>
@@ -1477,20 +1850,17 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.antlr</groupId>
 			<artifactId>antlr4-runtime</artifactId>
 			<version>${antlr.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.derby</groupId>
 			<artifactId>derby</artifactId>
 			<version>10.14.2.0</version>
 			<scope>provided</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>
@@ -1507,49 +1877,41 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>net.sf.py4j</groupId>
 			<artifactId>py4j</artifactId>
 			<version>0.10.9</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.google.protobuf</groupId>
 			<artifactId>protobuf-java</artifactId>
 			<version>${protobuf.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.google.protobuf</groupId>
 			<artifactId>protobuf-java-util</artifactId>
 			<version>${protobuf.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 			<version>${slf4j.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-reload4j</artifactId>
 			<version>${slf4j.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>jul-to-slf4j</artifactId>
 			<version>${slf4j.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>jcl-over-slf4j</artifactId>
 			<version>${slf4j.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-api</artifactId>
@@ -1565,13 +1927,11 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-core</artifactId>
-			<version>${log4j.version}</version>
+			<version>${log4j-core.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>ch.randelshofer</groupId>
 			<artifactId>fastdoubleparser</artifactId>

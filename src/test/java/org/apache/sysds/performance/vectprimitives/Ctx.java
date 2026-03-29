@@ -18,7 +18,7 @@
  */
 
 
-package org.apache.sysds.performance.primitives_vector_api;
+package org.apache.sysds.performance.vectprimitives;
 
 public class Ctx {
 	public int len;
@@ -61,7 +61,7 @@ public class Ctx {
 		for (int i = 0; i < len; i++) b[i] = ((i % 10) + 1);
 	}
 
-	void initDenseAandC_mutable() {
+	void initDenseACMutable() {
 		initDenseADiv();
 		cInit = new double[len];
 		for (int i = 0; i < len; i++) cInit[i] = (i % 10) - 5;

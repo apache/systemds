@@ -18,7 +18,7 @@
  */
 
 
-package org.apache.sysds.performance.primitives_vector_api;
+package org.apache.sysds.performance.vectprimitives;
 
 
 public class BenchUtil {
@@ -51,7 +51,7 @@ public class BenchUtil {
 			return args[i + 1];
 		return def;
 	}
-  
+
 	public static double maxAbsDiff(double[] a, double[] b) {
 		double m = 0;
 		for (int i = 0; i < a.length; i++)
@@ -63,7 +63,7 @@ public class BenchUtil {
 		double nsScalar, double nsVector,
 		double scalarRes, double vectorRes,
 		boolean ok) {
-  
+
 		double speedup = nsScalar / nsVector;
 		System.out.printf("%s | scalar %.1f ns | vector %.1f ns | speedup %.3fx | " +
 						"s=%.6g v=%.6g | %s%n",
@@ -80,5 +80,4 @@ public class BenchUtil {
 						"maxDiff=%.6g | %s%n",
 		name, nsScalar, nsVector, speedup, maxDiff, ok ? "OK" : "FAIL");
 	}
-  }
-  
+}

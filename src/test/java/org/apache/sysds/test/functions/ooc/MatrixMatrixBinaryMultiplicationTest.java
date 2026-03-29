@@ -122,6 +122,7 @@ public class MatrixMatrixBinaryMultiplicationTest extends AutomatedTestBase {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private static double[][] readMatrix(String fname, Types.FileFormat fmt, long rows, long cols, int brows, int bcols )
 			throws IOException
 	{

@@ -300,7 +300,6 @@ public class ColGroupDDCLZWTest {
 		double[] dictValues = new double[] {42.0};
 		Dictionary dict = Dictionary.create(dictValues);
 
-		int[] src = new int[] {0, 0, 0, 0};
 		AMapToData data = MapToFactory.create(4, 1);
 		for(int i = 0; i < 4; i++) {
 			data.set(i, 0);

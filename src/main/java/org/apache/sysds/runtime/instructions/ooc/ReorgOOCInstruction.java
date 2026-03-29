@@ -44,7 +44,7 @@ public class ReorgOOCInstruction extends ComputationOOCInstruction {
 	// reshape-specific attributes
 	private final CPOperand _opRows;
 	private final CPOperand _opCols;
-	private final CPOperand _opDims;
+	//private final CPOperand _opDims;
 	private final CPOperand _opByRow;
 
 	protected ReorgOOCInstruction(ReorgOperator op, CPOperand in1, CPOperand out, String opcode, String istr) {
@@ -64,7 +64,7 @@ public class ReorgOOCInstruction extends ComputationOOCInstruction {
 		_ixret = ixret;
 		_opRows = opRows;
 		_opCols = opCols;
-		_opDims = opDims;
+		//_opDims = opDims;
 		_opByRow = opByRow;
 	}
 

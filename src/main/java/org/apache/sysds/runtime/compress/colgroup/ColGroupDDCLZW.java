@@ -283,6 +283,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 			return mapIndex < _nRows;
 		}
 
+		@SuppressWarnings("unused")
 		void skip(int k) {
 			for(int i = 0; i < k; i++)
 				next();

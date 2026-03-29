@@ -363,7 +363,7 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 	}
 
 	@Override
-	public String toString() {
+	public synchronized String toString() {
 		return "STQ-" + hashCode();
 	}
 }

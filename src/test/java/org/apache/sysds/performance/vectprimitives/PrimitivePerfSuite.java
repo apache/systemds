@@ -18,7 +18,7 @@
  */
 
 
-package org.apache.sysds.performance.primitives_vector_api;
+package org.apache.sysds.performance.vectprimitives;
 
 
 public class PrimitivePerfSuite {

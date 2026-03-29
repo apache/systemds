@@ -86,7 +86,7 @@ public class OOCLRUCacheSchedulerTest {
 	@Test
 	public void testDeferredReadSingleBlock() throws Exception {
 		BlockKey key = new BlockKey(1, 1);
-		BlockEntry entry = putColdSourceBacked(key);
+		putColdSourceBacked(key);
 		Assert.assertEquals(0, _scheduler.getCacheSize());
 
 		CompletableFuture<BlockEntry> future = _scheduler.request(key);

@@ -18,7 +18,7 @@
  */
 
 
-package org.apache.sysds.performance.primitives_vector_api;
+package org.apache.sysds.performance.vectprimitives;
 
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 
@@ -32,7 +32,7 @@ import jdk.incubator.vector.VectorSpecies;
 import jdk.incubator.vector.VectorMask;
 
 
-public class backup_primitives_for_benchmark {
+public class BenchmarkPrimitives {
 
 	// Vector API initializations
 	private static final VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_PREFERRED;
@@ -538,7 +538,7 @@ public class backup_primitives_for_benchmark {
 	}
 	
 	// not in use: vector api implementation slower than scalar loop version
-	public static double[] vectNotequalWrite_vector_api(double[] a, double[] b, int ai, int bi, int len) {
+	public static double[] vectNotequalWriteVectorAPI(double[] a, double[] b, int ai, int bi, int len) {
 		double[] c = allocVector(len, false);
 		final DoubleVector ones  = DoubleVector.broadcast(SPECIES, 1.0);
 		final DoubleVector zeros = DoubleVector.zero(SPECIES);

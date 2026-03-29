@@ -1577,5 +1577,6 @@
 			<artifactId>fastdoubleparser</artifactId>
 			<version>0.9.0</version>
 		</dependency>
+
 	</dependencies>
 </project>

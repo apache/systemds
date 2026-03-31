@@ -301,7 +301,7 @@ public class TransposeInPlaceBrennerTest {
 	}
 
 	@Test
-	public void testTensorPermute_SingleElement() {
+	public void testTensorPermuteSingleElement() {
 		int[] shape = {1, 1, 1};
 		int[] perm = {2, 1, 0};
 		testTransposeInPlaceTensor(shape, perm);
@@ -403,7 +403,7 @@ public class TransposeInPlaceBrennerTest {
 	// 9. Invalid permutations (negative tests)
 	// NOTE: more detailed error handling can be added in the future, currently these are just checking for exceptions
 	@Test
-	public void testTensorPermute_InvalidPerm_OutOfRange() {
+	public void testTensorPermuteInvalidPermOutOfRange() {
 		int[] shape = {2, 3, 4};
 		int[] perm = {0, 1, 3}; // 3 is out of range for 3D tensor
 		
@@ -647,7 +647,7 @@ public class TransposeInPlaceBrennerTest {
 		}
 		
 		@Test
-		public void testTensorPermuteSplitShape_2D() {
+		public void testTensorPermuteSplitShape2D() {
 		int[] shape = {2,3}; 
 		int[] perm = {1,0}; 
 		

@@ -205,7 +205,7 @@ public abstract class OOCInstruction extends Instruction {
 		return new MergedOOCStream<>(streams);
 	}
 
-	@SuppressWarnings({"varargs", "unchecked"})
+	@SuppressWarnings({"unchecked"})
 	protected <T> OOCStream<T> mergeOOCStreams(OOCStream<T>... streams) {
 		return new MergedOOCStream<>(streams);
 	}
@@ -1093,7 +1093,6 @@ public abstract class OOCInstruction extends Instruction {
 					};
 
 					if(callback instanceof OOCStream.GroupQueueCallback<?>) {
-						@SuppressWarnings("unchecked")
 						OOCStream.GroupQueueCallback<T> group = (OOCStream.GroupQueueCallback<T>) callback;
 
 						if(localFuture.isDone()) {

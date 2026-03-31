@@ -85,7 +85,6 @@ public class FilteredOOCStream<T> implements OOCStream<T> {
 			}
 
 			if(cb instanceof OOCStream.GroupQueueCallback<?>) {
-				@SuppressWarnings("unchecked")
 				OOCStream.GroupQueueCallback<T> group = (OOCStream.GroupQueueCallback<T>) cb;
 				for(int i = 0; i < group.size(); i++) {
 					QueueCallback<T> sub = group.getCallback(i);

@@ -31,21 +31,21 @@ public class MatrixMultTransposedPerformanceTest {
 	private final int k = 200;
 
 	@Test
-	public void testPerf_1_NoTransA_TransB() {
+	public void testPerf1NoTransATransB() {
 		System.out.println("Case: C = A %*% t(B)");
 		runTest(false, true);
 		System.out.println();
 	}
 
 	@Test
-	public void testPerf_2_TransA_NoTransB() {
+	public void testPerf2TransANoTransB() {
 		System.out.println("Case: C = t(A) %*% B");
 		runTest(true, false);
 		System.out.println();
 	}
 
 	@Test
-	public void testPerf_3_TransA_TransB() {
+	public void testPerf3TransATransB() {
 		System.out.println("Case: C = t(A) %*% t(B)");
 		runTest(true, true);
 	}

@@ -35,6 +35,7 @@ public class SplittingOOCStream<T> implements OOCStream<T> {
 	private OOCStream<T> _sourceStream;
 	private SubOOCStream<T>[] _subStreams;
 
+	@SuppressWarnings("unchecked")
 	public SplittingOOCStream(OOCStream<T> sourceStream, Function<T, Integer> partitionFunc, int numPartitions) {
 		_sourceStream = sourceStream;
 		_subStreams = new SubOOCStream[numPartitions];
@@ -75,7 +76,6 @@ public class SplittingOOCStream<T> implements OOCStream<T> {
 					}
 
 					if(cb instanceof OOCStream.GroupQueueCallback<?>) {
-						@SuppressWarnings("unchecked")
 						OOCStream.GroupQueueCallback<T> group = (OOCStream.GroupQueueCallback<T>) cb;
 						for(int gi = 0; gi < group.size(); gi++) {
 							OOCStream.QueueCallback<T> sub = group.getCallback(gi);

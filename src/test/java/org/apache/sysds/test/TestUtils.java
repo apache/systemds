@@ -3990,4 +3990,10 @@ public class TestUtils {
 			return 2;
 		}
 	}
+
+	public static void compareTensorValues(MatrixBlock actual, MatrixBlock expected, double epsilon) {
+		double[] a = actual.getDenseBlockValues();
+		double[] e = expected.getDenseBlockValues();
+		compareMatrices(e, a, epsilon);
+	}
 }

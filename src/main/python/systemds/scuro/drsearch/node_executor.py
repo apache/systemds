@@ -21,13 +21,15 @@
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 from dataclasses import dataclass
 import os
+from multiprocessing import shared_memory
 from systemds.scuro import Modality
+from systemds.scuro.drsearch.modality_shared_memory import add_shared_memory_candidate
 from systemds.scuro.drsearch.node_scheduler import MemoryAwareNodeScheduler
 from systemds.scuro.drsearch.representation_dag import (
     RepresentationDag,
     RepresentationNode,
 )
-import resource
+
 import numpy as np
 from typing import Any, Dict, List, Optional
 import multiprocessing as mp
@@ -42,6 +44,7 @@ from systemds.scuro.representations.dimensionality_reduction import (
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
+from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.utils.checkpointing import CheckpointManager
 import sys
@@ -49,6 +52,7 @@ import threading
 import time
 import psutil
 import os
+from systemds.scuro.utils.static_variables import DEBUG
 
 
 def measure_peak_rss_during(fn, *args, sample_s=0.01, **kwargs):
@@ -81,16 +85,40 @@ class RefCountResultCache:
         self.cache = {}
         self.ref_count = {}
         self.memory_usage_per_node = {}
+        self.shared_memory_names = {}
 
     def get(self, node_id: str) -> Any:
         return self.cache[node_id]
 
     def add_result(self, node_id: str, result: Any):
+        resident_bytes = result.calculate_memory_usage()
+        shared_backing_bytes = 0
+
+        if hasattr(result, "data"):
+            try:
+                data, shm_name, data_nbytes, resident_bytes = (
+                    add_shared_memory_candidate(result.data, resident_bytes)
+                )
+                if data is not None:
+                    result.data = data
+                    self.shared_memory_names[node_id] = [shm_name]
+                    shared_backing_bytes = data_nbytes
+            except Exception as e:
+                print(
+                    f"Failed to move cache entry {node_id} to shared memory, falling back to RAM: {e}"
+                )
+
         self.cache[node_id] = result
-        self.memory_usage_per_node[node_id] = result.calculate_memory_usage()
-        print(
-            f"Node {node_id} has a CPU memory usage of {self.memory_usage_per_node[node_id]/1024**3:.5f} GB"
-        )
+        self.memory_usage_per_node[node_id] = int(resident_bytes)
+        if DEBUG:
+            print(
+                f"Node {node_id} has a CPU memory usage of {self.memory_usage_per_node[node_id]/1024**3:.5f} GB"
+                + (
+                    f" (shared-memory backing: {shared_backing_bytes/1024**3:.5f} GB)"
+                    if shared_backing_bytes > 0
+                    else ""
+                )
+            )
 
     def inc_ref(self, node_id: str):
         if node_id not in self.ref_count:
@@ -103,16 +131,38 @@ class RefCountResultCache:
             del self.cache[node_id]
             del self.ref_count[node_id]
             del self.memory_usage_per_node[node_id]
+            self._cleanup_shared_memory(node_id)
 
     def clear(self, node_id: str):
-        del self.cache[node_id]
-        del self.ref_count[node_id]
+        if node_id in self.cache:
+            del self.cache[node_id]
+        if node_id in self.ref_count:
+            del self.ref_count[node_id]
+        if node_id in self.memory_usage_per_node:
+            del self.memory_usage_per_node[node_id]
+        self._cleanup_shared_memory(node_id)
 
     def __len__(self):
         return len(self.cache)
 
     def get_memory_total_memory_usage(self):
         return sum(self.memory_usage_per_node.values())
+
+    def _cleanup_shared_memory(self, node_id: str):
+        names = self.shared_memory_names.pop(node_id, [])
+        for shm_name in names:
+            try:
+                shm = shared_memory.SharedMemory(name=shm_name)
+                shm.close()
+                shm.unlink()
+            except FileNotFoundError:
+                pass
+            except Exception:
+                pass
+
+    def cleanup_all(self):
+        for node_id in list(self.shared_memory_names.keys()):
+            self._cleanup_shared_memory(node_id)
 
 
 def _execute_node_worker(node, input_mods, task, rep_cache, gpu_id):
@@ -123,6 +173,8 @@ def _execute_node_worker(node, input_mods, task, rep_cache, gpu_id):
 
     node_operation = node.operation(params=node.parameters)
     operation_name = node_operation.name
+    if DEBUG:
+        print(f"Executing node {node.node_id} {operation_name} on GPU {gpu_id}")
 
     if gpu_id is not None and hasattr(node_operation, "gpu_id"):
         node_operation.gpu_id = gpu_id
@@ -136,9 +188,15 @@ def _execute_node_worker(node, input_mods, task, rep_cache, gpu_id):
             elif isinstance(node_operation, AggregatedRepresentation):
                 return node_operation.transform(input_mods[0])
             elif isinstance(node_operation, UnimodalRepresentation):
+                pushdown_config = node.parameters.get("_pushdown_aggregation", None)
+                agg = None
+                if pushdown_config is not None:
+                    agg = AggregatedRepresentation(params=pushdown_config)
                 if rep_cache is not None and node_operation.name in rep_cache:
                     return rep_cache[node_operation.name]
-                return input_mods[0].apply_representation(node_operation)
+                return input_mods[0].apply_representation(
+                    node_operation, aggregation=agg
+                )
             return input_mods[0].apply_representation(node_operation)
         else:
             fusion_op = node_operation
@@ -159,8 +217,8 @@ def _execute_node_worker(node, input_mods, task, rep_cache, gpu_id):
 
     return {
         "result": result,
-        "peak_bytes": peak_delta_bytes,  # per-call CPU peak over baseline
-        "peak_abs_rss_bytes": peak_abs_rss,  # optional
+        "peak_bytes": peak_delta_bytes,
+        "peak_abs_rss_bytes": peak_abs_rss,
         "gpu_peak_bytes": gpu_peak_bytes,
         "operation_name": operation_name,
     }
@@ -170,7 +228,8 @@ def _execute_task_worker(
     task_node_id: str, task: Any, data: Any, gpu_id: Optional[int]
 ) -> Dict[str, Any]:
 
-    # print(f"Executing task {task_node_id} on GPU {gpu_id}")
+    if DEBUG:
+        print(f"Executing task {task_node_id} on GPU {gpu_id}")
     if gpu_id is not None:
         device = torch.device(f"cuda:{gpu_id}")
         torch.cuda.set_device(device)
@@ -192,16 +251,16 @@ def _execute_task_worker(
         _run_task,
         sample_s=0.01,
     )
-    # print(f"Task {task_node_id} has a CPU peak memory usage of {delta_bytes/1024**3:.2f} GB, and a GPU peak memory usage of {gpu_peak_bytes/1024**3:.2f} GB")
+    if DEBUG:
+        print(
+            f"Task {task_node_id} has a CPU peak memory usage of {peak_delta_bytes/1024**3:.2f} GB, and a GPU peak memory usage of {gpu_peak_bytes/1024**3:.2f} GB"
+        )
     return {
         "scores": result[0],
         "task_time": result[1],
         "peak_bytes": peak_delta_bytes,
         "gpu_peak_bytes": gpu_peak_bytes,
     }
-
-
-# TODO: checkpoint for memory estimates, name of operation and node id plus estimated and actual memory usage
 
 
 class NodeExecutor:
@@ -212,15 +271,19 @@ class NodeExecutor:
         tasks: List[Any],
         checkpoint_manager: Optional[CheckpointManager] = None,
         max_num_workers: int = -1,
+        result_path: Optional[str] = None,
     ):
-        available_total_cpu = float(psutil.virtual_memory().available)
+        available_total_cpu = (
+            float(psutil.virtual_memory().available)
+            - float(psutil.virtual_memory().available) * 0.30
+        )
         self.dags = dags
         self.scheduler = MemoryAwareNodeScheduler(
             dags, modalities, tasks, available_total_cpu
         )
         self.checkpoint_manager = CheckpointManager(
-            checkpoint_dir=os.getcwd(),
-            prefix="node_executor_checkpoint_",
+            checkpoint_dir=result_path if result_path is not None else os.getcwd(),
+            prefix=f"node_executor_checkpoint_{modalities[0].modality_id}_",
             checkpoint_every=1,
             resume=False,
         )
@@ -233,8 +296,8 @@ class NodeExecutor:
         self.tasks = tasks
         self.result_cache = RefCountResultCache()
         self.memory_usage_checkpoint = CheckpointManager(
-            checkpoint_dir=os.getcwd(),
-            prefix="memory_usage_checkpoint_",
+            checkpoint_dir=result_path if result_path is not None else os.getcwd(),
+            prefix=f"memory_usage_checkpoint_{modalities[0].modality_id}_",
             checkpoint_every=1,
             resume=False,
         )
@@ -242,6 +305,9 @@ class NodeExecutor:
     def run(self) -> None:
         task_results = {}
         memory_usage_data = {}
+
+        self._materialize_leaf_modalities_in_shared_memory()
+
         ctx = mp.get_context("spawn")
         with ProcessPoolExecutor(
             max_workers=self.max_num_workers, mp_context=ctx
@@ -332,17 +398,42 @@ class NodeExecutor:
                             gpu_peak_bytes,
                             "task",
                             memory_usage_data,
+                            None,
                         )
+
+                        parent_node_id = self.scheduler.get_valid_parent(node_id)
+                        if parent_node_id is not None:
+                            self.result_cache.dec_ref(parent_node_id)
+                            if (
+                                parent_node_id in self.result_cache.ref_count
+                                and self.result_cache.ref_count[parent_node_id] == 0
+                            ):
+                                self.result_cache.clear(parent_node_id)
                         self.scheduler.complete_node(node_id)
 
                     else:
                         transformed_modality = result["result"]
+                        actual_stats = self._infer_actual_output_stats(
+                            transformed_modality
+                        )
+                        estimated_stats = self.scheduler.node_stats.get(node_id)
+
+                        if actual_stats is not None and (
+                            estimated_stats is None
+                            or not getattr(
+                                estimated_stats, "output_shape_is_known", True
+                            )
+                        ):
+                            self.scheduler.update_node_stats_and_reestimate_descendants(
+                                node_id, actual_stats
+                            )
                         self._checkpoint_memory_usage(
                             node_id,
                             peak_bytes,
                             gpu_peak_bytes,
                             result["operation_name"],
                             memory_usage_data,
+                            transformed_modality.data,
                         )
                         before_bytes = self.result_cache.get_memory_total_memory_usage()
                         self._manage_result_cache(node_id, transformed_modality)
@@ -353,8 +444,33 @@ class NodeExecutor:
                         self.scheduler.complete_node(node_id)
 
                     submit_new_ready_nodes()
+        assert len(self.result_cache.ref_count.keys()) == 0
 
+        self.result_cache.cleanup_all()
+        self._cleanup_leaf_shared_memory()
         return list(task_results.values())
+
+    def _materialize_leaf_modalities_in_shared_memory(self):
+        self._leaf_shm_names = []
+        for modality in self.modalities:
+            if hasattr(modality, "extract_raw_data") and not modality.has_data():
+                modality.extract_raw_data()
+            data, shm_name, _, _ = add_shared_memory_candidate(modality.data)
+            if shm_name is not None:
+                modality.data = data
+                self._leaf_shm_names.append(shm_name)
+
+    def _cleanup_leaf_shared_memory(self):
+        for shm_name in getattr(self, "_leaf_shm_names", []):
+            try:
+                shm = shared_memory.SharedMemory(name=shm_name)
+                shm.close()
+                shm.unlink()
+            except FileNotFoundError:
+                pass
+            except Exception:
+                pass
+        self._leaf_shm_names = []
 
     def _checkpoint_memory_usage(
         self,
@@ -363,36 +479,97 @@ class NodeExecutor:
         gpu_peak_bytes: int,
         operation_name: str,
         data,
+        result,
     ):
         self.memory_usage_checkpoint.increment(node_id)
+
+        shape = None
+        if DEBUG:
+            shape = self._print_node_stats(node_id, result, operation_name)
+            if peak_bytes > self.scheduler.node_resources[node_id][0]:
+                print(
+                    f"UNDERESTIMATED PEAK MEMORY: Peak bytes: {peak_bytes/1024**3:.2f} GB, Estimated CPU bytes: {self.scheduler.node_resources[node_id][0]/1024**3:.2f} GB for node {node_id}: {operation_name}"
+                )
+            if gpu_peak_bytes > self.scheduler.node_resources[node_id][1]:
+                print(
+                    f"UNDERESTIMATED GPU PEAK MEMORY: GPU peak bytes: {gpu_peak_bytes/1024**3:.2f} GB, Estimated GPU bytes: {self.scheduler.node_resources[node_id][1]/1024**3:.2f} GB for node {node_id}: {operation_name}"
+                )
+        if self.scheduler.node_resources[node_id][0] >= peak_bytes * 2:
+            print(
+                f"Peak bytes: {peak_bytes/1024**3:.2f} GB, Estimated CPU bytes: {self.scheduler.node_resources[node_id][0]/1024**3:.2f} GB, 200% of estimated for node {node_id}: {operation_name}"
+            )
+        if self.scheduler.node_resources[node_id][1] > gpu_peak_bytes * 2:
+            print(
+                f"GPU peak bytes: {gpu_peak_bytes/1024**3:.2f} GB, Estimated GPU bytes: {self.scheduler.node_resources[node_id][1]/1024**3:.2f} GB, 200% of estimated for node {node_id}: {operation_name}"
+            )
         data[node_id] = {
             "cpu_peak_bytes": peak_bytes,
             "gpu_peak_bytes": gpu_peak_bytes,
             "operation_name": operation_name,
             "estimated_cpu_bytes": self.scheduler.node_resources[node_id][0],
             "estimated_gpu_bytes": self.scheduler.node_resources[node_id][1],
+            "shape": shape,
         }
-        print(
-            f"Node {node_id}: {operation_name} has a CPU peak memory usage of {peak_bytes/1024**3:.2f}/{self.scheduler.node_resources[node_id][0]/1024**3:.2f} GB estimated, and a GPU peak memory usage of {gpu_peak_bytes/1024**3:.2f}/{self.scheduler.node_resources[node_id][1]/1024**3:.2f} GB estimated "
-        )
         self.memory_usage_checkpoint.checkpoint_if_due(data)
 
-    def _result_cache_size_bytes(self) -> int:
-        size = 0
-        for node_id in self.result_cache.cache:
-            if isinstance(self.result_cache.cache[node_id].data, np.ndarray):
-                size += self.result_cache.cache[node_id].data.nbytes
-            elif isinstance(self.result_cache.cache[node_id].data, list):
-                for item in self.result_cache.cache[node_id].data:
-                    if isinstance(item, np.ndarray):
-                        size += item.nbytes
-                    elif isinstance(item, list):
-                        for sub in item:
-                            if isinstance(sub, np.ndarray):
-                                size += sub.nbytes
+    def _print_node_stats(self, node_id: str, result: Any, operation_name: str):
+        if (
+            result is not None
+            and operation_name != "BoW"
+            and not operation_name.endswith("Split")
+        ):
+            node_stats = self.scheduler.node_stats[node_id]
+            shape = None
+            if isinstance(result[0], list):
+                if isinstance(result[0][0], np.ndarray):
+                    shape = (len(result[0]), *result[0][0].shape)
+                elif isinstance(result[0][0], list):
+                    shape = (len(result[0]), *result[0][0][0].shape)
+                else:
+                    shape = (len(result[0]), *result[0][0].shape)
             else:
-                size += sys.getsizeof(self.result_cache.cache[node_id].data)
-        return size
+                shape = result[0].shape
+            print(
+                f"Node {node_id} {operation_name} should have shape of {node_stats.num_instances, node_stats.output_shape}, actual shape: {len(result), shape} output shape is known: {node_stats.output_shape_is_known}"
+            )
+            if node_stats.output_shape_is_known:
+                assert (
+                    len(result) == node_stats.num_instances
+                ), f"Node {node_id} {operation_name} should have {node_stats.num_instances} instances, actual: {len(result)}"
+            return shape
+
+    def _infer_actual_output_stats(
+        self, transformed_modality: Any
+    ) -> Optional[RepresentationStats]:
+        if transformed_modality is None or not hasattr(transformed_modality, "data"):
+            return None
+
+        data = transformed_modality.data
+
+        if isinstance(data, np.ndarray):
+            if data.ndim == 0:
+                return RepresentationStats(1, (1,), output_shape_is_known=True)
+            num_instances = int(data.shape[0])
+            output_shape = (
+                tuple(int(d) for d in data.shape[1:]) if data.ndim > 1 else (1,)
+            )
+            return RepresentationStats(
+                num_instances, output_shape, output_shape_is_known=True
+            )
+
+        if isinstance(data, list) and len(data) > 0 and isinstance(data[0], np.ndarray):
+            num_instances = len(data)
+            first_shape = tuple(int(d) for d in data[0].shape)
+            same_shape = all(
+                isinstance(x, np.ndarray) and x.shape == data[0].shape for x in data
+            )
+            return RepresentationStats(
+                num_instances,
+                first_shape,
+                output_shape_is_known=bool(same_shape),
+            )
+
+        return None
 
     def _manage_result_cache(self, node_id: str, result: Any):
         parent_node_id = self.scheduler.get_valid_parent(node_id)

@@ -49,7 +49,9 @@ class BoW(UnimodalRepresentation):
                 input_stats.num_instances * input_stats.max_length * self.ngram_range,
             ),
         )
-        return RepresentationStats(input_stats.num_instances, (vocab_estimate,))
+        return RepresentationStats(
+            input_stats.num_instances, (vocab_estimate,), output_shape_is_known=False
+        )
 
     def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
         output_bytes = 1
@@ -75,7 +77,6 @@ class BoW(UnimodalRepresentation):
         )
 
         X = vectorizer.fit_transform(modality.data).toarray()
-        # X = [X[i : i + 1] for i in range(X.shape[0])]
 
         if self.output_file is not None:
             save_embeddings(X, self.output_file)

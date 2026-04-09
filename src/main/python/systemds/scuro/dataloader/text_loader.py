@@ -31,6 +31,8 @@ class TextStats:
     num_instances: int
     max_length: int
     avg_length: float
+    max_words: int
+    avg_words: float
     output_shape: tuple
 
 
@@ -63,6 +65,8 @@ class TextLoader(BaseLoader):
         num_instances = 0
         max_length = 0
         avg_length = 0
+        max_words = 0
+        avg_words = 0
         for file in os.listdir(source_path):
             self.file_sanity_check(source_path + file)
             with open(source_path + file) as text_file:
@@ -74,5 +78,10 @@ class TextLoader(BaseLoader):
                     num_instances += 1
                     max_length = max(max_length, length)
                     avg_length += length
+                    max_words = max(max_words, len(line.split()))
+                    avg_words += len(line.split())
             avg_length /= num_instances
-        return TextStats(num_instances, max_length, avg_length, (max_length,))
+            avg_words /= num_instances
+        return TextStats(
+            num_instances, max_length, avg_length, max_words, avg_words, (max_length,)
+        )

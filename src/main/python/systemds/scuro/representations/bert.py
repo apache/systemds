@@ -48,6 +48,7 @@ class BertFamily(UnimodalRepresentation):
         output_file=None,
         max_seq_length=512,
         batch_size=32,
+        aggregation=None,
         params=None,
     ):
         parameters = {"batch_size": [1, 2, 4, 8, 16, 32, 64, 128]}
@@ -64,6 +65,8 @@ class BertFamily(UnimodalRepresentation):
         self.gpu_id = None
         self.device = get_device()
         self.data_type = torch.float32
+        self.aggregation = aggregation
+        self.params = params
 
     @property
     def gpu_id(self):
@@ -74,7 +77,9 @@ class BertFamily(UnimodalRepresentation):
         self._gpu_id = gpu_id
         self.device = get_device(gpu_id)
 
-    def set_parameters(self, params, max_seq_length, batch_size, layer, output_file):
+    def set_parameters(
+        self, params, max_seq_length, batch_size, layer, output_file, aggregation=None
+    ):
         if params is not None:
             self.max_seq_length = int(params.get("max_seq_length", max_seq_length))
             self.batch_size = int(params.get("batch_size", batch_size))
@@ -88,46 +93,66 @@ class BertFamily(UnimodalRepresentation):
 
     def get_output_stats(self, input_stats) -> RepresentationStats:
         if not isinstance(input_stats, RepresentationStats):
-            return RepresentationStats(
-                input_stats.num_instances, (self.max_seq_length, 768)
+            self.stats = RepresentationStats(
+                input_stats.num_instances,
+                (self.max_seq_length, 768),
+                aggregate_dim=(0,),
             )
         else:
-            return RepresentationStats(
+            self.stats = RepresentationStats(
                 input_stats.num_instances,
                 (input_stats.output_shape[0], self.max_seq_length, 768),
+                aggregate_dim=(
+                    0,
+                    1,
+                ),
             )
+        if self.params and "_pushdown_aggregation" in self.params:
+            output_shape = (768,)
+            self.stats.output_shape = output_shape
+            self.stats.aggregate_dim = None
+        return self.stats
 
     def estimate_output_memory_bytes(self, input_stats):
         output_stats = self.get_output_stats(input_stats).output_shape
-        return int(input_stats.num_instances * np.prod(output_stats) * 8)
+        return int(
+            input_stats.num_instances * np.prod(output_stats) * self.data_type.itemsize
+        )
 
     def estimate_peak_memory_bytes(self, input_stats):
         model = AutoModel.from_pretrained(self.model_name)
         params_bytes = model.get_memory_footprint()
-        tokenizer_bytes = 100 * 1024 * 1024  # rough upper bound
+        tokenizer_bytes = 60 * 1024 * 1024  # rough upper bound
 
         output_bytes = self.estimate_output_memory_bytes(input_stats)
+        if isinstance(input_stats, RepresentationStats):
+            per_instance_input_bytes = (
+                int(np.prod(input_stats.output_shape)) * self.data_type.itemsize
+            )
+            input_bytes_all_instances = per_instance_input_bytes
+        else:
+            per_instance_input_bytes = (
+                int(np.prod(input_stats.output_shape)) * self.data_type.itemsize
+            )
+            input_bytes_all_instances = self.batch_size * per_instance_input_bytes
+        safety_margin_bytes = 100 * 1024 * 1024
 
-        per_instance_input_bytes = int(np.prod(input_stats.output_shape)) * 8
-        input_bytes_all_instances = input_stats.num_instances * per_instance_input_bytes
-
-        safety_margin_bytes = 64 * 1024 * 1024  # 64 MB
+        batch_output_bytes = output_bytes / input_stats.num_instances * self.batch_size
 
         model_specific_margin_bytes = 0
         if "albert" in self.model_name.lower():
-            model_specific_margin_bytes = 300 * 1024 * 1024  # 300 MB
+            model_specific_margin_bytes = 300 * 1024 * 1024
 
         cpu_peak = (
             params_bytes
             + tokenizer_bytes
             + input_bytes_all_instances
             + output_bytes
+            + batch_output_bytes
             + safety_margin_bytes
             + model_specific_margin_bytes
+            + 128 * 1024 * 1024
         )
-
-        if "electra" in self.model_name.lower():
-            cpu_peak = tokenizer_bytes + output_bytes + safety_margin_bytes
 
         cfg = model.config
         hidden_size = cfg.hidden_size
@@ -139,9 +164,8 @@ class BertFamily(UnimodalRepresentation):
             self.C * (hidden_size + intermediate_size) * self.data_type.itemsize
         )
         activations_bytes = batch_tokens * num_layers * activations_per_token_per_layer
-        batch_input_bytes = self.batch_size * per_instance_input_bytes
 
-        gpu_peak = params_bytes + batch_input_bytes + activations_bytes
+        gpu_peak = params_bytes + per_instance_input_bytes + activations_bytes
 
         return {
             "cpu_peak_bytes": int(cpu_peak),
@@ -164,6 +188,7 @@ class BertFamily(UnimodalRepresentation):
 
             return hook
 
+        aggregate_dim = (0,)
         if self.layer_name != "cls":
             for name, layer in self.model.named_modules():
                 if name == self.layer_name:
@@ -172,11 +197,16 @@ class BertFamily(UnimodalRepresentation):
         if ModalityType.TEXT.has_field(modality.metadata, "text_spans"):
             dataset = TextSpanDataset(modality.data, modality.metadata)
             embeddings = []
+            aggregate_dim = (0, 1)
             for text in dataset:
                 embedding = self.create_embeddings(
                     text, self.model, tokenizer, aggregation
                 )
-                embeddings.append(embedding)
+                embeddings.append(
+                    aggregation.execute(embedding)
+                    if aggregation is not None
+                    else embedding
+                )
         else:
             embeddings = self.create_embeddings(
                 modality.data, self.model, tokenizer, aggregation
@@ -186,8 +216,31 @@ class BertFamily(UnimodalRepresentation):
             save_embeddings(embeddings, self.output_file)
 
         transformed_modality.data_type = np.float32
+        transformed_modality.aggregate_dim = aggregate_dim
         transformed_modality.data = embeddings
+        self.assert_output_stats(transformed_modality)
         return transformed_modality
+
+    def assert_output_stats(self, transformed_modality):
+        if self.stats:
+            assert len(transformed_modality.data) == self.stats.num_instances
+            if len(self.stats.output_shape) == 3:
+                assert (
+                    transformed_modality.data[0].shape[0] <= self.stats.output_shape[0]
+                ), f"Output shape: {transformed_modality.data[0].shape}, Expected shape: {self.stats.output_shape}"
+                assert (
+                    transformed_modality.data[0].shape[1] == self.stats.output_shape[1]
+                ), f"Output shape: {transformed_modality.data[0].shape}, Expected shape: {self.stats.output_shape}"
+                assert (
+                    transformed_modality.data[0].shape[2] == self.stats.output_shape[2]
+                ), f"Output shape: {transformed_modality.data[0].shape}, Expected shape: {self.stats.output_shape}"
+            else:
+                assert (
+                    transformed_modality.data[0].shape[0] == self.stats.output_shape[0]
+                ), f"Output shape: {transformed_modality.data[0].shape}, Expected shape: {self.stats.output_shape}"
+                assert (
+                    transformed_modality.data[0].shape[1] == self.stats.output_shape[1]
+                ), f"Output shape: {transformed_modality.data[0].shape}, Expected shape: {self.stats.output_shape}"
 
     def create_embeddings(self, data, model, tokenizer, aggregation=None):
         dataset = TextDataset(data)
@@ -271,11 +324,12 @@ class Bert(BertFamily):
             output_file,
             max_seq_length,
             batch_size,
+            params=params,
         )
         self.C = 0.3
 
 
-@register_representation(ModalityType.TEXT)
+# @register_representation(ModalityType.TEXT)
 class RoBERTa(BertFamily):
     def __init__(
         self,
@@ -314,11 +368,12 @@ class RoBERTa(BertFamily):
             output_file,
             max_seq_length,
             batch_size,
+            params=params,
         )
         self.C = 0.3
 
 
-@register_representation(ModalityType.TEXT)
+# @register_representation(ModalityType.TEXT)
 class DistillBERT(BertFamily):
     def __init__(
         self,
@@ -349,11 +404,12 @@ class DistillBERT(BertFamily):
             output_file,
             max_seq_length,
             batch_size,
+            params=params,
         )
         self.C = 0.5
 
 
-@register_representation(ModalityType.TEXT)
+# @register_representation(ModalityType.TEXT)
 class ALBERT(BertFamily):
     def __init__(
         self,
@@ -373,11 +429,12 @@ class ALBERT(BertFamily):
             output_file,
             max_seq_length,
             batch_size,
+            params=params,
         )
         self.C = 0.4
 
 
-@register_representation(ModalityType.TEXT)
+# @register_representation(ModalityType.TEXT)
 class ELECTRA(BertFamily):
     def __init__(
         self,
@@ -413,5 +470,6 @@ class ELECTRA(BertFamily):
             output_file,
             max_seq_length,
             batch_size,
+            params=params,
         )
         self.C = 0.5

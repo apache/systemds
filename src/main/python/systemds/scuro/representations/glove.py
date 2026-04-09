@@ -74,7 +74,10 @@ class GloVe(UnimodalRepresentation):
         output_bytes = self.estimate_output_memory_bytes(input_stats)
 
         glove_dict_bytes = 256 * 1024 * 1024
-        return {"cpu_peak_bytes": glove_dict_bytes + output_bytes, "gpu_peak_bytes": 0}
+        return {
+            "cpu_peak_bytes": glove_dict_bytes + output_bytes * 1.2,
+            "gpu_peak_bytes": 0,
+        }
 
     def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(modality, self)

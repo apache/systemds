@@ -27,6 +27,8 @@ from systemds.scuro.utils.identifier import Identifier
 class RepresentationStats:
     num_instances: int
     output_shape: tuple
+    output_shape_is_known: bool = True
+    aggregate_dim: tuple = (0,)
 
 
 class Representation:
@@ -35,7 +37,7 @@ class Representation:
         self._parameters = parameters
         self.self_contained = True
         self.representation_id = Identifier().new_id()
-        self.stats = RepresentationStats(0, (0,))
+        self.stats = None
 
     @property
     def parameters(self):

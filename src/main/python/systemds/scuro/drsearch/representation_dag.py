@@ -498,7 +498,7 @@ def pushdown_aggregation(dag_group: List[RepresentationDag]) -> List[Representat
                 continue
 
             op_instance = input_node.operation(params=input_node.parameters)
-            if op_instance.__class__.__bases__[0].__name__ != "UnimodalRepresentation":
+            if op_instance.__class__.__bases__[0].__name__ != "BertFamily":
                 continue
 
             input_node.parameters["_pushdown_aggregation"] = agg_node.parameters

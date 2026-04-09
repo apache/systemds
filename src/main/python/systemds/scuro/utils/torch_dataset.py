@@ -56,14 +56,14 @@ class CustomDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index) -> Dict[str, object]:
         data = self.data[index]
-        output = torch.empty(
-            (len(data), 3, self.size[1], self.size[0]), dtype=self.data_type
-        )
 
         if isinstance(data, np.ndarray) and data.ndim == 3:
             # image
             output = self.tf(data)
         else:
+            output = torch.empty(
+                (len(data), 3, self.size[1], self.size[0]), dtype=self.data_type
+            )
             for i, d in enumerate(data):
                 if data[0].ndim < 3:
                     d = torch.tensor(d)

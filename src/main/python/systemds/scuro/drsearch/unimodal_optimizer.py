@@ -44,6 +44,7 @@ from systemds.scuro.drsearch.representation_dag import (
     RepresentationDag,
     RepresentationNode,
     CSEAwareDAGBuilder,
+    pushdown_aggregation,
 )
 from bisect import bisect_left
 
@@ -328,6 +329,7 @@ class UnimodalOptimizer:
             )
 
         dags = self.add_aggregation_operator(self.builders[modality.modality_id], dags)
+        dags = pushdown_aggregation(dags)
 
         if skip_remaining > 0:
             dags = dags[skip_remaining:]
@@ -340,6 +342,7 @@ class UnimodalOptimizer:
             self.tasks,
             self._checkpoint_manager,
             self.max_num_workers,
+            self.result_path,
         )
         task_results = node_executor.run()
 
@@ -426,7 +429,7 @@ class UnimodalOptimizer:
                     operator.get_current_parameters(),
                 )
 
-                agg_operator = AggregatedRepresentation()
+                agg_operator = AggregatedRepresentation(target_dimensions=1)
                 context_agg_node_id = builder.create_operation_node(
                     agg_operator.__class__,
                     [context_rep_node_id],
@@ -493,8 +496,10 @@ class UnimodalOptimizer:
                 last_stats = modality.stats
                 break
         for node in dag.nodes[1:]:
-            last_stats = node.operation().get_output_stats(last_stats)
-        return len(last_stats.output_shape) > 1 or last_stats.num_instances > 1
+            last_stats = node.operation(params=node.parameters).get_output_stats(
+                last_stats
+            )
+        return len(last_stats.output_shape) > 1
 
     def add_aggregation_operator(self, builder, dags):
         new_dags = []

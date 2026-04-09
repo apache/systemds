@@ -134,7 +134,7 @@ class UnimodalModality(Modality):
         if self.data is None:
             raise Exception("Data is None")
 
-    def apply_representations(self, representations):
+    def apply_representations(self, representations, aggregation=None):
         """
         Applies a list of representations to the modality. Specifically, it applies the representations to the modality in a chunked manner.
         :param representations: List of representations to apply
@@ -144,7 +144,6 @@ class UnimodalModality(Modality):
         padding_per_representation = {}
         original_lengths_per_representation = {}
 
-        # Initialize dictionaries for each representation
         for representation in representations:
             transformed_modality = TransformedModality(self, representation.name)
             transformed_modality.data = []
@@ -176,25 +175,6 @@ class UnimodalModality(Modality):
             if not self.has_data():
                 self.extract_raw_data()
             new_modality = representation.transform(self)
-
-            # for i, d in enumerate(new_modality.data):
-            #     output = np.array(d)
-            #     if np.isnan(output).any():
-            #         new_modality.data[i] = np.where(np.isnan(output), 0, output)
-
-            # if not all(
-            #     "attention_masks" in entry for entry in new_modality.metadata.values()
-            # ):
-            #     for d in new_modality.data:
-            #         if d.shape[0] == 1 and d.ndim == 2:
-            #             padding_per_representation[representation.name] = True
-            #             original_lengths_per_representation[representation.name].append(
-            #                 d.shape[1]
-            #             )
-            #         else:
-            #             original_lengths_per_representation[representation.name].append(
-            #                 d.shape[0]
-            #             )
             transformed_modalities_per_representation[representation.name] = (
                 new_modality
             )
@@ -214,8 +194,10 @@ class UnimodalModality(Modality):
         gc.collect()
         return transformed_modalities_per_representation
 
-    def apply_representation(self, representation):
-        return self.apply_representations([representation])[representation.name]
+    def apply_representation(self, representation, aggregation=None):
+        return self.apply_representations([representation], aggregation=aggregation)[
+            representation.name
+        ]
 
     def _apply_padding(self, modality, original_lengths, pad_dim_one):
         if len(original_lengths) > 0 and min(original_lengths) < max(original_lengths):

@@ -168,7 +168,15 @@ class SentenceBoundarySplitIndices(Context):
     def get_output_stats(self, input_stats: TextStats) -> RepresentationStats:
         return RepresentationStats(
             input_stats.num_instances,
-            (math.ceil(input_stats.max_length / self.max_words), self.max_words),
+            (
+                max(
+                    math.ceil(
+                        input_stats.avg_words / (self.max_words - self.overlap) - 1
+                    ),
+                    1,
+                ),
+                self.max_words,
+            ),
         )
 
     def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
@@ -176,6 +184,7 @@ class SentenceBoundarySplitIndices(Context):
         output_shape = self.get_output_stats(input_stats).output_shape
         for dim in output_shape:
             output_memory_bytes *= dim
+
         return (
             input_stats.num_instances
             * output_memory_bytes
@@ -183,8 +192,11 @@ class SentenceBoundarySplitIndices(Context):
         )
 
     def estimate_peak_memory_bytes(self, input_stats: TextStats) -> dict:
+        per_instance_temp = int(input_stats.max_words * 64) * input_stats.num_instances
+
         return {
-            "cpu_peak_bytes": self.estimate_output_memory_bytes(input_stats) * 2,
+            "cpu_peak_bytes": per_instance_temp
+            + self.estimate_output_memory_bytes(input_stats) * 2,
             "gpu_peak_bytes": 0,
         }
 
@@ -293,7 +305,12 @@ class OverlappingSplitIndices(Context):
         return RepresentationStats(
             input_stats.num_instances,
             (
-                math.ceil(input_stats.max_length / (self.max_words - self.overlap)),
+                max(
+                    math.ceil(
+                        input_stats.avg_words / (self.max_words - self.overlap) - 1
+                    ),
+                    1,
+                ),
                 self.max_words,
             ),
         )
@@ -303,6 +320,7 @@ class OverlappingSplitIndices(Context):
         output_shape = self.get_output_stats(input_stats).output_shape
         for dim in output_shape:
             output_memory_bytes *= dim
+
         return (
             input_stats.num_instances
             * output_memory_bytes
@@ -310,8 +328,11 @@ class OverlappingSplitIndices(Context):
         )
 
     def estimate_peak_memory_bytes(self, input_stats: TextStats) -> dict:
+        per_instance_temp = int(input_stats.max_words * 64) * input_stats.num_instances
+
         return {
-            "cpu_peak_bytes": self.estimate_output_memory_bytes(input_stats) * 2,
+            "cpu_peak_bytes": per_instance_temp
+            + self.estimate_output_memory_bytes(input_stats) * 2,
             "gpu_peak_bytes": 0,
         }
 

@@ -37,6 +37,7 @@ class TransformedModality(Modality):
         new_modality_type=None,
         self_contained=True,
         set_data=False,
+        aggregate_dim=(0,),
     ):
         """
         Parent class of the different Modalities (unimodal & multimodal)
@@ -62,27 +63,12 @@ class TransformedModality(Modality):
             if isinstance(transformation, TransformedModality)
             else True
         )
-        # self.add_transformation(transformation, modality)
+        self.aggregate_dim = aggregate_dim
 
         if modality.__class__.__name__ == "UnimodalModality":
             for k, v in self.metadata.items():
                 if "attention_masks" in v:
                     del self.metadata[k]["attention_masks"]
-
-    # def add_transformation(self, transformation, modality):
-    #     if (
-    #         transformation.__class__.__bases__[0].__name__ == "Fusion"
-    #         and type(modality).__name__ == "TransformedModality"
-    #         and modality.transformation[0].__class__.__bases__[0].__name__ != "Fusion"
-    #     ):
-    #         self.transformation = []
-    #     else:
-    #         self.transformation = (
-    #             []
-    #             if type(modality).__name__ != "TransformedModality"
-    #             else copy.deepcopy(modality.transformation)
-    #         )
-    #     self.transformation.append(transformation)
 
     def calculate_memory_usage(self):
         data_bytes = 0
@@ -172,9 +158,9 @@ class TransformedModality(Modality):
         transformed_modality.transform_time += time.time() - start
         return transformed_modality
 
-    def apply_representation(self, representation):
+    def apply_representation(self, representation, aggregation=None):
         start = time.time()
-        new_modality = representation.transform(self)
+        new_modality = representation.transform(self, aggregation=aggregation)
         new_modality.update_metadata()
         new_modality.transform_time += time.time() - start
         new_modality.self_contained = representation.self_contained

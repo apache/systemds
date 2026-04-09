@@ -33,7 +33,9 @@ class JSONStats:
     num_instances: int
     max_length: int
     avg_length: float
-    output_shape: Tuple[int, int]
+    max_words: int
+    avg_words: float
+    output_shape: Tuple[int]
 
 
 class JSONLoader(BaseLoader):
@@ -74,6 +76,8 @@ class JSONLoader(BaseLoader):
         num_instances = 0
         max_length = 0
         avg_length = 0
+        max_words = 0
+        avg_words = 0
         if os.path.isfile(source_path):
             with open(source_path) as f:
                 json_file = json.load(f)
@@ -96,10 +100,20 @@ class JSONLoader(BaseLoader):
                     text = " ".join(text) if isinstance(text, list) else text
                     num_instances += 1
                     max_length = max(max_length, len(text))  # number of characters
+                    max_words = max(max_words, len(text.split()))
+                    avg_words += len(text.split())
                     avg_length += len(text)
 
             avg_length /= num_instances
-        return JSONStats(num_instances, max_length, avg_length, (max_length,))
+            avg_words /= num_instances
+        return JSONStats(
+            num_instances,
+            max_length,
+            avg_length,
+            max_words,
+            avg_words,
+            (max_length,),
+        )
 
     def estimate_peak_memory_bytes(self) -> dict:
         s = self.stats

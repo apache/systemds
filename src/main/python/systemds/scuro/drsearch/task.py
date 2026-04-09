@@ -24,7 +24,6 @@ from typing import List
 from systemds.scuro.models.model import Model
 import numpy as np
 from sklearn.model_selection import train_test_split
-import sys
 from systemds.scuro.representations.representation import RepresentationStats
 
 
@@ -104,55 +103,79 @@ class Task:
         return RepresentationStats(0, (0,))
 
     def estimate_peak_memory_bytes(self, input_stats):
-        label_bytes = self.labels.nbytes * 3  # should be a np array
-        train_indices_bytes = sum([sys.getsizeof(i) for i in self.train_indices]) * 2
-        test_indices_bytes = sum([sys.getsizeof(i) for i in self.test_indices]) * 2
-        cv_train_indices_bytes = (
-            sum(
-                [
-                    sum([sys.getsizeof(i) for i in fold])
-                    for fold in self.cv_train_indices
-                ]
-            )
-            * 2
+        labels_array = np.asarray(self.labels)
+        n_instances = int(input_stats.num_instances)
+        feature_dim = (
+            int(np.prod(input_stats.output_shape)) if input_stats.output_shape else 0
         )
-        cv_val_indices_bytes = (
-            sum([sum([sys.getsizeof(i) for i in fold]) for fold in self.cv_val_indices])
-            * 2
-        )
-        fusion_train_indices_bytes = (
-            sum([sys.getsizeof(i) for i in self.fusion_train_indices]) * 2
-        )
-        input_data = input_stats.num_instances * input_stats.output_shape[0] * 4 * 3
+        feature_dtype_bytes = 4
 
-        total_bytes = (
-            input_data
-            + label_bytes
-            + train_indices_bytes
-            + test_indices_bytes
-            + cv_train_indices_bytes
-            + cv_val_indices_bytes
-            + fusion_train_indices_bytes
+        n_train = len(self.train_indices) if self.train_indices is not None else 0
+        n_test = len(self.test_indices) if self.test_indices is not None else 0
+        n_labels = int(labels_array.shape[1]) if labels_array.ndim > 1 else 1
+
+        max_fold_train = max((len(fold) for fold in self.cv_train_indices), default=0)
+        max_fold_val = max((len(fold) for fold in self.cv_val_indices), default=0)
+
+        base_input_bytes = n_instances * feature_dim * feature_dtype_bytes
+        test_slice_bytes = n_test * feature_dim * feature_dtype_bytes
+        fold_slice_bytes = (
+            (max_fold_train + max_fold_val) * feature_dim * feature_dtype_bytes
         )
-        input_stats_bytes = input_stats.num_instances * input_stats.output_shape[0] * 4
-        if hasattr(self.model, "estimate_peak_memory_bytes"):
-            model_peak_memory_cpu, model_peak_memory_gpu = (
-                self.model.estimate_peak_memory_bytes(
-                    input_stats.output_shape[0], len(self.train_indices)
-                )
+        label_slice_bytes = (
+            (max_fold_train + max_fold_val + n_test) * n_labels * feature_dtype_bytes
+        )
+        label_storage_bytes = int(labels_array.nbytes) * 2
+
+        total_index_entries = (
+            n_train
+            + n_test
+            + sum(len(fold) for fold in self.cv_train_indices)
+            + sum(len(fold) for fold in self.cv_val_indices)
+            + (
+                len(self.fusion_train_indices)
+                if self.fusion_train_indices is not None
+                else 0
             )
-            return {
-                "cpu_peak_bytes": model_peak_memory_cpu
-                + total_bytes
-                + input_stats_bytes,
-                "gpu_peak_bytes": model_peak_memory_gpu,
-            }
-        else:
-            # TODO: Implement a default estimate of the peak memory bytes for the task
-            return {
-                "cpu_peak_bytes": total_bytes + input_stats_bytes,
-                "gpu_peak_bytes": 0,
-            }
+        )
+        index_bytes = total_index_entries * np.dtype(np.int64).itemsize
+
+        scheduler_side_cpu_bytes = (
+            base_input_bytes
+            + test_slice_bytes * 2
+            + fold_slice_bytes * 2
+            + label_slice_bytes * 2
+            + label_storage_bytes
+            + index_bytes
+            + (192 * 1024 * 1024)
+        )
+
+        model_peak_memory_cpu = 0.0
+        model_peak_memory_gpu = 0.0
+        if hasattr(self.model, "estimate_peak_memory_bytes"):
+            try:
+                model_peak_memory_cpu, model_peak_memory_gpu = (
+                    self.model.estimate_peak_memory_bytes(
+                        input_dim=feature_dim,
+                        n_train_samples=(
+                            max_fold_train if max_fold_train > 0 else n_train
+                        ),
+                        n_labels=n_labels,
+                        n_val_samples=max_fold_val,
+                        n_test_samples=n_test,
+                    )
+                )
+            except TypeError:
+                model_peak_memory_cpu, model_peak_memory_gpu = (
+                    self.model.estimate_peak_memory_bytes(feature_dim, n_train)
+                )
+
+        return {
+            "cpu_peak_bytes": int(
+                model_peak_memory_cpu * 1.5 + scheduler_side_cpu_bytes * 2
+            ),
+            "gpu_peak_bytes": int(model_peak_memory_gpu) * 1.4,
+        }
 
     def _create_cv_splits(self):
         train_labels = [self.labels[i] for i in self.train_indices]

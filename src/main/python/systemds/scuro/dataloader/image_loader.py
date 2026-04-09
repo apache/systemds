@@ -36,6 +36,9 @@ class ImageStats:
     max_channels: int
     num_instances: int
     output_shape: tuple
+    average_width: int
+    average_height: int
+    average_channels: int
 
 
 class ImageLoader(BaseLoader):
@@ -79,7 +82,9 @@ class ImageLoader(BaseLoader):
         max_height = 0
         max_channels = 0
         num_instances = 0
-
+        average_width = 0
+        average_height = 0
+        average_channels = 0
         for file in self.indices:
             path = os.path.join(source_path, f"{file}{self._ext}")
             # if self.chunk_size is None:
@@ -98,10 +103,19 @@ class ImageLoader(BaseLoader):
             max_height = max(max_height, height)
             max_channels = max(max_channels, channels)
             num_instances += 1
+            average_width += width
+            average_height += height
+            average_channels += channels
+        average_width = average_width / num_instances
+        average_height = average_height / num_instances
+        average_channels = average_channels / num_instances
         return ImageStats(
             max_width,
             max_height,
             max_channels,
             num_instances,
-            (max_width, max_height, max_channels),
+            (average_width, average_height, average_channels),
+            average_width,
+            average_height,
+            average_channels,
         )

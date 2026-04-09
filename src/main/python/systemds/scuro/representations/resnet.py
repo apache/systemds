@@ -115,11 +115,22 @@ class ResNet(UnimodalRepresentation):
         return RepresentationStats(input_stats.num_instances, (512,))
 
     def estimate_peak_memory_bytes(self, input_stats: ImageStats) -> dict:
+        input_bytes = (
+            self.batch_size
+            * input_stats.max_width
+            * input_stats.max_height
+            * input_stats.max_channels
+            * self.data_type.itemsize
+        )
         output_bytes = self.estimate_output_memory_bytes(input_stats)
+        output_bytes_batch = output_bytes / input_stats.num_instances * self.batch_size
+
         batch_peak_bytes = (
             self.batch_size * 512 * self.data_type.itemsize
             + self.batch_size * 224 * 224 * 3 * self.data_type.itemsize
-        )
+        ) * 2
+
+        safety_margin_bytes = 100 * 1024 * 1024
 
         param_size = 0
         for param in self.model.parameters():
@@ -131,11 +142,14 @@ class ResNet(UnimodalRepresentation):
 
         size_all_bytes = param_size + buffer_size
 
-        cpu_peak = size_all_bytes * 2 * self.data_type.itemsize + output_bytes
-        gpu_peak = (
-            size_all_bytes * self.data_type.itemsize * self.batch_size * 0.05
-            + batch_peak_bytes * 2
+        cpu_peak = (
+            size_all_bytes * 2 * self.data_type.itemsize
+            + output_bytes_batch
+            + output_bytes
+            + input_bytes
+            + safety_margin_bytes
         )
+        gpu_peak = (size_all_bytes * self.data_type.itemsize + batch_peak_bytes) * 6
         return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": gpu_peak}
 
     def _get_parameters(self, high_level=True):
@@ -161,15 +175,6 @@ class ResNet(UnimodalRepresentation):
         if next(self.model.parameters()).dtype != self.data_type:
             self.model = self.model.to(self.data_type)
 
-        # sample = modality.data[0] if modality.data else ""
-        # self.batch_size = compute_batch_size(
-        #     model=self.model,
-        #     device=self.device,
-        #     sample_data=sample,
-        #     tokenizer=None,
-        #     max_seq_length=None,
-        #     max_batch_size=128,
-        # )
         embeddings = {}
         dataset = CustomDataset(modality.data, self.data_type, self.device)
         res5c_output = None

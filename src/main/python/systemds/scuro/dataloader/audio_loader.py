@@ -34,6 +34,7 @@ class AudioStats:
     max_length: int
     avg_length: float
     num_instances: int
+    output_shape_is_known: bool
 
     @property
     def output_shape(self):
@@ -91,4 +92,4 @@ class AudioLoader(BaseLoader):
             max_length = max(max_length, audio.shape[0])
             avg_length += audio.shape[0]
         avg_length /= num_instances
-        return AudioStats(sampling_rate, max_length, avg_length, num_instances)
+        return AudioStats(sampling_rate, max_length, avg_length, num_instances, True)

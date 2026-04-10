@@ -34,6 +34,8 @@ class TimeseriesStats:
     max_length: int
     num_instances: int
     num_signals: int
+    output_shape: tuple
+    output_shape_is_known: bool
 
 
 class TimeseriesLoader(BaseLoader):

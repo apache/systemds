@@ -46,6 +46,7 @@ from systemds.scuro.representations.representation import RepresentationStats
 random_state = 42
 np.random.seed(random_state)
 
+
 class TestDataLoader(BaseLoader):
     def __init__(self, indices, chunk_size, modality_type, data, data_type, metadata):
         super().__init__("", indices, data_type, chunk_size, modality_type)
@@ -53,16 +54,54 @@ class TestDataLoader(BaseLoader):
         self.metadata = metadata
         self.test_data = data
         if modality_type == ModalityType.TEXT:
-            self.stats = TextStats(len(data), max(len(d) for d in data), sum(len(d) for d in data) / len(data), (max(len(d) for d in data),))
+            self.stats = TextStats(
+                len(data),
+                max(len(d) for d in data),
+                sum(len(d) for d in data) / len(data),
+                max(len(d.split(" ")) for d in data),
+                sum(len(d.split(" ")) for d in data) / len(data),
+                (max(len(d) for d in data),),
+            )
         elif modality_type == ModalityType.AUDIO:
-            self.stats = AudioStats(len(data), max(len(d) for d in data), sum(len(d) for d in data) / len(data))
+            self.stats = AudioStats(
+                16000,
+                max(len(d) for d in data),
+                sum(len(d) for d in data) / len(data),
+                len(data),
+                output_shape_is_known=True,
+            )
         elif modality_type == ModalityType.VIDEO:
-            self.stats = VideoStats(len(data), max(len(d) for d in data), sum(len(d) for d in data) / len(data))
+            self.stats = VideoStats(
+                30,
+                max(d.shape[0] for d in data),
+                max(d.shape[1] for d in data),
+                max(d.shape[2] for d in data),
+                max(d.shape[3] for d in data),
+                len(data),
+            )
         elif modality_type == ModalityType.TIMESERIES:
-            self.stats = TimeseriesStats(len(data), max(len(d) for d in data), sum(len(d) for d in data) / len(data))
+            self.stats = TimeseriesStats(
+                max(len(d) for d in data),
+                len(data),
+                sum(len(d) for d in data) / len(data),
+                (max(len(d) for d in data),),
+                True,
+            )
         elif modality_type == ModalityType.IMAGE:
-            self.stats = ImageStats(max(d.shape[0] for d in data), max(d.shape[1] for d in data), max(d.shape[2] for d in data), len(data), (max(d.shape[0] for d in data), max(d.shape[1] for d in data), max(d.shape[2] for d in data)))
-      
+            self.stats = ImageStats(
+                max(d.shape[0] for d in data),
+                max(d.shape[1] for d in data),
+                max(d.shape[2] for d in data),
+                len(data),
+                (
+                    max(d.shape[0] for d in data),
+                    max(d.shape[1] for d in data),
+                    max(d.shape[2] for d in data),
+                ),
+                average_width=sum(d.shape[0] for d in data) / len(data),
+                average_height=sum(d.shape[1] for d in data) / len(data),
+                average_channels=sum(d.shape[2] for d in data) / len(data),
+            )
 
     def reset(self):
         self._next_chunk = 0
@@ -83,7 +122,58 @@ class ModalityRandomDataGenerator:
         self.modality_type = None
         self.metadata = {}
         self.data_type = np.float32
-        self.transform_time = None
+        self.transform_time = 0
+        self.stats = None
+
+    def create_stats(self, data):
+        if self.modality_type == ModalityType.TEXT:
+            self.stats = TextStats(
+                len(data),
+                max(len(d) for d in data),
+                sum(len(d) for d in data) / len(data),
+                max(len(d.split(" ")) for d in data),
+                sum(len(d.split(" ")) for d in data) / len(data),
+                (max(len(d) for d in data),),
+            )
+        elif self.modality_type == ModalityType.AUDIO:
+            self.stats = AudioStats(
+                16000,
+                max(len(d) for d in data),
+                sum(len(d) for d in data) / len(data),
+                len(data),
+            )
+        elif self.modality_type == ModalityType.VIDEO:
+            self.stats = VideoStats(
+                30,
+                max(d.shape[0] for d in data),
+                max(d.shape[1] for d in data),
+                max(d.shape[2] for d in data),
+                max(d.shape[3] for d in data),
+                len(data),
+            )
+        elif self.modality_type == ModalityType.TIMESERIES:
+            self.stats = TimeseriesStats(
+                len(data),
+                max(len(d) for d in data),
+                sum(len(d) for d in data) / len(data),
+                (max(len(d) for d in data),),
+                True,
+            )
+        elif self.modality_type == ModalityType.IMAGE:
+            self.stats = ImageStats(
+                max(d.shape[0] for d in data),
+                max(d.shape[1] for d in data),
+                max(d.shape[2] for d in data),
+                len(data),
+                (
+                    max(d.shape[0] for d in data),
+                    max(d.shape[1] for d in data),
+                    max(d.shape[2] for d in data),
+                ),
+            )
+        else:
+            raise ValueError(f"Unsupported modality type: {self.modality_type}")
+        return self.stats
 
     def create1DModality(
         self,
@@ -120,7 +210,7 @@ class ModalityRandomDataGenerator:
         return tf_modality
 
     def create_audio_data(self, num_instances, max_audio_length):
-        modality_type = ModalityType.AUDIO
+        self.modality_type = ModalityType.AUDIO
         data = [
             [
                 random.random()
@@ -132,29 +222,31 @@ class ModalityRandomDataGenerator:
         for i in range(num_instances):
             data[i] = np.array(data[i]).astype(self.data_type)
 
-        metadata = {
-            i: modality_type.create_metadata(16000, np.array(data[i]))
+        self.metadata = {
+            i: self.modality_type.create_metadata(16000, np.array(data[i]))
             for i in range(num_instances)
         }
 
-        return data, metadata
+        return data, self.metadata
 
     def create_timeseries_data(self, num_instances, sequence_length, num_features=1):
+        self.modality_type = ModalityType.TIMESERIES
         data = [
             np.random.rand(sequence_length, num_features).astype(self.data_type)
             for _ in range(num_instances)
         ]
         if num_features == 1:
             data = [d.squeeze(-1) for d in data]
-        metadata = {
-            i: ModalityType.TIMESERIES.create_metadata(
+        self.metadata = {
+            i: self.modality_type.create_metadata(
                 [f"feature_{j}" for j in range(num_features)], data[i]
             )
             for i in range(num_instances)
         }
-        return data, metadata
+        return data, self.metadata
 
     def create_text_data(self, num_instances, num_sentences_per_instance=1):
+        self.modality_type = ModalityType.TEXT
         subjects = [
             "The cat",
             "A dog",
@@ -216,48 +308,77 @@ class ModalityRandomDataGenerator:
                 sentence += f" {verb} {obj}{punct}"
             sentences.append(sentence)
 
-        metadata = {
-            i: ModalityType.TEXT.create_metadata(len(sentences[i]), sentences[i])
+        self.metadata = {
+            i: self.modality_type.create_metadata(len(sentences[i]), sentences[i])
             for i in range(num_instances)
         }
 
-        return sentences, metadata
+        return sentences, self.metadata
+
+    def create_3d_modality(self, num_instances, dims=(100, 28, 28)):
+        self.modality_type = ModalityType.EMBEDDING
+        data = [
+            np.random.rand(dims[0], dims[1], dims[2]).astype(self.data_type)
+            for _ in range(num_instances)
+        ]
+        self.metadata = {
+            i: self.modality_type.create_metadata(data[i]) for i in range(num_instances)
+        }
+        return data, self.metadata
+
+    def create_2d_modality(self, num_instances, dims=(100, 28)):
+        self.modality_type = ModalityType.EMBEDDING
+        data = [
+            np.random.rand(dims[0], dims[1]).astype(self.data_type)
+            for _ in range(num_instances)
+        ]
+        self.metadata = {
+            i: self.modality_type.create_metadata(data[i]) for i in range(num_instances)
+        }
+        return data, self.metadata
 
     def create_visual_modality(
-        self, num_instances, max_num_frames=1, height=28, width=28
+        self, num_instances, max_num_frames=1, height=28, width=28, color_channels=3
     ):
         if max_num_frames > 1:
+            self.modality_type = ModalityType.VIDEO
             data = [
                 np.random.uniform(
                     0.0,
                     1.0,
-                    (np.random.randint(10, max_num_frames + 1), height, width, 3),
+                    (
+                        np.random.randint(10, max_num_frames + 1),
+                        height,
+                        width,
+                        color_channels,
+                    ),
                 )
                 for _ in range(num_instances)
             ]
 
-            metadata = {
-                i: ModalityType.VIDEO.create_metadata(
-                    30, data[i].shape[0], width, height, 3
+            self.metadata = {
+                i: self.modality_type.create_metadata(
+                    30, data[i].shape[0], width, height, color_channels
                 )
                 for i in range(num_instances)
             }
         else:
+            self.modality_type = ModalityType.IMAGE
             data = [
                 np.random.randint(
                     0,
                     256,
-                    (height, width, 3),
+                    (height, width, color_channels),
                     dtype=np.uint8,
                 )
                 for _ in range(num_instances)
             ]
-            metadata = {
-                i: ModalityType.IMAGE.create_metadata(width, height, 3)
+            self.metadata = {
+                i: self.modality_type.create_metadata(width, height, color_channels)
                 for i in range(num_instances)
             }
 
-        return data, metadata
+        return data, self.metadata
 
     def create_balanced_labels(self, num_instances, num_classes=2):
         if num_instances % num_classes != 0:
@@ -289,14 +410,17 @@ class TestDataGenerator:
     def __init__(self, modalities_types, path, balanced=True):
 
         self.modalities_types = modalities_types
-        self.modalities_paths = {modality_type.name: f"{path}/{modality_type.name}/" for modality_type in modalities_types}
+        self.modalities_paths = {
+            modality_type.name: f"{path}/{modality_type.name}/"
+            for modality_type in modalities_types
+        }
         self._indices = None
         self.path = path
         self.balanced = balanced
 
         for modality_path in self.modalities_paths.values():
             os.mkdir(modality_path)
-    
+
         self.labels = []
         self.label_path = f"{path}/labels.npy"
 
@@ -341,7 +465,9 @@ class TestDataGenerator:
 
             for modality_type in self.modalities_types:
                 if modality_type == ModalityType.VIDEO:
-                    self.__create_visual_data(idx, duration, 30, speed_factor, modality_type)
+                    self.__create_visual_data(
+                        idx, duration, 30, speed_factor, modality_type
+                    )
                 elif modality_type == ModalityType.IMAGE:
                     self.__create_visual_data(idx, 1, 1, speed_factor, modality_type)
                 elif modality_type == ModalityType.AUDIO:
@@ -396,7 +522,6 @@ class TestDataGenerator:
         else:
             raise ValueError(f"Unsupported modality type: {modality_type}")
 
-
     def __create_text_data(self, idx, speed_factor):
         path = f"{self.path}/TEXT/{idx}.txt"
 
@@ -422,38 +547,16 @@ class TestSVM(Model):
         super().__init__(name)
 
     def fit(self, X, y, X_test, y_test):
-        if isinstance(X, list):
-            X = np.asarray(X)
-        if X.ndim > 2:
-            X = X.reshape(X.shape[0], -1)
-        self.clf = svm.SVC(C=1, gamma="scale", kernel="rbf", verbose=False)
-        self.clf = self.clf.fit(X, np.asarray(y))
-        y_pred = self.clf.predict(X)
-
-        return {
-            "accuracy": classification_report(
-                y, y_pred, output_dict=True, digits=3, zero_division=1
-            )["accuracy"]
-        }, 0
+        return {"accuracy": random.uniform(0.5, 1.0)}, 0
 
     def test(self, test_X: np.ndarray, test_y: np.ndarray):
-        if isinstance(test_X, list):
-            test_X = np.asarray(test_X)
-        if test_X.ndim > 2:
-            test_X = test_X.reshape(test_X.shape[0], -1)
-        y_pred = self.clf.predict(np.asarray(test_X))  # noqa]
-
-        return {
-            "accuracy": classification_report(
-                np.array(test_y), y_pred, output_dict=True, digits=3, zero_division=1
-            )["accuracy"]
-        }, 0
+        return {"accuracy": random.uniform(0.5, 1.0)}, 0
 
 
 class TestTask(Task):
     def __init__(self, name, model_name, num_instances):
         self.labels = ModalityRandomDataGenerator().create_balanced_labels(
-            num_instances=10
+            num_instances=num_instances
         )
         split = train_test_split(
             np.array(range(num_instances)),
@@ -476,4 +579,3 @@ class TestTask(Task):
 
     def get_output_stats(self, input_stats):
         return RepresentationStats(1, (1,))
-        

@@ -81,6 +81,7 @@ class MemoryAwareNodeScheduler:
                 for info in self.gpu_memory_info
             },
         }
+        self._initialized = False
 
     def update_cpu_memory_in_use(self, delta_bytes: int):
         self.memory_stats["cpu_in_use"] += delta_bytes
@@ -145,8 +146,13 @@ class MemoryAwareNodeScheduler:
                 self.remaining_children[parent_id] -= 1
 
     def is_finished(self) -> bool:
+        if not self._initialized:
+            self._initialized = True
+            return False
+
         if self._is_deadlock():
             self.deadlock = True
+            self.success = False
             return True
 
         if self._is_success():
@@ -258,6 +264,7 @@ class MemoryAwareNodeScheduler:
         if cpu_mem > self.memory_budget["cpu"] - self.memory_stats["cpu_in_use"]:
             if cpu_mem > self.memory_budget["cpu"]:
                 self.blocked_memory_nodes_perm.append(node_id)
+                self.topo_order.remove(node_id)
             return False, None
 
         if gpu_mem > 0.0 and self.n_gpu > 0:

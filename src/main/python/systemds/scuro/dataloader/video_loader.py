@@ -35,7 +35,7 @@ class VideoStats:
     max_length: int
     max_width: int
     max_height: int
-    max_num_channels: int
+    max_channels: int
     num_instances: int
 
     @property
@@ -48,7 +48,7 @@ class VideoStats:
         the per-instance tensor shape. For videos we approximate this as
         (max_length, max_height, max_width, max_num_channels).
         """
-        return (self.max_length, self.max_height, self.max_width, self.max_num_channels)
+        return (self.max_length, self.max_height, self.max_width, self.max_channels)
 
 
 class VideoLoader(BaseLoader):

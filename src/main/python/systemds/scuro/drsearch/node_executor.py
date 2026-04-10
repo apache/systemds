@@ -47,7 +47,6 @@ from systemds.scuro.representations.aggregated_representation import (
 from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.utils.checkpointing import CheckpointManager
-import sys
 import threading
 import time
 import psutil
@@ -371,6 +370,10 @@ class NodeExecutor:
                     try:
                         result = future.result()
                     except Exception as e:
+                        err_cls = type(e)
+                        err_mod = err_cls.__module__
+                        if err_mod.startswith("torch"):
+                            torch.cuda.empty_cache()
                         print(f"Error executing node {node_id}: {e}")
                         self.scheduler.add_failed_node(node_id)
                         continue

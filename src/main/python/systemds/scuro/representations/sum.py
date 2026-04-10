@@ -73,3 +73,10 @@ class Sum(Fusion):
 
         largest = max(stats_list, key=num_elements)
         return RepresentationStats(largest.num_instances, largest.output_shape)
+
+    def estimate_peak_memory_bytes(self, input_stats) -> dict:
+        # TODO
+        return {
+            "cpu_peak_bytes": 0,
+            "gpu_peak_bytes": 0,
+        }

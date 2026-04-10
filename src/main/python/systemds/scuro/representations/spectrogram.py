@@ -30,6 +30,11 @@ from systemds.scuro.drsearch.operator_registry import (
     register_representation,
     register_context_representation_operator,
 )
+from systemds.scuro.utils.static_variables import (
+    NP_ARRAY_HEADER_BYTES,
+    PY_LIST_HEADER_BYTES,
+    PY_LIST_SLOT_BYTES,
+)
 
 
 @register_representation(ModalityType.AUDIO)
@@ -59,6 +64,46 @@ class Spectrogram(UnimodalRepresentation):
             y=np.array(np.abs(instance)), hop_length=self.hop_length, n_fft=self.n_fft
         )
         return librosa.amplitude_to_db(np.abs(spectrogram)).T
+
+    def estimate_peak_memory_bytes(self, input_stats) -> dict:
+        # TODO: validate this function
+        n = int(input_stats.num_instances)
+        output_shape = input_stats.output_shape
+
+        signal_length = output_shape[0]
+        if signal_length < self.n_fft:
+            num_frames = 1
+        else:
+            num_frames = 1 + (signal_length - self.n_fft) // self.hop_length
+        num_frames = max(int(num_frames), 1)
+        num_freq_bins = 1 + self.n_fft // 2
+
+        output_payload_bytes = (
+            num_frames * num_freq_bins * np.dtype(np.float32).itemsize
+        )
+        per_instance_retained = (
+            output_payload_bytes + NP_ARRAY_HEADER_BYTES + PY_LIST_SLOT_BYTES
+        )
+        retained_output_bytes = PY_LIST_HEADER_BYTES + n * per_instance_retained
+        input_copy_bytes = max(signal_length, 1) * np.dtype(np.float32).itemsize
+        stft_bytes = num_frames * num_freq_bins * np.dtype(np.complex64).itemsize
+
+        magnitude_bytes = num_frames * num_freq_bins * np.dtype(np.float32).itemsize
+        db_bytes = output_payload_bytes
+        fft_workspace_bytes = max(2 * 1024 * 1024, stft_bytes // 2)
+        transient_one_instance_bytes = (
+            input_copy_bytes
+            + stft_bytes
+            + magnitude_bytes
+            + db_bytes
+            + fft_workspace_bytes
+        )
+        cpu_peak = retained_output_bytes + transient_one_instance_bytes
+
+        return {
+            "cpu_peak_bytes": int(cpu_peak),
+            "gpu_peak_bytes": 0,
+        }
 
     def get_output_stats(self, input_stats) -> RepresentationStats:
         num_instances = getattr(input_stats, "num_instances", 0)

@@ -96,3 +96,10 @@ class Concatenation(Fusion):
             output_shape = stats_list[0].output_shape
 
         return RepresentationStats(num_instances, output_shape)
+
+    def estimate_peak_memory_bytes(self, input_stats) -> dict:
+        # TODO
+        return {
+            "cpu_peak_bytes": 0,
+            "gpu_peak_bytes": 0,
+        }

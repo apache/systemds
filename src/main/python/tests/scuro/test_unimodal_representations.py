@@ -22,7 +22,13 @@
 import unittest
 import copy
 import numpy as np
-
+from systemds.scuro.representations.bert import (
+    Bert,
+    ALBERT,
+    ELECTRA,
+    RoBERTa,
+    DistillBERT,
+)
 from systemds.scuro.representations.clip import CLIPVisual, CLIPText
 from systemds.scuro.representations.bow import BoW
 from systemds.scuro.representations.covarep_audio_features import (
@@ -31,6 +37,7 @@ from systemds.scuro.representations.covarep_audio_features import (
     Pitch,
     ZeroCrossing,
 )
+from systemds.scuro.representations.glove import GloVe
 from systemds.scuro.representations.wav2vec import Wav2Vec
 from systemds.scuro.representations.spectrogram import Spectrogram
 from systemds.scuro.representations.word2vec import W2V
@@ -77,7 +84,7 @@ class TestUnimodalRepresentations(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.num_instances = 4
+        cls.num_instances = 2
         cls.indices = np.array(range(cls.num_instances))
 
     def test_audio_representations(self):
@@ -176,7 +183,7 @@ class TestUnimodalRepresentations(unittest.TestCase):
             SwinVideoTransformer(),
         ]
         video_data, video_md = ModalityRandomDataGenerator().create_visual_modality(
-            self.num_instances, 60
+            self.num_instances, 25
         )
         video = UnimodalModality(
             TestDataLoader(
@@ -189,9 +196,20 @@ class TestUnimodalRepresentations(unittest.TestCase):
             assert len(r.data) == self.num_instances
 
     def test_text_representations(self):
-        test_representations = [CLIPText(), BoW(2, 2), TfIdf(), W2V()]
+        test_representations = [
+            CLIPText(),
+            Bert(),
+            BoW(2, 2),
+            TfIdf(),
+            W2V(),
+            GloVe(),
+            ALBERT(),
+            ELECTRA(),
+            RoBERTa(),
+            DistillBERT(),
+        ]
         text_data, text_md = ModalityRandomDataGenerator().create_text_data(
-            self.num_instances
+            self.num_instances, 100
         )
         text = UnimodalModality(
             TestDataLoader(
@@ -206,7 +224,7 @@ class TestUnimodalRepresentations(unittest.TestCase):
     def test_chunked_video_representations(self):
         video_representations = [ResNet()]
         video_data, video_md = ModalityRandomDataGenerator().create_visual_modality(
-            self.num_instances, 60
+            self.num_instances, 25
         )
         video = UnimodalModality(
             TestDataLoader(

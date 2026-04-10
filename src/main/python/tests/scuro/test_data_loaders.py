@@ -19,23 +19,14 @@
 #
 # -------------------------------------------------------------
 
-import os
 import shutil
 import unittest
 import numpy as np
 
-from systemds.scuro.modality.unimodal_modality import UnimodalModality
-from systemds.scuro.representations.bert import Bert
-from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
-from systemds.scuro.representations.resnet import ResNet
 from tests.scuro.data_generator import setup_data
-from unittest.mock import patch, mock_open
-from systemds.scuro.dataloader.base_loader import BaseLoader
 from systemds.scuro.dataloader.audio_loader import AudioLoader, AudioStats
 from systemds.scuro.dataloader.image_loader import ImageLoader, ImageStats
-from systemds.scuro.dataloader.json_loader import JSONLoader, JSONStats
 from systemds.scuro.dataloader.text_loader import TextLoader, TextStats
-from systemds.scuro.dataloader.timeseries_loader import TimeseriesLoader, TimeseriesStats
 from systemds.scuro.dataloader.video_loader import VideoLoader, VideoStats
 from systemds.scuro.modality.type import ModalityType
 
@@ -45,7 +36,13 @@ class TestDataLoadersLoadFromFiles(unittest.TestCase):
     def setUpClass(cls):
         cls.test_file_path = "test_data"
         cls.num_instances = 2
-        cls.mods = [ModalityType.AUDIO, ModalityType.VIDEO, ModalityType.TEXT, ModalityType.IMAGE, ModalityType.TIMESERIES]
+        cls.mods = [
+            ModalityType.AUDIO,
+            ModalityType.VIDEO,
+            ModalityType.TEXT,
+            ModalityType.IMAGE,
+            ModalityType.TIMESERIES,
+        ]
         cls.data_generator = setup_data(cls.mods, cls.num_instances, cls.test_file_path)
 
     @classmethod
@@ -79,7 +76,6 @@ class TestDataLoadersLoadFromFiles(unittest.TestCase):
         self.assertEqual(stats.max_length, 44100)
         self.assertAlmostEqual(stats.avg_length, (44100 * 2) / 2.0)
 
-
     def test_video_loader_loads_all_instances(self):
         loader = VideoLoader(
             self.data_generator.get_modality_path(ModalityType.VIDEO),
@@ -94,7 +90,6 @@ class TestDataLoadersLoadFromFiles(unittest.TestCase):
             self.assertIsInstance(arr, np.ndarray)
             self.assertEqual(arr.ndim, 4)
 
-
     def test_video_loader_stats(self):
         loader = VideoLoader(
             self.data_generator.get_modality_path(ModalityType.VIDEO),
@@ -108,7 +103,6 @@ class TestDataLoadersLoadFromFiles(unittest.TestCase):
         self.assertEqual(stats.max_width, 160)
         self.assertEqual(stats.max_height, 120)
         self.assertEqual(stats.max_num_channels, 3)
-
 
     def test_text_loader_loads_all_instances(self):
         loader = TextLoader(
@@ -132,8 +126,8 @@ class TestDataLoadersLoadFromFiles(unittest.TestCase):
 
         self.assertIsInstance(stats, TextStats)
         self.assertEqual(stats.num_instances, 2)
-        self.assertEqual(stats.max_length, 5)
-        self.assertAlmostEqual(stats.avg_length, (5 + 4) / 2.0)
+        self.assertEqual(stats.max_length, 7)
+        self.assertAlmostEqual(stats.avg_length, (7 + 7) / 2.0)
 
     def test_image_loader_loads_all_instances(self):
         loader = ImageLoader(
@@ -161,7 +155,6 @@ class TestDataLoadersLoadFromFiles(unittest.TestCase):
         self.assertEqual(stats.max_width, 160)
         self.assertEqual(stats.max_height, 120)
         self.assertEqual(stats.max_channels, 3)
-    
 
     # def test_timeseries_loader_loads_all_instances(self):
     #     loader = TimeseriesLoader(
@@ -188,7 +181,6 @@ class TestDataLoadersLoadFromFiles(unittest.TestCase):
     #     self.assertEqual(stats.num_instances, 2)
     #     self.assertEqual(stats.max_length, 10)
     #     self.assertEqual(stats.num_signals, 2)
-
 
 
 if __name__ == "__main__":

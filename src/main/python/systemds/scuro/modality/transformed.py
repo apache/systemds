@@ -70,6 +70,12 @@ class TransformedModality(Modality):
                 if "attention_masks" in v:
                     del self.metadata[k]["attention_masks"]
 
+    def copy_from_instance(self):
+        """
+        Create a copy of the transformed modality instance
+        """
+        return type(self)(self, None, self.modality_type)
+
     def calculate_memory_usage(self):
         data_bytes = 0
         for instance in self.data:

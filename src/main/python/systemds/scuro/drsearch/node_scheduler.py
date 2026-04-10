@@ -150,6 +150,11 @@ class MemoryAwareNodeScheduler:
             self._initialized = True
             return False
 
+        if self.not_enough_memory():
+            self.deadlock = True
+            self.success = False
+            return True
+
         if self._is_deadlock():
             self.deadlock = True
             self.success = False
@@ -250,13 +255,26 @@ class MemoryAwareNodeScheduler:
     def _is_deadlock(self) -> bool:
         pending_nodes = self._get_pending_nodes()
         blocked = len(pending_nodes) > 0
+        # if len(self.running_nodes) == 0 and len(self.ready_nodes) == 0 and blocked:
+        #     return True
 
         for node_id in pending_nodes:
             if node_id not in self.blocked_memory_nodes_perm:
                 blocked = False
                 break
 
-        return len(self.running_nodes) == 0 and self.ready_nodes == [] and blocked
+        return blocked
+
+    def not_enough_memory(self) -> bool:
+        for node_id in self._get_pending_nodes():
+            cpu_mem, gpu_mem = self.node_resources[node_id]
+            if cpu_mem > self.memory_budget["cpu"] - self.memory_stats["cpu_in_use"]:
+                return True
+            if gpu_mem > 0.0 and self.n_gpu > 0:
+                gpu_id = self._gpu_with_most_free_memory(gpu_mem)
+                if gpu_id is None:
+                    return True
+        return self.memory_stats["cpu_in_use"] > self.memory_budget["cpu"]
 
     def _check_memory_constraints(self, node_id: str) -> bool:
         cpu_mem, gpu_mem = self.node_resources[node_id]

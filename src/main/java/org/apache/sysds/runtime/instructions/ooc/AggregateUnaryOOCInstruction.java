@@ -35,6 +35,8 @@ import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.ooc.stream.StreamContext;
+import org.apache.sysds.runtime.util.IndexRange;
 
 import java.util.HashMap;
 
@@ -90,6 +92,21 @@ public class AggregateUnaryOOCInstruction extends ComputationOOCInstruction {
 
 			ec.getMatrixObject(output).setStreamHandle(qOut);
 
+			qIn.setDownstreamMessageRelay(qOut::messageDownstream);
+			qOut.setUpstreamMessageRelay(qIn::messageUpstream);
+			qOut.setIXTransform((downstream, range) -> {
+				if (downstream) {
+					if (aggun.isRowAggregate())
+						return new IndexRange(range.rowStart, range.rowEnd, 1, 1);
+					else
+						return new IndexRange(1, 1, range.colStart, range.colEnd);
+				}
+				if (aggun.isRowAggregate())
+					return new IndexRange(range.rowStart, range.rowEnd, 1, min.getNumColumns() - 1);
+				else
+					return new IndexRange(1, min.getNumRows() - 1, range.colStart, range.colEnd);
+			});
+
 			// per-block aggregation (parallel map)
 			mapOOC(qIn, qLocal, tmp -> {
 				MatrixIndexes midx = aggun.isRowAggregate() ?
@@ -134,18 +151,18 @@ public class AggregateUnaryOOCInstruction extends ComputationOOCInstruction {
 					}
 				}
 				qOut.closeInput();
-			});
+			}, new StreamContext().addOutStream(qOut));
 		}
 		// full aggregation
 		else {
 			OOCStream<MatrixBlock> qLocal = createWritableStream();
 
-			mapOOC(qIn, qLocal, tmp -> (MatrixBlock) ((MatrixBlock) tmp.getValue())
+			mapOOC(qIn, qLocal, tmp -> (MatrixBlock) tmp.getValue()
 				.aggregateUnaryOperations(aggun, new MatrixBlock(), blen, tmp.getIndexes()));
 
 			MatrixBlock ltmp;
 			int extra = _aop.correction.getNumRemovedRowsColumns();
-			MatrixBlock ret = new MatrixBlock(1,1+extra,false);
+			MatrixBlock ret = new MatrixBlock(1, 1 + extra, _aop.initialValue);
 			MatrixBlock corr = new MatrixBlock(1,1+extra,false);
 			while((ltmp = qLocal.dequeue()) != LocalTaskQueue.NO_MORE_TASKS) {
 				OperationsOnMatrixValues.incrementalAggregation(

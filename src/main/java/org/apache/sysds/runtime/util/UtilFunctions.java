@@ -1482,12 +1482,13 @@ public class UtilFunctions {
 			//compute block sizes
 			int maxRow = UtilFunctions.computeBlockSize(mc.getRows(), blockRow+1, mc.getBlocksize());
 			int maxCol = UtilFunctions.computeBlockSize(mc.getCols(), blockCol+1, mc.getBlocksize());
+			MatrixBlock block = null;
 			//copy sub-matrix to block
-			MatrixBlock block = new MatrixBlock(maxRow, maxCol, mb.isInSparseFormat());
-			int row_offset = (int)blockRow*mc.getBlocksize();
-			int col_offset = (int)blockCol*mc.getBlocksize();
-			block = mb.slice( row_offset, row_offset+maxRow-1,
-				col_offset, col_offset+maxCol-1, false, block );
+			block = new MatrixBlock(maxRow, maxCol, mb.isInSparseFormat());
+			int row_offset = (int) blockRow * mc.getBlocksize();
+			int col_offset = (int) blockCol * mc.getBlocksize();
+			block = mb.slice(row_offset, row_offset + maxRow - 1, col_offset, col_offset + maxCol - 1, false,
+				block);
 			//create key-value pair
 			return new IndexedMatrixValue(new MatrixIndexes(blockRow+1, blockCol+1), block);
 		}

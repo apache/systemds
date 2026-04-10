@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.ooc;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.math3.random.Well1024a;
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.DataGenOp;
@@ -36,6 +37,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysds.runtime.ooc.stream.StreamContext;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class DataGenOOCInstruction extends UnaryOOCInstruction {
@@ -177,6 +179,7 @@ public class DataGenOOCInstruction extends UnaryOOCInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		final OOCStream<IndexedMatrixValue> qOut = createWritableStream();
+		ec.getMatrixObject(output).setStreamHandle(qOut);
 
 		// process specific datagen operator
 		if (method == Types.OpOpDG.RAND) {
@@ -187,9 +190,6 @@ public class DataGenOOCInstruction extends UnaryOOCInstruction {
 			long lrows = ec.getScalarInput(rows).getLongValue();
 			long lcols = ec.getScalarInput(cols).getLongValue();
 			checkValidDimensions(lrows, lcols);
-
-			if (!pdf.equalsIgnoreCase("uniform") || minValue != maxValue)
-				throw new NotImplementedException(); // TODO modified version of rng as in LibMatrixDatagen to handle blocks independently
 
 			OOCStream<MatrixIndexes> qIn = createWritableStream();
 			int nrb = (int)((lrows-1) / blen)+1;
@@ -210,10 +210,37 @@ public class DataGenOOCInstruction extends UnaryOOCInstruction {
 				return;
 			}
 
+			if(sparsity == 1.0 && minValue == maxValue) {
+				mapOOC(qIn, qOut, idx -> {
+					long rlen = Math.min(blen, lrows - (idx.getRowIndex()-1) * blen);
+					long clen =  Math.min(blen, lcols - (idx.getColumnIndex()-1) * blen);
+					return new IndexedMatrixValue(idx, new MatrixBlock((int)rlen, (int)clen, minValue));
+				});
+				return;
+			}
+
+			Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(lSeed);
+			int nb = nrb * ncb;
+			long[] seeds = new long[nb];
+			for(int i = 0; i < nb; i++) seeds[i] = bigrand.nextLong();
+
 			mapOOC(qIn, qOut, idx -> {
 				long rlen = Math.min(blen, lrows - (idx.getRowIndex()-1) * blen);
 				long clen =  Math.min(blen, lcols - (idx.getColumnIndex()-1) * blen);
-				MatrixBlock mout = MatrixBlock.randOperations(getGenerator(rlen, clen), lSeed);
+
+				int r = (int) idx.getRowIndex()-1;
+				int c = (int) idx.getColumnIndex()-1;
+				long bSeed = seeds[r*ncb+c];
+
+				final long estnnz = ((minValue==0.0 && maxValue==0.0) ? 0 : (long)(sparsity * rlen * clen));
+				boolean lsparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, estnnz);
+
+				MatrixBlock mout = new MatrixBlock();
+				mout.reset((int) rlen, (int) clen, lsparse, estnnz);
+				mout.allocateBlock();
+
+				LibMatrixDatagen.genRandomNumbers(false, 0, 1, 0, 1, mout, getGenerator(rlen, clen), bSeed, null);
+				mout.recomputeNonZeros();
 				return new IndexedMatrixValue(idx, mout);
 			});
 		}
@@ -259,12 +286,10 @@ public class DataGenOOCInstruction extends UnaryOOCInstruction {
 				}
 
 				qOut.closeInput();
-			}, qOut);
+			}, new StreamContext().addOutStream(qOut));
 		}
 		else
 			throw new NotImplementedException();
-
-		ec.getMatrixObject(output).setStreamHandle(qOut);
 	}
 
 

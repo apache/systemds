@@ -53,11 +53,10 @@ public class RandTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME_2, config2);
 	}
 
-	// Actual rand operation not yet supported
-	/*@Test
+	@Test
 	public void testRand() {
 		runRandTest(TEST_NAME_1);
-	}*/
+	}
 
 	@Test
 	public void testConstInit() {

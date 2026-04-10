@@ -24,6 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.FunctionOp.FunctionType;
@@ -141,6 +142,10 @@ public class InterProceduralAnalysis {
 		//would require an update of the function call graph
 		_passes.add(new IPAPassForwardFunctionCalls());
 		_passes.add(new IPAPassApplyStaticAndDynamicHopRewrites());
+		if (DMLScript.USE_OOC) {
+			_passes.add(new IPAPassPruneUnreachableHops());
+			_passes.add(new IPAPassInjectOOCTee());
+		}
 	}
 	
 	public InterProceduralAnalysis(StatementBlock sb) {

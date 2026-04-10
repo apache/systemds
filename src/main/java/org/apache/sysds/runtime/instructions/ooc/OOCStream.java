@@ -36,10 +36,6 @@ public interface OOCStream<T> extends OOCStreamable<T> {
 
 	void propagateFailure(DMLRuntimeException re);
 
-	boolean hasStreamCache();
-
-	CachingStream getStreamCache();
-
 	/**
 	 * Registers a new subscriber that consumes the stream.
 	 * While there is no guarantee for any specific order, the closing item LocalTaskQueue.NO_MORE_TASKS
@@ -61,6 +57,14 @@ public interface OOCStream<T> extends OOCStreamable<T> {
 		void fail(DMLRuntimeException failure);
 
 		boolean isEos();
+
+		boolean isFailure();
+	}
+
+	interface GroupQueueCallback<T> extends QueueCallback<T> {
+		int size();
+
+		QueueCallback<T> getCallback(int idx);
 	}
 
 	class SimpleQueueCallback<T> implements QueueCallback<T> {
@@ -94,7 +98,12 @@ public interface OOCStream<T> extends OOCStreamable<T> {
 
 		@Override
 		public boolean isEos() {
-			return get() == null;
+			return _result == null && _failure == null;
+		}
+
+		@Override
+		public boolean isFailure() {
+			return _failure != null;
 		}
 	}
 }

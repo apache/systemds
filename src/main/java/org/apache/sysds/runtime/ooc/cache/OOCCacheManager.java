@@ -21,7 +21,9 @@ package org.apache.sysds.runtime.ooc.cache;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.instructions.ooc.OOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
+import org.apache.sysds.runtime.instructions.ooc.TeeOOCInstruction;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.ooc.stats.OOCEventLog;
@@ -30,9 +32,11 @@ import org.apache.sysds.utils.Statistics;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class OOCCacheManager {
@@ -52,6 +56,7 @@ public class OOCCacheManager {
 	}
 
 	public static void reset() {
+		TeeOOCInstruction.reset();
 		OOCIOHandler ioHandler = _ioHandler.getAndSet(null);
 		OOCCacheScheduler cacheScheduler = _scheduler.getAndSet(null);
 		if (ioHandler != null)
@@ -91,13 +96,21 @@ public class OOCCacheManager {
 				return scheduler;
 
 			OOCIOHandler ioHandler = new OOCMatrixIOHandler();
-			scheduler = new OOCLRUCacheScheduler(ioHandler, _evictionLimit, _hardLimit);
+			scheduler = new OOCLRUCacheScheduler(ioHandler, _evictionLimit, _hardLimit, Math.max(40000000, (long)((_hardLimit - _evictionLimit) * 0.1)));
 
 			if(_scheduler.compareAndSet(null, scheduler)) {
 				_ioHandler.set(ioHandler);
 				return scheduler;
 			}
 		}
+	}
+
+	/**
+	 * Returns the current cache scheduler if already initialized, otherwise null.
+	 * This method does not trigger lazy initialization.
+	 */
+	public static OOCCacheScheduler getCacheIfInitialized() {
+		return _scheduler.get();
 	}
 
 	public static OOCIOHandler getIOHandler() {
@@ -134,9 +147,24 @@ public class OOCCacheManager {
 		getCache().putSourceBacked(key, value, ((MatrixBlock) value.getValue()).getExactSerializedSize(), descriptor);
 	}
 
+	public static void putRawSourceBacked(BlockKey key, Object data, long size, OOCIOHandler.SourceBlockDescriptor descriptor) {
+		getCache().putSourceBacked(key, data, size, descriptor);
+	}
+
 	public static OOCStream.QueueCallback<IndexedMatrixValue> putAndPin(long streamId, int blockId, IndexedMatrixValue value) {
 		BlockKey key = new BlockKey(streamId, blockId);
 		return new CachedQueueCallback<>(getCache().putAndPin(key, value, ((MatrixBlock)value.getValue()).getExactSerializedSize()), null);
+	}
+
+	public static void putRaw(BlockKey key, Object data, long size) {
+		getCache().put(key, data, size);
+	}
+
+	public static OOCStream.QueueCallback<IndexedMatrixValue> putAndPinRaw(BlockKey key, Object data, long size) {
+		BlockEntry entry = getCache().putAndPin(key, data, size);
+		if (data instanceof List)
+			return new CachedGroupCallback<>(entry, null);
+		return new CachedQueueCallback<>(entry, null);
 	}
 
 	public static OOCStream.QueueCallback<IndexedMatrixValue> putAndPinSourceBacked(long streamId, int blockId,
@@ -147,14 +175,74 @@ public class OOCCacheManager {
 				descriptor), null);
 	}
 
+	public static OOCStream.QueueCallback<IndexedMatrixValue> putAndPinRawSourceBacked(BlockKey key, Object data, long size,
+		OOCIOHandler.SourceBlockDescriptor descriptor) {
+		BlockEntry entry = getCache().putAndPinSourceBacked(key, data, size, descriptor);
+		if (data instanceof List)
+			return new CachedGroupCallback<>(entry, null);
+		return new CachedQueueCallback<>(entry, null);
+	}
+
+	public static void prioritize(BlockKey key, int priority) {
+		getCache().prioritize(key, priority);
+	}
+
 	public static CompletableFuture<OOCStream.QueueCallback<IndexedMatrixValue>> requestBlock(long streamId, long blockId) {
-		BlockKey key = new BlockKey(streamId, blockId);
-		return getCache().request(key).thenApply(e -> new CachedQueueCallback<>(e, null));
+		return requestBlock(new BlockKey(streamId, (int)blockId));
+	}
+
+	public static CompletableFuture<OOCStream.QueueCallback<IndexedMatrixValue>> requestBlock(BlockKey key) {
+		return getCache().request(key).thenApply(e -> toCallback(e, key, null));
 	}
 
 	public static CompletableFuture<List<OOCStream.QueueCallback<IndexedMatrixValue>>> requestManyBlocks(List<BlockKey> keys) {
 		return getCache().request(keys).thenApply(
-			l -> l.stream().map(e -> (OOCStream.QueueCallback<IndexedMatrixValue>)new CachedQueueCallback<IndexedMatrixValue>(e, null)).toList());
+			l -> {
+				List<OOCStream.QueueCallback<IndexedMatrixValue>> out = new ArrayList<>(l.size());
+				for (int i = 0; i < l.size(); i++)
+					out.add(toCallback(l.get(i), keys.get(i), null));
+				return out;
+			});
+	}
+
+	public static List<OOCStream.QueueCallback<IndexedMatrixValue>> tryRequestManyBlocks(List<BlockKey> keys) {
+		List<BlockEntry> entries = getCache().tryRequest(keys);
+		if(entries == null)
+			return null;
+		List<OOCStream.QueueCallback<IndexedMatrixValue>> out = new ArrayList<>(entries.size());
+		for (int i = 0; i < entries.size(); i++)
+			out.add(toCallback(entries.get(i), keys.get(i), null));
+		return out;
+	}
+
+	public static CompletableFuture<List<OOCStream.QueueCallback<IndexedMatrixValue>>> requestAnyOf(List<BlockKey> keys, int n, List<BlockKey> sel) {
+		return getCache().requestAnyOf(keys, n, sel)
+			.thenApply(
+				l -> {
+					List<OOCStream.QueueCallback<IndexedMatrixValue>> out = new ArrayList<>(l.size());
+					for (int i = 0; i < l.size(); i++) {
+						BlockKey key = sel.size() == l.size() ? sel.get(i) : keys.get(i);
+						out.add(toCallback(l.get(i), key, null));
+					}
+					return out;
+				});
+	}
+
+	private static OOCStream.QueueCallback<IndexedMatrixValue> toCallback(BlockEntry entry, BlockKey key, DMLRuntimeException failure) {
+		if (entry.getData() instanceof List<?>) {
+			CachedGroupCallback<IndexedMatrixValue> group = new CachedGroupCallback<>(entry, failure);
+			if (key instanceof GroupedBlockKey gk) {
+				OOCStream.QueueCallback<IndexedMatrixValue> sub = group.getCallback(gk.getGroupIndex());
+				group.close(); // drop the group-level pin, sub keeps it pinned
+				return sub;
+			}
+			return group;
+		}
+		return new CachedQueueCallback<>(entry, failure);
+	}
+
+	public static boolean canClaimMemory() {
+		return getCache().isWithinLimits() && OOCInstruction.getComputeInFlight() <= OOCInstruction.getComputeBackpressureThreshold();
 	}
 
 	private static void pin(BlockEntry entry) {
@@ -168,33 +256,32 @@ public class OOCCacheManager {
 
 
 
-	static class CachedQueueCallback<T> implements OOCStream.QueueCallback<T> {
+	public static class CachedQueueCallback<T> implements OOCStream.QueueCallback<T> {
 		private final BlockEntry _result;
-		private DMLRuntimeException _failure;
 		private final AtomicBoolean _pinned;
+		private T _data;
+		private DMLRuntimeException _failure;
 
+		@SuppressWarnings("unchecked")
 		CachedQueueCallback(BlockEntry result, DMLRuntimeException failure) {
 			this._result = result;
+			this._data = (T)result.getData();
 			this._failure = failure;
 			this._pinned = new AtomicBoolean(true);
 		}
 
-		@SuppressWarnings("unchecked")
 		@Override
 		public T get() {
-			if (_failure != null)
+			if(_failure != null)
 				throw _failure;
-			if (!_pinned.get())
+			if(!_pinned.get())
 				throw new IllegalStateException("Cannot get cached item of a closed callback");
-			T ret = (T)_result.getData();
-			if (ret == null)
-				throw new IllegalStateException("Cannot get a cached item if it is not pinned in memory: " + _result.getState());
-			return ret;
+			return _data;
 		}
 
 		@Override
 		public OOCStream.QueueCallback<T> keepOpen() {
-			if (!_pinned.get())
+			if(!_pinned.get())
 				throw new IllegalStateException("Cannot keep open an already closed callback");
 			pin(_result);
 			return new CachedQueueCallback<>(_result, _failure);
@@ -211,10 +298,155 @@ public class OOCCacheManager {
 		}
 
 		@Override
+		public boolean isFailure() {
+			return _failure != null;
+		}
+
+		@Override
 		public void close() {
-			if (_pinned.compareAndSet(true, false)) {
+			if(_pinned.compareAndSet(true, false)) {
+				_data = null;
 				unpin(_result);
 			}
+		}
+
+		public BlockKey getBlockKey() {
+			return _result.getKey();
+		}
+	}
+
+	public static class CachedSubCallback<T> implements OOCStream.QueueCallback<T> {
+		private final CachedGroupCallback<T> _parent;
+		private final AtomicBoolean _pinned;
+		private T _data;
+		private final int _groupIndex;
+
+		CachedSubCallback(CachedGroupCallback<T> parent, T data, int groupIndex) {
+			_parent = parent;
+			_data = data;
+			_groupIndex = groupIndex;
+			_pinned = new AtomicBoolean(true);
+		}
+
+		@Override
+		public T get() {
+			if(_parent.isFailure())
+				throw _parent._failure;
+			return _data;
+		}
+
+		@Override
+		public OOCStream.QueueCallback<T> keepOpen() {
+			_parent.registerQueueCallback();
+			return new CachedSubCallback<>(_parent, _data, _groupIndex);
+		}
+
+		@Override
+		public void close() {
+			if(_pinned.compareAndSet(true, false)) {
+				_data = null;
+				_parent.close();
+			}
+		}
+
+		@Override
+		public void fail(DMLRuntimeException failure) {
+			_parent.fail(failure);
+		}
+
+		@Override
+		public boolean isEos() {
+			return false;
+		}
+
+		@Override
+		public boolean isFailure() {
+			return _parent.isFailure();
+		}
+
+		public CachedGroupCallback<T> getParent() {
+			return _parent;
+		}
+
+		public int getGroupIndex() {
+			return _groupIndex;
+		}
+	}
+
+	public static class CachedGroupCallback<T> implements OOCStream.GroupQueueCallback<T> {
+		private final BlockEntry _result;
+		private final AtomicInteger _pinCounter;
+		private List<T> _data;
+		private DMLRuntimeException _failure;
+
+		@SuppressWarnings("unchecked")
+		CachedGroupCallback(BlockEntry result, DMLRuntimeException failure) {
+			this._result = result;
+			this._data = (List<T>)result.getData();
+			this._failure = failure;
+			this._pinCounter = new AtomicInteger(1);
+		}
+
+		public OOCStream.QueueCallback<T> getCallback(int idx) {
+			if(_pinCounter.get() <= 0)
+				throw new IllegalStateException("Cannot open sub-callback on a closed GroupCallback");
+			registerQueueCallback();
+			return new CachedSubCallback<>(this, _data.get(idx), idx);
+		}
+
+		public void registerQueueCallback() {
+			if(_pinCounter.incrementAndGet() <= 1)
+				throw new IllegalStateException();
+		}
+
+		@Override
+		public T get() {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public int size() {
+			return _data.size();
+		}
+
+		public T get(int idx) {
+			return _data.get(idx);
+		}
+
+		@Override
+		public OOCStream.QueueCallback<T> keepOpen() {
+			if(_pinCounter.get() <= 0)
+				throw new IllegalStateException("Cannot keep open an already closed callback");
+			pin(_result);
+			return new CachedGroupCallback<>(_result, _failure);
+		}
+
+		@Override
+		public void close() {
+			int cnt = _pinCounter.decrementAndGet();
+			if(cnt == 0) {
+				_data = null;
+				unpin(_result);
+			}
+		}
+
+		@Override
+		public void fail(DMLRuntimeException failure) {
+			_failure = failure;
+		}
+
+		@Override
+		public boolean isEos() {
+			return false;
+		}
+
+		@Override
+		public boolean isFailure() {
+			return _failure != null;
+		}
+
+		public BlockKey getBlockKey() {
+			return _result.getKey();
 		}
 	}
 }

@@ -51,6 +51,8 @@ public class CumulativeOffsetFEDInstruction extends BinaryFEDInstruction
 
 		if ("bcumoffk+".equals(opcode))
 			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucumk+"));
+		else if ("browcumoffk+".equals(opcode))
+			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("urowcumk+"));
 		else if ("bcumoff*".equals(opcode))
 			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucum*"));
 		else if ("bcumoff+*".equals(opcode))

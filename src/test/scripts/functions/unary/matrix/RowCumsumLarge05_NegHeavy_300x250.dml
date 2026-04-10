@@ -1,0 +1,44 @@
+# Test-specific focus:
+#   Negative-dominated values with increasing magnitude.
+#
+# Why this matters:
+#   Ensures numerical correctness when cumulative sums are decreasing
+#   and values span multiple column blocks.
+#
+# This test stresses:
+#   - Sign correctness (cumsum should keep decreasing)
+#   - Carry propagation across column blocks
+#   - No accidental abs() / truncation / overflow-ish behavior
+#
+# Expected result:
+#   Verified via a sequential loop reference (per-row prefix sum).
+#
+# Output:
+#   Writes TRUE/FALSE to $1
+#
+# NOTE:
+# - Do NOT call setExecMode() here. Exec mode is controlled by CLI: -exec spark
+
+n = 300; m = 250;
+ri = matrix(seq(1, n), n, 1);
+cj = matrix(seq(1, m), 1, m);
+
+# X[i,j] = - (i*j) / 1000
+# Construct i replicated across columns and j replicated across rows, then multiply.
+I = ri %*% matrix(1, 1, m);
+J = matrix(1, n, 1) %*% cj;
+X = - (I * J) / 1000;
+
+Y = rowcumsum(X);
+
+# Expected via explicit sequential loop over columns
+E = matrix(0, n, m);
+E[, 1] = X[, 1];
+for (j in 2:m) {
+  E[, j] = E[, j-1] + X[, j];
+}
+
+err  = max(abs(Y - E));
+pass = (err < 1e-9);
+
+write(pass, $1);

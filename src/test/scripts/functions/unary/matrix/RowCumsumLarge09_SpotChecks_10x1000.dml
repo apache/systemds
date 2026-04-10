@@ -1,0 +1,45 @@
+# Test-specific focus:
+#   Explicit spot-check validation with known exact values.
+#
+# Why this matters:
+#   Provides human-readable correctness checks that can be discussed
+#   and verified manually.
+#
+# This test:
+#   - Checks global correctness via max error
+#   - Verifies specific entries with analytically known results
+#
+# Useful for debugging and supervisor review.
+#
+# Output:
+#   Writes TRUE/FALSE to $1
+#
+# NOTE:
+# - Do NOT call setExecMode() here. Exec mode is controlled by CLI: -exec spark
+
+n = 10;  m = 1000;
+
+ri = matrix(seq(1, n), n, 1);
+cj = matrix(seq(1, m), 1, m);
+
+# X[i,j] = i + j
+X = ri %*% matrix(1, 1, m) + matrix(1, n, 1) %*% cj;
+
+# Row-wise cumulative sum (builtin is lower-case in DML)
+Y = rowcumsum(X);
+
+# Closed-form expected:
+# E[i,j] = sum_{k=1..j} (i+k) = j*i + j*(j+1)/2
+J = matrix(1, n, 1) %*% cj;
+E = J * (ri %*% matrix(1, 1, m)) + (J * (J + 1)) / 2;
+
+err = max(abs(Y - E));
+
+# Spot checks (exact integers)
+s1 = Y[1, 1];        # should be 1+1 = 2
+s2 = Y[1, 10];       # sum_{k=1..10}(1+k)= 10*1 + 55 = 65
+s3 = Y[3, 1000];     # 1000*3 + 1000*1001/2 = 3000 + 500500 = 503500
+
+pass = (err < 1e-9) & (s1 == 2) & (s2 == 65) & (s3 == 503500);
+
+write(pass, $1);

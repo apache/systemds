@@ -1,0 +1,45 @@
+# Test-specific focus:
+#   Wide dense matrix spanning multiple column blocks.
+#
+# Why this matters:
+#   Row-wise cumulative sum in Spark can fail when carries are not propagated
+#   correctly across column blocks/partitions. This test checks continuity of
+#   cumulative sums across the full row width.
+#
+# Matrix construction:
+#   X[i,j] = i + 0.01*j
+#
+# Expected result (closed-form, no loops):
+#   E[i,j] = sum_{k=1..j} (i + 0.01*k)
+#          = j*i + 0.01 * j*(j+1)/2
+#
+# Output:
+#   Writes TRUE/FALSE to $1
+#
+# NOTE:
+# - Do NOT call setExecMode() here. That helper exists only in the JUnit test harness.
+# - Exec mode is controlled by CLI: -exec spark
+#
+# IMPORTANT:
+# - The builtin function name is "rowcumsum" (lowercase), not "rowCumsum".
+# - Do NOT source scripts/builtin/rowCumsum.dml because it does not exist.
+
+n = 100; m = 200;
+
+ri = matrix(seq(1, n), n, 1);
+cj = matrix(seq(1, m), 1, m);
+
+# X[i,j] = i + 0.01*j
+X = ri %*% matrix(1, 1, m) + 0.01 * (matrix(1, n, 1) %*% cj);
+
+# Compute row-wise cumulative sum (native builtin)
+Y = rowcumsum(X);
+
+# Expected: E[i,j] = j*i + 0.01 * j*(j+1)/2
+J  = matrix(1, n, 1) %*% cj;                                  # j replicated down
+E  = J * (ri %*% matrix(1, 1, m)) + 0.01 * (J * (J + 1)) / 2; # closed form
+
+err  = max(abs(Y - E));
+pass = (err < 1e-9);
+
+write(pass, $1);

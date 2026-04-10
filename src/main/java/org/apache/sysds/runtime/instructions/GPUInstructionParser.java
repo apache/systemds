@@ -145,6 +145,7 @@ public class GPUInstructionParser  extends InstructionParser
 
 		// Cumulative Ops
 		String2GPUInstructionType.put( "ucumk+"  , GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "urowcumk+", GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "ucum*"   , GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "ucumk+*" , GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "ucummin" , GPUINSTRUCTION_TYPE.BuiltinUnary);

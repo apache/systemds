@@ -1,0 +1,45 @@
+# Test-specific focus:
+#   Stress test for carry propagation across many column blocks.
+#
+# Why this matters:
+#   Spark row-wise prefix sums commonly break at block boundaries when
+#   carries are not propagated correctly. This test uses a very simple
+#   data pattern with a closed-form expected result, so any block-boundary
+#   error shows up immediately.
+#
+# Matrix construction:
+#   X[i,j] = i   (constant across each row)
+#
+# Expected result (closed-form, no loops):
+#   E[i,j] = sum_{k=1..j} i = j * i
+#
+# Output:
+#   Writes TRUE/FALSE to $1
+#
+# NOTE:
+# - Do NOT call setExecMode() here. That helper exists only in the JUnit harness.
+# - Exec mode is controlled by CLI: -exec spark
+
+n = 64;  m = 1024;
+
+# Row index column vector i = 1..n
+ri = matrix(seq(1, n), n, 1);
+
+# Construct X so every row i is constant: X[i,j] = i
+X = ri %*% matrix(1, 1, m);
+
+# Compute row-wise cumulative sum
+Y = rowcumsum(X);
+
+# Column index row vector j = 1..m
+cj = matrix(seq(1, m), 1, m);
+J  = matrix(1, n, 1) %*% cj;          # replicate j down the rows
+R  = ri %*% matrix(1, 1, m);          # replicate i across columns
+
+# Expected: E[i,j] = j * i
+E = J * R;
+
+err  = max(abs(Y - E));
+pass = (err < 1e-9);
+
+write(pass, $1);

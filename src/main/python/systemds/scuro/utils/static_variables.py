@@ -26,7 +26,7 @@ PY_LIST_HEADER_BYTES = 56
 PY_LIST_SLOT_BYTES = 8
 NP_ARRAY_HEADER_BYTES = 112
 
-DEBUG = True
+DEBUG = False
 
 global_rng = np.random.default_rng(42)
 

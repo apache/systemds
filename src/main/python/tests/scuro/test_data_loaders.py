@@ -102,7 +102,7 @@ class TestDataLoadersLoadFromFiles(unittest.TestCase):
         self.assertEqual(stats.max_length, 60)
         self.assertEqual(stats.max_width, 160)
         self.assertEqual(stats.max_height, 120)
-        self.assertEqual(stats.max_num_channels, 3)
+        self.assertEqual(stats.max_channels, 3)
 
     def test_text_loader_loads_all_instances(self):
         loader = TextLoader(

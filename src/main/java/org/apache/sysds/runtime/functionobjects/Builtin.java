@@ -29,7 +29,7 @@ import org.apache.sysds.runtime.DMLScriptException;
 
 /**
  *  Class with pre-defined set of objects. This class can not be instantiated elsewhere.
- *  
+ *
  *  Notes on commons.math FastMath:
  *  * FastMath uses lookup tables and interpolation instead of native calls.
  *  * The memory overhead for those tables is roughly 48KB in total (acceptable)
@@ -41,24 +41,24 @@ import org.apache.sysds.runtime.DMLScriptException;
  *    on the JVM. For example, currently the IBM JDK JIT compiles to HW instructions for sqrt
  *    which makes this operation very efficient; as soon as other operations like log/exp are
  *    similarly compiled, we should rerun the micro benchmarks, and switch back if necessary.
- *  
+ *
  */
-public class Builtin extends ValueFunction 
+public class Builtin extends ValueFunction
 {
 	private static final long serialVersionUID = 3836744687789840574L;
-	
+
 	public enum BuiltinCode { AUTODIFF, SIN, COS, TAN, SINH, COSH, TANH, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN,
 		MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, PRINTF, NROW, NCOL, LENGTH, LINEAGE, ROUND, MAXINDEX, MININDEX,
-		STOP, CEIL, FLOOR, CUMSUM, ROWCUMSUM, CUMPROD, CUMMIN, CUMMAX, CUMSUMPROD, INVERSE, SPROP, SIGMOID, EVAL, LIST,
-		TYPEOF, APPLY_SCHEMA, DETECTSCHEMA, ISNA, ISNAN, ISINF, DROP_INVALID_TYPE, 
+		STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, CUMSUMPROD, INVERSE, SPROP, SIGMOID, EVAL, LIST,
+		TYPEOF, APPLY_SCHEMA, DETECTSCHEMA, ISNA, ISNAN, ISINF, DROP_INVALID_TYPE,
 		DROP_INVALID_LENGTH, VALUE_SWAP, FRAME_ROW_REPLICATE,
 		MAP, COUNT_DISTINCT, COUNT_DISTINCT_APPROX, UNIQUE}
 
 
 	public BuiltinCode bFunc;
-	
+
 	private static final boolean FASTMATH = true;
-	
+
 	static public HashMap<String, BuiltinCode> String2BuiltinCode;
 	static {
 		String2BuiltinCode = new HashMap<>();
@@ -95,8 +95,6 @@ public class Builtin extends ValueFunction
 		String2BuiltinCode.put( "ceil"   , BuiltinCode.CEIL);
 		String2BuiltinCode.put( "floor"  , BuiltinCode.FLOOR);
 		String2BuiltinCode.put( "ucumk+" , BuiltinCode.CUMSUM);
-		String2BuiltinCode.put( "urowcumk+" , BuiltinCode.ROWCUMSUM);
-		String2BuiltinCode.put("rowCumsum", BuiltinCode.ROWCUMSUM);
 		String2BuiltinCode.put( "ucum*"  , BuiltinCode.CUMPROD);
 		String2BuiltinCode.put( "ucumk+*", BuiltinCode.CUMSUMPROD);
 		String2BuiltinCode.put( "ucummin", BuiltinCode.CUMMIN);
@@ -116,15 +114,15 @@ public class Builtin extends ValueFunction
 		String2BuiltinCode.put( "valueSwap", BuiltinCode.VALUE_SWAP);
 		String2BuiltinCode.put( "applySchema", BuiltinCode.APPLY_SCHEMA);
 	}
-	
+
 	protected Builtin(BuiltinCode bf) {
 		bFunc = bf;
 	}
-	
+
 	public BuiltinCode getBuiltinCode() {
 		return bFunc;
 	}
-	
+
 	public static boolean isBuiltinCode(ValueFunction fn, BuiltinCode... codes) {
 		for( BuiltinCode code : codes )
 			if (fn instanceof Builtin && ((Builtin)fn).getBuiltinCode() == code)
@@ -135,15 +133,15 @@ public class Builtin extends ValueFunction
 	public static boolean isBuiltinFnObject(String str) {
 		return String2BuiltinCode.containsKey(str);
 	}
-	
+
 	public static Builtin getBuiltinFnObject(String str) {
 		BuiltinCode code = String2BuiltinCode.get(str);
 		return getBuiltinFnObject( code );
 	}
 
 	public static Builtin getBuiltinFnObject(BuiltinCode code) {
-		if ( code == null ) 
-			return null; 
+		if ( code == null )
+			return null;
 		if(code == BuiltinCode.MAX)
 			return Max.getMaxFnObject();
 		else if (code == BuiltinCode.MIN)
@@ -173,7 +171,7 @@ public class Builtin extends ValueFunction
 			case SQRT:   return Math.sqrt(in); //faster in Math
 			case EXP:    return FASTMATH ? FastMath.exp(in) : Math.exp(in);
 			case ROUND: return Math.round(in); //no need for FastMath
-			
+
 			case PLOGP:
 				if (in == 0.0)
 					return 0.0;
@@ -181,19 +179,19 @@ public class Builtin extends ValueFunction
 					return Double.NaN;
 				else //faster in Math
 					return in * Math.log(in);
-			
+
 			case SPROP:
 				//sample proportion: P*(1-P)
-				return in * (1 - in); 
-	
+				return in * (1 - in);
+
 			case SIGMOID:
 				//sigmoid: 1/(1+exp(-x))
 				return FASTMATH ? 1 / (1 + FastMath.exp(-in))  : 1 / (1 + Math.exp(-in));
-			
+
 			case ISNA: return Double.isNaN(in) ? 1 : 0;
 			case ISNAN: return Double.isNaN(in) ? 1 : 0;
 			case ISINF: return Double.isInfinite(in) ? 1 : 0;
-			
+
 			default:
 				throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
 		}
@@ -224,18 +222,18 @@ public class Builtin extends ValueFunction
 			case MIN:
 			case CUMMIN:
 				return Math.min(in1, in2);
-				
-				// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
-				// rowIndexMax() and its siblings require comparing four values, but
-				// the aggregation API only allows two values. So the execute()
-				// method receives as its argument the two cell values to be
-				// compared and performs just the value part of the comparison. We
-				// return an integer cast down to a double, since the aggregation
-				// API doesn't have any way to return anything but a double. The
-				// integer returned takes on three possible values: //
-				// .     0 => keep the index associated with in1 //
-				// .     1 => use the index associated with in2 //
-				// .     2 => use whichever index is higher (tie in value) //
+
+			// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
+			// rowIndexMax() and its siblings require comparing four values, but
+			// the aggregation API only allows two values. So the execute()
+			// method receives as its argument the two cell values to be
+			// compared and performs just the value part of the comparison. We
+			// return an integer cast down to a double, since the aggregation
+			// API doesn't have any way to return anything but a double. The
+			// integer returned takes on three possible values: //
+			// .     0 => keep the index associated with in1 //
+			// .     1 => use the index associated with in2 //
+			// .     2 => use whichever index is higher (tie in value) //
 			case MAXINDEX:
 				if (in1 == in2) {
 					return 2;
@@ -254,7 +252,7 @@ public class Builtin extends ValueFunction
 				}
 				// *** END HACK ***
 			case LOG://faster in Math
-				return (Math.log(in1)/Math.log(in2)); 
+				return (Math.log(in1)/Math.log(in2));
 			case LOG_NZ: //faster in Math
 				// if in2 == 0 then Math.log is -infinity and division by -infinity returns -0.
 				// therefore to allow sparse linear algebra, we replace it with standard 0.
@@ -263,19 +261,19 @@ public class Builtin extends ValueFunction
 				throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
 		}
 	}
-	
+
 	@Override
 	public double execute (long in1, long in2) {
 		switch(bFunc) {
 			case MAX:
 			case CUMMAX:   return Math.max(in1, in2);
-			
+
 			case MIN:
 			case CUMMIN:   return Math.min(in1, in2);
-			
+
 			case MAXINDEX: return (in1 >= in2) ? 1 : 0;
 			case MININDEX: return (in1 <= in2) ? 1 : 0;
-			
+
 			case LOG:
 				//faster in Math
 				return Math.log(in1)/Math.log(in2);
@@ -292,18 +290,18 @@ public class Builtin extends ValueFunction
 	@Override
 	public String execute (String in1) {
 		switch (bFunc) {
-		case PRINT:
-			if (!DMLScript.suppressPrint2Stdout())
-				System.out.println(in1);
-			return null;
-		case PRINTF:
-			if (!DMLScript.suppressPrint2Stdout())
-				System.out.println(in1);
-			return null;
-		case STOP:
-			throw new DMLScriptException(in1);
-		default:
-			throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
+			case PRINT:
+				if (!DMLScript.suppressPrint2Stdout())
+					System.out.println(in1);
+				return null;
+			case PRINTF:
+				if (!DMLScript.suppressPrint2Stdout())
+					System.out.println(in1);
+				return null;
+			case STOP:
+				throw new DMLScriptException(in1);
+			default:
+				throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
 		}
 	}
 

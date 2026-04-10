@@ -56,12 +56,12 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 
 	public static UnaryMatrixFEDInstruction parseInstruction(UnaryMatrixCPInstruction instr) {
 		return new UnaryMatrixFEDInstruction(instr.getOperator(), instr.input1, instr.output, instr.getOpcode(),
-			instr.getInstructionString());
+				instr.getInstructionString());
 	}
 
 	public static UnaryMatrixFEDInstruction parseInstruction(UnaryMatrixSPInstruction instr) {
 		return new UnaryMatrixFEDInstruction(instr.getOperator(), instr.input1, instr.output, instr.getOpcode(),
-			instr.getInstructionString());
+				instr.getInstructionString());
 	}
 
 	public static UnaryMatrixFEDInstruction parseInstruction(String str) {
@@ -72,12 +72,12 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 		String opcode = parts[0];
 
 		if(parts.length == 5 &&
-			(opcode.equalsIgnoreCase("exp") || opcode.equalsIgnoreCase("log") || opcode.startsWith("ucum"))) {
+				(opcode.equalsIgnoreCase("exp") || opcode.equalsIgnoreCase("log") || opcode.startsWith("ucum"))) {
 			in.split(parts[1]);
 			out.split(parts[2]);
 			ValueFunction func = Builtin.getBuiltinFnObject(opcode);
-			if(Arrays.asList(new String[] {"ucumk+", "urowcumk+", "ucum*", "ucumk+*", "ucummin", "ucummax", "exp", "log", "sigmoid"})
-				.contains(opcode)) {
+			if(Arrays.asList(new String[] {"ucumk+", "ucum*", "ucumk+*", "ucummin", "ucummax", "exp", "log", "sigmoid"})
+					.contains(opcode)) {
 				UnaryOperator op = new UnaryOperator(func, Integer.parseInt(parts[3]), Boolean.parseBoolean(parts[4]));
 				return new UnaryMatrixFEDInstruction(op, in, out, opcode, str);
 			}
@@ -97,7 +97,7 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 			//federated execution on arbitrary row/column partitions
 			//(only assumption for sparse-unsafe: fed mapping covers entire matrix)
 			FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
-				new CPOperand[] {input1}, new long[] {mo1.getFedMapping().getID()});
+					new CPOperand[] {input1}, new long[] {mo1.getFedMapping().getID()});
 			mo1.getFedMapping().execute(getTID(), true, fr1);
 
 			setOutputFedMapping(ec, mo1, fr1.getID());
@@ -109,7 +109,7 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 		MatrixObject out;
 		if(opcode.equalsIgnoreCase("ucumk+*")) {
 			FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
-				new CPOperand[] {input1}, new long[] {mo1.getFedMapping().getID()});
+					new CPOperand[] {input1}, new long[] {mo1.getFedMapping().getID()});
 			FederatedRequest fr2 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr1.getID());
 			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
 			out = setOutputFedMapping(ec, mo1, fr1.getID());
@@ -122,8 +122,8 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 			String agg2 = opcode.replace(opcode.contains("ucumk")? "ucumk" :"ucum", "");
 
 			double init = opcode.equalsIgnoreCase("ucumk+") ? 0.0:
-				opcode.equalsIgnoreCase("ucum*") ? 1.0 :
-				opcode.equalsIgnoreCase("ucummin") ? Double.MAX_VALUE : -Double.MAX_VALUE;
+					opcode.equalsIgnoreCase("ucum*") ? 1.0 :
+							opcode.equalsIgnoreCase("ucummin") ? Double.MAX_VALUE : -Double.MAX_VALUE;
 
 			Future<FederatedResponse>[] tmp = modifyAndGetInstruction(colAgg, mo1);
 			MatrixBlock scalingValues = getResultBlock(tmp, (int)mo1.getNumColumns(), opcode, init);
@@ -138,7 +138,7 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 		String modifiedInstString = InstructionUtils.replaceOperand(instString, 1, newInst);
 
 		FederatedRequest fr1 = FederationUtils.callInstruction(modifiedInstString, output,
-			new CPOperand[] {input1}, new long[] {mo1.getFedMapping().getID()});
+				new CPOperand[] {input1}, new long[] {mo1.getFedMapping().getID()});
 		FederatedRequest fr2 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr1.getID());
 		return mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
 	}
@@ -147,7 +147,7 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 		String modifiedInstString = InstructionUtils.replaceOperand(instString, 2, InstructionUtils.createOperand(output));
 
 		FederatedRequest fr4 = FederationUtils.callInstruction(modifiedInstString, output, out.getFedMapping().getID(),
-			new CPOperand[] {output}, new long[] {out.getFedMapping().getID()}, Types.ExecType.CP, false);
+				new CPOperand[] {output}, new long[] {out.getFedMapping().getID()}, Types.ExecType.CP, false);
 		out.getFedMapping().execute(getTID(), true, fr4);
 
 		out.setFedMapping(out.getFedMapping().copyWithNewID(fr4.getID()));
@@ -164,7 +164,7 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 
 	private static MatrixBlock getResultBlock(Future<FederatedResponse>[] tmp, int cols, String opcode, double init) {
 		//TODO perf simple rbind, as the first row (init) is anyway not transferred
-		
+
 		//collect row vectors into local matrix
 		MatrixBlock res = new MatrixBlock(tmp.length, cols, init);
 		for(int i = 0; i < tmp.length-1; i++)
@@ -177,8 +177,8 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 
 		//local cumulative aggregate
 		return res.unaryOperations(
-			new UnaryOperator(Builtin.getBuiltinFnObject(opcode)),
-			new MatrixBlock());
+				new UnaryOperator(Builtin.getBuiltinFnObject(opcode)),
+				new MatrixBlock());
 	}
 
 	private MatrixBlock getScalars(MatrixObject mo1, Future<FederatedResponse>[] tmp) {
@@ -197,12 +197,12 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 		// aggregate sumprod to get scalars
 		MatrixBlock a = new MatrixBlock(tmp.length, 1, 0.0);
 		a.copy(1, a.getNumRows()-1, 0, 0,
-			prod.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject("ucumk+*")), new MatrixBlock())
-				.slice(0, prod.getNumRows()-2), true);
+				prod.unaryOperations(new UnaryOperator(Builtin.getBuiltinFnObject("ucumk+*")), new MatrixBlock())
+						.slice(0, prod.getNumRows()-2), true);
 
 		// compute  B11 = B11 + B12 ⊙ a
 		MatrixBlock B = firstValues.slice(0, firstValues.getNumRows()-1,1, 1)
-			.binaryOperations(InstructionUtils.parseBinaryOperator(Opcodes.MULT.toString()), a, new MatrixBlock());
+				.binaryOperations(InstructionUtils.parseBinaryOperator(Opcodes.MULT.toString()), a, new MatrixBlock());
 		return B.binaryOperationsInPlace(InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString()), firstValues.slice(0,firstValues.getNumRows()-1,0,0));
 	}
 
@@ -250,7 +250,7 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 		FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(cond, false);
 		FederatedRequest[] fr2 = mo1.getFedMapping().broadcastSliced(mo2, false);
 		FederatedRequest fr3 = FederationUtils.callInstruction(ternaryInstString, output,
-			new CPOperand[] {input1, opCond, op2}, new long[] {mo1.getFedMapping().getID(), fr1[0].getID(), fr2[0].getID()});
+				new CPOperand[] {input1, opCond, op2}, new long[] {mo1.getFedMapping().getID(), fr1[0].getID(), fr2[0].getID()});
 		//TODO perf no need to execute here, we can piggyback the requests onto the final cumagg
 		mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
 
@@ -263,7 +263,7 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 	private void setScalingValues(String opcode, ExecutionContext ec, MatrixObject mo1, MatrixObject out, MatrixBlock scalingValues, double init) {
 		//TODO perf improvement (currently this creates a sliced broadcast in the size of the original matrix
 		//but sparse w/ strategically placed offsets, but would need to be dense for dense prod/cumsum)
-		
+
 		//allocated large matrix of init value and placed offset rows in first row of every partition
 		MatrixBlock mb2 = new MatrixBlock((int) mo1.getNumRows(), (int) mo1.getNumColumns(), init);
 		for(int i = 1; i < scalingValues.getNumRows(); i++) {
@@ -280,7 +280,7 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 
 		FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo2, false);
 		FederatedRequest fr2 = FederationUtils.callInstruction(modifiedInstString, output,
-			new CPOperand[] {input1, op2}, new long[] {mo1.getFedMapping().getID(), fr1[0].getID()});
+				new CPOperand[] {input1, op2}, new long[] {mo1.getFedMapping().getID(), fr1[0].getID()});
 		mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
 
 		out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr2.getID()));

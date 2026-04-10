@@ -22,9 +22,28 @@ package org.apache.sysds.resource.cost;
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.lops.*;
+import org.apache.sysds.lops.MMTSJ;
+import org.apache.sysds.lops.PickByCount;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.instructions.cp.*;
+import org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.BuiltinNaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.CPInstruction;
+import org.apache.sysds.runtime.instructions.cp.CentralMomentCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.CovarianceCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.DnnCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.QuantilePickCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.QuantileSortCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ReorgCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.StringInitCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.UaggOuterChainCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
@@ -481,7 +500,6 @@ public class CPCostUtils {
 						costs = 40;
 						break;
 					case "ucumk+":
-					case "urowcumk+":
 					case "ucummin":
 					case "ucummax":
 					case "ucum*":
@@ -663,7 +681,7 @@ public class CPCostUtils {
 			case UaggOuterChain:
 			case Dnn:
 				throw new RuntimeException("CP operation type'" + instructionType + "' is not supported yet");
-			// types corresponding to BinaryCPInstruction
+				// types corresponding to BinaryCPInstruction
 			case Binary:
 				if (opcode.equals(Opcodes.PLUS.toString()) || opcode.equals(Opcodes.MINUS.toString())) {
 					if (inputs.length < 2)
@@ -760,7 +778,7 @@ public class CPCostUtils {
 					default:
 						throw new DMLRuntimeException("QPick operation with opcode '" + opcode + "' is not supported by SystemDS");
 				}
-			// types corresponding to others CPInstruction(s)
+				// types corresponding to others CPInstruction(s)
 			case Ternary:
 				if (output == null)
 					throw new RuntimeException("Not all required arguments for Ternary operation is passed initialized");

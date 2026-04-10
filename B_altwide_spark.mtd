@@ -1,0 +1,11 @@
+{
+    "data_type": "matrix",
+    "value_type": "double",
+    "rows": 2,
+    "cols": 12,
+    "nnz": 17,
+    "format": "text",
+    "description": "-1.0",
+    "author": "samar",
+    "created": "2026-04-10 22:13:13 CEST"
+}

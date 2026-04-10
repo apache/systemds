@@ -33,7 +33,7 @@ import org.apache.sysds.utils.stats.Timing;
 
 public class MatrixBuiltinGPUInstruction extends BuiltinUnaryGPUInstruction {
 	private static final Log LOG = LogFactory.getLog(MatrixBuiltinGPUInstruction.class.getName());
-	
+
 	protected MatrixBuiltinGPUInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
 		super(op, in, out, 1, opcode, instr);
 		_gputype = GPUINSTRUCTION_TYPE.BuiltinUnary;
@@ -90,10 +90,6 @@ public class MatrixBuiltinGPUInstruction extends BuiltinUnaryGPUInstruction {
 				LibMatrixCuDNN.softmax(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "ucumk+":
 				LibMatrixCUDA.cumulativeScan(ec, ec.getGPUContext(0), getExtendedOpcode(), "cumulative_sum", mat,
-						_output.getName());
-				break;
-			case "urowcumk+":
-				LibMatrixCUDA.cumulativeScan(ec, ec.getGPUContext(0), getExtendedOpcode(), "row_cumulative_sum", mat,
 						_output.getName());
 				break;
 			case "ucum*":

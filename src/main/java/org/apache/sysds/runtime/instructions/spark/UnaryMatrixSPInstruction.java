@@ -31,7 +31,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
-import scala.Tuple2;
 
 public class UnaryMatrixSPInstruction extends UnarySPInstruction {
 
@@ -51,36 +50,17 @@ public class UnaryMatrixSPInstruction extends UnarySPInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 
-		// get input
-		JavaPairRDD<MatrixIndexes, MatrixBlock> in =
-				sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
+		//get input
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
 
-		// Only do distributed rowcumsum logic for the rowcumsum opcode.
-		// Otherwise do the default unary builtin blockwise operation.
-		if ("urowcumk+".equals(getOpcode())) {
+		//execute unary builtin operation
+		UnaryOperator uop = (UnaryOperator) _optr;
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in.mapValues(new RDDMatrixBuiltinUnaryOp(uop));
 
-			// rowcumsum processing (distributed: aggregate + offsets)
-			Tuple2<JavaPairRDD<MatrixIndexes, MatrixBlock>, JavaPairRDD<MatrixIndexes, MatrixBlock>> results =
-					CumulativeAggregateSPInstruction.processRowCumsumWithEndValues(in);
-
-			JavaPairRDD<MatrixIndexes, MatrixBlock> rowEndValues =
-					CumulativeOffsetSPInstruction.processRowCumsumOffsetsDirectly(results._1, results._2);
-
-			updateUnaryOutputDataCharacteristics(sec);
-			sec.setRDDHandleForVariable(output.getName(), rowEndValues);
-			sec.addLineageRDD(output.getName(), input1.getName());
-		}
-		else {
-			// execute unary builtin operation (blockwise)
-			UnaryOperator uop = (UnaryOperator) _optr;
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out =
-					in.mapValues(new RDDMatrixBuiltinUnaryOp(uop));
-
-			// set output RDD
-			updateUnaryOutputDataCharacteristics(sec);
-			sec.setRDDHandleForVariable(output.getName(), out);
-			sec.addLineageRDD(output.getName(), input1.getName());
-		}
+		//set output RDD
+		updateUnaryOutputDataCharacteristics(sec);
+		sec.setRDDHandleForVariable(output.getName(), out);
+		sec.addLineageRDD(output.getName(), input1.getName());
 	}
 
 	private static class RDDMatrixBuiltinUnaryOp implements Function<MatrixBlock,MatrixBlock>

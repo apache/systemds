@@ -20,12 +20,9 @@
 package org.apache.sysds.runtime.instructions.spark;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Iterator;
-import java.util.List;
 
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.Optional;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
@@ -52,7 +49,7 @@ import scala.Tuple2;
 public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 	private UnaryOperator _uop = null;
 	private boolean _cumsumprod = false;
-	private final double _initValue ;
+	private final double _initValue;
 	private final boolean _broadcast;
 
 	private CumulativeOffsetSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
@@ -61,8 +58,6 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 
 		if (Opcodes.BCUMOFFKP.toString().equals(opcode))
 			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucumk+"));
-		else if (Opcodes.BROWCUMOFFKP.toString().equals(opcode))
-			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("urowcumk+"));
 		else if (Opcodes.BCUMOFFM.toString().equals(opcode))
 			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucum*"));
 		else if (Opcodes.BCUMOFFPM.toString().equals(opcode)) {
@@ -80,173 +75,63 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 
 	public static CumulativeOffsetSPInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		// parts: opcode, in1, in2, out, init, broadcast  => 6 fields
-		InstructionUtils.checkNumFields(parts, 6);
-
+		InstructionUtils.checkNumFields(parts, 5);
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
 		CPOperand out = new CPOperand(parts[3]);
 		double init = Double.parseDouble(parts[4]);
 		boolean broadcast = Boolean.parseBoolean(parts[5]);
-
 		return new CumulativeOffsetSPInstruction(null, in1, in2, out, init, broadcast, opcode, str);
 	}
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		SparkExecutionContext sec = (SparkExecutionContext)ec;
+		SparkExecutionContext sec = (SparkExecutionContext) ec;
 		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
 		DataCharacteristics mc2 = sec.getDataCharacteristics(input2.getName());
+
 		long rlen = mc2.getRows();
+		long clen = mc1.getCols();
 		int blen = mc2.getBlocksize();
 
-		if (Opcodes.BROWCUMOFFKP.toString().equals(getOpcode())) {
-			processRowCumsumOffsets(sec, mc1, mc2);
-			return;
-		}
+		// Row-cumsum in Spark reuses the current cumulative offset instruction path.
+		// We infer row orientation from the shape of the preaggregated offsets:
+		// normal cumsum  -> rows compressed, cols unchanged
+		// rowcumsum      -> rows unchanged, cols compressed
+		boolean rowCum = Opcodes.BCUMOFFKP.toString().equals(getOpcode())
+				&& mc1.getRows() > 0 && mc1.getCols() > 0
+				&& mc2.getRows() == mc1.getRows()
+				&& mc2.getCols() == (long) Math.ceil((double) mc1.getCols() / blen);
 
-		//get and join inputs
-		JavaPairRDD<MatrixIndexes,MatrixBlock> inData = sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
-		JavaPairRDD<MatrixIndexes,Tuple2<MatrixBlock,MatrixBlock>> joined = null;
+		JavaPairRDD<MatrixIndexes, MatrixBlock> inData =
+				sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
+		JavaPairRDD<MatrixIndexes, Tuple2<MatrixBlock, MatrixBlock>> joined;
 		boolean broadcast = _broadcast && !SparkUtils.isHashPartitioned(inData);
 
-		if( broadcast ) {
-			//broadcast offsets and broadcast join with data
+		if (broadcast) {
 			PartitionedBroadcast<MatrixBlock> inAgg = sec.getBroadcastForVariable(input2.getName());
-			joined = inData.mapToPair(new RDDCumSplitLookupFunction(inAgg,_initValue, rlen, blen));
+			joined = inData.mapToPair(
+					new RDDCumSplitLookupFunction(inAgg, _initValue, rlen, clen, blen, rowCum));
 		}
 		else {
-			//prepare aggregates (cumsplit of offsets) and repartition join with data
 			joined = inData.join(sec
 					.getBinaryMatrixBlockRDDHandleForVariable(input2.getName())
-					.flatMapToPair(new RDDCumSplitFunction(_initValue, rlen, blen)));
+					.flatMapToPair(new RDDCumSplitFunction(_initValue, rlen, clen, blen, rowCum)));
 		}
 
-		//execute cumulative offset (apply cumulative op w/ offsets)
-		JavaPairRDD<MatrixIndexes,MatrixBlock> out = joined
-				.mapValues(new RDDCumOffsetFunction(_uop, _cumsumprod));
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out =
+				joined.mapValues(new RDDCumOffsetFunction(_uop, _cumsumprod, rowCum));
 
-		//put output handle in symbol table
-		if( _cumsumprod )
+		if (_cumsumprod)
 			sec.getDataCharacteristics(output.getName())
 					.set(mc1.getRows(), 1, mc1.getBlocksize(), mc1.getBlocksize());
-		else //general case
+		else
 			updateUnaryOutputDataCharacteristics(sec);
+
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineage(output.getName(), input2.getName(), broadcast);
-	}
-
-	/**
-	 * Distributed rowcumsum offset application:
-	 * - endValues: for each (rowBlock, colBlock), a (rowsInBlock x 1) column vector with the last value of each row
-	 * - compute per-(rowBlock,colBlock) offsets via prefix-scan across colBlocks (within each rowBlock)
-	 * - join offsets with localRowCumsum blocks and add offsets row-wise
-	 *
-	 * This matches the paper’s two-phase scan: local scan + carry propagation.
-	 */
-	public static JavaPairRDD<MatrixIndexes, MatrixBlock> processRowCumsumOffsetsDirectly(
-			JavaPairRDD<MatrixIndexes, MatrixBlock> localRowCumsum,
-			JavaPairRDD<MatrixIndexes, MatrixBlock> endValues) {
-
-		// Group end-values by row-block, then sort by col-block and compute prefix offsets
-		JavaPairRDD<Long, Iterable<Tuple2<Long, MatrixBlock>>> groupedByRowBlock = endValues
-				.mapToPair(new PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, Long, Tuple2<Long, MatrixBlock>>() {
-					private static final long serialVersionUID = 1L;
-
-					@Override
-					public Tuple2<Long, Tuple2<Long, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> t) {
-						long rowBlock = t._1.getRowIndex();
-						long colBlock = t._1.getColumnIndex();
-						return new Tuple2<>(rowBlock, new Tuple2<>(colBlock, t._2));
-					}
-				})
-				.groupByKey();
-
-		// Produce offsets per (rowBlock, colBlock) as a MatrixBlock (rowsInBlock x 1)
-		JavaPairRDD<MatrixIndexes, MatrixBlock> offsetsByBlock = groupedByRowBlock
-				.flatMapToPair(new PairFlatMapFunction<Tuple2<Long, Iterable<Tuple2<Long, MatrixBlock>>>, MatrixIndexes, MatrixBlock>() {
-					private static final long serialVersionUID = 1L;
-
-					@Override
-					public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<Long, Iterable<Tuple2<Long, MatrixBlock>>> t) {
-						long rowBlock = t._1;
-
-						List<Tuple2<Long, MatrixBlock>> cols = new ArrayList<>();
-						for (Tuple2<Long, MatrixBlock> x : t._2)
-							cols.add(x);
-
-						cols.sort(Comparator.comparingLong(Tuple2::_1));
-
-						int numRows = 0;
-						if (!cols.isEmpty())
-							numRows = cols.get(0)._2.getNumRows();
-
-						double[] cumulative = new double[numRows];
-						List<Tuple2<MatrixIndexes, MatrixBlock>> out = new ArrayList<>(cols.size());
-
-						for (Tuple2<Long, MatrixBlock> cb : cols) {
-							long colBlock = cb._1;
-							MatrixBlock endBlock = cb._2; // (numRows x 1)
-
-							// offsets for THIS block = cumulative sum of all previous blocks
-							MatrixBlock offsetBlock = new MatrixBlock(numRows, 1, false);
-							for (int i = 0; i < numRows; i++)
-								offsetBlock.set(i, 0, cumulative[i]);
-
-							out.add(new Tuple2<>(new MatrixIndexes(rowBlock, colBlock), offsetBlock));
-
-							// update cumulative by adding this block’s end-values
-							for (int i = 0; i < numRows; i++)
-								cumulative[i] += endBlock.get(i, 0);
-						}
-
-						return out.iterator();
-					}
-				});
-
-		// Join local rowcumsum with offsets and add offsets row-wise
-		return localRowCumsum
-				.leftOuterJoin(offsetsByBlock)
-				.mapToPair(new PairFunction<Tuple2<MatrixIndexes, Tuple2<MatrixBlock, Optional<MatrixBlock>>>, MatrixIndexes, MatrixBlock>() {
-					private static final long serialVersionUID = 1L;
-
-					@Override
-					public Tuple2<MatrixIndexes, MatrixBlock> call(
-							Tuple2<MatrixIndexes, Tuple2<MatrixBlock, Optional<MatrixBlock>>> t) {
-
-						MatrixIndexes ix = t._1;
-						MatrixBlock local = t._2._1;
-						MatrixBlock off = t._2._2.isPresent() ? t._2._2.get() : null;
-
-						int r = local.getNumRows();
-						int c = local.getNumColumns();
-						MatrixBlock out = new MatrixBlock(r, c, false);
-
-						for (int i = 0; i < r; i++) {
-							double rowOffset = (off != null) ? off.get(i, 0) : 0.0;
-							for (int j = 0; j < c; j++)
-								out.set(i, j, local.get(i, j) + rowOffset);
-						}
-
-						return new Tuple2<>(ix, out);
-					}
-				});
-	}
-
-	private void processRowCumsumOffsets(SparkExecutionContext sec, DataCharacteristics mc1, DataCharacteristics mc2) {
-		JavaPairRDD<MatrixIndexes, MatrixBlock> localRowCumsum =
-				sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
-		JavaPairRDD<MatrixIndexes, MatrixBlock> endValues =
-				sec.getBinaryMatrixBlockRDDHandleForVariable(input2.getName());
-
-		JavaPairRDD<MatrixIndexes, MatrixBlock> out = processRowCumsumOffsetsDirectly(localRowCumsum, endValues);
-
-		sec.setRDDHandleForVariable(output.getName(), out);
-		sec.addLineageRDD(output.getName(), input1.getName());
-		sec.addLineageRDD(output.getName(), input2.getName());
-		sec.getDataCharacteristics(output.getName()).set(mc1);
 	}
 
 	public double getInitValue() {
@@ -257,117 +142,155 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 		return _broadcast;
 	}
 
-	// --- existing generic cumsum offset machinery below (unchanged) ---
-
-	private static class RDDCumSplitFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock>
-	{
+	private static class RDDCumSplitFunction
+			implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> {
 		private static final long serialVersionUID = -8407407527406576965L;
 
-		private double _initValue = 0;
-		private int _blen = -1;
-		private long _lastRowBlockIndex;
+		private final double _initValue;
+		private final int _blen;
+		private final long _rlen;
+		private final long _clen;
+		private final boolean _rowCum;
+		private final long _lastRowBlockIndex;
+		private final long _lastColBlockIndex;
 
-		public RDDCumSplitFunction( double initValue, long rlen, int blen )
-		{
+		public RDDCumSplitFunction(double initValue, long rlen, long clen, int blen, boolean rowCum) {
 			_initValue = initValue;
 			_blen = blen;
-			_lastRowBlockIndex = (long)Math.ceil((double)rlen/blen);
+			_rlen = rlen;
+			_clen = clen;
+			_rowCum = rowCum;
+			_lastRowBlockIndex = (long) Math.ceil((double) rlen / blen);
+			_lastColBlockIndex = (long) Math.ceil((double) clen / blen);
 		}
 
 		@Override
-		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 )
-				throws Exception
-		{
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0)
+				throws Exception {
 			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<>();
 
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
 
-			long rixOffset = (ixIn.getRowIndex()-1)*_blen;
-			boolean firstBlk = (ixIn.getRowIndex() == 1);
-			boolean lastBlk = (ixIn.getRowIndex() == _lastRowBlockIndex );
+			if (!_rowCum) {
+				long rixOffset = (ixIn.getRowIndex() - 1) * _blen;
+				boolean firstBlk = (ixIn.getRowIndex() == 1);
+				boolean lastBlk = (ixIn.getRowIndex() == _lastRowBlockIndex);
 
-			//introduce offsets w/ init value for first row
-			if( firstBlk ) {
-				MatrixIndexes tmpix = new MatrixIndexes(1, ixIn.getColumnIndex());
-				MatrixBlock tmpblk = new MatrixBlock(1, blkIn.getNumColumns(), blkIn.isInSparseFormat());
-				if( _initValue != 0 ){
-					for( int j=0; j<blkIn.getNumColumns(); j++ )
-						tmpblk.appendValue(0, j, _initValue);
-				}
-				ret.add(new Tuple2<>(tmpix, tmpblk));
-			}
-
-			//output splitting (shift by one), preaggregated offset used by subsequent block
-			for( int i=0; i<blkIn.getNumRows(); i++ )
-				if( !(lastBlk && i==(blkIn.getNumRows()-1)) ) //ignore last row
-				{
-					MatrixIndexes tmpix = new MatrixIndexes(rixOffset+i+2, ixIn.getColumnIndex());
+				if (firstBlk) {
+					MatrixIndexes tmpix = new MatrixIndexes(1, ixIn.getColumnIndex());
 					MatrixBlock tmpblk = new MatrixBlock(1, blkIn.getNumColumns(), blkIn.isInSparseFormat());
-					blkIn.slice(i, i, 0, blkIn.getNumColumns()-1, tmpblk);
+					if (_initValue != 0) {
+						for (int j = 0; j < blkIn.getNumColumns(); j++)
+							tmpblk.appendValue(0, j, _initValue);
+					}
 					ret.add(new Tuple2<>(tmpix, tmpblk));
 				}
+
+				for (int i = 0; i < blkIn.getNumRows(); i++)
+					if (!(lastBlk && i == (blkIn.getNumRows() - 1))) {
+						MatrixIndexes tmpix = new MatrixIndexes(rixOffset + i + 2, ixIn.getColumnIndex());
+						MatrixBlock tmpblk = new MatrixBlock(1, blkIn.getNumColumns(), blkIn.isInSparseFormat());
+						blkIn.slice(i, i, 0, blkIn.getNumColumns() - 1, tmpblk);
+						ret.add(new Tuple2<>(tmpix, tmpblk));
+					}
+			}
+			else {
+				long cixOffset = (ixIn.getColumnIndex() - 1) * _blen;
+				boolean firstBlk = (ixIn.getColumnIndex() == 1);
+				boolean lastBlk = (ixIn.getColumnIndex() == _lastColBlockIndex);
+
+				if (firstBlk) {
+					MatrixIndexes tmpix = new MatrixIndexes(ixIn.getRowIndex(), 1);
+					MatrixBlock tmpblk = new MatrixBlock(blkIn.getNumRows(), 1, blkIn.isInSparseFormat());
+					if (_initValue != 0) {
+						for (int i = 0; i < blkIn.getNumRows(); i++)
+							tmpblk.appendValue(i, 0, _initValue);
+					}
+					ret.add(new Tuple2<>(tmpix, tmpblk));
+				}
+
+				for (int j = 0; j < blkIn.getNumColumns(); j++)
+					if (!(lastBlk && j == (blkIn.getNumColumns() - 1))) {
+						MatrixIndexes tmpix = new MatrixIndexes(ixIn.getRowIndex(), cixOffset + j + 2);
+						MatrixBlock tmpblk = new MatrixBlock(blkIn.getNumRows(), 1, blkIn.isInSparseFormat());
+						blkIn.slice(0, blkIn.getNumRows() - 1, j, j, tmpblk);
+						ret.add(new Tuple2<>(tmpix, tmpblk));
+					}
+			}
 
 			return ret.iterator();
 		}
 	}
 
-	private static class RDDCumSplitLookupFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, Tuple2<MatrixBlock,MatrixBlock>>
-	{
+	private static class RDDCumSplitLookupFunction
+			implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, Tuple2<MatrixBlock, MatrixBlock>> {
 		private static final long serialVersionUID = -2785629043886477479L;
 
 		private final PartitionedBroadcast<MatrixBlock> _pbc;
 		private final double _initValue;
 		private final int _blen;
+		private final boolean _rowCum;
 
-		public RDDCumSplitLookupFunction(PartitionedBroadcast<MatrixBlock> pbc, double initValue, long rlen, int blen) {
+		public RDDCumSplitLookupFunction(PartitionedBroadcast<MatrixBlock> pbc, double initValue,
+										 long rlen, long clen, int blen, boolean rowCum) {
 			_pbc = pbc;
 			_initValue = initValue;
 			_blen = blen;
+			_rowCum = rowCum;
 		}
 
 		@Override
-		public Tuple2<MatrixIndexes, Tuple2<MatrixBlock,MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) throws Exception {
+		public Tuple2<MatrixIndexes, Tuple2<MatrixBlock, MatrixBlock>> call(
+				Tuple2<MatrixIndexes, MatrixBlock> arg0) throws Exception {
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
 
-			//compute block and row indexes
-			long brix = UtilFunctions.computeBlockIndex(ixIn.getRowIndex()-1, _blen);
-			int rix = UtilFunctions.computeCellInBlock(ixIn.getRowIndex()-1, _blen);
+			MatrixBlock off;
+			if (!_rowCum) {
+				long brix = UtilFunctions.computeBlockIndex(ixIn.getRowIndex() - 1, _blen);
+				int rix = UtilFunctions.computeCellInBlock(ixIn.getRowIndex() - 1, _blen);
 
-			//lookup offset row and return joined output
-			MatrixBlock off = (ixIn.getRowIndex() == 1) ? new MatrixBlock(1, blkIn.getNumColumns(), _initValue) :
-					_pbc.getBlock((int)brix, (int)ixIn.getColumnIndex()).slice(rix, rix);
-			return new Tuple2<>(ixIn, new Tuple2<>(blkIn,off));
+				off = (ixIn.getRowIndex() == 1)
+						? new MatrixBlock(1, blkIn.getNumColumns(), _initValue)
+						: _pbc.getBlock((int) brix, (int) ixIn.getColumnIndex()).slice(rix, rix);
+			}
+			else {
+				long bcix = UtilFunctions.computeBlockIndex(ixIn.getColumnIndex() - 1, _blen);
+				int cix = UtilFunctions.computeCellInBlock(ixIn.getColumnIndex() - 1, _blen);
+
+				off = (ixIn.getColumnIndex() == 1)
+						? new MatrixBlock(blkIn.getNumRows(), 1, _initValue)
+						: _pbc.getBlock((int) ixIn.getRowIndex(), (int) bcix)
+						.slice(0, blkIn.getNumRows() - 1, cix, cix);
+			}
+
+			return new Tuple2<>(ixIn, new Tuple2<>(blkIn, off));
 		}
 	}
 
-	private static class RDDCumOffsetFunction implements Function<Tuple2<MatrixBlock, MatrixBlock>, MatrixBlock>
-	{
+	private static class RDDCumOffsetFunction implements Function<Tuple2<MatrixBlock, MatrixBlock>, MatrixBlock> {
 		private static final long serialVersionUID = -5804080263258064743L;
 
 		private final UnaryOperator _uop;
 		private final boolean _cumsumprod;
 
-		public RDDCumOffsetFunction(UnaryOperator uop, boolean cumsumprod) {
-			_uop = uop;
+		public RDDCumOffsetFunction(UnaryOperator uop, boolean cumsumprod, boolean rowCum) {
+			_uop = rowCum ? new UnaryOperator(Builtin.getBuiltinFnObject("urowcumk+")) : uop;
 			_cumsumprod = cumsumprod;
 		}
 
 		@Override
-		public MatrixBlock call(Tuple2<MatrixBlock, MatrixBlock> arg0) throws Exception  {
-			//prepare inputs and outputs
-			MatrixBlock dblkIn = arg0._1(); //original data
-			MatrixBlock oblkIn = arg0._2(); //offset row vector
+		public MatrixBlock call(Tuple2<MatrixBlock, MatrixBlock> arg0) throws Exception {
+			MatrixBlock dblkIn = arg0._1();
+			MatrixBlock oblkIn = arg0._2();
 
-			//allocate output block
 			MatrixBlock blkOut = new MatrixBlock(dblkIn.getNumRows(),
 					_cumsumprod ? 1 : dblkIn.getNumColumns(), false);
 
-			//blockwise cumagg computation, incl offset aggregation
 			return LibMatrixAgg.cumaggregateUnaryMatrix(dblkIn, blkOut, _uop,
 					DataConverter.convertToDoubleVector(oblkIn, false,
-							((Builtin)_uop.fn).bFunc == BuiltinCode.CUMSUM));
+							((Builtin) _uop.fn).bFunc == BuiltinCode.CUMSUM));
 		}
 	}
 }

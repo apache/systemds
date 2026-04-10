@@ -40,7 +40,7 @@ import org.apache.sysds.runtime.instructions.gpu.ReorgGPUInstruction;
 import org.apache.sysds.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
 import org.apache.sysds.runtime.instructions.gpu.SpoofCUDAInstruction;
 
-public class GPUInstructionParser  extends InstructionParser 
+public class GPUInstructionParser  extends InstructionParser
 {
 	static final HashMap<String, GPUINSTRUCTION_TYPE> String2GPUInstructionType;
 	static {
@@ -66,7 +66,7 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "batch_norm2d_test",      GPUINSTRUCTION_TYPE.Dnn);
 		String2GPUInstructionType.put( "batch_norm2d_train",      GPUINSTRUCTION_TYPE.Dnn);
 		String2GPUInstructionType.put( "update_nesterov_x",      GPUINSTRUCTION_TYPE.Dnn);
-		
+
 		// Matrix Multiply Operators
 		String2GPUInstructionType.put( "ba+*",  GPUINSTRUCTION_TYPE.AggregateBinary);
 		String2GPUInstructionType.put( "tsmm",  GPUINSTRUCTION_TYPE.MMTSJ);
@@ -92,7 +92,7 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "-nz",  GPUINSTRUCTION_TYPE.ArithmeticBinary); //special - case
 		String2GPUInstructionType.put( "+*",   GPUINSTRUCTION_TYPE.ArithmeticBinary);
 		String2GPUInstructionType.put( "-*",   GPUINSTRUCTION_TYPE.ArithmeticBinary);
-		
+
 		// Unary Builtin functions
 		String2GPUInstructionType.put( "exp",   GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "log",   GPUINSTRUCTION_TYPE.BuiltinUnary);
@@ -145,7 +145,6 @@ public class GPUInstructionParser  extends InstructionParser
 
 		// Cumulative Ops
 		String2GPUInstructionType.put( "ucumk+"  , GPUINSTRUCTION_TYPE.BuiltinUnary);
-		String2GPUInstructionType.put( "urowcumk+", GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "ucum*"   , GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "ucumk+*" , GPUINSTRUCTION_TYPE.BuiltinUnary);
 		String2GPUInstructionType.put( "ucummin" , GPUINSTRUCTION_TYPE.BuiltinUnary);
@@ -157,38 +156,38 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( ">"    , GPUINSTRUCTION_TYPE.RelationalBinary);
 		String2GPUInstructionType.put( "<="   , GPUINSTRUCTION_TYPE.RelationalBinary);
 		String2GPUInstructionType.put( ">="   , GPUINSTRUCTION_TYPE.RelationalBinary);
-		
-		// Indexing 
+
+		// Indexing
 		String2GPUInstructionType.put( RightIndex.OPCODE, GPUINSTRUCTION_TYPE.MatrixIndexing);
 
 		String2GPUInstructionType.put( "spoof"   , GPUINSTRUCTION_TYPE.SpoofFused);
 	}
-	
+
 	public static GPUInstruction parseSingleInstruction (String str ) {
 		if ( str == null || str.isEmpty() )
 			return null;
 		GPUINSTRUCTION_TYPE cptype = InstructionUtils.getGPUType(str);
-		if ( cptype == null ) 
+		if ( cptype == null )
 			throw new DMLRuntimeException("Unable derive cptype for instruction: " + str);
 		GPUInstruction cpinst = parseSingleInstruction(cptype, str);
 		if ( cpinst == null )
 			throw new DMLRuntimeException("Unable to parse instruction: " + str);
 		return cpinst;
 	}
-	
+
 	public static GPUInstruction parseSingleInstruction ( GPUINSTRUCTION_TYPE gputype, String str ) {
-		if( str == null || str.isEmpty() ) 
-			return null;	
+		if( str == null || str.isEmpty() )
+			return null;
 		if( gputype == null )
 			throw new DMLRuntimeException("The instruction is not GPU-enabled:" + str);
-		
+
 		switch(gputype) {
 			case AggregateUnary:
 				return AggregateUnaryGPUInstruction.parseInstruction(str);
 
 			case AggregateBinary:
 				return AggregateBinaryGPUInstruction.parseInstruction(str);
-			
+
 			case BuiltinUnary:
 				return BuiltinUnaryGPUInstruction.parseInstruction(str);
 
@@ -200,16 +199,16 @@ public class GPUInstructionParser  extends InstructionParser
 
 			case Dnn:
 				return DnnGPUInstruction.parseInstruction(str);
-				
+
 			case MMTSJ:
 				return MMTSJGPUInstruction.parseInstruction(str);
-				
+
 			case Reorg:
 				return ReorgGPUInstruction.parseInstruction(str);
-				
+
 			case MatrixReshape:
 				return MatrixReshapeGPUInstruction.parseInstruction(str);
-				
+
 			case ArithmeticBinary:
 				String opcode = InstructionUtils.getOpCode(str);
 				if( opcode.equals("+*") || opcode.equals("-*")  )
@@ -225,8 +224,8 @@ public class GPUInstructionParser  extends InstructionParser
 			case SpoofFused:
 				return SpoofCUDAInstruction.parseInstruction(str);
 
-			default: 
+			default:
 				throw new DMLRuntimeException("Invalid GPU Instruction Type: " + gputype );
 		}
-	}	
+	}
 }

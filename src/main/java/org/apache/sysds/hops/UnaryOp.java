@@ -251,11 +251,15 @@ public class UnaryOp extends MultiThreadedHop
 		boolean force = !dimsKnown() || _etypeForced == ExecType.SPARK;
 		AggOp aggtype = getCumulativeAggType();
 		Lop X = input.constructLops();
+		boolean rowCum = (_op == OpOp1.ROWCUMSUM);
 		
 		//special case single row block (no offsets needed)
-		if( rlen > 0 && clen > 0 && rlen <= blen ) {
-			Lop offset = HopRewriteUtils.createDataGenOpByVal(new LiteralOp(1), new LiteralOp(clen),
-					null, DataType.MATRIX, ValueType.FP64, getCumulativeInitValue()).constructLops();
+		if( rlen > 0 && clen > 0 && (rowCum ? clen <= blen : rlen <= blen) ) {
+			Lop offset = rowCum ?
+					HopRewriteUtils.createDataGenOpByVal(new LiteralOp(rlen), new LiteralOp(1),
+							null, DataType.MATRIX, ValueType.FP64, getCumulativeInitValue()).constructLops() :
+					HopRewriteUtils.createDataGenOpByVal(new LiteralOp(1), new LiteralOp(clen),
+							null, DataType.MATRIX, ValueType.FP64, getCumulativeInitValue()).constructLops();
 			return constructCumOffBinary(X, offset, aggtype, rlen, clen, blen);
 		}
 		
@@ -264,8 +268,14 @@ public class UnaryOp extends MultiThreadedHop
 		int level = 0;
 		
 		//recursive preaggregation until aggregates fit into CP memory budget
-		while( ((2*OptimizerUtils.estimateSize(TEMP.getOutputParameters().getNumRows(), clen) + OptimizerUtils.estimateSize(1, clen)) 
-			> OptimizerUtils.getLocalMemBudget() && TEMP.getOutputParameters().getNumRows()>1) || force )
+		while( ((2*OptimizerUtils.estimateSize(
+				rowCum ? TEMP.getOutputParameters().getNumRows() : TEMP.getOutputParameters().getNumRows(),
+				rowCum ? TEMP.getOutputParameters().getNumCols() : clen)
+				+ OptimizerUtils.estimateSize(rowCum ? rlen : 1, rowCum ? 1 : clen))
+				> OptimizerUtils.getLocalMemBudget()
+				&& (rowCum ? TEMP.getOutputParameters().getNumCols() > 1
+				: TEMP.getOutputParameters().getNumRows() > 1))
+				|| force )
 		{
 			//caching within multi-level cascades
 			if( ALLOW_CUMAGG_CACHING && level > 0 ) {
@@ -278,9 +288,14 @@ public class UnaryOp extends MultiThreadedHop
 	
 			//preaggregation per block (for spark, the CumulativePartialAggregate subsumes both
 			//the preaggregation and subsequent block aggregation)
-			long rlenAgg = (long)Math.ceil((double)TEMP.getOutputParameters().getNumRows()/blen);
+			long rlenAgg = rowCum ? TEMP.getOutputParameters().getNumRows() :
+					(long)Math.ceil((double)TEMP.getOutputParameters().getNumRows()/blen);
+			long clenAgg = rowCum ?
+					(long)Math.ceil((double)TEMP.getOutputParameters().getNumCols()/blen) :
+					TEMP.getOutputParameters().getNumCols();
+
 			Lop preagg = new CumulativePartialAggregate(TEMP, DataType.MATRIX, ValueType.FP64, aggtype, ExecType.SPARK);
-			preagg.getOutputParameters().setDimensions(rlenAgg, clen, blen, -1);
+			preagg.getOutputParameters().setDimensions(rlenAgg, clenAgg, blen, -1);
 			setLineNumbers(preagg);
 			
 			TEMP = preagg;
@@ -290,10 +305,13 @@ public class UnaryOp extends MultiThreadedHop
 		
 		//in-memory cum sum (of partial aggregates)
 		//marked for update in-place if there was at least one aggregation level
-		if( TEMP.getOutputParameters().getNumRows()!=1 ){
+		if( rowCum ? TEMP.getOutputParameters().getNumCols()!=1 : TEMP.getOutputParameters().getNumRows()!=1 ) {
 			int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );
 			Unary unary1 = new Unary( TEMP, _op, DataType.MATRIX, ValueType.FP64, ExecType.CP, k, TEMP!=X);
-			unary1.getOutputParameters().setDimensions(TEMP.getOutputParameters().getNumRows(), clen, blen, -1);
+			unary1.getOutputParameters().setDimensions(
+					TEMP.getOutputParameters().getNumRows(),
+					TEMP.getOutputParameters().getNumCols(),
+					blen, -1);
 			setLineNumbers(unary1);
 			TEMP = unary1;
 		}
@@ -324,7 +342,8 @@ public class UnaryOp extends MultiThreadedHop
 
 	private AggOp getCumulativeAggType() {
 		switch( _op ) {
-			case CUMSUM:     return AggOp.SUM;
+			case CUMSUM:
+			case ROWCUMSUM:	 return AggOp.SUM;
 			case CUMPROD:    return AggOp.PROD;
 			case CUMMIN:     return AggOp.MIN;
 			case CUMMAX:     return AggOp.MAX;
@@ -335,8 +354,9 @@ public class UnaryOp extends MultiThreadedHop
 
 	private double getCumulativeInitValue() {
 		switch( _op ) {
-			case CUMSUMPROD: 
-			case CUMSUM:  return 0;
+			case CUMSUMPROD:
+			case CUMSUM:
+			case ROWCUMSUM:return 0;
 			case CUMPROD: return 1;
 			case CUMMIN:  return Double.POSITIVE_INFINITY;
 			case CUMMAX:  return Double.NEGATIVE_INFINITY;

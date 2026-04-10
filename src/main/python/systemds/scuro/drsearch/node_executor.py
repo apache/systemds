@@ -497,14 +497,14 @@ class NodeExecutor:
                 print(
                     f"UNDERESTIMATED GPU PEAK MEMORY: GPU peak bytes: {gpu_peak_bytes/1024**3:.2f} GB, Estimated GPU bytes: {self.scheduler.node_resources[node_id][1]/1024**3:.2f} GB for node {node_id}: {operation_name}"
                 )
-        if self.scheduler.node_resources[node_id][0] >= peak_bytes * 2:
-            print(
-                f"Peak bytes: {peak_bytes/1024**3:.2f} GB, Estimated CPU bytes: {self.scheduler.node_resources[node_id][0]/1024**3:.2f} GB, 200% of estimated for node {node_id}: {operation_name}"
-            )
-        if self.scheduler.node_resources[node_id][1] > gpu_peak_bytes * 2:
-            print(
-                f"GPU peak bytes: {gpu_peak_bytes/1024**3:.2f} GB, Estimated GPU bytes: {self.scheduler.node_resources[node_id][1]/1024**3:.2f} GB, 200% of estimated for node {node_id}: {operation_name}"
-            )
+            if self.scheduler.node_resources[node_id][0] >= peak_bytes * 2:
+                print(
+                    f"Peak bytes: {peak_bytes/1024**3:.2f} GB, Estimated CPU bytes: {self.scheduler.node_resources[node_id][0]/1024**3:.2f} GB, 200% of estimated for node {node_id}: {operation_name}"
+                )
+            if self.scheduler.node_resources[node_id][1] > gpu_peak_bytes * 2:
+                print(
+                    f"GPU peak bytes: {gpu_peak_bytes/1024**3:.2f} GB, Estimated GPU bytes: {self.scheduler.node_resources[node_id][1]/1024**3:.2f} GB, 200% of estimated for node {node_id}: {operation_name}"
+                )
         data[node_id] = {
             "cpu_peak_bytes": peak_bytes,
             "gpu_peak_bytes": gpu_peak_bytes,

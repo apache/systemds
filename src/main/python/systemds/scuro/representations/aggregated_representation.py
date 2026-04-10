@@ -94,7 +94,6 @@ class AggregatedRepresentation(Representation):
         )
 
         aggregate_dim = (0,)
-        print("Aggregated representation transform start")
         if self.target_dimensions is not None:
             input_dimensions = self._get_input_dimensions(modality.data)
 

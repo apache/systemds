@@ -205,6 +205,7 @@ class ModalityType(Flag):
         "VIDEO": "create_video_metadata",
         "IMAGE": "create_image_metadata",
         "TIMESERIES": "create_ts_metadata",
+        "EMBEDDING": "create_embedding_metadata",
     }
 
     def get_schema(self):
@@ -293,6 +294,14 @@ class ModalityType(Flag):
         md["signal_names"] = signal_names
         md["timestamp"] = create_timestamps(md["frequency"], md["length"])
         md["is_multivariate"] = len(signal_names) > 1
+        return md
+
+    def create_embedding_metadata(self, data, is_single_instance=True):
+        md = deepcopy(self.get_schema())
+        md = ModalitySchemas.update_base_metadata(md, data, is_single_instance)
+        md["data_layout"]["representation"] = DataLayout.SINGLE_LEVEL
+        md["data_layout"]["type"] = np.float32
+        md["data_layout"]["shape"] = data.shape
         return md
 
     def create_video_metadata(self, frequency, length, width, height, num_channels):

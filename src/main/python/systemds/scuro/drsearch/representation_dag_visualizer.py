@@ -20,36 +20,22 @@
 # -------------------------------------------------------------
 
 from typing import Dict, Any
-from systemds.scuro.drsearch.representation_dag import RepresentationDag
+from typing import List
+from systemds.scuro.drsearch.representation_dag import (
+    RepresentationDag,
+    dags_to_graphviz,
+)
 
 
 def visualize_dag(dag: RepresentationDag) -> Dict[str, Any]:
-    nodes = []
-    edges = []
+    graph = dag.to_graphviz()
+    return {"root": dag.root_node_id, "dot": graph.source, "graph": graph}
 
-    for i, node in enumerate(dag.nodes):
-        # Create node entry
-        node_type = "operation" if node.operation else "modality"
-        label = node.operation if node.operation else f"Modality: {node.modality_id}"
 
-        nodes.append(
-            {
-                "id": node.node_id,
-                "label": label,
-                "type": node_type,
-                "parameters": node.parameters,
-            }
-        )
-
-        print(nodes[i])
-
-        # Create edges
-        for input_id in node.inputs:
-            edges.append({"from": input_id, "to": node.node_id})
-
-    for edge in edges:
-        print(edge)
-
-    print(f"Root Node ID: {dag.root_node_id}")
-
-    return {"nodes": nodes, "edges": edges, "root": dag.root_node_id}
+def visualize_dag_group(dags: List[RepresentationDag]) -> Dict[str, Any]:
+    graph = dags_to_graphviz(dags)
+    return {
+        "roots": [dag.root_node_id for dag in dags],
+        "dot": graph.source,
+        "graph": graph,
+    }

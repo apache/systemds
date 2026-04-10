@@ -22,10 +22,17 @@
 import numpy as np
 import cv2
 
+from systemds.scuro.dataloader.image_loader import ImageStats
 from systemds.scuro.drsearch.operator_registry import register_representation
 from systemds.scuro.modality.type import ModalityType
+from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.modality.transformed import TransformedModality
+from systemds.scuro.utils.static_variables import (
+    PY_LIST_HEADER_BYTES,
+    PY_LIST_SLOT_BYTES,
+    NP_ARRAY_HEADER_BYTES,
+)
 
 
 @register_representation(ModalityType.IMAGE)
@@ -37,6 +44,7 @@ class ColorHistogram(UnimodalRepresentation):
         normalize=False,
         aggregation="mean",
         output_file=None,
+        params=None,
     ):
         super().__init__(
             "ColorHistogram", ModalityType.EMBEDDING, self._get_parameters()
@@ -46,6 +54,7 @@ class ColorHistogram(UnimodalRepresentation):
         self.normalize = normalize
         self.aggregation = aggregation
         self.output_file = output_file
+        self.data_type = np.float32
 
     def _get_parameters(self):
         return {
@@ -84,7 +93,56 @@ class ColorHistogram(UnimodalRepresentation):
                 hist /= hist_sum
         return hist.astype(np.float32)
 
-    def transform(self, modality):
+    def estimate_output_memory_bytes(self, input_stats: ImageStats) -> int:
+        return (
+            input_stats.num_instances * self.bins**3 * np.dtype(self.data_type).itemsize
+        )
+
+    def calculate_hist_dim(self):
+        num_channels = 1 if self.color_space == "GRAY" else 3
+        if isinstance(self.bins, (tuple, list)):
+            hist_dim = 1
+            for b in self.bins:
+                hist_dim *= int(b)
+            return hist_dim * num_channels
+        else:
+            return int(self.bins) ** num_channels
+
+    def get_output_stats(self, input_stats) -> RepresentationStats:
+        return RepresentationStats(
+            input_stats.num_instances, (self.calculate_hist_dim(),)
+        )
+
+    def estimate_peak_memory_bytes(self, input_stats: ImageStats) -> dict:
+        elem_size = np.dtype(self.data_type).itemsize
+        n = int(input_stats.num_instances)
+
+        hist_payload_bytes = self.calculate_hist_dim() * elem_size
+        per_instance_retained = (
+            hist_payload_bytes + NP_ARRAY_HEADER_BYTES + PY_LIST_SLOT_BYTES
+        )
+        retained_output_bytes = PY_LIST_HEADER_BYTES + n * per_instance_retained
+        transient_hist_bytes = 3 * hist_payload_bytes
+        max_h = int(input_stats.max_height)
+        max_w = int(input_stats.max_width)
+        if self.color_space == "HSV":
+            cvt_tmp_bytes = max_h * max_w * 3 * np.dtype(np.uint8).itemsize
+        elif self.color_space == "GRAY":
+            cvt_tmp_bytes = max_h * max_w * 1 * np.dtype(np.uint8).itemsize
+        else:
+            cvt_tmp_bytes = 0
+
+        opencv_workspace_bytes = max(1 * 1024 * 1024, int(hist_payload_bytes))
+        transient_one_instance_bytes = (
+            transient_hist_bytes + cvt_tmp_bytes + opencv_workspace_bytes
+        )
+        cpu_peak_bytes = retained_output_bytes + transient_one_instance_bytes
+        return {
+            "cpu_peak_bytes": int(cpu_peak_bytes * 1.05),
+            "gpu_peak_bytes": 0,
+        }
+
+    def transform(self, modality, aggregation=None):
         if modality.modality_type == ModalityType.IMAGE:
             images = modality.data
             hist_list = [self.compute_histogram(img) for img in images]

@@ -18,7 +18,6 @@
 # under the License.
 #
 # -------------------------------------------------------------
-import copy
 
 import numpy as np
 import math
@@ -28,24 +27,50 @@ from systemds.scuro.modality.type import DataLayout, ModalityType
 from systemds.scuro.drsearch.operator_registry import register_context_operator
 from systemds.scuro.representations.aggregate import Aggregation
 from systemds.scuro.representations.context import Context
+from systemds.scuro.representations.representation import (
+    Representation,
+    RepresentationStats,
+)
 
 
 class Window(Context):
     def __init__(self, name, aggregation_function):
-        is_ts_rep = False
-        if isinstance(aggregation_function, str):
-            parameters = {
-                "aggregation_function": list(Aggregation().get_aggregation_functions()),
-            }
-        else:
-            is_ts_rep = True
-            parameters = {
-                "aggregation_function": aggregation_function.name,
-                "agg_params": aggregation_function.parameters,
-            }
-
-        super().__init__(name, parameters, is_ts_rep)
         self.aggregation_function = aggregation_function
+        parameters = {}
+        if isinstance(self.aggregation_function, Aggregation) or isinstance(
+            self.aggregation_function, Representation
+        ):
+            parameters["aggregation_function"] = self.aggregation_function.__class__
+        else:
+            raise ValueError(
+                f"Invalid aggregation function type: {type(self.aggregation_function)}"
+            )
+
+        super().__init__(name, parameters)
+        self.data_type = np.float32
+
+    def get_current_parameters(self):
+        current_params = {}
+        if not self.parameters:
+            return current_params
+
+        for parameter in list(self.parameters.keys()):
+            if parameter == "aggregation_function":
+                if "aggregation_function" in self.parameters:
+                    current_params["aggregation_function"] = self.parameters[
+                        "aggregation_function"
+                    ]
+                    if isinstance(self.aggregation_function, Aggregation) or isinstance(
+                        self.aggregation_function, Representation
+                    ):
+                        for (
+                            key,
+                            value,
+                        ) in self.aggregation_function.get_current_parameters().items():
+                            current_params[f"aggregation_function_{key}"] = value
+            else:
+                current_params[parameter] = getattr(self, parameter)
+        return current_params
 
     @property
     def aggregation_function(self):
@@ -53,21 +78,102 @@ class Window(Context):
 
     @aggregation_function.setter
     def aggregation_function(self, value):
-        if self.is_ts_rep:
+        if isinstance(value, Representation):
+            self._aggregation_function = value
+        elif isinstance(value, Aggregation):
             self._aggregation_function = value
         else:
             self._aggregation_function = Aggregation(value)
+
+    def estimate_output_memory_bytes(self, input_stats: RepresentationStats) -> int:
+        return None
+
+    def estimate_peak_memory_bytes(self, input_stats: RepresentationStats) -> dict:
+        return None
+
+    def assert_output_stats(self, windowed_data):
+        if self.stats:
+            assert (
+                len(windowed_data) == self.stats.num_instances
+            ), f"Output shape: {windowed_data.shape}, Expected shape: {self.stats.output_shape}"
+            assert (
+                windowed_data.shape[1] == self.stats.output_shape[0]
+            ), f"Output shape: {windowed_data.shape}, Expected shape: {self.stats.output_shape}"
+            assert (
+                windowed_data.shape[2:] == self.stats.output_shape[1:]
+            ), f"Output shape: {windowed_data.shape}, Expected shape: {self.stats.output_shape}"
+
+    @staticmethod
+    def _shape_numel(shape):
+        return int(np.prod(shape)) if len(shape) > 0 else 1
+
+    @staticmethod
+    def _rest_numel(shape):
+        return int(np.prod(shape[1:])) if len(shape) > 1 else 1
 
 
 @register_context_operator(
     [ModalityType.TIMESERIES, ModalityType.AUDIO, ModalityType.EMBEDDING]
 )
 class WindowAggregation(Window):
-    def __init__(self, aggregation_function="mean", window_size=10, pad=False):
+    def __init__(
+        self, aggregation_function="mean", window_size=10, pad=True, params=None
+    ):
+        if params is not None:
+            aggregation_function = params["aggregation_function"]
+            try:
+                aggregation_function = aggregation_function()
+            except:
+                pass
+            window_size = params["window_size"]
+            pad = True
         super().__init__("WindowAggregation", aggregation_function)
         self.parameters["window_size"] = [5, 10, 15, 25, 50, 100]
         self.window_size = int(window_size)
         self.pad = pad
+
+    def get_output_stats(self, input_stats: RepresentationStats) -> tuple:
+        in_shape = tuple(int(s) for s in input_stats.output_shape)
+        if len(in_shape) == 1:
+            self.stats = RepresentationStats(
+                input_stats.num_instances,
+                (math.ceil(in_shape[0] / self.window_size),),
+            )
+        if len(in_shape) >= 2:
+            self.stats = RepresentationStats(
+                input_stats.num_instances,
+                (math.ceil(in_shape[0] / self.window_size), *in_shape[1:]),
+            )
+        self.stats.output_shape_is_known = input_stats.output_shape_is_known
+        return self.stats
+
+    def estimate_output_memory_bytes(self, input_stats: RepresentationStats) -> int:
+        in_shape = tuple(int(s) for s in input_stats.output_shape)
+        if len(in_shape) == 0:
+            return 0
+
+        out_seq_len = math.ceil(in_shape[0] / self.window_size)
+        output_bytes = out_seq_len * self._rest_numel(in_shape)
+        return (
+            input_stats.num_instances * output_bytes * np.dtype(self.data_type).itemsize
+        )
+
+    def estimate_peak_memory_bytes(self, input_stats: RepresentationStats) -> dict:
+        in_shape = tuple(int(s) for s in input_stats.output_shape)
+        if len(in_shape) == 0:
+            return {"cpu_peak_bytes": 0, "gpu_peak_bytes": 0}
+
+        effective_seq_len = in_shape[0]
+        in_numel = effective_seq_len * self._rest_numel(in_shape)
+        output_bytes = self.estimate_output_memory_bytes(input_stats)
+        one_instance_bytes = in_numel * np.dtype(self.data_type).itemsize
+        cpu_peak = (
+            output_bytes * 2
+            + one_instance_bytes * input_stats.num_instances
+            + one_instance_bytes * self.window_size
+            + 8 * 1024 * 1024
+        )
+        return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}
 
     def execute(self, modality):
         windowed_data = []
@@ -75,10 +181,14 @@ class WindowAggregation(Window):
         for instance in modality.data:
             new_length = math.ceil(len(instance) / self.window_size)
             if modality.get_data_layout() == DataLayout.SINGLE_LEVEL:
+                instance = np.array(instance)
+                instance.setflags(write=False)
                 windowed_instance = self.window_aggregate_single_level(
                     instance, new_length
                 )
             else:
+                instance = np.array(instance)
+                instance.setflags(write=False)
                 windowed_instance = self.window_aggregate_nested_level(
                     instance, new_length
                 )
@@ -88,7 +198,6 @@ class WindowAggregation(Window):
         if self.pad and not isinstance(windowed_data, np.ndarray):
             target_length = max(original_lengths)
             sample_shape = windowed_data[0].shape
-            is_1d = len(sample_shape) == 1
 
             padded_features = []
             for i, features in enumerate(windowed_data):
@@ -97,13 +206,9 @@ class WindowAggregation(Window):
                 if current_len < target_length:
                     padding_needed = target_length - current_len
 
-                    if is_1d:
-                        padding = np.zeros(padding_needed)
-                        padded = np.concatenate([features, padding])
-                    else:
-                        feature_dim = features.shape[-1]
-                        padding = np.zeros((padding_needed, feature_dim))
-                        padded = np.concatenate([features, padding], axis=0)
+                    pad_shape = (padding_needed,) + features.shape[1:]
+                    padding = np.zeros(pad_shape)
+                    padded = np.concatenate([features, padding], axis=0)
 
                     padded_features.append(padded)
                 else:
@@ -123,48 +228,31 @@ class WindowAggregation(Window):
             if data_type != "str":
                 windowed_data = windowed_data.astype(data_type)
 
+        self.assert_output_stats(windowed_data)
         return windowed_data
 
     def window_aggregate_single_level(self, instance, new_length):
         if isinstance(instance, str):
             return instance
-        instance = np.array(copy.deepcopy(instance))
 
         result = []
         for i in range(0, new_length):
-            if self.is_ts_rep:
-                result.append(
-                    self.aggregation_function.compute_feature(
-                        instance[
-                            i * self.window_size : i * self.window_size
-                            + self.window_size
-                        ]
-                    )
+            result.append(
+                self.aggregation_function.compute_feature(
+                    instance[
+                        i * self.window_size : i * self.window_size + self.window_size
+                    ]
                 )
-            else:
-                result.append(
-                    self.aggregation_function.aggregate_instance(
-                        instance[
-                            i * self.window_size : i * self.window_size
-                            + self.window_size
-                        ]
-                    )
-                )
+            )
 
         return np.array(result)
 
     def window_aggregate_nested_level(self, instance, new_length):
         result = [[] for _ in range(0, new_length)]
-        data = np.stack(copy.deepcopy(instance))
         for i in range(0, new_length):
-            if self.is_ts_rep:
-                result[i] = self.aggregation_function.compute_feature(
-                    data[i * self.window_size : i * self.window_size + self.window_size]
-                )
-            else:
-                result[i] = self.aggregation_function.aggregate_instance(
-                    data[i * self.window_size : i * self.window_size + self.window_size]
-                )
+            result[i] = self.aggregation_function.compute_feature(
+                instance[i * self.window_size : i * self.window_size + self.window_size]
+            )
 
         return np.array(result)
 
@@ -173,10 +261,51 @@ class WindowAggregation(Window):
     [ModalityType.TIMESERIES, ModalityType.AUDIO, ModalityType.EMBEDDING]
 )
 class StaticWindow(Window):
-    def __init__(self, aggregation_function="mean", num_windows=100):
+    # TODO
+    def __init__(self, aggregation_function="mean", num_windows=100, params=None):
         super().__init__("StaticWindow", aggregation_function)
         self.parameters["num_windows"] = [10, num_windows]
         self.num_windows = int(num_windows)
+
+    def get_output_stats(self, input_stats: RepresentationStats) -> tuple:
+        in_shape = tuple(int(s) for s in input_stats.output_shape)
+        if len(in_shape) <= 1:
+            self.stats = RepresentationStats(
+                input_stats.num_instances, (self.num_windows,)
+            )
+        else:
+            self.stats = RepresentationStats(
+                input_stats.num_instances, (self.num_windows, *in_shape[1:])
+            )
+        self.stats.output_shape_is_known = input_stats.output_shape_is_known
+
+        return self.stats
+
+    def estimate_output_memory_bytes(self, input_stats: RepresentationStats) -> int:
+        in_shape = tuple(int(s) for s in input_stats.output_shape)
+        if len(in_shape) == 0:
+            return 0
+
+        out_seq_len = self.num_windows
+        output_bytes = out_seq_len * self._rest_numel(in_shape)
+        return (
+            input_stats.num_instances * output_bytes * np.dtype(self.data_type).itemsize
+        )
+
+    def estimate_peak_memory_bytes(self, input_stats: RepresentationStats) -> dict:
+        in_shape = tuple(int(s) for s in input_stats.output_shape)
+        if len(in_shape) == 0:
+            return {"cpu_peak_bytes": 0, "gpu_peak_bytes": 0}
+        effective_seq_len = in_shape[0]
+        in_numel = effective_seq_len * self._rest_numel(in_shape)
+        output_bytes = self.estimate_output_memory_bytes(input_stats)
+        one_instance_bytes = in_numel * np.dtype(self.data_type).itemsize
+        cpu_peak = (
+            output_bytes * 2
+            + one_instance_bytes * input_stats.num_instances
+            + 8 * 1024 * 1024
+        )
+        return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}
 
     def execute(self, modality):
         windowed_data = []
@@ -189,9 +318,10 @@ class StaticWindow(Window):
             for i in range(0, self.num_windows):
                 extra = 1 if i < remainder else 0
                 end = start + window_size + extra
-                window = copy.deepcopy(instance[start:end])
+                window = instance[start:end]
+                window.setflags(write=False)
                 val = (
-                    self.aggregation_function.aggregate_instance(window)
+                    self.aggregation_function.compute_feature(window)
                     if len(window) > 0
                     else np.zeros_like(output[i - 1])
                 )
@@ -199,17 +329,58 @@ class StaticWindow(Window):
                 start = end
 
             windowed_data.append(output)
-        return np.array(windowed_data)
+        windowed_data = np.array(windowed_data)
+        self.assert_output_stats(windowed_data)
+        return windowed_data
 
 
 @register_context_operator(
     [ModalityType.TIMESERIES, ModalityType.AUDIO, ModalityType.EMBEDDING]
 )
 class DynamicWindow(Window):
-    def __init__(self, aggregation_function="mean", num_windows=100):
+    def __init__(self, aggregation_function="mean", num_windows=100, params=None):
         super().__init__("DynamicWindow", aggregation_function)
         self.parameters["num_windows"] = [10, num_windows]
         self.num_windows = int(num_windows)
+
+    def get_output_stats(self, input_stats: RepresentationStats) -> tuple:
+        in_shape = tuple(int(s) for s in input_stats.output_shape)
+        if len(in_shape) <= 1:
+            self.stats = RepresentationStats(
+                input_stats.num_instances, (self.num_windows,)
+            )
+        else:
+            self.stats = RepresentationStats(
+                input_stats.num_instances, (self.num_windows, *in_shape[1:])
+            )
+        self.stats.output_shape_is_known = input_stats.output_shape_is_known
+        return self.stats
+
+    def estimate_output_memory_bytes(self, input_stats: RepresentationStats) -> int:
+        in_shape = tuple(int(s) for s in input_stats.output_shape)
+        if len(in_shape) == 0:
+            return 0
+
+        out_seq_len = self.num_windows
+        output_bytes = out_seq_len * self._rest_numel(in_shape)
+        return (
+            input_stats.num_instances * output_bytes * np.dtype(self.data_type).itemsize
+        )
+
+    def estimate_peak_memory_bytes(self, input_stats: RepresentationStats) -> dict:
+        in_shape = tuple(int(s) for s in input_stats.output_shape)
+        if len(in_shape) == 0:
+            return {"cpu_peak_bytes": 0, "gpu_peak_bytes": 0}
+        effective_seq_len = in_shape[0]
+        in_numel = effective_seq_len * self._rest_numel(in_shape)
+        output_bytes = self.estimate_output_memory_bytes(input_stats)
+        one_instance_bytes = in_numel * np.dtype(self.data_type).itemsize
+        cpu_peak = (
+            output_bytes * 2
+            + one_instance_bytes * input_stats.num_instances
+            + 8 * 1024 * 1024
+        )
+        return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}
 
     def execute(self, modality):
         windowed_data = []
@@ -224,9 +395,10 @@ class DynamicWindow(Window):
             output = []
             start = 0
             for end in indices:
-                window = copy.deepcopy(instance[start:end])
+                window = instance[start:end]
+                window.setflags(write=False)
                 val = (
-                    self.aggregation_function.aggregate_instance(window)
+                    self.aggregation_function.compute_feature(window)
                     if len(window) > 0
                     else np.zeros_like(instance[0])
                 )
@@ -234,5 +406,6 @@ class DynamicWindow(Window):
                 start = end
 
             windowed_data.append(output)
-
-        return np.array(windowed_data)
+        windowed_data = np.array(windowed_data)
+        self.assert_output_stats(windowed_data)
+        return windowed_data

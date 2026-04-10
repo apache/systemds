@@ -35,8 +35,7 @@ class Registry:
     _representations = {}
     _context_operators = {}
     _fusion_operators = []
-    _text_context_operators = []
-    _video_context_operators = []
+    _context_representation_operators = {}
     _dimensionality_reduction_operators = {}
 
     def __new__(cls):
@@ -86,6 +85,18 @@ class Registry:
                 dimensionality_reduction_operator
             )
 
+    def add_context_representation_operator(
+        self, context_representation, modality_type
+    ):
+        if not isinstance(modality_type, list):
+            modality_type = [modality_type]
+        for m_type in modality_type:
+            if not m_type in self._context_representation_operators.keys():
+                self._context_representation_operators[m_type] = []
+            self._context_representation_operators[m_type].append(
+                context_representation
+            )
+
     def get_representations(self, modality: ModalityType):
         return self._representations[modality]
 
@@ -102,7 +113,7 @@ class Registry:
         return self._context_operators[modality_type]
 
     def get_dimensionality_reduction_operators(self, modality_type):
-        return self._dimensionality_reduction_operators[modality_type]
+        return self._dimensionality_reduction_operators.get(modality_type, [])
 
     def get_fusion_operators(self):
         return self._fusion_operators
@@ -124,6 +135,9 @@ class Registry:
                     return representation, False
 
         return None, False
+
+    def get_context_representations(self, modality_type):
+        return self._context_representation_operators[modality_type]
 
 
 def register_representation(modalities: Union[ModalityType, List[ModalityType]]):
@@ -152,6 +166,18 @@ def register_dimensionality_reduction_operator(modality_type):
 
     def decorator(cls):
         Registry().add_dimensionality_reduction_operator(cls, modality_type)
+        return cls
+
+    return decorator
+
+
+def register_context_representation_operator(modality_type):
+    """
+    Decorator to register a context representation operator.
+    """
+
+    def decorator(cls):
+        Registry().add_context_representation_operator(cls, modality_type)
         return cls
 
     return decorator

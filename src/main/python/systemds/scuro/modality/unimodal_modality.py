@@ -26,6 +26,7 @@ from systemds.scuro.dataloader.base_loader import BaseLoader
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.transformed import TransformedModality
+from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.utils.identifier import Identifier
 
 
@@ -44,6 +45,7 @@ class UnimodalModality(Modality):
             data_loader.data_type,
         )
         self.data_loader = data_loader
+        self.stats = data_loader.stats
 
     def copy_from_instance(self):
         new_instance = type(self)(self.data_loader)
@@ -59,12 +61,38 @@ class UnimodalModality(Modality):
 
         return self.metadata[self.dataIndex][position]
 
+    def get_stats(self):
+        return self.stats
+
+    def get_output_stats(self):
+        return RepresentationStats(self.stats.num_instances, self.stats.output_shape)
+
+    def estimate_memory_bytes(self):
+        memory_bytes = 1
+        for i in self.stats.output_shape:
+            memory_bytes *= i
+
+        return (
+            self.stats.num_instances * memory_bytes * 4
+        )  # TODO: check how to meausure str size
+
+    def estimate_peak_memory_bytes(self):
+        return {"cpu_peak_bytes": self.estimate_memory_bytes(), "gpu_peak_bytes": 0.0}
+
     def extract_raw_data(self):
         """
         Uses the data loader to read the raw data from a specified location
         and stores the data in the data location.
         """
         self.data, self.metadata = self.data_loader.load()
+
+    def iter_raw_data_chunks(self, reset: bool = True):
+        for data, metadata, chunk_indices in self.data_loader.iter_loaded_chunks(
+            reset=reset
+        ):
+            self.data = data
+            self.metadata = metadata
+            yield chunk_indices
 
     def join(self, other, join_condition):
         if isinstance(other, UnimodalModality):
@@ -106,7 +134,7 @@ class UnimodalModality(Modality):
         if self.data is None:
             raise Exception("Data is None")
 
-    def apply_representations(self, representations):
+    def apply_representations(self, representations, aggregation=None):
         """
         Applies a list of representations to the modality. Specifically, it applies the representations to the modality in a chunked manner.
         :param representations: List of representations to apply
@@ -116,7 +144,6 @@ class UnimodalModality(Modality):
         padding_per_representation = {}
         original_lengths_per_representation = {}
 
-        # Initialize dictionaries for each representation
         for representation in representations:
             transformed_modality = TransformedModality(self, representation.name)
             transformed_modality.data = []
@@ -130,9 +157,7 @@ class UnimodalModality(Modality):
             time.time()
         )  # TODO: should be repalced in unimodal_representation.transform
         if self.data_loader.chunk_size:
-            self.data_loader.reset()
-            while self.data_loader.next_chunk < self.data_loader.num_chunks:
-                self.extract_raw_data()
+            for _ in self.iter_raw_data_chunks(reset=True):
                 for representation in representations:
                     transformed_chunk = representation.transform(self)
                     transformed_modalities_per_representation[
@@ -150,25 +175,6 @@ class UnimodalModality(Modality):
             if not self.has_data():
                 self.extract_raw_data()
             new_modality = representation.transform(self)
-
-            for i, d in enumerate(new_modality.data):
-                output = np.array(d)
-                if np.isnan(output).any():
-                    new_modality.data[i] = np.where(np.isnan(output), 0, output)
-
-            if not all(
-                "attention_masks" in entry for entry in new_modality.metadata.values()
-            ):
-                for d in new_modality.data:
-                    if d.shape[0] == 1 and d.ndim == 2:
-                        padding_per_representation[representation.name] = True
-                        original_lengths_per_representation[representation.name].append(
-                            d.shape[1]
-                        )
-                    else:
-                        original_lengths_per_representation[representation.name].append(
-                            d.shape[0]
-                        )
             transformed_modalities_per_representation[representation.name] = (
                 new_modality
             )
@@ -188,8 +194,10 @@ class UnimodalModality(Modality):
         gc.collect()
         return transformed_modalities_per_representation
 
-    def apply_representation(self, representation):
-        return self.apply_representations([representation])[representation.name]
+    def apply_representation(self, representation, aggregation=None):
+        return self.apply_representations([representation], aggregation=aggregation)[
+            representation.name
+        ]
 
     def _apply_padding(self, modality, original_lengths, pad_dim_one):
         if len(original_lengths) > 0 and min(original_lengths) < max(original_lengths):
@@ -217,6 +225,7 @@ class UnimodalModality(Modality):
                                 mode="constant",
                                 constant_values=0,
                             )
+                            padded_embeddings.append(padded)
                         elif len(embeddings.shape) == 2:
                             padded = np.pad(
                                 embeddings,
@@ -224,6 +233,7 @@ class UnimodalModality(Modality):
                                 mode="constant",
                                 constant_values=0,
                             )
+                            padded_embeddings.append(padded)
                         elif len(embeddings.shape) == 3:
                             padded = np.pad(
                                 embeddings,

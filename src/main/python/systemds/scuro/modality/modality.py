@@ -24,6 +24,7 @@ import numpy as np
 
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations import utils
+from systemds.scuro.representations.representation import RepresentationStats
 
 
 class Modality:
@@ -45,10 +46,9 @@ class Modality:
         self.metadata = metadata
         self.data = []
         self.data_type = data_type
-        self.cost = None
-        self.shape = None
         self.modality_id = modality_id
         self.transform_time = transform_time if transform_time else 0
+        self.stats = RepresentationStats(0, ())
 
     @property
     def data(self):

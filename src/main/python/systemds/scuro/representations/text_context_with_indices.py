@@ -18,12 +18,15 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import math
 import re
 from typing import List, Any
-
+import numpy as np
+from systemds.scuro.dataloader.text_loader import TextStats
 from systemds.scuro.drsearch.operator_registry import register_context_operator
 from systemds.scuro.representations.context import Context
 from systemds.scuro.modality.type import ModalityType
+from systemds.scuro.representations.representation import RepresentationStats
 
 # TODO: Use this to get indices for text chunks based on different splitting strategies
 # To use this approach a differnt extration of text chunks is needed in either the TextModality or the Representations
@@ -85,7 +88,7 @@ class WordCountSplitIndices(Context):
         overlap (int): Number of overlapping words between chunks (default: 0)
     """
 
-    def __init__(self, max_words=55, overlap=0):
+    def __init__(self, max_words=55, overlap=0, params=None):
         parameters = {
             "max_words": [40, 50, 55, 60, 70, 250, 300, 350, 400, 450],
             "overlap": [0, 10, 20, 30],
@@ -144,16 +147,58 @@ class SentenceBoundarySplitIndices(Context):
         min_words (int): Minimum number of words per chunk before splitting (default: 10)
     """
 
-    def __init__(self, max_words=55, min_words=10, overlap=0.1):
+    def __init__(self, max_words=55, min_words=10, overlap=0.1, params=None):
         parameters = {
             "max_words": [40, 50, 55, 60, 70, 250, 300, 350, 400, 450],
             "min_words": [10, 20, 30],
         }
         super().__init__("SentenceBoundarySplit", parameters)
-        self.max_words = int(max_words)
-        self.min_words = max(1, int(min_words))
-        self.overlap = overlap
-        self.stride = max(1, int(max_words * (1 - overlap)))
+        if params is not None:
+            self.max_words = int(params.get("max_words", max_words))
+            self.min_words = int(params.get("min_words", min_words))
+            self.overlap = float(params.get("overlap", overlap))
+            self.stride = int(params.get("stride", max_words * (1 - overlap)))
+        else:
+            self.max_words = int(max_words)
+            self.min_words = max(1, int(min_words))
+            self.overlap = overlap
+            self.stride = max(1, int(max_words * (1 - overlap)))
+        self.data_type = np.int32
+
+    def get_output_stats(self, input_stats: TextStats) -> RepresentationStats:
+        return RepresentationStats(
+            input_stats.num_instances,
+            (
+                max(
+                    math.ceil(
+                        input_stats.avg_words / (self.max_words - self.overlap) - 1
+                    ),
+                    1,
+                ),
+                self.max_words,
+            ),
+        )
+
+    def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
+        output_memory_bytes = 1
+        output_shape = self.get_output_stats(input_stats).output_shape
+        for dim in output_shape:
+            output_memory_bytes *= dim
+
+        return (
+            input_stats.num_instances
+            * output_memory_bytes
+            * np.dtype(self.data_type).itemsize
+        )
+
+    def estimate_peak_memory_bytes(self, input_stats: TextStats) -> dict:
+        per_instance_temp = int(input_stats.max_words * 64) * input_stats.num_instances
+
+        return {
+            "cpu_peak_bytes": per_instance_temp
+            + self.estimate_output_memory_bytes(input_stats) * 2,
+            "gpu_peak_bytes": 0,
+        }
 
     def execute(self, modality):
         """
@@ -240,7 +285,7 @@ class OverlappingSplitIndices(Context):
         stride (int, optional): Step size in words. If None, stride = max_words - overlap_words
     """
 
-    def __init__(self, max_words=55, overlap=0.5, stride=None):
+    def __init__(self, max_words=55, overlap=0.5, stride=None, params=None):
         overlap_words = int(max_words * overlap)
         if stride is None:
             stride = max_words - overlap_words
@@ -254,6 +299,42 @@ class OverlappingSplitIndices(Context):
         self.max_words = max_words
         self.overlap = overlap
         self.stride = stride
+        self.data_type = np.int32
+
+    def get_output_stats(self, input_stats: TextStats) -> RepresentationStats:
+        return RepresentationStats(
+            input_stats.num_instances,
+            (
+                max(
+                    math.ceil(
+                        input_stats.avg_words / (self.max_words - self.overlap) - 1
+                    ),
+                    1,
+                ),
+                self.max_words,
+            ),
+        )
+
+    def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
+        output_memory_bytes = 1
+        output_shape = self.get_output_stats(input_stats).output_shape
+        for dim in output_shape:
+            output_memory_bytes *= dim
+
+        return (
+            input_stats.num_instances
+            * output_memory_bytes
+            * np.dtype(self.data_type).itemsize
+        )
+
+    def estimate_peak_memory_bytes(self, input_stats: TextStats) -> dict:
+        per_instance_temp = int(input_stats.max_words * 64) * input_stats.num_instances
+
+        return {
+            "cpu_peak_bytes": per_instance_temp
+            + self.estimate_output_memory_bytes(input_stats) * 2,
+            "gpu_peak_bytes": 0,
+        }
 
     def execute(self, modality):
         """

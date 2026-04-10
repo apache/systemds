@@ -18,21 +18,13 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import resource
+import sys
 import numpy as np
+from sympy import Dict
 import torch
-from typing import Tuple
-
-PY_LIST_HEADER_BYTES = 56
-PY_LIST_SLOT_BYTES = 8
-NP_ARRAY_HEADER_BYTES = 112
-
-DEBUG = False
-
-global_rng = np.random.default_rng(42)
-
-
-def get_seed():
-    return global_rng.integers(0, 1024)
+from typing import List, Tuple
+import psutil
 
 
 def get_model_size_mb(model: torch.nn.Module) -> float:
@@ -140,3 +132,63 @@ def get_device(gpu_id: int = None):
     if gpu_id is not None:
         return torch.device(f"cuda:{gpu_id}")
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def get_cpu_memory_mb():
+    rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    if __import__("sys").platform == "darwin":
+        rss /= 1024  # macOS reports bytes
+    return rss / 1024  # MB
+
+
+def get_gpu_memory_mb(device):
+    if not torch.cuda.is_available() or device.type == "cpu":
+        return 0.0
+    torch.cuda.synchronize(device)
+    return torch.cuda.memory_allocated(device) / (1024**2)
+
+
+def gpu_memory_info():
+    infos = []
+    num_gpus = torch.cuda.device_count()
+    for i in range(num_gpus):
+        torch.cuda.set_device(i)
+        free_b, total_b = torch.cuda.mem_get_info()
+        infos.append(dict(index=i, free_b=free_b, total_b=total_b))
+    return infos
+
+
+def log_memory(operation_name: str, device: torch.device):
+    cpu_mb = get_cpu_memory_mb()
+    gpu_mb = get_gpu_memory_mb(device)
+    current_mb = psutil.Process().memory_info().rss / (1024**2)
+    print(
+        f"[mem] {operation_name}: CPU={cpu_mb:.1f} MB, GPU={gpu_mb:.1f} MB, Current={current_mb:.1f} MB"
+    )
+
+
+def estimate_numpy_like_bytes(data) -> int:
+    if data is None:
+        return 0
+    if isinstance(data, np.ndarray):
+        return int(data.nbytes)
+    if isinstance(data, torch.Tensor):
+        return int(data.numel() * data.element_size())
+    if isinstance(data, memoryview):
+        return int(data.nbytes)
+    if isinstance(data, (bytes, bytearray)):
+        return int(len(data))
+    if isinstance(data, dict):
+        return int(sum(estimate_numpy_like_bytes(v) for v in data.values()))
+    if isinstance(data, (list, tuple)):
+        return int(sum(estimate_numpy_like_bytes(v) for v in data))
+    return int(sys.getsizeof(data))
+
+
+def estimate_modality_bytes(modality) -> int:
+    if modality is None:
+        return 0
+    data_bytes = estimate_numpy_like_bytes(getattr(modality, "data", None))
+    metadata = getattr(modality, "metadata", None)
+    metadata_bytes = estimate_numpy_like_bytes(metadata)
+    return int(data_bytes + metadata_bytes)

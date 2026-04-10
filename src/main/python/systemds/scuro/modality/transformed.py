@@ -25,7 +25,7 @@ from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.window_aggregation import WindowAggregation
 import time
-import copy
+import sys
 
 
 class TransformedModality(Modality):
@@ -37,6 +37,7 @@ class TransformedModality(Modality):
         new_modality_type=None,
         self_contained=True,
         set_data=False,
+        aggregate_dim=(0,),
     ):
         """
         Parent class of the different Modalities (unimodal & multimodal)
@@ -56,36 +57,47 @@ class TransformedModality(Modality):
         )
         if set_data:
             self.data = modality.data
-        self.transformation = None
+
         self.self_contained = (
             self_contained and transformation.self_contained
             if isinstance(transformation, TransformedModality)
             else True
         )
-        self.add_transformation(transformation, modality)
+        self.aggregate_dim = aggregate_dim
 
         if modality.__class__.__name__ == "UnimodalModality":
             for k, v in self.metadata.items():
                 if "attention_masks" in v:
                     del self.metadata[k]["attention_masks"]
 
-    def add_transformation(self, transformation, modality):
-        if (
-            transformation.__class__.__bases__[0].__name__ == "Fusion"
-            and type(modality).__name__ == "TransformedModality"
-            and modality.transformation[0].__class__.__bases__[0].__name__ != "Fusion"
-        ):
-            self.transformation = []
-        else:
-            self.transformation = (
-                []
-                if type(modality).__name__ != "TransformedModality"
-                else copy.deepcopy(modality.transformation)
-            )
-        self.transformation.append(transformation)
-
     def copy_from_instance(self):
-        return type(self)(self, self.transformation)
+        """
+        Create a copy of the transformed modality instance
+        """
+        return type(self)(self, None, self.modality_type)
+
+    def calculate_memory_usage(self):
+        data_bytes = 0
+        for instance in self.data:
+            data_bytes += self._estimate_data_bytes(instance)
+
+        md_bytes = 0
+        for key, value in self.metadata.items():
+            md_bytes += self._estimate_data_bytes(key)
+            md_bytes += self._estimate_data_bytes(value)
+
+        total_bytes = (
+            data_bytes
+            + md_bytes
+            + sys.getsizeof(self.data_type)
+            + sys.getsizeof(self.modality_id)
+            + sys.getsizeof(self.schema)
+            + sys.getsizeof(self.stats)
+            + sys.getsizeof(self.self_contained)
+            + sys.getsizeof(self.transform_time)
+            + sys.getsizeof(self.modality_type)
+        )
+        return total_bytes
 
     def join(self, right, join_condition):
         chunked_execution = False
@@ -152,9 +164,9 @@ class TransformedModality(Modality):
         transformed_modality.transform_time += time.time() - start
         return transformed_modality
 
-    def apply_representation(self, representation):
+    def apply_representation(self, representation, aggregation=None):
         start = time.time()
-        new_modality = representation.transform(self)
+        new_modality = representation.transform(self, aggregation=aggregation)
         new_modality.update_metadata()
         new_modality.transform_time += time.time() - start
         new_modality.self_contained = representation.self_contained
@@ -225,3 +237,13 @@ class TransformedModality(Modality):
             all_outputs.append(out)
             start = end
         return np.concatenate(all_outputs, axis=0)
+
+    def _estimate_data_bytes(self, instance):
+        if isinstance(instance, np.ndarray):
+            return instance.nbytes
+        elif isinstance(instance, list):
+            return sum(self._estimate_data_bytes(item) for item in instance)
+        elif isinstance(instance, dict):
+            return sum(self._estimate_data_bytes(item) for item in instance.values())
+        else:
+            return sys.getsizeof(instance)

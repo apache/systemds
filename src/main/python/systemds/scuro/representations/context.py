@@ -49,9 +49,18 @@ class Context(Representation):
         for parameter in list(self.parameters.keys()):
             if self.is_ts_rep:
                 if parameter == "agg_params":
-                    current_params[parameter] = (
-                        self.aggregation_function.get_current_parameters()
-                    )
+                    for (
+                        agg_param,
+                        agg_value,
+                    ) in self.aggregation_function.get_current_parameters().items():
+                        if isinstance(agg_value, dict):
+                            for (
+                                key,
+                                value,
+                            ) in agg_value.get_current_parameters().items():
+                                current_params[f"agg_params_{agg_param}_{key}"] = value
+                        else:
+                            current_params[f"agg_params_{agg_param}"] = agg_value
                     continue
             current_params[parameter] = getattr(self, parameter)
         return current_params

@@ -26,6 +26,7 @@ import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.ooc.TeeOOCInstruction;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.ooc.memory.InMemoryQueueCallback;
 import org.apache.sysds.runtime.ooc.stats.OOCEventLog;
 import org.apache.sysds.utils.Statistics;
 
@@ -130,6 +131,10 @@ public class OOCCacheManager {
 		getCache().forget(key);
 	}
 
+	public static void forget(BlockKey key) {
+		getCache().forget(key);
+	}
+
 	/**
 	 * Store a block in the OOC cache (serialize once)
 	 */
@@ -195,6 +200,15 @@ public class OOCCacheManager {
 		return getCache().request(key).thenApply(e -> toCallback(e, key, null));
 	}
 
+	public static OOCStream.QueueCallback<IndexedMatrixValue> tryRequestBlock(long streamId, long blockId) {
+		return tryRequestBlock(new BlockKey(streamId, (int) blockId));
+	}
+
+	public static OOCStream.QueueCallback<IndexedMatrixValue> tryRequestBlock(BlockKey key) {
+		BlockEntry entry = getCache().tryRequest(key);
+		return entry == null ? null : toCallback(entry, key, null);
+	}
+
 	public static CompletableFuture<List<OOCStream.QueueCallback<IndexedMatrixValue>>> requestManyBlocks(List<BlockKey> keys) {
 		return getCache().request(keys).thenApply(
 			l -> {
@@ -243,6 +257,10 @@ public class OOCCacheManager {
 
 	public static boolean canClaimMemory() {
 		return getCache().isWithinLimits() && OOCInstruction.getComputeInFlight() <= OOCInstruction.getComputeBackpressureThreshold();
+	}
+
+	public static OOCCacheScheduler.HandoverHandle handover(BlockKey key, InMemoryQueueCallback callback) {
+		return getCache().handover(key, callback);
 	}
 
 	private static void pin(BlockEntry entry) {

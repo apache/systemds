@@ -23,6 +23,9 @@ import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.runtime.instructions.ooc.OOCStream;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
+import org.apache.sysds.runtime.ooc.memory.InMemoryQueueCallback;
 import org.apache.sysds.runtime.ooc.stats.OOCEventLog;
 import org.apache.sysds.utils.Statistics;
 import scala.Tuple2;
@@ -49,6 +52,7 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 	private final HashMap<BlockKey, BlockEntry> _evictionCache;
 	private final DeferredReadQueue _deferredReadRequests;
 	private final Deque<DeferredReadRequest> _processingReadRequests;
+	private final Deque<PendingHandover> _pendingHandovers;
 	private final HashMap<BlockKey, BlockReadState> _blockReads;
 	private volatile long _hardLimit;
 	private long _evictionLimit;
@@ -74,6 +78,7 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 		this._evictionCache = new  HashMap<>();
 		this._deferredReadRequests = new DeferredReadQueue();
 		this._processingReadRequests = new ArrayDeque<>();
+		this._pendingHandovers = new ArrayDeque<>();
 		this._blockReads = new HashMap<>();
 		this._hardLimit = hardLimit;
 		this._evictionLimit = evictionLimit;
@@ -283,6 +288,25 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 	}
 
 	@Override
+	public HandoverHandle handover(BlockKey key, InMemoryQueueCallback callback) {
+		if(!this._running)
+			throw new IllegalStateException("Cache scheduler has been shut down.");
+		PendingHandover handover = new PendingHandover(key, callback);
+		boolean immediateCommit = false;
+		synchronized(this) {
+			if(canAcceptHandoverLocked(callback.getManagedBytes()))
+				immediateCommit = true;
+			else
+				_pendingHandovers.addLast(handover);
+		}
+		if(immediateCommit) {
+			if(commitHandover(handover))
+				onCacheSizeChanged(true);
+		}
+		return handover;
+	}
+
+	@Override
 	public void putSourceBacked(BlockKey key, Object data, long size, OOCIOHandler.SourceBlockDescriptor descriptor) {
 		put(key, data, size, false, descriptor);
 	}
@@ -487,6 +511,14 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 		_cache.clear();
 		_evictionCache.clear();
 		_processingReadRequests.clear();
+		while(!_pendingHandovers.isEmpty()) {
+			PendingHandover pending = _pendingHandovers.pollFirst();
+			if(pending == null)
+				continue;
+			OOCStream.QueueCallback<IndexedMatrixValue> callback = pending.reclaim();
+			if(callback != null)
+				callback.close();
+		}
 		_deferredReadRequests.clear();
 		_deferredReadCountHint = 0;
 		_blockReads.clear();
@@ -555,6 +587,9 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 			onCacheSizeIncremented();
 		else
 			while(onCacheSizeDecremented()) {}
+		while(processPendingHandovers()) {
+			onCacheSizeIncremented();
+		}
 		if(DMLScript.OOC_LOG_EVENTS)
 			OOCEventLog.onCacheSizeChangedEvent(_callerId, System.nanoTime(), _cacheSize, _bytesUpForEviction,
 				_pinnedBytes, _readingReservedBytes);
@@ -719,6 +754,32 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 
 	private long getEvictionPressure() {
 		return _cacheSize + _readBuffer - _bytesUpForEviction;
+	}
+
+	private boolean processPendingHandovers() {
+		List<PendingHandover> committed = new ArrayList<>();
+		synchronized(this) {
+			while(!_pendingHandovers.isEmpty()) {
+				PendingHandover pending = _pendingHandovers.peekFirst();
+				if(pending == null)
+					break;
+				if(pending.isCancelled()) {
+					_pendingHandovers.pollFirst();
+					continue;
+				}
+				long bytes = pending.getManagedBytes();
+				if(!canAcceptHandoverLocked(bytes))
+					break;
+				_pendingHandovers.pollFirst();
+				committed.add(pending);
+			}
+		}
+		boolean progress = false;
+		for(PendingHandover pending : committed) {
+			if(commitHandover(pending))
+				progress = true;
+		}
+		return progress;
 	}
 
 	private boolean onCacheSizeDecremented() {
@@ -1018,6 +1079,34 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 		state.waiters.add(new DeferredReadWaiter(request, index));
 	}
 
+	private boolean commitHandover(PendingHandover pending) {
+		InMemoryQueueCallback callback = pending.takeForCommit();
+		if(callback == null)
+			return false;
+		try {
+			IndexedMatrixValue value = callback.takeManagedResultForHandover();
+			long size = callback.getManagedBytes();
+			synchronized(this) {
+				BlockEntry entry = new BlockEntry(pending.getKey(), size, value);
+				_cache.put(pending.getKey(), entry);
+				_cacheSize += size;
+			}
+			callback.releaseManagedMemory();
+			callback.close();
+			pending.markCommitted();
+			return true;
+		}
+		catch(Throwable t) {
+			pending.markCancelled();
+			callback.close();
+			throw t;
+		}
+	}
+
+	private boolean canAcceptHandoverLocked(long bytes) {
+		return bytes >= 0 && _cacheSize + bytes <= _hardLimit;
+	}
+
 	private static class BlockReadState {
 		private double priority;
 		private final List<DeferredReadWaiter> waiters;
@@ -1035,6 +1124,78 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 		private DeferredReadWaiter(DeferredReadRequest request, int index) {
 			this.request = request;
 			this.index = index;
+		}
+	}
+
+	private static class PendingHandover implements HandoverHandle {
+		private final BlockKey _key;
+		private final CompletableFuture<Boolean> _completionFuture;
+		private InMemoryQueueCallback _callback;
+		private boolean _committed;
+		private boolean _cancelled;
+		private boolean _committing;
+
+		private PendingHandover(BlockKey key, InMemoryQueueCallback callback) {
+			_key = key;
+			_completionFuture = new CompletableFuture<>();
+			_callback = callback;
+		}
+
+		@Override
+		public synchronized BlockKey getKey() {
+			return _key;
+		}
+
+		@Override
+		public synchronized boolean isCommitted() {
+			return _committed;
+		}
+
+		@Override
+		public synchronized CompletableFuture<Boolean> getCompletionFuture() {
+			return _completionFuture;
+		}
+
+		@Override
+		public synchronized OOCStream.QueueCallback<IndexedMatrixValue> reclaim() {
+			if(_committed || _committing)
+				return null;
+			_cancelled = true;
+			_completionFuture.complete(false);
+			OOCStream.QueueCallback<IndexedMatrixValue> callback = _callback;
+			_callback = null;
+			return callback;
+		}
+
+		private synchronized long getManagedBytes() {
+			return _callback == null ? 0 : _callback.getManagedBytes();
+		}
+
+		private synchronized boolean isCancelled() {
+			return _cancelled;
+		}
+
+		private synchronized InMemoryQueueCallback takeForCommit() {
+			if(_committed || _cancelled || _committing)
+				return null;
+			_committing = true;
+			InMemoryQueueCallback callback = _callback;
+			_callback = null;
+			return callback;
+		}
+
+		private synchronized void markCommitted() {
+			_committing = false;
+			_committed = true;
+			_completionFuture.complete(true);
+		}
+
+		private synchronized void markCancelled() {
+			if(_committed || _cancelled)
+				return;
+			_committing = false;
+			_cancelled = true;
+			_completionFuture.complete(false);
 		}
 	}
 }

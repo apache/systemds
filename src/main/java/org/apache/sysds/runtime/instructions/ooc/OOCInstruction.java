@@ -672,8 +672,7 @@ public abstract class OOCInstruction extends Instruction {
 					List<OOCStream.QueueCallback<IndexedMatrixValue>> outList = new ArrayList<>(r.size());
 					for(int j = 0; j < r.size(); j++) {
 						if(explicitCaching[j]) {
-							// Early forget item from cache
-							outList.add(new OOCStream.SimpleQueueCallback<>(r.get(j).get(), null));
+							outList.add(r.get(j).keepOpen());
 						}
 						else {
 							outList.add(r.get(j).keepOpen());

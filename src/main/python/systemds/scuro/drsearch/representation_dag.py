@@ -74,7 +74,8 @@ class RepresentationNode:
 @dataclass
 class RepresentationDag:
 
-    def __init__(self, nodes: List[Any], root_node_id):
+    def __init__(self, nodes: List[Any], root_node_id, dag_id: int = None):
+        self.dag_id = dag_id
         self.root_node_id = root_node_id
         self.nodes = self.filter_connected_nodes(nodes)
 
@@ -399,6 +400,7 @@ class RepresentationDAGBuilder:
     def __init__(self):
         self.nodes = []
         self.node_counter = 0
+        self.dag_counter = 0
 
     def create_leaf_node(
         self, modality_id: str, representation_index: int = -1, operation=None
@@ -431,10 +433,13 @@ class RepresentationDAGBuilder:
         self.nodes.append(node)
         return node_id
 
-    def build(self, root_node_id: str) -> RepresentationDag:
+    def build(self, root_node_id: str, dag_id: int = None) -> RepresentationDag:
         dag = RepresentationDag(
-            nodes=copy.deepcopy(self.nodes), root_node_id=root_node_id
+            nodes=copy.deepcopy(self.nodes),
+            root_node_id=root_node_id,
+            dag_id=dag_id if dag_id is not None else self.dag_counter + 1,
         )
+        self.dag_counter += 1
         if not dag.validate():
             raise ValueError("Invalid DAG construction")
         return dag
@@ -524,6 +529,7 @@ class CSEAwareDAGBuilder:
         self.signature_to_node: Dict[Hashable, str] = {}
         self.node_to_signature: Dict[str, Hashable] = {}
         self.node_counter = 0
+        self.dag_counter = 0
 
     def _compute_node_signature(
         self, operation: Any, inputs: List[str], parameters: Dict[str, Any] = None
@@ -602,8 +608,13 @@ class CSEAwareDAGBuilder:
             operation=operation, inputs=inputs, parameters=parameters, is_leaf=False
         )
 
-    def build(self, root_node_id: str) -> RepresentationDag:
-        dag = RepresentationDag(nodes=self.global_nodes, root_node_id=root_node_id)
+    def build(self, root_node_id: str, dag_id: int = None) -> RepresentationDag:
+        dag = RepresentationDag(
+            nodes=self.global_nodes,
+            root_node_id=root_node_id,
+            dag_id=dag_id if dag_id is not None else self.dag_counter + 1,
+        )
+        self.dag_counter += 1
         if not dag.validate():
             raise ValueError("Invalid DAG construction")
         return dag

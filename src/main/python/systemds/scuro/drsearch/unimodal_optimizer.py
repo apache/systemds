@@ -62,7 +62,9 @@ class UnimodalOptimizer:
         checkpoint_every: Optional[int] = 1,
         resume: bool = False,
         max_num_workers: int = -1,
+        enable_checkpointing: bool = True,
     ):
+        self.enable_checkpointing = enable_checkpointing
         self.modalities = modalities
         self.tasks = tasks
         self.modality_ids = [modality.modality_id for modality in modalities]
@@ -295,7 +297,9 @@ class UnimodalOptimizer:
                 )
 
                 task_root_dag = RepresentationDag(
-                    nodes=[*dag.nodes, task_node], root_node_id=task_node_id
+                    nodes=[*dag.nodes, task_node],
+                    root_node_id=task_node_id,
+                    dag_id=dag.dag_id,
                 )
                 expanded_dags.append(task_root_dag)
         return expanded_dags
@@ -329,25 +333,28 @@ class UnimodalOptimizer:
             )
 
         dags = self.add_aggregation_operator(self.builders[modality.modality_id], dags)
-        dags = pushdown_aggregation(dags)
+        dags_with_pushdown = pushdown_aggregation(dags)
 
         if skip_remaining > 0:
             dags = dags[skip_remaining:]
 
-        expanded_dags = self._expand_dags_with_task_roots(dags)
+        expanded_dags_with_task_roots = self._expand_dags_with_task_roots(
+            dags_with_pushdown
+        )
 
         node_executor = NodeExecutor(
-            expanded_dags,
+            expanded_dags_with_task_roots,
             [modality],
             self.tasks,
             self._checkpoint_manager,
             self.max_num_workers,
             self.result_path,
+            enable_checkpointing=self.enable_checkpointing,
         )
         task_results = node_executor.run()
 
         for task_result in task_results:
-            local_results.add_task_result(task_result)
+            local_results.add_task_result(task_result, dags)
 
         if self.save_all_results:
             timestr = time.strftime("%Y%m%d-%H%M%S")
@@ -515,7 +522,7 @@ class UnimodalOptimizer:
                         [dag.root_node_id],
                         agg_op.get_current_parameters(),
                     )
-                    aggregated_dags.append(builder.build(agg_node_id))
+                    aggregated_dags.append(builder.build(agg_node_id, dag.dag_id))
                 else:
                     aggregated_dags.append(dag)
             new_dags = aggregated_dags
@@ -596,10 +603,12 @@ class UnimodalResults:
             self.results[modality] = {task_name: [] for task_name in self.task_names}
             self.cache[modality] = {task_name: [] for task_name in self.task_names}
 
-    def add_task_result(self, task_result: ResultEntry):
+    def add_task_result(self, task_result: ResultEntry, dags: List[RepresentationDag]):
+        dag_id = task_result.dag.dag_id
         task_name = self.task_names[
             task_result.dag.nodes[-1].parameters.get("_task_idx", 0)
         ]
+        task_result.dag = get_dag_by_id(dags, dag_id)
         self.results[task_result.dag.nodes[0].modality_id][task_name].append(
             task_result
         )
@@ -716,3 +725,10 @@ class UnimodalResults:
             ] = cache
 
         return results, cache
+
+
+def get_dag_by_id(dags: List[RepresentationDag], dag_id: int) -> RepresentationDag:
+    for dag in dags:
+        if dag.dag_id == dag_id:
+            return dag
+    return None

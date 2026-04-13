@@ -271,7 +271,9 @@ class NodeExecutor:
         checkpoint_manager: Optional[CheckpointManager] = None,
         max_num_workers: int = -1,
         result_path: Optional[str] = None,
+        enable_checkpointing: bool = True,
     ):
+        self.enable_checkpointing = enable_checkpointing
         available_total_cpu = (
             float(psutil.virtual_memory().available)
             - float(psutil.virtual_memory().available) * 0.30
@@ -393,16 +395,17 @@ class NodeExecutor:
                         task_results[node_id].test_score = result["scores"][
                             2
                         ].average_scores
-                        self.checkpoint_manager.increment(node_id)
-                        self.checkpoint_manager.checkpoint_if_due(task_results)
-                        self._checkpoint_memory_usage(
-                            node_id,
-                            peak_bytes,
-                            gpu_peak_bytes,
-                            "task",
-                            memory_usage_data,
-                            None,
-                        )
+                        if self.enable_checkpointing:
+                            self.checkpoint_manager.increment(node_id)
+                            self.checkpoint_manager.checkpoint_if_due(task_results)
+                            self._checkpoint_memory_usage(
+                                node_id,
+                                peak_bytes,
+                                gpu_peak_bytes,
+                                "task",
+                                memory_usage_data,
+                                None,
+                            )
 
                         parent_node_id = self.scheduler.get_valid_parent(node_id)
                         if parent_node_id is not None:
@@ -430,14 +433,15 @@ class NodeExecutor:
                             self.scheduler.update_node_stats_and_reestimate_descendants(
                                 node_id, actual_stats
                             )
-                        self._checkpoint_memory_usage(
-                            node_id,
-                            peak_bytes,
-                            gpu_peak_bytes,
-                            result["operation_name"],
-                            memory_usage_data,
-                            transformed_modality.data,
-                        )
+                        if self.enable_checkpointing:
+                            self._checkpoint_memory_usage(
+                                node_id,
+                                peak_bytes,
+                                gpu_peak_bytes,
+                                result["operation_name"],
+                                memory_usage_data,
+                                transformed_modality.data,
+                            )
                         before_bytes = self.result_cache.get_memory_total_memory_usage()
                         self._manage_result_cache(node_id, transformed_modality)
                         after_bytes = self.result_cache.get_memory_total_memory_usage()

@@ -167,11 +167,18 @@ class WindowAggregation(Window):
         in_numel = effective_seq_len * self._rest_numel(in_shape)
         output_bytes = self.estimate_output_memory_bytes(input_stats)
         one_instance_bytes = in_numel * np.dtype(self.data_type).itemsize
-        cpu_peak = (
-            output_bytes * 2
-            + one_instance_bytes * input_stats.num_instances
-            + one_instance_bytes * self.window_size
-            + 8 * 1024 * 1024
+        input_bytes = one_instance_bytes * input_stats.num_instances
+
+        output_transient = output_bytes
+
+        pad_overhead = 0
+        if getattr(self, "pad", False):
+            out_seq_len = math.ceil(in_shape[0] / self.window_size)
+            pad_overhead = int(input_stats.num_instances * out_seq_len * 8)
+
+        cpu_peak = int(
+            (input_bytes + output_bytes + output_transient + pad_overhead) * 1.15
+            + 16 * 1024 * 1024
         )
         return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}
 
@@ -298,12 +305,12 @@ class StaticWindow(Window):
             return {"cpu_peak_bytes": 0, "gpu_peak_bytes": 0}
         effective_seq_len = in_shape[0]
         in_numel = effective_seq_len * self._rest_numel(in_shape)
-        output_bytes = self.estimate_output_memory_bytes(input_stats)
         one_instance_bytes = in_numel * np.dtype(self.data_type).itemsize
-        cpu_peak = (
-            output_bytes * 2
-            + one_instance_bytes * input_stats.num_instances
-            + 8 * 1024 * 1024
+        input_bytes = one_instance_bytes * input_stats.num_instances
+        output_bytes = self.estimate_output_memory_bytes(input_stats)
+        output_transient = output_bytes
+        cpu_peak = int(
+            (input_bytes + output_bytes + output_transient) * 1.12 + 12 * 1024 * 1024
         )
         return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}
 

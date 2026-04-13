@@ -20,16 +20,19 @@
 # -------------------------------------------------------------
 from typing import Dict, List, Tuple, Any, Optional
 import os
-from skopt.space import Real, Integer, Categorical
 import numpy as np
 import logging
 from dataclasses import dataclass
 import time
 import copy
 from joblib import Parallel, delayed
-from skopt import Optimizer
+import itertools
+import math
+import random
 from systemds.scuro.drsearch.representation_dag import (
     RepresentationDAGBuilder,
+    RepresentationDag,
+    RepresentationNode,
 )
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.drsearch.task import PerformanceMeasure
@@ -110,13 +113,16 @@ class HyperparameterTuner:
         tasks,
         optimization_results,
         k: int = 2,
-        n_jobs: int = -1,
+        n_jobs: int = 1,
         scoring_metric: str = "accuracy",
         maximize_metric: bool = True,
         save_results: bool = False,
         debug: bool = False,
         checkpoint_every: Optional[int] = None,
         resume: bool = True,
+        random_state: int = 42,
+        exhaustive_threshold: int = 256,
+        local_search_patience: int = 3,
     ):
         self.tasks = tasks
         self.unimodal_optimization_results = optimization_results
@@ -136,6 +142,10 @@ class HyperparameterTuner:
         self.logger = logging.getLogger(__name__)
         self.checkpoint_every = checkpoint_every
         self.resume = resume
+        self.random_state = random_state
+        self.exhaustive_threshold = max(1, exhaustive_threshold)
+        self.local_search_patience = max(1, local_search_patience)
+        self._rng = random.Random(self.random_state)
         self._checkpoint_manager = CheckpointManager(
             os.getcwd(),
             "hyperparam_checkpoint_",
@@ -209,11 +219,12 @@ class HyperparameterTuner:
         self.resume_from_checkpoint()
         for task in self.tasks:
             reps = self.k_best_representations[task.model.name]
-            skip_remaining = self._checkpoint_manager.skip_remaining_by_key.get(
-                task.model.name, 0
-            )
-            if skip_remaining >= len(reps):
-                continue
+            skip_remaining = 0
+            # skip_remaining = self._checkpoint_manager.skip_remaining_by_key.get(
+            #     task.model.name, 0
+            # )
+            # if skip_remaining >= len(reps):
+            #     continue
 
             chunk_size = self.checkpoint_every or len(reps)
             for start_idx in range(skip_remaining, len(reps), chunk_size):
@@ -258,8 +269,9 @@ class HyperparameterTuner:
                 visit_node(input_id)
             visited.add(node_id)
             if node.operation is not None:
-                if node.operation().parameters:
-                    hyperparams[node_id] = node.operation().parameters
+                params = self._get_params_for_node(node)
+                if params:
+                    hyperparams[node_id] = params
                 reps.append(node.operation)
                 node_order.append(node_id)
             if node.modality_id is not None:
@@ -267,85 +279,41 @@ class HyperparameterTuner:
 
         visit_node(root_node_id)
 
-        if not hyperparams:
-            return None
-
         start_time = time.time()
         rep_name = "-".join([rep.__name__ for rep in reps])
-
-        search_space = []
-        param_names = []
-        for op_id, op_params in hyperparams.items():
-            for param_name, param_values in op_params.items():
-                param_names.append(op_id + "-" + param_name)
-                if isinstance(param_values, list):
-                    search_space.append(
-                        Categorical(param_values, name=op_id + "-" + param_name)
-                    )
-                elif isinstance(param_values, tuple) and len(param_values) == 2:
-                    if isinstance(param_values[0], int) and isinstance(
-                        param_values[1], int
-                    ):
-                        search_space.append(
-                            Integer(
-                                param_values[0],
-                                param_values[1],
-                                name=op_id + "-" + param_name,
-                            )
-                        )
-                    else:
-                        search_space.append(
-                            Real(
-                                param_values[0],
-                                param_values[1],
-                                name=op_id + "-" + param_name,
-                            )
-                        )
-                else:
-                    search_space.append(
-                        Categorical([param_values], name=op_id + "-" + param_name)
-                    )
-
-        n_calls = max_evals if max_evals else 50
-
-        all_results = []
-
-        def evaluate_point(point):
-            params = dict(zip(param_names, point))
-            result = self.evaluate_dag_config(
+        modalities_override = (
+            self._get_cached_modalities_for_task(task, modality_ids) if mm_opt else None
+        )
+        if not hyperparams:
+            baseline = self.evaluate_dag_config(
                 dag,
-                params,
+                {},
                 node_order,
                 modality_ids,
                 task,
-                modalities_override=(
-                    self._get_cached_modalities_for_task(task, modality_ids)
-                    if mm_opt
-                    else None
-                ),
+                modalities_override=modalities_override,
             )
-            score = result[1]
-            if isinstance(score, PerformanceMeasure):
-                score = score.average_scores[self.scoring_metric]
-            if self.maximize_metric:
-                objective_value = -score
-            else:
-                objective_value = score
-            return objective_value, result
+            all_results = [baseline]
+        else:
+            n_calls = max_evals if max_evals else 50
+            param_specs = self._build_param_specs(hyperparams)
+            default_config = {}
+            for node_id, params in default_params.items():
+                for p_name, p_val in params.items():
+                    default_config[f"{node_id}-{p_name}"] = p_val
+            all_results = self._search_best_configs(
+                dag=dag,
+                task=task,
+                node_order=node_order,
+                modality_ids=modality_ids,
+                modalities_override=modalities_override,
+                param_specs=param_specs,
+                budget=n_calls,
+                initial_config=default_config,
+            )
 
-        opt = Optimizer(
-            search_space, random_state=42, n_initial_points=min(10, n_calls // 2)
-        )
-        self.n_jobs = 2
-        n_batch = min(abs(self.n_jobs), n_calls) if self.n_jobs != 0 else 1
-        for _ in range(0, n_calls, n_batch):
-            points = opt.ask(n_points=n_batch)
-            results = Parallel(
-                n_jobs=self.n_jobs, max_nbytes=None, mmap_mode=None, backend="threading"
-            )(delayed(evaluate_point)(p) for p in points)
-            objective_values = [result[0] for result in results]
-            all_results.extend(result[1] for result in results)
-            opt.tell(points, objective_values)
+        if not all_results:
+            return None
 
         def get_score(result):
             score = result[1]
@@ -359,7 +327,21 @@ class HyperparameterTuner:
             best_params, best_score = min(all_results, key=get_score)
 
         tuning_time = time.time() - start_time
+        # results = self.unimodal_optimization_results.results[self.modalities[0].modality_id][task.model.name]
 
+        # default_result = sorted(
+        #     results,
+        #     key=lambda r: r.val_score[self.scoring_metric],
+        #     reverse=True,
+        # )[0]
+        # pm = PerformanceMeasure(name=self.scoring_metric, metrics=self.scoring_metric, higher_is_better=self.maximize_metric)
+        # pm.add_scores({self.scoring_metric: default_result.val_score[self.scoring_metric]})
+        # default_params = self._get_default_params(dag)
+        # def_par ={}
+        # for k, v in default_params.items():
+        #     for k_v, v_v in v.items():
+        #         def_par[k+"-"+k_v] = v_v
+        # all_results.append((def_par, pm))
         best_result = HyperparamResult(
             representation_name=rep_name,
             best_params=best_params,
@@ -373,6 +355,312 @@ class HyperparameterTuner:
         )
 
         return best_result
+
+    def _get_params_for_node(self, node: RepresentationNode) -> Dict[str, Any]:
+        if not node.operation().parameters:
+            return None
+
+        params = copy.deepcopy(node.operation().parameters)
+        return params
+
+    def _build_param_specs(
+        self, hyperparams: Dict[str, Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        param_specs = []
+        for op_id, op_params in hyperparams.items():
+            for param_name, param_values in op_params.items():
+                full_name = op_id + "-" + param_name
+                if isinstance(param_values, list):
+                    param_type = "categorical"
+                    domain = list(param_values)
+                elif isinstance(param_values, tuple) and len(param_values) == 2:
+                    lo, hi = param_values
+                    if isinstance(lo, int) and isinstance(hi, int):
+                        param_type = "integer"
+                    else:
+                        param_type = "real"
+                    domain = (lo, hi)
+                else:
+                    param_type = "categorical"
+                    domain = [param_values]
+                param_specs.append(
+                    {"name": full_name, "type": param_type, "domain": domain}
+                )
+        return param_specs
+
+    def _config_key(self, params: Dict[str, Any]) -> Tuple[Tuple[str, Any], ...]:
+        key_items = []
+        for name, value in sorted(params.items()):
+            if isinstance(value, float):
+                value = round(value, 10)
+            key_items.append((name, value))
+        return tuple(key_items)
+
+    def _score_value(self, score: Any) -> float:
+        if isinstance(score, PerformanceMeasure):
+            return score.average_scores.get(self.scoring_metric, np.nan)
+        return score
+
+    def _is_better(self, candidate_score: float, best_score: float) -> bool:
+        if np.isnan(candidate_score):
+            return False
+        if np.isnan(best_score):
+            return True
+        return (
+            candidate_score > best_score
+            if self.maximize_metric
+            else candidate_score < best_score
+        )
+
+    def _sample_random_config(
+        self, param_specs: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        config = {}
+        for spec in param_specs:
+            name = spec["name"]
+            domain = spec["domain"]
+            if spec["type"] == "categorical":
+                config[name] = self._rng.choice(domain)
+            elif spec["type"] == "integer":
+                config[name] = self._rng.randint(int(domain[0]), int(domain[1]))
+            else:
+                config[name] = self._rng.uniform(float(domain[0]), float(domain[1]))
+        return config
+
+    def _estimate_discrete_search_size(
+        self, param_specs: List[Dict[str, Any]]
+    ) -> Optional[int]:
+        size = 1
+        for spec in param_specs:
+            if spec["type"] == "real":
+                return None
+            if spec["type"] == "integer":
+                size *= max(0, int(spec["domain"][1]) - int(spec["domain"][0]) + 1)
+            else:
+                size *= len(spec["domain"])
+            if size > self.exhaustive_threshold:
+                return size
+        return size
+
+    def _enumerate_configs(
+        self, param_specs: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        domains = []
+        names = []
+        for spec in param_specs:
+            names.append(spec["name"])
+            if spec["type"] == "integer":
+                lo, hi = int(spec["domain"][0]), int(spec["domain"][1])
+                domains.append(list(range(lo, hi + 1)))
+            else:
+                domains.append(list(spec["domain"]))
+        return [dict(zip(names, values)) for values in itertools.product(*domains)]
+
+    def _generate_neighbor_config(
+        self,
+        base_config: Dict[str, Any],
+        param_specs: List[Dict[str, Any]],
+        step_scale: float,
+    ) -> Dict[str, Any]:
+        candidate = dict(base_config)
+        if not param_specs:
+            return candidate
+
+        n_mutations = 1 if len(param_specs) == 1 else self._rng.randint(1, 2)
+        mutated_specs = self._rng.sample(
+            param_specs, k=min(n_mutations, len(param_specs))
+        )
+        for spec in mutated_specs:
+            name = spec["name"]
+            current = candidate[name]
+            if spec["type"] == "categorical":
+                values = [value for value in spec["domain"] if value != current]
+                if values:
+                    candidate[name] = self._rng.choice(values)
+            elif spec["type"] == "integer":
+                lo, hi = int(spec["domain"][0]), int(spec["domain"][1])
+                width = max(1, hi - lo)
+                step = max(1, int(math.ceil(width * step_scale)))
+                delta = self._rng.choice([-step, step])
+                candidate[name] = max(lo, min(hi, int(current) + delta))
+            else:
+                lo, hi = float(spec["domain"][0]), float(spec["domain"][1])
+                span = max(1e-9, hi - lo)
+                delta = self._rng.uniform(-span * step_scale, span * step_scale)
+                candidate[name] = max(lo, min(hi, float(current) + delta))
+        return candidate
+
+    def _evaluate_configs(
+        self,
+        dag,
+        task,
+        node_order,
+        modality_ids,
+        modalities_override,
+        candidate_configs: List[Dict[str, Any]],
+        seen_configs: Dict[Tuple[Tuple[str, Any], ...], Tuple[Dict[str, Any], Any]],
+    ) -> List[Tuple[Dict[str, Any], Any]]:
+        pending_configs = []
+        for config in candidate_configs:
+            key = self._config_key(config)
+            if key not in seen_configs:
+                pending_configs.append(config)
+
+        if pending_configs:
+            n_jobs = self.n_jobs if self.n_jobs != 0 else 1
+            evaluated = Parallel(
+                n_jobs=n_jobs, max_nbytes=None, mmap_mode=None, backend="threading"
+            )(
+                delayed(self.evaluate_dag_config)(
+                    dag,
+                    config,
+                    node_order,
+                    modality_ids,
+                    task,
+                    modalities_override=modalities_override,
+                )
+                for config in pending_configs
+            )
+            for result in evaluated:
+                seen_configs[self._config_key(result[0])] = result
+
+        return [
+            seen_configs[self._config_key(config)]
+            for config in candidate_configs
+            if self._config_key(config) in seen_configs
+        ]
+
+    def _search_best_configs(
+        self,
+        dag,
+        task,
+        node_order,
+        modality_ids,
+        modalities_override,
+        param_specs: List[Dict[str, Any]],
+        budget: int,
+        initial_config: Dict[str, Any],
+    ) -> List[Tuple[Dict[str, Any], Any]]:
+        budget = max(1, budget)
+        seen_configs: Dict[Tuple[Tuple[str, Any], ...], Tuple[Dict[str, Any], Any]] = {}
+        all_results: List[Tuple[Dict[str, Any], Any]] = []
+        best_score = np.nan
+        best_config = None
+        if initial_config is not None and budget > 0:
+            initial_results = self._evaluate_configs(
+                dag,
+                task,
+                node_order,
+                modality_ids,
+                modalities_override,
+                [initial_config],
+                seen_configs,
+            )
+            all_results.extend(initial_results)
+            if initial_results:
+                p, s = initial_results[0]
+                best_config = p
+                best_score = self._score_value(s)
+            budget -= 1
+
+        discrete_size = self._estimate_discrete_search_size(param_specs)
+        if discrete_size is not None and discrete_size <= min(
+            self.exhaustive_threshold, budget
+        ):
+            candidates = self._enumerate_configs(param_specs)
+            self._rng.shuffle(candidates)
+            candidates = candidates[:budget]
+            batch_results = self._evaluate_configs(
+                dag,
+                task,
+                node_order,
+                modality_ids,
+                modalities_override,
+                candidates,
+                seen_configs,
+            )
+            all_results.extend(batch_results)
+            return all_results
+
+        initial_budget = min(budget, max(8, len(param_specs) * 4))
+        initial_candidates = [
+            self._sample_random_config(param_specs) for _ in range(initial_budget)
+        ]
+        initial_results = self._evaluate_configs(
+            dag,
+            task,
+            node_order,
+            modality_ids,
+            modalities_override,
+            initial_candidates,
+            seen_configs,
+        )
+        all_results.extend(initial_results)
+
+        for params, score in initial_results:
+            numeric_score = self._score_value(score)
+            if self._is_better(numeric_score, best_score):
+                best_score = numeric_score
+                best_config = params
+
+        eval_count = len(seen_configs)
+        no_improvement_rounds = 0
+        step_scale = 0.5
+
+        while eval_count < budget:
+            if best_config is None:
+                candidate_batch = [self._sample_random_config(param_specs)]
+            else:
+                candidate_batch = []
+                batch_size = min(
+                    max(2, abs(self.n_jobs) if self.n_jobs != 0 else 1),
+                    budget - eval_count,
+                )
+                for _ in range(batch_size):
+                    candidate_batch.append(
+                        self._generate_neighbor_config(
+                            best_config, param_specs, step_scale
+                        )
+                    )
+
+                if budget - eval_count > 3:
+                    candidate_batch.append(self._sample_random_config(param_specs))
+
+            batch_results = self._evaluate_configs(
+                dag,
+                task,
+                node_order,
+                modality_ids,
+                modalities_override,
+                candidate_batch,
+                seen_configs,
+            )
+            if not batch_results:
+                step_scale = max(0.05, step_scale * 0.5)
+                if step_scale <= 0.05:
+                    break
+                continue
+
+            improved = False
+            for params, score in batch_results:
+                numeric_score = self._score_value(score)
+                if self._is_better(numeric_score, best_score):
+                    best_score = numeric_score
+                    best_config = params
+                    improved = True
+            all_results.extend(batch_results)
+            eval_count = len(seen_configs)
+
+            if improved:
+                no_improvement_rounds = 0
+                step_scale = min(0.5, step_scale * 1.1)
+            else:
+                no_improvement_rounds += 1
+                step_scale = max(0.05, step_scale * 0.7)
+                if no_improvement_rounds >= self.local_search_patience:
+                    break
+
+        return all_results
 
     def _get_cached_modalities_for_task(self, task, modality_ids):
         if not self.k_best_cache_by_modality:
@@ -402,12 +690,13 @@ class HyperparameterTuner:
                 else self.get_modalities_by_id(modality_ids)
             )
             modified_modality = dag_copy.execute(modalities, task)
-            score = task.run(
-                modified_modality[list(modified_modality.keys())[-1]].data
-            )[1]
+            score = task.run(modified_modality.data)[1]
 
             return params, score
         except Exception as e:
+            import traceback
+
+            traceback.print_exc()
             self.logger.error(f"Error evaluating DAG with params {params}: {e}")
             return params, np.nan
 

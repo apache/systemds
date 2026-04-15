@@ -243,6 +243,9 @@ class CLIPVisual(UnimodalRepresentation):
                 with torch.no_grad():
                     output = self.model.get_image_features(**inputs)
 
+                if hasattr(output, "pooler_output"):
+                    output = output.pooler_output
+
                 if len(output.shape) > 2:
                     output = torch.nn.functional.adaptive_avg_pool2d(output, (1, 1))
 

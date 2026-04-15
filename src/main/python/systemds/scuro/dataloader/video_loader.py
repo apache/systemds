@@ -87,9 +87,9 @@ class VideoLoader(BaseLoader):
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         num_channels = 3
 
-        self.metadata[file] = self.modality_type.create_metadata(
+        self.metadata.append(self.modality_type.create_metadata(
             self.fps, length, width, height, num_channels
-        )
+        ))
 
         frames = []
         idx = 0

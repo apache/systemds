@@ -44,9 +44,7 @@ class Concatenation(Fusion):
         if len(modalities) == 1:
             return np.asarray(
                 modalities[0].data,
-                dtype=modalities[0].metadata[list(modalities[0].metadata.keys())[0]][
-                    "data_layout"
-                ]["type"],
+                dtype=modalities[0].metadata[0]["data_layout"]["type"],
             )
 
         max_emb_size = self.get_max_embedding_size(modalities)
@@ -64,9 +62,7 @@ class Concatenation(Fusion):
                     data,
                     np.asarray(
                         other_modality,
-                        dtype=modality.metadata[list(modality.metadata.keys())[0]][
-                            "data_layout"
-                        ]["type"],
+                        dtype=modality.metadata[0]["data_layout"]["type"],
                     ),
                 ],
                 axis=-1,

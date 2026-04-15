@@ -70,13 +70,11 @@ class Alignment(ABC):
     def apply_matching(alignment, secondary_modality):
         aligned_modality = copy.deepcopy(secondary_modality)
         aligned_modality.data = [None] * len(alignment)
-        aligned_modality.metadata = {}
+        aligned_modality.metadata = [None] * len(alignment)
         
         for match in alignment:
             aligned_modality.data[match.primary] = secondary_modality.data[match.secondary]
-            
-            metadata_index = list(secondary_modality.metadata.keys())[match.secondary]
-            aligned_modality.metadata[metadata_index] = secondary_modality.metadata[metadata_index]
+            aligned_modality.metadata[match.primary] = secondary_modality.metadata[match.secondary]
             
         return aligned_modality
 

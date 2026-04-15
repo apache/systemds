@@ -77,7 +77,7 @@ class JoinedModality(Modality):
             )
 
         for i in range(start, end):
-            idx_1 = list(self.left_modality.metadata.values())[i + starting_idx][
+            idx_1 = self.left_modality.metadata[i + starting_idx][
                 self.condition.leftField
             ]
             if (
@@ -90,7 +90,7 @@ class JoinedModality(Modality):
             if self.chunk_left:
                 i = i + starting_idx
 
-            idx_2 = list(self.right_modality.metadata.values())[i][
+            idx_2 = self.right_modality.metadata[i][
                 self.condition.rightField
             ]
             self.joined_right.data.append([])
@@ -246,11 +246,11 @@ class JoinedModality(Modality):
                 self.joined_right, representation
             )
             new_right.data.extend(right_transformed.data)
-            new_right.metadata.update(right_transformed.metadata)
+            new_right.metadata.extend(right_transformed.metadata)
 
             left_transformed = self._apply_representation(left_modality, representation)
             new_left.data.extend(left_transformed.data)
-            new_left.metadata.update(left_transformed.metadata)
+            new_left.metadata.extend(left_transformed.metadata)
 
         new_left.update_metadata()
         new_right.update_metadata()

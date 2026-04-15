@@ -212,7 +212,7 @@ class ModalityType(Flag):
         return ModalitySchemas.get(self.name)
 
     def has_field(self, md, field):
-        for value in md.values():
+        for value in md:
             if field in value:
                 return True
             else:
@@ -221,7 +221,7 @@ class ModalityType(Flag):
 
     def get_field_for_instances(self, md, field):
         data = []
-        for items in md.values():
+        for items in md:
             data.append(self.get_field(items, field))
         return data
 
@@ -242,8 +242,8 @@ class ModalityType(Flag):
         return md
 
     def add_field_for_instances(self, md, field, data):
-        for key, value in zip(md.keys(), data):
-            md[key].update({field: value})
+        for i, value in enumerate(data):
+            md[i].update({field: value})
 
         return md
 

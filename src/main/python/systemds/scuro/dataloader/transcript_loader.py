@@ -56,6 +56,6 @@ class TranscriptLoader(BaseLoader):
             md["timestamp_end"] = seg.end
             md["text"] = seg.text
             
-            self.metadata[f"{file}_{i}"] = md
+            self.metadata.append(md)
             
             self.data.append(seg.text)

@@ -302,6 +302,7 @@ public class OptimizerUtils
 	 */
 	public static boolean ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = true;
 
+	public static boolean ALLOW_JOIN_REORDERING_REWRITE = false;
 	/**
 	 * Enable prefetch and broadcast. Prefetch asynchronously calls acquireReadAndRelease() to trigger remote
 	 * operations, which would otherwise make the next instruction wait till completion. Broadcast allows
@@ -333,6 +334,11 @@ public class OptimizerUtils
 	 */
 
 	public static boolean AUTO_GPU_CACHE_EVICTION = true;
+
+	/**
+	 * Boolean specifying if relational algebra rewrites are allowed (e.g. Selection Pushdowns).
+	 */
+	public static boolean ALLOW_RA_REWRITES = false;
 
 	//////////////////////
 	// Optimizer levels //

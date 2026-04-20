@@ -63,6 +63,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
+import org.apache.sysds.runtime.ooc.stream.SourceOOCStreamable;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -469,10 +470,11 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	public boolean hasBroadcastHandle() {
 		return  _bcHandle != null && _bcHandle.hasBackReference();
 	}
-	
+
 	public synchronized OOCStream<IndexedMatrixValue> getStreamHandle() {
 		if( !hasStreamHandle() ) {
 			final SubscribableTaskQueue<IndexedMatrixValue> _mStream = new SubscribableTaskQueue<>();
+			_mStream.setData(this);
 			DataCharacteristics dc = getDataCharacteristics();
 			MatrixBlock src = (MatrixBlock)acquireReadAndRelease();
 			_streamHandle = _mStream;
@@ -489,13 +491,13 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 		}
 		
 		OOCStream<IndexedMatrixValue> stream = _streamHandle.getReadStream();
-		if (!stream.hasStreamCache())
+		if(!stream.hasStreamCache())
 			_streamHandle = null; // To ensure read once
 		return stream;
 	}
 
 	public OOCStreamable<IndexedMatrixValue> getStreamable() {
-		return _streamHandle;
+		return _streamHandle == null ? new SourceOOCStreamable(this) : _streamHandle;
 	}
 	
 	/**
@@ -539,6 +541,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	}
 
 	public synchronized void setStreamHandle(OOCStreamable<IndexedMatrixValue> q) {
+		q.setData(this);
 		_streamHandle = q;
 	}
 	

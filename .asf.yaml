@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 # Document for .asf.yml file is available at
-# https://cwiki.apache.org/confluence/display/INFRA/Git+-+.asf.yaml+features
+# https://github.com/apache/infrastructure-asfyaml/blob/main/README.md
 
 github:
   description: "An open source ML system for the end-to-end data science lifecycle"

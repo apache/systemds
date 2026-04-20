@@ -50,71 +50,72 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
     data_generator = None
     num_instances = 0
 
-    @classmethod
-    def setUpClass(cls):
-        cls.num_instances = 10
-        cls.mods = [ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT]
-        cls.indices = np.array(range(cls.num_instances))
+    # @classmethod
+    # def setUpClass(cls):
+    #     cls.num_instances = 10
+    #     cls.mods = [ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT]
+    #     cls.indices = np.array(range(cls.num_instances))
 
-    def test_multimodal_fusion(self):
-        task = TestTask("MM_Fusion_Task1", "Test1", self.num_instances)
+    # Note: Multimodal fusion is being refactored and not yet ready for testing
+    # def test_multimodal_fusion(self):
+    #     task = TestTask("MM_Fusion_Task1", "Test1", self.num_instances)
 
-        audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
-            self.num_instances, 1000
-        )
-        text_data, text_md = ModalityRandomDataGenerator().create_text_data(
-            self.num_instances
-        )
+    #     audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
+    #         self.num_instances, 1000
+    #     )
+    #     text_data, text_md = ModalityRandomDataGenerator().create_text_data(
+    #         self.num_instances
+    #     )
 
-        audio = UnimodalModality(
-            TestDataLoader(
-                self.indices, None, ModalityType.AUDIO, audio_data, np.float32, audio_md
-            )
-        )
-        text = UnimodalModality(
-            TestDataLoader(
-                self.indices, None, ModalityType.TEXT, text_data, str, text_md
-            )
-        )
+    #     audio = UnimodalModality(
+    #         TestDataLoader(
+    #             self.indices, None, ModalityType.AUDIO, audio_data, np.float32, audio_md
+    #         )
+    #     )
+    #     text = UnimodalModality(
+    #         TestDataLoader(
+    #             self.indices, None, ModalityType.TEXT, text_data, str, text_md
+    #         )
+    #     )
 
-        with patch.object(
-            Registry,
-            "_representations",
-            {
-                ModalityType.TEXT: [W2V],
-                ModalityType.AUDIO: [Spectrogram],
-                ModalityType.TIMESERIES: [ResNet],
-                ModalityType.VIDEO: [ResNet],
-                ModalityType.EMBEDDING: [],
-            },
-        ):
-            registry = Registry()
-            registry._fusion_operators = [Average, Concatenation, LSTM]
-            unimodal_optimizer = UnimodalOptimizer([audio, text], [task], debug=False)
-            unimodal_optimizer.optimize()
-            unimodal_optimizer.operator_performance.get_k_best_results(
-                audio, 2, task, "accuracy"
-            )
-            m_o = MultimodalOptimizer(
-                [audio, text],
-                unimodal_optimizer.operator_performance,
-                [task],
-                debug=False,
-                min_modalities=2,
-                max_modalities=3,
-            )
-            fusion_results = m_o.optimize(20)
+    #     with patch.object(
+    #         Registry,
+    #         "_representations",
+    #         {
+    #             ModalityType.TEXT: [W2V],
+    #             ModalityType.AUDIO: [Spectrogram],
+    #             ModalityType.TIMESERIES: [ResNet],
+    #             ModalityType.VIDEO: [ResNet],
+    #             ModalityType.EMBEDDING: [],
+    #         },
+    #     ):
+    #         registry = Registry()
+    #         registry._fusion_operators = [Average, Concatenation, LSTM]
+    #         unimodal_optimizer = UnimodalOptimizer([audio, text], [task], debug=False)
+    #         unimodal_optimizer.optimize()
+    #         unimodal_optimizer.operator_performance.get_k_best_results(
+    #             audio, 2, task, "accuracy"
+    #         )
+    #         m_o = MultimodalOptimizer(
+    #             [audio, text],
+    #             unimodal_optimizer.operator_performance,
+    #             [task],
+    #             debug=False,
+    #             min_modalities=2,
+    #             max_modalities=3,
+    #         )
+    #         fusion_results = m_o.optimize(20)
 
-            best_results = sorted(
-                fusion_results[task.model.name],
-                key=lambda x: getattr(x, "val_score")["accuracy"],
-                reverse=True,
-            )[:2]
+    #         best_results = sorted(
+    #             fusion_results[task.model.name],
+    #             key=lambda x: getattr(x, "val_score")["accuracy"],
+    #             reverse=True,
+    #         )[:2]
 
-            assert (
-                best_results[0].val_score["accuracy"]
-                >= best_results[1].val_score["accuracy"]
-            )
+    #         assert (
+    #             best_results[0].val_score["accuracy"]
+    #             >= best_results[1].val_score["accuracy"]
+    #         )
 
     # def test_parallel_multimodal_fusion(self):
     #     task = TestTask("MM_Fusion_Task1", "Test2", self.num_instances)

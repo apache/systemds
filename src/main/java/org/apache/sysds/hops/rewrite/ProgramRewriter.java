@@ -77,6 +77,7 @@ public class ProgramRewriter{
 			//add static HOP DAG rewrite rules
 			_dagRuleSet.add(     new RewriteRemoveReadAfterWrite()               ); //dependency: before blocksize
 			_dagRuleSet.add(     new RewriteBlockSizeAndReblock()                );
+	
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
 				_dagRuleSet.add( new RewriteRemoveUnnecessaryCasts()             );
 			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )
@@ -93,7 +94,6 @@ public class ProgramRewriter{
 			if( OptimizerUtils.ALLOW_QUANTIZE_COMPRESS_REWRITE )
 				_dagRuleSet.add( new RewriteQuantizationFusedCompression()  	 );
 
-
 			//add statement block rewrite rules
 			if( OptimizerUtils.ALLOW_BRANCH_REMOVAL )
 				_sbRuleSet.add(  new RewriteRemoveUnnecessaryBranches()          ); //dependency: constant folding
@@ -103,23 +103,27 @@ public class ProgramRewriter{
 				_sbRuleSet.add(  new RewriteMergeBlockSequence()                 ); //dependency: remove branches, remove for-loops
 			if(OptimizerUtils.ALLOW_COMPRESSION_REWRITE)
 				_sbRuleSet.add(      new RewriteCompressedReblock()              ); // Compression Rewrite
- 			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS )
- 				_sbRuleSet.add(  new RewriteSplitDagUnknownCSVRead()             ); //dependency: reblock, merge blocks
- 			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS && 
- 				ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS) )
- 				_sbRuleSet.add(  new RewriteSplitDagDataDependentOperators()     ); //dependency: merge blocks
- 			if( OptimizerUtils.ALLOW_AUTO_VECTORIZATION )
+			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS )
+				_sbRuleSet.add(  new RewriteSplitDagUnknownCSVRead()             ); //dependency: reblock, merge blocks
+			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS && 
+				ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS) )
+				_sbRuleSet.add(  new RewriteSplitDagDataDependentOperators()     ); //dependency: merge blocks
+			if( OptimizerUtils.ALLOW_AUTO_VECTORIZATION )
 				_sbRuleSet.add(  new RewriteForLoopVectorization()               ); //dependency: reblock (reblockop)
- 			_sbRuleSet.add( new RewriteInjectSparkLoopCheckpointing(true)        ); //dependency: reblock (blocksizes)
- 			if( OptimizerUtils.ALLOW_CODE_MOTION )
- 				_sbRuleSet.add(  new RewriteHoistLoopInvariantOperations()       ); //dependency: vectorize, but before inplace
- 			if( OptimizerUtils.ALLOW_LOOP_UPDATE_IN_PLACE )
- 				_sbRuleSet.add(  new RewriteMarkLoopVariablesUpdateInPlace()     );
- 			if( LineageCacheConfig.getCompAssRW() )
- 				_sbRuleSet.add(  new MarkForLineageReuse()                       );
- 			_sbRuleSet.add(      new RewriteRemoveTransformEncodeMeta()          );
- 			_dagRuleSet.add( new RewriteNonScalarPrint()                         );
- 		}
+			_sbRuleSet.add( new RewriteInjectSparkLoopCheckpointing(true)        ); //dependency: reblock (blocksizes)
+			if( OptimizerUtils.ALLOW_CODE_MOTION )
+				_sbRuleSet.add(  new RewriteHoistLoopInvariantOperations()       ); //dependency: vectorize, but before inplace
+			if( OptimizerUtils.ALLOW_LOOP_UPDATE_IN_PLACE )
+				_sbRuleSet.add(  new RewriteMarkLoopVariablesUpdateInPlace()     );
+			if( LineageCacheConfig.getCompAssRW() )
+				_sbRuleSet.add(  new MarkForLineageReuse()                       );
+			if( OptimizerUtils.ALLOW_RA_REWRITES )
+				_sbRuleSet.add(  new RewriteRaPushdown()                         );
+			_sbRuleSet.add(      new RewriteRemoveTransformEncodeMeta()          );
+			_dagRuleSet.add( new RewriteNonScalarPrint()                         );
+			if( OptimizerUtils.ALLOW_JOIN_REORDERING_REWRITE )
+				_sbRuleSet.add( new RewriteJoinReordering() );
+		}
 		
 		// DYNAMIC REWRITES (which do require size information)
 		if( dynamicRewrites )
@@ -152,7 +156,6 @@ public class ProgramRewriter{
 			_dagRuleSet.add( new RewriteConstantFolding()                    ); //dependency: cse
 		_sbRuleSet.add(  new RewriteRemoveEmptyBasicBlocks()                 );
 		_sbRuleSet.add(  new RewriteRemoveEmptyForLoops()                    );
-		_sbRuleSet.add(      new RewriteInjectOOCTee()                       );
 	}
 	
 	/**

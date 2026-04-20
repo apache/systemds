@@ -20,7 +20,7 @@
 # -------------------------------------------------------------
 import os
 from abc import ABC, abstractmethod
-from typing import List, Optional, Union
+from typing import Iterator, List, Optional, Tuple, Union
 import math
 
 import numpy as np
@@ -55,7 +55,7 @@ class BaseLoader(ABC):
         self._chunk_size = None
         self._data_type = data_type
         self._ext = ext
-
+        self.stats = None
         if chunk_size:
             self.chunk_size = chunk_size
 
@@ -98,6 +98,24 @@ class BaseLoader(ABC):
 
         return self._load(self.indices)
 
+    def iter_loaded_chunks(
+        self, reset: bool = True
+    ) -> Iterator[Tuple[list, dict, List[str]]]:
+        if reset:
+            self.reset()
+
+        if not self._chunk_size:
+            data, metadata = self._load(self.indices)
+            yield data, metadata, self.indices
+            return
+
+        while self._next_chunk < self._num_chunks:
+            chunk_start = self._next_chunk * self._chunk_size
+            chunk_end = (self._next_chunk + 1) * self._chunk_size
+            chunk_indices = self.indices[chunk_start:chunk_end]
+            data, metadata = self._load_next_chunk()
+            yield data, metadata, chunk_indices
+
     def update_chunk_sizes(self, other):
         if not self._chunk_size and not other.chunk_size:
             return
@@ -125,6 +143,9 @@ class BaseLoader(ABC):
         return self._load(next_chunk_indices)
 
     def _load(self, indices: List[str]):
+        if self.data is not None and len(self.data) == len(indices):
+            return self.data, self.metadata
+
         file_names = self.get_file_names(indices)
         if isinstance(file_names, str):
             self.extract(file_names, indices)

@@ -22,7 +22,11 @@ from torch.utils.data import DataLoader, TensorDataset
 import numpy as np
 import torch
 import torch.nn as nn
-from systemds.scuro.utils.static_variables import get_device
+from systemds.scuro.utils.static_variables import (
+    compute_batch_size,
+    get_device,
+    get_device_for_model,
+)
 
 from systemds.scuro.drsearch.operator_registry import (
     register_dimensionality_reduction_operator,
@@ -82,12 +86,12 @@ class MLPLearnedDimReduction(DimensionalityReduction):
             self.num_classes = len(np.unique(y))
 
         input_dim = X.shape[1]
-        device = get_device()
-        self.model = None
+        self.device = get_device_for_model(self.model, memory_factor=1.5)
+        self.model = self.model.to(self.device)
         self.is_trained = False
 
         self.model = self._build_model(input_dim, self.output_dim, self.num_classes).to(
-            device
+            self.device
         )
         if self.is_multilabel:
             criterion = nn.BCEWithLogitsLoss()
@@ -101,6 +105,16 @@ class MLPLearnedDimReduction(DimensionalityReduction):
         else:
             y_tensor = torch.LongTensor(y)
 
+        sample = data[0] if data else ""
+        self.batch_size = compute_batch_size(
+            model=self.model,
+            device=self.device,
+            sample_data=sample,
+            tokenizer=None,
+            max_seq_length=None,
+            max_batch_size=128,
+        )
+
         dataset = TensorDataset(X_tensor, y_tensor)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
 
@@ -108,8 +122,8 @@ class MLPLearnedDimReduction(DimensionalityReduction):
         for epoch in range(self.epochs):
             total_loss = 0
             for batch_X, batch_y in dataloader:
-                batch_X = batch_X.to(device)
-                batch_y = batch_y.to(device)
+                batch_X = batch_X.to(self.device)
+                batch_y = batch_y.to(self.device)
                 optimizer.zero_grad()
 
                 features, predictions = self.model(batch_X)
@@ -128,7 +142,7 @@ class MLPLearnedDimReduction(DimensionalityReduction):
                 TensorDataset(X_tensor), batch_size=self.batch_size, shuffle=False
             )
             for (batch_X,) in inference_dataloader:
-                batch_X = batch_X.to(device)
+                batch_X = batch_X.to(self.device)
                 features, _ = self.model(batch_X)
                 all_features.append(features.cpu())
 
@@ -138,8 +152,8 @@ class MLPLearnedDimReduction(DimensionalityReduction):
         if not self.is_trained or self.model is None:
             raise ValueError("Model must be trained before applying representation")
 
-        device = get_device()
-        self.model.to(device)
+        self.device = get_device_for_model(self.model, memory_factor=1.5)
+        self.model = self.model.to(self.device)
         X = np.array(data)
         X_tensor = torch.FloatTensor(X)
         all_features = []
@@ -149,7 +163,7 @@ class MLPLearnedDimReduction(DimensionalityReduction):
                 TensorDataset(X_tensor), batch_size=self.batch_size, shuffle=False
             )
             for (batch_X,) in inference_dataloader:
-                batch_X = batch_X.to(device)
+                batch_X = batch_X.to(self.device)
                 features, _ = self.model(batch_X)
                 all_features.append(features.cpu())
 

@@ -43,7 +43,7 @@ public class LmCGTest extends AutomatedTestBase {
 	private static final String OUTPUT_NAME = "res";
 
 	private final static int rows = 10000;
-	private final static int cols = 500;
+	private final static int cols = 1500;
 	private final static int maxVal = 2;
 	private final static double sparsity1 = 1;
 	private final static double sparsity2 = 0.05;

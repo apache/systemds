@@ -26,41 +26,22 @@ import torch.utils.data
 import torch
 import numpy as np
 from systemds.scuro.modality.type import ModalityType
-from systemds.scuro.utils.static_variables import get_device
+from systemds.scuro.utils.static_variables import get_device_for_model
 from flair.embeddings import ELMoEmbeddings
 from flair.data import Sentence
-from torch.utils.data import Dataset
+from systemds.scuro.utils.torch_dataset import TextDataset
 from torch.utils.data import DataLoader
-
-
-class TextDataset(Dataset):
-    def __init__(self, texts):
-
-        self.texts = []
-        if isinstance(texts, list):
-            self.texts = texts
-        else:
-            for text in texts:
-                if text is None:
-                    self.texts.append("")
-                elif isinstance(text, np.ndarray):
-                    self.texts.append(str(text.item()) if text.size == 1 else str(text))
-                elif not isinstance(text, str):
-                    self.texts.append(str(text))
-                else:
-                    self.texts.append(text)
-
-    def __len__(self):
-        return len(self.texts)
-
-    def __getitem__(self, idx):
-        return self.texts[idx]
 
 
 # @register_representation([ModalityType.TEXT])
 class ELMoRepresentation(UnimodalRepresentation):
     def __init__(
-        self, model_name="elmo-original", layer="mix", pooling="mean", output_file=None
+        self,
+        model_name="elmo-original",
+        layer="mix",
+        pooling="mean",
+        output_file=None,
+        params=None,
     ):
         self.data_type = torch.float32
         self.model_name = model_name
@@ -91,7 +72,8 @@ class ELMoRepresentation(UnimodalRepresentation):
         else:
             raise NotImplementedError(f"Model {model_name} not supported")
 
-        self.model = self.model.to(get_device())
+        self.device = get_device_for_model(self.model, memory_factor=1.5)
+        self.model = self.model.to(self.device)
 
     def _get_parameters(self):
         parameters = {
@@ -106,7 +88,7 @@ class ELMoRepresentation(UnimodalRepresentation):
         }
         return parameters
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(
             modality, self, ModalityType.EMBEDDING
         )

@@ -18,6 +18,8 @@
 # under the License.
 #
 # -------------------------------------------------------------
+from dataclasses import dataclass
+import os
 import numpy as np
 from typing import List, Optional, Union
 import h5py
@@ -25,6 +27,15 @@ import h5py
 
 from systemds.scuro.dataloader.base_loader import BaseLoader
 from systemds.scuro.modality.type import ModalityType
+
+
+@dataclass
+class TimeseriesStats:
+    max_length: int
+    num_instances: int
+    num_signals: int
+    output_shape: tuple
+    output_shape_is_known: bool
 
 
 class TimeseriesLoader(BaseLoader):
@@ -46,7 +57,7 @@ class TimeseriesLoader(BaseLoader):
         self.sampling_rate = sampling_rate
         self.normalize = normalize
         self.file_format = file_format.lower()
-
+        self.stats = self.get_stats(source_path)
         if self.file_format not in ["npy", "mat", "hdf5", "txt"]:
             raise ValueError(f"Unsupported file format: {self.file_format}")
 
@@ -93,11 +104,11 @@ class TimeseriesLoader(BaseLoader):
             return data
 
     def _load_npy(self, file: str) -> np.ndarray:
-        data = np.load(file).astype(self._data_type)
+        data = np.load(file).astype(self._data_type, copy=False)
         return data
 
     def _load_txt(self, file: str) -> np.ndarray:
-        data = np.loadtxt(file).astype(self._data_type)
+        data = np.loadtxt(file, dtype=self._data_type)
         return data
 
     def _load_txt_with_header(self, file: str) -> np.ndarray:
@@ -127,3 +138,16 @@ class TimeseriesLoader(BaseLoader):
         selected = [name for name in self.signal_names if name in df.columns]
         data = df[selected].to_numpy(dtype=self._data_type)
         return data
+
+    def get_stats(self, source_path: str):
+        pass  # TODO: Implement this
+        # self.file_sanity_check(source_path)
+        # max_length = 0
+        # num_instances = 0
+        # num_signals = 0
+        # for file in os.listdir(source_path):
+        #     data = self._load_npy(source_path + file)
+        #     max_length = max(max_length, data.shape[0])
+        #     num_instances += 1
+        #     num_signals = max(num_signals, data.shape[1])
+        # return TimeseriesStats(max_length, num_instances, num_signals)

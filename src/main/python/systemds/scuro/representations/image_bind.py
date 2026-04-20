@@ -50,7 +50,7 @@ class ImageBind(UnimodalRepresentation):
         self.model.eval()
         self.model.to(DEVICE)
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(
             modality, self, ModalityType.EMBEDDING
         )

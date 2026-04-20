@@ -56,6 +56,8 @@ public class OOCEventLog {
 
 	public static void onComputeEvent(int callerId, long startTimestamp, long endTimestamp) {
 		int idx = _logCtr.getAndIncrement();
+		if(idx >= _eventTypes.length)
+			return;
 		_eventTypes[idx] = EventType.COMPUTE;
 		_startTimestamps[idx] = startTimestamp;
 		_endTimestamps[idx] = endTimestamp;
@@ -65,6 +67,8 @@ public class OOCEventLog {
 
 	public static void onDiskWriteEvent(int callerId, long startTimestamp, long endTimestamp, long size) {
 		int idx = _logCtr.getAndIncrement();
+		if(idx >= _eventTypes.length)
+			return;
 		_eventTypes[idx] = EventType.DISK_WRITE;
 		_startTimestamps[idx] = startTimestamp;
 		_endTimestamps[idx] = endTimestamp;
@@ -75,6 +79,8 @@ public class OOCEventLog {
 
 	public static void onDiskReadEvent(int callerId, long startTimestamp, long endTimestamp, long size) {
 		int idx = _logCtr.getAndIncrement();
+		if(idx >= _eventTypes.length)
+			return;
 		_eventTypes[idx] = EventType.DISK_READ;
 		_startTimestamps[idx] = startTimestamp;
 		_endTimestamps[idx] = endTimestamp;
@@ -83,14 +89,25 @@ public class OOCEventLog {
 		_data[idx] = size;
 	}
 
-	public static void onCacheSizeChangedEvent(int callerId, long timestamp, long cacheSize, long bytesToEvict) {
-		int idx = _logCtr.getAndIncrement();
+	public static void onCacheSizeChangedEvent(int callerId, long timestamp, long cacheSize, long bytesToEvict,
+		long pinnedBytes, long readingReservedBytes) {
+		int idx = _logCtr.getAndAdd(2);
+		if(idx + 1 >= _eventTypes.length)
+			return;
 		_eventTypes[idx] = EventType.CACHESIZE_CHANGE;
 		_startTimestamps[idx] = timestamp;
 		_endTimestamps[idx] = bytesToEvict;
 		_callerIds[idx] = callerId;
 		_threadIds[idx] = Thread.currentThread().getId();
 		_data[idx] = cacheSize;
+
+		int idxCont = idx + 1;
+		_eventTypes[idxCont] = EventType.CACHESIZE_CHANGE_CONT;
+		_startTimestamps[idxCont] = timestamp;
+		_endTimestamps[idxCont] = pinnedBytes;
+		_callerIds[idxCont] = callerId;
+		_threadIds[idxCont] = Thread.currentThread().getId();
+		_data[idxCont] = readingReservedBytes;
 	}
 
 	public static void putRunSetting(String setting, Object data) {
@@ -110,14 +127,43 @@ public class OOCEventLog {
 	}
 
 	public static String getCacheSizeEventsCSV() {
-		return getFilteredCSV("ThreadID,CallerID,Timestamp,ScheduledEvictionSize,CacheSize\n", EventType.CACHESIZE_CHANGE, true);
+		StringBuilder sb = new StringBuilder();
+		sb.append("ThreadID,CallerID,Timestamp,ScheduledEvictionSize,CacheSize,PinnedSize,ReadReservedSize\n");
+
+		int maxIdx = Math.min(_logCtr.get(), _eventTypes.length);
+		for (int i = 0; i < maxIdx; i++) {
+			if (_eventTypes[i] != EventType.CACHESIZE_CHANGE)
+				continue;
+			long pinnedSize = 0;
+			long readReservedSize = 0;
+			if(i + 1 < maxIdx && _eventTypes[i + 1] == EventType.CACHESIZE_CHANGE_CONT) {
+				pinnedSize = _endTimestamps[i + 1];
+				readReservedSize = _data[i + 1];
+			}
+			sb.append(_threadIds[i]);
+			sb.append(',');
+			sb.append(_callerNames.get(_callerIds[i]));
+			sb.append(',');
+			sb.append(_startTimestamps[i]);
+			sb.append(',');
+			sb.append(_endTimestamps[i]);
+			sb.append(',');
+			sb.append(_data[i]);
+			sb.append(',');
+			sb.append(pinnedSize);
+			sb.append(',');
+			sb.append(readReservedSize);
+			sb.append('\n');
+		}
+
+		return sb.toString();
 	}
 
 	private static String getFilteredCSV(String header, EventType filter, boolean data) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(header);
 
-		int maxIdx = _logCtr.get();
+		int maxIdx = Math.min(_logCtr.get(), _eventTypes.length);
 		for (int i = 0; i < maxIdx; i++) {
 			if (_eventTypes[i] != filter)
 				continue;
@@ -174,6 +220,7 @@ public class OOCEventLog {
 		COMPUTE,
 		DISK_WRITE,
 		DISK_READ,
-		CACHESIZE_CHANGE
+		CACHESIZE_CHANGE,
+		CACHESIZE_CHANGE_CONT
 	}
 }

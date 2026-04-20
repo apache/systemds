@@ -20,19 +20,32 @@
 package org.apache.sysds.runtime.instructions.ooc;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.ooc.cache.BlockKey;
+import org.apache.sysds.runtime.ooc.cache.GroupedBlockKey;
 import org.apache.sysds.runtime.ooc.cache.OOCIOHandler;
 import org.apache.sysds.runtime.ooc.cache.OOCCacheManager;
-import org.apache.sysds.runtime.ooc.stream.OOCSourceStream;
+import org.apache.sysds.runtime.ooc.stream.SourceOOCStream;
+import org.apache.sysds.runtime.ooc.stream.message.OOCGetStreamTypeMessage;
+import org.apache.sysds.runtime.ooc.stream.message.OOCStreamMessage;
+import org.apache.sysds.runtime.ooc.util.OOCUtils;
+import org.apache.sysds.runtime.util.IndexRange;
 import shaded.parquet.it.unimi.dsi.fastutil.ints.IntArrayList;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
@@ -48,6 +61,11 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 	private final OOCStream<IndexedMatrixValue> _source;
 	private final IntArrayList _consumptionCounts = new IntArrayList();
 	private final IntArrayList _consumerConsumptionCounts = new IntArrayList();
+	private final IntArrayList _groupIndices = new IntArrayList();
+	private final IntArrayList _groupSizes = new IntArrayList();
+	private final List<BlockKey> _cacheKeys = new ArrayList<>();
+	private final BitSet _ownedCacheKeys = new BitSet();
+	private int _ownedCacheKeysSize = 0;
 
 	// stream identifier
 	private final long _streamId;
@@ -56,15 +74,16 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 	private int _numBlocks = 0;
 
 	private Consumer<OOCStream.QueueCallback<IndexedMatrixValue>>[] _subscribers;
+	private CopyOnWriteArrayList<Consumer<OOCStreamMessage>> _downstreamRelays;
 
 	// state flags
 	private boolean _cacheInProgress = true; // caching in progress, in the first pass.
-	private Map<MatrixIndexes, Integer> _index;
+	private volatile Map<MatrixIndexes, Integer> _index;
 
 	private DMLRuntimeException _failure;
 
-	private boolean deletable = false;
-	private int maxConsumptionCount = 0;
+	private boolean _deletable = false;
+	private int _maxConsumptionCount = 0;
 	private String _watchdogId = null;
 
 	public CachingStream(OOCStream<IndexedMatrixValue> source) {
@@ -73,49 +92,159 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 
 	public CachingStream(OOCStream<IndexedMatrixValue> source, long streamId) {
 		_source = source;
+		_source.setDownstreamMessageRelay(this::messageDownstream);
 		_streamId = streamId;
-		if (OOCWatchdog.WATCH) {
+		if(OOCWatchdog.WATCH) {
 			_watchdogId = "CS-" + hashCode();
 			// Capture a short context to help identify origin
-			OOCWatchdog.registerOpen(_watchdogId, "CachingStream@" + hashCode(), getCtxMsg(), this);
+			OOCWatchdog.registerOpen(_watchdogId, toString(), getCtxMsg(), this);
 		}
+		_downstreamRelays = null;
 		source.setSubscriber(tmp -> {
-			try (tmp) {
-				final IndexedMatrixValue task = tmp.get();
+			try(tmp) {
 				int blk;
+				int groupSize = 1;
 				Consumer<OOCStream.QueueCallback<IndexedMatrixValue>>[] mSubscribers;
 				OOCStream.QueueCallback<IndexedMatrixValue> mCallback = null;
 
-				synchronized (this) {
+				synchronized(this) {
 					mSubscribers = _subscribers;
-					if(task != LocalTaskQueue.NO_MORE_TASKS) {
-						if (!_cacheInProgress)
+					if(!tmp.isEos()) {
+						if(!_cacheInProgress)
 							throw new DMLRuntimeException("Stream is closed");
-						OOCIOHandler.SourceBlockDescriptor descriptor = null;
-						if (_source instanceof OOCSourceStream src) {
-							descriptor = src.getDescriptor(task.getIndexes());
-						}
-						if (descriptor == null) {
-							if (mSubscribers == null || mSubscribers.length == 0)
-								OOCCacheManager.put(_streamId, _numBlocks, task);
-							else
-								mCallback = OOCCacheManager.putAndPin(_streamId, _numBlocks, task);
+
+						if(tmp instanceof OOCStream.GroupQueueCallback<?>) {
+							OOCStream.GroupQueueCallback<IndexedMatrixValue> group =
+								(OOCStream.GroupQueueCallback<IndexedMatrixValue>) tmp;
+							groupSize = group.size();
+							for(int gi = 0; gi < groupSize; gi++) {
+								OOCStream.QueueCallback<IndexedMatrixValue> sub = group.getCallback(gi);
+								try(sub) {
+									IndexedMatrixValue imv = sub.get();
+									if(_index != null)
+										_index.put(imv.getIndexes(), _numBlocks + gi);
+								}
+							}
+
+							BlockKey baseKey;
+							boolean ownsEntry = true;
+							if(tmp instanceof OOCCacheManager.CachedGroupCallback<?> cachedGroup) {
+								baseKey = cachedGroup.getBlockKey();
+								ensureReferencedOrRematerialize(baseKey, cachedGroup);
+								ownsEntry = false;
+								if(mSubscribers != null && mSubscribers.length > 0)
+									mCallback = tmp.keepOpen();
+							}
+							else {
+								List<IndexedMatrixValue> values = new ArrayList<>(groupSize);
+								long totalSize = 0;
+								for(int gi = 0; gi < groupSize; gi++) {
+									OOCStream.QueueCallback<IndexedMatrixValue> sub = group.getCallback(gi);
+									try(sub) {
+										IndexedMatrixValue imv = sub.get();
+										values.add(imv);
+										totalSize += ((MatrixBlock) imv.getValue()).getExactSerializedSize();
+									}
+								}
+
+								baseKey = new BlockKey(_streamId, _numBlocks);
+								if (_source instanceof SourceOOCStream && tmp instanceof SourceOOCStream.SourceGroupCallback sg) {
+									OOCIOHandler.GroupSourceBlockDescriptor gdesc = sg.getDescriptor();
+									if (mSubscribers == null || mSubscribers.length == 0)
+										OOCCacheManager.putRawSourceBacked(baseKey, values, totalSize, gdesc);
+									else
+										mCallback = OOCCacheManager.putAndPinRawSourceBacked(baseKey, values, totalSize, gdesc);
+								}
+								else {
+									if(mSubscribers == null || mSubscribers.length == 0)
+										OOCCacheManager.putRaw(baseKey, values, totalSize);
+									else
+										mCallback = OOCCacheManager.putAndPinRaw(baseKey, values, totalSize);
+								}
+							}
+
+							blk = _numBlocks;
+							_numBlocks += groupSize;
+							for(int gi = 0; gi < groupSize; gi++) {
+								registerCacheKey(blk + gi,
+									new GroupedBlockKey(baseKey.getStreamId(), (int) baseKey.getSequenceNumber(), gi),
+									ownsEntry);
+								_consumptionCounts.add(0);
+								_groupIndices.add(gi);
+								_groupSizes.add(groupSize);
+								if(_deletable)
+									tryDeleteBlock(blk + gi);
+							}
 						}
 						else {
-							if (mSubscribers == null || mSubscribers.length == 0)
-								OOCCacheManager.putSourceBacked(_streamId, _numBlocks, task, descriptor);
-							else
-								mCallback = OOCCacheManager.putAndPinSourceBacked(_streamId, _numBlocks, task, descriptor);
+							final IndexedMatrixValue task = tmp.get();
+							OOCIOHandler.SourceBlockDescriptor descriptor = null;
+							BlockKey blockKey = null;
+							boolean ownsEntry = true;
+
+							if(tmp instanceof OOCCacheManager.CachedQueueCallback<?> cachedQueue) {
+								blockKey = cachedQueue.getBlockKey();
+								ensureReferencedOrRematerialize(blockKey, task);
+								ownsEntry = false;
+								if(mSubscribers != null && mSubscribers.length > 0)
+									mCallback = tmp.keepOpen();
+							}
+							else if(tmp instanceof OOCCacheManager.CachedSubCallback<?> cachedSub) {
+								BlockKey parent = cachedSub.getParent().getBlockKey();
+								ensureReferencedOrRematerialize(parent, cachedSub.getParent());
+								blockKey = new GroupedBlockKey(parent.getStreamId(), (int) parent.getSequenceNumber(),
+									cachedSub.getGroupIndex());
+								ownsEntry = false;
+								if(mSubscribers != null && mSubscribers.length > 0)
+									mCallback = tmp.keepOpen();
+							}
+
+							if(_source instanceof SourceOOCStream src) {
+								descriptor = src.getDescriptor(task.getIndexes());
+							}
+
+							if(blockKey == null) {
+								ownsEntry = true;
+								blockKey = new BlockKey(_streamId, _numBlocks);
+								if(descriptor == null) {
+									if(mSubscribers == null || mSubscribers.length == 0)
+										OOCCacheManager.put(_streamId, _numBlocks, task);
+									else
+										mCallback = OOCCacheManager.putAndPin(_streamId, _numBlocks, task);
+								}
+								else {
+									if(mSubscribers == null || mSubscribers.length == 0)
+										OOCCacheManager.putSourceBacked(_streamId, _numBlocks, task, descriptor);
+									else
+										mCallback = OOCCacheManager.putAndPinSourceBacked(_streamId, _numBlocks, task,
+											descriptor);
+								}
+							}
+
+							if(_index != null)
+								_index.put(task.getIndexes(), _numBlocks);
+
+							blk = _numBlocks;
+							_numBlocks++;
+							registerCacheKey(blk, blockKey, ownsEntry);
+							_consumptionCounts.add(0);
+							_groupIndices.add(-1);
+							_groupSizes.add(1);
+
+							if(_deletable)
+								tryDeleteBlock(blk);
 						}
-						if (_index != null)
-							_index.put(task.getIndexes(), _numBlocks);
-						blk = _numBlocks;
-						_numBlocks++;
-						_consumptionCounts.add(0);
+
 						notifyAll();
 					}
 					else {
 						_cacheInProgress = false; // caching is complete
+						try {
+							validateBlockCountOnClose();
+						}
+						catch(Exception e) {
+							_failure = e instanceof DMLRuntimeException ? (DMLRuntimeException) e : new DMLRuntimeException(e);
+						}
 						if (OOCWatchdog.WATCH)
 							OOCWatchdog.registerClose(_watchdogId);
 						notifyAll();
@@ -132,7 +261,12 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 								try(localCallback) {
 									mSubscribers[i].accept(localCallback);
 								}
-								if(onConsumed(blk, i))
+								boolean done = false;
+								for(int gi = 0; gi < groupSize; gi++) {
+									if(onConsumed(blk + gi, i))
+										done = true;
+								}
+								if(done)
 									mSubscribers[i].accept(OOCStream.eos(_failure));
 							}
 						}
@@ -153,7 +287,7 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 				}
 
 				Consumer<OOCStream.QueueCallback<IndexedMatrixValue>>[] mSubscribers = _subscribers;
-				OOCStream.QueueCallback<IndexedMatrixValue> err = OOCStream.eos( _failure);
+				OOCStream.QueueCallback<IndexedMatrixValue> err = OOCStream.eos(_failure);
 				if(mSubscribers != null) {
 					for(Consumer<OOCStream.QueueCallback<IndexedMatrixValue>> mSubscriber : mSubscribers) {
 						try {
@@ -164,6 +298,49 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 				}
 			}
 		});
+	}
+
+
+	private void ensureReferencedOrRematerialize(BlockKey key, IndexedMatrixValue value) {
+		try {
+			OOCCacheManager.getCache().addReference(key);
+		}
+		catch(IllegalArgumentException ex) {
+			try {
+				OOCCacheManager.putRaw(key, value, ((MatrixBlock) value.getValue()).getExactSerializedSize());
+			}
+			catch(IllegalStateException putEx) {
+				// Another downstream stream may have re-materialized the same entry first.
+				OOCCacheManager.getCache().addReference(key);
+			}
+		}
+	}
+
+	private void ensureReferencedOrRematerialize(BlockKey key, OOCCacheManager.CachedGroupCallback<?> group) {
+		try {
+			OOCCacheManager.getCache().addReference(key);
+		}
+		catch(IllegalArgumentException ex) {
+			try {
+				List<IndexedMatrixValue> values = new ArrayList<>(group.size());
+				long totalSize = 0;
+				for(int gi = 0; gi < group.size(); gi++) {
+					@SuppressWarnings("unchecked")
+					OOCStream.QueueCallback<IndexedMatrixValue> sub =
+						(OOCStream.QueueCallback<IndexedMatrixValue>) group.getCallback(gi);
+					try(sub) {
+						IndexedMatrixValue imv = sub.get();
+						values.add(imv);
+						totalSize += ((MatrixBlock) imv.getValue()).getExactSerializedSize();
+					}
+				}
+				OOCCacheManager.putRaw(key, values, totalSize);
+			}
+			catch(IllegalStateException putEx) {
+				// Another downstream stream may have re-materialized the same entry first.
+				OOCCacheManager.getCache().addReference(key);
+			}
+		}
 	}
 
 	private String getCtxMsg() {
@@ -181,13 +358,13 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 	}
 
 	public synchronized void scheduleDeletion() {
-		if (deletable)
+		if (_deletable)
 			return; // Deletion already scheduled
 
-		if (_cacheInProgress && maxConsumptionCount == 0)
-			throw new DMLRuntimeException("Cannot have a caching stream with no listeners");
+		if (_cacheInProgress && _maxConsumptionCount == 0)
+			System.out.println("[WARN] Scheduling deletion for caching stream with no listeners: " + this);
 
-		deletable = true;
+		_deletable = true;
 		for (int i = 0; i < _consumptionCounts.size(); i++) {
 			tryDeleteBlock(i);
 		}
@@ -199,21 +376,47 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 
 	private synchronized void tryDeleteBlock(int i) {
 		int cnt = _consumptionCounts.getInt(i);
-		if (cnt > maxConsumptionCount)
-			throw new DMLRuntimeException("Cannot have more than " + maxConsumptionCount + " consumptions.");
-		if (cnt == maxConsumptionCount)
-			OOCCacheManager.forget(_streamId, i);
+		if (cnt > _maxConsumptionCount)
+			throw new DMLRuntimeException("Cannot have more than " + _maxConsumptionCount + " consumptions.");
+		if(!_ownedCacheKeys.get(i))
+			return;
+
+		int groupIdx = _groupIndices.getInt(i);
+		int groupSize = _groupSizes.getInt(i);
+		if (groupIdx > 0 && groupSize > 1) {
+			// Grouped entries are physically represented by a single base cache entry.
+			// Re-check the base when a member reaches its terminal count.
+			if (cnt == _maxConsumptionCount) {
+				int baseId = i - groupIdx;
+				tryDeleteBlock(baseId);
+			}
+			return;
+		}
+
+		if (cnt == _maxConsumptionCount) {
+			if (groupIdx >= 0 && groupSize > 1) {
+				int baseId = i - groupIdx;
+				for (int j = 0; j < groupSize; j++) {
+					if (_consumptionCounts.getInt(baseId + j) < _maxConsumptionCount)
+						return;
+				}
+				OOCCacheManager.getCache().forget(getEntryBlockKey(baseId));
+			}
+			else {
+				OOCCacheManager.getCache().forget(getEntryBlockKey(i));
+			}
+		}
 	}
 
 	private synchronized boolean onConsumed(int blockIdx, int consumerIdx) {
 		int newCount = _consumptionCounts.getInt(blockIdx)+1;
-		if (newCount > maxConsumptionCount)
-			throw new DMLRuntimeException("Cannot have more than " + maxConsumptionCount + " consumptions.");
+		if (newCount > _maxConsumptionCount)
+			throw new DMLRuntimeException("Cannot have more than " + _maxConsumptionCount + " consumptions.");
 		_consumptionCounts.set(blockIdx, newCount);
 		int newConsumerCount = _consumerConsumptionCounts.getInt(consumerIdx)+1;
 		_consumerConsumptionCounts.set(consumerIdx, newConsumerCount);
 
-		if (deletable)
+		if (_deletable)
 			tryDeleteBlock(blockIdx);
 
 		return !_cacheInProgress && newConsumerCount == _numBlocks + 1;
@@ -225,55 +428,60 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 		return !_cacheInProgress && newConsumerCount == _numBlocks + 1;
 	}
 
-	public synchronized OOCStream.QueueCallback<IndexedMatrixValue> get(int idx) throws InterruptedException,
+	public synchronized CompletableFuture<OOCStream.QueueCallback<IndexedMatrixValue>> get(int idx) throws InterruptedException,
 		ExecutionException {
 		while (true) {
-			if (_failure != null)
+			if(_failure != null)
 				throw _failure;
-			else if (idx < _numBlocks) {
-				OOCStream.QueueCallback<IndexedMatrixValue> out = OOCCacheManager.requestBlock(_streamId, idx).get();
+			else if(idx < _numBlocks) {
+				return OOCCacheManager.requestBlock(getBlockKey(idx))
+					.thenApply(cb -> {
+						synchronized(this) {
+							if(_index != null) // Ensure index is up to date
+								_index.putIfAbsent(cb.get().getIndexes(), idx);
 
-				if (_index != null) // Ensure index is up to date
-					_index.putIfAbsent(out.get().getIndexes(), idx);
+							int newCount = _consumptionCounts.getInt(idx) + 1;
+							if(newCount > _maxConsumptionCount)
+								throw new DMLRuntimeException("Consumer overflow! Expected: " + _maxConsumptionCount);
+							_consumptionCounts.set(idx, newCount);
 
-				int newCount = _consumptionCounts.getInt(idx)+1;
-				if (newCount > maxConsumptionCount)
-					throw new DMLRuntimeException("Consumer overflow! Expected: " + maxConsumptionCount);
-				_consumptionCounts.set(idx, newCount);
-
-				if (deletable)
-					tryDeleteBlock(idx);
-
-				return out;
-			} else if (!_cacheInProgress)
-				return new OOCStream.SimpleQueueCallback<>(null, null);
+							if(_deletable)
+								tryDeleteBlock(idx);
+						}
+						return cb;
+					});
+			}
+			else if(!_cacheInProgress) {
+				return CompletableFuture.completedFuture(new OOCStream.SimpleQueueCallback<>(null, _failure));
+			}
 
 			wait();
 		}
 	}
 
-	public synchronized int findCachedIndex(MatrixIndexes idx) {
+	public int findCachedIndex(MatrixIndexes idx) {
 		return _index.get(idx);
 	}
 
 	public synchronized BlockKey peekCachedBlockKey(MatrixIndexes idx) {
-		return new BlockKey(_streamId, _index.get(idx));
+		return getBlockKey(_index.get(idx));
 	}
 
 	public synchronized OOCStream.QueueCallback<IndexedMatrixValue> findCached(MatrixIndexes idx) {
 		int mIdx = _index.get(idx);
 		int newCount = _consumptionCounts.getInt(mIdx)+1;
-		if (newCount > maxConsumptionCount)
-			throw new DMLRuntimeException("Consumer overflow in " + _streamId + "_" + mIdx + ". Expected: " + maxConsumptionCount);
+		if (newCount > _maxConsumptionCount)
+			throw new DMLRuntimeException("Consumer overflow in " + _streamId + "_" + mIdx + ". Expected: " +
+				_maxConsumptionCount);
 
 		_consumptionCounts.set(mIdx, newCount);
 
 		try {
-			return OOCCacheManager.requestBlock(_streamId, mIdx).get();
+			return OOCCacheManager.requestBlock(getBlockKey(mIdx)).get();
 		} catch (InterruptedException | ExecutionException e) {
 			return new OOCStream.SimpleQueueCallback<>(null, new DMLRuntimeException(e));
 		} finally {
-			if (deletable)
+			if (_deletable)
 				tryDeleteBlock(mIdx);
 		}
 	}
@@ -283,16 +491,17 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 		synchronized(this) {
 			mIdx = _index.get(idx);
 			int newCount = _consumptionCounts.getInt(mIdx)+1;
-			if (newCount > maxConsumptionCount)
-				throw new DMLRuntimeException("Consumer overflow in " + _streamId + "_" + mIdx + ". Expected: " + maxConsumptionCount);
+			if (newCount > _maxConsumptionCount)
+				throw new DMLRuntimeException("Consumer overflow in " + _streamId + "_" + mIdx + ". Expected: " +
+					_maxConsumptionCount);
 		}
-		OOCCacheManager.requestBlock(_streamId, mIdx).whenComplete((cb, r) -> {
+		OOCCacheManager.requestBlock(getBlockKey(mIdx)).whenComplete((cb, r) -> {
 			try (cb) {
 				synchronized(CachingStream.this) {
 					int newCount = _consumptionCounts.getInt(mIdx) + 1;
-					if(newCount > maxConsumptionCount) {
+					if(newCount > _maxConsumptionCount) {
 						_failure = new DMLRuntimeException(
-							"Consumer overflow in " + _streamId + "_" + mIdx + ". Expected: " + maxConsumptionCount);
+							"Consumer overflow in " + _streamId + "_" + mIdx + ". Expected: " + _maxConsumptionCount);
 						cb.fail(_failure);
 					}
 					else
@@ -304,35 +513,73 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 		});
 	}
 
+	private void validateBlockCountOnClose() {
+		DataCharacteristics dc = _source.getDataCharacteristics();
+		if (dc != null && dc.dimsKnown() && dc.getBlocksize() > 0) {
+			long expected = OOCUtils.getNumBlocks(dc);
+			if (expected >= 0 && _numBlocks != expected) {
+				throw new DMLRuntimeException("CachingStream block count mismatch: expected "
+					+ expected + " but saw " + _numBlocks + " (" + dc.getRows() + "x" + dc.getCols() + ")");
+			}
+		}
+	}
+
 	/**
 	 * Finds a cached item asynchronously without counting it as a consumption.
 	 */
 	public void peekCachedAsync(MatrixIndexes idx, Consumer<OOCStream.QueueCallback<IndexedMatrixValue>> callback) {
-		int mIdx;
-		synchronized(this) {
-			mIdx = _index.get(idx);
-		}
-		OOCCacheManager.requestBlock(_streamId, mIdx).whenComplete((cb, r) -> callback.accept(cb));
+		int mIdx = _index.get(idx);
+		OOCCacheManager.requestBlock(getBlockKey(mIdx)).whenComplete((cb, r) -> callback.accept(cb));
 	}
 
 	/**
 	 * Finds a cached item without counting it as a consumption.
 	 */
 	public OOCStream.QueueCallback<IndexedMatrixValue> peekCached(MatrixIndexes idx) {
-		int mIdx;
-		synchronized(this) {
-			mIdx = _index.get(idx);
-		}
+		int mIdx = _index.get(idx);
 		try {
-			return OOCCacheManager.requestBlock(_streamId, mIdx).get();
+			return OOCCacheManager.requestBlock(getBlockKey(mIdx)).get();
 		} catch (InterruptedException | ExecutionException e) {
 			return new OOCStream.SimpleQueueCallback<>(null, new DMLRuntimeException(e));
 		}
 	}
 
-	public synchronized void activateIndexing() {
-		if (_index == null)
-			_index = new HashMap<>();
+	private BlockKey getBlockKey(int blockIdx) {
+		if(_cacheKeys.size() > blockIdx)
+			return _cacheKeys.get(blockIdx);
+		int groupIdx = _groupIndices.size() > blockIdx ? _groupIndices.getInt(blockIdx) : -1;
+		if (groupIdx >= 0) {
+			int baseId = blockIdx - groupIdx;
+			return new GroupedBlockKey(_streamId, baseId, groupIdx);
+		}
+		return new BlockKey(_streamId, blockIdx);
+	}
+
+	private BlockKey getEntryBlockKey(int blockIdx) {
+		BlockKey key = getBlockKey(blockIdx);
+		if(key instanceof GroupedBlockKey)
+			return new BlockKey(key.getStreamId(), key.getSequenceNumber());
+		return key;
+	}
+
+	private void registerCacheKey(int blockIdx, BlockKey key, boolean ownsEntry) {
+		_cacheKeys.add(key);
+		if(ownsEntry)
+			_ownedCacheKeys.set(blockIdx);
+		else
+			_ownedCacheKeys.clear(blockIdx);
+		_ownedCacheKeysSize++;
+		if(_cacheKeys.size() != blockIdx + 1 || _ownedCacheKeysSize != blockIdx + 1)
+			throw new IllegalStateException("Invalid cache key registration order");
+	}
+
+	public void activateIndexing() {
+		if(_index != null)
+			return;
+		synchronized(this) {
+			if(_index == null)
+				_index = new ConcurrentHashMap<>();
+		}
 	}
 
 	@Override
@@ -346,27 +593,123 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 	}
 
 	@Override
+	public boolean hasStreamCache() {
+		return true;
+	}
+
+	@Override
+	public CachingStream getStreamCache() {
+		return this;
+	}
+
+	@Override
 	public boolean isProcessed() {
 		return false;
 	}
 
+	@Override
+	public DataCharacteristics getDataCharacteristics() {
+		return _source.getDataCharacteristics();
+	}
+
+	@Override
+	public CacheableData<?> getData() {
+		return _source.getData();
+	}
+
+	@Override
+	public void setData(CacheableData<?> data) {
+		_source.setData(data);
+	}
+
+	@Override
+	public void messageUpstream(OOCStreamMessage msg) {
+		if (msg.isCancelled())
+			return;
+		if(msg instanceof OOCGetStreamTypeMessage) {
+			((OOCGetStreamTypeMessage) msg).setCachedType();
+			activateIndexing();
+			return;
+		}
+
+		_source.messageUpstream(msg);
+	}
+
+	@Override
+	public void messageDownstream(OOCStreamMessage msg) {
+		CopyOnWriteArrayList<Consumer<OOCStreamMessage>> relays = _downstreamRelays;
+		if (relays != null) {
+			for (Consumer<OOCStreamMessage> relay : relays) {
+				if (msg.isCancelled())
+					break;
+				relay.accept(msg);
+			}
+		}
+	}
+
+	@Override
+	public void setUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public void setDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
+		addDownstreamMessageRelay(relay);
+	}
+
+	@Override
+	public void addUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public void addDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
+		if (relay == null)
+			throw new IllegalArgumentException("Cannot set downstream relay to null");
+		CopyOnWriteArrayList<Consumer<OOCStreamMessage>> relays = _downstreamRelays;
+		if (relays == null) {
+			synchronized(this) {
+				if (_downstreamRelays == null)
+					_downstreamRelays = new CopyOnWriteArrayList<>();
+				relays = _downstreamRelays;
+			}
+		}
+		relays.add(0, relay);
+	}
+
+	@Override
+	public void clearUpstreamMessageRelays() {
+		// No upstream relays supported
+	}
+
+	@Override
+	public void clearDownstreamMessageRelays() {
+		_downstreamRelays = null;
+	}
+
+	@Override
+	public void setIXTransform(BiFunction<Boolean, IndexRange, IndexRange> transform) {
+		throw new UnsupportedOperationException();
+	}
+
+	@SuppressWarnings("unchecked")
 	public void setSubscriber(Consumer<OOCStream.QueueCallback<IndexedMatrixValue>> subscriber, boolean incrConsumers) {
-		if (deletable)
+		if(_deletable)
 			throw new DMLRuntimeException("Cannot register a new subscriber on " + this + " because has been flagged for deletion");
-		if (_failure != null)
+		if(_failure != null)
 			throw _failure;
 
 		int mNumBlocks;
 		boolean cacheInProgress;
 		int consumerIdx;
-		synchronized (this) {
+		synchronized(this) {
 			mNumBlocks = _numBlocks;
 			cacheInProgress = _cacheInProgress;
 			consumerIdx = _consumerConsumptionCounts.size();
 			_consumerConsumptionCounts.add(0);
-			if (incrConsumers)
-				maxConsumptionCount++;
-			if (cacheInProgress) {
+			if(incrConsumers)
+				_maxConsumptionCount++;
+			if(cacheInProgress) {
 				int newLen = _subscribers == null ? 1 : _subscribers.length + 1;
 				Consumer<OOCStream.QueueCallback<IndexedMatrixValue>>[] newSubscribers = new Consumer[newLen];
 
@@ -378,17 +721,56 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 			}
 		}
 
-		for (int i = 0; i < mNumBlocks; i++) {
+		for(int i = 0; i < mNumBlocks; i++) {
 			final int idx = i;
-			OOCCacheManager.requestBlock(_streamId, i).whenComplete((cb, r) -> {
-				try (cb) {
+			int gIdx;
+			int gSize;
+			synchronized(this) {
+				gIdx = _groupIndices.getInt(idx);
+				gSize = _groupSizes.getInt(idx);
+			}
+			final int groupIdx = gIdx;
+			final int groupSize = gSize;
+			if(groupIdx > 0)
+				continue; // only replay grouped blocks once at the base index
+
+			BlockKey replayKey = (groupSize > 1 && groupIdx == 0) ? getEntryBlockKey(idx) : getBlockKey(i);
+			OOCCacheManager.requestBlock(replayKey).whenComplete((cb, r) -> {
+				if(r != null) {
+					subscriber.accept(OOCStream.eos(DMLRuntimeException.of(r)));
+					return;
+				}
+				try(cb) {
 					synchronized(CachingStream.this) {
-						if(_index != null)
-							_index.put(cb.get().getIndexes(), idx);
+						if(_index != null) {
+							if(cb instanceof OOCStream.GroupQueueCallback<?> && groupSize > 1) {
+								OOCStream.GroupQueueCallback<IndexedMatrixValue> group =
+									(OOCStream.GroupQueueCallback<IndexedMatrixValue>) cb;
+								for(int gi = 0; gi < groupSize; gi++) {
+									OOCStream.QueueCallback<IndexedMatrixValue> sub = group.getCallback(gi);
+									try(sub) {
+										_index.put(sub.get().getIndexes(), idx + gi);
+									}
+								}
+							}
+							else {
+								_index.put(cb.get().getIndexes(), idx);
+							}
+						}
 					}
 					subscriber.accept(cb);
 
-					if (onConsumed(idx, consumerIdx))
+					boolean done = false;
+					if(groupSize > 1) {
+						for(int gi = 0; gi < groupSize; gi++) {
+							if(onConsumed(idx + gi, consumerIdx))
+								done = true;
+						}
+					}
+					else if(onConsumed(idx, consumerIdx)) {
+						done = true;
+					}
+					if(done)
 						subscriber.accept(OOCStream.eos(_failure)); // NO_MORE_TASKS
 				}
 			});
@@ -403,10 +785,10 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 	 * Only use if certain blocks are accessed more than once.
 	 */
 	public synchronized void incrSubscriberCount(int count) {
-		if (deletable)
+		if (_deletable)
 			throw new IllegalStateException("Cannot increment the subscriber count if flagged for deletion");
 
-		maxConsumptionCount += count;
+		_maxConsumptionCount += count;
 	}
 
 	/**
@@ -416,7 +798,11 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 		int cnt = _consumptionCounts.getInt(i)+count;
 		_consumptionCounts.set(i, cnt);
 
-		if (deletable)
+		if (_deletable)
 			tryDeleteBlock(i);
+	}
+
+	public void incrProcessingCount(MatrixIndexes idx, int count) {
+		incrProcessingCount(_index.get(idx), count);
 	}
 }

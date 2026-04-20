@@ -27,12 +27,12 @@ from systemds.scuro.representations.representation import Representation
 
 
 class DimensionalityReduction(Representation):
-    def __init__(self, name, parameters=None):
+    def __init__(self, name, params=None):
         """
         Parent class for different dimensionality reduction operations
         :param name: Name of the dimensionality reduction operator
         """
-        super().__init__(name, parameters)
+        super().__init__(name, params)
         self.needs_training = False
 
     @abc.abstractmethod

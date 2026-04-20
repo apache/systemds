@@ -24,12 +24,15 @@ import math
 
 import numpy as np
 
+from systemds.scuro.modality.transformed import TransformedModality
+from systemds.scuro.representations.representation import RepresentationStats
 from tests.scuro.data_generator import ModalityRandomDataGenerator, TestDataLoader
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.window_aggregation import (
     StaticWindow,
     DynamicWindow,
+    WindowAggregation,
 )
 
 
@@ -95,6 +98,46 @@ class TestWindowOperations(unittest.TestCase):
             windowed_modality = r.window_aggregation(window_size, aggregation)
 
             self.verify_window_operation(aggregation, r, windowed_modality, window_size)
+
+    def test_window_aggregation_on_3d_modality(self):
+        data, _ = self.data_generator.create_3d_modality(40, (100, 28, 28))
+        embedding_modality = TransformedModality(
+            self.data_generator, "test_transformation"
+        )
+        embedding_modality.data = data
+        embedding_modality.stats = RepresentationStats(40, (100, 28, 28))
+        num_windows = 10
+
+        for window_operator in [
+            StaticWindow(num_windows=num_windows),
+            DynamicWindow(num_windows=num_windows),
+            WindowAggregation(window_size=10),
+        ]:
+            stats = window_operator.get_output_stats(embedding_modality.stats)
+            assert stats.num_instances == self.num_instances
+            assert stats.output_shape == (num_windows, 28, 28)
+
+            windowed_modality = embedding_modality.context(window_operator)
+
+    def test_window_aggregation_on_2d_modality(self):
+        data, _ = self.data_generator.create_2d_modality(40, (100, 28))
+        embedding_modality = TransformedModality(
+            self.data_generator, "test_transformation"
+        )
+        embedding_modality.data = data
+        embedding_modality.stats = RepresentationStats(40, (100, 28))
+        num_windows = 10
+
+        for window_operator in [
+            StaticWindow(num_windows=num_windows),
+            DynamicWindow(num_windows=num_windows),
+            WindowAggregation(window_size=10),
+        ]:
+            stats = window_operator.get_output_stats(embedding_modality.stats)
+            assert stats.num_instances == self.num_instances
+            assert stats.output_shape == (num_windows, 28)
+
+            windowed_modality = embedding_modality.context(window_operator)
 
     def verify_window_operation(
         self, aggregation, modality, windowed_modality, window_size

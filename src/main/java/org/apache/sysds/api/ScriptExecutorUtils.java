@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
@@ -45,7 +46,7 @@ public class ScriptExecutorUtils {
 	 * Execute the runtime program. This involves execution of the program
 	 * blocks that make up the runtime program and may involve dynamic
 	 * recompilation.
-	 * 
+	 *
 	 * @param se
 	 *            script executor
 	 * @param statisticsMaxHeavyHitters
@@ -62,7 +63,7 @@ public class ScriptExecutorUtils {
 	 * Execute the runtime program. This involves execution of the program
 	 * blocks that make up the runtime program and may involve dynamic
 	 * recompilation.
-	 * 
+	 *
 	 * @param rtprog
 	 *            runtime program
 	 * @param ec
@@ -82,7 +83,7 @@ public class ScriptExecutorUtils {
 				List<GPUContext> gCtxs = GPUContextPool.reserveAllGPUContexts();
 				if (gCtxs == null) {
 					throw new DMLRuntimeException(
-							"GPU : Could not create GPUContext, either no GPU or all GPUs currently in use");
+						"GPU : Could not create GPUContext, either no GPU or all GPUs currently in use");
 				}
 				gCtxs.get(0).initializeThread();
 				ec.setGPUContexts(gCtxs);
@@ -120,18 +121,21 @@ public class ScriptExecutorUtils {
 			}
 			if( ConfigurationManager.isCodegenEnabled() )
 				SpoofCompiler.cleanupCodeGenerator();
-			
+
 			// display statistics (incl caching stats if enabled)
 			Statistics.stopRunTimer();
 			System.out.println(Statistics.display(statisticsMaxHeavyHitters > 0 ?
-					statisticsMaxHeavyHitters : DMLScript.STATISTICS_COUNT));
-			
+				statisticsMaxHeavyHitters : DMLScript.STATISTICS_COUNT));
+
 			if (DMLScript.LINEAGE_ESTIMATE)
 				System.out.println(LineageEstimatorStatistics.displayLineageEstimates());
 
-			if (DMLScript.USE_OOC)
+			if(DMLScript.USE_OOC) {
+				// Clean symbol-table entries so OOC streams count as de-referenced
+				if((outputVariables == null || outputVariables.isEmpty()) && ec != null)
+					ec.getVarList().forEach(var -> VariableCPInstruction.processRmvarInstruction(ec, var));
 				OOCCacheManager.reset();
+			}
 		}
 	}
-
 }

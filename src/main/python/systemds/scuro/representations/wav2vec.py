@@ -25,6 +25,7 @@ import torch
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.transformed import TransformedModality
 
+from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.drsearch.operator_registry import register_representation
 
@@ -35,7 +36,7 @@ warnings.filterwarnings("ignore", message="Some weights of")
 
 @register_representation(ModalityType.AUDIO)
 class Wav2Vec(UnimodalRepresentation):
-    def __init__(self):
+    def __init__(self, params=None):
         super().__init__("Wav2Vec", ModalityType.TIMESERIES, {})
         self.processor = Wav2Vec2Processor.from_pretrained(
             "facebook/wav2vec2-base-960h"
@@ -44,7 +45,7 @@ class Wav2Vec(UnimodalRepresentation):
             "facebook/wav2vec2-base-960h"
         ).float()
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )
@@ -68,3 +69,8 @@ class Wav2Vec(UnimodalRepresentation):
 
         transformed_modality.data = result
         return transformed_modality
+
+    def get_output_stats(self, input_stats) -> RepresentationStats:
+        num_instances = getattr(input_stats, "num_instances", 0)
+        embedding_dim = 768
+        return RepresentationStats(num_instances, (embedding_dim,))

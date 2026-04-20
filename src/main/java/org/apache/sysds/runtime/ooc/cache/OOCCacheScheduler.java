@@ -19,6 +19,11 @@
 
 package org.apache.sysds.runtime.ooc.cache;
 
+import org.apache.sysds.runtime.instructions.ooc.OOCStream;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
+import org.apache.sysds.runtime.ooc.memory.InMemoryQueueCallback;
+
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -32,11 +37,46 @@ public interface OOCCacheScheduler {
 	CompletableFuture<BlockEntry> request(BlockKey key);
 
 	/**
+	 * Tries to request a single block from the cache.
+	 * Immediately returns the entry if present, otherwise null without scheduling reads.
+	 * @param key the requested key associated to the block
+	 * @return the available BlockEntry or null
+	 */
+	default BlockEntry tryRequest(BlockKey key) {
+		List<BlockEntry> out = tryRequest(List.of(key));
+		return out == null || out.isEmpty() ? null : out.get(0);
+	}
+
+	/**
 	 * Requests a list of blocks from the cache that must be available at the same time.
 	 * @param keys the requested keys associated to the block
 	 * @return the list of available BlockEntries
 	 */
 	CompletableFuture<List<BlockEntry>> request(List<BlockKey> keys);
+
+	/**
+	 * Tries to request a list of blocks from the cache that must be available at the same time.
+	 * Immediately returns the list of entries if present, otherwise null without scheduling reads.
+	 * @param keys the requested keys associated to the block
+	 * @return the list of available BlockEntries
+	 */
+	List<BlockEntry> tryRequest(List<BlockKey> keys);
+
+	/**
+	 * Requests any n entries of the list of blocks, preferring an available item.
+	 */
+	CompletableFuture<List<BlockEntry>> requestAnyOf(List<BlockKey> keys, int n, List<BlockKey> selectionOut);
+
+	/**
+	 * Requests any n entries of the list of blocks, preferring an available item.
+	 */
+	List<BlockEntry> tryRequestAnyOf(List<BlockKey> keys, int n, List<BlockKey> selectionOut);
+
+	/**
+	 * Adds the given priority to any pending request accessing the key.
+	 * Multi-requests are prioritized partially.
+	 */
+	void prioritize(BlockKey key, double priority);
 
 	/**
 	 * Places a new block in the cache. Note that objects are immutable and cannot be overwritten.
@@ -45,7 +85,7 @@ public interface OOCCacheScheduler {
 	 * @param data the block data
 	 * @param size the size of the data
 	 */
-	void put(BlockKey key, Object data, long size);
+	BlockKey put(BlockKey key, Object data, long size);
 
 	/**
 	 * Places a new block in the cache and returns a pinned handle.
@@ -55,6 +95,15 @@ public interface OOCCacheScheduler {
 	 * @param size the size of the data
 	 */
 	BlockEntry putAndPin(BlockKey key, Object data, long size);
+
+	interface HandoverHandle {
+		BlockKey getKey();
+		boolean isCommitted();
+		CompletableFuture<Boolean> getCompletionFuture();
+		OOCStream.QueueCallback<IndexedMatrixValue> reclaim();
+	}
+
+	HandoverHandle handover(BlockKey key, InMemoryQueueCallback callback);
 
 	/**
 	 * Places a new source-backed block in the cache and registers the location with the IO handler. The entry is
@@ -79,6 +128,14 @@ public interface OOCCacheScheduler {
 		OOCIOHandler.SourceBlockDescriptor descriptor);
 
 	/**
+	 * Notifies the cache that there is another reference to the same block key.
+	 * This will prevent forget(key) from removing the block from cache.
+	 * A block will only be forgotten after all referencing instances called forget(key).
+	 * @param key
+	 */
+	void addReference(BlockKey key);
+
+	/**
 	 * Forgets a block from the cache.
 	 * @param key the associated key of the block
 	 */
@@ -97,7 +154,43 @@ public interface OOCCacheScheduler {
 	void unpin(BlockEntry entry);
 
 	/**
+	 * Returns the current cache size in bytes.
+	 */
+	long getCacheSize();
+
+	/**
+	 * Returns the number of pinned bytes in the cache.
+	 */
+	long getPinnedBytes();
+
+	/**
+	 * Returns the hard cache limit in bytes.
+	 */
+	long getHardLimit();
+
+	/**
+	 * Returns if the current cache size is within its defined memory limits.
+	 */
+	boolean isWithinLimits();
+
+	/**
+	 * Returns if the current cache size is within its soft memory limits.
+	 */
+	boolean isWithinSoftLimits();
+
+	/**
 	 * Shuts down the cache scheduler.
 	 */
 	void shutdown();
+
+	/**
+	 * Updates the cache limits.
+	 */
+	void updateLimits(long evictionLimit, long hardLimit);
+
+	/**
+	 * Creates a snapshot of the cache.
+	 * Should only be used for debugging or diagnoses.
+	 */
+	Collection<BlockEntry> snapshot();
 }

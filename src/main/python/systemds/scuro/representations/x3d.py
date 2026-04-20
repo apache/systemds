@@ -18,10 +18,15 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from systemds.scuro.utils.static_variables import get_device
+from systemds.scuro.utils.static_variables import (
+    compute_batch_size,
+    get_device,
+    get_device_for_model,
+)
 from systemds.scuro.utils.torch_dataset import CustomDataset
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
+from systemds.scuro.representations.representation import RepresentationStats
 from typing import Tuple, Any
 import torch.utils.data
 import torch
@@ -34,7 +39,9 @@ from systemds.scuro.drsearch.operator_registry import register_representation
 
 @register_representation([ModalityType.VIDEO])
 class X3D(UnimodalRepresentation):
-    def __init__(self, layer="classifier.1", model_name="s3d", output_file=None):
+    def __init__(
+        self, layer="classifier.1", model_name="s3d", output_file=None, params=None
+    ):
         self.data_type = torch.float32
         self.model_name = model_name
         parameters = self._get_parameters()
@@ -52,6 +59,9 @@ class X3D(UnimodalRepresentation):
 
         self.model.fc = Identity()
 
+    def get_output_stats(self, input_stats) -> RepresentationStats:
+        return RepresentationStats(input_stats.num_instances, (512,))
+
     @property
     def model_name(self):
         return self._model_name
@@ -60,9 +70,13 @@ class X3D(UnimodalRepresentation):
     def model_name(self, model_name):
         self._model_name = model_name
         if model_name == "r3d":
-            self.model = r3d_18(pretrained=True).to(get_device())
+            self.model = r3d_18(pretrained=True)
+            self.device = get_device_for_model(self.model, memory_factor=1.5)
+            self.model = self.model.to(self.device)
         elif model_name == "s3d":
-            self.model = s3d(weights=models.video.S3D_Weights.DEFAULT).to(get_device())
+            self.model = s3d(weights=models.video.S3D_Weights.DEFAULT)
+            self.device = get_device_for_model(self.model, memory_factor=1.5)
+            self.model = self.model.to(self.device)
         else:
             raise NotImplementedError
 
@@ -97,8 +111,17 @@ class X3D(UnimodalRepresentation):
                 parameters["layer_name"].append(name)
         return parameters
 
-    def transform(self, modality):
-        dataset = CustomDataset(modality.data, self.data_type, get_device())
+    def transform(self, modality, aggregation=None):
+        sample = modality.data[0] if modality.data else ""
+        self.batch_size = compute_batch_size(
+            model=self.model,
+            device=self.device,
+            sample_data=sample,
+            tokenizer=None,
+            max_seq_length=None,
+            max_batch_size=128,
+        )
+        dataset = CustomDataset(modality.data, self.data_type, self.device)
 
         embeddings = {}
 
@@ -121,7 +144,7 @@ class X3D(UnimodalRepresentation):
 
         for instance in dataset:
             video_id = instance["id"]
-            frames = instance["data"].to(get_device())
+            frames = instance["data"].to(self.device)
             embeddings[video_id] = []
 
             frames = frames.unsqueeze(0).permute(0, 2, 1, 3, 4)
@@ -152,7 +175,9 @@ class I3D(UnimodalRepresentation):
         self.model_name = model_name
         self.model = torch.hub.load(
             "facebookresearch/pytorchvideo", "i3d_r50", pretrained=True
-        ).to(get_device())
+        )
+        self.device = get_device_for_model(self.model, memory_factor=1.5)
+        self.model = self.model.to(self.device)
         parameters = self._get_parameters()
         super().__init__("I3D", ModalityType.EMBEDDING, parameters)
 
@@ -181,7 +206,16 @@ class I3D(UnimodalRepresentation):
         return parameters
 
     def transform(self, modality):
-        dataset = CustomDataset(modality.data, torch.float32, get_device())
+        sample = modality.data[0] if modality.data else ""
+        self.batch_size = compute_batch_size(
+            model=self.model,
+            device=self.device,
+            sample_data=sample,
+            tokenizer=None,
+            max_seq_length=None,
+            max_batch_size=128,
+        )
+        dataset = CustomDataset(modality.data, torch.float32, self.device)
         embeddings = {}
 
         features = None
@@ -204,7 +238,7 @@ class I3D(UnimodalRepresentation):
 
         for instance in dataset:
             video_id = instance["id"]
-            frames = instance["data"].to(get_device())
+            frames = instance["data"].to(self.device)
             embeddings[video_id] = []
 
             batch = torch.transpose(frames, 1, 0)

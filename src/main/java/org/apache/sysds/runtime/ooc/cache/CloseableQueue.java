@@ -45,6 +45,7 @@ public class CloseableQueue<T> {
 		return true;
 	}
 
+	@SuppressWarnings("unchecked")
 	public T take() throws InterruptedException {
 		if (closed && queue.isEmpty())
 			return null;

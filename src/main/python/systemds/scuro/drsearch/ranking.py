@@ -33,7 +33,7 @@ def rank_by_tradeoff(
 ):
     entries = list(entries)
     if not entries:
-        return []
+        return [], []
 
     performance_score_accessor = lambda entry: getattr(entry, "val_score")[
         performance_metric_name

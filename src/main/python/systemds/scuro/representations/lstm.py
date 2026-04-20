@@ -25,7 +25,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 from typing import List, Dict, Any
-from systemds.scuro.utils.static_variables import get_device
+from systemds.scuro.utils.static_variables import get_device, get_device_for_model
 import numpy as np
 
 from systemds.scuro.modality.modality import Modality
@@ -44,6 +44,7 @@ class LSTM(Fusion):
         learning_rate=0.001,
         epochs=20,
         batch_size=32,
+        params=None,
     ):
         parameters = {
             "width": [128, 256, 512],
@@ -179,8 +180,8 @@ class LSTM(Fusion):
         self.input_dim = X.shape[2]
 
         self.model = self._build_model(self.input_dim, self.num_classes)
-        device = get_device()
-        self.model.to(device)
+        self.device = get_device_for_model(self.model, memory_factor=1.5)
+        self.model = self.model.to(self.device)
 
         if self.is_multilabel:
             criterion = nn.BCEWithLogitsLoss()
@@ -201,8 +202,8 @@ class LSTM(Fusion):
         for epoch in range(self.epochs):
             total_loss = 0
             for batch_X, batch_y in dataloader:
-                batch_X = batch_X.to(device)
-                batch_y = batch_y.to(device)
+                batch_X = batch_X.to(self.device)
+                batch_y = batch_y.to(self.device)
                 optimizer.zero_grad()
 
                 features, predictions = self.model(batch_X)
@@ -244,8 +245,8 @@ class LSTM(Fusion):
 
         X = self._prepare_data(modalities)
 
-        device = get_device()
-        self.model.to(device)
+        self.device = get_device_for_model(self.model, memory_factor=1.5)
+        self.model = self.model.to(self.device)
 
         X_tensor = torch.FloatTensor(X)
         all_features = []
@@ -255,7 +256,7 @@ class LSTM(Fusion):
                 TensorDataset(X_tensor), batch_size=self.batch_size, shuffle=False
             )
             for (batch_X,) in inference_dataloader:
-                batch_X = batch_X.to(device)
+                batch_X = batch_X.to(self.device)
                 features, _ = self.model(batch_X)
                 all_features.append(features.cpu())
 

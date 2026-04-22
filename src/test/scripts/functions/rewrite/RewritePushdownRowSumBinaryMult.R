@@ -1,5 +1,3 @@
-#-------------------------------------------------------------
-#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -7,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,11 +17,8 @@
 #
 #-------------------------------------------------------------
 
-X1 = rand(rows=$1, cols=$2, pdf=$3, seed=$4) * 7;
-
-while(FALSE){} #prevent cse
-
-X2 = rand(rows=$1, cols=$2, pdf=$3, seed=$4) * 7;
-
-R = as.matrix(sum(abs(X1)==abs(X2)));
-write(R, $5);
+args<-commandArgs(TRUE)
+library("Matrix")
+X=matrix(1, 100, 1) %*% t(seq(1,100))
+R=matrix(2*rowSums(3*X), ncol=1)
+writeMM(as(R, "CsparseMatrix"), paste(args[2], "R", sep=""))

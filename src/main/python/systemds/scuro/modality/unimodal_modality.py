@@ -56,7 +56,8 @@ class UnimodalModality(Modality):
     def get_metadata_at_position(self, position: int):
         if self.data_loader.chunk_size:
             return self.metadata[
-                (self.data_loader.next_chunk - 1) * self.data_loader.chunk_size + position
+                (self.data_loader.next_chunk - 1) * self.data_loader.chunk_size
+                + position
             ]
 
         return self.metadata[position]

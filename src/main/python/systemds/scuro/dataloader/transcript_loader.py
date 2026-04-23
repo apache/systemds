@@ -37,25 +37,23 @@ class TranscriptLoader(BaseLoader):
         transcribe_model_size: str = "medium",
         load=True,
     ):
-        super().__init__(
-            source_path, indices, data_type, chunk_size, ModalityType.TEXT
+        super().__init__(source_path, indices, data_type, chunk_size, ModalityType.TEXT)
+        self.model = WhisperModel(
+            transcribe_model_size, device="cpu", compute_type="int8"
         )
-        self.model = WhisperModel(transcribe_model_size, device="cpu", compute_type="int8")
         self.normalize = normalize
         self.load_data_from_file = load
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
         segments, _ = self.model.transcribe(file, vad_filter=True)
-        
+
         for i, seg in enumerate(segments):
-            md = self.modality_type.create_metadata(
-                len(seg.text.split()), seg.text
-            )
+            md = self.modality_type.create_metadata(len(seg.text.split()), seg.text)
             md["timestamp_start"] = seg.start
             md["timestamp_end"] = seg.end
             md["text"] = seg.text
-            
+
             self.metadata.append(md)
-            
+
             self.data.append(seg.text)

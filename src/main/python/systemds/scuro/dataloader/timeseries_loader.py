@@ -81,15 +81,19 @@ class TimeseriesLoader(BaseLoader):
             data = self._normalize_signals(data)
 
         if file:
-            self.metadata.append(self.modality_type.create_metadata(
-                self.signal_names, data, self.sampling_rate
-            ))
+            self.metadata.append(
+                self.modality_type.create_metadata(
+                    self.signal_names, data, self.sampling_rate
+                )
+            )
             self.data.append(data)
         else:
             for i, index in enumerate(self.indices):
-                self.metadata.append(self.modality_type.create_metadata(
-                    self.signal_names, data[i], self.sampling_rate
-                ))
+                self.metadata.append(
+                    self.modality_type.create_metadata(
+                        self.signal_names, data[i], self.sampling_rate
+                    )
+                )
                 self.data.append(data[i])
 
     def _normalize_signals(self, data: np.ndarray) -> np.ndarray:

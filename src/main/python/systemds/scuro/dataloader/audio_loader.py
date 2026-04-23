@@ -62,6 +62,7 @@ class AudioLoader(BaseLoader):
         self.file_sanity_check(file)
         if not self.load_data_from_file:
             import numpy as np
+
             audio = np.array([0])
             sr = 1000
         else:

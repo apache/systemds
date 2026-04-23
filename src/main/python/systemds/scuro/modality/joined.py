@@ -77,9 +77,8 @@ class JoinedModality(Modality):
             )
 
         for i in range(start, end):
-            idx_1 = self.left_modality.metadata[i + starting_idx][
-                self.condition.leftField
-            ]
+            left_meta_idx = i if self.chunk_left else i + starting_idx
+            idx_1 = self.left_modality.metadata[left_meta_idx][self.condition.leftField]
             if (
                 self.condition.alignment is None and self.condition.join_type == "<"
             ):  # TODO compute correct alignment timestamps/spatial params
@@ -90,9 +89,7 @@ class JoinedModality(Modality):
             if self.chunk_left:
                 i = i + starting_idx
 
-            idx_2 = self.right_modality.metadata[i][
-                self.condition.rightField
-            ]
+            idx_2 = self.right_modality.metadata[i][self.condition.rightField]
             self.joined_right.data.append([])
 
             c = 0

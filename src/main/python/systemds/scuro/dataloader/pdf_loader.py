@@ -45,13 +45,13 @@ class PdfLoader(BaseLoader):
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
-        
+
         doc = pymupdf.open(file)
-        
+
         for i, page in enumerate(doc.pages()):
             image_bytes = page.get_pixmap().tobytes("jpg")
             np_buffer = np.frombuffer(image_bytes, dtype=np.uint8)
-            
+
             image = cv2.imdecode(np_buffer, cv2.IMREAD_COLOR)
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
@@ -63,8 +63,8 @@ class PdfLoader(BaseLoader):
 
             image = image.astype(np.uint8, copy=False)
 
-            self.metadata.append(self.modality_type.create_metadata(
-                width, height, channels
-            ))
+            self.metadata.append(
+                self.modality_type.create_metadata(width, height, channels)
+            )
 
             self.data.append(image)

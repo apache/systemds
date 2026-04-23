@@ -56,9 +56,9 @@ class TextLoader(BaseLoader):
                 if self.prefix:
                     line = re.sub(self.prefix, "", line)
                 line = line.replace("\n", "")
-                self.metadata.append(self.modality_type.create_metadata(
-                    len(line.split()), line
-                ))
+                self.metadata.append(
+                    self.modality_type.create_metadata(len(line.split()), line)
+                )
                 self.data.append(line)
 
     def get_stats(self, source_path: str):

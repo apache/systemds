@@ -163,9 +163,7 @@ class Modality:
                         if "attention_mask" in self.metadata[i]:
                             self.metadata[i]["attention_mask"] = attention_mask
                         else:
-                            self.metadata[i].update(
-                                {"attention_mask": attention_mask}
-                            )
+                            self.metadata[i].update({"attention_mask": attention_mask})
             elif (
                 isinstance(first, list)
                 and len(first) > 0
@@ -192,9 +190,7 @@ class Modality:
                         if "attention_mask" in self.metadata[i]:
                             self.metadata[i]["attention_mask"] = attention_mask
                         else:
-                            self.metadata[i].update(
-                                {"attention_mask": attention_mask}
-                            )
+                            self.metadata[i].update({"attention_mask": attention_mask})
             else:
                 maxlen = (
                     max([len(seq) for seq in self.data]) if max_len is None else max_len
@@ -215,9 +211,7 @@ class Modality:
                         if "attention_mask" in self.metadata[i]:
                             self.metadata[i]["attention_mask"] = attention_mask
                         else:
-                            self.metadata[i].update(
-                                {"attention_mask": attention_mask}
-                            )
+                            self.metadata[i].update({"attention_mask": attention_mask})
         # TODO: this might need to be a new modality (otherwise we loose the original data)
         self.data = result
 

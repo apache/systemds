@@ -86,11 +86,25 @@ public class FederatedRevTest extends AutomatedTestBase {
 		runRevTest(Types.ExecMode.SPARK, true);
 	}
 
+	@Test
+	public void testRevDifferentRangesCP() {
+		runRevTest(Types.ExecMode.SINGLE_NODE, false, true);
+	}
+
+		@Test
+	public void testRevDifferentRangesSP() {
+		runRevTest(Types.ExecMode.SPARK, false, true);
+	}
+
 	private void runRevTest(ExecMode execMode) {
 		runRevTest(execMode, false);
 	}
 
 	private void runRevTest(ExecMode execMode, boolean activateFedCompilation) {
+		runRevTest(execMode, activateFedCompilation, false);
+	}
+
+	private void runRevTest(ExecMode execMode, boolean activateFedCompilation, boolean differentPartitionSizes) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;
 
@@ -108,20 +122,52 @@ public class FederatedRevTest extends AutomatedTestBase {
 			c = cols;
 		}
 
-		double[][] X1 = getRandomMatrix(r, c, 1, 5, 1, 3);
-		double[][] X2 = getRandomMatrix(r, c, 1, 5, 1, 7);
-		double[][] X3 = getRandomMatrix(r, c, 1, 5, 1, 8);
-		double[][] X4 = getRandomMatrix(r, c, 1, 5, 1, 9);
+		int r_X1 = r; int r_X2 = r; int r_X3 = r; int r_X4 = r;
+		int rend_X1 = r; int rend_X2 = r; int rend_X3 = r; int rend_X4 = r;
+		int c_X1 = c; int c_X2 = c; int c_X3 = c; int c_X4 = c;
+		int cend_X1 = c_X1; int cend_X2 = c_X1+c_X2; int cend_X3 = cend_X2+c_X3; int cend_X4 = cend_X3+c_X4;
+		if(rowPartitioned) {
+			if(differentPartitionSizes) {
+				r_X1 = r+1;
+				r_X2 = r-2;
+				r_X3 = r+1;
+				r_X4 = r-0;
+			}
+			else {
+				r_X1 = r;
+				r_X2 = r;
+				r_X3 = r;
+				r_X4 = r;
+			}
+			rend_X1 = r_X1; rend_X2 = r_X1+r_X2; rend_X3 = rend_X2+r_X3; rend_X4 = rend_X3+r_X4;
+			c_X1 = c; c_X2 = c; c_X3 = c; c_X4 = c;
+			cend_X1 = c; cend_X2 = c; cend_X3 = c; cend_X4 = c;
+		}
+		else if(differentPartitionSizes) {
+			c_X1 = c+1;
+			c_X2 = c-2;
+			c_X3 = c+1;
+			c_X4 = c-0;
+			cend_X1 = c_X1; cend_X2 = c_X1+c_X2; cend_X3 = cend_X2+c_X3; cend_X4 = cend_X3+c_X4;
+		}
+
+		double[][] X1 = getRandomMatrix(r_X1, c_X1, 1, 5, 1, 3);
+		double[][] X2 = getRandomMatrix(r_X2, c_X2, 1, 5, 1, 7);
+		double[][] X3 = getRandomMatrix(r_X3, c_X3, 1, 5, 1, 8);
+		double[][] X4 = getRandomMatrix(r_X4, c_X4, 1, 5, 1, 9);
 
 		for(int k : new int[] {1, 2, 3}) {
 			Arrays.fill(X3[k], 0);
 		}
 
-		MatrixCharacteristics mc = new MatrixCharacteristics(r, c, blocksize, r * c);
-		writeInputMatrixWithMTD("X1", X1, false, mc);
-		writeInputMatrixWithMTD("X2", X2, false, mc);
-		writeInputMatrixWithMTD("X3", X3, false, mc);
-		writeInputMatrixWithMTD("X4", X4, false, mc);
+		writeInputMatrixWithMTD("X1", X1, false,
+			new MatrixCharacteristics(r_X1, c_X1, blocksize, r_X1 * c_X1));
+		writeInputMatrixWithMTD("X2", X2, false,
+			new MatrixCharacteristics(r_X2, c_X2, blocksize, r_X2 * c_X2));
+		writeInputMatrixWithMTD("X3", X3, false,
+			new MatrixCharacteristics(r_X3, c_X3, blocksize, r_X3 * c_X3));
+		writeInputMatrixWithMTD("X4", X4, false,
+			new MatrixCharacteristics(r_X4, c_X4, blocksize, r_X4 * c_X4));
 
 		// empty script name because we don't execute any script, just start the worker
 		fullDMLScriptName = "";
@@ -134,7 +180,6 @@ public class FederatedRevTest extends AutomatedTestBase {
 		Process t3 = startLocalFedWorker(port3, FED_WORKER_WAIT_S);
 		Process t4 = startLocalFedWorker(port4);
 
-		
 		try {
 			if(!isAlive(t1, t2, t3, t4))
 				throw new RuntimeException("Failed starting federated worker");
@@ -147,7 +192,8 @@ public class FederatedRevTest extends AutomatedTestBase {
 
 			// Run reference dml script with normal matrix
 			fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-			programArgs = new String[] {"-stats", "100", "-args", input("X1"), input("X2"), input("X3"), input("X4"),
+			programArgs = new String[] {"-stats", "100", "-args",
+				input("X1"), input("X2"), input("X3"), input("X4"),
 				Boolean.toString(rowPartitioned).toUpperCase(), expected("S")};
 
 			runTest(null);
@@ -158,8 +204,14 @@ public class FederatedRevTest extends AutomatedTestBase {
 				"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 				"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
 				"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
-				"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + cols,
-				"rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out_S=" + output("S")};
+				"in_X4=" + TestUtils.federatedAddress(port4, input("X4")),
+				"rows=" + rows, "cols=" + cols,
+				"rend_X1=" + rend_X1, "cend_X1=" + cend_X1,
+				"rend_X2=" + rend_X2, "cend_X2=" + cend_X2,
+				"rend_X3=" + rend_X3, "cend_X3=" + cend_X3,
+				"rend_X4=" + rend_X4, "cend_X4=" + cend_X4,
+				"rP=" + Boolean.toString(rowPartitioned).toUpperCase(),
+				"out_S=" + output("S")};
 
 			runTest(null);
 

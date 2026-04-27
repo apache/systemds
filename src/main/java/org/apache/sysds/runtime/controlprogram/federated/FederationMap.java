@@ -750,7 +750,7 @@ public class FederationMap {
 
 		Collections.reverse(this._fedMap);
 
-		int dim = (getType() == FType.ROW) ? 0 : 1;
+		int dim = (getType() == FType.COL) ? 1 : 0;
 		int currentDimPos = 0;
 		Iterator<Pair<FederatedRange, FederatedData>> fmIter = this._fedMap.iterator();
 		while(fmIter.hasNext()) {

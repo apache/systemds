@@ -39,8 +39,6 @@ import org.junit.runners.Parameterized;
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedRevTest extends AutomatedTestBase {
-	// private static final Log LOG = LogFactory.getLog(FederatedRightIndexTest.class.getName());
-
 	private final static String TEST_NAME = "FederatedRevTest";
 
 	private final static String TEST_DIR = "functions/federated/";

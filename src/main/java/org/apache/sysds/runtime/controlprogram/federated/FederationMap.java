@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -724,21 +726,41 @@ public class FederationMap {
 				Arrays.stream(frset).forEach(fr -> fr.setTID(tid));
 	}
 
+	/**
+	 * Sort the entries of the federation map based on their federated ranges
+	 */
+	private void sortFederatedRanges() {
+		int dim = (this.getType() == FType.COL) ? 1 : 0;
+
+		this._fedMap.sort(new Comparator<Pair<FederatedRange, FederatedData>>() {
+			@Override
+			public int compare(Pair<FederatedRange, FederatedData> o1, Pair<FederatedRange, FederatedData> o2) {
+				return o1.getLeft().getBeginDimsInt()[dim] - o2.getLeft().getBeginDimsInt()[dim];
+			}
+		});
+	}
+
 	public void reverseFedMap() {
 		// TODO perf
-		// TODO: add a check if the map is sorted based on indexes before reversing.
 		// TODO: add a setup such that on construction the federated map is already sorted.
-		FederatedRange[] fedRanges = getFederatedRanges();
+		if(this.getType() != FType.ROW)
+			throw new DMLRuntimeException("Reversing is only supported for row partitioned federation maps yet.");
 
-		for(int i = 0; i < Math.floor(fedRanges.length / 2.0); i++) {
-			FederatedData data1 = getFederatedData(fedRanges[i]);
-			FederatedData data2 = getFederatedData(fedRanges[fedRanges.length-1-i]);
+		this.sortFederatedRanges();
 
-			removeFederatedData(fedRanges[i]);
-			removeFederatedData(fedRanges[fedRanges.length-1-i]);
+		Collections.reverse(this._fedMap);
 
-			_fedMap.add(Pair.of(fedRanges[i], data2));
-			_fedMap.add(Pair.of(fedRanges[fedRanges.length-1-i], data1));
+		int dim = (getType() == FType.ROW) ? 0 : 1;
+		int currentDimPos = 0;
+		Iterator<Pair<FederatedRange, FederatedData>> fmIter = this._fedMap.iterator();
+		while(fmIter.hasNext()) {
+			Pair<FederatedRange, FederatedData> elem = fmIter.next();
+			long dimSize = elem.getLeft().getSize(dim);
+			long[] beginDims = elem.getLeft().getBeginDims();
+			long[] endDims = elem.getLeft().getEndDims();
+			beginDims[dim] = currentDimPos;
+			currentDimPos += dimSize;
+			endDims[dim] = currentDimPos;
 		}
 	}
 

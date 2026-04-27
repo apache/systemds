@@ -1,0 +1,153 @@
+<!--
+{% comment %}
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to you under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied.  See the License for the specific language governing
+permissions and limitations under the License.
+{% endcomment %}
+-->
+
+# Native LLM inference in DML (work in progress)
+
+This directory contains tooling for running pre-trained transformer language
+models natively inside SystemDS, using the existing `scripts/nn/layers/*.dml`
+operators (affine, multi-head attention with optional causal mask, layer norm,
+GELU, etc.).
+
+The first model targeted is **GPT-2 small (124M)**.
+
+## Layout
+
+```
+llm-native/
+├── tools/
+│   └── convert_gpt2.py     # HF GPT-2 -> SystemDS CSV + MTD + manifest.json
+├── tests/
+│   └── test_convert_gpt2.py
+├── weights/                # generated; gitignored
+├── requirements.txt
+└── README.md
+```
+
+## Quick start
+
+```bash
+cd scripts/staging/llm-native
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+# Convert the HF GPT-2 small checkpoint into DML-ready matrices.
+python tools/convert_gpt2.py --model gpt2 --out weights/gpt2
+
+# Inspect what was produced.
+ls weights/gpt2/ | head
+cat weights/gpt2/manifest.json | head -40
+```
+
+The converter is a one-shot Python script.  After it runs, the `weights/gpt2/`
+directory contains one `<name>.csv` plus matching `<name>.csv.mtd` per
+parameter tensor, plus a `manifest.json` describing the model config, file
+map, tied weights, and SHA-256 hashes.
+
+## Why a converter?
+
+The DML transformer layers in `scripts/nn/layers/` describe **computation only**
+(matmuls, layer norm, attention).  Trained parameter values live in HuggingFace
+PyTorch checkpoints with HF-specific names and shapes.  The converter is the
+one-time bridge:
+
+1. Loads the HF `GPT2LMHeadModel` weights.
+2. Splits the fused `c_attn` projection back into separate `W_Q`, `W_K`, `W_V`.
+3. Reshapes biases from `(D,)` to `(1, D)` to match DML conventions.
+4. Upcasts to `float64` (DML's native value type).
+5. Writes one CSV + MTD pair per matrix and a `manifest.json` index.
+
+After conversion, DML scripts can `read("weights/gpt2/h0_W_Q.csv", format="csv")`
+and feed the matrices directly to `bert_layer::forward(...)` /
+`multi_attention::forward_causal(...)`.
+
+## HF -> DML name and shape mapping
+
+`B`/`T`/`D`/`H`/`I`/`V` follow the conventions of `bert_layer.dml`
+(`D = n_embd = 768`, `I = 4*D = 3072`, `V = 50257` for GPT-2 small).
+
+| HF state-dict key              | Shape (HF)     | DML file (this dir)        | DML role             |
+|--------------------------------|----------------|----------------------------|----------------------|
+| `wte.weight`                   | `(V, D)`       | `wte.csv`                  | token embedding      |
+| `wpe.weight`                   | `(n_ctx, D)`   | `wpe.csv`                  | positional embedding |
+| `h.i.ln_1.weight`              | `(D,)`         | `hi_ln1_gamma.csv`         | LN1 gamma            |
+| `h.i.ln_1.bias`                | `(D,)`         | `hi_ln1_beta.csv`          | LN1 beta             |
+| `h.i.attn.c_attn.weight[:,0:D]`| `(D, D)`       | `hi_W_Q.csv`               | query projection W   |
+| `h.i.attn.c_attn.weight[:,D:2D]`|`(D, D)`       | `hi_W_K.csv`               | key projection W     |
+| `h.i.attn.c_attn.weight[:,2D:3D]`|`(D, D)`      | `hi_W_V.csv`               | value projection W   |
+| `h.i.attn.c_attn.bias[0:D]`    | `(D,)`         | `hi_b_Q.csv` (1xD)         | query bias           |
+| `h.i.attn.c_attn.bias[D:2D]`   | `(D,)`         | `hi_b_K.csv`               | key bias             |
+| `h.i.attn.c_attn.bias[2D:3D]`  | `(D,)`         | `hi_b_V.csv`               | value bias           |
+| `h.i.attn.c_proj.weight`       | `(D, D)`       | `hi_W_context.csv`         | attn out W           |
+| `h.i.attn.c_proj.bias`         | `(D,)`         | `hi_b_context.csv`         | attn out bias        |
+| `h.i.ln_2.weight`              | `(D,)`         | `hi_ln2_gamma.csv`         | LN2 gamma            |
+| `h.i.ln_2.bias`                | `(D,)`         | `hi_ln2_beta.csv`          | LN2 beta             |
+| `h.i.mlp.c_fc.weight`          | `(D, I)`       | `hi_W_intermediate.csv`    | MLP expand W         |
+| `h.i.mlp.c_fc.bias`            | `(I,)`         | `hi_b_intermediate.csv`    | MLP expand bias      |
+| `h.i.mlp.c_proj.weight`        | `(I, D)`       | `hi_W_out.csv`             | MLP contract W       |
+| `h.i.mlp.c_proj.bias`          | `(D,)`         | `hi_b_out.csv`             | MLP contract bias    |
+| `ln_f.weight`                  | `(D,)`         | `lnf_gamma.csv`            | final LN gamma       |
+| `ln_f.bias`                    | `(D,)`         | `lnf_beta.csv`             | final LN beta        |
+| `lm_head.weight`               | tied to `wte`  | (none)                     | recorded in manifest |
+
+GPT-2 uses HuggingFace's `Conv1D` linear layer, which stores weights as
+`(in, out)` -- exactly what the DML affine layer (`W : (D, M)`) expects, so
+no transpose is performed during conversion.
+
+## Manifest format
+
+`manifest.json` is the index DML drivers should consult first:
+
+```json
+{
+  "model": "gpt2",
+  "arch": "gpt2-causal",
+  "config": {
+    "n_layer": 12, "n_head": 12, "n_embd": 768,
+    "n_ctx": 1024, "vocab_size": 50257,
+    "activation": "gelu", "layer_norm_eps": 1.0e-5
+  },
+  "dtype": "float64",
+  "tied":   { "lm_head": "wte" },
+  "files":  { "wte": "wte.csv", "...": "..." },
+  "sha256": { "wte.csv": "ab12...", "...": "..." }
+}
+```
+
+`tied.lm_head = wte` means the DML driver should reuse `wte` (transposed) for
+the language-modeling head rather than expecting a separate file.
+
+## CLI
+
+```
+python tools/convert_gpt2.py [options]
+
+  --model   HF model id or local path  (default: gpt2)
+  --out     output directory            (default: weights/<basename(model)>)
+  --dtype   {float64,float32}           (default: float64)
+  --cache   HuggingFace cache directory (default: HF default)
+```
+
+## Tests
+
+```bash
+pytest scripts/staging/llm-native/tests
+```
+
+The test suite uses `sshleifer/tiny-gpt2` (a 5-layer 64-dim fixture, a few MB)
+to verify the converter end-to-end without downloading the full GPT-2 weights.

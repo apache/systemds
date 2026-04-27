@@ -78,7 +78,9 @@ class JoinedModality(Modality):
 
         for i in range(start, end):
             left_meta_idx = i if self.chunk_left else i + starting_idx
-            idx_1 = self.left_modality.metadata[left_meta_idx][self.condition.leftField]
+            idx_1 = self.left_modality.metadata[left_meta_idx][
+                self.condition.leftField
+            ]
             if (
                 self.condition.alignment is None and self.condition.join_type == "<"
             ):  # TODO compute correct alignment timestamps/spatial params
@@ -225,8 +227,8 @@ class JoinedModality(Modality):
     def _apply_representation_chunked(
         self, left_modality, right_modality, chunk_right, representation
     ):
-        new_left = Modality(left_modality.modality_type, {})
-        new_right = Modality(right_modality.modality_type, {})
+        new_left = Modality(left_modality.modality_type)
+        new_right = Modality(right_modality.modality_type)
 
         for _ in left_modality.iter_raw_data_chunks(reset=True):
             if chunk_right:

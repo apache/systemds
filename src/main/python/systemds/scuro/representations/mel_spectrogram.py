@@ -57,10 +57,9 @@ class MelSpectrogram(UnimodalRepresentation):
             modality, self, self.output_modality_type
         )
         result = []
-        metadata_values = list(modality.metadata.values())
 
         for i, sample in enumerate(modality.data):
-            sr = metadata_values[i]["frequency"]
+            sr = modality.metadata[i]["frequency"]
             computed_feature = self.compute_feature(sample, sr)
             result.append(computed_feature)
 

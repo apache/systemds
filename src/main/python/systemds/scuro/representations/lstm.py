@@ -92,7 +92,7 @@ class LSTM(Fusion):
                 data = np.array(modality.data)
             except:
                 max_len = -1
-                for md in modality.metadata.values():
+                for md in modality.metadata:
                     if max_len < md["data_layout"]["shape"][0]:
                         max_len = md["data_layout"]["shape"][0]
                 data = np.zeros((len(modality.data), max_len))

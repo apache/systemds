@@ -41,7 +41,7 @@ class UnimodalModality(Modality):
         super().__init__(
             data_loader.modality_type,
             Identifier().new_id(),
-            {},
+            [],
             data_loader.data_type,
         )
         self.data_loader = data_loader

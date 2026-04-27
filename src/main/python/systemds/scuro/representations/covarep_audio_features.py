@@ -47,7 +47,7 @@ class Spectral(UnimodalRepresentation):
         )
         result = []
         for i, y in enumerate(modality.data):
-            sr = list(modality.metadata.values())[i]["frequency"]
+            sr = modality.metadata[i]["frequency"]
 
             spectral_centroid = librosa.feature.spectral_centroid(
                 y=y, sr=sr, hop_length=self.hop_length
@@ -222,7 +222,7 @@ class Pitch(UnimodalRepresentation):
         )
         result = []
         for i, y in enumerate(modality.data):
-            sr = list(modality.metadata.values())[i]["frequency"]
+            sr = modality.metadata[i]["frequency"]
 
             pitches, magnitudes = librosa.piptrack(
                 y=y, sr=sr, hop_length=self.hop_length

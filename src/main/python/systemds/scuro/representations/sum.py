@@ -43,17 +43,13 @@ class Sum(Fusion):
     def execute(self, modalities: List[Modality]):
         data = np.asarray(
             modalities[0].data,
-            dtype=modalities[0].metadata[list(modalities[0].metadata.keys())[0]][
-                "data_layout"
-            ]["type"],
+            dtype=modalities[0].metadata[0]["data_layout"]["type"],
         )
 
         for m in range(1, len(modalities)):
             data += np.asarray(
                 modalities[m].data,
-                dtype=modalities[m].metadata[list(modalities[m].metadata.keys())[0]][
-                    "data_layout"
-                ]["type"],
+                dtype=modalities[m].metadata[0]["data_layout"]["type"],
             )
         return data
 

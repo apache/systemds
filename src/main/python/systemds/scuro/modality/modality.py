@@ -33,7 +33,7 @@ class Modality:
         self,
         modalityType: ModalityType,
         modality_id=-1,
-        metadata={},
+        metadata=[],
         data_type=None,
         transform_time=0,
     ):

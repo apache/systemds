@@ -208,7 +208,7 @@ class SentenceBoundarySplitIndices(Context):
             List of lists, where each inner list contains text chunks (strings)
         """
 
-        for instance, metadata in zip(modality.data, modality.metadata.values()):
+        for instance, metadata in zip(modality.data, modality.metadata):
             text = _extract_text(instance)
             if not text:
                 ModalityType.TEXT.add_field(metadata, "text_spans", [(0, 0)])
@@ -344,7 +344,7 @@ class OverlappingSplitIndices(Context):
             List of tuples, where each tuple contains start and end index to the text chunks
         """
 
-        for instance, metadata in zip(modality.data, modality.metadata.values()):
+        for instance, metadata in zip(modality.data, modality.metadata):
             text = _extract_text(instance)
             if not text:
                 ModalityType.TEXT.add_field(metadata, "text_spans", [(0, 0)])

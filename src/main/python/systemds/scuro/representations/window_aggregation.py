@@ -224,7 +224,7 @@ class WindowAggregation(Window):
             )
 
             windowed_data = np.array(padded_features)
-            data_type = list(modality.metadata.values())[0]["data_layout"]["type"]
+            data_type = modality.metadata[0]["data_layout"]["type"]
             if data_type != "str":
                 windowed_data = windowed_data.astype(data_type)
 

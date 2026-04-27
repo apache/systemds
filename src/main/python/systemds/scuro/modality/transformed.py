@@ -82,8 +82,7 @@ class TransformedModality(Modality):
             data_bytes += self._estimate_data_bytes(instance)
 
         md_bytes = 0
-        for key, value in self.metadata.items():
-            md_bytes += self._estimate_data_bytes(key)
+        for value in self.metadata:
             md_bytes += self._estimate_data_bytes(value)
 
         total_bytes = (

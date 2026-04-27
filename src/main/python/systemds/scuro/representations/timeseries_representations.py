@@ -52,7 +52,7 @@ class TimeSeriesRepresentation(UnimodalRepresentation):
             result.append(feature)
 
         transformed_modality.data = np.vstack(np.array(result)).astype(
-            modality.metadata[list(modality.metadata.keys())[0]]["data_layout"]["type"]
+            modality.metadata[0]["data_layout"]["type"]
         )
         return transformed_modality
 

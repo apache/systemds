@@ -33,7 +33,8 @@ llm-native/
 ├── tools/
 │   ├── convert_gpt2.py     # HF GPT-2 -> SystemDS CSV + MTD + manifest.json
 │   ├── pack_weights.py     # per-layer CSVs -> stacked all_*.csv (for DML driver)
-│   └── np_oracle_gpt2.py   # pure-NumPy reference forward (debugger)
+│   ├── np_oracle_gpt2.py   # pure-NumPy reference forward (debugger)
+│   └── compare_logits.py   # three-way HF / oracle / DML parity check
 ├── dml/
 │   └── gpt2_inference.dml  # native DML inference driver
 ├── tests/
@@ -67,7 +68,16 @@ SYSTEMDS_ROOT=$PWD/../../.. $SYSTEMDS_ROOT/bin/systemds dml/gpt2_inference.dml \
           tokens=weights/gpt2/tokens.csv \
           out=weights/gpt2/dml_dumps \
           dump=TRUE
+
+# End-to-end three-way parity check (HF + NumPy oracle + DML driver):
+python tools/compare_logits.py --with-dml "Hello, my name is"
 ```
+
+`compare_logits.py` is the canonical artifact for "does native DML GPT-2
+match HuggingFace?".  Default mode runs only HF + oracle (~1s, no DML); pass
+`--with-dml` for the full three-way check (~10s; requires the converted
+weights *and* a successful `pack_weights.py` run).  All measured per-step
+max-abs-diffs at gpt2 (124M) sit at ~1e-12, the float64 round-off floor.
 
 The converter is a one-shot Python script.  After it runs, the `weights/gpt2/`
 directory contains one `<name>.csv` plus matching `<name>.csv.mtd` per
@@ -166,3 +176,29 @@ pytest scripts/staging/llm-native/tests
 
 The test suite uses `sshleifer/tiny-gpt2` (a 5-layer 64-dim fixture, a few MB)
 to verify the converter end-to-end without downloading the full GPT-2 weights.
+
+## Implementation notes (gotchas worth knowing)
+
+A few SystemDS / Hadoop quirks that shaped the design here, recorded so the
+next person who tries this doesn't lose a day to them:
+
+1. **DML `read()` paths must be const-string-traceable.**  The DML parser
+   rejects `read()` calls whose filename argument is built from runtime
+   variables -- including loop counters and `ifdef` defaults that aren't
+   string literals.  Trying to `read("weights/h" + i + "_W_Q.csv", ...)` in a
+   loop fails at parse time with a `NullPointerException` deep inside
+   `StringIdentifier.getValue()`, which is a deeply unhelpful error.
+
+   Workaround used here: `pack_weights.py` `vstack`s the 12 per-layer copies
+   of each parameter into a single `all_<param>.csv` (e.g. `all_W_Q.csv` of
+   shape `(12*D, D)`).  The DML driver `read()`s 16 stacked files once, then
+   row-slices inside the per-layer loop -- no runtime-built paths needed.
+   This also turns 196 disk reads into 16, which is why startup is bearable
+   on a laptop.
+
+2. **Hadoop's `FileInputFormat` silently skips files whose names start with
+   `_` or `.`** (its hidden / partition-marker convention).  SystemDS uses
+   the Hadoop input layer for CSV reads, so a tokens file called
+   `_tokens.csv` will produce an `InvalidInputException("Input path does not
+   exist")` at runtime even though `ls` shows it sitting right there.  Name
+   inputs without a leading underscore.

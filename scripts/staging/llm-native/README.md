@@ -31,7 +31,11 @@ The first model targeted is **GPT-2 small (124M)**.
 ```
 llm-native/
 ├── tools/
-│   └── convert_gpt2.py     # HF GPT-2 -> SystemDS CSV + MTD + manifest.json
+│   ├── convert_gpt2.py     # HF GPT-2 -> SystemDS CSV + MTD + manifest.json
+│   ├── pack_weights.py     # per-layer CSVs -> stacked all_*.csv (for DML driver)
+│   └── np_oracle_gpt2.py   # pure-NumPy reference forward (debugger)
+├── dml/
+│   └── gpt2_inference.dml  # native DML inference driver
 ├── tests/
 │   └── test_convert_gpt2.py
 ├── weights/                # generated; gitignored
@@ -49,9 +53,20 @@ pip install -r requirements.txt
 # Convert the HF GPT-2 small checkpoint into DML-ready matrices.
 python tools/convert_gpt2.py --model gpt2 --out weights/gpt2
 
-# Inspect what was produced.
-ls weights/gpt2/ | head
-cat weights/gpt2/manifest.json | head -40
+# Pack the per-layer matrices into stacked all_*.csv files for DML.
+python tools/pack_weights.py --weights weights/gpt2
+
+# (Optional) Cross-check the converter against HuggingFace via the
+# pure-NumPy reference forward.  All per-step diffs should be < 1e-11.
+python tools/np_oracle_gpt2.py --weights weights/gpt2 --compare-hf
+
+# Run native DML inference (writes logits.csv + per-block dumps).
+echo -e "464\n2068\n7586\n21831\n625\n262\n16931\n3290\n13" > weights/gpt2/tokens.csv
+SYSTEMDS_ROOT=$PWD/../../.. $SYSTEMDS_ROOT/bin/systemds dml/gpt2_inference.dml \
+  -nvargs weights=weights/gpt2 \
+          tokens=weights/gpt2/tokens.csv \
+          out=weights/gpt2/dml_dumps \
+          dump=TRUE
 ```
 
 The converter is a one-shot Python script.  After it runs, the `weights/gpt2/`

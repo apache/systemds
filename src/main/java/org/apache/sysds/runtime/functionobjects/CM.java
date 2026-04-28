@@ -20,7 +20,7 @@
 package org.apache.sysds.runtime.functionobjects;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
@@ -88,7 +88,7 @@ public class CM extends ValueFunction
 	 */
 	@Override
 	public Data execute(Data in1, double in2) {
-		CM_COV_Object cm1=(CM_COV_Object) in1;
+		CmCovObject cm1=(CmCovObject) in1;
 		
 		if(cm1.isCMAllZeros()) {
 			cm1.w=1;
@@ -203,7 +203,7 @@ public class CM extends ValueFunction
 	 */
 	@Override
 	public Data execute(Data in1, double in2, double w2) {
-		CM_COV_Object cm1=(CM_COV_Object) in1;
+		CmCovObject cm1=(CmCovObject) in1;
 		
 		if(cm1.isCMAllZeros())
 		{
@@ -320,8 +320,8 @@ public class CM extends ValueFunction
 	@Override
 	public Data execute(Data in1, Data in2)
 	{
-		CM_COV_Object cm1=(CM_COV_Object) in1;
-		CM_COV_Object cm2=(CM_COV_Object) in2;
+		CmCovObject cm1=(CmCovObject) in1;
+		CmCovObject cm2=(CmCovObject) in2;
 		
 		if(cm1.isCMAllZeros())
 		{

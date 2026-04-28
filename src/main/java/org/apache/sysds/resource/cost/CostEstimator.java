@@ -23,28 +23,97 @@ import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.lops.DataGen;
 import org.apache.sysds.lops.LeftIndex;
 import org.apache.sysds.lops.MapMult;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.resource.CloudInstance;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.*;
+import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
+import org.apache.sysds.runtime.controlprogram.ForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysds.runtime.controlprogram.IfProgramBlock;
+import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
+import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.instructions.cp.*;
-import org.apache.sysds.runtime.instructions.spark.*;
+import org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.BuiltinNaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.CPInstruction;
+import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.CompressionCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.CtableCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.DeCompressionCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.IndexingCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ParamservBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ReorgCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ScalarBuiltinNaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.StringInitCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.instructions.spark.AggregateBinarySPInstruction;
+import org.apache.sysds.runtime.instructions.spark.AggregateUnarySPInstruction;
+import org.apache.sysds.runtime.instructions.spark.AggregateUnarySketchSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.AppendMSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.AppendSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.BinaryFrameFrameSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.BinaryFrameMatrixSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.BinaryMatrixBVectorSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.BinaryMatrixMatrixSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.BinaryMatrixScalarSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.BinarySPInstruction;
+import org.apache.sysds.runtime.instructions.spark.CSVReblockSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.CastSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.CentralMomentSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.CheckpointSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.CtableSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.IndexingSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.LIBSVMReblockSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.MapmmChainSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.MapmmSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.MatrixIndexingSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.MatrixReshapeSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.PMapmmSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.PmmSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.QuantileSortSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.QuaternarySPInstruction;
+import org.apache.sysds.runtime.instructions.spark.RandSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.ReblockSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.ReorgSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.SPInstruction;
+import org.apache.sysds.runtime.instructions.spark.TernarySPInstruction;
+import org.apache.sysds.runtime.instructions.spark.Tsmm2SPInstruction;
+import org.apache.sysds.runtime.instructions.spark.TsmmSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.UnaryFrameSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.UnaryMatrixSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.UnarySPInstruction;
+import org.apache.sysds.runtime.instructions.spark.WriteSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.ZipmmSPInstruction;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 
 import static org.apache.sysds.lops.Data.PREAD_PREFIX;
-import static org.apache.sysds.lops.DataGen.*;
 import static org.apache.sysds.resource.cost.CPCostUtils.opcodeRequiresScan;
-import static org.apache.sysds.resource.cost.IOCostUtils.*;
 import static org.apache.sysds.resource.cost.SparkCostUtils.getRandInstTime;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+
 
 /**
  * Class for estimating the execution time of a program.
@@ -87,7 +156,7 @@ public class CostEstimator
 		_functions = new HashSet<>();
 		localMemoryLimit = (long) (OptimizerUtils.getLocalMemBudget() * MEM_ALLOCATION_LIMIT_FRACTION);
 		freeLocalMemory = localMemoryLimit;
-		driverMetrics = new IOMetrics(driverNode);
+		driverMetrics = new IOCostUtils.IOMetrics(driverNode);
 		if (executorNode == null) {
 			// estimation for single node execution -> no executor resources
 			executorMetrics = null;
@@ -100,7 +169,7 @@ public class CostEstimator
 					((double) executorNode.getVCPUs() / dedicatedExecutorCores));
 			// adapting the rest of the metrics not needed since the OS and resource management tasks
 			// would not consume large portion of the memory/storage/network bandwidth in the general case
-			executorMetrics = new IOMetrics(
+			executorMetrics = new IOCostUtils.IOMetrics(
 					effectiveExecutorFlops,
 					dedicatedExecutorCores,
 					executorNode.getMemoryBandwidth(),
@@ -645,7 +714,7 @@ public class CostEstimator
 			RandSPInstruction rinst = (RandSPInstruction) inst;
 			String opcode = rinst.getOpcode();
 			int randType = -1; // default for non-random object generation operations
-			if (opcode.equals(RAND_OPCODE) || opcode.equals(FRAME_OPCODE)) {
+			if (opcode.equals(DataGen.RAND_OPCODE) || opcode.equals(DataGen.FRAME_OPCODE)) {
 				if (rinst.getMinValue() == 0d && rinst.getMaxValue() == 0d) { // empty matrix
 					randType = 0;
 				} else if (rinst.getSparsity() == 1.0 && rinst.getMinValue() == rinst.getMaxValue()) { // allocate, array fill
@@ -747,7 +816,10 @@ public class CostEstimator
 			} else {
 				throw new RuntimeException("Unsupported Unary Spark instruction of type " + inst.getClass().getName());
 			}
-		} else if (inst instanceof BinaryFrameFrameSPInstruction || inst instanceof BinaryFrameMatrixSPInstruction || inst instanceof BinaryMatrixMatrixSPInstruction || inst instanceof BinaryMatrixScalarSPInstruction) {
+		} else if (inst instanceof BinaryFrameFrameSPInstruction 
+				|| inst instanceof BinaryFrameMatrixSPInstruction 
+				|| inst instanceof BinaryMatrixMatrixSPInstruction 
+				|| inst instanceof BinaryMatrixScalarSPInstruction) {
 			BinarySPInstruction binst = (BinarySPInstruction) inst;
 			VarStats input1 = getStatsWithDefaultScalar((binst).input1.getName());
 			VarStats input2 = getStatsWithDefaultScalar((binst).input2.getName());
@@ -942,7 +1014,7 @@ public class CostEstimator
 			collectTime = IOCostUtils.getSparkCollectTime(varToCollect.rddStats, driverMetrics, executorMetrics);
 		} else {
 			// redirect through HDFS (writing to HDFS on executors and reading back on driver)
-			varToCollect.fileInfo = new Object[] {HDFS_SOURCE_IDENTIFIER, FileFormat.BINARY};
+			varToCollect.fileInfo = new Object[] {IOCostUtils.HDFS_SOURCE_IDENTIFIER, FileFormat.BINARY};
 			collectTime = IOCostUtils.getHadoopWriteTime(varToCollect, executorMetrics) +
 					IOCostUtils.getFileSystemReadTime(varToCollect, driverMetrics);
 		}
@@ -985,7 +1057,7 @@ public class CostEstimator
 			// loading from a file
 			if (input.fileInfo == null || input.fileInfo.length != 2) {
 				throw new RuntimeException("Time estimation is not possible without file info.");
-			} else if (isInvalidDataSource((String) input.fileInfo[0])) {
+			} else if (IOCostUtils.isInvalidDataSource((String) input.fileInfo[0])) {
 				throw new RuntimeException("Time estimation is not possible for data source: " + input.fileInfo[0]);
 			}
 			loadTime = IOCostUtils.getFileSystemReadTime(input, driverMetrics);
@@ -1057,7 +1129,7 @@ public class CostEstimator
 			if (input.allocatedMemory >= 0) { // generated object locally
 				if (inputRDD.distributedSize < freeLocalMemory && inputRDD.distributedSize < (0.1 * localMemoryLimit)) {
 					// in this case transfer the data object over HDF (first set the fileInfo of the input)
-					input.fileInfo = new Object[] {HDFS_SOURCE_IDENTIFIER, FileFormat.BINARY};
+					input.fileInfo = new Object[] {IOCostUtils.HDFS_SOURCE_IDENTIFIER, FileFormat.BINARY};
 					ret = IOCostUtils.getFileSystemWriteTime(input, driverMetrics);
 					ret += IOCostUtils.getHadoopReadTime(input, executorMetrics);
 				} else {

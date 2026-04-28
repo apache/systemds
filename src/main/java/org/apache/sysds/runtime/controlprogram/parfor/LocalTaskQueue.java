@@ -45,7 +45,7 @@ public class LocalTaskQueue<T>
 	
 	protected LinkedList<T>  _data        = null;
 	protected boolean 	   _closedInput = false;
-	private DMLRuntimeException _failure = null;
+	protected DMLRuntimeException _failure = null;
 	private static final Log LOG = LogFactory.getLog(LocalTaskQueue.class.getName());
 	
 	public LocalTaskQueue()
@@ -101,6 +101,10 @@ public class LocalTaskQueue<T>
 		notify(); // notify waiting writers
 		
 		return t;
+	}
+
+	public synchronized boolean hasNext() {
+		return !_data.isEmpty() || _closedInput;
 	}
 
 	/**

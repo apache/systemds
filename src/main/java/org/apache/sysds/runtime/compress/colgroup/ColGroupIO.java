@@ -105,10 +105,14 @@ public interface ColGroupIO {
 		switch(ctype) {
 			case DDC:
 				return ColGroupDDC.read(in);
-			case DDCFOR:
-				return ColGroupDDCFOR.read(in);
-			case OLE:
-				return ColGroupOLE.read(in, nRows);
+		case DDCFOR:
+			return ColGroupDDCFOR.read(in);
+		case DeltaDDC:
+			return ColGroupDeltaDDC.read(in);
+		case DDCLZW:
+			return ColGroupDDCLZW.read(in);
+		case OLE:
+			return ColGroupOLE.read(in, nRows);
 			case RLE:
 				return ColGroupRLE.read(in, nRows);
 			case CONST:

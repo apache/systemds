@@ -33,7 +33,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.CentralMomentCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -83,7 +83,7 @@ public class CentralMomentFEDInstruction extends AggregateUnaryFEDInstruction {
 			cm_op = cm_op.setCMAggOp((int) order.getLongValue());
 
 		FederationMap fedMapping = mo.getFedMapping();
-		List<CM_COV_Object> globalCmobj = new ArrayList<>();
+		List<CmCovObject> globalCmobj = new ArrayList<>();
 
 		long varID = FederationUtils.getNextFedDataID();
 		CMOperator finalCm_op = cm_op;
@@ -109,7 +109,7 @@ public class CentralMomentFEDInstruction extends AggregateUnaryFEDInstruction {
 				if (!response.isSuccessful())
 					response.throwExceptionFromResponse();
 				synchronized (globalCmobj) {
-					globalCmobj.add((CM_COV_Object) response.getData()[0]);
+					globalCmobj.add((CmCovObject) response.getData()[0]);
 				}
 			}
 			catch (Exception e) {
@@ -118,8 +118,8 @@ public class CentralMomentFEDInstruction extends AggregateUnaryFEDInstruction {
 			return null;
 		});
 
-		Optional<CM_COV_Object> res = globalCmobj.stream()
-				.reduce((arg0, arg1) -> (CM_COV_Object) finalCm_op.fn.execute(arg0, arg1));
+		Optional<CmCovObject> res = globalCmobj.stream()
+				.reduce((arg0, arg1) -> (CmCovObject) finalCm_op.fn.execute(arg0, arg1));
 		try {
 			ec.setScalarOutput(output.getName(), new DoubleObject(res.get().getRequiredResult(finalCm_op)));
 		}

@@ -37,7 +37,7 @@ import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -1078,7 +1078,7 @@ public class Dictionary extends ACachingMBDictionary {
 	}
 
 	@Override
-	public CM_COV_Object centralMoment(CM_COV_Object ret, ValueFunction fn, int[] counts, int nRows) {
+	public CmCovObject centralMoment(CmCovObject ret, ValueFunction fn, int[] counts, int nRows) {
 		// should be guaranteed to only contain one value per tuple in dictionary.
 		for(int i = 0; i < _values.length; i++)
 			fn.execute(ret, _values[i], counts[i]);
@@ -1089,7 +1089,7 @@ public class Dictionary extends ACachingMBDictionary {
 	}
 
 	@Override
-	public CM_COV_Object centralMomentWithDefault(CM_COV_Object ret, ValueFunction fn, int[] counts, double def,
+	public CmCovObject centralMomentWithDefault(CmCovObject ret, ValueFunction fn, int[] counts, double def,
 		int nRows) {
 		// should be guaranteed to only contain one value per tuple in dictionary.
 		for(int i = 0; i < _values.length; i++)
@@ -1101,7 +1101,7 @@ public class Dictionary extends ACachingMBDictionary {
 	}
 
 	@Override
-	public CM_COV_Object centralMomentWithReference(CM_COV_Object ret, ValueFunction fn, int[] counts, double reference,
+	public CmCovObject centralMomentWithReference(CmCovObject ret, ValueFunction fn, int[] counts, double reference,
 		int nRows) {
 		// should be guaranteed to only contain one value per tuple in dictionary.
 		for(int i = 0; i < _values.length; i++)

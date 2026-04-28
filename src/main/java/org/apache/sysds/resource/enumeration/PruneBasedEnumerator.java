@@ -23,7 +23,13 @@ import org.apache.hadoop.util.Lists;
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.resource.CloudInstance;
 import org.apache.sysds.resource.ResourceCompiler;
-import org.apache.sysds.runtime.controlprogram.*;
+import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
+import org.apache.sysds.runtime.controlprogram.ForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysds.runtime.controlprogram.IfProgramBlock;
+import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
+import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysds.runtime.instructions.Instruction;
 
 import java.util.HashMap;

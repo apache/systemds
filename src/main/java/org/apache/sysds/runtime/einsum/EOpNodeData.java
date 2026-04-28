@@ -1,0 +1,51 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.apache.sysds.runtime.einsum;
+
+import org.apache.commons.logging.Log;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+
+import java.util.List;
+
+public class EOpNodeData extends EOpNode {
+	public int matrixIdx;
+	public EOpNodeData(Character c1, Character c2, Integer dim1, Integer dim2, int matrixIdx){
+		super(c1,c2,dim1,dim2);
+		this.matrixIdx = matrixIdx;
+	}
+
+	@Override
+	public List<EOpNode> getChildren() {
+		return List.of();
+	}
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName()+" ("+matrixIdx+") "+getOutputString();
+	}
+	@Override
+	public MatrixBlock computeEOpNode(List<MatrixBlock> inputs, int numOfThreads, Log LOG) {
+		return inputs.get(matrixIdx);
+	}
+
+	@Override
+	public EOpNode reorderChildrenAndOptimize(EOpNode parent, Character outChar1, Character outChar2) {
+		return this;
+	}
+}

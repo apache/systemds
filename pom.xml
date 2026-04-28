@@ -42,7 +42,7 @@
 		<hadoop.version>3.3.6</hadoop.version>
 		<antlr.version>4.8</antlr.version>
 		<protobuf.version>3.23.4</protobuf.version>
-		<spark.version>3.5.0</spark.version>
+		<spark.version>3.5.7</spark.version>
 		<scala.version>2.12.18</scala.version>
 		<scala.binary.version>2.12</scala.binary.version>
 		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
@@ -54,6 +54,7 @@
 		<log4j.version>2.22.1</log4j.version>
 		<maven-clean-plugin.version>3.2.0</maven-clean-plugin.version>
 		<maven-surefire-plugin.version>3.0.0</maven-surefire-plugin.version>
+        <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
 		<maven-remote-resources-plugin.version>3.0.0</maven-remote-resources-plugin.version>
 		<maven-javadoc-plugin.version>3.5.0</maven-javadoc-plugin.version>
 		<maven-javadoc-plugin.version2>3.2.0</maven-javadoc-plugin.version2>
@@ -77,6 +78,7 @@
 		<test-forkCount>1C</test-forkCount>
 		<rerun.failing.tests.count>2</rerun.failing.tests.count>
 		<jacoco.skip>false</jacoco.skip>
+		<checkstyle.skip>true</checkstyle.skip>
 		<doc.skip>false</doc.skip>
 		<jacoco.include>**</jacoco.include>
 		<automatedtestbase.outputbuffering>false</automatedtestbase.outputbuffering>
@@ -365,7 +367,34 @@
 			</plugin>
 
 
-			<plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${maven-checkstyle-plugin.version}</version>
+
+                <executions>
+                    <execution>
+                        <id>checkstyle</id>
+                        <!-- runs on mvn test -->
+                        <phase>test</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <configuration>
+                    <configLocation>dev/checkstyle/checkstyle.xml</configLocation>
+                    <skip>${checkstyle.skip}</skip>
+                    <failOnViolation>true</failOnViolation>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                    <outputFile>${project.build.directory}/checkstyle-result.xml</outputFile>
+                    <outputFileFormat>xml</outputFileFormat>
+                    <consoleOutput>true</consoleOutput>
+                </configuration>
+            </plugin>
+
+            <plugin>
 				<!-- unit tests -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
@@ -1548,5 +1577,6 @@
 			<artifactId>fastdoubleparser</artifactId>
 			<version>0.9.0</version>
 		</dependency>
+
 	</dependencies>
 </project>

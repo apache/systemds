@@ -18,10 +18,14 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import zipfile
 import numpy as np
 from gensim.utils import tokenize
+from huggingface_hub import hf_hub_download
 
+from systemds.scuro.dataloader.text_loader import TextStats
 from systemds.scuro.modality.transformed import TransformedModality
+from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import save_embeddings
 from systemds.scuro.modality.type import ModalityType
@@ -39,34 +43,64 @@ def load_glove_embeddings(file_path):
     return embeddings
 
 
-# @register_representation(ModalityType.TEXT)
+@register_representation(ModalityType.TEXT)
 class GloVe(UnimodalRepresentation):
-    def __init__(self, glove_path, output_file=None):
+    def __init__(self, output_file=None, params=None):
         super().__init__("GloVe", ModalityType.TEXT)
-        self.glove_path = glove_path
-        self.output_file = output_file
+        file_path = hf_hub_download(
+            repo_id="stanfordnlp/glove", filename="glove.6B.zip"
+        )
+        with zipfile.ZipFile(file_path, "r") as zip_ref:
+            zip_ref.extractall("./glove_extracted")
 
-    def transform(self, modality):
+        self.glove_path = "./glove_extracted/glove.6B.100d.txt"
+        self.output_file = output_file
+        self.data_type = np.float32
+        self.embedding_dim = 100
+
+    def get_output_stats(self, input_stats: TextStats) -> RepresentationStats:
+        return RepresentationStats(input_stats.num_instances, (self.embedding_dim,))
+
+    def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
+        output_bytes = 1
+        output_shape = self.get_output_stats(input_stats).output_shape
+        for dim in output_shape:
+            output_bytes *= dim
+        return (
+            input_stats.num_instances * output_bytes * np.dtype(self.data_type).itemsize
+        )
+
+    def estimate_peak_memory_bytes(self, input_stats: TextStats) -> dict:
+        output_bytes = self.estimate_output_memory_bytes(input_stats)
+
+        glove_dict_bytes = 256 * 1024 * 1024
+        return {
+            "cpu_peak_bytes": glove_dict_bytes + output_bytes * 1.2,
+            "gpu_peak_bytes": 0,
+        }
+
+    def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(modality, self)
         glove_embeddings = load_glove_embeddings(self.glove_path)
 
         embeddings = []
+        embedding_dim = (
+            len(next(iter(glove_embeddings.values()))) if glove_embeddings else 100
+        )
+
         for sentences in modality.data:
             tokens = list(tokenize(sentences.lower()))
-            embeddings.append(
-                np.mean(
-                    [
-                        glove_embeddings[token]
-                        for token in tokens
-                        if token in glove_embeddings
-                    ],
-                    axis=0,
-                )
-            )
+            token_embeddings = [
+                glove_embeddings[token] for token in tokens if token in glove_embeddings
+            ]
+
+            if len(token_embeddings) > 0:
+                embeddings.append(np.mean(token_embeddings, axis=0))
+            else:
+                embeddings.append(np.zeros(embedding_dim, dtype=self.data_type))
 
         if self.output_file is not None:
             save_embeddings(np.array(embeddings), self.output_file)
 
-        transformed_modality.data_type = np.float32
         transformed_modality.data = np.array(embeddings)
         return transformed_modality

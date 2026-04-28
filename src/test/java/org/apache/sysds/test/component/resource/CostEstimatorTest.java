@@ -43,7 +43,6 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import scala.Tuple2;
 
-import static org.apache.sysds.test.component.resource.ResourceTestUtils.*;
 
 public class CostEstimatorTest extends AutomatedTestBase {
 	static {
@@ -53,7 +52,7 @@ public class CostEstimatorTest extends AutomatedTestBase {
 	private static final String HOME = SCRIPT_DIR + TEST_DIR;
 	private static final String TEST_CLASS_DIR = TEST_DIR + CostEstimatorTest.class.getSimpleName() + "/";
 	private static final int DEFAULT_NUM_EXECUTORS = 4;
-	private static final HashMap<String, CloudInstance> INSTANCE_MAP = getSimpleCloudInstanceMap();
+	private static final HashMap<String, CloudInstance> INSTANCE_MAP = ResourceTestUtils.getSimpleCloudInstanceMap();
 	
 	@Override
 	public void setUp() {}

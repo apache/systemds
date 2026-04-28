@@ -45,7 +45,7 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.functionobjects.Plus;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -65,10 +65,10 @@ public abstract class AColGroup implements Serializable {
 
 	/** Public super types of compression ColGroups supported */
 	public static enum CompressionType {
-		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, SDCFOR, DDCFOR, DeltaDDC, LinearFunctional;
+		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, SDCFOR, DDCFOR, DeltaDDC, DDCLZW, LinearFunctional;
 
 		public boolean isDense() {
-			return this == DDC || this == CONST || this == DDCFOR || this == DDCFOR;
+			return this == DDC || this == CONST || this == DDCFOR || this == DDCFOR || this == DDCLZW;
 		}
 
 		public boolean isConst() {
@@ -86,7 +86,7 @@ public abstract class AColGroup implements Serializable {
 	 * Protected such that outside the ColGroup package it should be unknown which specific subtype is used.
 	 */
 	protected static enum ColGroupType {
-		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, SDCSingle, SDCSingleZeros, SDCZeros, SDCFOR, DDCFOR, DeltaDDC,
+		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, SDCSingle, SDCSingleZeros, SDCZeros, SDCFOR, DDCFOR, DDCLZW, DeltaDDC,
 		LinearFunctional;
 	}
 
@@ -610,7 +610,7 @@ public abstract class AColGroup implements Serializable {
 	 * @param nRows The number of rows contained in the ColumnGroup.
 	 * @return A Central Moment object.
 	 */
-	public abstract CM_COV_Object centralMoment(CMOperator op, int nRows);
+	public abstract CmCovObject centralMoment(CMOperator op, int nRows);
 
 	/**
 	 * Expand the column group to multiple columns. (one hot encode the column group)

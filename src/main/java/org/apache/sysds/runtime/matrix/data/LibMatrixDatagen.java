@@ -460,7 +460,7 @@ public class LibMatrixDatagen
 		return lseeds;
 	}
 
-	private static void genRandomNumbers(boolean invokedFromCP, int rl, int ru, int cl, int cu, MatrixBlock out, RandomMatrixGenerator rgen, long bSeed, long[] seeds) {
+	public static void genRandomNumbers(boolean invokedFromCP, int rl, int ru, int cl, int cu, MatrixBlock out, RandomMatrixGenerator rgen, long bSeed, long[] seeds) {
 		int rows = rgen._rows;
 		int cols = rgen._cols;
 		int blen = rgen._blocksize;

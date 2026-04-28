@@ -22,7 +22,9 @@ package org.apache.sysds.runtime.instructions;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.InstructionType;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.instructions.ooc.AggregateTernaryOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.AggregateUnaryOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.BinaryOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.CSVReblockOOCInstruction;
@@ -33,11 +35,14 @@ import org.apache.sysds.runtime.instructions.ooc.DataGenOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.OOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.ParameterizedBuiltinOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.ReblockOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.TernaryOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.TSMMOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.UnaryOOCInstruction;
-import org.apache.sysds.runtime.instructions.ooc.MatrixVectorBinaryOOCInstruction;
-import org.apache.sysds.runtime.instructions.ooc.TransposeOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.MMultOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.MapMMChainOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.ReorgOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.TeeOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.AppendOOCInstruction;
 
 public class OOCInstructionParser extends InstructionParser {
 	protected static final Log LOG = LogFactory.getLog(OOCInstructionParser.class.getName());
@@ -64,17 +69,34 @@ public class OOCInstructionParser extends InstructionParser {
 				return CSVReblockOOCInstruction.parseInstruction(str);
 			case AggregateUnary:
 				return AggregateUnaryOOCInstruction.parseInstruction(str);
+			case AggregateTernary:
+				return AggregateTernaryOOCInstruction.parseInstruction(str);
 			case Unary:
 				return UnaryOOCInstruction.parseInstruction(str);
 			case Binary:
 				return BinaryOOCInstruction.parseInstruction(str);
+			case Builtin:
+				String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+				if(parts[0].equals(Opcodes.LOG.toString()) || parts[0].equals(Opcodes.LOGNZ.toString())) {
+					if(parts.length == 3)
+						return UnaryOOCInstruction.parseInstruction(str);
+					else if(parts.length == 4)
+						return BinaryOOCInstruction.parseInstruction(str);
+				}
+				throw new DMLRuntimeException("Invalid Builtin Instruction: " + str);
+			case Ternary:
+				return TernaryOOCInstruction.parseInstruction(str);
 			case AggregateBinary:
 			case MAPMM:
-				return MatrixVectorBinaryOOCInstruction.parseInstruction(str);
+				return MMultOOCInstruction.parseInstruction(str);
+			case MAPMMCHAIN:
+				return MapMMChainOOCInstruction.parseInstruction(str);
 			case MMTSJ:
 				return TSMMOOCInstruction.parseInstruction(str);
 			case Reorg:
-				return TransposeOOCInstruction.parseInstruction(str);
+				return ReorgOOCInstruction.parseInstruction(str);
+			case Reshape:
+				return ReorgOOCInstruction.parseInstruction(str);
 			case Tee:
 				return TeeOOCInstruction.parseInstruction(str);
 			case CentralMoment:
@@ -87,6 +109,8 @@ public class OOCInstructionParser extends InstructionParser {
 				return IndexingOOCInstruction.parseInstruction(str);
 			case Rand:
 				return DataGenOOCInstruction.parseInstruction(str);
+			case Append:
+				return AppendOOCInstruction.parseInstruction(str);
 
 			default:
 				throw new DMLRuntimeException("Invalid OOC Instruction Type: " + ooctype);

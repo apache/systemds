@@ -210,7 +210,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * Thomas H. Cormen, Charles E. Leiserson, Ronald L. Rivest, Clifford Stein
 	 * Introduction to Algorithms, Third Edition, MIT Press, page 395.
 	 */
-	private static int[][] mmChainDP(double[] dimArray, int size) 
+	public static int[][] mmChainDP(double[] dimArray, int size)
 	{
 		double[][] dpMatrix = new double[size][size]; //min cost table
 		int[][] split = new int[size][size]; //min cost index table

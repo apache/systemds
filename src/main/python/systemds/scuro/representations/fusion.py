@@ -22,6 +22,8 @@ import copy
 from typing import List
 
 import numpy as np
+
+from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
@@ -44,6 +46,7 @@ class Fusion(Representation):
         self.needs_alignment = False
         self.needs_training = False
         self.needs_instance_alignment = False
+        self.output_modality_type = ModalityType.EMBEDDING
 
     def transform(self, modalities: List[Modality]):
         """
@@ -68,25 +71,31 @@ class Fusion(Representation):
         return self.execute(mods)
 
     def transform_with_training(self, modalities: List[Modality], task):
+        fusion_train_indices = task.fusion_train_indices
+
         train_modalities = []
         for modality in modalities:
             train_data = [
-                d for i, d in enumerate(modality.data) if i in task.train_indices
+                d for i, d in enumerate(modality.data) if i in fusion_train_indices
             ]
             train_modality = TransformedModality(modality, self)
-            train_modality.data = copy.deepcopy(train_data)
+            train_modality.data = list(train_data)
             train_modalities.append(train_modality)
 
         transformed_train = self.execute(
-            train_modalities, task.labels[task.train_indices]
+            train_modalities, task.labels[fusion_train_indices]
         )
-        transformed_val = self.transform_data(modalities, task.val_indices)
+
+        all_other_indices = [
+            i for i in range(len(modalities[0].data)) if i not in fusion_train_indices
+        ]
+        transformed_other = self.transform_data(modalities, all_other_indices)
 
         transformed_data = np.zeros(
             (len(modalities[0].data), transformed_train.shape[1])
         )
-        transformed_data[task.train_indices] = transformed_train
-        transformed_data[task.val_indices] = transformed_val
+        transformed_data[fusion_train_indices] = transformed_train
+        transformed_data[all_other_indices] = transformed_other
 
         return transformed_data
 
@@ -121,29 +130,16 @@ class Fusion(Representation):
         :param modalities: List of modalities
         :return: maximum embedding size
         """
-        try:
-            modalities[0].data = np.array(modalities[0].data)
-        except:
-            pass
 
-        if isinstance(modalities[0].data[0], list):
-            max_size = modalities[0].data[0][0].shape[1]
-        elif isinstance(modalities[0].data, np.ndarray):
-            max_size = modalities[0].data.shape[1]
-        else:
-            max_size = modalities[0].data[0].shape[1]
-        for idx in range(1, len(modalities)):
-            if isinstance(modalities[idx].data[0], list):
-                curr_shape = modalities[idx].data[0][0].shape
-            elif isinstance(modalities[idx].data, np.ndarray):
-                curr_shape = modalities[idx].data.shape
-            else:
-                curr_shape = modalities[idx].data[0].shape
-            if len(modalities[idx - 1].data) != len(modalities[idx].data):
-                raise f"Modality sizes don't match!"
-            elif len(curr_shape) == 1:
+        max_size = 0
+        for m in modalities:
+            data = m.data
+            if isinstance(data, memoryview):
+                data = np.array(data)
+            arr = np.asarray(data)
+            if arr.ndim < 2:
                 continue
-            elif curr_shape[1] > max_size:
-                max_size = curr_shape[1]
-
+            emb_size = arr.shape[1]
+            if emb_size > max_size:
+                max_size = emb_size
         return max_size

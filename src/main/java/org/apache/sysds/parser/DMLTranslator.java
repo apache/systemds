@@ -1392,7 +1392,7 @@ public class DMLTranslator
 
 	public void constructHopsForConditionalPredicate(StatementBlock passedSB) {
 
-		HashMap<String, Hop> _ids = new HashMap<>();
+		HashMap<String, Hop> ids = new HashMap<>();
 
 		// set conditional predicate
 		ConditionalPredicate cp = null;
@@ -1428,7 +1428,7 @@ public class DMLTranslator
 						null, actualDim1, actualDim2, var.getNnz(), var.getBlocksize());
 				read.setParseInfo(var);
 			}
-			_ids.put(varName, read);
+			ids.put(varName, read);
 		}
 
 		DataIdentifier target = new DataIdentifier(Expression.getTempName());
@@ -1439,12 +1439,12 @@ public class DMLTranslator
 		Expression predicate = cp.getPredicate();
 
 		if (predicate instanceof RelationalExpression) {
-			predicateHops = processRelationalExpression((RelationalExpression) cp.getPredicate(), target, _ids);
+			predicateHops = processRelationalExpression((RelationalExpression) cp.getPredicate(), target, ids);
 		} else if (predicate instanceof BooleanExpression) {
-			predicateHops = processBooleanExpression((BooleanExpression) cp.getPredicate(), target, _ids);
+			predicateHops = processBooleanExpression((BooleanExpression) cp.getPredicate(), target, ids);
 		} else if (predicate instanceof DataIdentifier) {
 			// handle data identifier predicate
-			predicateHops = processExpression(cp.getPredicate(), null, _ids);
+			predicateHops = processExpression(cp.getPredicate(), null, ids);
 		} else if (predicate instanceof ConstIdentifier) {
 			// handle constant identifier
 			//  a) translate 0 --> FALSE; translate 1 --> TRUE
@@ -1463,7 +1463,7 @@ public class DMLTranslator
 				throw new ParseException(predicate.printErrorLocation() + "String value '" + predicate.toString()
 						+ "' is not allowed for iterable predicate");
 			}
-			predicateHops = processExpression(cp.getPredicate(), null, _ids);
+			predicateHops = processExpression(cp.getPredicate(), null, ids);
 		}
 
 		//create transient write to internal variable name on top of expression
@@ -1487,7 +1487,7 @@ public class DMLTranslator
 	 */
 	public void constructHopsForIterablePredicate(ForStatementBlock fsb) 
 	{
-		HashMap<String, Hop> _ids = new HashMap<>();
+		HashMap<String, Hop> ids = new HashMap<>();
 
 		// set iterable predicate 
 		ForStatement fs = (ForStatement) fsb.getStatement(0);
@@ -1513,13 +1513,13 @@ public class DMLTranslator
 								null, actualDim1, actualDim2,  var.getNnz(), var.getBlocksize());
 						read.setParseInfo(var);
 					}
-					_ids.put(varName, read);
+					ids.put(varName, read);
 				}
 			}
 
 			//create transient write to internal variable name on top of expression
 			//in order to ensure proper instruction generation
-			Hop predicateHops = processTempIntExpression(expr, _ids);
+			Hop predicateHops = processTempIntExpression(expr, ids);
 			if( predicateHops != null )
 				predicateHops = HopRewriteUtils.createDataOp(
 					ProgramBlock.PRED_VAR, predicateHops, OpOpData.TRANSIENTWRITE);

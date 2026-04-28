@@ -18,22 +18,26 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from functools import reduce
-from operator import or_
 from typing import Union, List
-
+import numpy as np
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.window_aggregation import WindowAggregation
 import time
-import copy
+import sys
 
 
 class TransformedModality(Modality):
 
     def __init__(
-        self, modality, transformation, new_modality_type=None, self_contained=True
+        self,
+        modality,
+        transformation,
+        new_modality_type=None,
+        self_contained=True,
+        set_data=False,
+        aggregate_dim=(0,),
     ):
         """
         Parent class of the different Modalities (unimodal & multimodal)
@@ -45,38 +49,54 @@ class TransformedModality(Modality):
 
         metadata = modality.metadata.copy() if modality.metadata is not None else None
         super().__init__(
-            new_modality_type, modality.modality_id, metadata, modality.data_type
+            new_modality_type,
+            modality.modality_id,
+            metadata,
+            modality.data_type,
+            modality.transform_time,
         )
-        self.transformation = None
+        if set_data:
+            self.data = modality.data
+
         self.self_contained = (
             self_contained and transformation.self_contained
             if isinstance(transformation, TransformedModality)
             else True
         )
-        self.add_transformation(transformation, modality)
+        self.aggregate_dim = aggregate_dim
 
         if modality.__class__.__name__ == "UnimodalModality":
-            for k, v in self.metadata.items():
-                if "attention_masks" in v:
-                    del self.metadata[k]["attention_masks"]
-
-    def add_transformation(self, transformation, modality):
-        if (
-            transformation.__class__.__bases__[0].__name__ == "Fusion"
-            and type(modality).__name__ == "TransformedModality"
-            and modality.transformation[0].__class__.__bases__[0].__name__ != "Fusion"
-        ):
-            self.transformation = []
-        else:
-            self.transformation = (
-                []
-                if type(modality).__name__ != "TransformedModality"
-                else copy.deepcopy(modality.transformation)
-            )
-        self.transformation.append(transformation)
+            for m in self.metadata:
+                if "attention_masks" in m:
+                    del m["attention_masks"]
 
     def copy_from_instance(self):
-        return type(self)(self, self.transformation)
+        """
+        Create a copy of the transformed modality instance
+        """
+        return type(self)(self, None, self.modality_type)
+
+    def calculate_memory_usage(self):
+        data_bytes = 0
+        for instance in self.data:
+            data_bytes += self._estimate_data_bytes(instance)
+
+        md_bytes = 0
+        for value in self.metadata:
+            md_bytes += self._estimate_data_bytes(value)
+
+        total_bytes = (
+            data_bytes
+            + md_bytes
+            + sys.getsizeof(self.data_type)
+            + sys.getsizeof(self.modality_id)
+            + sys.getsizeof(self.schema)
+            + sys.getsizeof(self.stats)
+            + sys.getsizeof(self.self_contained)
+            + sys.getsizeof(self.transform_time)
+            + sys.getsizeof(self.modality_type)
+        )
+        return total_bytes
 
     def join(self, right, join_condition):
         chunked_execution = False
@@ -87,7 +107,8 @@ class TransformedModality(Modality):
                 right.extract_raw_data()
 
         joined_modality = JoinedModality(
-            reduce(or_, [right.modality_type], self.modality_type),
+            self.modality_type,
+            # reduce(or_, [right.modality_type], self.modality_type), #TODO
             self,
             right,
             join_condition,
@@ -107,7 +128,7 @@ class TransformedModality(Modality):
         )
         start = time.time()
         transformed_modality.data = w.execute(self)
-        transformed_modality.transform_time = time.time() - start
+        transformed_modality.transform_time += time.time() - start
         return transformed_modality
 
     def context(self, context_operator):
@@ -116,14 +137,37 @@ class TransformedModality(Modality):
         )
         start = time.time()
         transformed_modality.data = context_operator.execute(self)
-        transformed_modality.transform_time = time.time() - start
+        transformed_modality.transform_time += time.time() - start
         return transformed_modality
 
-    def apply_representation(self, representation):
+    def dimensionality_reduction(self, dimensionality_reduction_operator):
+        transformed_modality = TransformedModality(
+            self, dimensionality_reduction_operator, self_contained=self.self_contained
+        )
         start = time.time()
-        new_modality = representation.transform(self)
+        if len(self.data[0].shape) >= 3:
+            return self
+        else:
+            try:
+                data = np.array(self.data)
+                if len(data.shape) >= 3:
+                    data = data.reshape(data.shape[0], -1)
+                transformed_modality.data = dimensionality_reduction_operator.execute(
+                    data
+                )
+            except:
+                transformed_modality.data = self._padded_dimensionality_reduction(
+                    dimensionality_reduction_operator
+                )
+
+        transformed_modality.transform_time += time.time() - start
+        return transformed_modality
+
+    def apply_representation(self, representation, aggregation=None):
+        start = time.time()
+        new_modality = representation.transform(self, aggregation=aggregation)
         new_modality.update_metadata()
-        new_modality.transform_time = time.time() - start
+        new_modality.transform_time += time.time() - start
         new_modality.self_contained = representation.self_contained
         return new_modality
 
@@ -136,8 +180,10 @@ class TransformedModality(Modality):
         fused_modality = TransformedModality(
             self, fusion_method, ModalityType.EMBEDDING
         )
+        start_time = time.time()
         fused_modality.data = fusion_method.transform(self.create_modality_list(other))
-
+        end_time = time.time()
+        fused_modality.transform_time = end_time - start_time
         return fused_modality
 
     def combine_with_training(
@@ -147,7 +193,12 @@ class TransformedModality(Modality):
             self, fusion_method, ModalityType.EMBEDDING
         )
         modalities = self.create_modality_list(other)
+        start_time = time.time()
         fused_modality.data = fusion_method.transform_with_training(modalities, task)
+        end_time = time.time()
+        fused_modality.transform_time = (
+            end_time - start_time
+        )  # Note: this incldues the training time
 
         return fused_modality
 
@@ -159,3 +210,39 @@ class TransformedModality(Modality):
             modalities.append(other)
 
         return modalities
+
+    def _padded_dimensionality_reduction(self, dimensionality_reduction_operator):
+        all_outputs = []
+        batch_size = 1024 if len(self.data[0].shape) >= 3 else len(self.data)
+        ndim = self.data[0].ndim
+        start = 0
+        while start < len(self.data):
+            end = min(start + batch_size, len(self.data))
+            max_shape = tuple(
+                max(a.shape[i] for a in self.data[start:end]) for i in range(ndim)
+            )
+
+            padded = []
+            for a in self.data[start:end]:
+                pad_width = tuple((0, max_shape[i] - a.shape[i]) for i in range(ndim))
+                padded.append(np.pad(a, pad_width=pad_width, mode="constant"))
+            padded = np.array(padded)
+            end = min(start + batch_size, len(self.data))
+
+            if len(padded.shape) >= 3:
+                padded = padded.reshape(padded.shape[0], -1)
+
+            out = dimensionality_reduction_operator.execute(padded)
+            all_outputs.append(out)
+            start = end
+        return np.concatenate(all_outputs, axis=0)
+
+    def _estimate_data_bytes(self, instance):
+        if isinstance(instance, np.ndarray):
+            return instance.nbytes
+        elif isinstance(instance, list):
+            return sum(self._estimate_data_bytes(item) for item in instance)
+        elif isinstance(instance, dict):
+            return sum(self._estimate_data_bytes(item) for item in instance.values())
+        else:
+            return sys.getsizeof(instance)

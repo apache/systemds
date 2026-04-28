@@ -46,45 +46,67 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Eviction Manager for the Out-Of-Core stream cache
- * This is the base implementation for LRU, FIFO
+ * Eviction Manager for the Out-Of-Core (OOC) stream cache.
+ * <p>
+ * This manager implements a high-performance, thread-safe buffer pool designed
+ * to handle intermediate results that exceed available heap memory. It employs
+ * a <b>partitioned eviction</b> strategy to maximize disk throughput and a
+ * <b>lock-striped</b> concurrency model to minimize thread contention.
  *
- * Design choice 1: Pure JVM-memory cache
- * What: Store MatrixBlock objects in a synchronized in-memory cache
- *   (Map + Deque for LRU/FIFO). Spill to disk by serializing MatrixBlock
- *   only when evicting.
- * Pros: Simple to implement; no off-heap management; easy to debug;
- *   no serialization race since you serialize only when evicting;
- *   fast cache hits (direct object access).
- * Cons: Heap usage counted roughly via serialized-size estimate — actual
- *   JVM object overhead not accounted; risk of GC pressure and OOM if
- *   estimates are off or if many small objects cause fragmentation;
- *   eviction may be more expensive (serialize on eviction).
- * <p>
- * Design choice 2:
- * <p>
- * This manager runtime memory management by caching serialized
- * ByteBuffers and spilling them to disk when needed.
- * <p>
- * * core function: Caches ByteBuffers (off-heap/direct) and
- * spills them to disk
- * * Eviction: Evicts a ByteBuffer by writing its contents to a file
- * * Granularity: Evicts one IndexedMatrixValue block at a time
- * * Data replay: get() will always return the data either from memory or
- *   by falling back to the disk
- * * Memory: Since the datablocks are off-heap (in ByteBuffer) or disk,
- *   there won't be OOM.
+ * <h2>1. Purpose</h2>
+ * Provides a bounded cache for {@code MatrixBlock}s produced and consumed by OOC
+ * streaming operators (e.g., {@code tsmm}, {@code ba+*}). When memory pressure
+ * exceeds a configured limit, blocks are transparently evicted to disk and restored
+ * on demand, allowing execution of operations larger than RAM.
  *
- * Pros: Avoids heap OOM by keeping large data off-heap; predictable
- *   memory usage; good for very large blocks.
- * Cons: More complex synchronization; need robust off-heap allocator/free;
- *   must ensure serialization finishes before adding to queue or make evict
- *   wait on serialization; careful with native memory leaks.
+ * <h2>2. Lifecycle Management</h2>
+ * Blocks transition atomically through three states to ensure data consistency:
+ * <ul>
+ * <li><b>HOT:</b> The block is pinned in the JVM heap ({@code value != null}).</li>
+ * <li><b>EVICTING:</b> A transition state. The block is currently being written to disk.
+ * Concurrent readers must wait on the entry's condition variable.</li>
+ * <li><b>COLD:</b> The block is persisted on disk. The heap reference is nulled out
+ * to free memory, but the container (metadata) remains in the cache map.</li>
+ * </ul>
+ *
+ * <h2>3. Eviction Strategy (Partitioned I/O)</h2>
+ * To mitigate I/O thrashing caused by writing thousands of small blocks:
+ * <ul>
+ * <li>Eviction is <b>partition-based</b>: Groups of "HOT" blocks are gathered into
+ * batches (e.g., 64MB) and written sequentially to a single partition file.</li>
+ * <li>This converts random I/O into high-throughput sequential I/O.</li>
+ * <li>A separate metadata map tracks the {@code (partitionId, offset)} for every
+ * evicted block, allowing random-access reloading.</li>
+ * </ul>
+ *
+ * <h2>4. Data Integrity (Re-hydration)</h2>
+ * To prevent index corruption during serialization/deserialization cycles, this manager
+ * uses a "re-hydration" model. The {@code IndexedMatrixValue} container is <b>never</b>
+ * removed from the cache structure. Eviction only nulls the data payload. Loading
+ * restores the data into the existing container, preserving the original {@code MatrixIndexes}.
+ *
+ * <h2>5. Concurrency Model (Fine-Grained Locking)</h2>
+ * <ul>
+ * <li><b>Global Structure Lock:</b> A coarse-grained lock ({@code _cacheLock}) guards
+ * the {@code LinkedHashMap} structure against concurrent insertions, deletions,
+ * and iteration during eviction selection.</li>
+ *
+ * <li><b>Per-Block Locks:</b> Each {@code BlockEntry} owns an independent
+ * {@code ReentrantLock}. This decouples I/O operations, allowing a reader to load
+ * "Block A" from disk while the evictor writes "Block B" to disk simultaneously,
+ * maximizing throughput.</li>
+ *
+ * <li><b>Condition Queues:</b> To handle read-write races, the system uses atomic
+ * state transitions. If a reader attempts to access a block in the {@code EVICTING}
+ * state, it waits on the entry's {@code Condition} variable until the writer
+ * signals that the block is safely {@code COLD} (persisted).</li>
+ * </ul>
  */
+
 public class OOCEvictionManager {
 
 	// Configuration: OOC buffer limit as percentage of heap
-	private static final double OOC_BUFFER_PERCENTAGE = 0.15 * 0.01 * 2; // 15% of heap
+	private static final double OOC_BUFFER_PERCENTAGE = 0.15; // 15% of heap
 
 	private static final double PARTITION_EVICTION_SIZE = 64 * 1024 * 1024; // 64 MB
 
@@ -96,8 +118,8 @@ public class OOCEvictionManager {
 	private static LinkedHashMap<String, BlockEntry> _cache = new LinkedHashMap<>();
 
 	// Spill related structures
-	private static ConcurrentHashMap<String, spillLocation> _spillLocations =  new ConcurrentHashMap<>();
-	private static ConcurrentHashMap<Integer, partitionFile> _partitions = new ConcurrentHashMap<>();
+	private static ConcurrentHashMap<String, SpillLocation> _spillLocations =  new ConcurrentHashMap<>();
+	private static ConcurrentHashMap<Integer, PartitionFile> _partitions = new ConcurrentHashMap<>();
 	private static final AtomicInteger _partitionCounter = new AtomicInteger(0);
 
 	// Track which partitions belong to which stream (for cleanup)
@@ -121,24 +143,24 @@ public class OOCEvictionManager {
 		COLD // On disk
 	}
 
-	private static class spillLocation {
+	private static class SpillLocation {
 		// structure of spillLocation: file, offset
 		final int partitionId;
 		final long offset;
 
-		spillLocation(int partitionId, long offset) {
+		SpillLocation(int partitionId, long offset) {
 
 			this.partitionId = partitionId;
 			this.offset = offset;
 		}
 	}
 
-	private static class partitionFile {
+	private static class PartitionFile {
 		final String filePath;
 		//final long streamId;
 
 
-		private partitionFile(String filePath, long streamId) {
+		private PartitionFile(String filePath, long streamId) {
 			this.filePath = filePath;
 			//this.streamId = streamId;
 		}
@@ -168,6 +190,40 @@ public class OOCEvictionManager {
 		_size.set(0);
 		_spillDir = LocalFileUtils.getUniqueWorkingDir("ooc_stream");
 		LocalFileUtils.createLocalFileIfNotExist(_spillDir);
+	}
+
+	public static void reset() {
+		TeeOOCInstruction.reset();
+		if (!_cache.isEmpty()) {
+			System.err.println("There are dangling elements in the OOC Eviction cache: " + _cache.size());
+		}
+		_size.set(0);
+		_cache.clear();
+		_spillLocations.clear();
+		_partitions.clear();
+		_partitionCounter.set(0);
+		_streamPartitions.clear();
+	}
+
+	/**
+	 * Removes a block from the cache without setting its data to null.
+	 */
+	public static void forget(long streamId, int blockId) {
+		BlockEntry e;
+		synchronized (_cacheLock) {
+			e = _cache.remove(streamId + "_" + blockId);
+		}
+
+		if (e != null) {
+			e.lock.lock();
+			try {
+				if (e.state == BlockState.HOT)
+					_size.addAndGet(-e.size);
+			} finally {
+				e.lock.unlock();
+			}
+			System.out.println("Removed block " + streamId + "_" + blockId + " from cache (idx: " + (e.value != null ? e.value.getIndexes() : "?") + ")");
+		}
 	}
 
 	/**
@@ -304,7 +360,7 @@ public class OOCEvictionManager {
 		}
 
 		// 2. create the partition file metadata
-		partitionFile partFile = new partitionFile(filename, 0);
+		PartitionFile partFile = new PartitionFile(filename, 0);
 		_partitions.put(partitionId, partFile);
 
 		FileOutputStream fos = null;
@@ -329,7 +385,7 @@ public class OOCEvictionManager {
 				System.out.println("written, partition id: " + _partitions.get(partitionId) + ", offset: " + offset);
 
 				// 3. create the spillLocation
-				spillLocation sloc = new spillLocation(partitionId, offset);
+				SpillLocation sloc = new SpillLocation(partitionId, offset);
 				_spillLocations.put(tmp.getKey(), sloc);
 
 				// 4. track file for cleanup
@@ -372,12 +428,12 @@ public class OOCEvictionManager {
 		String key = streamId + "_" + blockId;
 
 		// 1. find the blocks address (spill location)
-		spillLocation sloc = _spillLocations.get(key);
+		SpillLocation sloc = _spillLocations.get(key);
 		if (sloc == null) {
 			throw new DMLRuntimeException("Failed to load spill location for: " + key);
 		}
 
-		partitionFile partFile = _partitions.get(sloc.partitionId);
+		PartitionFile partFile = _partitions.get(sloc.partitionId);
 		if (partFile == null) {
 			throw new DMLRuntimeException("Failed to load partition for: " + sloc.partitionId);
 		}

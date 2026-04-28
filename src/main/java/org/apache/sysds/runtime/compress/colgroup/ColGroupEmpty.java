@@ -49,7 +49,7 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
@@ -303,8 +303,8 @@ public class ColGroupEmpty extends AColGroupCompressed
 	}
 
 	@Override
-	public CM_COV_Object centralMoment(CMOperator op, int nRows) {
-		CM_COV_Object ret = new CM_COV_Object();
+	public CmCovObject centralMoment(CMOperator op, int nRows) {
+		CmCovObject ret = new CmCovObject();
 		op.fn.execute(ret, 0.0, nRows);
 		return ret;
 	}

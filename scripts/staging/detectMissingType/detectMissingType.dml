@@ -1,0 +1,181 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+# INPUT:
+# ------------------------------------------------------------------------------------
+# X            Matrix[Double] (n x p)
+#              Data matrix with possible missing values (NA)
+# alpha        Double
+#              Significance level for MCAR chi-square tests (default = 0.05)
+# auc_thresh   Double
+#              Threshold on AUC to distinguish MAR vs MNAR (default = 0.70)
+# ------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ------------------------------------------------------------------------------------
+# DetectedCodes   Matrix[Double] (p x 1)
+#                 Missingness type detected for each column:
+#                   0 = no missing values
+#                   1 = MCAR
+#                   2 = MAR
+#                   3 = MNAR
+# ------------------------------------------------------------------------------------
+#
+# The following function analyzes every column in the dataset to identify the missingness' mechanism
+# For each column having missing values, at first it verifies if the missing value depends on other variables (MCAR test via chi-squared)
+# If MCAR gets excluded, the function considers if the missing can be explain by the other observed columns using a logistic regression 
+# and AUc instead. In this way we differentiate between MAR and MNAR
+# In the end, it returns a code per column indicating the type of missingness
+
+m_detectMissingType = function(Matrix[Double] X, Double alpha = 0.05, Double auc_thresh = 0.70) 
+return (Matrix[Double] DetectedCodes) {
+    
+    p = ncol(X);
+    DetectedCodes = matrix(0, rows=p, cols=1);
+    min_rows = 20;
+
+    print("Col\tMissing\tMin_PVal\tAUC\tPredizione");
+    print("---------------------------------------------------------");
+
+    for (i in 1:p) {
+        target_col = X[, i];
+        missing_count = sum(is.na(target_col));
+
+        detected_code = 0;
+        label = "NONE";
+        best_pval = 1.0;
+        auc_val = 0.5;
+        
+        if (missing_count > 0) {
+            miss_flag = is.na(target_col) + 1;
+            
+            # MCAR check
+            for (j in 1:p) {
+                if (i != j) {
+                    col_j = X[, j];
+                    observed = (is.na(col_j) == 0);
+
+                    if (sum(observed) > min_rows) {
+                        R_v = removeEmpty(target=miss_flag, margin="rows", select=observed);
+                        P_v = removeEmpty(target=col_j,     margin="rows", select=observed);
+
+                        min_v = min(P_v); 
+                        max_v = max(P_v); 
+                        range_v = max_v - min_v;
+
+                        if (range_v > 0) {
+                            P_bin = bin_into_5(P_v);
+                            F = table(R_v, P_bin);
+                            
+                            if (nrow(F) > 1 & ncol(F) > 1) {
+                                pval = chisq_pval(F);
+                                if (pval < best_pval) { best_pval = pval; }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (best_pval > alpha) {
+                label = "MCAR"; 
+                detected_code = 1;
+            } else {
+                # MAR vs MNAR check
+                features = drop_column(X, i);
+                auc_val = mar_auc_score(miss_flag, features);
+                
+                if (auc_val >= auc_thresh) {
+                    label = "MAR "; 
+                    detected_code = 2;
+                } else {
+                    label = "MNAR"; 
+                    detected_code = 3;
+                }
+            }
+        }
+
+        DetectedCodes[i, 1] = detected_code;
+        print(i + "\t" + missing_count + "\t" + toString(best_pval) + "\t" + auc_val + "\t" + label);
+    }
+}
+
+
+
+# Evaluate AUC of a logistic regression that tries to explain the missingness using other columns
+# Higher values indicate the dependence of the observed variables (probably MAR)
+
+mar_auc_score = function(Matrix[Double] miss_flag, Matrix[Double] features) return (Double auc_val) {
+    # need to analyze only full rows
+    complete_rows = (rowSums(is.na(features)) == 0);
+    
+    X_clean = removeEmpty(target=features, margin="rows", select=complete_rows);
+    R_clean = removeEmpty(target=miss_flag, margin="rows", select=complete_rows);
+    
+    # need to check if we have more than 2 rows to compare
+    auc_val = 0.5;
+    if (nrow(R_clean) >= 2 & min(R_clean) != max(R_clean)) {
+        B = multiLogReg(X=X_clean, Y=R_clean, icpt=2, verbose=FALSE);
+        [probs, yhat, acc] = multiLogRegPredict(X=X_clean, B=B, Y=R_clean);
+        auc_val = auc(Y=(R_clean - 1), P=probs[, 2]);
+    }
+}
+
+# Bin a numeric vector into 5 equal-width bins (1..5)
+bin_into_5 = function(Matrix[Double] v)
+return (Matrix[Double] b)
+{
+    vmin = min(v);
+    vmax = max(v);
+    b = floor(((v - vmin) / (vmax - vmin)) * 4.99) + 1;
+}
+
+# Chi-square independence test p-value for a contingency table F
+chisq_pval = function(Matrix[Double] F)
+return (Double p)
+{
+    eps = 1e-10;
+
+    row_s = rowSums(F);
+    col_s = colSums(F);
+    expected = (row_s %*% col_s) / sum(F);
+
+    chi2 = sum((F - expected)^2 / (expected + eps));
+    dfv = (nrow(F) - 1) * (ncol(F) - 1);
+
+    p = 1.0 - cdf(target=chi2, dist="chisq", df=dfv);
+}
+
+# Remove column idx from matrix X (keeps column order)
+drop_column = function(Matrix[Double] X, Integer idx)
+return (Matrix[Double] X_out)
+{
+    p = ncol(X);
+
+    if (idx == 1) {
+        X_out = X[, 2:p];
+    } else if (idx == p) {
+        X_out = X[, 1:(p-1)];
+    } else {
+        X_out = cbind(X[, 1:(idx-1)], X[, (idx+1):p]);
+    }
+}
+

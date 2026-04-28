@@ -158,7 +158,7 @@ public class UnaryOp extends MultiThreadedHop
 					else { // general case MATRIX
 						ExecType et = optFindExecType();
 						// special handling cumsum/cumprod/cummin/cumsum
-						if(isCumulativeUnaryOperation() && !(et == ExecType.CP || et == ExecType.GPU)) {
+						if(isCumulativeUnaryOperation() && !(et == ExecType.CP || et == ExecType.GPU || et == ExecType.OOC)) {
 							// TODO additional physical operation if offsets fit in memory
 							ret = constructLopsSparkCumulativeUnary();
 						}

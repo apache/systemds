@@ -70,6 +70,10 @@ public abstract class JolEstimateTest {
 
 	public abstract CompressionType getCT();
 
+	protected boolean shouldTranspose() {
+		return true;
+	}
+
 	private final long actualSize;
 	private final int actualNumberUnique;
 	private final AColGroup cg;
@@ -77,16 +81,21 @@ public abstract class JolEstimateTest {
 	public JolEstimateTest(MatrixBlock mbt) {
 		CompressedMatrixBlock.debug = true;
 		this.mbt = mbt;
-		colIndexes = ColIndexFactory.create(mbt.getNumRows());
+		colIndexes = ColIndexFactory.create(shouldTranspose() ? mbt.getNumRows() : mbt.getNumColumns());
 
 		mbt.recomputeNonZeros();
 		mbt.examSparsity();
 		try {
-			CompressionSettings cs = new CompressionSettingsBuilder().setSamplingRatio(1.0)
-				.setValidCompressions(EnumSet.of(getCT())).create();
-			cs.transposed = true;
+			CompressionSettingsBuilder csb = new CompressionSettingsBuilder().setSamplingRatio(1.0)
+				.setValidCompressions(EnumSet.of(getCT()));
+			boolean useDelta = getCT() == CompressionType.DeltaDDC;
+			if(useDelta)
+				csb.setPreferDeltaEncoding(true);
+			CompressionSettings cs = csb.create();
+			cs.transposed = shouldTranspose();
 
-			final CompressedSizeInfoColGroup cgi = new ComEstExact(mbt, cs).getColGroupInfo(colIndexes);
+			final ComEstExact est = new ComEstExact(mbt, cs);
+			final CompressedSizeInfoColGroup cgi = useDelta ? est.getDeltaColGroupInfo(colIndexes) : est.getColGroupInfo(colIndexes);
 
 			final CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
 			final List<AColGroup> groups = ColGroupFactory.compressColGroups(mbt, csi, cs, 1);
@@ -158,13 +167,17 @@ public abstract class JolEstimateTest {
 			if(mbt.getNumColumns() > 10000)
 				tolerance *= 0.95;
 
-			final CompressionSettings cs = csb.setSamplingRatio(ratio).setMinimumSampleSize(10)
-				.setValidCompressions(EnumSet.of(getCT())).create();
-			cs.transposed = true;
+			CompressionSettingsBuilder testCsb = csb.setSamplingRatio(ratio).setMinimumSampleSize(10)
+				.setValidCompressions(EnumSet.of(getCT()));
+			boolean useDelta = getCT() == CompressionType.DeltaDDC;
+			if(useDelta)
+				testCsb.setPreferDeltaEncoding(true);
+			final CompressionSettings cs = testCsb.create();
+			cs.transposed = shouldTranspose();
 
 			final int sampleSize = Math.max(10, (int) (mbt.getNumColumns() * ratio));
 			final AComEst est = ComEstFactory.createEstimator(mbt, cs, sampleSize, 1);
-			final CompressedSizeInfoColGroup cInfo = est.getColGroupInfo(colIndexes);
+			final CompressedSizeInfoColGroup cInfo = useDelta ? est.getDeltaColGroupInfo(colIndexes) : est.getColGroupInfo(colIndexes);
 			final int estimateNUniques = cInfo.getNumVals();
 
 			final double estimateCSI = (cg.getCompType() == CompressionType.CONST) ? ColGroupSizes

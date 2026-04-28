@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.controlprogram.caching;
 
 import java.io.IOException;
 import java.lang.ref.SoftReference;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
@@ -44,6 +45,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
+import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
@@ -527,22 +529,45 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 	
 
 	@Override
-	protected MatrixBlock readBlobFromStream(LocalTaskQueue<IndexedMatrixValue> stream) throws IOException {
-		MatrixBlock ret = new MatrixBlock((int)getNumRows(), (int)getNumColumns(), false);
+	protected MatrixBlock readBlobFromStream(OOCStream<IndexedMatrixValue> stream) throws IOException {
+		boolean dimsUnknown = getNumRows() < 0 || getNumColumns() < 0;
+		int nrows = (int)getNumRows();
+		int ncols = (int)getNumColumns();
+		MatrixBlock ret = dimsUnknown ? null : new MatrixBlock((int)getNumRows(), (int)getNumColumns(), false);
+		List<IndexedMatrixValue> blockCache = dimsUnknown ? new ArrayList<>() : null;
 		IndexedMatrixValue tmp = null;
 		try {
 			int blen = getBlocksize(), lnnz = 0;
-			while( (tmp = stream.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS ) {
+			while( (tmp = stream.dequeue()) != LocalTaskQueue.NO_MORE_TASKS ) {
 				// compute row/column block offsets
 				final int row_offset = (int) (tmp.getIndexes().getRowIndex() - 1) * blen;
 				final int col_offset = (int) (tmp.getIndexes().getColumnIndex() - 1) * blen;
 
-				// Add the values of this block into the output block.
-				((MatrixBlock)tmp.getValue()).putInto(ret, row_offset, col_offset, true);
+				if (dimsUnknown) {
+					nrows = Math.max(nrows, row_offset + tmp.getValue().getNumRows());
+					ncols = Math.max(ncols, col_offset + tmp.getValue().getNumColumns());
+					blockCache.add(tmp);
+				} else {
+					// Add the values of this block into the output block.
+					((MatrixBlock) tmp.getValue()).putInto(ret, row_offset, col_offset, true);
+				}
 				
 				// incremental maintenance nnz
 				lnnz += tmp.getValue().getNonZeros();
 			}
+
+			if (dimsUnknown) {
+				ret = new MatrixBlock(nrows, ncols, false);
+
+				for (IndexedMatrixValue tmp2 : blockCache) {
+					// compute row/column block offsets
+					final int row_offset = (int) (tmp2.getIndexes().getRowIndex() - 1) * blen;
+					final int col_offset = (int) (tmp2.getIndexes().getColumnIndex() - 1) * blen;
+
+					((MatrixBlock) tmp2.getValue()).putInto(ret, row_offset, col_offset, true);
+				}
+			}
+
 			ret.setNonZeros(lnnz);
 		}
 		catch(Exception ex) {
@@ -611,7 +636,7 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		FileFormat fmt = (ofmt != null ? FileFormat.safeValueOf(ofmt) : iimd.getFileFormat());
 		MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(fmt, rep, fprop);
-		return writer.writeMatrixFromStream(fname, getStreamHandle().toLocalTaskQueue(),
+		return writer.writeMatrixFromStream(fname, getStreamHandle(),
 			getNumRows(), getNumColumns(), ConfigurationManager.getBlocksize());
 	}
 

@@ -39,9 +39,8 @@ Various forms of documentation for SystemDS are available.
 - [Builtin Functions](./site/builtins-reference) contains a collection of builtin functions providing an high level abstraction on complex machine learning algorithms.
 - [Algorithm Reference](./site/algorithms-reference) contains specifics on algorithms supported in systemds.
 - [Entity Resolution](./site/entity-resolution) provides a collection of customizable entity resolution primitives and pipelines.
-- [Run SystemDS](./site/run) contains an Helloworld example along with an environment setup guide.
+- [Quickstart Guide](./site/install) guides through setup from git download to running system.
 - Instructions on python can be found at [Python Documentation](./api/python/index)
 - The [JavaDOC](./api/java/index) contains internal documentation of the system source code.
-- [Install from Source](./site/install) guides through setup from git download to running system.
 - If you want to contribute take a look at [Contributing](https://github.com/apache/systemds/blob/main/CONTRIBUTING.md)
 - [R to DML](./site/dml-vs-r-guide) walks through the basics of converting a script from R to dml.

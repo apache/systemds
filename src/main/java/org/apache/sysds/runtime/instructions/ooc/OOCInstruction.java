@@ -26,43 +26,68 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.OOCInstructionParser;
+import org.apache.sysds.runtime.instructions.cp.CPInstruction;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.ooc.cache.BlockEntry;
+import org.apache.sysds.runtime.ooc.cache.BlockKey;
+import org.apache.sysds.runtime.ooc.cache.OOCCacheManager;
+import org.apache.sysds.runtime.ooc.stats.OOCEventLog;
+import org.apache.sysds.runtime.ooc.stream.FilteredOOCStream;
+import org.apache.sysds.runtime.ooc.stream.MergedOOCStream;
+import org.apache.sysds.runtime.ooc.stream.SplittingOOCStream;
+import org.apache.sysds.runtime.ooc.stream.StreamContext;
+import org.apache.sysds.runtime.ooc.stream.TaskContext;
 import org.apache.sysds.runtime.util.CommonThreadPool;
-import org.apache.sysds.runtime.util.OOCJoin;
+import org.apache.sysds.utils.Statistics;
+import scala.Tuple2;
+import scala.Tuple4;
+import scala.Tuple5;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 public abstract class OOCInstruction extends Instruction {
+	public static final boolean ALLOW_PIPELINING = true;
+	public static final ExecutorService COMPUTE_EXECUTOR = CommonThreadPool.get();
+	private static final AtomicInteger COMPUTE_IN_FLIGHT = new AtomicInteger(0);
+	private static final int COMPUTE_BACKPRESSURE_THRESHOLD = 100;
 	protected static final Log LOG = LogFactory.getLog(OOCInstruction.class.getName());
 	private static final AtomicInteger nextStreamId = new AtomicInteger(0);
+	private long nanoTime;
 
 	public enum OOCType {
-		Reblock, Tee, Binary, Unary, AggregateUnary, AggregateBinary, MAPMM, MMTSJ,
-		Reorg, CM, Ctable, MatrixIndexing, ParameterizedBuiltin, Rand
+		Reblock, Tee, Binary, Ternary, Unary, AggregateUnary, AggregateBinary, AggregateTernary, MAPMM, MMTSJ,
+		MAPMMCHAIN, Reorg, CM, Ctable, MatrixIndexing, ParameterizedBuiltin, Rand, Append
 	}
 
 	protected final OOCInstruction.OOCType _ooctype;
 	protected final boolean _requiresLabelUpdate;
-	protected Set<OOCStream<?>> _inQueues;
-	protected Set<OOCStream<?>> _outQueues;
-	private boolean _failed;
+	protected StreamContext _streamContext;
+	private LongAdder _localStatisticsAdder;
+	public final int _callerId;
 
 	protected OOCInstruction(OOCInstruction.OOCType type, String opcode, String istr) {
 		this(type, null, opcode, istr);
@@ -75,7 +100,18 @@ public abstract class OOCInstruction extends Instruction {
 		instOpcode = opcode;
 
 		_requiresLabelUpdate = super.requiresLabelUpdate();
-		_failed = false;
+
+		if (DMLScript.STATISTICS)
+			_localStatisticsAdder = new LongAdder();
+		_callerId = DMLScript.OOC_LOG_EVENTS ? OOCEventLog.registerCaller(getExtendedOpcode() + "_" + hashCode()) : 0;
+	}
+
+	public static int getComputeInFlight() {
+		return COMPUTE_IN_FLIGHT.get();
+	}
+
+	public static int getComputeBackpressureThreshold() {
+		return COMPUTE_BACKPRESSURE_THRESHOLD;
 	}
 
 	@Override
@@ -99,8 +135,19 @@ public abstract class OOCInstruction extends Instruction {
 
 	@Override
 	public Instruction preprocessInstruction(ExecutionContext ec) {
-		// TODO
-		return super.preprocessInstruction(ec);
+		Instruction tmp = super.preprocessInstruction(ec);
+
+		// Keep consistent with CP/SP instruction patching semantics.
+		if(tmp.requiresLabelUpdate()) {
+			String updInst = CPInstruction.updateLabels(tmp.toString(), ec.getVariables());
+			tmp = OOCInstructionParser.parseSingleInstruction(updInst);
+		}
+
+		// Record event start timestamp on the instruction instance that will execute.
+		if (DMLScript.OOC_LOG_EVENTS && tmp instanceof OOCInstruction)
+			((OOCInstruction) tmp).nanoTime = System.nanoTime();
+
+		return tmp;
 	}
 
 	@Override
@@ -108,218 +155,1069 @@ public abstract class OOCInstruction extends Instruction {
 
 	@Override
 	public void postprocessInstruction(ExecutionContext ec) {
+		_streamContext = null;
 		if(DMLScript.LINEAGE_DEBUGGER)
 			ec.maintainLineageDebuggerInfo(this);
+		if (DMLScript.OOC_LOG_EVENTS)
+			OOCEventLog.onComputeEvent(_callerId, nanoTime, System.nanoTime());
 	}
 
 	protected void addInStream(OOCStream<?>... queue) {
-		if (_inQueues == null)
-			_inQueues = new HashSet<>();
-		_inQueues.addAll(List.of(queue));
+		if(_streamContext == null)
+			_streamContext = new StreamContext();
+		_streamContext.addInStream(queue);
 	}
 
 	protected void addOutStream(OOCStream<?>... queue) {
-		// Currently same behavior as addInQueue
-		if (_outQueues == null)
-			_outQueues = new HashSet<>();
-		_outQueues.addAll(List.of(queue));
+		if(_streamContext == null)
+			_streamContext = new StreamContext();
+		_streamContext.addOutStream(queue);
+	}
+
+	protected boolean inStreamsDefined() {
+		return _streamContext != null && _streamContext.inStreamsDefined();
+	}
+
+	protected boolean outStreamsDefined() {
+		return _streamContext != null && _streamContext.outStreamsDefined();
 	}
 
 	protected <T> OOCStream<T> createWritableStream() {
 		return new SubscribableTaskQueue<>();
 	}
 
-	protected <T, R> CompletableFuture<Void> filterOOC(OOCStream<T> qIn, Consumer<T> processor, Function<T, Boolean> predicate, Runnable finalizer) {
-		if (_inQueues == null || _outQueues == null)
+	protected <T> CompletableFuture<Void> filterOOC(OOCStream<T> qIn, Consumer<T> processor, Function<T, Boolean> predicate) {
+		return filterOOC(qIn, processor, predicate, null);
+	}
+
+	protected <T> CompletableFuture<Void> filterOOC(OOCStream<T> qIn, Consumer<T> processor, Function<T, Boolean> predicate, Consumer<T> onNotProcessed) {
+		if (!inStreamsDefined() || !outStreamsDefined())
 			throw new NotImplementedException("filterOOC requires manual specification of all input and output streams for error propagation");
 
-		return submitOOCTasks(qIn, processor, finalizer, predicate);
+		return submitOOCTasks(qIn, c -> processor.accept(c.get()), p -> predicate.apply(p.get()), onNotProcessed != null ? (i, tmp) -> onNotProcessed.accept(tmp.get()) : null);
+	}
+
+	protected <T> OOCStream<T> filteredOOCStream(OOCStream<T> qIn, Function<T, Boolean> predicate) {
+		return new FilteredOOCStream<>(qIn, predicate);
+	}
+
+	protected <T> OOCStream<T> mergeOOCStreams(List<OOCStream<T>> streams) {
+		return new MergedOOCStream<>(streams);
+	}
+
+	@SuppressWarnings({"unchecked"})
+	protected <T> OOCStream<T> mergeOOCStreams(OOCStream<T>... streams) {
+		return new MergedOOCStream<>(streams);
+	}
+
+	protected <T> List<OOCStream<T>> splitOOCStream(OOCStream<T> source, Function<T, Integer> partitionFunc,
+		int numPartitions) {
+		SplittingOOCStream<T> split = new SplittingOOCStream<>(source, partitionFunc, numPartitions);
+		List<OOCStream<T>> out = new ArrayList<>(numPartitions);
+		for(int i = 0; i < numPartitions; i++)
+			out.add(split.getSubStream(i));
+		return out;
 	}
 
 	protected <T, R> CompletableFuture<Void> mapOOC(OOCStream<T> qIn, OOCStream<R> qOut, Function<T, R> mapper) {
+		return mapOptionalOOC(qIn, qOut, tmp -> Optional.of(mapper.apply(tmp)));
+	}
+
+	protected <T, R> CompletableFuture<Void> expandOOC(OOCStream<T> qIn, OOCStream<R> qOut, Function<T, Collection<R>> op) {
 		addInStream(qIn);
 		addOutStream(qOut);
 
-		return submitOOCTasks(qIn, tmp -> {
-			try {
-				R r = mapper.apply(tmp);
-				qOut.enqueue(r);
-			} catch (Exception e) {
-				throw e instanceof DMLRuntimeException ? (DMLRuntimeException) e : new DMLRuntimeException(e);
-			}
-		}, qOut::closeInput);
+		AtomicInteger deferredCtr = new AtomicInteger(1);
+		CompletableFuture<Void> future = new CompletableFuture<>();
+
+		submitOOCTasks(qIn, tmp -> {
+				Collection<R> out;
+				try(tmp) {
+					out = op.apply(tmp.get());
+				}
+				if(!out.isEmpty()) {
+					deferredCtr.getAndIncrement();
+					TaskContext.defer(() -> {
+						out.forEach(qOut::enqueue);
+						if(deferredCtr.decrementAndGet() == 0)
+							future.complete(null);
+					});
+				}
+			})
+			.thenRun(() -> {
+				if(deferredCtr.decrementAndGet() == 0)
+					future.complete(null);
+			})
+			.exceptionally(err -> {
+				future.completeExceptionally(err);
+				return null;
+			});
+
+		return future.thenRun(qOut::closeInput).exceptionally(err -> {
+			DMLRuntimeException dmlErr = DMLRuntimeException.of(err);
+			qOut.propagateFailure(dmlErr);
+			throw dmlErr;
+		});
 	}
 
-	protected <T, R, P> CompletableFuture<Void> joinOOC(OOCStream<T> qIn1, OOCStream<T> qIn2, OOCStream<R> qOut, BiFunction<T, T, R> mapper, Function<T, P> on) {
-		return joinOOC(qIn1, qIn2, qOut, mapper, on, on);
-	}
-
-	@SuppressWarnings("unchecked")
-	protected <T, R, P> CompletableFuture<Void> joinOOC(OOCStream<T> qIn1, OOCStream<T> qIn2, OOCStream<R> qOut, BiFunction<T, T, R> mapper, Function<T, P> onLeft, Function<T, P> onRight) {
-		addInStream(qIn1, qIn2);
+	protected <T, R> CompletableFuture<Void> mapOptionalOOC(OOCStream<T> qIn, OOCStream<R> qOut, Function<T, Optional<R>> optionalMapper) {
+		addInStream(qIn);
 		addOutStream(qOut);
 
-		final CompletableFuture<Void> future = new CompletableFuture<>();
+		AtomicInteger deferredCtr = new AtomicInteger(1);
+		CompletableFuture<Void> future = new CompletableFuture<>();
 
-		// We need to construct our own stream to properly manage the cached items in the hash join
-		CachingStream leftCache = qIn1.hasStreamCache() ? qIn1.getStreamCache() : new CachingStream((SubscribableTaskQueue<IndexedMatrixValue>)qIn1); // We have to assume this generic type for now
-		CachingStream rightCache = qIn2.hasStreamCache() ? qIn2.getStreamCache() : new CachingStream((SubscribableTaskQueue<IndexedMatrixValue>)qIn2); // We have to assume this generic type for now
+		Consumer<OOCStream.QueueCallback<T>> exec = tmp -> {
+			Optional<R> r;
+			try(tmp) {
+				r = optionalMapper.apply(tmp.get());
+			}
+			catch(Exception e) {
+				throw e instanceof DMLRuntimeException ? (DMLRuntimeException) e : new DMLRuntimeException(e);
+			}
+			r.ifPresent(t -> {
+				deferredCtr.incrementAndGet();
+				// Defer to clean the stack of large objects
+				TaskContext.defer(() -> {
+					qOut.enqueue(t);
+					if(deferredCtr.decrementAndGet() == 0)
+						future.complete(null);
+				});
+			});
+		};
+
+		submitOOCTasks(qIn, exec, tmp -> {
+					// Try to run as a predicate to prefer pipelining rather than fan-out
+					if(ALLOW_PIPELINING && ForkJoinTask.getPool() == COMPUTE_EXECUTOR && TaskContext.canPipe()) {
+						exec.accept(tmp);
+						return false;
+					}
+					return true;
+				}, null)
+			.thenRun(() -> {
+				if(deferredCtr.decrementAndGet() == 0)
+					future.complete(null);
+			})
+			.exceptionally(err -> {
+				future.completeExceptionally(err);
+				return null;
+			});
+
+		return future.thenRun(qOut::closeInput).exceptionally(err -> {
+			DMLRuntimeException dmlErr = DMLRuntimeException.of(err);
+			qOut.propagateFailure(dmlErr);
+			throw dmlErr;
+		});
+	}
+
+	protected <R, P> CompletableFuture<Void> broadcastJoinOOC(OOCStream<IndexedMatrixValue> qIn, OOCStream<IndexedMatrixValue> broadcast, OOCStream<R> qOut, BiFunction<IndexedMatrixValue, BroadcastedElement, R> mapper, Function<IndexedMatrixValue, P> on) {
+		return broadcastJoinOOC(qIn, broadcast, qOut, mapper, on, on);
+	}
+
+	protected <R, P> CompletableFuture<Void> broadcastJoinOOC(OOCStream<IndexedMatrixValue> qIn, OOCStream<IndexedMatrixValue> broadcast, OOCStream<R> qOut, BiFunction<IndexedMatrixValue, BroadcastedElement, R> mapper, Function<IndexedMatrixValue, P> onLeft, Function<IndexedMatrixValue, P> onRight) {
+		addInStream(qIn, broadcast);
+		addOutStream(qOut);
+
+		boolean leftCached = qIn.hasStreamCache();
+		boolean rightCached = broadcast.hasStreamCache();
+		CachingStream leftCache = leftCached ? qIn.getStreamCache() : new CachingStream(qIn);
+		CachingStream rightCache = rightCached ? broadcast.getStreamCache() : new CachingStream(broadcast);
 		leftCache.activateIndexing();
 		rightCache.activateIndexing();
 
-		final OOCJoin<P, MatrixIndexes> join = new OOCJoin<>((idx, left, right) -> {
-			T leftObj = (T) leftCache.findCached(left);
-			T rightObj = (T) rightCache.findCached(right);
-			qOut.enqueue(mapper.apply(leftObj, rightObj));
+		leftCache.incrSubscriberCount(1); // Prevent early block deletion as we may read elements twice
+		rightCache.incrSubscriberCount(1);
+
+		Map<P, List<MatrixIndexes>> availableLeftInput = new ConcurrentHashMap<>();
+		Map<P, BroadcastedElement> availableBroadcastInput = new ConcurrentHashMap<>();
+
+		OOCStream<Tuple4<P, OOCStream.QueueCallback<IndexedMatrixValue>, OOCStream.QueueCallback<IndexedMatrixValue>, BroadcastedElement>> broadcastingQueue = createWritableStream();
+		AtomicInteger waitCtr = new AtomicInteger(1);
+		Object lock = new Object();
+		OOCStream<IndexedMatrixValue> leftReadStream = leftCached ? qIn : leftCache.getReadStream();
+		OOCStream<IndexedMatrixValue> rightReadStream = rightCached ? broadcast : rightCache.getReadStream();
+
+		CompletableFuture<Void> fut1 = submitOOCTasks(List.of(leftReadStream, rightReadStream), (i, tmp) -> {
+			try(tmp) {
+				P key = i == 0 ? onLeft.apply(tmp.get()) : onRight.apply(tmp.get());
+
+				if(i == 0) { // qIn stream
+					BroadcastedElement b;
+
+					synchronized(lock) {
+						b = availableBroadcastInput.get(key);
+
+						if(b == null) {
+							availableLeftInput.compute(key, (k, v) -> {
+								if(v == null)
+									v = new ArrayList<>();
+								v.add(tmp.get().getIndexes());
+								return v;
+							});
+							return;
+						}
+					}
+
+					// Then items are present in cache
+					waitCtr.incrementAndGet();
+					OOCCacheManager.requestManyBlocks(
+							List.of(leftCache.peekCachedBlockKey(tmp.get().getIndexes()), rightCache.peekCachedBlockKey(b.idx)))
+						.whenComplete((items, err) -> {
+							try {
+								broadcastingQueue.enqueue(new Tuple4<>(key, items.get(0).keepOpen(), items.get(1).keepOpen(), b));
+							} finally {
+								items.forEach(OOCStream.QueueCallback::close);
+							}
+						});
+				}
+				else { // broadcast stream
+					BroadcastedElement b = new BroadcastedElement(tmp.get().getIndexes());
+					List<MatrixIndexes> queued;
+					synchronized(lock) {
+						availableBroadcastInput.put(key, b);
+						queued = availableLeftInput.remove(key);
+					}
+
+					if(queued != null) {
+						for(MatrixIndexes idx : queued) {
+							waitCtr.incrementAndGet();
+
+							OOCCacheManager.requestManyBlocks(
+								List.of(leftCache.peekCachedBlockKey(idx), rightCache.peekCachedBlockKey(tmp.get().getIndexes())))
+								.whenComplete((items, err) -> {
+									try{
+										broadcastingQueue.enqueue(new Tuple4<>(key, items.get(0).keepOpen(), items.get(1).keepOpen(), b));
+									} finally {
+										items.forEach(OOCStream.QueueCallback::close);
+									}
+								});
+						}
+					}
+				}
+			}
+		});
+		fut1 = fut1.thenApply(v -> {
+			if(waitCtr.decrementAndGet() == 0)
+				broadcastingQueue.closeInput();
+			return null;
 		});
 
-		submitOOCTasks(List.of(leftCache.getReadStream(), rightCache.getReadStream()), (i, tmp) -> {
-			if (i == 0)
-				join.addLeft(onLeft.apply((T)tmp), ((IndexedMatrixValue) tmp).getIndexes());
-			else
-				join.addRight(onRight.apply((T)tmp), ((IndexedMatrixValue) tmp).getIndexes());
-		}, () -> {
-			join.close();
+		CompletableFuture<Void> fut2 = submitOOCTasks(List.of(broadcastingQueue), (i, tpl) -> {
+			try(tpl) {
+				final BroadcastedElement b = tpl.get()._4();
+				final OOCStream.QueueCallback<IndexedMatrixValue> lValue = tpl.get()._2();
+				final OOCStream.QueueCallback<IndexedMatrixValue> bValue = tpl.get()._3();
+
+				try(lValue; bValue) {
+					b.value = bValue.get();
+					leftCache.incrProcessingCount(lValue.get().getIndexes(), 1);
+					qOut.enqueue(mapper.apply(lValue.get(), b));
+
+					if(b.tryRelease()) {
+						availableBroadcastInput.remove(tpl.get()._1());
+						rightCache.incrProcessingCount(b.idx, 1); // Correct for incremented subscriber count to allow block deletion
+					}
+				}
+
+				if(waitCtr.decrementAndGet() == 0)
+					broadcastingQueue.closeInput();
+			}
+		});
+
+		if(!qIn.hasStreamCache())
+			leftCache.scheduleDeletion();
+		if(!broadcast.hasStreamCache())
+			rightCache.scheduleDeletion();
+
+		CompletableFuture<Void> fut = CompletableFuture.allOf(fut1, fut2);
+		final StreamContext context = _streamContext.copy();
+		return fut.thenRun(() -> {
+			availableBroadcastInput.forEach((k, v) -> {
+				rightCache.incrProcessingCount(v.idx, 1);
+			});
+			availableBroadcastInput.clear();
 			qOut.closeInput();
-			future.complete(null);
+		}).exceptionally(t -> {
+			context.failAll(DMLRuntimeException.of(t));
+			return null;
+		});
+	}
+
+	protected <R, P> CompletableFuture<Void> joinManyOOC(OOCStream<IndexedMatrixValue> left,
+		OOCStream<IndexedMatrixValue> right, OOCStream<R> out,
+		BiFunction<IndexedMatrixValue, IndexedMatrixValue, R> mapper, Function<IndexedMatrixValue, P> leftOn,
+		Function<IndexedMatrixValue, P> rightOn, int releaseLeftCount, int releaseRightCount) {
+		addInStream(left, right);
+		addOutStream(out);
+
+		boolean leftCached = left.hasStreamCache();
+		boolean rightCached = right.hasStreamCache();
+		CachingStream leftCache = leftCached ? left.getStreamCache() : new CachingStream(left);
+		CachingStream rightCache = rightCached ? right.getStreamCache() : new CachingStream(right);
+		leftCache.activateIndexing();
+		rightCache.activateIndexing();
+
+		leftCache.incrSubscriberCount(1); // Prevent early block deletion as we may read elements twice
+		rightCache.incrSubscriberCount(1);
+
+		Map<P, Tuple2<List<BroadcastedElement>, List<BroadcastedElement>>> joinMap = new ConcurrentHashMap<>();
+
+		OOCStream<Tuple5<P, OOCStream.QueueCallback<IndexedMatrixValue>, OOCStream.QueueCallback<IndexedMatrixValue>, BroadcastedElement, BroadcastedElement>> joinQueue = createWritableStream();
+		AtomicInteger waitCtr = new AtomicInteger(1);
+		OOCStream<IndexedMatrixValue> leftReadStream = leftCached ? left : leftCache.getReadStream();
+		OOCStream<IndexedMatrixValue> rightReadStream = rightCached ? right : rightCache.getReadStream();
+
+		CompletableFuture<Void> fut1 = submitOOCTasks(List.of(leftReadStream, rightReadStream),
+			(i, tmp) -> {
+				try(tmp) {
+					boolean leftItem = i == 0;
+					P key = (leftItem ? leftOn : rightOn).apply(tmp.get());
+					Tuple2<List<BroadcastedElement>, List<BroadcastedElement>> tuple = joinMap.computeIfAbsent(key,
+						k -> new Tuple2<>(new ArrayList<>(releaseRightCount), new ArrayList<>(releaseLeftCount)));
+					BroadcastedElement b = new BroadcastedElement(tmp.get().getIndexes());
+					List<BroadcastedElement> matches = leftItem ? tuple._2 : tuple._1;
+					List<BroadcastedElement> toInsert = leftItem ? tuple._1 : tuple._2;
+					int matchesSize;
+					boolean remove;
+					synchronized(tuple) {
+						toInsert.add(b);
+						matchesSize = matches.size();
+						waitCtr.addAndGet(matchesSize);
+						remove = tuple._1.size() == releaseRightCount && tuple._2.size() == releaseLeftCount;
+					}
+
+					// We have the guarantee that matches is append only so we don't need to synchronize for this
+					for(int mIdx = 0; mIdx  < matchesSize; mIdx++) {
+						BroadcastedElement e = matches.get(mIdx);
+						OOCCacheManager.requestManyBlocks(
+							List.of(leftCache.peekCachedBlockKey(leftItem ? b.idx : e.idx),
+								rightCache.peekCachedBlockKey(leftItem ? e.idx : b.idx))).thenApply(joined -> {
+							try {
+								joinQueue.enqueue(
+									new Tuple5<>(key, joined.get(0).keepOpen(), joined.get(1).keepOpen(),
+										leftItem ? b : e, leftItem ? e : b));
+							}
+							finally {
+								joined.forEach(OOCStream.QueueCallback::close);
+							}
+							return null;
+						}).exceptionally(t -> {
+							joinQueue.propagateFailure(DMLRuntimeException.of(t));
+							return null;
+						});
+					}
+
+					if(remove)
+						joinMap.remove(key);
+				}
+			});
+		fut1 = fut1.thenApply(v -> {
+			if(waitCtr.decrementAndGet() == 0)
+				joinQueue.closeInput();
+			return null;
 		});
 
-		return future;
+		CompletableFuture<Void> fut2 = mapOOC(joinQueue, out, tpl -> {
+			final BroadcastedElement bLeft = tpl._4();
+			final BroadcastedElement bRight = tpl._5();
+			final OOCStream.QueueCallback<IndexedMatrixValue> lValue = tpl._2();
+			final OOCStream.QueueCallback<IndexedMatrixValue> rValue = tpl._3();
+			R res;
+
+			try(lValue; rValue) {
+				res = mapper.apply(lValue.get(), rValue.get());
+				int leftCtr = bLeft.incrProcessCtrAndGet();
+				int rightCtr = bRight.incrProcessCtrAndGet();
+
+				if(leftCtr == releaseLeftCount)
+					leftCache.incrProcessingCount(bLeft.idx,
+						1); // Correct for incremented subscriber count to allow block deletion
+				if(rightCtr == releaseRightCount)
+					rightCache.incrProcessingCount(bRight.idx, 1);
+			}
+
+			if(waitCtr.decrementAndGet() == 0)
+				joinQueue.closeInput();
+			return res;
+		});
+
+		if(!left.hasStreamCache())
+			leftCache.scheduleDeletion();
+		if(!right.hasStreamCache())
+			rightCache.scheduleDeletion();
+
+		return CompletableFuture.allOf(fut1, fut2);
 	}
 
-	protected <T> CompletableFuture<Void> submitOOCTasks(final List<OOCStream<T>> queues, BiConsumer<Integer, T> consumer, Runnable finalizer) {
-		List<CompletableFuture<Void>> futures = new ArrayList<>(queues.size());
+	protected static class BroadcastedElement {
+		private final MatrixIndexes idx;
+		private IndexedMatrixValue value;
+		private boolean release;
+		private int processCtr;
 
-		for (int i = 0; i < queues.size(); i++)
-			futures.add(new CompletableFuture<>());
-
-		return submitOOCTasks(queues, consumer, finalizer, futures, null);
-	}
-
-	protected <T> CompletableFuture<Void> submitOOCTasks(final List<OOCStream<T>> queues, BiConsumer<Integer, T> consumer, Runnable finalizer, List<CompletableFuture<Void>> futures, BiFunction<Integer, T, Boolean> predicate) {
-		addInStream(queues.toArray(OOCStream[]::new));
-		ExecutorService pool = CommonThreadPool.get();
-
-		final List<AtomicInteger> activeTaskCtrs = new ArrayList<>(queues.size());
-		final List<AtomicBoolean> streamsClosed = new ArrayList<>(queues.size());
-
-		for (int i = 0; i < queues.size(); i++) {
-			activeTaskCtrs.add(new AtomicInteger(0));
-			streamsClosed.add(new AtomicBoolean(false));
+		public BroadcastedElement(MatrixIndexes idx) {
+			this.idx = idx;
+			this.release = false;
 		}
 
-		final AtomicInteger globalTaskCtr = new AtomicInteger(0);
+		public synchronized void release() {
+			release = true;
+		}
+
+		public synchronized boolean canRelease() {
+			return release;
+		}
+
+		public synchronized boolean tryRelease() {
+			if(release) {
+				release = false; // To not double release
+				return true;
+			}
+			return false;
+		}
+
+		public synchronized int incrProcessCtrAndGet() {
+			processCtr++;
+			return processCtr;
+		}
+
+		public MatrixIndexes getIndex() {
+			return idx;
+		}
+
+		public IndexedMatrixValue getValue() {
+			return value;
+		}
+	}
+
+	protected <R> CompletableFuture<Void> joinOOC(OOCStream<IndexedMatrixValue> qIn1, OOCStream<IndexedMatrixValue> qIn2, OOCStream<R> qOut, BiFunction<IndexedMatrixValue, IndexedMatrixValue, R> mapper, Function<IndexedMatrixValue, MatrixIndexes> on) {
+		return joinOOC(List.of(qIn1, qIn2), qOut, t -> mapper.apply(t.get(0), t.get(1)), on);
+	}
+
+	protected <R> CompletableFuture<Void> joinOOC(List<OOCStream<IndexedMatrixValue>> qIn, OOCStream<R> qOut, Function<List<IndexedMatrixValue>, R> mapper, Function<IndexedMatrixValue, MatrixIndexes> on) {
+		int inSize = qIn.size();
+		return joinOOC(qIn, qOut, mapper, Collections.nCopies(inSize, on), t -> Collections.nCopies(inSize, t));
+	}
+
+	protected <R, P> CompletableFuture<Void> joinOOC(List<OOCStream<IndexedMatrixValue>> qIn, OOCStream<R> qOut, Function<List<IndexedMatrixValue>, R> mapper, List<Function<IndexedMatrixValue, P>> on, Function<P, List<MatrixIndexes>> invOn) {
+		if(qIn == null || on == null || qIn.size() != on.size())
+			throw new DMLRuntimeException("joinOOC(list) requires the same number of streams and key functions.");
+
+		final int n = qIn.size();
+
+		CachingStream[] caches = new CachingStream[n];
+		boolean[] explicitCaching = new boolean[n];
+
+		for(int i = 0; i < n; i++) {
+			OOCStream<IndexedMatrixValue> s = qIn.get(i);
+			explicitCaching[i] = !s.hasStreamCache();
+			caches[i] = explicitCaching[i] ? new CachingStream(s) : s.getStreamCache();
+			caches[i].activateIndexing();
+			// One additional consumption for the materialization when emitting
+			caches[i].incrSubscriberCount(1);
+		}
+
+		Map<P, MatrixIndexes[]> seen = new ConcurrentHashMap<>();
+
+		OOCStream<List<OOCStream.QueueCallback<IndexedMatrixValue>>> materialized = createWritableStream();
+
+		List<OOCStream<IndexedMatrixValue>> rStreams = new ArrayList<>(caches.length);
+		for(int i = 0; i < caches.length; i++)
+			rStreams.add(explicitCaching[i] ? caches[i].getReadStream() : qIn.get(i));
+
+		AtomicInteger processing = new AtomicInteger(1);
+
+		addInStream(qIn.toArray(OOCStream[]::new));
+		addOutStream(qOut);
+
+		CompletableFuture<Void> future = pipeOOC(rStreams, (i, tmp) -> {
+			Function<IndexedMatrixValue, P> keyFn = on.get(i);
+			P key = keyFn.apply(tmp.get());
+			MatrixIndexes idx = tmp.get().getIndexes();
+
+			MatrixIndexes[] arr = seen.computeIfAbsent(key, k -> new MatrixIndexes[n]);
+			boolean ready;
+			synchronized(arr) {
+				arr[i] = idx;
+				ready = true;
+				for(int j = 0; j < arr.length; j++) {
+					MatrixIndexes ix = arr[j];
+					if (ix == null) {
+						ready = false;
+						break;
+					}
+				}
+			}
+
+			if(!ready || !seen.remove(key, arr))
+				return;
+
+			processing.incrementAndGet();
+			List<BlockKey> entries = new ArrayList<>(arr.length);
+			for(int j = 0; j < arr.length; j++)
+				entries.add(caches[j].peekCachedBlockKey(arr[j]));
+
+			var f = OOCCacheManager.requestManyBlocks(entries);
+			f.whenComplete((r, err) -> {
+				try {
+					if(err != null) {
+						if(err instanceof DMLRuntimeException)
+							materialized.propagateFailure((DMLRuntimeException) err);
+						else if(err instanceof Exception)
+							materialized.propagateFailure(new DMLRuntimeException(err));
+						else
+							materialized.propagateFailure(new DMLRuntimeException(new Exception(err)));
+						return;
+					}
+					List<OOCStream.QueueCallback<IndexedMatrixValue>> outList = new ArrayList<>(r.size());
+					for(int j = 0; j < r.size(); j++) {
+						if(explicitCaching[j]) {
+							outList.add(r.get(j).keepOpen());
+						}
+						else {
+							outList.add(r.get(j).keepOpen());
+						}
+						caches[j].incrProcessingCount(r.get(j).get().getIndexes(), 1);
+					}
+					materialized.enqueue(outList);
+					r.forEach(OOCStream.QueueCallback::close);
+				}
+				catch(Throwable t) {
+					throw t;
+				}
+				finally {
+					if(processing.decrementAndGet() == 0)
+						materialized.closeInput();
+				}
+			});
+		});
+
+		future.whenComplete((r, err) -> {
+			if (processing.decrementAndGet() == 0) {
+				materialized.closeInput();
+			}
+		});
+
+		CompletableFuture<Void> outFuture = mapOOC(materialized, qOut, cb -> {
+			try {
+				List<IndexedMatrixValue> imvs = cb.stream().map(OOCStream.QueueCallback::get).toList();
+				return mapper.apply(imvs);
+			}
+			finally {
+				cb.forEach(OOCStream.QueueCallback::close);
+			}
+		});
+
+		for(int i = 0; i < n; i++) {
+			if (explicitCaching[i])
+				caches[i].scheduleDeletion();
+		}
+
+		return outFuture;
+	}
+
+	protected CompletableFuture<Void> groupedReduceOOC(OOCStream<IndexedMatrixValue> qIn, OOCStream<IndexedMatrixValue> qOut, BiFunction<IndexedMatrixValue, IndexedMatrixValue, IndexedMatrixValue> reduce, int emitCount) {
+		addInStream(qIn);
+		addOutStream(qOut);
+
+		if(qIn.hasStreamCache())
+			throw new UnsupportedOperationException();
+		Map<MatrixIndexes, Aggregator> aggregators = new ConcurrentHashMap<>();
+		AtomicInteger busyCtr = new AtomicInteger(1);
+		CompletableFuture<Void> outFuture = new CompletableFuture<>();
+
+		CompletableFuture<Void> pipeFuture = pipeOOC(qIn, cb -> {
+			try(cb) {
+				Aggregator agg = aggregators.compute(cb.get().getIndexes(), (k, v) -> {
+					if(v == null) {
+						v = new Aggregator(reduce, emitCount);
+						busyCtr.incrementAndGet();
+						v.getFuture().thenApply(imv -> {
+							qOut.enqueue(imv);
+							if(busyCtr.decrementAndGet() == 0)
+								outFuture.complete(null);
+							return null;
+						})
+							.exceptionally(outFuture::completeExceptionally);
+					}
+					return v;
+				});
+				agg.insert(cb.get());
+			}
+		});
+
+		pipeFuture.thenRun(() -> {
+			if(busyCtr.decrementAndGet() == 0)
+				outFuture.complete(null);
+		});
+
+		return outFuture.thenRun(qOut::closeInput);
+	}
+
+	private static class Aggregator {
+		private final long _streamId;
+		private final BiFunction<IndexedMatrixValue, IndexedMatrixValue, IndexedMatrixValue> _aggFn;
+		private final int _numTiles;
+		private final CompletableFuture<IndexedMatrixValue> _future;
+		private LinkedList<BlockKey> _availableIntermediates;
+		private int _blockId;
+		private int _processed;
+
+
+		public Aggregator(BiFunction<IndexedMatrixValue, IndexedMatrixValue, IndexedMatrixValue> aggFn, int numTiles) {
+			_streamId = CachingStream._streamSeq.getNextID();
+			_blockId = 0;
+			_aggFn = aggFn;
+			_numTiles = numTiles;
+			_future = new CompletableFuture<>();
+			_availableIntermediates = new LinkedList<>();
+			_processed = 0;
+		}
+
+		public CompletableFuture<IndexedMatrixValue> getFuture() {
+			return _future;
+		}
+
+		public void insert(IndexedMatrixValue imv) {
+			IndexedMatrixValue v = null;
+			CompletableFuture<List<BlockEntry>> future = null;
+			boolean finished = false;
+			synchronized(this) {
+				_processed++;
+				if(_processed == _numTiles * 2 - 1) {
+					// Then we are done
+					finished = true;
+				}
+				else {
+					if(!_availableIntermediates.isEmpty()) {
+						List<BlockKey> sel = new ArrayList<>(1);
+						List<BlockEntry> entries = OOCCacheManager.getCache().tryRequestAnyOf(_availableIntermediates, 1, sel);
+
+						if(entries == null) {
+							BlockEntry entry = OOCCacheManager.getCache()
+								.putAndPin(new BlockKey(_streamId, _blockId++), imv,
+									((MatrixBlock) imv.getValue()).getExactSerializedSize());
+							entry.addRetainHint(10);
+							future = OOCCacheManager.getCache()
+								.request(List.of(entry.getKey(), _availableIntermediates.removeFirst()));
+							OOCCacheManager.getCache().unpin(entry);
+						}
+						else {
+							v = (IndexedMatrixValue)entries.get(0).getData();
+							_availableIntermediates.remove(sel.get(0));
+							OOCCacheManager.getCache().forget(sel.get(0));
+							if(v == null)
+								throw new IllegalStateException();
+						}
+					}
+					else {
+						BlockEntry entry = OOCCacheManager.getCache()
+							.putAndPin(new BlockKey(_streamId, _blockId++), imv,
+								((MatrixBlock) imv.getValue()).getExactSerializedSize());
+						entry.addRetainHint(10);
+						OOCCacheManager.getCache().unpin(entry);
+						_availableIntermediates.add(entry.getKey());
+						return;
+					}
+				}
+			}
+
+			if(finished) {
+				_availableIntermediates = null;
+				_future.complete(imv);
+				return;
+			}
+
+			if(v != null) {
+				imv = _aggFn.apply(v, imv);
+				insert(imv);
+				return;
+			}
+
+			future.thenApply(l -> {
+				IndexedMatrixValue agg = _aggFn.apply((IndexedMatrixValue)l.get(0).getData(),
+					(IndexedMatrixValue)l.get(1).getData());
+				OOCCacheManager.getCache().forget(l.get(0).getKey());
+				OOCCacheManager.getCache().forget(l.get(1).getKey());
+				insert(agg);
+				return null;
+			});
+		}
+	}
+
+	protected <T> CompletableFuture<Void> pipeOOC(OOCStream<T> queue, Consumer<OOCStream.QueueCallback<T>> consumer) {
+		return pipeOOC(List.of(queue), (i, tmp) -> consumer.accept(tmp));
+	}
+
+	protected <T> CompletableFuture<Void> pipeOOC(List<OOCStream<T>> queues, BiConsumer<Integer, OOCStream.QueueCallback<T>> consumer) {
+		return submitOOCTasks(queues, consumer, (i, tmp) -> {
+			// Try to run as a predicate to prefer pipelining rather than fan-out
+			if(ALLOW_PIPELINING && ForkJoinTask.getPool() == COMPUTE_EXECUTOR && TaskContext.canPipe()) {
+				consumer.accept(i, tmp);
+				return false;
+			}
+			return true;
+		}, (i, tmp) -> {});
+	}
+
+	protected static final class ScanStep<R, C> {
+		private final R _out;
+		private final C _carry;
+
+		protected ScanStep(R out, C carry) {
+			_out = out;
+			_carry = carry;
+		}
+
+		protected R getOut() {
+			return _out;
+		}
+
+		protected C getCarry() {
+			return _carry;
+		}
+	}
+
+	/**
+	 * Performs a sequential scan in a given order. This method is currently fully in-memory and thus should not yet
+	 * be used for large sequences. TODO
+	 * @param qIn the (unsorted) input stream
+	 * @param qOut the target output stream
+	 * @param seqFn a sequence function to define a unique order
+	 * @param scanner the scanner function that takes the current sequence item and a carry object and returns output and next carry
+	 * @param sequenceSize the sequence size
+	 * @return
+	 * @param <R> the return tile
+	 * @param <C> the carry state
+	 */
+	protected <R, C> CompletableFuture<Void> scanOOC(OOCStream<IndexedMatrixValue> qIn, OOCStream<R> qOut,
+		Function<IndexedMatrixValue, Long> seqFn,
+		BiFunction<IndexedMatrixValue, C, ScanStep<R, C>> scanner, long sequenceSize) {
+		if(sequenceSize <= 0)
+			throw new DMLRuntimeException("Invalid ordered scan size: " + sequenceSize);
+
+		addOutStream(qOut);
+		TreeMap<Long, OOCStream.QueueCallback<IndexedMatrixValue>> pending = new TreeMap<>();
+		long[] expected = new long[] {1L};
+		Object[] carry = new Object[1];
+		AtomicLong processed = new AtomicLong(0);
+
+		CompletableFuture<Void> future = pipeOOC(qIn, cb -> {
+			List<R> ready = new ArrayList<>();
+			List<OOCStream.QueueCallback<IndexedMatrixValue>> processedCallbacks = new ArrayList<>();
+			try {
+				synchronized(pending) {
+					OOCStream.QueueCallback<IndexedMatrixValue> pinned = cb.keepOpen();
+					IndexedMatrixValue item = pinned.get();
+					long seqIx = seqFn.apply(item);
+					if(seqIx < 1 || seqIx > sequenceSize) {
+						pinned.close();
+						throw new DMLRuntimeException("Ordered scan index out of bounds: " + seqIx + "/" + sequenceSize);
+					}
+
+					OOCStream.QueueCallback<IndexedMatrixValue> prior = pending.put(seqIx, pinned);
+					if(prior != null) {
+						pending.put(seqIx, prior);
+						pinned.close();
+						throw new DMLRuntimeException("Duplicate ordered scan item for sequence index " + seqIx + ".");
+					}
+
+					while(pending.containsKey(expected[0])) {
+						OOCStream.QueueCallback<IndexedMatrixValue> curCb = pending.remove(expected[0]);
+						try {
+							IndexedMatrixValue cur = curCb.get();
+							@SuppressWarnings("unchecked")
+							C agg = (C) carry[0];
+							ScanStep<R, C> step = scanner.apply(cur, agg);
+							if(step == null)
+								throw new DMLRuntimeException("Ordered scan step must not be null.");
+							R out = step.getOut();
+							if(out == null)
+								throw new DMLRuntimeException("Ordered scan output must not be null.");
+							carry[0] = step.getCarry();
+							ready.add(out);
+							expected[0]++;
+							processed.incrementAndGet();
+						}
+						finally {
+							processedCallbacks.add(curCb);
+						}
+					}
+				}
+
+				for(R out : ready)
+					qOut.enqueue(out);
+			}
+			finally {
+				processedCallbacks.forEach(OOCStream.QueueCallback::close);
+			}
+		});
+
+		return future.handle((r, err) -> {
+			synchronized(pending) {
+				if(err != null) {
+					pending.values().forEach(OOCStream.QueueCallback::close);
+					pending.clear();
+					throw DMLRuntimeException.of(err);
+				}
+
+				if(processed.get() != sequenceSize || !pending.isEmpty()) {
+					Object pendingKeys = pending.keySet().toString();
+					pending.values().forEach(OOCStream.QueueCallback::close);
+					pending.clear();
+					throw new DMLRuntimeException(
+						"Incomplete ordered scan processing. processed=" + processed.get() + ", expected="
+							+ sequenceSize + ", pendingKeys=" + pendingKeys);
+				}
+
+				if(expected[0] != sequenceSize + 1) {
+					pending.values().forEach(OOCStream.QueueCallback::close);
+					pending.clear();
+					throw new DMLRuntimeException("Missing ordered scan items: expected terminal index="
+						+ (sequenceSize + 1) + ", seen=" + expected[0]);
+				}
+			}
+			qOut.closeInput();
+			return null;
+		});
+	}
+
+	protected <R, C> CompletableFuture<Void> scanOOC(OOCStream<IndexedMatrixValue> qIn, OOCStream<R> qOut,
+		Function<IndexedMatrixValue, Long> seqFn, BiFunction<IndexedMatrixValue, C, R> scanner,
+		Function<R, C> carryFn, long sequenceSize) {
+		return scanOOC(qIn, qOut, seqFn, (IndexedMatrixValue item, C carry) -> {
+			R out = scanner.apply(item, carry);
+			if(out == null)
+				throw new DMLRuntimeException("Ordered scan output must not be null.");
+			return new ScanStep<>(out, carryFn.apply(out));
+		}, sequenceSize);
+	}
+
+	protected <T> CompletableFuture<Void> submitOOCTasks(final List<OOCStream<T>> queues, BiConsumer<Integer, OOCStream.QueueCallback<T>> consumer) {
+		return submitOOCTasks(queues, consumer, null, null);
+	}
+
+	protected <T> CompletableFuture<Void> submitOOCTasks(final List<OOCStream<T>> queues, BiConsumer<Integer, OOCStream.QueueCallback<T>> consumer, BiFunction<Integer, OOCStream.QueueCallback<T>, Boolean> predicate, BiConsumer<Integer, OOCStream.QueueCallback<T>> onNotProcessed) {
+		addInStream(queues.toArray(OOCStream[]::new));
+		if(!outStreamsDefined())
+			throw new IllegalArgumentException("Explicit specification of all output streams is required before submitting tasks. If no output streams are present use addOutStream().");
+
+		final List<AtomicInteger> activeTaskCtrs = new ArrayList<>(queues.size());
+		final List<CompletableFuture<Void>> futures = new ArrayList<>(queues.size());
+
+		for(int i = 0; i < queues.size(); i++) {
+			activeTaskCtrs.add(new AtomicInteger(1));
+			futures.add(new CompletableFuture<>());
+		}
+
 		final CompletableFuture<Void> globalFuture = CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
-		if (_outQueues == null)
-			_outQueues = Collections.emptySet();
-		final Runnable oocFinalizer = oocTask(finalizer, null, Stream.concat(_outQueues.stream(), _inQueues.stream()).toArray(OOCStream[]::new));
-		final Object globalLock = new Object();
+		final StreamContext streamContext = _streamContext.copy(); // Snapshot of the current stream context
+		if(streamContext == null || !streamContext.inStreamsDefined() || !streamContext.outStreamsDefined())
+			throw new IllegalArgumentException("Explicit specification of all output streams is required before submitting tasks. If no output streams are present use addOutStream().");
 
 		int i = 0;
 		@SuppressWarnings("unused")
 		final int streamId = nextStreamId.getAndIncrement();
-		//System.out.println("New stream: (id " + streamId + ", size " + queues.size() + ", initiator '" + this.getClass().getSimpleName() + "')");
 
 		for (OOCStream<T> queue : queues) {
 			final int k = i;
 			final AtomicInteger localTaskCtr =  activeTaskCtrs.get(k);
-			final AtomicBoolean localStreamClosed = streamsClosed.get(k);
 			final CompletableFuture<Void> localFuture = futures.get(k);
+			final AtomicBoolean closeRaceWatchdog = new AtomicBoolean(false);
 
-			//System.out.println("Substream (k " + k + ", id " + streamId + ", type '" + queue.getClass().getSimpleName() + "', stream_id " + queue.hashCode() + ")");
-			queue.setSubscriber(oocTask(() -> {
-				final T item = queue.dequeue();
+			queue.setSubscriber(oocTask(callback -> {
+				long startTime = DMLScript.STATISTICS ? System.nanoTime() : 0;
+				try(callback) {
+					if(callback.isEos()) {
+						if(!closeRaceWatchdog.compareAndSet(false, true))
+							throw new DMLRuntimeException(
+								"Race condition observed: NO_MORE_TASKS callback has been triggered more than once");
 
-				if (predicate != null && item != null && !predicate.apply(k, item)) // Can get closed due to cancellation
-					return;
-
-				synchronized (globalLock) {
-					if (localFuture.isDone())
-						return;
-
-					globalTaskCtr.incrementAndGet();
-				}
-
-				localTaskCtr.incrementAndGet();
-
-				pool.submit(oocTask(() -> {
-					if(item != null) {
-						//System.out.println("Accept" + ((IndexedMatrixValue)item).getIndexes() + " (k " + k + ", id " + streamId + ")");
-						consumer.accept(k, item);
-					}
-					else {
-						//System.out.println("Close substream (k " + k + ", id " + streamId + ")");
-						localStreamClosed.set(true);
-					}
-
-					boolean runFinalizer = false;
-
-					synchronized (globalLock) {
-						int localTasks = localTaskCtr.decrementAndGet();
-						boolean finalizeStream = localTasks == 0 && localStreamClosed.get();
-
-						int globalTasks = globalTaskCtr.get() - 1;
-
-						if (finalizeStream || (globalFuture.isDone() && localTasks == 0)) {
+						if(localTaskCtr.decrementAndGet() == 0) {
+							// Then we can run the finalization procedure already
 							localFuture.complete(null);
+						}
+						return;
+					}
 
-							if (globalFuture.isDone() && globalTasks == 0)
-								runFinalizer = true;
+					Consumer<OOCStream.QueueCallback<T>> process = cb -> {
+						if(predicate != null && !predicate.apply(k, cb)) { // Can get closed due to cancellation
+							if(onNotProcessed != null)
+								onNotProcessed.accept(k, cb);
+							return;
 						}
 
-						globalTaskCtr.decrementAndGet();
+						if(localFuture.isDone()) {
+							if(onNotProcessed != null)
+								onNotProcessed.accept(k, cb);
+							return;
+						}
+						else {
+							localTaskCtr.incrementAndGet();
+						}
+
+						// The item needs to be pinned in memory to be accessible in the executor thread
+						final OOCStream.QueueCallback<T> pinned = cb.keepOpen();
+
+						COMPUTE_IN_FLIGHT.incrementAndGet();
+						try {
+							Runnable oocTask = oocTask(() -> {
+								long taskStartTime = DMLScript.STATISTICS || DMLScript.OOC_LOG_EVENTS ? System.nanoTime() : 0;
+								try(pinned) {
+									consumer.accept(k, pinned);
+
+									if(localTaskCtr.decrementAndGet() == 0) {
+										TaskContext.defer(() -> localFuture.complete(null));
+									}
+								}
+								finally {
+									COMPUTE_IN_FLIGHT.decrementAndGet();
+									if (DMLScript.STATISTICS) {
+										_localStatisticsAdder.add(System.nanoTime() - taskStartTime);
+										if (globalFuture.isDone()) {
+											Statistics.maintainOOCHeavyHitter(getExtendedOpcode(), _localStatisticsAdder.sum());
+											_localStatisticsAdder.reset();
+										}
+									}
+									if (DMLScript.OOC_LOG_EVENTS)
+										OOCEventLog.onComputeEvent(_callerId, taskStartTime, System.nanoTime());
+								}
+							}, localFuture, streamContext);
+							COMPUTE_EXECUTOR.submit(oocTask);
+						}
+						catch (Exception e) {
+							COMPUTE_IN_FLIGHT.decrementAndGet();
+							throw e;
+						}
+					};
+
+					if(callback instanceof OOCStream.GroupQueueCallback<?>) {
+						OOCStream.GroupQueueCallback<T> group = (OOCStream.GroupQueueCallback<T>) callback;
+
+						if(localFuture.isDone()) {
+							for(int idx = 0; idx < group.size(); idx++) {
+								OOCStream.QueueCallback<T> sub = group.getCallback(idx);
+								try(sub) {
+									if(onNotProcessed != null)
+										onNotProcessed.accept(k, sub);
+								}
+							}
+							return;
+						}
+
+						localTaskCtr.incrementAndGet();
+						final OOCStream.GroupQueueCallback<T> pinnedGroup =
+							(OOCStream.GroupQueueCallback<T>) group.keepOpen();
+
+						COMPUTE_IN_FLIGHT.incrementAndGet();
+						try {
+							Runnable oocTask = oocTask(() -> {
+								long taskStartTime = DMLScript.STATISTICS || DMLScript.OOC_LOG_EVENTS ? System.nanoTime() : 0;
+								try(pinnedGroup) {
+									for(int idx = 0; idx < pinnedGroup.size(); idx++) {
+										OOCStream.QueueCallback<T> sub = pinnedGroup.getCallback(idx);
+										try(sub) {
+											process.accept(sub);
+										}
+									}
+
+									if(localTaskCtr.decrementAndGet() == 0) {
+										TaskContext.defer(() -> localFuture.complete(null));
+									}
+								}
+								finally {
+									COMPUTE_IN_FLIGHT.decrementAndGet();
+									if (DMLScript.STATISTICS) {
+										_localStatisticsAdder.add(System.nanoTime() - taskStartTime);
+										if (globalFuture.isDone()) {
+											Statistics.maintainOOCHeavyHitter(getExtendedOpcode(), _localStatisticsAdder.sum());
+											_localStatisticsAdder.reset();
+										}
+									}
+									if (DMLScript.OOC_LOG_EVENTS)
+										OOCEventLog.onComputeEvent(_callerId, taskStartTime, System.nanoTime());
+								}
+							}, localFuture, streamContext);
+							COMPUTE_EXECUTOR.submit(oocTask);
+						}
+						catch (Exception e) {
+							COMPUTE_IN_FLIGHT.decrementAndGet();
+							throw e;
+						}
+					}
+					else {
+						process.accept(callback);
 					}
 
-					if (runFinalizer)
-						oocFinalizer.run();
-				}, localFuture, Stream.concat(_outQueues.stream(), _inQueues.stream()).toArray(OOCStream[]::new)));
-			}, null,  Stream.concat(_outQueues.stream(), _inQueues.stream()).toArray(OOCStream[]::new)));
+					if(closeRaceWatchdog.get()) // Sanity check
+						throw new DMLRuntimeException("Race condition observed");
+				}
+				catch(Throwable t) {
+					streamContext.failAll(DMLRuntimeException.of(t));
+					throw t;
+				}
+				finally {
+					if (DMLScript.STATISTICS) {
+						_localStatisticsAdder.add(System.nanoTime() - startTime);
+						if (globalFuture.isDone()) {
+							Statistics.maintainOOCHeavyHitter(getExtendedOpcode(), _localStatisticsAdder.sum());
+							_localStatisticsAdder.reset();
+						}
+					}
+				}
+			}, null,  streamContext));
 
 			i++;
 		}
 
-		pool.shutdown();
-
-		globalFuture.whenComplete((res, e) -> {
-			if (globalFuture.isCancelled() || globalFuture.isCompletedExceptionally())
+		return globalFuture.handle((res, e) -> {
+			if (globalFuture.isCancelled() || globalFuture.isCompletedExceptionally()) {
 				futures.forEach(f -> {
-					if (!f.isDone()) {
-						if (globalFuture.isCancelled() || globalFuture.isCompletedExceptionally())
+					if(!f.isDone()) {
+						if(globalFuture.isCancelled() || globalFuture.isCompletedExceptionally())
 							f.cancel(true);
 						else
 							f.complete(null);
 					}
 				});
-
-			boolean runFinalizer;
-
-			synchronized (globalLock) {
-				runFinalizer = globalTaskCtr.get() == 0;
 			}
 
-			if (runFinalizer)
-				oocFinalizer.run();
-
-			//System.out.println("Shutdown (id " + streamId + ")");
+			streamContext.clear();
+			return null;
 		});
-		return globalFuture;
 	}
 
-	protected <T> CompletableFuture<Void> submitOOCTasks(OOCStream<T> queue, Consumer<T> consumer, Runnable finalizer) {
-		return submitOOCTasks(List.of(queue), (i, tmp) -> consumer.accept(tmp), finalizer);
+	protected <T> CompletableFuture<Void> submitOOCTasks(OOCStream<T> queue, Consumer<OOCStream.QueueCallback<T>> consumer) {
+		return submitOOCTasks(List.of(queue), (i, tmp) -> consumer.accept(tmp), null, null);
 	}
 
-	protected <T> CompletableFuture<Void> submitOOCTasks(OOCStream<T> queue, Consumer<T> consumer, Runnable finalizer, Function<T, Boolean> predicate) {
-		return submitOOCTasks(List.of(queue), (i, tmp) -> consumer.accept(tmp), finalizer, List.of(new CompletableFuture<Void>()), (i, tmp) -> predicate.apply(tmp));
+	protected <T> CompletableFuture<Void> submitOOCTasks(OOCStream<T> queue, Consumer<OOCStream.QueueCallback<T>> consumer, Function<OOCStream.QueueCallback<T>, Boolean> predicate, BiConsumer<Integer, OOCStream.QueueCallback<T>> onNotProcessed) {
+		return submitOOCTasks(List.of(queue), (i, tmp) -> consumer.accept(tmp), (i, tmp) -> predicate.apply(tmp), onNotProcessed);
 	}
 
-	protected CompletableFuture<Void> submitOOCTask(Runnable r, OOCStream<?>... queues) {
+	protected CompletableFuture<Void> submitOOCTask(Runnable r, StreamContext ctx) {
 		ExecutorService pool = CommonThreadPool.get();
 		final CompletableFuture<Void> future = new CompletableFuture<>();
 		try {
-			pool.submit(oocTask(() -> {r.run();future.complete(null);}, future, queues));
+			COMPUTE_IN_FLIGHT.incrementAndGet();
+			pool.submit(oocTask(() -> {
+				long startTime = DMLScript.STATISTICS || DMLScript.OOC_LOG_EVENTS ? System.nanoTime() : 0;
+				try {
+					r.run();
+					future.complete(null);
+					ctx.clear();
+					if (DMLScript.STATISTICS)
+						Statistics.maintainOOCHeavyHitter(getExtendedOpcode(), System.nanoTime() - startTime);
+					if (DMLScript.OOC_LOG_EVENTS)
+						OOCEventLog.onComputeEvent(_callerId, startTime,  System.nanoTime());
+				}
+				finally {
+					COMPUTE_IN_FLIGHT.decrementAndGet();
+				}
+				}, future, ctx));
 		}
 		catch (Exception ex) {
+			COMPUTE_IN_FLIGHT.decrementAndGet();
 			throw new DMLRuntimeException(ex);
 		}
 		finally {
@@ -329,21 +1227,47 @@ public abstract class OOCInstruction extends Instruction {
 		return future;
 	}
 
-	private Runnable oocTask(Runnable r, CompletableFuture<Void> future,  OOCStream<?>... queues) {
+	private Runnable oocTask(Runnable r, CompletableFuture<Void> future,  StreamContext ctx) {
 		return () -> {
+			boolean setContext = TaskContext.getContext() == null;
+			if(setContext)
+				TaskContext.setContext(new TaskContext());
+			long startTime = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			try {
 				r.run();
+				if(setContext) {
+					while(TaskContext.runDeferred()) {
+					}
+				}
 			}
 			catch (Exception ex) {
-				DMLRuntimeException re = ex instanceof DMLRuntimeException ? (DMLRuntimeException) ex : new DMLRuntimeException(ex);
+				DMLRuntimeException re = DMLRuntimeException.of(ex);
 
-				if (_failed) // Do avoid infinite cycles
-					throw re;
+				ctx.failAll(re);
 
-				_failed = true;
+				if (future != null)
+					future.completeExceptionally(re);
 
-				for (OOCStream<?> q : queues)
-					q.propagateFailure(re);
+				// Rethrow to ensure proper future handling
+				throw re;
+			} finally {
+				if(setContext)
+					TaskContext.clearContext();
+				if (DMLScript.STATISTICS)
+					_localStatisticsAdder.add(System.nanoTime() - startTime);
+			}
+		};
+	}
+
+	private <T> Consumer<OOCStream.QueueCallback<T>> oocTask(Consumer<OOCStream.QueueCallback<T>> c, CompletableFuture<Void> future,  StreamContext ctx) {
+		return callback -> {
+			try {
+				c.accept(callback);
+			}
+			catch (Exception ex) {
+				DMLRuntimeException re = DMLRuntimeException.of(ex);
+
+				ctx.failAll(re);
 
 				if (future != null)
 					future.completeExceptionally(re);

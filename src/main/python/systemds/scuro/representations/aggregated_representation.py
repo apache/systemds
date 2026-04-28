@@ -52,9 +52,9 @@ class AggregatedRepresentation(Representation):
 
     def get_output_stats(self, input_stats: RepresentationStats) -> RepresentationStats:
         input_shape = list(copy.deepcopy(input_stats.output_shape))
-        input_aggregate_dim = copy.deepcopy(input_stats.aggregate_dim)
-        for input_aggregate_dim in reversed(input_aggregate_dim):
-            input_shape.pop(input_aggregate_dim)
+        if self.target_dimensions is not None:
+            while len(input_shape) > self.target_dimensions:
+                input_shape.pop()
         out_shape = tuple(input_shape)
         self.stats = RepresentationStats(
             input_stats.num_instances,
@@ -100,11 +100,11 @@ class AggregatedRepresentation(Representation):
             if len(input_dimensions) == self.target_dimensions:
                 return modality
             else:
-
-                i = 1
-                while len(input_dimensions) - 1 > self.target_dimensions:
+                i = len(input_dimensions) - 1
+                aggregate_dim = ()
+                while len(input_dimensions) > self.target_dimensions:
                     aggregate_dim = aggregate_dim + (i,)
-                    i += 1
+                    i -= 1
                     input_dimensions = input_dimensions[:-1]
 
         aggregated_data = self.aggregation.execute(modality, aggregate_dim)

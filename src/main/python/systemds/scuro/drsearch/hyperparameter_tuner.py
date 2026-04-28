@@ -285,6 +285,7 @@ class HyperparameterTuner:
             self._get_cached_modalities_for_task(task, modality_ids) if mm_opt else None
         )
         if not hyperparams:
+            # TODO: extract the information from the unimodal optimization results
             baseline = self.evaluate_dag_config(
                 dag,
                 {},
@@ -298,9 +299,6 @@ class HyperparameterTuner:
             n_calls = max_evals if max_evals else 50
             param_specs = self._build_param_specs(hyperparams)
             default_config = {}
-            for node_id, params in default_params.items():
-                for p_name, p_val in params.items():
-                    default_config[f"{node_id}-{p_name}"] = p_val
             all_results = self._search_best_configs(
                 dag=dag,
                 task=task,
@@ -309,7 +307,7 @@ class HyperparameterTuner:
                 modalities_override=modalities_override,
                 param_specs=param_specs,
                 budget=n_calls,
-                initial_config=default_config,
+                initial_config=None,
             )
 
         if not all_results:
@@ -500,8 +498,18 @@ class HyperparameterTuner:
         candidate_configs: List[Dict[str, Any]],
         seen_configs: Dict[Tuple[Tuple[str, Any], ...], Tuple[Dict[str, Any], Any]],
     ) -> List[Tuple[Dict[str, Any], Any]]:
-        pending_configs = []
+        ordered_unique_configs = []
+        unique_keys_in_order = []
+        unique_keys_set = set()
         for config in candidate_configs:
+            key = self._config_key(config)
+            if key not in unique_keys_set:
+                unique_keys_set.add(key)
+                unique_keys_in_order.append(key)
+                ordered_unique_configs.append(config)
+
+        pending_configs = []
+        for config in ordered_unique_configs:
             key = self._config_key(config)
             if key not in seen_configs:
                 pending_configs.append(config)
@@ -525,9 +533,7 @@ class HyperparameterTuner:
                 seen_configs[self._config_key(result[0])] = result
 
         return [
-            seen_configs[self._config_key(config)]
-            for config in candidate_configs
-            if self._config_key(config) in seen_configs
+            seen_configs[key] for key in unique_keys_in_order if key in seen_configs
         ]
 
     def _search_best_configs(
@@ -774,11 +780,11 @@ class HyperparameterTuner:
                     self.optimization_results.add_result([result])
                     self._checkpoint_manager.increment(task.model.name, 1)
                     self._checkpoint_manager.checkpoint_if_due(
-                        self.optimization_results.results, "eval_count_by_task"
+                        self.optimization_results.results
                     )
                 except Exception:
                     self._checkpoint_manager.save_checkpoint(
-                        self.optimization_results.results, "eval_count_by_task", {}
+                        self.optimization_results.results, {}
                     )
                     raise
         if self.save_results:

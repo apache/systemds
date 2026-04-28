@@ -329,7 +329,7 @@ class Bert(BertFamily):
         self.C = 0.3
 
 
-# @register_representation(ModalityType.TEXT)
+@register_representation(ModalityType.TEXT)
 class RoBERTa(BertFamily):
     def __init__(
         self,

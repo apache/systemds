@@ -19,6 +19,7 @@
 #
 # -------------------------------------------------------------
 from typing import Union, List
+import inspect
 import numpy as np
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.joined import JoinedModality
@@ -166,7 +167,11 @@ class TransformedModality(Modality):
 
     def apply_representation(self, representation, aggregation=None):
         start = time.time()
-        new_modality = representation.transform(self, aggregation=aggregation)
+        transform_sig = inspect.signature(representation.transform)
+        if "aggregation" in transform_sig.parameters:
+            new_modality = representation.transform(self, aggregation=aggregation)
+        else:
+            new_modality = representation.transform(self)
         new_modality.update_metadata()
         new_modality.transform_time += time.time() - start
         new_modality.self_contained = representation.self_contained

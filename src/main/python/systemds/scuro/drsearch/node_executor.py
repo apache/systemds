@@ -318,14 +318,17 @@ class NodeExecutor:
             def submit_node(node_id: str):
                 node = self.scheduler.mapping[node_id]
                 gpu_id = node.gpu_id
-                parent_result = None
-                parent_node_id = self.scheduler.get_valid_parent(node_id)
-                if parent_node_id is not None:
-                    parent_result = self.result_cache.get(parent_node_id)
+                parent_node_ids = self.scheduler.get_valid_parents(node_id)
+                parent_results = None
+                if parent_node_ids:
+                    parent_results = [
+                        self.result_cache.get(parent_node_id)
+                        for parent_node_id in parent_node_ids
+                    ]
                 if self._is_task_node(node):
                     task_result = ResultEntry(
                         dag=self._get_dag_from_node_ids(node_id),
-                        representation_time=parent_result.transform_time,
+                        representation_time=parent_results[0].transform_time,
                     )
                     task_results[node_id] = task_result
                     task_idx = int(node.parameters.get("_task_idx", 0))
@@ -335,8 +338,8 @@ class NodeExecutor:
                         self.tasks[task_idx],
                         (
                             self.modalities[0].data
-                            if parent_result is None
-                            else parent_result.data
+                            if parent_results is None
+                            else parent_results[0].data
                         ),
                         gpu_id,
                     )
@@ -344,7 +347,7 @@ class NodeExecutor:
                     future = executor.submit(
                         _execute_node_worker,
                         node,
-                        self.modalities if parent_result is None else [parent_result],
+                        self.modalities if parent_results is None else parent_results,
                         None,
                         None,
                         gpu_id,
@@ -407,14 +410,15 @@ class NodeExecutor:
                                 None,
                             )
 
-                        parent_node_id = self.scheduler.get_valid_parent(node_id)
-                        if parent_node_id is not None:
-                            self.result_cache.dec_ref(parent_node_id)
-                            if (
-                                parent_node_id in self.result_cache.ref_count
-                                and self.result_cache.ref_count[parent_node_id] == 0
-                            ):
-                                self.result_cache.clear(parent_node_id)
+                        parent_node_ids = self.scheduler.get_valid_parents(node_id)
+                        if len(parent_node_ids) > 0:
+                            for parent_node_id in parent_node_ids:
+                                self.result_cache.dec_ref(parent_node_id)
+                                if (
+                                    parent_node_id in self.result_cache.ref_count
+                                    and self.result_cache.ref_count[parent_node_id] == 0
+                                ):
+                                    self.result_cache.clear(parent_node_id)
                         self.scheduler.complete_node(node_id)
 
                     else:
@@ -543,6 +547,9 @@ class NodeExecutor:
                 assert (
                     len(result) == node_stats.num_instances
                 ), f"Node {node_id} {operation_name} should have {node_stats.num_instances} instances, actual: {len(result)}"
+                # assert (
+                #     shape == node_stats.output_shape
+                # ), f"Node {node_id} {operation_name} should have shape of {node_stats.output_shape}, actual shape: {shape}"
             return shape
 
     def _infer_actual_output_stats(
@@ -579,20 +586,22 @@ class NodeExecutor:
         return None
 
     def _manage_result_cache(self, node_id: str, result: Any):
-        parent_node_id = self.scheduler.get_valid_parent(node_id)
-        if parent_node_id is not None:
-            self.result_cache.dec_ref(parent_node_id)
+        parent_node_ids = self.scheduler.get_valid_parents(node_id)
+        if len(parent_node_ids) > 0:
+            for parent_node_id in parent_node_ids:
+                self.result_cache.dec_ref(parent_node_id)
 
         if self.scheduler.get_children(node_id):
             for _ in self.scheduler.get_children(node_id):
                 self.result_cache.inc_ref(node_id)
             self.result_cache.add_result(node_id, result)
 
-        if (
-            parent_node_id in self.result_cache.ref_count
-            and self.result_cache.ref_count[parent_node_id] == 0
-        ):
-            self.result_cache.clear(parent_node_id)
+        for parent_node_id in parent_node_ids:
+            if (
+                parent_node_id in self.result_cache.ref_count
+                and self.result_cache.ref_count[parent_node_id] == 0
+            ):
+                self.result_cache.clear(parent_node_id)
 
     def _get_nodes_by_ids(self, nodes_ids: List[str]) -> List[RepresentationNode]:
         return [self.scheduler.mapping[node_id] for node_id in nodes_ids]

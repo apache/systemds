@@ -24,6 +24,7 @@ import org.apache.sysds.hops.estim.EstimatorBasicAvg;
 import org.apache.sysds.hops.estim.EstimatorBasicWorst;
 import org.apache.sysds.hops.estim.EstimatorBitsetMM;
 import org.apache.sysds.hops.estim.EstimatorMatrixHistogram;
+import org.apache.sysds.hops.estim.EstimatorRowWise;
 import org.apache.sysds.hops.estim.EstimatorLayeredGraph;
 import org.apache.sysds.hops.estim.SparsityEstimator;
 import org.apache.sysds.hops.estim.SparsityEstimator.OpCode;
@@ -132,7 +133,18 @@ public class OpBindTest extends AutomatedTestBase
 	public void testSampleCasecbind() {
 		runSparsityEstimateTest(new EstimatorSample(), m, k, n, sparsity, cbind);
 	}*/
-	
+
+	// Row Wise Sparsity Estimator
+	@Test
+	public void testRowWiseRbind() {
+		runSparsityEstimateTest(new EstimatorRowWise(), m, k, n, sparsity, rbind);
+	}
+
+	@Test
+	public void testRowWiseCbind() {
+		runSparsityEstimateTest(new EstimatorRowWise(), m, k, n, sparsity, cbind);
+	}
+
 	
 	private static void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, int n, double[] sp, OpCode op) {
 		MatrixBlock m1;

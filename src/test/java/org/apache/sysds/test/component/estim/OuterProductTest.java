@@ -26,6 +26,7 @@ import org.apache.sysds.hops.estim.EstimatorBitsetMM;
 import org.apache.sysds.hops.estim.EstimatorDensityMap;
 import org.apache.sysds.hops.estim.EstimatorMatrixHistogram;
 import org.apache.sysds.hops.estim.EstimatorLayeredGraph;
+import org.apache.sysds.hops.estim.EstimatorRowWise;
 import org.apache.sysds.hops.estim.EstimatorSample;
 import org.apache.sysds.hops.estim.SparsityEstimator;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -148,6 +149,16 @@ public class OuterProductTest extends AutomatedTestBase
 	@Test
 	public void testLayeredGraphCase2() {
 		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, case2);
+	}
+
+	@Test
+	public void testRowWiseCase1() {
+		runSparsityEstimateTest(new EstimatorRowWise(), m, k, n, case1);
+	}
+
+	@Test
+	public void testRowWiseCase2() {
+		runSparsityEstimateTest(new EstimatorRowWise(), m, k, n, case2);
 	}
 
 	private static void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, int n, double[] sp) {

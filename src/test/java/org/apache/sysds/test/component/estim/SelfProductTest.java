@@ -28,6 +28,7 @@ import org.apache.sysds.hops.estim.EstimatorBitsetMM;
 import org.apache.sysds.hops.estim.EstimatorDensityMap;
 import org.apache.sysds.hops.estim.EstimatorLayeredGraph;
 import org.apache.sysds.hops.estim.EstimatorMatrixHistogram;
+import org.apache.sysds.hops.estim.EstimatorRowWise;
 import org.apache.sysds.hops.estim.EstimatorSample;
 import org.apache.sysds.hops.estim.EstimatorSampleRa;
 import org.apache.sysds.hops.estim.SparsityEstimator;
@@ -156,7 +157,15 @@ public class SelfProductTest extends AutomatedTestBase
 	public void testLayeredGraphCase2() {
 		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, sparsity2);
 	}
-	
+
+	@Test
+	public void testRowWiseCase() {
+		runSparsityEstimateTest(new EstimatorRowWise(), m/4, sparsity0);
+		runSparsityEstimateTest(new EstimatorRowWise(), m/2, sparsity1);
+		runSparsityEstimateTest(new EstimatorRowWise(), m, sparsity2);
+		runSparsityEstimateTest(new EstimatorRowWise(), m, sparsity3);
+	}
+
 	private static void runSparsityEstimateTest(SparsityEstimator estim, int n, double sp) {
 		MatrixBlock m1 = MatrixBlock.randOperations(n, n, sp, 1, 1, "uniform", 3);
 		MatrixBlock m3 = m1.aggregateBinaryOperations(m1, m1, 

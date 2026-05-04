@@ -21,12 +21,13 @@ package org.apache.sysds.hops.estim;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
+import java.util.function.DoubleBinaryOperator;
+import java.util.function.DoubleUnaryOperator;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
@@ -40,8 +41,8 @@ import java.util.stream.IntStream;
 public class EstimatorRowWise extends SparsityEstimator {
 	@Override
 	public DataCharacteristics estim(MMNode root) {
-		double[] rsOut = estimInternMMChain(root);
-		double sparsity = DoubleStream.of(rsOut).average().orElse(0);
+		estimInternChain(root);
+		double sparsity = ((RSVector)root.getSynopsis()).avg();
 
 		MatrixCharacteristics matrixCharacteristics = getMatrixCharacteristics(root, sparsity);
 
@@ -55,12 +56,13 @@ public class EstimatorRowWise extends SparsityEstimator {
 	
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
-		if( isExactMetadataOp(op) )
+		if( isExactMetadataOp(op) ) {
 			return estimExactMetaData(m1.getDataCharacteristics(),
 				m2.getDataCharacteristics(), op).getSparsity();
+		}
 
-		double[] rsOut = estimIntern(m1, m2, op);
-		return DoubleStream.of(rsOut).average().orElse(0);
+		RSVector rsOut = estimIntern(m1, m2, op);
+		return rsOut.avg();
 	}
 
 	@Override
@@ -70,84 +72,115 @@ public class EstimatorRowWise extends SparsityEstimator {
 		throw new NotImplementedException();
 	}
 
-	private double[] estimInternMMChain(MMNode node) {
-		return estimInternMMChain(node, null, null);
+	private void estimInternChain(MMNode node) {
+		estimInternChain(node, null, null);
 	}
 
-	private double[] estimInternMMChain(MMNode node, double[] rsRightNeighbor, OpCode opRightNeighbor) {
+	private void estimInternChain(MMNode node, RSVector rsRightNeighbor, OpCode opRightNeighbor) {
 		if(node.isLeaf()) {
 			MatrixBlock mb = node.getData();
-			if(rsRightNeighbor == null)
-				return getRowWiseSparsityVector(mb);
+			RSVector rsOut;
+			if(rsRightNeighbor != null)
+				rsOut = estimIntern(mb, rsRightNeighbor, opRightNeighbor);
 			else
-				return estimIntern(mb, rsRightNeighbor, opRightNeighbor);
+				rsOut = getRowWiseSparsityVector(mb);
+			node.setSynopsis(rsOut);
+			return;
 		}
 		switch(node.getOp()) {
 			case MM:
-				double[] rsRightNode = estimInternMMChain(node.getRight(), rsRightNeighbor, opRightNeighbor);
-				return estimInternMMChain(node.getLeft(), rsRightNode, node.getOp());
+				estimInternChain(node.getRight(), rsRightNeighbor, opRightNeighbor);
+				estimInternChain(node.getLeft(), (RSVector)(node.getRight().getSynopsis()), node.getOp());
+				node.setSynopsis(node.getLeft().getSynopsis());
+				return;
 			case CBIND:
+				/** NOTE: considering the current node as new DAG for estimation (cut), since the row sparsity of
+				 * the right neighbor cannot be aggregated into a cbind operation when having only row sparsity vectors
+				 */
+				estimInternChain(node.getLeft());
+				estimInternChain(node.getRight());
+				RSVector rsCBind = estimInternCBind((RSVector)(node.getLeft().getSynopsis()), (RSVector)(node.getRight().getSynopsis()));
+				if(rsRightNeighbor != null)
+					node.setSynopsis(estimIntern(rsCBind, rsRightNeighbor, opRightNeighbor));
+				else
+					node.setSynopsis(rsCBind);
+				return;
 			case RBIND:
-				// consider the current node as new DAG for estimation (cut)
-				double[] rsOut = estimInternBind(estimInternMMChain(node.getLeft()),
-					estimInternMMChain(node.getRight()), node.getOp());
-				if(rsRightNeighbor != null) {
-					rsOut = estimInternMM(rsOut, rsRightNeighbor);
-				}
-				return rsOut;
+				/** NOTE: considering the current node as new DAG for estimation (cut), since the row sparsity of
+				 * the right neighbor cannot be aggregated into an rbind operation when having only row sparsity vectors
+				 */
+				estimInternChain(node.getLeft());
+				estimInternChain(node.getRight());
+				RSVector rsRBind = estimInternRBind((RSVector)(node.getLeft().getSynopsis()), (RSVector)(node.getRight().getSynopsis()));
+				if(rsRightNeighbor != null)
+					node.setSynopsis(estimIntern(rsRBind, rsRightNeighbor, opRightNeighbor));
+				else
+					node.setSynopsis(rsRBind);
+				return;
 			default:
 				throw new NotImplementedException();
 		}
 	}
 
-	private double[] estimIntern(MatrixBlock m1, MatrixBlock m2, OpCode op) {
-		double[] rsM2 = getRowWiseSparsityVector(m2);
+	private RSVector estimIntern(MatrixBlock m1, MatrixBlock m2, OpCode op) {
+		RSVector rsM2 = getRowWiseSparsityVector(m2);
 		return estimIntern(m1, rsM2, op);
 	}
 
-	private double[] estimIntern(MatrixBlock m1, double[] rsM2, OpCode op) {
+	private RSVector estimIntern(MatrixBlock m1, RSVector rsM2, OpCode op) {
 		switch(op) {
 			case MM:
 				return estimInternMM(m1, rsM2);
 			case CBIND:
+				return estimInternCBind(getRowWiseSparsityVector(m1), rsM2);
 			case RBIND:
-				return estimInternBind(getRowWiseSparsityVector(m1), rsM2, op);
+				return estimInternRBind(getRowWiseSparsityVector(m1), rsM2);
+			default:
+				throw new NotImplementedException("Sparsity estimation for operation " + op.toString() + " not supported yet.");
+		}
+	}
+
+	private RSVector estimIntern(RSVector rsM1, RSVector rsM2, OpCode op) {
+		switch(op) {
+			case MM:
+				return estimInternMM(rsM1, rsM2);
+			// case CBIND:
+			// 	return estimInternCBind(rsM1, rsM2);
+			// case RBIND:
+			// 	return estimInternRBind(rsM1, rsM2);
 			default:
 				throw new NotImplementedException("Sparsity estimation for operation " + op.toString() + " not supported yet.");
 		}
 	}
 
 	// Corresponds to Algorithm 1 in the publication
-	private double[] estimInternMM(MatrixBlock m1, double[] rsM2) {
-		double[] rsOut = new double[m1.getNumRows()];
-		for(int r = 0; r < m1.getNumRows(); r++) {
-			int nonZeroCols[] = getNonZeroColumnIndices(m1, r);
-			double temp = 1;
-			for(int c : nonZeroCols) {
-				temp *= (double) 1 - rsM2[c];
-			}
-			rsOut[r] = (double) 1 - temp;
-		}
+	private RSVector estimInternMM(MatrixBlock m1, RSVector rsM2) {
+		RSVector rsOut = new RSVector(IntStream.range(0, m1.getNumRows()).mapToDouble(
+			r -> (double) 1 - IntStream.of(getNonZeroColumnIndices(m1, r)).mapToDouble(
+					c -> (double) 1 - rsM2.get(c)
+				).reduce((double) 1, (currentVal, val) -> currentVal * val))
+			.toArray());
 		return rsOut;
 	}
 
-	private double[] estimInternMM(double[] rsM1, double[] rsM2) {
-		double[] rsOut = DoubleStream.of(rsM1).map(
-			rsM1I -> (double) 1 - DoubleStream.of(rsM2).reduce((double) 1,
-				(currentVal, rsM2J) -> currentVal * ((double) 1 - (rsM1I * rsM2J)))).toArray();
+	// NOTE: this is the best estimation possible when we only have the two row sparsity vectors
+	private RSVector estimInternMM(RSVector rsM1, RSVector rsM2) {
+		// double avgRsM2 = DoubleStream.of(rsM2).average().orElse(0);
+		// RSVector rsOut = DoubleStream.of(rsM1).map(
+		// 	rsM1I -> (double) 1 - Math.pow((double) 1 - (rsM1I * avgRsM2), rsM2.length)).toArray();
+		RSVector rsOut = rsM1.map(
+			rsM1I -> (double) 1 - rsM2.reduce((double) 1,
+				(currentVal, rsM2J) -> currentVal * ((double) 1 - (rsM1I * rsM2J))));
 		return rsOut;
 	}
 
-	private double[] estimInternBind(double[] rsM1, double[] rsM2, OpCode op) {
-		switch(op) {
-			case CBIND:
-				return IntStream.range(0, rsM1.length)
-					.mapToDouble(idx -> (double) rsM1[idx] + rsM2[idx]).toArray();
-			case RBIND:
-				return ArrayUtils.addAll(rsM1, rsM2);
-			default:
-				throw new DMLRuntimeException("We should never reach this point.");
-		}
+	private RSVector estimInternCBind(RSVector rsM1, RSVector rsM2) {
+		return new RSVector(IntStream.range(0, rsM1.size()).mapToDouble(
+			idx -> (rsM1.get(idx) + rsM2.get(idx)) / (double) 2).toArray());
+	}
+
+	private RSVector estimInternRBind(RSVector rsM1, RSVector rsM2) {
+		return rsM1.append(rsM2);
 	}
 
 	private MatrixCharacteristics getMatrixCharacteristics(MMNode root, double sparsity) {
@@ -171,21 +204,20 @@ public class EstimatorRowWise extends SparsityEstimator {
 		}
 	}
 
-	private double[] getRowWiseSparsityVector(MatrixBlock mb) {
+	private RSVector getRowWiseSparsityVector(MatrixBlock mb) {
 		int numRows = mb.getNumRows();
-		double[] rs = new double[numRows];
 		if(mb.isInSparseFormat()) {
+			double[] rsArray = new double[numRows];
 			for(int counter = 0; counter < numRows; counter++) {
 				SparseRow sparseRow = mb.getSparseBlock().get(counter);
-				rs[counter] = (sparseRow == null) ? 0 : (double) sparseRow.size() / mb.getNumColumns();
+				rsArray[counter] = (sparseRow == null) ? 0 : (double) sparseRow.size() / mb.getNumColumns();
 			}
+			return new RSVector(rsArray);
 		}
 		else {
-			for(int counter = 0; counter < numRows; counter++) {
-				rs[counter] = (double) mb.getDenseBlock().countNonZeros(counter) / mb.getNumColumns();
-			}
+			return new RSVector(IntStream.range(0, numRows).mapToDouble(
+				rIdx -> (double) mb.getDenseBlock().countNonZeros(rIdx) / mb.getNumColumns()).toArray());
 		}
-		return rs;
 	}
 
 	private int[] getNonZeroColumnIndices(MatrixBlock mb, final int rIdx) {
@@ -200,4 +232,40 @@ public class EstimatorRowWise extends SparsityEstimator {
 		}
 		return nonZeroCols;
 	}
+
+	public static class RSVector {
+		private final double[] rs;
+
+		public RSVector(double[] rs) {
+			this.rs = rs;
+		}
+
+		public double[] get() {
+			return this.rs;
+		}
+
+		public double get(int idx) {
+			return this.rs[idx];
+		}
+
+		public int size() {
+			return this.rs.length;
+		}
+
+		public double avg() {
+			return DoubleStream.of(this.rs).average().orElse(0);
+		}
+
+		public RSVector append(RSVector that) {
+			return new RSVector(ArrayUtils.addAll(this.rs, that.get()));
+		}
+
+		public RSVector map(DoubleUnaryOperator mapper) {
+			return new RSVector(DoubleStream.of(this.rs).map(mapper).toArray());
+		}
+
+		public double reduce(double identity, DoubleBinaryOperator op) {
+			return DoubleStream.of(this.rs).reduce(identity, op);
+		}
+	};
 };

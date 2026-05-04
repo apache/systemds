@@ -1,0 +1,11 @@
+A = rand(rows=30, cols=5)
+B = rand(rows=5, cols=2)
+C = rand(rows=30, cols=6)
+D = rand(rows=6, cols=2)
+E = rand(rows=30, cols=4)
+
+# (A %*% B) %*% (t(C %*% D) %*% E) -> 30*6*2 + 30*2 + 2*30*4 + 30*5*2 + 30*2*4 = 1200 FLOPs
+
+R = A %*% B %*% t(C %*% D) %*% E
+
+write(R, $1)

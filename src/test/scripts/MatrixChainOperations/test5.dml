@@ -7,12 +7,10 @@
 # 3. t(B) %*% (t(A) %*% C) = (8*3) + (3*8*8) + (3*8) +(8*3*4) = 336 -> OPTIMAL PLAN
 
 
-A = rand(rows=1000, cols=10)
-B = rand(rows=10, cols=1000)
-C = rand(rows=1000, cols=5)
+A = rand(rows=8, cols=3)
+B = rand(rows=3, cols=8)
+C = rand(rows=8, cols=4)
 
 D = t(A %*% B) %*% C
 
-out = sum(D)
-
-print(out)
+write(D, $1)

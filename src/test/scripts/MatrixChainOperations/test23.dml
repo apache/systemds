@@ -1,0 +1,14 @@
+A = rand(rows=10, cols=5)
+B = rand(rows=5, cols=6)
+C = rand(rows=1000, cols=10)
+D = rand(rows=10, cols=20)
+E = rand(rows=20, cols=10)
+F = rand(rows=10, cols=10)
+
+# t( C %*% ( ( D %*% ( E %*% ( F %*% A ) ) ) %*% B ) )  -> optimal plan
+# - costs: 10*10*5 + 20*10*5 + 10*20*5 + 10*5*6 + 1000*10*6+ 1000*6 = 68800 FLOPs
+
+R = t(A %*% B) %*% t(C %*% D %*% E %*% F)
+
+
+write(R, $1)

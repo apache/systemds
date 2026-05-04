@@ -1,0 +1,14 @@
+# A = 1000x1
+# B = 1x2
+# C = 1x1000
+#
+#
+# R = t(A %*% (B %*% C)) -> optimal plan
+
+A = rand(rows=1000, cols=1)
+B = rand(rows=1, cols=2)
+C = rand(rows=2, cols=1000)
+
+R = t(A %*% B %*% C)
+
+write(R, $1)

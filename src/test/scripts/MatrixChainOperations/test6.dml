@@ -1,0 +1,11 @@
+A = rand(rows=2, cols=6)
+B = rand(rows=2, cols=6)
+C = rand(rows=2, cols=8)
+D = rand(rows=9, cols=8)
+E = rand(rows=9, cols=2)
+
+# (A %*% t(B)) %*% (C %*% (t(D) %*% E)) -> optimal plan
+
+R = A %*% t(B) %*% C %*% t(D) %*% E
+
+write(R, $1)

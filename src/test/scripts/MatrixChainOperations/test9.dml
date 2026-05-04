@@ -1,0 +1,14 @@
+A = rand(rows=3, cols=3)
+B = rand(rows=3, cols=2)
+C = rand(rows=10, cols=20)
+D = rand(rows=20, cols=2)
+E = rand(rows=10, cols=30)
+
+# ((A %*% B) %*% t(C %*% D)) %*% E -> optimal plan  (3 x 2 + 2 x 10) + 10 x 30     -> 60 + 30*30 = 2100
+#  (A %*% B) %*% (t(C %*% D) %*% E) -> or this??     3 x 2  + (2 x 10 +   10 x 30)  -> 20*30 + 3*2*30 = 1200
+
+
+R = A %*% B %*% t(C %*% D) %*% E
+
+write(R, $1)
+

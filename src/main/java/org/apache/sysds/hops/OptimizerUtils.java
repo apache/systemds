@@ -203,7 +203,12 @@ public class OptimizerUtils
 	 * Enables additional mmchain optimizations. In the future, this might be merged with
 	 * ALLOW_SUM_PRODUCT_REWRITES.
 	 */
-	public static boolean ALLOW_ADVANCED_MMCHAIN_REWRITES = false;
+	public static boolean ALLOW_ADVANCED_MMCHAIN_REWRITES = true;
+
+	/**
+	 * Enables a DPSize inspired algorithm rewrite for MMChain with transposes
+	 */
+	public static boolean ALLOW_NEW_MMCHAIN_REWRITE = true;
 	
 	/**
 	 * Enables a specific hop dag rewrite that splits hop dags after csv persistent reads with 

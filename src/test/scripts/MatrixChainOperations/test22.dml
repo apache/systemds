@@ -1,0 +1,17 @@
+A = rand(rows=34, cols=25)
+B = rand(rows=25, cols=18)
+C = rand(rows=34, cols=23)
+D = rand(rows=24, cols=15)
+E = rand(rows=15, cols=23)
+F = rand(rows=24, cols=16)
+
+
+# t(((E %*% t(C)) %*% A) %*% B) %*% (t(D) %*% F) -> optimal plan
+# 34*23 + 15*23*34 + 15 * 34 * 25 + 15*25*18 + 18*15 + 24*15 + 15*24*16 + 18*15*16 = 42722 FLOPs
+
+res = t(A %*% B) %*% C %*% t(D %*% E) %*% F
+
+write(res, $1)
+
+
+

@@ -17,6 +17,4 @@ D = rand(rows=30, cols=5)
 E = A %*% B %*% C %*% D
 
 
-out = sum(E)
-
-print(out)
+write(E, $1)

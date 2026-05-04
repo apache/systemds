@@ -132,6 +132,9 @@ public class ProgramRewriter{
 				if( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES2 )
 					_dagRuleSet.add( new RewriteElementwiseMultChainOptimization()); //dependency: cse
 			}
+			if( OptimizerUtils.ALLOW_NEW_MMCHAIN_REWRITE ) {
+				_dagRuleSet.add( new RewriteMatrixMultChainWithTransOptimization()		);
+			}
 			if(OptimizerUtils.ALLOW_ADVANCED_MMCHAIN_REWRITES){
 				_dagRuleSet.add( new RewriteMatrixMultChainOptimizationTranspose()      ); //dependency: cse
 				_dagRuleSet.add( new RewriteMatrixMultChainOptimizationSparse()         ); //dependency: cse

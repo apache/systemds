@@ -1,0 +1,15 @@
+A = rand(rows=9, cols=18)
+B = rand(rows=18, cols=12)
+C = rand(rows=16, cols=13)
+D = rand(rows=13, cols=12)
+E = rand(rows=16, cols=14)
+
+# t( C %*% (D %*% t(A %*% B) ) ) %*% E -> optimal plan
+# 9 * 18 * 12 + 9 * 12 + 13 * 12 * 9 + 16*13*9 + 16*9 + 9 * 16 * 14 = 7488 FLOPs
+
+R = A %*% B %*% t(C %*% D) %*% E
+
+write(R, $1)
+
+
+

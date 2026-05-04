@@ -1,0 +1,10 @@
+A = rand(rows=50, cols=10)
+B = rand(rows=30, cols=10)
+C = rand(rows=30, cols=5)
+D = rand(rows=20, cols=5)
+
+# (A %*% (t(B) %*% C) ) %*% t(D) -> optimal Plan
+
+R = A %*% t(B) %*% C %*% t(D)
+
+write(R, $1)

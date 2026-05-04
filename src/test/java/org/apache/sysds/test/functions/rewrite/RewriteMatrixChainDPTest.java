@@ -28,9 +28,6 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-
 public class RewriteMatrixChainDPTest extends AutomatedTestBase {
 
 	private static final String TEST_DIR = "functions/rewrite/mmchain/";
@@ -52,76 +49,76 @@ public class RewriteMatrixChainDPTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testMatrixChainDP_Test1() {  runTestMatrixChainDP(TEST_CASES[0]); }
+	public void testMatrixChainDPTest1() {  runTestMatrixChainDP(TEST_CASES[0]); }
 
 	@Test
-	public void testMatrixChainDP_Test2() { runTestMatrixChainDP(TEST_CASES[1]); }
+	public void testMatrixChainDPTest2() { runTestMatrixChainDP(TEST_CASES[1]); }
 
 	@Test
-	public void testMatrixChainDP_Test3() { runTestMatrixChainDP(TEST_CASES[2]); }
+	public void testMatrixChainDPTest3() { runTestMatrixChainDP(TEST_CASES[2]); }
 
 	@Test
-	public void testMatrixChainDP_Test4() { runTestMatrixChainDP(TEST_CASES[3]); }
+	public void testMatrixChainDPTest4() { runTestMatrixChainDP(TEST_CASES[3]); }
 
 	@Test
-	public void testMatrixChainDP_Test5() { runTestMatrixChainDP(TEST_CASES[4]); }
+	public void testMatrixChainDPTest5() { runTestMatrixChainDP(TEST_CASES[4]); }
 
 	@Test
-	public void testMatrixChainDP_Test6() { runTestMatrixChainDP(TEST_CASES[5]); }
+	public void testMatrixChainDPTest6() { runTestMatrixChainDP(TEST_CASES[5]); }
 
 	@Test
-	public void testMatrixChainDP_Test7() { runTestMatrixChainDP(TEST_CASES[6]); }
+	public void testMatrixChainDPTest7() { runTestMatrixChainDP(TEST_CASES[6]); }
 
 	@Test
-	public void testMatrixChainDP_Test8() { runTestMatrixChainDP(TEST_CASES[7]); }
+	public void testMatrixChainDPTest8() { runTestMatrixChainDP(TEST_CASES[7]); }
 
 	@Test
-	public void testMatrixChainDP_Test9() { runTestMatrixChainDP(TEST_CASES[8]); }
+	public void testMatrixChainDPTest9() { runTestMatrixChainDP(TEST_CASES[8]); }
 
 	@Test
-	public void testMatrixChainDP_Test10() { runTestMatrixChainDP(TEST_CASES[9]); }
+	public void testMatrixChainDPTest10() { runTestMatrixChainDP(TEST_CASES[9]); }
 
 	@Test
-	public void testMatrixChainDP_Test11() { runTestMatrixChainDP(TEST_CASES[10]); }
+	public void testMatrixChainDPTest11() { runTestMatrixChainDP(TEST_CASES[10]); }
 
 	@Test
-	public void testMatrixChainDP_Test12() { runTestMatrixChainDP(TEST_CASES[11]); }
+	public void testMatrixChainDPTest12() { runTestMatrixChainDP(TEST_CASES[11]); }
 
 	@Test
-	public void testMatrixChainDP_Test13() { runTestMatrixChainDP(TEST_CASES[12]); }
+	public void testMatrixChainDPTest13() { runTestMatrixChainDP(TEST_CASES[12]); }
 
 	@Test
-	public void testMatrixChainDP_Test14() { runTestMatrixChainDP(TEST_CASES[13]); }
+	public void testMatrixChainDPTest14() { runTestMatrixChainDP(TEST_CASES[13]); }
 
 	@Test
-	public void testMatrixChainDP_Test15() { runTestMatrixChainDP(TEST_CASES[14]); }
+	public void testMatrixChainDPTest15() { runTestMatrixChainDP(TEST_CASES[14]); }
 
 	@Test
-	public void testMatrixChainDP_Test16() { runTestMatrixChainDP(TEST_CASES[15]); }
+	public void testMatrixChainDPTest16() { runTestMatrixChainDP(TEST_CASES[15]); }
 
 	@Test
-	public void testMatrixChainDP_Test17() { runTestMatrixChainDP(TEST_CASES[16]); }
+	public void testMatrixChainDPTest17() { runTestMatrixChainDP(TEST_CASES[16]); }
 
 	@Test
-	public void testMatrixChainDP_Test18() { runTestMatrixChainDP(TEST_CASES[17]); }
+	public void testMatrixChainDPTest18() { runTestMatrixChainDP(TEST_CASES[17]); }
 
 	@Test
-	public void testMatrixChainDP_Test19() { runTestMatrixChainDP(TEST_CASES[18]); }
+	public void testMatrixChainDPTest19() { runTestMatrixChainDP(TEST_CASES[18]); }
 
 	@Test
-	public void testMatrixChainDP_Test20() { runTestMatrixChainDP(TEST_CASES[19]); }
+	public void testMatrixChainDPTest20() { runTestMatrixChainDP(TEST_CASES[19]); }
 
 	@Test
-	public void testMatrixChainDP_Test21() { runTestMatrixChainDP(TEST_CASES[20]); }
+	public void testMatrixChainDPTest21() { runTestMatrixChainDP(TEST_CASES[20]); }
 
 	@Test
-	public void testMatrixChainDP_Test22() { runTestMatrixChainDP(TEST_CASES[21]); }
+	public void testMatrixChainDPTest22() { runTestMatrixChainDP(TEST_CASES[21]); }
 
 	@Test
-	public void testMatrixChainDP_Test23() { runTestMatrixChainDP(TEST_CASES[22]); }
+	public void testMatrixChainDPTest23() { runTestMatrixChainDP(TEST_CASES[22]); }
 
 	@Test
-	public void testMatrixChainDP_Test24() {runTestMatrixChainDP(TEST_CASES[23]);}
+	public void testMatrixChainDPTest24() {runTestMatrixChainDP(TEST_CASES[23]);}
 
 
 	private void runTestMatrixChainDP(String testName) {
@@ -144,23 +141,11 @@ public class RewriteMatrixChainDPTest extends AutomatedTestBase {
 
 			programArgs = new String[]{ "-explain", "hops", "-stats", "-args", output("R") };
 
-			// print HOP DAG
-			PrintStream originalOut = System.out;
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			System.setOut(new PrintStream(bos));
+			// Execute the DML script
+			setOutputBuffering(true);
+			String output = runTest(true, false, null, -1).toString();
 
-			try {
-				// Execute the DML script
-				runTest(true, false, null, -1);
-			} finally {
-				System.setOut(originalOut);
-			}
-
-			String output = bos.toString();
-
-			System.out.println("Output for " + testName + ":\n" + output);
-
-			/* the following uses the intermediate matrices dimensions to check, wether
+			/* the following uses the intermediate matrices dimensions to check, whether
 			 * the rewrite rule has found the optimal plan, which is commented in each script
 			 */
 			switch(testName) {

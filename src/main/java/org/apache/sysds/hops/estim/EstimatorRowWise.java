@@ -21,6 +21,7 @@ package org.apache.sysds.hops.estim;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
@@ -44,9 +45,8 @@ public class EstimatorRowWise extends SparsityEstimator {
 		estimInternChain(root);
 		double sparsity = ((RSVector)root.getSynopsis()).avg();
 
-		MatrixCharacteristics matrixCharacteristics = getMatrixCharacteristics(root, sparsity);
-
-		return root.setDataCharacteristics(matrixCharacteristics);
+		DataCharacteristics outputCharacteristics = deriveOutputCharacteristics(root, sparsity);
+		return root.setDataCharacteristics(outputCharacteristics);
 	}
 
 	@Override 
@@ -77,49 +77,53 @@ public class EstimatorRowWise extends SparsityEstimator {
 	}
 
 	private void estimInternChain(MMNode node, RSVector rsRightNeighbor, OpCode opRightNeighbor) {
+		RSVector rsOut;
 		if(node.isLeaf()) {
 			MatrixBlock mb = node.getData();
-			RSVector rsOut;
 			if(rsRightNeighbor != null)
 				rsOut = estimIntern(mb, rsRightNeighbor, opRightNeighbor);
 			else
 				rsOut = getRowWiseSparsityVector(mb);
-			node.setSynopsis(rsOut);
-			return;
 		}
-		switch(node.getOp()) {
-			case MM:
-				estimInternChain(node.getRight(), rsRightNeighbor, opRightNeighbor);
-				estimInternChain(node.getLeft(), (RSVector)(node.getRight().getSynopsis()), node.getOp());
-				node.setSynopsis(node.getLeft().getSynopsis());
-				return;
-			case CBIND:
-				/** NOTE: considering the current node as new DAG for estimation (cut), since the row sparsity of
-				 * the right neighbor cannot be aggregated into a cbind operation when having only row sparsity vectors
-				 */
-				estimInternChain(node.getLeft());
-				estimInternChain(node.getRight());
-				RSVector rsCBind = estimInternCBind((RSVector)(node.getLeft().getSynopsis()), (RSVector)(node.getRight().getSynopsis()));
-				if(rsRightNeighbor != null)
-					node.setSynopsis(estimIntern(rsCBind, rsRightNeighbor, opRightNeighbor));
-				else
-					node.setSynopsis(rsCBind);
-				return;
-			case RBIND:
-				/** NOTE: considering the current node as new DAG for estimation (cut), since the row sparsity of
-				 * the right neighbor cannot be aggregated into an rbind operation when having only row sparsity vectors
-				 */
-				estimInternChain(node.getLeft());
-				estimInternChain(node.getRight());
-				RSVector rsRBind = estimInternRBind((RSVector)(node.getLeft().getSynopsis()), (RSVector)(node.getRight().getSynopsis()));
-				if(rsRightNeighbor != null)
-					node.setSynopsis(estimIntern(rsRBind, rsRightNeighbor, opRightNeighbor));
-				else
-					node.setSynopsis(rsRBind);
-				return;
-			default:
-				throw new NotImplementedException();
+		else {
+			switch(node.getOp()) {
+				case MM:
+					estimInternChain(node.getRight(), rsRightNeighbor, opRightNeighbor);
+					estimInternChain(node.getLeft(), (RSVector)(node.getRight().getSynopsis()), node.getOp());
+					rsOut = (RSVector)node.getLeft().getSynopsis();
+					break;
+				case CBIND:
+					/** NOTE: considering the current node as new DAG for estimation (cut), since the row sparsity of
+					 * the right neighbor cannot be aggregated into a cbind operation when having only row sparsity vectors
+					 */
+					estimInternChain(node.getLeft());
+					estimInternChain(node.getRight());
+					RSVector rsCBind = estimInternCBind((RSVector)(node.getLeft().getSynopsis()), (RSVector)(node.getRight().getSynopsis()));
+					if(rsRightNeighbor != null)
+						rsOut = (RSVector)estimIntern(rsCBind, rsRightNeighbor, opRightNeighbor);
+					else
+						rsOut = (RSVector)rsCBind;
+					break;
+				case RBIND:
+					/** NOTE: considering the current node as new DAG for estimation (cut), since the row sparsity of
+					 * the right neighbor cannot be aggregated into an rbind operation when having only row sparsity vectors
+					 */
+					estimInternChain(node.getLeft());
+					estimInternChain(node.getRight());
+					RSVector rsRBind = estimInternRBind((RSVector)(node.getLeft().getSynopsis()), (RSVector)(node.getRight().getSynopsis()));
+					if(rsRightNeighbor != null)
+						rsOut = (RSVector)estimIntern(rsRBind, rsRightNeighbor, opRightNeighbor);
+					else
+						rsOut = (RSVector)rsRBind;
+					break;
+				default:
+					throw new NotImplementedException("Chain estimation for operator " + node.getOp().toString() +
+					" is not supported yet.");
+			}
 		}
+		node.setSynopsis(rsOut);
+		node.setDataCharacteristics(deriveOutputCharacteristics(node, rsOut.avg()));
+		return;
 	}
 
 	private RSVector estimIntern(MatrixBlock m1, MatrixBlock m2, OpCode op) {
@@ -183,27 +187,6 @@ public class EstimatorRowWise extends SparsityEstimator {
 		return rsM1.append(rsM2);
 	}
 
-	private MatrixCharacteristics getMatrixCharacteristics(MMNode root, double sparsity) {
-		switch(root.getOp()) {
-			case MM:
-				MMNode tmpNode = root;
-				while(!tmpNode.isLeaf()) {
-					tmpNode = tmpNode.getLeft();
-				}
-				int numRows = tmpNode.getData().getNumRows();
-				tmpNode = root;
-				while(!tmpNode.isLeaf()) {
-					tmpNode = tmpNode.getRight();
-				}
-				int numColumns = tmpNode.getData().getNumColumns();
-				
-				return new MatrixCharacteristics(
-					numRows, numColumns, (long)(numRows * numColumns * sparsity));
-			default:
-				throw new NotImplementedException();
-		}
-	}
-
 	private RSVector getRowWiseSparsityVector(MatrixBlock mb) {
 		int numRows = mb.getNumRows();
 		if(mb.isInSparseFormat()) {
@@ -231,6 +214,43 @@ public class EstimatorRowWise extends SparsityEstimator {
 				.filter(cIdx -> mb.get(rIdx, cIdx) != 0).toArray();
 		}
 		return nonZeroCols;
+	}
+
+	public static DataCharacteristics deriveOutputCharacteristics(MMNode node, double spOut) {
+		if(node.isLeaf() ||
+			(node.getDataCharacteristics() != null && node.getDataCharacteristics().getNonZeros() != -1)) {
+			return node.getDataCharacteristics();
+		}
+
+		MMNode nodeLeft = node.getLeft();
+		MMNode nodeRight = node.getRight();
+		switch(node.getOp()) {
+			case MM:
+				return new MatrixCharacteristics(nodeLeft.getRows(), nodeRight.getCols(),
+					OptimizerUtils.getNnz(nodeLeft.getRows(), nodeRight.getCols(), spOut));
+			case MULT:
+			case PLUS:
+			case NEQZERO:
+			case EQZERO:
+				return new MatrixCharacteristics(nodeLeft.getRows(), nodeLeft.getCols(),
+					OptimizerUtils.getNnz(nodeLeft.getRows(), nodeLeft.getCols(), spOut));
+			case RBIND:
+				return new MatrixCharacteristics(nodeLeft.getRows()+nodeLeft.getRows(), nodeLeft.getCols(),
+					OptimizerUtils.getNnz(nodeLeft.getRows()+nodeRight.getRows(), nodeLeft.getCols(), spOut));
+			case CBIND:
+				return new MatrixCharacteristics(nodeLeft.getRows(), nodeLeft.getCols()+nodeRight.getCols(),
+					OptimizerUtils.getNnz(nodeLeft.getRows(), nodeLeft.getCols()+nodeRight.getCols(), spOut));
+			case DIAG:
+				int ncol = nodeLeft.getCols()==1 ? nodeLeft.getRows() : 1;
+				return new MatrixCharacteristics(nodeLeft.getRows(), ncol,
+					OptimizerUtils.getNnz(nodeLeft.getRows(), ncol, spOut));
+			case TRANS:
+			case RESHAPE:
+				throw new NotImplementedException("Characteristics derivation for trans and reshape has not been " +
+					"implemented yet, but could be implemented similar to EstimatorMatrixHistogram.java");
+			default:
+				throw new NotImplementedException();
+		}
 	}
 
 	public static class RSVector {

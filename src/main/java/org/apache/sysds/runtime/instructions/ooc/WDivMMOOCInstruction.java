@@ -19,11 +19,8 @@
 
 package org.apache.sysds.runtime.instructions.ooc;
 
-
 import org.apache.sysds.common.Opcodes;
-import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.lops.WeightedDivMM.WDivMMType;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
@@ -35,14 +32,13 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.QuaternaryOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 import java.util.function.Function;
 
-
-public class WDivMMOOCInstruction extends QuaternaryOOCInstruction
-{
+public class WDivMMOOCInstruction extends QuaternaryOOCInstruction {
 
 	protected WDivMMOOCInstruction(QuaternaryOperator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4,
 		CPOperand out, String opcode, String istr) {
@@ -56,41 +52,68 @@ public class WDivMMOOCInstruction extends QuaternaryOOCInstruction
 			instr.input3, instr.input4, instr.output, opcode, instrStr);
 	}
 
-
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		QuaternaryOperator _qop = ((QuaternaryOperator)_optr);
-		final WDivMMType wt = _qop.wtype3;
-
-		if(!(wt.hasFourInputs()&&wt.hasScalar()) || wt.isBasic() || wt.isMult() || wt.isMinus()) throw new DMLRuntimeException("Not implemented: only pnmf supported yet");
+		QuaternaryOperator qop = ((QuaternaryOperator) _optr);
+		final WDivMMType wt = qop.wtype3;
 
 		CachingStream X = new CachingStream(ec.getMatrixObject(input1).getStreamHandle());
 		CachingStream U = new CachingStream(ec.getMatrixObject(input2).getStreamHandle());
 		CachingStream V = new CachingStream(ec.getMatrixObject(input3).getStreamHandle());
 
-		double eps = 0.0;
-		if(_qop.hasFourInputs()) {
-			if (input4.getDataType() == DataType.SCALAR)
-				eps = ec.getScalarInput(input4).getDoubleValue();
-		}
+		boolean basic = wt.isBasic();
+		boolean left = wt.isLeft();
+		boolean mult = wt.isMult();
+		boolean minus = wt.isMinus();
+		boolean four = wt.hasFourInputs();
+		boolean scalar = wt.hasScalar();
 
-		OOCStream<IndexedMatrixValue> mmt = matMultOOC(U.getReadStream(), V.getReadStream(), U.getDataCharacteristics(), V.getDataCharacteristics(), false, true);
-		OOCStream<IndexedMatrixValue> plus = elemPlusOOC(mmt, eps);
-		OOCStream<IndexedMatrixValue> inter = elemDivOOC(X.getReadStream(), plus);
+		OOCStream<IndexedMatrixValue> mmt = matMultOOC(U.getReadStream(), V.getReadStream(), U.getDataCharacteristics(),
+			V.getDataCharacteristics(), false, true);
+		OOCStream<IndexedMatrixValue> inter;
 		OOCStream<IndexedMatrixValue> out;
 
-		if(wt.isLeft())
-			out = matMultOOC(inter, U.getReadStream(), X.getDataCharacteristics(), U.getDataCharacteristics(), true, false);
+		if(basic) {
+			out = elemMultOOC(X.getReadStream(), mmt);
+			ec.getMatrixObject(output).setStreamHandle(out);
+			return;
+		}
+		else if(four) {
+			if(scalar) {
+				double eps = ec.getScalarInput(input4).getDoubleValue();
+				inter = elemDivOOC(X.getReadStream(), elemPlusOOC(mmt, eps));
+			}
+			else {
+				CachingStream W = new CachingStream(ec.getMatrixObject(input4).getStreamHandle());
+				inter = elemMultOOC(X.getReadStream(), elemMinusOOC(mmt, W.getReadStream()));
+			}
+		}
+		else {
+			if(minus)
+				inter = maskOOC(X.getReadStream(), elemMinusOOC(mmt, X.getReadStream()));
+			else {
+				if(mult)
+					inter = elemMultOOC(X.getReadStream(), mmt);
+				else
+					inter = elemDivOOC(X.getReadStream(), mmt);
+			}
+		}
+
+		if(left)
+			out = matMultOOC(inter, U.getReadStream(), X.getDataCharacteristics(), U.getDataCharacteristics(),
+				true, false);
 		else
-			out = matMultOOC(inter, V.getReadStream(), X.getDataCharacteristics(), V.getDataCharacteristics(), false, false);
+			out = matMultOOC(inter, V.getReadStream(), X.getDataCharacteristics(), V.getDataCharacteristics(),
+				false, false);
 
 		ec.getMatrixObject(output).setStreamHandle(out);
 	}
 
-	private OOCStream<IndexedMatrixValue> matMultOOC(OOCStream<IndexedMatrixValue> m1, OOCStream<IndexedMatrixValue> m2,  DataCharacteristics dc1, DataCharacteristics dc2, boolean leftTranspose, boolean rightTranspose){
+	private OOCStream<IndexedMatrixValue> matMultOOC(OOCStream<IndexedMatrixValue> m1, OOCStream<IndexedMatrixValue> m2,
+		DataCharacteristics dc1, DataCharacteristics dc2, boolean leftTranspose, boolean rightTranspose) {
 
-		int emitLeftThreshold = rightTranspose? (int) dc2.getNumRowBlocks() : (int) dc2.getNumColBlocks();
-		int emitRightThreshold = leftTranspose? (int) dc1.getNumColBlocks() : (int) dc1.getNumRowBlocks();
+		int emitLeftThreshold = rightTranspose ? (int) dc2.getNumRowBlocks() : (int) dc2.getNumColBlocks();
+		int emitRightThreshold = leftTranspose ? (int) dc1.getNumColBlocks() : (int) dc1.getNumRowBlocks();
 
 		OOCStream<IndexedMatrixValue> intermediateStream = createWritableStream();
 		OOCStream<IndexedMatrixValue> out = createWritableStream();
@@ -98,28 +121,27 @@ public class WDivMMOOCInstruction extends QuaternaryOOCInstruction
 		AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 		AggregateBinaryOperator op = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
 
-		joinManyOOC(m1, m2, intermediateStream,
-			(left, right) -> {
-				MatrixBlock leftBlock = (MatrixBlock) left.getValue();
-				MatrixBlock rightBlock = (MatrixBlock) right.getValue();
-				if(leftTranspose) leftBlock = leftBlock.transpose();
-				if(rightTranspose) rightBlock = rightBlock.transpose();
+		joinManyOOC(m1, m2, intermediateStream, (left, right) -> {
+			MatrixBlock leftBlock = (MatrixBlock) left.getValue();
+			MatrixBlock rightBlock = (MatrixBlock) right.getValue();
+			if(leftTranspose)
+				leftBlock = leftBlock.transpose();
+			if(rightTranspose)
+				rightBlock = rightBlock.transpose();
 
-				MatrixBlock partialResult = leftBlock.aggregateBinaryOperations(leftBlock, rightBlock,
-					new MatrixBlock(), op);
-				int lidx = (int) (leftTranspose? left.getIndexes().getColumnIndex() : left.getIndexes().getRowIndex());
-				int ridx = (int) (rightTranspose? right.getIndexes().getRowIndex() : right.getIndexes().getColumnIndex());
-				return new IndexedMatrixValue(new MatrixIndexes(lidx, ridx), partialResult);
-			},
-			tmp -> leftTranspose? tmp.getIndexes().getRowIndex() : tmp.getIndexes().getColumnIndex(),
-			tmp -> rightTranspose? tmp.getIndexes().getColumnIndex() : tmp.getIndexes().getRowIndex(),
+			MatrixBlock partialResult = leftBlock.aggregateBinaryOperations(leftBlock, rightBlock, new MatrixBlock(), op);
+			int lidx = (int) (leftTranspose ? left.getIndexes().getColumnIndex() : left.getIndexes().getRowIndex());
+			int ridx = (int) (rightTranspose ? right.getIndexes().getRowIndex() : right.getIndexes().getColumnIndex());
+			return new IndexedMatrixValue(new MatrixIndexes(lidx, ridx), partialResult);
+		}, tmp -> leftTranspose ? tmp.getIndexes().getRowIndex() : tmp.getIndexes().getColumnIndex(),
+			tmp -> rightTranspose ? tmp.getIndexes().getColumnIndex() : tmp.getIndexes().getRowIndex(),
 			emitLeftThreshold, emitRightThreshold);
 
 		BinaryOperator plus = InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString());
-		int emitAggThreshold = leftTranspose? (int) dc1.getNumRowBlocks() : (int) dc1.getNumColBlocks();
+		int emitAggThreshold = leftTranspose ? (int) dc1.getNumRowBlocks() : (int) dc1.getNumColBlocks();
 
 		groupedReduceOOC(intermediateStream, out, (left, right) -> {
-			MatrixBlock mb = ((MatrixBlock)left.getValue()).binaryOperationsInPlace(plus, right.getValue());
+			MatrixBlock mb = ((MatrixBlock) left.getValue()).binaryOperationsInPlace(plus, right.getValue());
 			left.setValue(mb);
 			return left;
 		}, emitAggThreshold);
@@ -127,15 +149,15 @@ public class WDivMMOOCInstruction extends QuaternaryOOCInstruction
 		return out;
 	}
 
-	private OOCStream<IndexedMatrixValue> elemDivOOC(OOCStream<IndexedMatrixValue> m1, OOCStream<IndexedMatrixValue> m2){
+	private OOCStream<IndexedMatrixValue> elemOOC(OOCStream<IndexedMatrixValue> m1, OOCStream<IndexedMatrixValue> m2, BinaryOperator bop) {
 		SubscribableTaskQueue<IndexedMatrixValue> out = new SubscribableTaskQueue<>();
-		BinaryOperator div = InstructionUtils.parseBinaryOperator(Opcodes.DIV.toString());
-		Function<IndexedMatrixValue, MatrixIndexes> key = imv -> new MatrixIndexes(imv.getIndexes().getRowIndex(), imv.getIndexes().getColumnIndex());
+		Function<IndexedMatrixValue, MatrixIndexes> key = imv ->
+			new MatrixIndexes(imv.getIndexes().getRowIndex(), imv.getIndexes().getColumnIndex());
 
 		joinOOC(m1, m2, out, (left, right) -> {
 			MatrixBlock lb = (MatrixBlock) left.getValue();
 			MatrixBlock rb = (MatrixBlock) right.getValue();
-			MatrixBlock combined = lb.binaryOperations(div, rb);
+			MatrixBlock combined = lb.binaryOperations(bop, rb);
 			return new IndexedMatrixValue(
 				new MatrixIndexes(left.getIndexes().getRowIndex(), left.getIndexes().getColumnIndex()), combined);
 		}, key);
@@ -143,17 +165,52 @@ public class WDivMMOOCInstruction extends QuaternaryOOCInstruction
 		return out;
 	}
 
-	private OOCStream<IndexedMatrixValue> elemPlusOOC(OOCStream<IndexedMatrixValue> m1, double eps){
+	private OOCStream<IndexedMatrixValue> elemDivOOC(OOCStream<IndexedMatrixValue> m1, OOCStream<IndexedMatrixValue> m2) {
+		BinaryOperator div = InstructionUtils.parseBinaryOperator(Opcodes.DIV.toString());
+		return elemOOC(m1, m2, div);
+	}
+
+	private OOCStream<IndexedMatrixValue> elemMultOOC(OOCStream<IndexedMatrixValue> m1, OOCStream<IndexedMatrixValue> m2) {
+		BinaryOperator div = InstructionUtils.parseBinaryOperator(Opcodes.MULT.toString());
+		return elemOOC(m1, m2, div);
+	}
+
+	private OOCStream<IndexedMatrixValue> elemMinusOOC(OOCStream<IndexedMatrixValue> m1, OOCStream<IndexedMatrixValue> m2) {
+		BinaryOperator div = InstructionUtils.parseBinaryOperator(Opcodes.MINUS.toString());
+		return elemOOC(m1, m2, div);
+	}
+
+	private OOCStream<IndexedMatrixValue> elemPlusOOC(OOCStream<IndexedMatrixValue> m1, double eps) {
 		SubscribableTaskQueue<IndexedMatrixValue> out = new SubscribableTaskQueue<>();
-		mapOOC(m1, out, blk -> new IndexedMatrixValue(
-			new MatrixIndexes(blk.getIndexes().getRowIndex(), blk.getIndexes().getColumnIndex()), plusDouble((MatrixBlock) blk.getValue(), eps)));
+		mapOOC(m1, out, blk -> {
+			MatrixBlock res = ((MatrixBlock) blk.getValue())
+				.scalarOperations(new RightScalarOperator(Plus.getPlusFnObject(), eps), null);
+			return new IndexedMatrixValue(
+				new MatrixIndexes(blk.getIndexes().getRowIndex(), blk.getIndexes().getColumnIndex()), res);
+		});
 		return out;
 	}
 
-	private MatrixBlock plusDouble(MatrixBlock blk, double eps){
-		for(int i=0; i<blk.getNumRows(); i++){
-			for(int j=0; j<blk.getNumColumns(); j++){
-				blk.set(i, j, blk.get(i, j) + eps);
+	private OOCStream<IndexedMatrixValue> maskOOC(OOCStream<IndexedMatrixValue> mask, OOCStream<IndexedMatrixValue> m1) {
+		SubscribableTaskQueue<IndexedMatrixValue> out = new SubscribableTaskQueue<>();
+		Function<IndexedMatrixValue, MatrixIndexes> key = imv ->
+			new MatrixIndexes(imv.getIndexes().getRowIndex(), imv.getIndexes().getColumnIndex());
+
+		joinOOC(mask, m1, out, (left, right) -> {
+			MatrixBlock lb = (MatrixBlock) left.getValue();
+			MatrixBlock rb = (MatrixBlock) right.getValue();
+			MatrixBlock combined = mask(lb, rb);
+			return new IndexedMatrixValue(
+				new MatrixIndexes(left.getIndexes().getRowIndex(), left.getIndexes().getColumnIndex()), combined);
+		}, key);
+
+		return out;
+	}
+
+	private MatrixBlock mask(MatrixBlock mask, MatrixBlock blk) {
+		for(int i = 0; i < blk.getNumRows(); i++) {
+			for(int j = 0; j < blk.getNumColumns(); j++) {
+				if(mask.get(i,j) ==0) blk.set(i, j, 0);
 			}
 		}
 		return blk;

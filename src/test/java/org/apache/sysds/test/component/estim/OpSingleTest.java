@@ -26,6 +26,7 @@ import org.apache.sysds.hops.estim.EstimatorBasicAvg;
 import org.apache.sysds.hops.estim.EstimatorBasicWorst;
 import org.apache.sysds.hops.estim.EstimatorBitsetMM;
 import org.apache.sysds.hops.estim.EstimatorLayeredGraph;
+import org.apache.sysds.hops.estim.EstimatorRowWise;
 import org.apache.sysds.hops.estim.SparsityEstimator;
 import org.apache.sysds.hops.estim.SparsityEstimator.OpCode;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -40,7 +41,7 @@ public class OpSingleTest extends AutomatedTestBase
 	private final static int m = 600;
 	private final static int k = 300;
 	private final static double sparsity = 0.2;
-//	private final static OpCode eqzero = OpCode.EQZERO;
+	// private final static OpCode eqzero = OpCode.EQZERO;
 	private final static OpCode diag = OpCode.DIAG;
 	private final static OpCode neqzero = OpCode.NEQZERO;
 	private final static OpCode trans = OpCode.TRANS;
@@ -237,7 +238,33 @@ public class OpSingleTest extends AutomatedTestBase
 //	public void testSampleCasereshape() {
 //		runSparsityEstimateTest(new EstimatorSample(), m, k, sparsity, reshape);
 //	}
-	
+
+	// Row Wise Sparsity Estimator
+	// @Test
+	// public void testRowWiseEqzero() {
+	// 	runSparsityEstimateTest(new EstimatorRowWise(), m, k, sparsity, eqzero);
+	// }
+
+	// @Test
+	// public void testRowWiseDiag() {
+	// 	runSparsityEstimateTest(new EstimatorRowWise(), m, m, sparsity, diag);
+	// }
+
+	@Test
+	public void testRowWiseNeqzero() {
+		runSparsityEstimateTest(new EstimatorRowWise(), m, k, sparsity, neqzero);
+	}
+
+	@Test
+	public void testRowWiseTrans() {
+		runSparsityEstimateTest(new EstimatorRowWise(), m, k, sparsity, trans);
+	}
+
+	@Test
+	public void testRowWiseReshape() {
+		runSparsityEstimateTest(new EstimatorRowWise(), m, k, sparsity, reshape);
+	}
+
 	private static void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, double sp, OpCode op) {
 		MatrixBlock m1 = MatrixBlock.randOperations(m, k, sp, 1, 1, "uniform", 3);
 		MatrixBlock m2 = new MatrixBlock();
@@ -252,13 +279,7 @@ public class OpSingleTest extends AutomatedTestBase
 				est = estim.estim(m1, op);
 				break;
 			case NEQZERO:
-				m2 = m1;
-				est = estim.estim(m1, op);
-				break;
 			case TRANS:
-				m2 = m1;
-				est = estim.estim(m1, op);
-				break;
 			case RESHAPE:
 				m2 = m1;
 				est = estim.estim(m1, op);

@@ -25,6 +25,7 @@ import org.apache.sysds.hops.estim.EstimatorBasicWorst;
 import org.apache.sysds.hops.estim.EstimatorBitsetMM;
 import org.apache.sysds.hops.estim.EstimatorDensityMap;
 import org.apache.sysds.hops.estim.EstimatorMatrixHistogram;
+import org.apache.sysds.hops.estim.EstimatorRowWise;
 import org.apache.sysds.hops.estim.EstimatorLayeredGraph;
 import org.apache.sysds.hops.estim.EstimatorSample;
 import org.apache.sysds.hops.estim.SparsityEstimator;
@@ -128,7 +129,18 @@ public class OpElemWTest extends AutomatedTestBase
 	public void testSamplePlus() {
 		runSparsityEstimateTest(new EstimatorSample(), m, n, sparsity, plus);
 	}
-	
+
+	// Row Wise Sparsity Estimator
+	@Test
+	public void testRowWiseMult() {
+		runSparsityEstimateTest(new EstimatorRowWise(), m, n, sparsity, mult);
+	}
+
+	@Test
+	public void testRowWisePlus() {
+		runSparsityEstimateTest(new EstimatorRowWise(), m, n, sparsity, plus);
+	}
+
 	private static void runSparsityEstimateTest(SparsityEstimator estim, int m, int n, double[] sp, OpCode op) {
 		MatrixBlock m1 = MatrixBlock.randOperations(m, n, sp[0], 1, 1, "uniform", 3);
 		MatrixBlock m2 = MatrixBlock.randOperations(m, n, sp[1], 1, 1, "uniform", 7);

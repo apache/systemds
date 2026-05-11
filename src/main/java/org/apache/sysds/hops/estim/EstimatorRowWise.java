@@ -286,29 +286,35 @@ public class EstimatorRowWise extends SparsityEstimator {
 
 		MMNode nodeLeft = node.getLeft();
 		MMNode nodeRight = node.getRight();
+		int leftNRow = nodeLeft.getRows();
+		int leftNCol = nodeLeft.getCols();
+		int rightNRow = nodeRight.getRows();
+		int rightNCol = nodeRight.getCols();
 		switch(node.getOp()) {
 			case MM:
-				return new MatrixCharacteristics(nodeLeft.getRows(), nodeRight.getCols(),
-					OptimizerUtils.getNnz(nodeLeft.getRows(), nodeRight.getCols(), spOut));
+				return new MatrixCharacteristics(leftNRow, rightNCol,
+					OptimizerUtils.getNnz(leftNRow, rightNCol, spOut));
 			case MULT:
 			case PLUS:
 			case NEQZERO:
 			case EQZERO:
-				return new MatrixCharacteristics(nodeLeft.getRows(), nodeLeft.getCols(),
-					OptimizerUtils.getNnz(nodeLeft.getRows(), nodeLeft.getCols(), spOut));
+				return new MatrixCharacteristics(leftNRow, leftNCol,
+					OptimizerUtils.getNnz(leftNRow, leftNCol, spOut));
 			case RBIND:
-				return new MatrixCharacteristics(nodeLeft.getRows()+nodeLeft.getRows(), nodeLeft.getCols(),
-					OptimizerUtils.getNnz(nodeLeft.getRows()+nodeRight.getRows(), nodeLeft.getCols(), spOut));
+				return new MatrixCharacteristics(leftNRow+rightNRow, leftNCol,
+					OptimizerUtils.getNnz(leftNRow+rightNRow, leftNCol, spOut));
 			case CBIND:
-				return new MatrixCharacteristics(nodeLeft.getRows(), nodeLeft.getCols()+nodeRight.getCols(),
-					OptimizerUtils.getNnz(nodeLeft.getRows(), nodeLeft.getCols()+nodeRight.getCols(), spOut));
+				return new MatrixCharacteristics(leftNRow, leftNCol+rightNCol,
+					OptimizerUtils.getNnz(leftNRow, leftNCol+rightNCol, spOut));
 			case DIAG:
-				int ncol = nodeLeft.getCols()==1 ? nodeLeft.getRows() : 1;
-				return new MatrixCharacteristics(nodeLeft.getRows(), ncol,
-					OptimizerUtils.getNnz(nodeLeft.getRows(), ncol, spOut));
+				int ncol = (leftNCol == 1) ? leftNRow : 1;
+				return new MatrixCharacteristics(leftNRow, ncol,
+					OptimizerUtils.getNnz(leftNRow, ncol, spOut));
 			case TRANS:
+				return new MatrixCharacteristics(leftNCol, leftNRow,
+					OptimizerUtils.getNnz(leftNCol, leftNRow, spOut));
 			case RESHAPE:
-				throw new NotImplementedException("Characteristics derivation for trans and reshape has not been " +
+				throw new NotImplementedException("Characteristics derivation for " + node.getOp() +" has not been " +
 					"implemented yet, but could be implemented similar to EstimatorMatrixHistogram.java");
 			default:
 				throw new NotImplementedException();

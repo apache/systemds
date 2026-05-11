@@ -41,7 +41,7 @@ public class OpSingleTest extends AutomatedTestBase
 	private final static int m = 600;
 	private final static int k = 300;
 	private final static double sparsity = 0.2;
-	// private final static OpCode eqzero = OpCode.EQZERO;
+	private final static OpCode eqzero = OpCode.EQZERO;
 	private final static OpCode diag = OpCode.DIAG;
 	private final static OpCode neqzero = OpCode.NEQZERO;
 	private final static OpCode trans = OpCode.TRANS;
@@ -240,15 +240,20 @@ public class OpSingleTest extends AutomatedTestBase
 //	}
 
 	// Row Wise Sparsity Estimator
-	// @Test
-	// public void testRowWiseEqzero() {
-	// 	runSparsityEstimateTest(new EstimatorRowWise(), m, k, sparsity, eqzero);
-	// }
+	@Test
+	public void testRowWiseEqzero() {
+		runSparsityEstimateTest(new EstimatorRowWise(), m, k, sparsity, eqzero);
+	}
 
-	// @Test
-	// public void testRowWiseDiag() {
-	// 	runSparsityEstimateTest(new EstimatorRowWise(), m, m, sparsity, diag);
-	// }
+	@Test
+	public void testRowWiseDiagMV() {
+		runSparsityEstimateTest(new EstimatorRowWise(), m, m, sparsity, diag);
+	}
+
+	@Test
+	public void testRowWiseDiagVM() {
+		runSparsityEstimateTest(new EstimatorRowWise(), m, 1, sparsity, diag);
+	}
 
 	@Test
 	public void testRowWiseNeqzero() {
@@ -268,27 +273,32 @@ public class OpSingleTest extends AutomatedTestBase
 	private static void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, double sp, OpCode op) {
 		MatrixBlock m1 = MatrixBlock.randOperations(m, k, sp, 1, 1, "uniform", 3);
 		MatrixBlock m2 = new MatrixBlock();
+		double ref = 1;
 		double est = 0;
 		switch(op) {
 			case EQZERO:
-				//TODO find out how to do eqzero
+				ref = 1 - m1.getSparsity();
+				est = estim.estim(m1, op);
+				break;
 			case DIAG:
 				m2 = m1.getNumColumns() == 1
 						? LibMatrixReorg.diag(m1, new MatrixBlock(m1.getNumRows(), m1.getNumRows(), false))
 						: LibMatrixReorg.diag(m1, new MatrixBlock(m1.getNumRows(), 1, false));
+				ref = m2.getSparsity();
 				est = estim.estim(m1, op);
 				break;
 			case NEQZERO:
 			case TRANS:
 			case RESHAPE:
 				m2 = m1;
+				ref = m2.getSparsity();
 				est = estim.estim(m1, op);
 				break;
 			default:
 				throw new NotImplementedException();
 		}
 		//compare estimated and real sparsity
-		TestUtils.compareScalars(est, m2.getSparsity(),
+		TestUtils.compareScalars(est, ref,
 			(estim instanceof EstimatorBasicWorst) ? 5e-1 :
 			(estim instanceof EstimatorLayeredGraph) ? 3e-2 : 2e-2);
 	}

@@ -56,7 +56,7 @@ public class EstimatorRowWise extends SparsityEstimator {
 	
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
-		if( isExactMetadataOp(op) ) {
+		if( isExactMetadataOp(op, m1.getNumColumns()) ) {
 			return estimExactMetaData(m1.getDataCharacteristics(),
 				m2.getDataCharacteristics(), op).getSparsity();
 		}
@@ -67,9 +67,11 @@ public class EstimatorRowWise extends SparsityEstimator {
 
 	@Override
 	public double estim(MatrixBlock m1, OpCode op) {
-		if( isExactMetadataOp(op) )
+		if( isExactMetadataOp(op, m1.getNumColumns()) )
 			return estimExactMetaData(m1.getDataCharacteristics(), null, op).getSparsity();
-		throw new NotImplementedException();
+
+		RSVector rsOut = estimIntern(m1, op);
+		return rsOut.avg();
 	}
 
 	private void estimInternChain(MMNode node) {
@@ -103,7 +105,7 @@ public class EstimatorRowWise extends SparsityEstimator {
 						rsOut = (RSVector)estimInternMMFallback(rsCBind, rsRightNeighbor);
 						if(opRightNeighbor != OpCode.MM)
 							throw new NotImplementedException("Fallback sparsity estimation has only been " +
-								"considered for MM operation w/ right neighbor, yet");
+								"considered for MM operation w/ right neighbor yet.");
 					}
 					else
 						rsOut = (RSVector)rsCBind;
@@ -119,7 +121,7 @@ public class EstimatorRowWise extends SparsityEstimator {
 						rsOut = (RSVector)estimInternMMFallback(rsRBind, rsRightNeighbor);
 						if(opRightNeighbor != OpCode.MM)
 							throw new NotImplementedException("Fallback sparsity estimation has only been " +
-								"considered for MM operation w/ right neighbor, yet");
+								"considered for MM operation w/ right neighbor yet.");
 					}
 					else
 						rsOut = (RSVector)rsRBind;
@@ -135,7 +137,7 @@ public class EstimatorRowWise extends SparsityEstimator {
 						rsOut = (RSVector)estimInternMMFallback(rsPlus, rsRightNeighbor);
 						if(opRightNeighbor != OpCode.MM)
 							throw new NotImplementedException("Fallback sparsity estimation has only been " +
-								"considered for MM operation w/ right neighbor, yet");
+								"considered for MM operation w/ right neighbor yet.");
 					}
 					else
 						rsOut = (RSVector)rsPlus;
@@ -151,7 +153,7 @@ public class EstimatorRowWise extends SparsityEstimator {
 						rsOut = (RSVector)estimInternMMFallback(rsMult, rsRightNeighbor);
 						if(opRightNeighbor != OpCode.MM)
 							throw new NotImplementedException("Fallback sparsity estimation has only been " +
-								"considered for MM operation w/ right neighbor, yet");
+								"considered for MM operation w/ right neighbor yet.");
 					}
 					else
 						rsOut = (RSVector)rsMult;
@@ -183,6 +185,15 @@ public class EstimatorRowWise extends SparsityEstimator {
 				return estimInternPlus(getRowWiseSparsityVector(m1), rsM2);
 			case MULT:
 				return estimInternMult(getRowWiseSparsityVector(m1), rsM2);
+			default:
+				throw new NotImplementedException("Sparsity estimation for operation " + op.toString() + " not supported yet.");
+		}
+	}
+
+	private RSVector estimIntern(MatrixBlock mb, OpCode op) {
+		switch(op) {
+			case DIAG:
+				return estimInternDiag(mb);
 			default:
 				throw new NotImplementedException("Sparsity estimation for operation " + op.toString() + " not supported yet.");
 		}
@@ -229,6 +240,13 @@ public class EstimatorRowWise extends SparsityEstimator {
 		// row-wise average case estimates
 		// rsM1 * rsM2
 		return rsM1.multiply(rsM2);
+	}
+
+	private RSVector estimInternDiag(MatrixBlock mb) {
+		RSVector rsOut = new RSVector(IntStream.range(0, mb.getNumRows()).mapToDouble(
+				rIdx -> (mb.get(rIdx, rIdx) == 0) ? 0d : 1d)
+			.toArray());
+		return rsOut;
 	}
 
 	private RSVector getRowWiseSparsityVector(MatrixBlock mb) {

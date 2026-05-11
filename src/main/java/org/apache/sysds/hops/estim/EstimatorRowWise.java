@@ -43,7 +43,7 @@ public class EstimatorRowWise extends SparsityEstimator {
 	@Override
 	public DataCharacteristics estim(MMNode root) {
 		estimInternChain(root);
-		double sparsity = ((RSVector)root.getSynopsis()).avg();
+		double sparsity = DoubleStream.of((double[])root.getSynopsis()).average().orElse(0);
 
 		DataCharacteristics outputCharacteristics = deriveOutputCharacteristics(root, sparsity);
 		return root.setDataCharacteristics(outputCharacteristics);
@@ -61,8 +61,8 @@ public class EstimatorRowWise extends SparsityEstimator {
 				m2.getDataCharacteristics(), op).getSparsity();
 		}
 
-		RSVector rsOut = estimIntern(m1, m2, op);
-		return rsOut.avg();
+		double[] rsOut = estimIntern(m1, m2, op);
+		return DoubleStream.of(rsOut).average().orElse(0);
 	}
 
 	@Override
@@ -70,16 +70,16 @@ public class EstimatorRowWise extends SparsityEstimator {
 		if( isExactMetadataOp(op, m1.getNumColumns()) )
 			return estimExactMetaData(m1.getDataCharacteristics(), null, op).getSparsity();
 
-		RSVector rsOut = estimIntern(m1, op);
-		return rsOut.avg();
+		double[] rsOut = estimIntern(m1, op);
+		return DoubleStream.of(rsOut).average().orElse(0);
 	}
 
 	private void estimInternChain(MMNode node) {
 		estimInternChain(node, null, null);
 	}
 
-	private void estimInternChain(MMNode node, RSVector rsRightNeighbor, OpCode opRightNeighbor) {
-		RSVector rsOut;
+	private void estimInternChain(MMNode node, double[] rsRightNeighbor, OpCode opRightNeighbor) {
+		double[] rsOut;
 		if(node.isLeaf()) {
 			MatrixBlock mb = node.getData();
 			if(rsRightNeighbor != null)
@@ -91,8 +91,8 @@ public class EstimatorRowWise extends SparsityEstimator {
 			switch(node.getOp()) {
 				case MM:
 					estimInternChain(node.getRight(), rsRightNeighbor, opRightNeighbor);
-					estimInternChain(node.getLeft(), (RSVector)(node.getRight().getSynopsis()), node.getOp());
-					rsOut = (RSVector)node.getLeft().getSynopsis();
+					estimInternChain(node.getLeft(), (double[])(node.getRight().getSynopsis()), node.getOp());
+					rsOut = (double[])node.getLeft().getSynopsis();
 					break;
 				case CBIND:
 					/** NOTE: considering the current node as new DAG for estimation (cut), since the row sparsity of
@@ -100,15 +100,15 @@ public class EstimatorRowWise extends SparsityEstimator {
 					 */
 					estimInternChain(node.getLeft());
 					estimInternChain(node.getRight());
-					RSVector rsCBind = estimInternCBind((RSVector)(node.getLeft().getSynopsis()), (RSVector)(node.getRight().getSynopsis()));
+					double[] rsCBind = estimInternCBind((double[])(node.getLeft().getSynopsis()), (double[])(node.getRight().getSynopsis()));
 					if(rsRightNeighbor != null) {
-						rsOut = (RSVector)estimInternMMFallback(rsCBind, rsRightNeighbor);
+						rsOut = (double[])estimInternMMFallback(rsCBind, rsRightNeighbor);
 						if(opRightNeighbor != OpCode.MM)
 							throw new NotImplementedException("Fallback sparsity estimation has only been " +
 								"considered for MM operation w/ right neighbor yet.");
 					}
 					else
-						rsOut = (RSVector)rsCBind;
+						rsOut = (double[])rsCBind;
 					break;
 				case RBIND:
 					/** NOTE: considering the current node as new DAG for estimation (cut), since the row sparsity of
@@ -116,15 +116,15 @@ public class EstimatorRowWise extends SparsityEstimator {
 					 */
 					estimInternChain(node.getLeft());
 					estimInternChain(node.getRight());
-					RSVector rsRBind = estimInternRBind((RSVector)(node.getLeft().getSynopsis()), (RSVector)(node.getRight().getSynopsis()));
+					double[] rsRBind = estimInternRBind((double[])(node.getLeft().getSynopsis()), (double[])(node.getRight().getSynopsis()));
 					if(rsRightNeighbor != null) {
-						rsOut = (RSVector)estimInternMMFallback(rsRBind, rsRightNeighbor);
+						rsOut = (double[])estimInternMMFallback(rsRBind, rsRightNeighbor);
 						if(opRightNeighbor != OpCode.MM)
 							throw new NotImplementedException("Fallback sparsity estimation has only been " +
 								"considered for MM operation w/ right neighbor yet.");
 					}
 					else
-						rsOut = (RSVector)rsRBind;
+						rsOut = (double[])rsRBind;
 					break;
 				case PLUS:
 					/** NOTE: considering the current node as new DAG for estimation (cut), since the row sparsity of
@@ -132,15 +132,15 @@ public class EstimatorRowWise extends SparsityEstimator {
 					 */
 					estimInternChain(node.getLeft());
 					estimInternChain(node.getRight());
-					RSVector rsPlus = estimInternPlus((RSVector)(node.getLeft().getSynopsis()), (RSVector)(node.getRight().getSynopsis()));
+					double[] rsPlus = estimInternPlus((double[])(node.getLeft().getSynopsis()), (double[])(node.getRight().getSynopsis()));
 					if(rsRightNeighbor != null) {
-						rsOut = (RSVector)estimInternMMFallback(rsPlus, rsRightNeighbor);
+						rsOut = (double[])estimInternMMFallback(rsPlus, rsRightNeighbor);
 						if(opRightNeighbor != OpCode.MM)
 							throw new NotImplementedException("Fallback sparsity estimation has only been " +
 								"considered for MM operation w/ right neighbor yet.");
 					}
 					else
-						rsOut = (RSVector)rsPlus;
+						rsOut = (double[])rsPlus;
 					break;
 				case MULT:
 					/** NOTE: considering the current node as new DAG for estimation (cut), since the row sparsity of
@@ -148,15 +148,15 @@ public class EstimatorRowWise extends SparsityEstimator {
 					 */
 					estimInternChain(node.getLeft());
 					estimInternChain(node.getRight());
-					RSVector rsMult = estimInternMult((RSVector)(node.getLeft().getSynopsis()), (RSVector)(node.getRight().getSynopsis()));
+					double[] rsMult = estimInternMult((double[])(node.getLeft().getSynopsis()), (double[])(node.getRight().getSynopsis()));
 					if(rsRightNeighbor != null) {
-						rsOut = (RSVector)estimInternMMFallback(rsMult, rsRightNeighbor);
+						rsOut = (double[])estimInternMMFallback(rsMult, rsRightNeighbor);
 						if(opRightNeighbor != OpCode.MM)
 							throw new NotImplementedException("Fallback sparsity estimation has only been " +
 								"considered for MM operation w/ right neighbor yet.");
 					}
 					else
-						rsOut = (RSVector)rsMult;
+						rsOut = (double[])rsMult;
 					break;
 				default:
 					throw new NotImplementedException("Chain estimation for operator " + node.getOp().toString() +
@@ -164,16 +164,16 @@ public class EstimatorRowWise extends SparsityEstimator {
 			}
 		}
 		node.setSynopsis(rsOut);
-		node.setDataCharacteristics(deriveOutputCharacteristics(node, rsOut.avg()));
+		node.setDataCharacteristics(deriveOutputCharacteristics(node, DoubleStream.of(rsOut).average().orElse(0)));
 		return;
 	}
 
-	private RSVector estimIntern(MatrixBlock m1, MatrixBlock m2, OpCode op) {
-		RSVector rsM2 = getRowWiseSparsityVector(m2);
+	private double[] estimIntern(MatrixBlock m1, MatrixBlock m2, OpCode op) {
+		double[] rsM2 = getRowWiseSparsityVector(m2);
 		return estimIntern(m1, rsM2, op);
 	}
 
-	private RSVector estimIntern(MatrixBlock m1, RSVector rsM2, OpCode op) {
+	private double[] estimIntern(MatrixBlock m1, double[] rsM2, OpCode op) {
 		switch(op) {
 			case MM:
 				return estimInternMM(m1, rsM2);
@@ -190,7 +190,7 @@ public class EstimatorRowWise extends SparsityEstimator {
 		}
 	}
 
-	private RSVector estimIntern(MatrixBlock mb, OpCode op) {
+	private double[] estimIntern(MatrixBlock mb, OpCode op) {
 		switch(op) {
 			case DIAG:
 				return estimInternDiag(mb);
@@ -200,56 +200,59 @@ public class EstimatorRowWise extends SparsityEstimator {
 	}
 
 	// Corresponds to Algorithm 1 in the publication
-	private RSVector estimInternMM(MatrixBlock m1, RSVector rsM2) {
-		RSVector rsOut = new RSVector(IntStream.range(0, m1.getNumRows()).mapToDouble(
+	private double[] estimInternMM(MatrixBlock m1, double[] rsM2) {
+		double[] rsOut = IntStream.range(0, m1.getNumRows()).mapToDouble(
 			r -> (double) 1 - IntStream.of(getNonZeroColumnIndices(m1, r)).mapToDouble(
-					c -> (double) 1 - rsM2.get(c)
+					c -> (double) 1 - rsM2[c]
 				).reduce((double) 1, (currentVal, val) -> currentVal * val))
-			.toArray());
+			.toArray();
 		return rsOut;
 	}
 
 	// NOTE: this is the best estimation possible when we only have the two row sparsity vectors
-	private RSVector estimInternMMFallback(RSVector rsM1, RSVector rsM2) {
+	private double[] estimInternMMFallback(double[] rsM1, double[] rsM2) {
 		// NOTE: Considering the average would probably not be far off while saving computing time
 		// double avgRsM2 = DoubleStream.of(rsM2).average().orElse(0);
-		// RSVector rsOut = DoubleStream.of(rsM1).map(
+		// double[] rsOut = DoubleStream.of(rsM1).map(
 		// 	rsM1I -> (double) 1 - Math.pow((double) 1 - (rsM1I * avgRsM2), rsM2.length)).toArray();
-		RSVector rsOut = rsM1.map(
-			rsM1I -> (double) 1 - rsM2.reduce((double) 1,
-				(currentVal, rsM2J) -> currentVal * ((double) 1 - (rsM1I * rsM2J))));
+		double[] rsOut = DoubleStream.of(rsM1).map(
+			rsM1I -> (double) 1 - DoubleStream.of(rsM2).reduce((double) 1,
+				(currentVal, rsM2J) -> currentVal * ((double) 1 - (rsM1I * rsM2J)))).toArray();
 		return rsOut;
 	}
 
-	private RSVector estimInternCBind(RSVector rsM1, RSVector rsM2) {
-		return new RSVector(IntStream.range(0, rsM1.size()).mapToDouble(
-			idx -> (rsM1.get(idx) + rsM2.get(idx)) / (double) 2).toArray());
+	private double[] estimInternCBind(double[] rsM1, double[] rsM2) {
+		// FIXME: this assumes that the number of columns is equivalent for both inputs
+		return IntStream.range(0, rsM1.length).mapToDouble(
+			idx -> (rsM1[idx] + rsM2[idx]) / (double) 2).toArray();
 	}
 
-	private RSVector estimInternRBind(RSVector rsM1, RSVector rsM2) {
-		return rsM1.append(rsM2);
+	private double[] estimInternRBind(double[] rsM1, double[] rsM2) {
+		return ArrayUtils.addAll(rsM1, rsM2);
 	}
 
-	private RSVector estimInternPlus(RSVector rsM1, RSVector rsM2) {
+	private double[] estimInternPlus(double[] rsM1, double[] rsM2) {
 		// row-wise average case estimates
 		// rsM1 + rsM2 - (rsM1 * rsM2)
-		return rsM1.add(rsM2).subtract(rsM1.multiply(rsM2));
+		return IntStream.range(0, rsM1.length).mapToDouble(
+			idx -> rsM1[idx] + rsM2[idx] - (rsM1[idx] * rsM2[idx])).toArray();
 	}
 
-	private RSVector estimInternMult(RSVector rsM1, RSVector rsM2) {
+	private double[] estimInternMult(double[] rsM1, double[] rsM2) {
 		// row-wise average case estimates
 		// rsM1 * rsM2
-		return rsM1.multiply(rsM2);
+		return IntStream.range(0, rsM1.length).mapToDouble(
+			idx -> rsM1[idx] * rsM2[idx]).toArray();
 	}
 
-	private RSVector estimInternDiag(MatrixBlock mb) {
-		RSVector rsOut = new RSVector(IntStream.range(0, mb.getNumRows()).mapToDouble(
+	private double[] estimInternDiag(MatrixBlock mb) {
+		double[] rsOut = IntStream.range(0, mb.getNumRows()).mapToDouble(
 				rIdx -> (mb.get(rIdx, rIdx) == 0) ? 0d : 1d)
-			.toArray());
+			.toArray();
 		return rsOut;
 	}
 
-	private RSVector getRowWiseSparsityVector(MatrixBlock mb) {
+	private double[] getRowWiseSparsityVector(MatrixBlock mb) {
 		int numRows = mb.getNumRows();
 		if(mb.isInSparseFormat()) {
 			double[] rsArray = new double[numRows];
@@ -257,11 +260,12 @@ public class EstimatorRowWise extends SparsityEstimator {
 				SparseRow sparseRow = mb.getSparseBlock().get(counter);
 				rsArray[counter] = (sparseRow == null) ? 0 : (double) sparseRow.size() / mb.getNumColumns();
 			}
-			return new RSVector(rsArray);
+			return rsArray;
 		}
 		else {
-			return new RSVector(IntStream.range(0, numRows).mapToDouble(
-				rIdx -> (double) mb.getDenseBlock().countNonZeros(rIdx) / mb.getNumColumns()).toArray());
+			return IntStream.range(0, numRows).mapToDouble(
+					rIdx -> (double) mb.getDenseBlock().countNonZeros(rIdx) / mb.getNumColumns())
+				.toArray();
 		}
 	}
 
@@ -320,55 +324,4 @@ public class EstimatorRowWise extends SparsityEstimator {
 				throw new NotImplementedException();
 		}
 	}
-
-	public static class RSVector {
-		private final double[] rs;
-
-		public RSVector(double[] rs) {
-			this.rs = rs;
-		}
-
-		public double[] get() {
-			return this.rs;
-		}
-
-		public double get(int idx) {
-			return this.rs[idx];
-		}
-
-		public int size() {
-			return this.rs.length;
-		}
-
-		public double avg() {
-			return DoubleStream.of(this.rs).average().orElse(0);
-		}
-
-		public RSVector append(RSVector that) {
-			return new RSVector(ArrayUtils.addAll(this.rs, that.get()));
-		}
-
-		public RSVector map(DoubleUnaryOperator mapper) {
-			return new RSVector(DoubleStream.of(this.rs).map(mapper).toArray());
-		}
-
-		public double reduce(double identity, DoubleBinaryOperator op) {
-			return DoubleStream.of(this.rs).reduce(identity, op);
-		}
-
-		public RSVector add(RSVector that) {
-			return new RSVector(IntStream.range(0, this.size()).mapToDouble(
-				idx -> this.get(idx) + that.get(idx)).toArray());
-		}
-
-		public RSVector subtract(RSVector that) {
-			return new RSVector(IntStream.range(0, this.size()).mapToDouble(
-				idx -> this.get(idx) - that.get(idx)).toArray());
-		}
-
-		public RSVector multiply(RSVector that) {
-			return new RSVector(IntStream.range(0, this.size()).mapToDouble(
-				idx -> this.get(idx) * that.get(idx)).toArray());
-		}
-	};
 };

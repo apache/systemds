@@ -34,7 +34,7 @@ import org.apache.sysds.test.TestUtils;
 import org.apache.commons.lang3.NotImplementedException;
 
 /**
- * this is the basic operation check for all estimators with single operations
+ * this is the basic operation check for all estimators with binding operations
  */
 public class OpBindTest extends AutomatedTestBase 
 {
@@ -150,27 +150,21 @@ public class OpBindTest extends AutomatedTestBase
 		MatrixBlock m1;
 		MatrixBlock m2;
 		MatrixBlock m3 = new MatrixBlock();
-		double est = 0;
 		switch(op) {
 			case RBIND:
 				m1 = MatrixBlock.randOperations(m, k, sp[0], 1, 1, "uniform", 3);
 				m2 = MatrixBlock.randOperations(n, k, sp[1], 1, 1, "uniform", 3);
 				m1.append(m2, m3, false);
-				est = estim.estim(m1, m2, op);
-				// System.out.println(est);
-				// System.out.println(m3.getSparsity());
 				break;
 			case CBIND:
 				m1 = MatrixBlock.randOperations(10, 130, sp[0], 1, 1, "uniform", 3);
 				m2 = MatrixBlock.randOperations(10, 70, sp[1], 1, 1, "uniform", 3);
 				m1.append(m2, m3);
-				est = estim.estim(m1, m2, op);
-				// System.out.println(est);
-				// System.out.println(m3.getSparsity());
 				break;
 			default:
 				throw new NotImplementedException();
 		}
+		double est = estim.estim(m1, m2, op);
 		//compare estimated and real sparsity
 		TestUtils.compareScalars(est, m3.getSparsity(),
 			(estim instanceof EstimatorBasicWorst) ? 5e-1 :

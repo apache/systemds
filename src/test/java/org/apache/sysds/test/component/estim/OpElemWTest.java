@@ -39,7 +39,7 @@ import org.apache.sysds.test.TestUtils;
 import org.apache.commons.lang3.NotImplementedException;
 
 /**
- * this is the basic operation check for all estimators with single operations
+ * this is the basic operation check for all estimators with element-wise operations
  */
 public class OpElemWTest extends AutomatedTestBase 
 {
@@ -146,25 +146,18 @@ public class OpElemWTest extends AutomatedTestBase
 		MatrixBlock m2 = MatrixBlock.randOperations(m, n, sp[1], 1, 1, "uniform", 7);
 		MatrixBlock m3 = new MatrixBlock();
 		BinaryOperator bOp;
-		double est = 0;
 		switch(op) {
 			case MULT:
 				bOp = new BinaryOperator(Multiply.getMultiplyFnObject());
-				m1.binaryOperations(bOp, m2, m3);
-				est = estim.estim(m1, m2, op);
-				// System.out.println(est);
-				// System.out.println(m3.getSparsity());
 				break;
 			case PLUS:
 				bOp = new BinaryOperator(Plus.getPlusFnObject());
-				m1.binaryOperations(bOp, m2, m3);
-				est = estim.estim(m1, m2, op);
-				// System.out.println(est);
-				// System.out.println(m3.getSparsity());
 				break;
-			default:
-				throw new NotImplementedException();
+				default:
+					throw new NotImplementedException();
 		}
+		m1.binaryOperations(bOp, m2, m3);
+		double est = estim.estim(m1, m2, op);
 		//compare estimated and real sparsity
 		TestUtils.compareScalars(est, m3.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 5e-1 :
 			(estim instanceof EstimatorLayeredGraph) ? 3e-2 : 5e-3);

@@ -36,7 +36,7 @@ import org.apache.sysds.test.TestUtils;
 import org.apache.commons.lang3.NotImplementedException;
 
 /**
- * this is the basic operation check for all estimators with single operations
+ * this is the basic operation check for all estimators with chains of operations including binding operations
  */
 public class OpBindChainTest extends AutomatedTestBase 
 {
@@ -142,38 +142,27 @@ public class OpBindChainTest extends AutomatedTestBase
 
 
 	private static void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, int n, double[] sp, OpCode op) {
-		MatrixBlock m1;
+		MatrixBlock m1 = MatrixBlock.randOperations(m, k, sp[0], 1, 1, "uniform", 3);
 		MatrixBlock m2;
 		MatrixBlock m3 = new MatrixBlock();
 		MatrixBlock m4;
-		MatrixBlock m5 = new MatrixBlock();
-		double est = 0;
 		switch(op) {
 			case RBIND:
-				m1 = MatrixBlock.randOperations(m, k, sp[0], 1, 1, "uniform", 3);
 				m2 = MatrixBlock.randOperations(n, k, sp[1], 1, 1, "uniform", 7);
 				m1.append(m2, m3, false);
 				m4 = MatrixBlock.randOperations(k, m, sp[1], 1, 1, "uniform", 5);
-				m5 = m3.aggregateBinaryOperations(m3, m4, 
-						new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
-				est = estim.estim(new MMNode(new MMNode(new MMNode(m1), new MMNode(m2), op), new MMNode(m4), OpCode.MM)).getSparsity();
-				//System.out.println(est);
-				//System.out.println(m5.getSparsity());
 				break;
 			case CBIND:
-				m1 = MatrixBlock.randOperations(m, k, sp[0], 1, 1, "uniform", 3);
 				m2 = MatrixBlock.randOperations(m, n, sp[1], 1, 1, "uniform", 7);
 				m1.append(m2, m3, true);
 				m4 = MatrixBlock.randOperations(k+n, m, sp[1], 1, 1, "uniform", 5);
-				m5 = m3.aggregateBinaryOperations(m3, m4, 
-						new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
-				est = estim.estim(new MMNode(new MMNode(new MMNode(m1), new MMNode(m2), op), new MMNode(m4), OpCode.MM)).getSparsity();
-				//System.out.println(est);
-				//System.out.println(m5.getSparsity());
 				break;
 			default:
 				throw new NotImplementedException();
 		}
+		MatrixBlock m5 = m3.aggregateBinaryOperations(m3, m4,
+				new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
+		double est = estim.estim(new MMNode(new MMNode(new MMNode(m1), new MMNode(m2), op), new MMNode(m4), OpCode.MM)).getSparsity();
 		//compare estimated and real sparsity
 		TestUtils.compareScalars(est, m5.getSparsity(),
 			(estim instanceof EstimatorBasicWorst) ? 5e-1 :

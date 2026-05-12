@@ -40,7 +40,7 @@ import org.apache.sysds.test.TestUtils;
 import org.apache.commons.lang3.NotImplementedException;
 
 /**
- * this is the basic operation check for all estimators with single operations
+ * this is the basic operation check for all estimators with chains of operations including element-wise operations
  */
 public class OpElemWChainTest extends AutomatedTestBase 
 {
@@ -136,31 +136,22 @@ public class OpElemWChainTest extends AutomatedTestBase
 		MatrixBlock m2 = MatrixBlock.randOperations(m, n, sp[1], 1, 1, "uniform", 5);
 		MatrixBlock m3 = MatrixBlock.randOperations(n, m, sp[1], 1, 1, "uniform", 7);
 		MatrixBlock m4 = new MatrixBlock();
-		MatrixBlock m5 = new MatrixBlock();
 		BinaryOperator bOp;
-		double est = 0;
 		switch(op) {
 			case MULT:
 				bOp = new BinaryOperator(Multiply.getMultiplyFnObject());
-				m1.binaryOperations(bOp, m2, m4);
-				m5 = m4.aggregateBinaryOperations(m4, m3, 
-						new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
-				est = estim.estim(new MMNode(new MMNode(new MMNode(m1), new MMNode(m2), op), new MMNode(m3), OpCode.MM)).getSparsity();
-				// System.out.println(m5.getSparsity());
-				// System.out.println(est);
 				break;
 			case PLUS:
 				bOp = new BinaryOperator(Plus.getPlusFnObject());
-				m1.binaryOperations(bOp, m2, m4);
-				m5 = m4.aggregateBinaryOperations(m4, m3, 
-						new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
-				est = estim.estim(new MMNode(new MMNode(new MMNode(m1), new MMNode(m2), op), new MMNode(m3), OpCode.MM)).getSparsity();
-				// System.out.println(m5.getSparsity());
-				// System.out.println(est);
 				break;
 			default:
 				throw new NotImplementedException();
 		}
+		m1.binaryOperations(bOp, m2, m4);
+		MatrixBlock m5 = m4.aggregateBinaryOperations(m4, m3,
+				new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
+		double est = estim.estim(new MMNode(new MMNode(new MMNode(m1), new MMNode(m2), op), new MMNode(m3), OpCode.MM)).getSparsity();
+
 		//compare estimated and real sparsity
 		TestUtils.compareScalars(est, m5.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 9e-1 :
 			(estim instanceof EstimatorLayeredGraph) ? 7e-2 : 1e-2);

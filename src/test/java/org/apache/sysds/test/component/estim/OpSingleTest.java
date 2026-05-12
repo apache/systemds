@@ -272,31 +272,28 @@ public class OpSingleTest extends AutomatedTestBase
 
 	private static void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, double sp, OpCode op) {
 		MatrixBlock m1 = MatrixBlock.randOperations(m, k, sp, 1, 1, "uniform", 3);
-		MatrixBlock m2 = new MatrixBlock();
-		double ref = 1;
-		double est = 0;
+		MatrixBlock m2;
+		double ref = -1;
 		switch(op) {
 			case EQZERO:
 				ref = 1 - m1.getSparsity();
-				est = estim.estim(m1, op);
 				break;
 			case DIAG:
 				m2 = m1.getNumColumns() == 1
 						? LibMatrixReorg.diag(m1, new MatrixBlock(m1.getNumRows(), m1.getNumRows(), false))
 						: LibMatrixReorg.diag(m1, new MatrixBlock(m1.getNumRows(), 1, false));
 				ref = m2.getSparsity();
-				est = estim.estim(m1, op);
 				break;
 			case NEQZERO:
 			case TRANS:
 			case RESHAPE:
 				m2 = m1;
 				ref = m2.getSparsity();
-				est = estim.estim(m1, op);
 				break;
 			default:
 				throw new NotImplementedException();
 		}
+		double est = estim.estim(m1, op);
 		//compare estimated and real sparsity
 		TestUtils.compareScalars(est, ref,
 			(estim instanceof EstimatorBasicWorst) ? 5e-1 :

@@ -80,7 +80,7 @@ public abstract class OOCInstruction extends Instruction {
 
 	public enum OOCType {
 		Reblock, Tee, Binary, Ternary, Unary, AggregateUnary, AggregateBinary, AggregateTernary, MAPMM, MMTSJ,
-		MAPMMCHAIN, Reorg, CM, Ctable, MatrixIndexing, ParameterizedBuiltin, Rand, Append
+		MAPMMCHAIN, Reorg, CM, Ctable, MatrixIndexing, ParameterizedBuiltin, Rand, Append, Quaternary
 	}
 
 	protected final OOCInstruction.OOCType _ooctype;

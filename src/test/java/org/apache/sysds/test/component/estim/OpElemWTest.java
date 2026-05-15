@@ -19,7 +19,6 @@
 
 package org.apache.sysds.test.component.estim;
 
-import org.junit.Test;
 import org.apache.sysds.hops.estim.EstimatorBasicAvg;
 import org.apache.sysds.hops.estim.EstimatorBasicWorst;
 import org.apache.sysds.hops.estim.EstimatorBitsetMM;
@@ -36,114 +35,134 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
+
+import java.util.Arrays;
+import java.util.Collection;
+
 import org.apache.commons.lang3.NotImplementedException;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 /**
  * this is the basic operation check for all estimators with element-wise operations
  */
+@RunWith(value = Parameterized.class)
 public class OpElemWTest extends AutomatedTestBase 
 {
-	private final static int m = 1600;
-	private final static int n = 700;
-	private final static double[] sparsity = new double[]{0.2, 0.4};
-	private final static OpCode mult = OpCode.MULT;
-	private final static OpCode plus = OpCode.PLUS;
+	@Parameterized.Parameter(0)
+	public int m;
+	@Parameterized.Parameter(1)
+	public int n;
+	@Parameterized.Parameter(2)
+	public double[] sparsity;
 
 	@Override
 	public void setUp() {
 		//do  nothing
 	}
+
+	@Parameterized.Parameters
+	public static Collection<Object[]> data() {
+		return Arrays.asList(new Object[][] {
+			// {m, n, sparsity}
+			{1600, 700, new double[]{0.2, 0.4}},
+			{900, 1200, new double[]{0.01, 0.125}},
+		});
+	}
+
 	//Average Case
 	@Test
 	public void testAvgMult() {
-		runSparsityEstimateTest(new EstimatorBasicAvg(), m, n, sparsity, mult);
+		runSparsityEstimateTest(new EstimatorBasicAvg(), OpCode.MULT);
 	}
 	
 	@Test
 	public void testAvgPlus() {
-		runSparsityEstimateTest(new EstimatorBasicAvg(), m, n, sparsity, plus);
+		runSparsityEstimateTest(new EstimatorBasicAvg(), OpCode.PLUS);
 	}
 	
 	//Worst Case
 	@Test
 	public void testWorstMult() {
-		runSparsityEstimateTest(new EstimatorBasicWorst(), m, n, sparsity, mult);
+		runSparsityEstimateTest(new EstimatorBasicWorst(), OpCode.MULT);
 	}
 	
 	@Test
 	public void testWorstPlus() {
-		runSparsityEstimateTest(new EstimatorBasicWorst(), m, n, sparsity, plus);
+		runSparsityEstimateTest(new EstimatorBasicWorst(), OpCode.PLUS);
 	}
 	
 	//DensityMap
 	@Test
 	public void testDMMult() {
-		runSparsityEstimateTest(new EstimatorDensityMap(), m, n, sparsity, mult);
+		runSparsityEstimateTest(new EstimatorDensityMap(), OpCode.MULT);
 	}
 	
 	@Test
 	public void testDMPlus() {
-		runSparsityEstimateTest(new EstimatorDensityMap(), m, n, sparsity, plus);
+		runSparsityEstimateTest(new EstimatorDensityMap(), OpCode.PLUS);
 	}
 	
 	//MNC
 	@Test
 	public void testMNCMult() {
-		runSparsityEstimateTest(new EstimatorMatrixHistogram(), m, n, sparsity, mult);
+		runSparsityEstimateTest(new EstimatorMatrixHistogram(), OpCode.MULT);
 	}
 	
 	@Test
 	public void testMNCPlus() {
-		runSparsityEstimateTest(new EstimatorMatrixHistogram(), m, n, sparsity, plus);
+		runSparsityEstimateTest(new EstimatorMatrixHistogram(), OpCode.PLUS);
 	}
 	
 	//Bitset
 	@Test
 	public void testBitsetMult() {
-		runSparsityEstimateTest(new EstimatorBitsetMM(), m, n, sparsity, mult);
+		runSparsityEstimateTest(new EstimatorBitsetMM(), OpCode.MULT);
 	}
 	
 	@Test
 	public void testBitsetPlus() {
-		runSparsityEstimateTest(new EstimatorBitsetMM(), m, n, sparsity, plus);
+		runSparsityEstimateTest(new EstimatorBitsetMM(), OpCode.PLUS);
 	}
 
 	//Layered Graph
 	@Test
 	public void testLGCasemult() {
-		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, n, sparsity, mult);
+		runSparsityEstimateTest(new EstimatorLayeredGraph(), OpCode.MULT);
 	}
 	
 	@Test
 	public void testLGCaseplus() {
-		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, n, sparsity, plus);
+		runSparsityEstimateTest(new EstimatorLayeredGraph(), OpCode.PLUS);
 	}
 	
 	//Sample
 	@Test
 	public void testSampleMult() {
-		runSparsityEstimateTest(new EstimatorSample(), m, n, sparsity, mult);
+		runSparsityEstimateTest(new EstimatorSample(), OpCode.MULT);
 	}
 	
 	@Test
 	public void testSamplePlus() {
-		runSparsityEstimateTest(new EstimatorSample(), m, n, sparsity, plus);
+		runSparsityEstimateTest(new EstimatorSample(), OpCode.PLUS);
 	}
 
 	// Row Wise Sparsity Estimator
 	@Test
 	public void testRowWiseMult() {
-		runSparsityEstimateTest(new EstimatorRowWise(), m, n, sparsity, mult);
+		runSparsityEstimateTest(new EstimatorRowWise(), OpCode.MULT);
 	}
 
 	@Test
 	public void testRowWisePlus() {
-		runSparsityEstimateTest(new EstimatorRowWise(), m, n, sparsity, plus);
+		runSparsityEstimateTest(new EstimatorRowWise(), OpCode.PLUS);
 	}
 
-	private static void runSparsityEstimateTest(SparsityEstimator estim, int m, int n, double[] sp, OpCode op) {
-		MatrixBlock m1 = MatrixBlock.randOperations(m, n, sp[0], 1, 1, "uniform", 3);
-		MatrixBlock m2 = MatrixBlock.randOperations(m, n, sp[1], 1, 1, "uniform", 7);
+	private void runSparsityEstimateTest(SparsityEstimator estim, OpCode op) {
+		MatrixBlock m1 = MatrixBlock.randOperations(m, n, sparsity[0], 1, 1, "uniform", 3);
+		MatrixBlock m2 = MatrixBlock.randOperations(m, n, sparsity[1], 1, 1, "uniform", 7);
 		MatrixBlock m3 = new MatrixBlock();
 		BinaryOperator bOp;
 		switch(op) {

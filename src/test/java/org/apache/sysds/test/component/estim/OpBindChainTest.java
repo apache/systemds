@@ -19,7 +19,6 @@
 
 package org.apache.sysds.test.component.estim;
 
-import org.junit.Test;
 import org.apache.sysds.hops.estim.EstimatorBasicAvg;
 import org.apache.sysds.hops.estim.EstimatorBasicWorst;
 import org.apache.sysds.hops.estim.EstimatorBitsetMM;
@@ -33,129 +32,139 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
+
+import java.util.Arrays;
+import java.util.Collection;
+
 import org.apache.commons.lang3.NotImplementedException;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 /**
  * this is the basic operation check for all estimators with chains of operations including binding operations
  */
-public class OpBindChainTest extends AutomatedTestBase 
+@RunWith(value = Parameterized.class)
+public class OpBindChainTest extends AutomatedTestBase
 {
-	private final static int m = 600;
-	private final static int k = 300;
-	private final static int n = 100;
-	private final static double[] sparsity = new double[]{0.2, 0.4};
-//	private final static OpCode mult = OpCode.MULT;
-//	private final static OpCode plus = OpCode.PLUS;
-	private final static OpCode rbind = OpCode.RBIND;
-	private final static OpCode cbind = OpCode.CBIND;
-//	private final static OpCode eqzero = OpCode.EQZERO;
-//	private final static OpCode diag = OpCode.DIAG;
-//	private final static OpCode neqzero = OpCode.NEQZERO;
-//	private final static OpCode trans = OpCode.TRANS;
-//	private final static OpCode reshape = OpCode.RESHAPE;
+	@Parameterized.Parameter(0)
+	public int m;
+	@Parameterized.Parameter(1)
+	public int k;
+	@Parameterized.Parameter(2)
+	public int n;
+	@Parameterized.Parameter(3)
+	public double[] sparsity;
 
 	@Override
 	public void setUp() {
 		//do  nothing
 	}
-	
+
+	@Parameterized.Parameters
+	public static Collection<Object[]> data() {
+		return Arrays.asList(new Object[][] {
+			// {m, k, n, sparsity}
+			{600, 300, 100, new double[]{0.2, 0.4}},
+			{600, 200, 300, new double[]{0.1, 0.15}},
+		});
+	}
+
 	//Average Case
 	@Test
 	public void testAvgRbind() {
-		runSparsityEstimateTest(new EstimatorBasicAvg(), m, k, n, sparsity, rbind);
+		runSparsityEstimateTest(new EstimatorBasicAvg(), OpCode.RBIND);
 	}
 	
 	@Test
 	public void testAvgCbind() {
-		runSparsityEstimateTest(new EstimatorBasicAvg(), m, k, n, sparsity, cbind);
+		runSparsityEstimateTest(new EstimatorBasicAvg(), OpCode.CBIND);
 	}
 	
 	//Worst Case
 	@Test
 	public void testWorstRbind() {
-		runSparsityEstimateTest(new EstimatorBasicWorst(), m, k, n, sparsity, rbind);
+		runSparsityEstimateTest(new EstimatorBasicWorst(), OpCode.RBIND);
 	}
 	
 	@Test
 	public void testWorstCbind() {
-		runSparsityEstimateTest(new EstimatorBasicWorst(), m, k, n, sparsity, cbind);
+		runSparsityEstimateTest(new EstimatorBasicWorst(), OpCode.CBIND);
 	}
 	
 	//DensityMap
 	/*@Test
 	public void testDMCaserbind() {
-		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, n, sparsity, rbind);
+		runSparsityEstimateTest(new EstimatorDensityMap(), OpCode.RBIND);
 	}
 	
 	@Test
 	public void testDMCasecbind() {
-		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, n, sparsity, cbind);
+		runSparsityEstimateTest(new EstimatorDensityMap(), OpCode.CBIND);
 	}*/
 	
 	//MNC
 	@Test
 	public void testMNCRbind() {
-		runSparsityEstimateTest(new EstimatorMatrixHistogram(), m, k, n, sparsity, rbind);
+		runSparsityEstimateTest(new EstimatorMatrixHistogram(), OpCode.RBIND);
 	}
 		
 	@Test
 	public void testMNCCbind() {
-		runSparsityEstimateTest(new EstimatorMatrixHistogram(), m, k, n, sparsity, cbind);
+		runSparsityEstimateTest(new EstimatorMatrixHistogram(), OpCode.CBIND);
 	}
 
 	//Bitset
 	@Test
 	public void testBitsetCaserbind() {
-		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, n, sparsity, rbind);
+		runSparsityEstimateTest(new EstimatorBitsetMM(), OpCode.RBIND);
 	}
 	
 	 @Test
 	public void testBitsetCasecbind() {
-		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, n, sparsity, cbind);
+		runSparsityEstimateTest(new EstimatorBitsetMM(), OpCode.CBIND);
 	 }
 		
 	//Layered Graph
 	@Test
 	public void testLGCaserbind() {
 		runSparsityEstimateTest(
-			new EstimatorLayeredGraph(EstimatorLayeredGraph.ROUNDS, 7), 
-			m, k, n, sparsity, rbind);
+			new EstimatorLayeredGraph(EstimatorLayeredGraph.ROUNDS, 7), OpCode.RBIND);
 	}
 			
 	@Test
 	public void testLGCasecbind() {
 		runSparsityEstimateTest(
-			new EstimatorLayeredGraph(EstimatorLayeredGraph.ROUNDS, 3), 
-			m, k, n, sparsity, cbind);
+			new EstimatorLayeredGraph(EstimatorLayeredGraph.ROUNDS, 3), OpCode.CBIND);
 	}
 
 	// Row Wise Sparsity Estimator
 	@Test
 	public void testRowWiseRbind() {
-		runSparsityEstimateTest(new EstimatorRowWise(), m, k, n, sparsity, rbind);
+		runSparsityEstimateTest(new EstimatorRowWise(), OpCode.RBIND);
 	}
 
 	@Test
 	public void testRowWiseCbind() {
-		runSparsityEstimateTest(new EstimatorRowWise(), m, k, n, sparsity, cbind);
+		runSparsityEstimateTest(new EstimatorRowWise(), OpCode.CBIND);
 	}
 
 
-	private static void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, int n, double[] sp, OpCode op) {
-		MatrixBlock m1 = MatrixBlock.randOperations(m, k, sp[0], 1, 1, "uniform", 3);
+	private void runSparsityEstimateTest(SparsityEstimator estim, OpCode op) {
+		MatrixBlock m1 = MatrixBlock.randOperations(m, k, sparsity[0], 1, 1, "uniform", 3);
 		MatrixBlock m2;
 		MatrixBlock m3 = new MatrixBlock();
 		MatrixBlock m4;
 		switch(op) {
 			case RBIND:
-				m2 = MatrixBlock.randOperations(n, k, sp[1], 1, 1, "uniform", 7);
+				m2 = MatrixBlock.randOperations(n, k, sparsity[1], 1, 1, "uniform", 7);
 				m1.append(m2, m3, false);
-				m4 = MatrixBlock.randOperations(k, m, sp[1], 1, 1, "uniform", 5);
+				m4 = MatrixBlock.randOperations(k, m, sparsity[1], 1, 1, "uniform", 5);
 				break;
 			case CBIND:
-				m2 = MatrixBlock.randOperations(m, n, sp[1], 1, 1, "uniform", 7);
+				m2 = MatrixBlock.randOperations(m, n, sparsity[1], 1, 1, "uniform", 7);
 				m1.append(m2, m3, true);
-				m4 = MatrixBlock.randOperations(k+n, m, sp[1], 1, 1, "uniform", 5);
+				m4 = MatrixBlock.randOperations(k+n, m, sparsity[1], 1, 1, "uniform", 5);
 				break;
 			default:
 				throw new NotImplementedException();

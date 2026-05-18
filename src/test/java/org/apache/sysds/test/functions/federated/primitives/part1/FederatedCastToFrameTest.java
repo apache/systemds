@@ -97,12 +97,10 @@ public class FederatedCastToFrameTest extends AutomatedTestBase {
 
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
-		Process t1 = startLocalFedWorker(port1, FED_WORKER_WAIT_S);
-		Process t2 = startLocalFedWorker(port2);
+		Process[] workers = startLocalFedWorkers(new int[] {port1, port2});
 
-		
 		try {
-			if(!isAlive(t1, t2))
+			if(!isAlive(workers))
 				throw new RuntimeException("Failed starting federated worker");
 
 			TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
@@ -127,7 +125,7 @@ public class FederatedCastToFrameTest extends AutomatedTestBase {
 		}
 		finally {
 
-			TestUtils.shutdownThreads(t1, t2);
+			TestUtils.shutdownThreads(workers);
 
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;

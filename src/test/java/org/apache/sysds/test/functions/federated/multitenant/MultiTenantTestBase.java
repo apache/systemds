@@ -38,8 +38,6 @@ import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.After;
 
-import com.google.crypto.tink.subtle.Random;
-
 public abstract class MultiTenantTestBase extends AutomatedTestBase {
 	protected static final Log LOG = LogFactory.getLog(MultiTenantTestBase.class.getName());
 
@@ -63,7 +61,8 @@ public abstract class MultiTenantTestBase extends AutomatedTestBase {
 	}
 
 	/**
-	 * Start numFedWorkers federated worker processes on available ports and add them to the workerProcesses
+	 * Start numFedWorkers federated worker processes on available ports and add them to the workerProcesses.
+	 * Workers are spawned together and their port-bind is awaited in parallel.
 	 *
 	 * @param numFedWorkers the number of federated workers to start
 	 * @return int[] the ports of the created federated workers
@@ -72,10 +71,10 @@ public abstract class MultiTenantTestBase extends AutomatedTestBase {
 		int[] ports = new int[numFedWorkers];
 		for(int counter = 0; counter < numFedWorkers; counter++) {
 			ports[counter] = getRandomAvailablePort();
-			// start process but only wait long for last one.
-			Process tmpProcess = startLocalFedWorker(ports[counter], addArgs,
-				counter == numFedWorkers - 1 ? (FED_WORKER_WAIT + Random.randInt(1000)) * 3 : FED_WORKER_WAIT_S);
-			workerProcesses.add(tmpProcess);
+		}
+		Process[] processes = startLocalFedWorkers(ports, addArgs);
+		for(Process p : processes) {
+			workerProcesses.add(p);
 		}
 		return ports;
 	}

@@ -113,8 +113,7 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 		fullDMLScriptName = "";
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
-		Thread t2 = startLocalFedWorkerThread(port2);
+		Thread[] workers = startLocalFedWorkerThreads(new int[] {port1, port2});
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
@@ -155,7 +154,7 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 
 		// compare via files
 		// compareResults(1e-9); --> randomized
-		TestUtils.shutdownThreads(t1, t2);
+		TestUtils.shutdownThreads(workers);
 
 		resetExecMode(platformOld);
 	}

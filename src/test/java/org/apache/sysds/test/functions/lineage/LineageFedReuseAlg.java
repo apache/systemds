@@ -93,8 +93,7 @@ public class LineageFedReuseAlg extends AutomatedTestBase {
 			int port3 = getRandomAvailablePort();
 			int port4 = getRandomAvailablePort();
 			String[] otherargs = new String[] {"-lineage", "reuse_full"};
-			Thread t1 = startLocalFedWorkerThread(port1, otherargs, FED_WORKER_WAIT_S);
-			Thread t2 = startLocalFedWorkerThread(port2, otherargs);
+			Thread[] workers = startLocalFedWorkerThreads(new int[] {port1, port2}, otherargs, FED_WORKER_WAIT);
 
 			TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 			loadTestConfiguration(config);
@@ -136,7 +135,7 @@ public class LineageFedReuseAlg extends AutomatedTestBase {
 			assertTrue(mmCount > mmCount_reuse);
 			assertTrue(fed_mmCount > fed_mmCount_reuse);
 
-			TestUtils.shutdownThreads(t1, t2);
+			TestUtils.shutdownThreads(workers);
 		}
 		finally {
 			resetExecMode(oldExec);

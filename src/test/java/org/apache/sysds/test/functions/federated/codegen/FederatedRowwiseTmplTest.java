@@ -147,8 +147,7 @@ public class FederatedRowwiseTmplTest extends AutomatedTestBase {
 		fullDMLScriptName = "";
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
-		Thread thread1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
-		Thread thread2 = startLocalFedWorkerThread(port2);
+		Thread[] workers = startLocalFedWorkerThreads(new int[] {port1, port2});
 
 		getAndLoadTestConfiguration(TEST_NAME);
 
@@ -178,7 +177,7 @@ public class FederatedRowwiseTmplTest extends AutomatedTestBase {
 
 		TestUtils.compareMatrices(fedResults, refResults, TOLERANCE, "Fed", "Ref");
 
-		TestUtils.shutdownThreads(thread1, thread2);
+		TestUtils.shutdownThreads(workers);
 
 		// check for federated operations
 		if(row_partitioned)

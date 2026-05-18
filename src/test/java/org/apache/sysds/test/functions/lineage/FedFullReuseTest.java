@@ -103,8 +103,7 @@ public class FedFullReuseTest extends AutomatedTestBase {
 		int port2 = getRandomAvailablePort();
 		String[] otherargs = new String[] {"-lineage", "reuse_full"};
 		Lineage.resetInternalState();
-		Thread t1 = startLocalFedWorkerThread(port1, otherargs, FED_WORKER_WAIT_S);
-		Thread t2 = startLocalFedWorkerThread(port2, otherargs);
+		Thread[] workers = startLocalFedWorkerThreads(new int[] {port1, port2}, otherargs, FED_WORKER_WAIT);
 
 		TestConfiguration config = availableTestConfigurations.get(test);
 		loadTestConfiguration(config);
@@ -149,7 +148,7 @@ public class FedFullReuseTest extends AutomatedTestBase {
 		}
 
 
-		TestUtils.shutdownThreads(t1, t2);
+		TestUtils.shutdownThreads(workers);
 	}
 
 }

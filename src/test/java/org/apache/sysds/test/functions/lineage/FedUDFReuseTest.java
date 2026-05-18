@@ -108,10 +108,7 @@ public class FedUDFReuseTest extends AutomatedTestBase {
 		int port4 = getRandomAvailablePort();
 		String[] otherargs = new String[] {"-lineage", "reuse_full"};
 		Lineage.resetInternalState();
-		Thread t1 = startLocalFedWorkerThread(port1, otherargs, FED_WORKER_WAIT_S);
-		Thread t2 = startLocalFedWorkerThread(port2, otherargs, FED_WORKER_WAIT_S);
-		Thread t3 = startLocalFedWorkerThread(port3, otherargs, FED_WORKER_WAIT_S);
-		Thread t4 = startLocalFedWorkerThread(port4, otherargs);
+		Thread[] workers = startLocalFedWorkerThreads(new int[] {port1, port2, port3, port4}, otherargs, FED_WORKER_WAIT);
 
 		rtplatform = execMode;
 		if(rtplatform == ExecMode.SPARK) {
@@ -146,7 +143,7 @@ public class FedUDFReuseTest extends AutomatedTestBase {
 		// assert reuse count
 		Assert.assertTrue(LineageCacheStatistics.getInstHits() > 0);
 
-		TestUtils.shutdownThreads(t1, t2, t3, t4);
+		TestUtils.shutdownThreads(workers);
 
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;

@@ -100,10 +100,7 @@ public class FederatedUnivarTest extends AutomatedTestBase {
 		int port2 = getRandomAvailablePort();
 		int port3 = getRandomAvailablePort();
 		int port4 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
-		Thread t2 = startLocalFedWorkerThread(port2, FED_WORKER_WAIT_S);
-		Thread t3 = startLocalFedWorkerThread(port3, FED_WORKER_WAIT_S);
-		Thread t4 = startLocalFedWorkerThread(port4);
+		Thread[] workers = startLocalFedWorkerThreads(new int[] {port1, port2, port3, port4});
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
@@ -126,7 +123,7 @@ public class FederatedUnivarTest extends AutomatedTestBase {
 
 		// compare via files
 		compareResults(1e-9);
-		TestUtils.shutdownThreads(t1, t2, t3, t4);
+		TestUtils.shutdownThreads(workers);
 
 		// check for federated operations
 		Assert.assertTrue(heavyHittersContainsString("fed_uacmax"));

@@ -118,7 +118,7 @@ public class FederatedDynamicPlanningTest extends AutomatedTestBase {
 		Types.ExecMode platformOld = rtplatform;
 		rtplatform = Types.ExecMode.SINGLE_NODE;
 
-		Thread t1 = null, t2 = null;
+		Thread[] workers = null;
 
 		try {
 			getAndLoadTestConfiguration(testName);
@@ -128,8 +128,7 @@ public class FederatedDynamicPlanningTest extends AutomatedTestBase {
 
 			int port1 = getRandomAvailablePort();
 			int port2 = getRandomAvailablePort();
-			t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
-			t2 = startLocalFedWorkerThread(port2);
+			workers = startLocalFedWorkerThreads(new int[] {port1, port2}, null, FED_WORKER_WAIT);
 
 			// Run actual dml script with federated matrix
 			fullDMLScriptName = HOME + testName + ".dml";
@@ -164,7 +163,7 @@ public class FederatedDynamicPlanningTest extends AutomatedTestBase {
 					+ Arrays.toString(missingHeavyHitters(expectedHeavyHitters)));
 		}
 		finally {
-			TestUtils.shutdownThreads(t1, t2);
+			TestUtils.shutdownThreads(workers);
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}

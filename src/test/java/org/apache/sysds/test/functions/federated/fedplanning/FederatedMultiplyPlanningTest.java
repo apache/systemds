@@ -240,7 +240,7 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 		if(rtplatform == Types.ExecMode.SPARK) {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		}
-		Thread t1 = null, t2 = null;
+		Thread[] workers = null;
 
 		try{
 			getAndLoadTestConfiguration(testName);
@@ -250,8 +250,7 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 
 			int port1 = getRandomAvailablePort();
 			int port2 = getRandomAvailablePort();
-			t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
-			t2 = startLocalFedWorkerThread(port2);
+			workers = startLocalFedWorkerThreads(new int[] {port1, port2}, null, FED_WORKER_WAIT);
 
 			// Run actual dml script with federated matrix
 			fullDMLScriptName = HOME + testName + ".dml";
@@ -275,7 +274,7 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 				fail("The following expected heavy hitters are missing: "
 					+ Arrays.toString(missingHeavyHitters(expectedHeavyHitters)));
 		} finally {
-			TestUtils.shutdownThreads(t1, t2);
+			TestUtils.shutdownThreads(workers);
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}

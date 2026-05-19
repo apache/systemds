@@ -386,7 +386,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 					return new MatrixCharacteristics(h1.getRows(), h1.getCols(),
 						OptimizerUtils.getNnz(h1.getRows(), h1.getCols(), spOut));
 				case RBIND:
-					return new MatrixCharacteristics(h1.getRows()+h1.getRows(), h1.getCols(),
+					return new MatrixCharacteristics(h1.getRows()+h2.getRows(), h1.getCols(),
 						OptimizerUtils.getNnz(h1.getRows()+h2.getRows(), h1.getCols(), spOut));
 				case CBIND:
 					return new MatrixCharacteristics(h1.getRows(), h1.getCols()+h2.getCols(),

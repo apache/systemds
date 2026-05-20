@@ -76,6 +76,8 @@
 		<test-parallel>classes</test-parallel>
 		<test-threadCount>2</test-threadCount>
 		<test-forkCount>1C</test-forkCount>
+		<!-- Per-fork timeout in seconds; kills hung forks before the 30 min CI cap. -->
+		<test-forkedProcessTimeout>1380</test-forkedProcessTimeout>
 		<rerun.failing.tests.count>2</rerun.failing.tests.count>
 		<jacoco.skip>false</jacoco.skip>
 		<checkstyle.skip>true</checkstyle.skip>
@@ -406,6 +408,8 @@
 					<!-- 1C means the number of threads times 1 possible maximum forks for testing-->
 					<forkCount>${test-forkCount}</forkCount>
 					<reuseForks>false</reuseForks>
+					<!-- Kill hung test forks before CI cancels the whole job. -->
+					<forkedProcessTimeoutInSeconds>${test-forkedProcessTimeout}</forkedProcessTimeoutInSeconds>
 					<!-- <reportFormat>brief</reportFormat> -->
 					<trimStackTrace>true</trimStackTrace>
 					<rerunFailingTestsCount>${rerun.failing.tests.count}</rerunFailingTestsCount>

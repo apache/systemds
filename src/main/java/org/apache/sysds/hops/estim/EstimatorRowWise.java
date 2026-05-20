@@ -210,7 +210,7 @@ public class EstimatorRowWise extends SparsityEstimator {
 		for(int rIdx = 0; rIdx < m1.getNumRows(); rIdx++) {
 			double currentVal = 1;
 			for(int cIdx : getNonZeroColumnIndices(m1, rIdx)) {
-				currentVal *= (double) 1 - rsM2[cIdx];
+				currentVal *= 1.0 - rsM2[cIdx];
 			}
 			rsOut[rIdx] = 1 - currentVal;
 		}
@@ -218,17 +218,24 @@ public class EstimatorRowWise extends SparsityEstimator {
 	}
 
 	/**
-	 * NOTE: this is the best estimation possible when we only have the two row sparsity vectors
+	 * NOTE: fallback estimate using the uniform estimator (aka average-case estimator, Naive Bayes estimator) for
+	 * the case when we are limited to the row sparsity vectors of both inputs
 	 * NOTE: Considering the average of the second matrix would probably not be far off while saving computing time
 	 */
 	private double[] estimInternMMFallback(double[] rsM1, double[] rsM2) {
 		double[] rsOut = new double[rsM1.length];
 		for(int i = 0; i < rsM1.length; i++) {
-			double currentVal = 1;
-			for(int j = 0; j < rsM2.length; j++) {
-				currentVal *= (double) 1 - (rsM1[i] * rsM2[j]);
+			double rsM1i = rsM1[i];
+			if(rsM1i == 0) {
+				rsOut[i] = 0;
 			}
-			rsOut[i] = (double) 1 - currentVal;
+			else {
+				double currentVal = 1;
+				for(int j = 0; j < rsM2.length; j++) {
+					currentVal *= 1.0 - (rsM1i * rsM2[j]);
+				}
+				rsOut[i] = 1.0 - currentVal;
+			}
 		}
 		return rsOut;
 	}
@@ -237,7 +244,7 @@ public class EstimatorRowWise extends SparsityEstimator {
 		// FIXME: this estimate assumes that the number of columns is equivalent for both inputs
 		double[] rsOut = new double[rsM1.length];
 		for(int idx = 0; idx < rsM1.length; idx++) {
-			rsOut[idx] = (rsM1[idx] + rsM2[idx]) / (double) 2;
+			rsOut[idx] = (rsM1[idx] + rsM2[idx]) / 2.0;
 		}
 		return rsOut;
 	}
@@ -269,7 +276,7 @@ public class EstimatorRowWise extends SparsityEstimator {
 	private double[] estimInternDiag(MatrixBlock mb) {
 		double[] rsOut = new double[mb.getNumRows()];
 		for(int rIdx = 0; rIdx < mb.getNumRows(); rIdx++) {
-			rsOut[rIdx] = (mb.get(rIdx, rIdx) == 0) ? (double) 0 : (double) 1;
+			rsOut[rIdx] = (mb.get(rIdx, rIdx) == 0) ? 0 : 1;
 		}
 		return rsOut;
 	}

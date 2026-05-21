@@ -19,12 +19,12 @@
 
 package org.apache.sysds.test.component.estim;
 
-import org.junit.Test;
 import org.apache.sysds.hops.estim.EstimatorBasicAvg;
 import org.apache.sysds.hops.estim.EstimatorBasicWorst;
 import org.apache.sysds.hops.estim.EstimatorBitsetMM;
 import org.apache.sysds.hops.estim.EstimatorDensityMap;
 import org.apache.sysds.hops.estim.EstimatorMatrixHistogram;
+import org.apache.sysds.hops.estim.EstimatorRowWise;
 import org.apache.sysds.hops.estim.EstimatorLayeredGraph;
 import org.apache.sysds.hops.estim.EstimatorSample;
 import org.apache.sysds.hops.estim.SparsityEstimator;
@@ -33,138 +33,108 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
+import java.util.Arrays;
+import java.util.Collection;
+
 /**
  * This is a basic sanity check for all estimator, which need
  * to compute a reasonable estimate for uniform data.
  */
-public class SquaredProductTest extends AutomatedTestBase 
+@RunWith(value = Parameterized.class)
+public class SquaredProductTest extends AutomatedTestBase
 {
-	private final static int m = 1000;
-	private final static int k = 1000;
-	private final static int n = 1000;
-	private final static double[] case1 = new double[]{0.0001, 0.00007};
-	private final static double[] case2 = new double[]{0.0006, 0.00007};
-
-	private final static double eps1 = 0.05;
-	private final static double eps2 = 1e-4;
-	private final static double eps3 = 0;
-	
+	@Parameterized.Parameter(0)
+	public int m;
+	@Parameterized.Parameter(1)
+	public int k;
+	@Parameterized.Parameter(2)
+	public int n;
+	@Parameterized.Parameter(3)
+	public double[] sparsity;
 	
 	@Override
 	public void setUp() {
 		//do  nothing
 	}
-	
-	@Test
-	public void testBasicAvgCase1() {
-		runSparsityEstimateTest(new EstimatorBasicAvg(), m, k, n, case1);
+
+	@Parameterized.Parameters
+	public static Collection<Object[]> data() {
+		return Arrays.asList(new Object[][] {
+			// {m, k, n, sparsity}
+			{1000, 1000, 1000, new double[]{0.0001, 0.00007}},
+			{1000, 1000, 1000, new double[]{0.0006, 0.00007}},
+		});
 	}
 	
 	@Test
-	public void testBasicAvgCase2() {
-		runSparsityEstimateTest(new EstimatorBasicAvg(), m, k, n, case2);
+	public void testBasicAvg() {
+		runSparsityEstimateTest(new EstimatorBasicAvg());
 	}
 	
 	@Test
-	public void testBasicWorstCase1() {
-		runSparsityEstimateTest(new EstimatorBasicWorst(), m, k, n, case1);
+	public void testBasicWorst() {
+		runSparsityEstimateTest(new EstimatorBasicWorst());
 	}
 	
 	@Test
-	public void testBasicWorstCase2() {
-		runSparsityEstimateTest(new EstimatorBasicWorst(), m, k, n, case2);
+	public void testDensityMap() {
+		runSparsityEstimateTest(new EstimatorDensityMap());
 	}
 	
 	@Test
-	public void testDensityMapCase1() {
-		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, n, case1);
+	public void testDensityMapBlocksize7() {
+		runSparsityEstimateTest(new EstimatorDensityMap(7));
 	}
 	
 	@Test
-	public void testDensityMapCase2() {
-		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, n, case2);
+	public void testBitsetMatrix() {
+		runSparsityEstimateTest(new EstimatorBitsetMM());
 	}
 	
 	@Test
-	public void testDensityMap7Case1() {
-		runSparsityEstimateTest(new EstimatorDensityMap(7), m, k, n, case1);
+	public void testMatrixHistogram() {
+		runSparsityEstimateTest(new EstimatorMatrixHistogram(false));
 	}
 	
 	@Test
-	public void testDensityMap7Case2() {
-		runSparsityEstimateTest(new EstimatorDensityMap(7), m, k, n, case2);
-	}
-	
-	@Test
-	public void testBitsetMatrixCase1() {
-		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, n, case1);
-	}
-	
-	@Test
-	public void testBitsetMatrixCase2() {
-		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, n, case2);
-	}
-	
-	@Test
-	public void testMatrixHistogramCase1() {
-		runSparsityEstimateTest(new EstimatorMatrixHistogram(false), m, k, n, case1);
-	}
-	
-	@Test
-	public void testMatrixHistogramCase2() {
-		runSparsityEstimateTest(new EstimatorMatrixHistogram(false), m, k, n, case2);
-	}
-	
-	@Test
-	public void testMatrixHistogramExceptCase1() {
-		runSparsityEstimateTest(new EstimatorMatrixHistogram(true), m, k, n, case1);
-	}
-	
-	@Test
-	public void testMatrixHistogramExceptCase2() {
-		runSparsityEstimateTest(new EstimatorMatrixHistogram(true), m, k, n, case2);
+	public void testMatrixHistogramExcept() {
+		runSparsityEstimateTest(new EstimatorMatrixHistogram(true));
 	}
 
 	@Test
-	public void testSamplingDefCase1() {
-		runSparsityEstimateTest(new EstimatorSample(), m, k, n, case1);
+	public void testSampling() {
+		runSparsityEstimateTest(new EstimatorSample());
 	}
 	
 	@Test
-	public void testSamplingDefCase2() {
-		runSparsityEstimateTest(new EstimatorSample(), m, k, n, case2);
-	}
-	
-	@Test
-	public void testSampling20Case1() {
-		runSparsityEstimateTest(new EstimatorSample(0.2), m, k, n, case1);
-	}
-	
-	@Test
-	public void testSampling20Case2() {
-		runSparsityEstimateTest(new EstimatorSample(0.2), m, k, n, case2);
+	public void testSamplingFrac20() {
+		runSparsityEstimateTest(new EstimatorSample(0.2));
 	}
 
 	@Test
-	public void testLayeredGraphCase1() {
-		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, case1);
+	public void testLayeredGraph() {
+		runSparsityEstimateTest(new EstimatorLayeredGraph());
 	}
 
 	@Test
-	public void testLayeredGraphCase2() {
-		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, case2);
+	public void testRowWise() {
+		runSparsityEstimateTest(new EstimatorRowWise());
 	}
-	
-	private static void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, int n, double[] sp) {
-		MatrixBlock m1 = MatrixBlock.randOperations(m, k, sp[0], 1, 1, "uniform", 3);
-		MatrixBlock m2 = MatrixBlock.randOperations(k, n, sp[1], 1, 1, "uniform", 7);
+
+	private void runSparsityEstimateTest(SparsityEstimator estim) {
+		MatrixBlock m1 = MatrixBlock.randOperations(m, k, sparsity[0], 1, 1, "uniform", 3);
+		MatrixBlock m2 = MatrixBlock.randOperations(k, n, sparsity[1], 1, 1, "uniform", 7);
 		MatrixBlock m3 = m1.aggregateBinaryOperations(m1, m2, 
 			new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
 		
 		//compare estimated and real sparsity
 		double est = estim.estim(m1, m2);
 		TestUtils.compareScalars(est, m3.getSparsity(),
-			(estim instanceof EstimatorBitsetMM) ? eps3 : //exact
-			(estim instanceof EstimatorBasicWorst) ? eps1 : eps2);
+			(estim instanceof EstimatorBitsetMM) ? 0 : //exact
+			(estim instanceof EstimatorBasicWorst) ? 0.05 : 1e-4);
 	}
 }

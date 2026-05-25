@@ -26,6 +26,7 @@ import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.utils.ParameterizedLogger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -51,6 +52,7 @@ import java.util.Set;
  * {@code TeeOp}, and safely rewire the graph.
  */
 public class RewriteInjectOOCTee extends StatementBlockRewriteRule {
+	private static final ParameterizedLogger LOG = ParameterizedLogger.getLogger(RewriteInjectOOCTee.class);
 
 	public static boolean APPLY_ONLY_XtX_PATTERN = false;
 
@@ -138,10 +140,7 @@ public class RewriteInjectOOCTee extends StatementBlockRewriteRule {
 		}
 
 		int consumerCount = sharedInput.getParent().size();
-		if (LOG.isDebugEnabled()) {
-			LOG.debug("Inject tee for hop " + sharedInput.getHopID() + " ("
-				+ sharedInput.getName() + "), consumers=" + consumerCount);
-		}
+		LOG.debug("Inject tee for hop {} ({}), consumers={}", sharedInput.getHopID(), sharedInput.getName(), consumerCount);
 
 		// Take a defensive copy of consumers before modifying the graph
 		ArrayList<Hop> consumers = new ArrayList<>(sharedInput.getParent());
@@ -161,10 +160,7 @@ public class RewriteInjectOOCTee extends StatementBlockRewriteRule {
 		handledHop.put(sharedInput.getHopID(), teeOp);
 		rewrittenHops.add(sharedInput.getHopID());
 
-		if (LOG.isDebugEnabled()) {
-			LOG.debug("Created tee hop " + teeOp.getHopID() + " -> "
-				+ teeOp.getName());
-		}
+		LOG.debug("Created tee hop {} -> {}", teeOp.getHopID(), teeOp.getName());
 	}
 
 	@SuppressWarnings("unused")
@@ -276,11 +272,8 @@ public class RewriteInjectOOCTee extends StatementBlockRewriteRule {
 		if (HopRewriteUtils.isData(hop, OpOpData.TEE) && hop.getInput().size() == 1) {
 			Hop teeInput = hop.getInput().get(0);
 			if (HopRewriteUtils.isData(teeInput, OpOpData.TEE)) {
-				if (LOG.isDebugEnabled()) {
-					LOG.debug("Remove redundant tee hop " + hop.getHopID()
-						+ " (" + hop.getName() + ") -> " + teeInput.getHopID()
-						+ " (" + teeInput.getName() + ")");
-				}
+				LOG.debug("Remove redundant tee hop {} ({}) -> {} ({})",
+					hop.getHopID(), hop.getName(), teeInput.getHopID(), teeInput.getName());
 				HopRewriteUtils.rewireAllParentChildReferences(hop, teeInput);
 				HopRewriteUtils.removeAllChildReferences(hop);
 			}

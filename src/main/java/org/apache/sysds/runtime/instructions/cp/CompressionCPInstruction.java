@@ -23,8 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.utils.ParameterizedLogger;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.CompressionStatistics;
@@ -39,7 +38,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class CompressionCPInstruction extends ComputationCPInstruction {
-	private static final Log LOG = LogFactory.getLog(CompressionCPInstruction.class.getName());
+	private static final ParameterizedLogger LOG = ParameterizedLogger.getLogger(CompressionCPInstruction.class);
 
 	private final int _singletonLookupID;
 	private final int _numThreads;
@@ -197,8 +196,7 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 		if(LOG.isTraceEnabled())
 			LOG.trace(compResult.getRight());
 		MatrixBlock out = compResult.getLeft();
-		if(LOG.isInfoEnabled())
-			LOG.info("Compression output class: " + out.getClass().getSimpleName());
+		LOG.info("Compression output class: {}", out.getClass().getSimpleName());
 		// Set output and release input
 		ec.releaseMatrixInput(input1.getName());
 		ec.setMatrixOutput(output.getName(), out);
@@ -216,8 +214,7 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 		if(LOG.isTraceEnabled())
 			LOG.trace(compResult.getRight());
 		MatrixBlock out = compResult.getLeft();
-		if(LOG.isInfoEnabled())
-			LOG.info("Compression output class: " + out.getClass().getSimpleName());
+		LOG.info("Compression output class: {}", out.getClass().getSimpleName());
 		// Set output and release input
 		ec.releaseMatrixInput(input1.getName());
 		ec.releaseMatrixInput(input2.getName());
@@ -229,8 +226,7 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 		if(LOG.isTraceEnabled())
 			LOG.trace(compResult.getRight());
 		MatrixBlock out = compResult.getLeft();
-		if(LOG.isInfoEnabled())
-			LOG.info("Compression output class: " + out.getClass().getSimpleName());
+		LOG.info("Compression output class: {}", out.getClass().getSimpleName());
 		// Set output and release input
 		ec.releaseMatrixInput(input1.getName());
 		if (input2.isMatrix()) {

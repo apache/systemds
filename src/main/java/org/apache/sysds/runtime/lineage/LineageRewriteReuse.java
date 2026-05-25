@@ -24,8 +24,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.AggOp;
@@ -66,6 +64,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.Explain.ExplainType;
+import org.apache.sysds.utils.ParameterizedLogger;
 
 public class LineageRewriteReuse
 {
@@ -74,7 +73,7 @@ public class LineageRewriteReuse
 	private static ExecutionContext _lrEC = null;
 	private static boolean _disableReuse = true;
 	private static long _computeTime = 0;
-	private static final Log LOG = LogFactory.getLog(LineageRewriteReuse.class.getName());
+	private static final ParameterizedLogger LOG = ParameterizedLogger.getLogger(LineageRewriteReuse.class);
 	
 	public static boolean executeRewrites (Instruction curr, ExecutionContext ec)
 	{
@@ -167,8 +166,7 @@ public class LineageRewriteReuse
 		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
 
 		// generate runtime instructions
-		if (LOG.isDebugEnabled())
-			LOG.debug("LINEAGE REWRITE rewriteTsmmCbind APPLIED");
+		LOG.debug("LINEAGE REWRITE rewriteTsmmCbind APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		
 		// cleanup buffer pool
@@ -209,8 +207,7 @@ public class LineageRewriteReuse
 		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
 
 		// generate runtime instructions
-		if (LOG.isDebugEnabled())
-			LOG.debug("LINEAGE REWRITE rewriteTsmmCbindOnes APPLIED");
+		LOG.debug("LINEAGE REWRITE rewriteTsmmCbindOnes APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
@@ -254,8 +251,7 @@ public class LineageRewriteReuse
 		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
 
 		// generate runtime instructions
-		if (LOG.isDebugEnabled())
-			LOG.debug("LINEAGE REWRITE rewriteTsmmRbind APPLIED");
+		LOG.debug("LINEAGE REWRITE rewriteTsmmRbind APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
@@ -318,8 +314,7 @@ public class LineageRewriteReuse
 		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
 
 		// generate runtime instructions
-		if (LOG.isDebugEnabled())
-			LOG.debug("LINEAGE REWRITE rewriteTsmm2Cbind APPLIED");
+		LOG.debug("LINEAGE REWRITE rewriteTsmm2Cbind APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
@@ -389,8 +384,7 @@ public class LineageRewriteReuse
 		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
 
 		// generate runtime instructions
-		if (LOG.isDebugEnabled())
-			LOG.debug("LINEAGE REWRITE rewriteTsmm2CbindSameLeft APPLIED");
+		LOG.debug("LINEAGE REWRITE rewriteTsmm2CbindSameLeft APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
@@ -435,8 +429,7 @@ public class LineageRewriteReuse
 		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
 
 		// generate runtime instructions
-		if (LOG.isDebugEnabled())
-			LOG.debug("LINEAGE REWRITE rewriteMetMulRbindLeft APPLIED");
+		LOG.debug("LINEAGE REWRITE rewriteMetMulRbindLeft APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
@@ -481,8 +474,7 @@ public class LineageRewriteReuse
 		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
 
 		// generate runtime instructions
-		if (LOG.isDebugEnabled())
-			LOG.debug("LINEAGE REWRITE rewriteMatMulCbindRight APPLIED");
+		LOG.debug("LINEAGE REWRITE rewriteMatMulCbindRight APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
@@ -516,8 +508,7 @@ public class LineageRewriteReuse
 		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
 
 		// generate runtime instructions
-		if (LOG.isDebugEnabled())
-			LOG.debug("LINEAGE REWRITE rewriteMatMulCbindRightOnes APPLIED");
+		LOG.debug("LINEAGE REWRITE rewriteMatMulCbindRightOnes APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
@@ -573,8 +564,7 @@ public class LineageRewriteReuse
 		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
 
 		// generate runtime instructions
-		if (LOG.isDebugEnabled())
-			LOG.debug("LINEAGE REWRITE rewriteElementMulRbind APPLIED");
+		LOG.debug("LINEAGE REWRITE rewriteElementMulRbind APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
@@ -630,8 +620,7 @@ public class LineageRewriteReuse
 		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
 
 		// generate runtime instructions
-		if (LOG.isDebugEnabled())
-			LOG.debug("LINEAGE REWRITE rewriteElementMulCbind APPLIED");
+		LOG.debug("LINEAGE REWRITE rewriteElementMulCbind APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
@@ -687,8 +676,7 @@ public class LineageRewriteReuse
 		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
 
 		// generate runtime instructions
-		if (LOG.isDebugEnabled())
-			LOG.debug("LINEAGE REWRITE rewriteElementMulCbind APPLIED");
+		LOG.debug("LINEAGE REWRITE rewriteElementMulCbind APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
@@ -740,8 +728,7 @@ public class LineageRewriteReuse
 		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
 
 		// generate runtime instructions
-		if (LOG.isDebugEnabled())
-			LOG.debug("LINEAGE REWRITE rewriteIndexingMatMul APPLIED");
+		LOG.debug("LINEAGE REWRITE rewriteIndexingMatMul APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		// Keep reuse enabled
 		_disableReuse = false;
@@ -801,8 +788,7 @@ public class LineageRewriteReuse
 		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
 		
 		// Generate runtime instructions
-		if (LOG.isDebugEnabled())
-			LOG.debug("LINEAGE REWRITE rewritePcaTsmm APPLIED");
+		LOG.debug("LINEAGE REWRITE rewritePcaTsmm APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
@@ -1221,8 +1207,8 @@ public class LineageRewriteReuse
 		ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(hops, ec.getVariables(), null, true, true, 0);
 		if (LOG.isDebugEnabled()) {
 			LOG.debug("COMPENSATION PLAN: ");
-			LOG.debug("EXPLAIN LINEAGE REWRITE (HOP) \n" + Explain.explain(hops,1));
-			LOG.debug("EXPLAIN LINEAGE REWRITE (INSTRUCTION) \n" + Explain.explain(newInst,1));
+			LOG.debug("EXPLAIN LINEAGE REWRITE (HOP) \n{}", Explain.explain(hops,1));
+			LOG.debug("EXPLAIN LINEAGE REWRITE (INSTRUCTION) \n{}", Explain.explain(newInst,1));
 		}
 		return newInst;
 	}

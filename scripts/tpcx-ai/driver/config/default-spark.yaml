@@ -1,0 +1,350 @@
+#
+# Copyright (C) 2021 Transaction Processing Performance Council (TPC) and/or its contributors.
+# This file is part of a software package distributed by the TPC
+# The contents of this file have been developed by the TPC, and/or have been licensed to the TPC under one or more contributor
+# license agreements.
+# This file is subject to the terms and conditions outlined in the End-User
+# License Agreement (EULA) which can be found in this distribution (EULA.txt) and is available at the following URL:
+# http://www.tpc.org/TPC_Documents_Current_Versions/txt/EULA.txt
+# Unless required by applicable law or agreed to in writing, this software is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, and the user bears the entire risk as to quality
+# and performance as well as the entire cost of service or repair in case of defect. See the EULA for more details.
+#
+
+
+#
+# Copyright 2019 Intel Corporation.
+# This software and the related documents are Intel copyrighted materials, and your use of them 
+# is governed by the express license under which they were provided to you ("License"). Unless the 
+# License provides otherwise, you may not use, modify, copy, publish, distribute, disclose or 
+# transmit this software or the related documents without Intel's prior written permission.
+# 
+# This software and the related documents are provided as is, with no express or implied warranties, 
+# other than those that are expressly stated in the License.
+# 
+#
+
+
+# DEFAULT Configuration for the tpcxai Driver
+# convenience configurations
+# examples for different datastores
+
+# Local filesystem on Windows, Linux, or MacOS
+local_fs: &LOCAL_FS
+  name: "local_fs"
+  create: "tools/python/create.sh $destination"
+  load: "tools/python/load.sh $destination $source"
+  copy: "cp -f $source $destination"
+  delete: "rm -rf $destination"
+  delete_parallel: "pssh -t 0 -P -h nodes rm -rf $destination"
+  download: "cp $source $destination"
+
+# HDFS = Hadoop Distributed Filesystem
+hdfs: &HDFS_LOCAL
+  name: "hdfs"
+  create: "tools/spark/create_hdfs.sh $destination"
+  load: "tools/spark/load_hdfs.sh $destination $source"
+  copy: "hdfs dfs -cp -f $source $destination"
+  delete: "hdfs dfs -rm -r -f -skipTrash $destination"
+  download: 'hdfs dfs -cat $source/* | awk ''BEGIN{f=""}{if($0!=f){print $0}if(NR==1){f=$0}}'' > $destination/predictions.csv'
+
+hdfs_parallel: &HDFS
+  name: "hdfs"
+  create: "tools/spark/create_hdfs.sh $destination"
+  load: "tools/parallel-data-load.sh nodes 1 $destination $source"
+  copy: "hdfs dfs -cp -f $source $destination"
+  delete: "hdfs dfs -rm -r -f -skipTrash  $destination"
+  download: 'hdfs dfs -cat $source/* | awk ''BEGIN{f=""}{if($0!=f){print $0}if(NR==1){f=$0}}'' > $destination/predictions.csv'
+
+workload:
+  # global definitions
+  engine_base : "spark-submit
+    --conf spark.executor.extraJavaOptions='-Xss128m'
+    --conf spark.executorEnv.NUMBA_CACHE_DIR=/tmp
+    --conf spark.kryoserializer.buffer.max=1g
+    --conf spark.rpc.message.maxSize=1024
+    --deploy-mode client
+    --driver-java-options '-Xss128m'
+    --driver-memory 10g
+    --master yarn"
+    
+  engine_executable: &ENGINE "$engine_base
+    --num-executors 1
+    --executor-cores 5
+    --executor-memory 40g
+    --conf spark.executor.memoryOverhead=4g
+    --jars '$tpcxai_home/lib/config-1.4.2.jar,$tpcxai_home/lib/threeten-extra-0.9.jar,$tpcxai_home/lib/scala_2.11/*.jar'"
+    
+  engine_executable_dl2: &ENGINE_DL2 "$engine_base
+    --num-executors 1
+    --executor-cores 1
+    --executor-memory 40g
+    --conf spark.executor.memoryOverhead=4g
+    --jars '$tpcxai_home/lib/config-1.4.2.jar,$tpcxai_home/lib/threeten-extra-0.9.jar,$tpcxai_home/lib/scala_2.11/*.jar'"
+    
+  engine_executable_dl5: &ENGINE_DL5 "$engine_base
+    --num-executors 1
+    --executor-cores 1
+    --executor-memory 40g
+    --conf spark.executor.memoryOverhead=4g
+    --jars '$tpcxai_home/lib/config-1.4.2.jar,$tpcxai_home/lib/threeten-extra-0.9.jar,$tpcxai_home/lib/scala_2.11/*.jar'"
+    
+  engine_executable_9: &SERVING_9 "$engine_base
+    --num-executors 1
+    --executor-cores 5
+    --executor-memory 40g
+    --conf spark.executor.memoryOverhead=4g
+    --conf spark.task.cpus=1
+    --jars '$tpcxai_home/lib/config-1.4.2.jar,$tpcxai_home/lib/threeten-extra-0.9.jar,$tpcxai_home/lib/scala_2.11/*.jar'"
+
+  datagen_template: "java -jar $pdgf -ns -sf $scale_factor -s $table"
+  training_template: &TRAINING_TEMPLATE "$training_engine --class $name lib/workload-assembly_2.11-0.1.jar --stage training --workdir $output $input/$file"
+  serving_template: &SERVING_TEMPLATE "$serving_engine --class $name lib/workload-assembly_2.11-0.1.jar --stage serving --workdir $model --output $output/$phase $input/$file"
+  serving_throughput_template: &SERVING_THROUGHPUT_TEMPLATE "$serving_engine --class $name lib/workload-assembly_2.11-0.1.jar --stage serving --workdir $model --output $output/$stream $input/$file"
+  training_data_url: &TRAINING_DATA_URL "output/data/training"
+  serving_data_url: &SERVING_DATA_URL "output/data/serving"
+  scoring_data_url: &SCORING_DATA_URL "output/raw_data/scoring"
+  datagen_datastore: *LOCAL_FS
+  # general/ benchmark-wide configuration parameters
+  pdgf_node_parallel: True
+  pdgf_home: "lib/pdgf"
+  raw_data_url: "output/raw_data"
+  temp_dir: '/tmp/tpcxai'
+  usecases:
+    1:
+      # general
+      name: "org.tpc.tpcxai.UseCase01"
+      # engines
+      training_engine: *ENGINE
+      serving_engine: *ENGINE
+      # data stores
+      training_datastore: *HDFS   # for storing the training data
+      model_datastore: *HDFS      # for storing the trained models
+      serving_datastore: *HDFS    # for storing the serving data
+      output_datastore: *HDFS     # for storing the final output
+      # templates
+      datagen_template: "java -jar $pdgf -ns -sf $scale_factor -s $table"
+      training_template: "$training_engine --class $name lib/workload-assembly_2.11-0.1.jar --stage training --num_clusters 4 --workdir $output $input/order.csv $input/lineitem.csv $input/order_returns.csv"
+      serving_template: "$serving_engine --class $name lib/workload-assembly_2.11-0.1.jar --stage serving --workdir $model --output $output/$phase $input/order.csv $input/lineitem.csv $input/order_returns.csv"
+      serving_throughput_template: "$serving_engine --class $name lib/workload-assembly_2.11-0.1.jar --stage serving --workdir $model --output $output/$stream $input/order.csv $input/lineitem.csv $input/order_returns.csv"
+      # URLs
+      training_data_url: *TRAINING_DATA_URL
+      serving_data_url: *SERVING_DATA_URL
+      scoring_data_url: *SCORING_DATA_URL
+      model_url: "output/model/uc01"
+      output_url: "output/output/uc01"
+      scoring_output_url: "output/scoring/uc01"
+    2:
+      # general
+      name: "UseCase02.py"
+      # engines
+      training_engine: *ENGINE_DL2
+      serving_engine: *ENGINE
+      # data stores
+      training_datastore: *HDFS   # for storing the training data
+      model_datastore: *HDFS      # for storing the trained models
+      serving_datastore: *HDFS    # for storing the serving data
+      output_datastore: *HDFS     # for storing the final output
+      # templates
+      datagen_template: "java -jar $pdgf -ns -sf $scale_factor -s $table"
+      training_template: "$training_engine $tpcxai_home/workload/spark/pyspark/workload-pyspark/$name --stage training --epochs 25 --batch 32 --executor_cores_horovod 1 --task_cpus_horovod 1 --workdir $output '$input/$file' $input/CONVERSATION_AUDIO.seq"
+      serving_template: "$serving_engine $tpcxai_home/workload/spark/pyspark/workload-pyspark/$name --stage serving --batch 32 --workdir $model --output $output/$phase '$input/$file' $input/CONVERSATION_AUDIO.seq"
+      serving_throughput_template: "$serving_engine $tpcxai_home/workload/spark/pyspark/workload-pyspark/$name --stage serving --batch 32 --workdir $model --output $output/$stream '$input/$file' $input/CONVERSATION_AUDIO.seq"
+      # URLs
+      training_data_url: *TRAINING_DATA_URL
+      serving_data_url: *SERVING_DATA_URL
+      scoring_data_url: *SCORING_DATA_URL
+      model_url: "output/model/uc02"
+      output_url: "output/output/uc02"
+      scoring_output_url: "output/scoring/uc02"
+      working_dir: "/tmp"
+    3:
+      # general
+      name: "org.tpc.tpcxai.UseCase03"
+      # engines
+      training_engine: *ENGINE
+      serving_engine: *ENGINE
+      # data stores
+      training_datastore: *HDFS   # for storing the training data
+      model_datastore: *HDFS      # for storing the trained models
+      serving_datastore: *HDFS    # for storing the serving data
+      output_datastore: *HDFS     # for storing the final output
+      # templates
+      datagen_template: "java -jar $pdgf -ns -sf $scale_factor -s $table"
+      training_template: "$training_engine --class $name lib/workload-assembly_2.11-0.1.jar --stage training --workdir $output $input/order.csv $input/lineitem.csv $input/product.csv"
+      serving_template: "$serving_engine --class $name lib/workload-assembly_2.11-0.1.jar --stage serving --workdir $model --output $output/$phase $input/store_dept.csv"
+      serving_throughput_template: "$serving_engine --class $name lib/workload-assembly_2.11-0.1.jar --stage serving --workdir $model --output $output/$stream $input/store_dept.csv"
+      # URLs
+      training_data_url: *TRAINING_DATA_URL
+      serving_data_url: *SERVING_DATA_URL
+      scoring_data_url: *SCORING_DATA_URL
+      model_url: "output/model/uc03"
+      output_url: "output/output/uc03"
+      scoring_output_url: "output/scoring/uc03"
+    4:
+      # general
+      name: "org.tpc.tpcxai.UseCase04"
+      # engines
+      training_engine: *ENGINE
+      serving_engine: *ENGINE
+      # data stores
+      training_datastore: *HDFS   # for storing the training data
+      model_datastore: *HDFS      # for storing the trained models
+      serving_datastore: *HDFS    # for storing the serving data
+      output_datastore: *HDFS     # for storing the final output
+      # templates
+      datagen_template: "java -jar $pdgf -ns -sf $scale_factor -s $table"
+      training_template: *TRAINING_TEMPLATE
+      serving_template: *SERVING_TEMPLATE
+      serving_throughput_template: *SERVING_THROUGHPUT_TEMPLATE
+      # URLs
+      training_data_url: *TRAINING_DATA_URL
+      serving_data_url: *SERVING_DATA_URL
+      scoring_data_url: *SCORING_DATA_URL
+      model_url: "output/model/uc04"
+      output_url: "output/output/uc04"
+      scoring_output_url: "output/scoring/uc04"
+    5:
+      # general
+      name: "UseCase05.py"
+      # engines
+      training_engine: *ENGINE_DL5
+      serving_engine: *ENGINE
+      # data stores
+      training_datastore: *HDFS   # for storing the training data
+      model_datastore: *HDFS      # for storing the trained models
+      serving_datastore: *HDFS    # for storing the serving data
+      output_datastore: *HDFS     # for storing the final output
+      # templates
+      datagen_template: "java -jar $pdgf -ns -sf $scale_factor -s $table"
+      # add namenode if necessary by specifying
+      # $training_engine [path]/$name --namenode [namenode.url:port]
+      training_template: &TRAINING_TEMPLATE_PY "$training_engine $tpcxai_home/workload/spark/pyspark/workload-pyspark/$name --stage training --epochs 15 --batch 512 --workdir $output $input/$file"
+      serving_template: "$serving_engine $tpcxai_home/workload/spark/pyspark/workload-pyspark/$name --stage serving --batch 512 --workdir $model --output $output/$phase $input/$file"
+      serving_throughput_template: "$serving_engine $tpcxai_home/workload/spark/pyspark/workload-pyspark/$name --stage serving --batch 512 --workdir $model --output $output/$stream $input/$file"
+      # URLs
+      training_data_url: *TRAINING_DATA_URL
+      serving_data_url: *SERVING_DATA_URL
+      scoring_data_url: *SCORING_DATA_URL
+      model_url: "output/model/uc05"
+      output_url: "output/output/uc05"
+      scoring_output_url: "output/scoring/uc05"
+      working_dir: "/tmp"
+    6:
+      # general
+      name: "org.tpc.tpcxai.UseCase06"
+      # engines
+      training_engine: *ENGINE
+      serving_engine: *ENGINE
+      # data stores
+      training_datastore: *HDFS   # for storing the training data
+      model_datastore: *HDFS      # for storing the trained models
+      serving_datastore: *HDFS    # for storing the serving data
+      output_datastore: *HDFS     # for storing the final output
+      # templates
+      datagen_template: "java -jar $pdgf -ns -sf $scale_factor -s $table"
+      training_template: *TRAINING_TEMPLATE
+      serving_template: *SERVING_TEMPLATE
+      serving_throughput_template: *SERVING_THROUGHPUT_TEMPLATE
+      # URLs
+      training_data_url: *TRAINING_DATA_URL
+      serving_data_url: *SERVING_DATA_URL
+      scoring_data_url: *SCORING_DATA_URL
+      model_url: "output/model/uc06"
+      output_url: "output/output/uc06"
+      scoring_output_url: "output/scoring/uc06"
+    7:
+      # general
+      name: "org.tpc.tpcxai.UseCase07"
+      # engines
+      training_engine: *ENGINE
+      serving_engine: *ENGINE
+      # data stores
+      training_datastore: *HDFS   # for storing the training data
+      model_datastore: *HDFS      # for storing the trained models
+      serving_datastore: *HDFS    # for storing the serving data
+      output_datastore: *HDFS     # for storing the final output
+      # templates
+      datagen_template: "java -jar $pdgf -ns -sf $scale_factor -s $table"
+      training_template: "$training_engine --class $name lib/workload-assembly_2.11-0.1.jar --stage training --num-blocks 20 --workdir $output $input/$file"
+      serving_template: *SERVING_TEMPLATE
+      serving_throughput_template: *SERVING_THROUGHPUT_TEMPLATE
+      # URLs
+      training_data_url: *TRAINING_DATA_URL
+      serving_data_url: *SERVING_DATA_URL
+      scoring_data_url: *SCORING_DATA_URL
+      model_url: "output/model/uc07"
+      output_url: "output/output/uc07"
+      scoring_output_url: "output/scoring/uc07"
+    8:
+      # general
+      name: "org.tpc.tpcxai.UseCase08"
+      # engines
+      training_engine: *ENGINE
+      serving_engine: *ENGINE
+      # data stores
+      training_datastore: *HDFS   # for storing the training data
+      model_datastore: *HDFS      # for storing the trained models
+      serving_datastore: *HDFS    # for storing the serving data
+      output_datastore: *HDFS     # for storing the final output
+      # templates
+      datagen_template: "java -jar $pdgf -ns -sf $scale_factor -s $table"
+      training_template: "$training_engine --class $name lib/workload-assembly_2.11-0.1.jar --stage training --num-workers 1 --num-threads 1 --num-rounds 100 --workdir $output $input/order.csv $input/lineitem.csv $input/product.csv"
+      serving_template: "$serving_engine --class $name lib/workload-assembly_2.11-0.1.jar --stage serving --num-workers 1 --num-threads 1 --workdir $model --output $output/$phase $input/order.csv $input/lineitem.csv $input/product.csv"
+      serving_throughput_template: "$serving_engine --class $name lib/workload-assembly_2.11-0.1.jar --stage serving --num-workers 1 --num-threads 1 --workdir $model --output $output/$stream $input/order.csv $input/lineitem.csv $input/product.csv"
+      # URLs
+      training_data_url: *TRAINING_DATA_URL
+      serving_data_url: *SERVING_DATA_URL
+      scoring_data_url: *SCORING_DATA_URL
+      model_url: "output/model/uc08"
+      output_url: "output/output/uc08"
+      scoring_output_url: "output/scoring/uc08"
+    9:
+      # general
+      name: "UseCase09.py"
+      # engines
+      training_engine: *ENGINE_DL2
+      serving_engine: *SERVING_9
+      # data stores
+      training_datastore: *HDFS   # for storing the training data
+      model_datastore: *HDFS      # for storing the trained models
+      serving_datastore: *HDFS    # for storing the serving data
+      output_datastore: *HDFS     # for storing the final output
+      # templates
+      datagen_template: "java -jar $pdgf -ns -sf $scale_factor -s $table"
+      # add namenode if necessary by specifying
+      # $training_engine [path]/$name --namenode [namenode.url:port]
+      training_template: "$training_engine --files $tpcxai_home/workload/spark/pyspark/workload-pyspark/resources/uc09/shape_predictor_5_face_landmarks.dat $tpcxai_home/workload/spark/pyspark/workload-pyspark/$name --stage training --epochs_embedding=15 --batch=64 --executor_cores_horovod 1 --task_cpus_horovod 1  --workdir $output '$input/CUSTOMER_IMAGES_META.csv' '$input/CUSTOMER_IMAGES.seq'"
+      serving_template: "$serving_engine --files $tpcxai_home/workload/spark/pyspark/workload-pyspark/resources/uc09/shape_predictor_5_face_landmarks.dat $tpcxai_home/workload/spark/pyspark/workload-pyspark/$name --stage serving --workdir $model --output $output/$phase '$input/CUSTOMER_IMAGES_META.csv' '$input/CUSTOMER_IMAGES.seq'"
+      serving_throughput_template: "$serving_engine --files $tpcxai_home/workload/spark/pyspark/workload-pyspark/resources/uc09/shape_predictor_5_face_landmarks.dat $tpcxai_home/workload/spark/pyspark/workload-pyspark/$name --stage serving --workdir $model --output $output/$stream '$input/CUSTOMER_IMAGES_META.csv' '$input/CUSTOMER_IMAGES.seq'"
+      # URLs
+      training_data_url: *TRAINING_DATA_URL
+      serving_data_url: *SERVING_DATA_URL
+      scoring_data_url: *SCORING_DATA_URL
+      model_url: "output/model/uc09"
+      output_url: "output/output/uc09"
+      scoring_output_url: "output/scoring/uc09"
+      working_dir: "/tmp"
+    10:
+      # general
+      name: "org.tpc.tpcxai.UseCase10"
+      # engines
+      training_engine: *ENGINE
+      serving_engine: *ENGINE
+      # data stores
+      training_datastore: *HDFS   # for storing the training data
+      model_datastore: *HDFS      # for storing the trained models
+      serving_datastore: *HDFS    # for storing the serving data
+      output_datastore: *HDFS     # for storing the final output
+      # templates
+      datagen_template: "java -jar $pdgf -ns -sf $scale_factor -s $table"
+      training_template: "$training_engine --class $name lib/workload-assembly-0.1.jar --stage training --workdir $output $input/financial_account.csv $input/financial_transactions.csv"
+      serving_template: "$serving_engine --class $name lib/workload-assembly-0.1.jar --stage serving --workdir $model --output $output/$phase $input/financial_account.csv $input/financial_transactions.csv"
+      serving_throughput_template: "$serving_engine --class $name lib/workload-assembly-0.1.jar --stage serving --workdir $model --output $output/$stream $input/financial_account.csv $input/financial_transactions.csv"
+      # URLs
+      training_data_url: *TRAINING_DATA_URL
+      serving_data_url: *SERVING_DATA_URL
+      scoring_data_url: *SCORING_DATA_URL
+      model_url: "output/model/uc10"
+      output_url: "output/output/uc10"
+      scoring_output_url: "output/scoring/uc10"

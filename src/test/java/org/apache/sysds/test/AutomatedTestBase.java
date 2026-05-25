@@ -20,7 +20,6 @@
 package org.apache.sysds.test;
 
 import static java.lang.Math.ceil;
-import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 

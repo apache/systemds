@@ -372,17 +372,15 @@ public class FederatedLogicalTest extends AutomatedTestBase {
 		// empty script name because we don't execute any script, just start the worker
 		fullDMLScriptName = "";
 		int port1 = getRandomAvailablePort();
-		int port2 = (!single_fed_worker ? getRandomAvailablePort() : 0);
-		int port3 = (!single_fed_worker ? getRandomAvailablePort() : 0);
-		int port4 = (!single_fed_worker ? getRandomAvailablePort() : 0);
-		Process thread1 = startLocalFedWorker(port1, (!single_fed_worker ? FED_WORKER_WAIT_S : FED_WORKER_WAIT));
-		Process thread2 = (!single_fed_worker ? startLocalFedWorker(port2, FED_WORKER_WAIT_S) : null);
-		Process thread3 = (!single_fed_worker ? startLocalFedWorker(port3, FED_WORKER_WAIT_S) : null);
-		Process thread4 = (!single_fed_worker ? startLocalFedWorker(port4) : null);
+		int port2 = single_fed_worker ? 0 : getRandomAvailablePort();
+		int port3 = single_fed_worker ? 0 : getRandomAvailablePort();
+		int port4 = single_fed_worker ? 0 : getRandomAvailablePort();
+		Process[] workers = startLocalFedWorkers(single_fed_worker
+			? new int[] {port1}
+			: new int[] {port1, port2, port3, port4});
 
-		
 		try {
-			if(!isAlive(thread1))
+			if(!isAlive(workers))
 				throw new RuntimeException("Failed starting federated worker");
 
 			getAndLoadTestConfiguration(testname);
@@ -449,9 +447,7 @@ public class FederatedLogicalTest extends AutomatedTestBase {
 			}
 		}
 		finally {
-			TestUtils.shutdownThreads(thread1);
-			if(!single_fed_worker)
-				TestUtils.shutdownThreads(thread2, thread3, thread4);
+			TestUtils.shutdownThreads(workers);
 
 			resetExecMode(platform_old);
 		}

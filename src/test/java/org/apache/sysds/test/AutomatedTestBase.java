@@ -20,7 +20,6 @@
 package org.apache.sysds.test;
 
 import static java.lang.Math.ceil;
-import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -118,15 +117,10 @@ public abstract class AutomatedTestBase {
 	public static final double GPU_TOLERANCE = 1e-9;
 
 	/**
-	 * Default upper bound (ms) passed to federated worker readiness waits. The wait returns as soon
-	 * as the worker's TCP port accepts a connection, so this value only affects the deadline used
-	 * when a worker never becomes ready. {@link FederatedWorkerUtils} clamps caller values below its
-	 * enforced floor up to that floor, so the effective ceiling is at least that floor regardless
-	 * of this constant.
+	 * Default deadline (ms) for federated worker/monitoring readiness waits and a few legacy
+	 * {@code sleep()} calls. {@link FederatedWorkerUtils} enforces its own minimum floor.
 	 */
 	public static final int FED_WORKER_WAIT = 3000;
-	public static final int FED_MONITOR_WAIT = 10000;
-	public static final int FED_WORKER_WAIT_S = 50;
 	
 
 	// The timeout for a test to fail. all tests must execute in less than this time.
@@ -1765,29 +1759,53 @@ public abstract class AutomatedTestBase {
 	}
 
 	/**
-	 * Start new JVM for a federated monitoring backend at the port.
+	 * Start a new JVM for a federated monitoring backend at the port.
 	 *
-	 * @param port Port to use for the JVM
-	 * @return the process associated with the worker.
+	 * <p>Returns once the backend's TCP port accepts connections (Netty's bind has completed), or
+	 * throws a {@link RuntimeException} once the {@link FederatedWorkerUtils} readiness floor
+	 * elapses.
+	 *
+	 * @param port    Port to use for the JVM
+	 * @param addArgs Extra CLI args to append, or null
+	 * @return the process associated with the monitoring backend.
 	 */
 	protected Process startLocalFedMonitoring(int port, String[] addArgs) {
-		Process process = null;
+		return startLocalFedMonitoring(port, addArgs, FED_WORKER_WAIT);
+	}
+
+	/**
+	 * Start a new JVM for a federated monitoring backend at the port.
+	 *
+	 * <p>Returns once the backend's TCP port accepts connections, or throws a
+	 * {@link RuntimeException} after {@code timeoutMs} elapses. The monitoring server opens the
+	 * port after Netty's {@code bind().sync()} returns; a successful TCP connect therefore signals
+	 * that the HTTP listener is ready to accept requests.
+	 *
+	 * @param port      Port to use for the JVM
+	 * @param addArgs   Extra CLI args to append, or null
+	 * @param timeoutMs Upper bound on the wait, in ms; raised to a minimum value enforced inside
+	 *                  {@link FederatedWorkerUtils}.
+	 * @return the process associated with the monitoring backend.
+	 */
+	protected Process startLocalFedMonitoring(int port, String[] addArgs, int timeoutMs) {
+		Process process = spawnLocalFedMonitoring(port, addArgs);
+		FederatedWorkerUtils.waitForWorker(port, timeoutMs, process::isAlive, "monitoring process");
+		return process;
+	}
+
+	/** Spawn a federated monitoring backend JVM and return without waiting for the port to bind. */
+	private static Process spawnLocalFedMonitoring(int port, String[] addArgs) {
 		String separator = System.getProperty("file.separator");
 		String classpath = System.getProperty("java.class.path");
 		String path = System.getProperty("java.home") + separator + "bin" + separator + "java";
-		String[] args = ArrayUtils.addAll(new String[]{path, "-cp", classpath, DMLScript.class.getName(),
-				"-fedMonitoring", Integer.toString(port)}, addArgs);
-		ProcessBuilder processBuilder = new ProcessBuilder(args);
-
+		String[] args = ArrayUtils.addAll(new String[] {path, "-cp", classpath, DMLScript.class.getName(),
+			"-fedMonitoring", Integer.toString(port)}, addArgs);
 		try {
-			process = processBuilder.start();
-			// Wait till process is started
-			sleep(FED_MONITOR_WAIT);
+			return new ProcessBuilder(args).start();
 		}
-		catch(IOException | InterruptedException e) {
-			throw new RuntimeException(e);
+		catch(IOException e) {
+			throw new RuntimeException("Failed to launch federated monitoring process on port " + port, e);
 		}
-		return process;
 	}
 
 	/**

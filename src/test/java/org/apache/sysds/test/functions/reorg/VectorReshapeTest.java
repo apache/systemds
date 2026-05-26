@@ -95,7 +95,7 @@ public class VectorReshapeTest extends AutomatedTestBase
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		           inputDir() + " " + rows2 + " " + cols2 + " " + expectedDir();
+				inputDir() + " " + rows2 + " " + cols2 + " " + expectedDir();
 			
 			double sparsity = sparse ? sparsitySparse : sparsityDense;
 			double[][] X = getRandomMatrix(rows1, cols1, 0, 1, sparsity, 7);

@@ -275,17 +275,17 @@ public class TransformFrameEncodeBagOfWords extends AutomatedTestBase
 	}
 
 	private String[][] readTwoColumnStringCSV(String s) {
-        try {
-            FrameBlock in = readDMLFrameFromHDFS(s, Types.FileFormat.CSV, false);
+		try {
+			FrameBlock in = readDMLFrameFromHDFS(s, Types.FileFormat.CSV, false);
 			String[][] out = new String[2][in.getNumRows()];
 			for (int i = 0; i < in.getNumRows(); i++) {
 				out[0][i] = in.getString(i, 0);
 				out[1][i] = in.getString(i, 1);
 			}
 			return out;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@SuppressWarnings("unchecked")

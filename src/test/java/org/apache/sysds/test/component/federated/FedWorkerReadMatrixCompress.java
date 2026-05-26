@@ -65,15 +65,14 @@ public class FedWorkerReadMatrixCompress extends FedWorkerBase {
 	public void verifyRead() {
 		MatrixBlock expected = readCSV();
 		Long id = readMatrix(path);
-		// give the federated site time to compress async.
-		FederatedTestUtils.wait(1000);
-		MatrixBlock actual = getMatrixBlock(id);
+		// Compression happens async on the worker; poll instead of sleeping a fixed amount.
+		MatrixBlock actual = awaitCompressed(id);
 		if(actual instanceof CompressedMatrixBlock){
 			TestUtils.compareMatricesBitAvgDistance(expected, actual, 0, 0,
 				"Not equivalent matrix block read from federated site");
 		}
 		else
-			fail("Did not compress the matrix input");
+			fail("Did not compress the matrix input within " + COMPRESS_TIMEOUT_MS + "ms");
 	}
 
 	protected MatrixBlock readCSV() {

@@ -25,6 +25,7 @@ import java.io.IOException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -1051,4 +1052,23 @@ public interface IDictionary {
 	 * @return The nonzero count of each column in the dictionary.
 	 */
 	public int[] countNNZZeroColumns(int[] counts);
+
+	/**
+	 * Sort the values of this dictionary via an index of how the values mapped previously.
+	 * 
+	 * In practice this design means we can reuse the previous dictionary for the resulting column group
+	 * 
+	 * @return The sorted index.
+	 */
+	public int[] sort();
+
+	/**
+	 * Slice out the selected columns given of this encoded group.
+	 * 
+	 * @param selectedColumns The columns to slice out and return as a new matrix.
+	 * @param nCol            The number of columns in this dictionary.
+	 * @return The returned matrix
+	 */
+	public IDictionary sliceColumns(IntArrayList selectedColumns, int nCol);
+
 }

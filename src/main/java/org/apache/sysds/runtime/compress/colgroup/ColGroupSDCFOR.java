@@ -39,6 +39,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.RemoveEmptyOffsetsTmp;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
@@ -618,6 +619,68 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup, IFrameOfRef
 			res[i] = create(ci, _numRows / multiplier, _dict, offs[i], maps[i], null, _reference);
 		}
 		return res;
+	}
+
+	@Override
+	public AColGroup sort() {
+		if(getNumCols() > 1)
+			throw new NotImplementedException();
+		// TODO restore support for run length encoding.
+
+		final int[] counts = getCounts();
+		// get the sort index
+		final int[] r = _dict.sort();
+
+		// find default value position.
+		// todo use binary search for minor improvements.
+		int defIdx = counts.length;
+		for(int i = 0; i < r.length; i++) {
+			if(_dict.getValue(r[i], 0, 1) >= 0) {
+				defIdx = i;
+				break;
+			}
+		}
+
+		int nondefault = _data.size();
+		int defaultLength = _numRows - nondefault;
+		AMapToData m = MapToFactory.create(nondefault, counts.length);
+		int[] offsets = new int[nondefault];
+
+		int off = 0;
+		for(int i = 0; i < counts.length; i++) {
+			if(i < defIdx) {
+				for(int j = 0; j < counts[r[i]]; j++) {
+					offsets[off] = off;
+					m.set(off++, r[i]);
+				}
+			}
+			else {// if( i >= defIdx){
+				for(int j = 0; j < counts[r[i]]; j++) {
+					offsets[off] = off + defaultLength;
+					m.set(off++, r[i]);
+				}
+			}
+		}
+
+		AOffset o = OffsetFactory.createOffset(offsets);
+		return ColGroupSDCFOR.create(_colIndexes, _numRows, _dict, o, m, counts, _reference);
+	}
+
+	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+		final RemoveEmptyOffsetsTmp offsetTmp = _indexes.removeEmptyRows(selectV, rOut);
+		final AMapToData nm = _data.removeEmpty(offsetTmp.select);
+		return ColGroupSDCFOR.create(_colIndexes, rOut, _dict, offsetTmp.retOffset, nm, null, _reference);
+	}
+
+	@Override
+	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns) {
+		double[] ref = new double[selectedColumns.size()];
+		for(int i = 0; i < selectedColumns.size(); i++) {
+			ref[i] = _reference[selectedColumns.get(i)];
+		}
+		return ColGroupSDCFOR.create(newColumnIDs, _numRows, _dict.sliceColumns(selectedColumns, getNumCols()), _indexes, _data, null,
+			ref);
 	}
 
 	@Override

@@ -49,7 +49,7 @@ public class DecoderPassThrough extends Decoder
 		_dcCols = dcCols;
 	}
 
-	public DecoderPassThrough() { super(null, null); }
+	// public DecoderPassThrough() { super(null, null); }
 
 	@Override
 	public FrameBlock decode(MatrixBlock in, FrameBlock out) {
@@ -61,13 +61,12 @@ public class DecoderPassThrough extends Decoder
 	@Override
 	public void decode(MatrixBlock in, FrameBlock out, int rl, int ru) {
 		int clen = Math.min(_colList.length, out.getNumColumns());
-		for( int i=rl; i<ru; i++ ) {
-			for( int j=0; j<clen; j++ ) {
-				int srcColID = _srcCols[j];
-				int tgtColID = _colList[j];
-				double val = in.get(i, srcColID-1);
-				out.set(i, tgtColID-1,
-					UtilFunctions.doubleToObject(_schema[tgtColID-1], val));
+		for(int i = rl; i < ru; i++) {
+			for(int j = 0; j < clen; j++) {
+				int srcColID = _srcCols[j] - 1;
+				int tgtColID = _colList[j] - 1;
+				double val = in.get(i, srcColID);
+				out.getColumn(tgtColID).set(i, val);
 			}
 		}
 	}
@@ -114,7 +113,13 @@ public class DecoderPassThrough extends Decoder
 				}
 				else { //_colList[ix1] > _dcCols[ix2]
 					ColumnMetadata d =meta.getColumnMetadata()[_dcCols[ix2]-1];
-					off += d.isDefault() ? -1 : d.getNumDistinct() - 1;
+					String v = meta.getString( 0,_dcCols[ix2]-1);
+					if(v.length() > 1 && v.charAt(0) == '¿'){
+						off += UtilFunctions.parseToLong(v.substring(1)) -1;
+					}
+					else {
+						off += d.isDefault() ? -1 : d.getNumDistinct() - 1;
+					}
 					ix2 ++;
 				}
 			}

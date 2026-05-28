@@ -23,6 +23,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -277,4 +279,13 @@ public class QDictionary extends ACachingMBDictionary {
 		return new MatrixBlockDictionary(mb);
 	}
 
+	@Override
+	public int[] sort() {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public IDictionary sliceColumns(IntArrayList selectedColumns, int nCol) {
+		return getMBDict().sliceColumns(selectedColumns, nCol);
+	}
 }

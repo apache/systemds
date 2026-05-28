@@ -28,13 +28,14 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.RemoveEmptyOffsetsTmp;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.junit.Test;
 
 public class CustomOffsetTest {
 	protected static final Log LOG = LogFactory.getLog(CustomOffsetTest.class.getName());
 
-	static{
+	static {
 		CompressedMatrixBlock.debug = true;
 	}
 
@@ -95,5 +96,96 @@ public class CustomOffsetTest {
 		off.cacheIterator(it, 3000);
 		String s = off.toString();
 		assertTrue(s.contains("CacheRow"));
+	}
+
+	@Test
+	public void removeEmptyRows1() {
+		AOffset of = OffsetFactory.createOffset(new int[] {1, 2, 3, 4, 5});
+		RemoveEmptyOffsetsTmp t = of.removeEmptyRows(new boolean[] {false, true, false, false, false, false}, 0);
+		assertEquals(1, t.select.size());
+		assertEquals(0, t.select.get(0));
+		assertEquals(1, t.retOffset.getSize());
+		assertEquals(OffsetFactory.createOffset(new int[] {0}), t.retOffset);
+	}
+
+	@Test
+	public void removeEmptyRows2() {
+		AOffset of = OffsetFactory.createOffset(new int[] {1, 2, 3, 4, 5});
+		RemoveEmptyOffsetsTmp t = of.removeEmptyRows(new boolean[] {false, false, true, false, false, false}, 0);
+		assertEquals(1, t.select.size());
+		assertEquals(1, t.select.get(0));
+		assertEquals(1, t.retOffset.getSize());
+		assertEquals(OffsetFactory.createOffset(new int[] {0}), t.retOffset);
+	}
+
+	@Test
+	public void removeEmptyRows3() {
+		AOffset of = OffsetFactory.createOffset(new int[] {1, 2, 3, 4, 5});
+		RemoveEmptyOffsetsTmp t = of.removeEmptyRows(new boolean[] {false, true, true, false, false, false}, 0);
+		assertEquals(2, t.select.size());
+		assertEquals(0, t.select.get(0));
+		assertEquals(1, t.select.get(1));
+		assertEquals(2, t.retOffset.getSize());
+		assertEquals(OffsetFactory.createOffset(new int[] {0, 1}), t.retOffset);
+	}
+
+	@Test
+	public void removeEmptyRows4() {
+		AOffset of = OffsetFactory.createOffset(new int[] {1, 2, 3, 4, 5});
+		RemoveEmptyOffsetsTmp t = of.removeEmptyRows(new boolean[] {false, true, true, false, false, true}, 0);
+		assertEquals(3, t.select.size());
+		assertEquals(0, t.select.get(0));
+		assertEquals(1, t.select.get(1));
+		assertEquals(4, t.select.get(2));
+		assertEquals(3, t.retOffset.getSize());
+		assertEquals(OffsetFactory.createOffset(new int[] {0, 1, 2}), t.retOffset);
+	}
+
+	@Test
+	public void removeEmptyRows5() {
+		AOffset of = OffsetFactory.createOffset(new int[] {1, 2, 3, 4, 5});
+		RemoveEmptyOffsetsTmp t = of.removeEmptyRows(new boolean[] {false, false, false, false, false, true}, 0);
+		assertEquals(1, t.select.size());
+		assertEquals(4, t.select.get(0));
+		assertEquals(1, t.retOffset.getSize());
+		assertEquals(OffsetFactory.createOffset(new int[] {0}), t.retOffset);
+	}
+
+	@Test
+	public void removeEmptyRows6() {
+		AOffset of = OffsetFactory.createOffset(new int[] {1, 2, 5});
+		RemoveEmptyOffsetsTmp t = of.removeEmptyRows(new boolean[] {false, false, false, true, true, true}, 0);
+		assertEquals(1, t.select.size());
+		assertEquals(2, t.select.get(0));
+		assertEquals(1, t.retOffset.getSize());
+		assertEquals(OffsetFactory.createOffset(new int[] {2}), t.retOffset);
+	}
+
+	@Test
+	public void removeEmptyRows7() {
+		AOffset of = OffsetFactory.createOffset(new int[] {1, 2, 5});
+		RemoveEmptyOffsetsTmp t = of.removeEmptyRows(new boolean[] {true, false, false, true, true, true}, 0);
+		assertEquals(1, t.select.size());
+		assertEquals(2, t.select.get(0));
+		assertEquals(1, t.retOffset.getSize());
+		assertEquals(OffsetFactory.createOffset(new int[] {3}), t.retOffset);
+	}
+
+	@Test
+	public void removeEmptyRows8() {
+		AOffset of = OffsetFactory.createOffset(new int[] {1, 2, 3, 4, 5});
+		RemoveEmptyOffsetsTmp t = of.removeEmptyRows(new boolean[] {true, false, false, false, false, true}, 0);
+		assertEquals(1, t.select.size());
+		assertEquals(4, t.select.get(0));
+		assertEquals(1, t.retOffset.getSize());
+		assertEquals(OffsetFactory.createOffset(new int[] {1}), t.retOffset);
+	}
+
+	@Test
+	public void removeEmptyRowsEmpty() {
+		AOffset of = OffsetFactory.createOffset(new int[] {1, 2, 3, 4, 5});
+		RemoveEmptyOffsetsTmp t = of.removeEmptyRows(new boolean[] {false, false, false, false, false, false}, 0);
+		assertEquals(0, t.select.size());
+		assertEquals(OffsetFactory.createOffset(new int[] {}), t.retOffset);
 	}
 }

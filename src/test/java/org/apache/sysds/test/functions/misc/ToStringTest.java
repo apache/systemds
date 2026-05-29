@@ -270,4 +270,96 @@ public class ToStringTest extends AutomatedTestBase {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
+
+	@Test
+	public void testPrintWithDecimal(){
+		String testName = "ToString12";
+
+		String decimalPoints = "2";
+		String value = "22";
+		String expectedOutput = "22.00\n";
+		
+		addTestConfiguration(testName, new TestConfiguration(TEST_CLASS_DIR, testName));
+		toStringTestHelper2(ExecMode.SINGLE_NODE, testName, expectedOutput, decimalPoints, value);
+	}
+
+
+	@Test
+	public void testPrintWithDecimal2(){
+		String testName = "ToString12";
+
+		String decimalPoints = "2";
+		String value = "5.244058388023880";
+		String expectedOutput = "5.24\n";
+		
+		addTestConfiguration(testName, new TestConfiguration(TEST_CLASS_DIR, testName));
+		toStringTestHelper2(ExecMode.SINGLE_NODE, testName, expectedOutput, decimalPoints, value);
+	}
+
+
+	@Test
+	public void testPrintWithDecimal3(){
+		String testName = "ToString12";
+
+		String decimalPoints = "10";
+		String value = "5.244058388023880";
+		String expectedOutput = "5.2440583880\n";
+		
+		addTestConfiguration(testName, new TestConfiguration(TEST_CLASS_DIR, testName));
+		toStringTestHelper2(ExecMode.SINGLE_NODE, testName, expectedOutput, decimalPoints, value);
+	}
+
+
+	@Test
+	public void testPrintWithDecimal4(){
+		String testName = "ToString12";
+
+		String decimalPoints = "4";
+		String value = "5.244058388023880";
+		String expectedOutput = "5.2441\n";
+		
+		addTestConfiguration(testName, new TestConfiguration(TEST_CLASS_DIR, testName));
+		toStringTestHelper2(ExecMode.SINGLE_NODE, testName, expectedOutput, decimalPoints, value);
+	}
+
+
+	@Test
+	public void testPrintWithDecimal5(){
+		String testName = "ToString12";
+
+		String decimalPoints = "10";
+		String value = "0.000000008023880";
+		String expectedOutput = "0.0000000080\n";
+		
+		addTestConfiguration(testName, new TestConfiguration(TEST_CLASS_DIR, testName));
+		toStringTestHelper2(ExecMode.SINGLE_NODE, testName, expectedOutput, decimalPoints, value);
+	}
+
+	protected void toStringTestHelper2(ExecMode platform, String testName, String expectedOutput, String decimalPoints, String value) {
+		ExecMode platformOld = rtplatform;
+		
+		rtplatform = platform;
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if (rtplatform == ExecMode.SPARK)
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		try {
+			// Create and load test configuration
+			getAndLoadTestConfiguration(testName);
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + testName + ".dml";
+			programArgs = new String[]{"-args", output(OUTPUT_NAME), value, decimalPoints};
+
+			// Run DML and R scripts
+			runTest(true, false, null, -1);
+
+			// Compare output strings
+			String output = TestUtils.readDMLString(output(OUTPUT_NAME));
+			TestUtils.compareScalars(expectedOutput, output);
+		}
+		finally {
+			// Reset settings
+			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		}
+	}
 }

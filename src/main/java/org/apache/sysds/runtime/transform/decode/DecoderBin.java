@@ -28,6 +28,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
+import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -43,15 +44,18 @@ public class DecoderBin extends Decoder {
 
 	// a) column bin boundaries
 	private int[] _numBins;
+	private int[] _dcCols = null;
+	private int[] _srcCols = null;
 	private double[][] _binMins = null;
 	private double[][] _binMaxs = null;
 
-	public DecoderBin() {
-		super(null, null);
-	}
+	// public DecoderBin() {
+	// 	super(null, null);
+	// }
 
-	protected DecoderBin(ValueType[] schema, int[] binCols) {
+	protected DecoderBin(ValueType[] schema, int[] binCols, int[] dcCols) {
 		super(schema, binCols);
+		_dcCols = dcCols;
 	}
 
 	@Override
@@ -66,14 +70,28 @@ public class DecoderBin extends Decoder {
 		for( int i=rl; i< ru; i++ ) {
 			for( int j=0; j<_colList.length; j++ ) {
 				final Array<?> a = out.getColumn(_colList[j] - 1);
-				final double val = in.get(i, _colList[j] - 1);
+				final double val = in.get(i, _srcCols[j] - 1);
 				if(!Double.isNaN(val)){
-					final int key = (int) Math.round(val);
-					double bmin = _binMins[j][key - 1];
-					double bmax = _binMaxs[j][key - 1];
-					double oval = bmin + (bmax - bmin) / 2 // bin center
-						+ (val - key) * (bmax - bmin); // bin fractions
-					a.set(i, oval);
+					try{
+
+						final int key = (int) Math.round(val);
+						if(key == 0){
+							a.set(i, _binMins[j][key]);
+						}
+						else{
+							double bmin = _binMins[j][key - 1];
+							double bmax = _binMaxs[j][key - 1];
+							double oval = bmin + (bmax - bmin) / 2 // bin center
+								+ (val - key) * (bmax - bmin); // bin fractions
+							a.set(i, oval);
+						}
+					}
+					catch(Exception e){
+						LOG.error(a);
+						LOG.error(in.slice(0, in.getNumRows()-1, _colList[j]-1,_colList[j]-1));
+						LOG.error( val);
+						throw e;
+					}
 				}
 				else 
 					a.set(i, val); // NaN
@@ -110,6 +128,34 @@ public class DecoderBin extends Decoder {
 				_binMins[j][i] = Double.parseDouble(parts[0]);
 				_binMaxs[j][i] = Double.parseDouble(parts[1]);
 			}
+		}
+
+
+		if( _dcCols.length > 0 ) {
+			//prepare source column id mapping w/ dummy coding
+			_srcCols = new int[_colList.length];
+			int ix1 = 0, ix2 = 0, off = 0;
+			while( ix1<_colList.length ) {
+				if( ix2>=_dcCols.length || _colList[ix1] < _dcCols[ix2] ) {
+					_srcCols[ix1] = _colList[ix1] + off;
+					ix1 ++;
+				}
+				else { //_colList[ix1] > _dcCols[ix2]
+					ColumnMetadata d =meta.getColumnMetadata()[_dcCols[ix2]-1];
+					String v = meta.getString(0, _dcCols[ix2]-1);
+					if(v.length() > 1 && v.charAt(0) == '¿'){
+						off += UtilFunctions.parseToLong(v.substring(1)) -1;
+					}
+					else {
+						off += d.isDefault() ? -1 : d.getNumDistinct() - 1;
+					}
+					ix2 ++;
+				}
+			}
+		}
+		else {
+			//prepare direct source column mapping
+			_srcCols = _colList;
 		}
 	}
 

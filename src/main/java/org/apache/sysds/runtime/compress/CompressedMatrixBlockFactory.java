@@ -64,6 +64,8 @@ public class CompressedMatrixBlockFactory {
 
 	private static final Log LOG = LogFactory.getLog(CompressedMatrixBlockFactory.class.getName());
 
+	private static final Object asyncCompressLock = new Object(); 
+
 	/** Timing object to measure the time of each phase in the compression */
 	private final Timing time = new Timing(true);
 	/** Compression statistics gathered throughout the compression */
@@ -181,21 +183,23 @@ public class CompressedMatrixBlockFactory {
 	}
 
 	public static Future<Void> compressAsync(ExecutionContext ec, String varName, InstructionTypeCounter ins) {
-		LOG.debug("Compressing Async");
 		final ExecutorService pool = CommonThreadPool.get(); // We have to guarantee that a thread pool is allocated.
 		return CompletableFuture.runAsync(() -> {
 			// method call or code to be async
 			try {
 				CacheableData<?> data = ec.getCacheableData(varName);
-				if(data instanceof MatrixObject) {
-					MatrixObject mo = (MatrixObject) data;
-					MatrixBlock mb = mo.acquireReadAndRelease();
-					MatrixBlock mbc = CompressedMatrixBlockFactory.compress(mo.acquireReadAndRelease(), ins).getLeft();
-					if(mbc instanceof CompressedMatrixBlock) {
-						ExecutionContext.createCacheableData(mb);
-						mo.acquireModify(mbc);
-						mo.release();
-						mbc.sum(); // calculate sum to forcefully materialize counts
+				synchronized(asyncCompressLock){ // synchronize on the data object to not allow multiple compressions of the same matrix.
+					if(data instanceof MatrixObject) {
+						LOG.debug("Compressing Async");
+						MatrixObject mo = (MatrixObject) data;
+						MatrixBlock mb = mo.acquireReadAndRelease();
+						MatrixBlock mbc = CompressedMatrixBlockFactory.compress(mb, ins).getLeft();
+						if(mbc instanceof CompressedMatrixBlock) {
+							ExecutionContext.createCacheableData(mb);
+							mo.acquireModify(mbc);
+							mo.release();
+							mbc.sum(); // calculate sum to forcefully materialize counts
+						}
 					}
 				}
 			}

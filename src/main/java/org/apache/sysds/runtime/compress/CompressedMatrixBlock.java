@@ -1201,8 +1201,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public void sparseToDense(int k) {
-		// do nothing
+	public MatrixBlock sparseToDense(int k) {
+		return this; // do nothing
 	}
 
 	@Override
@@ -1233,16 +1233,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public double interQuartileMean() {
 		return getUncompressed("interQuartileMean").interQuartileMean();
-	}
-
-	@Override
-	public MatrixBlock pickValues(MatrixValue quantiles, MatrixValue ret) {
-		return getUncompressed("pickValues").pickValues(quantiles, ret);
-	}
-
-	@Override
-	public double pickValue(double quantile, boolean average) {
-		return getUncompressed("pickValue").pickValue(quantile, average);
 	}
 
 	@Override

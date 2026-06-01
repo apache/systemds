@@ -366,7 +366,11 @@ public class UnaryOp extends MultiThreadedHop
 		} else {
 			sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
 		}
-		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity, getDataType());
+
+		if(getDataType() == DataType.FRAME)
+			return OptimizerUtils.estimateSizeExactFrame(dim1, dim2);
+		else
+			return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
 	}
 	
 	@Override
@@ -463,6 +467,13 @@ public class UnaryOp extends MultiThreadedHop
 			|| _op == OpOp1.CAST_AS_LIST;
 	}
 	
+	private boolean isDisallowedSparkOps(){
+		return isCumulativeUnaryOperation() 
+			|| isCastUnaryOperation()
+			|| _op==OpOp1.MEDIAN
+			|| _op==OpOp1.IQM;
+	}
+
 	@Override
 	protected ExecType optFindExecType(boolean transitive) 
 	{
@@ -493,19 +504,22 @@ public class UnaryOp extends MultiThreadedHop
 			checkAndSetInvalidCPDimsAndSize();
 		}
 	
+
 		//spark-specific decision refinement (execute unary w/ spark input and 
 		//single parent also in spark because it's likely cheap and reduces intermediates)
-		if( _etype == ExecType.CP && _etypeForced != ExecType.CP
-			&& getInput().get(0).optFindExecType() == ExecType.SPARK 
-			&& getDataType().isMatrix() 
-			&& !isCumulativeUnaryOperation() && !isCastUnaryOperation()
-			&& _op!=OpOp1.MEDIAN && _op!=OpOp1.IQM
-			&& !(getInput().get(0) instanceof DataOp)    //input is not checkpoint
-			&& getInput().get(0).getParent().size()==1 ) //unary is only parent
-		{
+		if(_etype == ExecType.CP // currently CP instruction
+			&& _etype != ExecType.SPARK /// currently not SP.
+			&& _etypeForced != ExecType.CP // not forced as CP instruction
+			&& getInput(0).hasSparkOutput() // input is a spark instruction
+			&& (getDataType().isMatrix() || getDataType().isFrame()) // output is a matrix or frame
+			&& !isDisallowedSparkOps() // is invalid spark instruction
+			// && !(getInput().get(0) instanceof DataOp) // input is not checkpoint
+			// && getInput(0).getParent().size() <= 1// unary is only parent
+		) {
 			//pull unary operation into spark 
 			_etype = ExecType.SPARK;
 		}
+
 		
 		//mark for recompile (forever)
 		setRequiresRecompileIfNecessary();
@@ -520,7 +534,7 @@ public class UnaryOp extends MultiThreadedHop
 		} else {
 			setRequiresRecompileIfNecessary();
 		}
-		
+
 		return _etype;
 	}
 	

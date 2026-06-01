@@ -486,7 +486,7 @@ public class CLALibCompAgg {
 			final ArrayList<UAOverlappingTask> tasks = new ArrayList<>();
 			final int nCol = m1.getNumColumns();
 			final int nRow = m1.getNumRows();
-			final int blklen = Math.max(64, nRow / k);
+			final int blklen = Math.max(64, (nRow + k) / k);
 			final List<AColGroup> groups = m1.getColGroups();
 			final boolean shouldFilter = CLALibUtils.shouldPreFilter(groups);
 			if(shouldFilter) {

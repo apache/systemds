@@ -31,6 +31,8 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.ASDC;
+import org.apache.sysds.runtime.compress.colgroup.ASDCZero;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
@@ -71,10 +73,10 @@ public final class CLALibRightMultBy {
 				if(m2 instanceof CompressedMatrixBlock)
 					m2 = ((CompressedMatrixBlock) m2).getUncompressed("Uncompressed right side of right MM", k);
 
-				if(betterIfDecompressed(m1)) {
-					// perform uncompressed multiplication.
-					return decompressingMatrixMult(m1, m2, k);
-				}
+				// if(betterIfDecompressed(m1)) {
+				// 	// perform uncompressed multiplication.
+				// 	return decompressingMatrixMult(m1, m2, k);
+				// }
 
 				if(!allowOverlap) {
 					LOG.trace("Overlapping output not allowed in call to Right MM");
@@ -143,7 +145,9 @@ public final class CLALibRightMultBy {
 
 	private static boolean betterIfDecompressed(CompressedMatrixBlock m) {
 		for(AColGroup g : m.getColGroups()) {
-			if(!(g instanceof ColGroupUncompressed) && g.getNumValues() * 2 >= m.getNumRows()) {
+			// TODO add subpport for decompressing RMM to ASDC and ASDCZero
+			if(!(g instanceof ColGroupUncompressed || g instanceof ASDC || g instanceof ASDCZero) &&
+				g.getNumValues() * 2 >= m.getNumRows()) {
 				return true;
 			}
 		}

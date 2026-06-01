@@ -142,4 +142,9 @@ public class DeltaDictionary extends ADictionary {
 	public IDictionary sliceColumns(IntArrayList selectedColumns, int nCol){
 		throw new NotImplementedException();
 	}
+
+	@Override
+	public int[] sort() {
+		throw new NotImplementedException();
+	}
 }

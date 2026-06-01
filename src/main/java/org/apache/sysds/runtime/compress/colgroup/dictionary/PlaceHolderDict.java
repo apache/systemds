@@ -107,4 +107,9 @@ public class PlaceHolderDict extends ADictionary {
 		throw new RuntimeException("Invalid call");
 	}
 
+	@Override
+	public int[] sort() {
+		throw new RuntimeException("Invalid call");
+	}
+
 }

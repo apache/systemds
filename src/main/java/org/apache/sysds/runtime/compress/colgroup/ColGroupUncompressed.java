@@ -1331,4 +1331,9 @@ public class ColGroupUncompressed extends AColGroup {
 
 		return sb.toString();
 	}
+
+	@Override
+	public AColGroup sort() {
+		return new ColGroupUncompressed(_data.sortOperations(), _colIndexes);
+	}
 }

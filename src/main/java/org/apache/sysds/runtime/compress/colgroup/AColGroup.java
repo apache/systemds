@@ -974,6 +974,16 @@ public abstract class AColGroup implements Serializable {
 		return splitReshape(multiplier, nRow, nColOrg);
 	}
 
+	/**
+	 * Sort the values of the column group according to double comparison operations and return as another compressed
+	 * group.
+	 * 
+	 * This sorting assumes that the column group is sorted independently of everything else.
+	 * 
+	 * @return The sorted group
+	 */
+	public abstract AColGroup sort();
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

@@ -750,4 +750,9 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns){
 		throw new NotImplementedException("Unimplemented method 'removeEmptyColumns'");
 	}
+
+	@Override
+	public AColGroup sort() {
+		throw new NotImplementedException("Unimplemented method 'sort'");
+	}
 }

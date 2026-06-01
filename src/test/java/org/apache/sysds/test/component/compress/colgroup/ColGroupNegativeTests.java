@@ -481,6 +481,12 @@ public class ColGroupNegativeTests {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException("Unimplemented method 'removeEmptyColsSubset'");
 		}
+
+		@Override
+		public AColGroup sort() {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'sort'");
+		}
 	}
 
 	private class FakeDictBasedColGroup extends ADictBasedColGroup {
@@ -801,6 +807,12 @@ public class ColGroupNegativeTests {
 		protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns) {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException("Unimplemented method 'removeEmptyColsSubset'");
+		}
+
+		@Override
+		public AColGroup sort() {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'sort'");
 		}
 	}
 }

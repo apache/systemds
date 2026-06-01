@@ -1178,4 +1178,23 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	public AColGroup convertToDDCLZW() {
 		return ColGroupDDCLZW.create(_colIndexes, _dict, _data, null);
 	}
+
+	@Override
+	public AColGroup sort() {
+		// TODO restore support for run length encoding to exploit the runs
+
+		int[] counts = getCounts();
+		// get the sort index
+		int[] r = _dict.sort();
+
+		AMapToData m = MapToFactory.create(_data.size(), counts.length);
+		int off = 0;
+		for(int i = 0; i < counts.length; i++) {
+			for(int j = 0; j < counts[r[i]]; j++) {
+				m.set(off++, r[i]);
+			}
+		}
+
+		return ColGroupDDC.create(_colIndexes, _dict, m, counts);
+	}
 }

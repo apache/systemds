@@ -1062,4 +1062,13 @@ public interface IDictionary {
 	 */
 	public IDictionary sliceColumns(IntArrayList selectedColumns, int nCol);
 
+	/**
+	 * Sort the values of this dictionary via an index of how the values mapped previously.
+	 * 
+	 * In practice this design means we can reuse the previous dictionary for the resulting column group
+	 * 
+	 * @return The sorted index.
+	 */
+	public int[] sort();
+
 }

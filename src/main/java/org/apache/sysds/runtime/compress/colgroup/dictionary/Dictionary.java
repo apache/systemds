@@ -28,10 +28,13 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.compress.utils.Util;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Multiply;
@@ -1339,6 +1342,33 @@ public class Dictionary extends ACachingMBDictionary {
 		System.arraycopy(_values, 0, retV, 0, _values.length);
 		System.arraycopy(row, 0, retV, _values.length, row.length);
 		return new Dictionary(retV);
+	}
+
+	@Override
+	public IDictionary sliceColumns(IntArrayList selectedColumns, int nCol) {
+		// TODO: make specialized version for this.
+		return getMBDict(nCol).sliceColumns(selectedColumns, nCol);
+	}
+
+	private static int partition(int[] indices, double[] values, int low, int high) {
+		double pivotValue = values[indices[high]];
+		int i = low - 1;
+
+		for(int j = low; j < high; j++) {
+			if(values[indices[j]] <= pivotValue) {
+				i++;
+				swap(indices, i, j);
+			}
+		}
+
+		swap(indices, i + 1, high);
+		return i + 1;
+	}
+
+	private static void swap(int[] arr, int i, int j) {
+		int tmp = arr[i];
+		arr[i] = arr[j];
+		arr[j] = tmp;
 	}
 
 }

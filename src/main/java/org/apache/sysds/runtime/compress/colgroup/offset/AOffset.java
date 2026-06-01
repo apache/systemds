@@ -586,7 +586,7 @@ public abstract class AOffset implements Serializable {
 			else
 				return new OffsetSliceInfo(0, s, moveIndex(l));
 		}
-		else if (u < first)
+		else if(u < first)
 			return emptySlice();
 
 		final AIterator it = getIteratorSkipCache(l);
@@ -781,6 +781,43 @@ public abstract class AOffset implements Serializable {
 		return OffsetFactory.createOffset(newOff);
 	}
 
+	public RemoveEmptyOffsetsTmp removeEmptyRows(boolean[] selectV, int rOut) {
+		IntArrayList newOff = new IntArrayList();
+		IntArrayList selectMTmp = new IntArrayList();
+
+		final AIterator it = getIterator();
+		final int last = getOffsetToLast();
+		int t = 0;
+		int o = 0;
+		while(it.value() < last) {
+			while(t < it.value()) {
+				if(selectV[t])
+					o++;
+				t++;
+			}
+			if(selectV[it.value()]) {
+				newOff.appendValue(o);
+				selectMTmp.appendValue(it.getDataIndex());
+				o++;
+				t++;
+			}
+			it.next();
+		}
+		while(t < last) {
+			if(selectV[t])
+				o++;
+			t++;
+		}
+		if(selectV[last]) {
+			newOff.appendValue(o);
+			selectMTmp.appendValue(it.getDataIndex());
+		}
+
+		// throw new RuntimeException("\n\n\n" + Arrays.toString(selectV) + " \n\n " + this + "\n\n " + newOff + " \n " +
+		// selectMTmp + "\n\n " + "\n\n ");
+		return new RemoveEmptyOffsetsTmp(OffsetFactory.createOffset(newOff), selectMTmp);
+	}
+
 	/**
 	 * Offset slice info containing the start and end index an offset that contains the slice, and an new AOffset
 	 * containing only the sliced elements
@@ -808,6 +845,16 @@ public abstract class AOffset implements Serializable {
 			return sb.toString();
 		}
 
+	}
+
+	public static final class RemoveEmptyOffsetsTmp {
+		public final AOffset retOffset;
+		public final IntArrayList select;
+
+		protected RemoveEmptyOffsetsTmp(AOffset retOffset, IntArrayList select) {
+			this.retOffset = retOffset;
+			this.select = select;
+		}
 	}
 
 	private static class OffsetCache {
@@ -841,4 +888,5 @@ public abstract class AOffset implements Serializable {
 			return "r" + row + " d " + dataIndex + " o " + offIndex + "\n";
 		}
 	}
+
 }

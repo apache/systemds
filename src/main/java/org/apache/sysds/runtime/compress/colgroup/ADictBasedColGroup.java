@@ -402,4 +402,5 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 	public double getSparsity() {
 		return _dict.getSparsity();
 	}
+
 }

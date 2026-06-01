@@ -21,6 +21,7 @@ package org.apache.sysds.test.component.compress.estim.encoding;
 
 import static org.junit.Assert.fail;
 
+import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
@@ -114,6 +115,8 @@ public abstract class EncodeSampleMultiColTest extends EncodeSampleTest {
 
 	private void partJoinVerification(IEncode er) {
 		boolean incorrectUnique = e.getUnique() != er.getUnique();
+
+		er.extractFacts(10000, 1.0, 1.0, new CompressionSettingsBuilder().create());
 
 		if(incorrectUnique) {
 			StringBuilder sb = new StringBuilder();

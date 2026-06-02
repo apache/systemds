@@ -392,9 +392,10 @@ class StaticWindow(Window):
         for instance in modality.data:
             window_size = int(np.ceil(len(instance) / self.num_windows))
             padding_size = int(window_size * self.num_windows - len(instance))
-
+            pad_width = [(0, 0)] * instance.ndim
+            pad_width[0] = (0, padding_size)
             instance = np.pad(
-                instance, (0, padding_size), mode="constant", constant_values=0
+                instance, pad_width=pad_width, mode="constant", constant_values=0
             )
             full_batches = instance.reshape(
                 self.num_windows, window_size, *instance.shape[1:]
@@ -407,7 +408,6 @@ class StaticWindow(Window):
                 f = self.aggregation_function.compute_feature(full_batches)
 
             windowed_data.append(f)
-
         windowed_data = np.array(windowed_data)
         return windowed_data
 

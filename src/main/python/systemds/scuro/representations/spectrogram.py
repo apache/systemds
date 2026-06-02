@@ -60,10 +60,14 @@ class Spectrogram(UnimodalRepresentation):
         return transformed_modality
 
     def compute_feature(self, instance):
+        data = np.array(instance)
         spectrogram = librosa.stft(
-            y=np.array(np.abs(instance)), hop_length=self.hop_length, n_fft=self.n_fft
+            y=np.abs(data), hop_length=self.hop_length, n_fft=self.n_fft
         )
-        return librosa.amplitude_to_db(np.abs(spectrogram)).T
+        if data.ndim == 1:
+            return librosa.amplitude_to_db(np.abs(spectrogram)).T
+
+        return librosa.amplitude_to_db(np.abs(spectrogram)).transpose(0, 2, 1)
 
     def estimate_peak_memory_bytes(self, input_stats) -> dict:
         # TODO: validate this function
@@ -74,7 +78,7 @@ class Spectrogram(UnimodalRepresentation):
         if signal_length < self.n_fft:
             num_frames = 1
         else:
-            num_frames = 1 + (signal_length - self.n_fft) // self.hop_length
+            num_frames = 1 + signal_length // self.hop_length
         num_frames = max(int(num_frames), 1)
         num_freq_bins = 1 + self.n_fft // 2
 
@@ -121,7 +125,7 @@ class Spectrogram(UnimodalRepresentation):
             if signal_length < self.n_fft:
                 num_frames = 1
             else:
-                num_frames = 1 + (signal_length - self.n_fft) // self.hop_length
+                num_frames = 1 + signal_length // self.hop_length
             num_frames = max(int(num_frames), 1)
 
         num_freq_bins = 1 + self.n_fft // 2

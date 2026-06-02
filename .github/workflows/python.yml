@@ -174,7 +174,7 @@ jobs:
           nltk \
           fvcore \
           scikit-optimize \
-          flair
+          flair \
           optuna 
         kill $KA 
         cd src/main/python

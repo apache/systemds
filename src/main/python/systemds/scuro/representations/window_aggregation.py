@@ -299,18 +299,6 @@ class WindowAggregation(Window):
         return windowed_data
 
     def window_aggregate_single_level(self, instance, new_length):
-        if self.old:
-            result = []
-            for i in range(0, new_length):
-                result.append(
-                    self.aggregation_function.compute_feature(
-                        instance[
-                            i * self.window_size : i * self.window_size
-                            + self.window_size
-                        ]
-                    )
-                )
-            return np.array(result)
         if isinstance(instance, str):
             return instance
 

@@ -51,7 +51,7 @@ class Aggregation:
     def __init__(self, aggregation_function="mean", pad_modality=True, params=None):
         if params is not None:
             aggregation_function = params["aggregation_function"]
-            pad_modality = params["pad_modality"]
+            pad_modality = params.get("pad_modality", True)
 
         if aggregation_function not in list(self._aggregation_function.keys()):
             raise ValueError("Invalid aggregation function")

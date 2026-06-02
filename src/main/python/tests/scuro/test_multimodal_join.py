@@ -118,7 +118,9 @@ class TestMultimodalJoin(unittest.TestCase):
             left_modality.join(
                 right_modality, JoinCondition("timestamp", "timestamp", "<")
             )
-            .apply_representation(ResNet(layer="layer1.0.conv2", model_name="ResNet18"))
+            .apply_representation(
+                ResNet(layer_name="layer1.0.conv2", model_name="ResNet18")
+            )
             .window_aggregation(window_size, "mean")
             .combine("concat")
         )

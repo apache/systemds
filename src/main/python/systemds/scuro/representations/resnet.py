@@ -19,6 +19,7 @@
 #
 # -------------------------------------------------------------
 from systemds.scuro.dataloader.image_loader import ImageStats
+from systemds.scuro.dataloader.video_loader import VideoStats
 from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.utils.torch_dataset import CustomDataset
 from systemds.scuro.modality.transformed import TransformedModality
@@ -33,12 +34,17 @@ from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.utils.static_variables import get_device
 
 
+class Identity(torch.nn.Module):
+    def forward(self, input_: torch.Tensor) -> torch.Tensor:
+        return input_
+
+
 @register_representation([ModalityType.IMAGE, ModalityType.VIDEO])
 class ResNet(UnimodalRepresentation):
     def __init__(
         self,
         model_name="ResNet18",
-        layer="avgpool",
+        layer_name="avgpool",
         output_file=None,
         batch_size=32,
         params=None,
@@ -47,20 +53,20 @@ class ResNet(UnimodalRepresentation):
         self.model = None
         self.gpu_id = None
         self.device = get_device()
+        if params is not None:
+            self.batch_size = int(params.get("batch_size", batch_size))
+            self.layer_name = params.get("layer_name", layer_name)
+        else:
+            self.batch_size = batch_size
+            self.layer_name = layer_name
         self.model_name = model_name
-        self.batch_size = batch_size
         parameters = self._get_parameters()
         super().__init__("ResNet", ModalityType.EMBEDDING, parameters)
 
         self.output_file = output_file
-        self.layer_name = layer
         self.model.eval()
         for param in self.model.parameters():
             param.requires_grad = False
-
-        class Identity(torch.nn.Module):
-            def forward(self, input_: torch.Tensor) -> torch.Tensor:
-                return input_
 
         self.model.fc = Identity()
 
@@ -109,9 +115,24 @@ class ResNet(UnimodalRepresentation):
             raise NotImplementedError
 
     def estimate_output_memory_bytes(self, input_stats: ImageStats) -> int:
+        if isinstance(input_stats, VideoStats):
+            return (
+                input_stats.num_instances
+                * input_stats.max_length
+                * 512
+                * self.data_type.itemsize
+            )
         return input_stats.num_instances * 512 * self.data_type.itemsize
 
     def get_output_stats(self, input_stats) -> RepresentationStats:
+        if isinstance(input_stats, VideoStats):
+            return RepresentationStats(
+                input_stats.num_instances,
+                (
+                    input_stats.max_length,
+                    512,
+                ),
+            )
         return RepresentationStats(input_stats.num_instances, (512,))
 
     def estimate_peak_memory_bytes(self, input_stats: ImageStats) -> dict:
@@ -122,6 +143,9 @@ class ResNet(UnimodalRepresentation):
             * input_stats.max_channels
             * self.data_type.itemsize
         )
+        if isinstance(input_stats, VideoStats):
+            input_bytes = input_bytes * input_stats.max_length
+
         output_bytes = self.estimate_output_memory_bytes(input_stats)
         output_bytes_batch = output_bytes / input_stats.num_instances * self.batch_size
 

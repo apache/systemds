@@ -23,13 +23,17 @@ from dataclasses import dataclass
 import os
 from multiprocessing import shared_memory
 from systemds.scuro import Modality
-from systemds.scuro.drsearch.modality_shared_memory import add_shared_memory_candidate
+from systemds.scuro.drsearch.modality_shared_memory import (
+    add_shared_memory_candidate,
+    collect_shm_names_from_payload,
+)
 from systemds.scuro.drsearch.node_scheduler import MemoryAwareNodeScheduler
 from systemds.scuro.drsearch.representation_dag import (
     RepresentationDag,
     RepresentationNode,
 )
 
+import threading
 import numpy as np
 from typing import Any, Dict, List, Optional
 import multiprocessing as mp
@@ -85,6 +89,7 @@ class RefCountResultCache:
         self.ref_count = {}
         self.memory_usage_per_node = {}
         self.shared_memory_names = {}
+        self._shm_retain_count: Dict[str, int] = {}
 
     def get(self, node_id: str) -> Any:
         return self.cache[node_id]
@@ -125,27 +130,64 @@ class RefCountResultCache:
         self.ref_count[node_id] += 1
 
     def dec_ref(self, node_id: str):
+        if node_id not in self.ref_count:
+            return
         self.ref_count[node_id] -= 1
-        if self.ref_count[node_id] == 0:
-            del self.cache[node_id]
-            del self.ref_count[node_id]
-            del self.memory_usage_per_node[node_id]
-            self._cleanup_shared_memory(node_id)
+        if self.ref_count[node_id] <= 0:
+            self.ref_count[node_id] = 0
+            self._try_cleanup_node(node_id)
 
     def clear(self, node_id: str):
-        if node_id in self.cache:
-            del self.cache[node_id]
         if node_id in self.ref_count:
-            del self.ref_count[node_id]
-        if node_id in self.memory_usage_per_node:
-            del self.memory_usage_per_node[node_id]
-        self._cleanup_shared_memory(node_id)
+            self.ref_count[node_id] = 0
+        self._try_cleanup_node(node_id)
+
+    def retain_shm_names(self, shm_names: List[str]) -> List[str]:
+        retained: List[str] = []
+        for shm_name in shm_names:
+            if not shm_name:
+                continue
+            self._shm_retain_count[shm_name] = (
+                self._shm_retain_count.get(shm_name, 0) + 1
+            )
+            retained.append(shm_name)
+        return retained
+
+    def release_shm_names(self, shm_names: List[str]) -> None:
+        nodes_to_recheck: List[str] = []
+        for shm_name in shm_names:
+            if not shm_name:
+                continue
+            count = self._shm_retain_count.get(shm_name, 0) - 1
+            if count <= 0:
+                self._shm_retain_count.pop(shm_name, None)
+            else:
+                self._shm_retain_count[shm_name] = count
+            for node_id, node_names in self.shared_memory_names.items():
+                if shm_name in node_names and node_id not in nodes_to_recheck:
+                    nodes_to_recheck.append(node_id)
+        for node_id in nodes_to_recheck:
+            self._try_cleanup_node(node_id)
 
     def __len__(self):
         return len(self.cache)
 
     def get_memory_total_memory_usage(self):
         return sum(self.memory_usage_per_node.values())
+
+    def _shm_names_in_use(self, shm_names: List[str]) -> bool:
+        return any(self._shm_retain_count.get(name, 0) > 0 for name in shm_names)
+
+    def _try_cleanup_node(self, node_id: str) -> None:
+        if self.ref_count.get(node_id, 0) > 0:
+            return
+        shm_names = self.shared_memory_names.get(node_id, [])
+        if shm_names and self._shm_names_in_use(shm_names):
+            return
+        self.cache.pop(node_id, None)
+        self.ref_count.pop(node_id, None)
+        self.memory_usage_per_node.pop(node_id, None)
+        self._cleanup_shared_memory(node_id)
 
     def _cleanup_shared_memory(self, node_id: str):
         names = self.shared_memory_names.pop(node_id, [])
@@ -160,8 +202,35 @@ class RefCountResultCache:
                 pass
 
     def cleanup_all(self):
+        self._shm_retain_count.clear()
         for node_id in list(self.shared_memory_names.keys()):
+            self.ref_count.pop(node_id, None)
+            self.cache.pop(node_id, None)
+            self.memory_usage_per_node.pop(node_id, None)
             self._cleanup_shared_memory(node_id)
+
+
+def _execute_multiple_reps_for_leaf_dependencies(
+    nodes: List[RepresentationNode],
+    modalities: List[Modality],
+    gpu_id: Optional[int],
+):
+    representations = []
+    node_id_by_representation = {}
+    for node in nodes:
+        operation = node.operation(params=node.parameters)
+        if hasattr(operation, "gpu_id"):
+            operation.gpu_id = gpu_id
+        representations.append(operation)
+        node_id_by_representation[operation.name] = node.node_id
+
+    modality_results = modalities[0].apply_representations(
+        representations, parallel=True
+    )
+    return {
+        "results": modality_results,
+        "node_id_by_representation": node_id_by_representation,
+    }
 
 
 def _execute_node_worker(node, input_mods, task, rep_cache, gpu_id):
@@ -205,14 +274,19 @@ def _execute_node_worker(node, input_mods, task, rep_cache, gpu_id):
                 )
             return input_mods[0].combine(input_mods[1:], fusion_op)
 
-    result, peak_delta_bytes, peak_abs_rss = measure_peak_rss_during(
-        _run_node_op,
-        sample_s=0.01,
-    )
-
-    gpu_peak_bytes = (
-        torch.cuda.max_memory_allocated(device) if gpu_id is not None else 0
-    )
+    gpu_peak_bytes = -1
+    peak_delta_bytes = -1
+    peak_abs_rss = -1
+    if DEBUG:
+        result, peak_delta_bytes, peak_abs_rss = measure_peak_rss_during(
+            _run_node_op,
+            sample_s=0.01,
+        )
+        gpu_peak_bytes = (
+            torch.cuda.max_memory_allocated(device) if gpu_id is not None else 0
+        )
+    else:
+        result = _run_node_op()
 
     return {
         "result": result,
@@ -224,7 +298,10 @@ def _execute_node_worker(node, input_mods, task, rep_cache, gpu_id):
 
 
 def _execute_task_worker(
-    task_node_id: str, task: Any, data: Any, gpu_id: Optional[int]
+    task_node_id: str,
+    task: Any,
+    data: Any,
+    gpu_id: Optional[int],
 ) -> Dict[str, Any]:
 
     if DEBUG:
@@ -243,17 +320,23 @@ def _execute_task_worker(
         end = time.perf_counter()
         return scores, end - start
 
-    gpu_peak_bytes = (
-        torch.cuda.max_memory_allocated(device) if gpu_id is not None else 0
-    )
-    result, peak_delta_bytes, peak_abs_rss = measure_peak_rss_during(
-        _run_task,
-        sample_s=0.01,
-    )
+    gpu_peak_bytes = -1
+    peak_delta_bytes = -1
     if DEBUG:
+        gpu_peak_bytes = (
+            torch.cuda.max_memory_allocated(device) if gpu_id is not None else 0
+        )
+        result, peak_delta_bytes, peak_abs_rss = measure_peak_rss_during(
+            _run_task,
+            sample_s=0.01,
+        )
+
         print(
             f"Task {task_node_id} has a CPU peak memory usage of {peak_delta_bytes/1024**3:.2f} GB, and a GPU peak memory usage of {gpu_peak_bytes/1024**3:.2f} GB"
         )
+    else:
+        result = _run_task()
+
     return {
         "scores": result[0],
         "task_time": result[1],
@@ -303,6 +386,31 @@ class NodeExecutor:
             resume=False,
         )
 
+    def _shm_names_for_submit(
+        self, parent_node_ids: List[str], payload_data: Any
+    ) -> List[str]:
+        names: List[str] = []
+        for parent_id in parent_node_ids or []:
+            names.extend(self.result_cache.shared_memory_names.get(parent_id, []))
+        if parent_node_ids:
+            names.extend(collect_shm_names_from_payload(payload_data))
+        else:
+            names.extend(getattr(self, "_leaf_shm_names", []))
+            names.extend(collect_shm_names_from_payload(payload_data))
+        # preserve order, drop duplicates
+        return list(dict.fromkeys(names))
+
+    def _retain_for_submit(
+        self, parent_node_ids: List[str], payload_data: Any
+    ) -> List[str]:
+        return self.result_cache.retain_shm_names(
+            self._shm_names_for_submit(parent_node_ids, payload_data)
+        )
+
+    def _release_for_future(self, retained_shm_names: List[str]) -> None:
+        if retained_shm_names:
+            self.result_cache.release_shm_names(retained_shm_names)
+
     def run(self) -> None:
         task_results = {}
         memory_usage_data = {}
@@ -314,6 +422,22 @@ class NodeExecutor:
             max_workers=self.max_num_workers, mp_context=ctx
         ) as executor:
             future_to_node_id = {}
+            future_to_retained_shm: Dict[Any, List[str]] = {}
+
+            def submit_nodes_with_leaf_dependencies(node_ids: List[str]):
+                nodes = [self.scheduler.mapping[node_id] for node_id in node_ids]
+                gpu_id = nodes[0].gpu_id
+                self.scheduler.move_to_running(node_ids)
+
+                retained = self._retain_for_submit([], self.modalities[0].data)
+                future = executor.submit(
+                    _execute_multiple_reps_for_leaf_dependencies,
+                    nodes,
+                    self.modalities,
+                    gpu_id,
+                )
+                future_to_node_id[future] = node_ids
+                future_to_retained_shm[future] = retained
 
             def submit_node(node_id: str):
                 node = self.scheduler.mapping[node_id]
@@ -325,6 +449,7 @@ class NodeExecutor:
                         self.result_cache.get(parent_node_id)
                         for parent_node_id in parent_node_ids
                     ]
+
                 if self._is_task_node(node):
                     task_result = ResultEntry(
                         dag=self._get_dag_from_node_ids(node_id),
@@ -332,31 +457,42 @@ class NodeExecutor:
                     )
                     task_results[node_id] = task_result
                     task_idx = int(node.parameters.get("_task_idx", 0))
+                    payload_data = (
+                        self.modalities[0].data
+                        if parent_results is None
+                        else parent_results[0].data
+                    )
+                    retained = self._retain_for_submit(parent_node_ids, payload_data)
                     future = executor.submit(
                         _execute_task_worker,
                         node_id,
                         self.tasks[task_idx],
-                        (
-                            self.modalities[0].data
-                            if parent_results is None
-                            else parent_results[0].data
-                        ),
+                        payload_data,
                         gpu_id,
                     )
                 else:
+                    payload_data = (
+                        self.modalities if parent_results is None else parent_results
+                    )
+                    retained = self._retain_for_submit(parent_node_ids, payload_data)
                     future = executor.submit(
                         _execute_node_worker,
                         node,
-                        self.modalities if parent_results is None else parent_results,
+                        payload_data,
                         None,
                         None,
                         gpu_id,
                     )
                 self.scheduler.move_to_running(node_id)
                 future_to_node_id[future] = node_id
+                future_to_retained_shm[future] = retained
 
             def submit_new_ready_nodes():
-                for node_id in self.scheduler.get_runnable().copy():
+                ready_nodes = self.scheduler.get_runnable().copy()
+                for node_id in ready_nodes:
+                    if isinstance(node_id, list):
+                        submit_nodes_with_leaf_dependencies(node_id)
+                        continue
                     submit_node(node_id)
 
             submit_new_ready_nodes()
@@ -372,94 +508,127 @@ class NodeExecutor:
 
                 for future in done:
                     node_id = future_to_node_id.pop(future)
+                    retained_shm = future_to_retained_shm.pop(future, [])
                     try:
                         result = future.result()
-                    except Exception as e:
-                        err_cls = type(e)
-                        err_mod = err_cls.__module__
-                        if err_mod.startswith("torch"):
-                            torch.cuda.empty_cache()
-                        print(f"Error executing node {node_id}: {e}")
-                        self.scheduler.add_failed_node(node_id)
-                        continue
 
-                    peak_bytes = result["peak_bytes"]
-                    gpu_peak_bytes = result["gpu_peak_bytes"]
+                        if isinstance(node_id, list):
+                            results = result["results"]
+                            node_id_by_representation = result[
+                                "node_id_by_representation"
+                            ]
+                            for (
+                                representation,
+                                transformed_modality,
+                            ) in results.items():
+                                batch_node_id = node_id_by_representation[
+                                    representation
+                                ]
+                                self._handle_modality_result(
+                                    transformed_modality,
+                                    batch_node_id,
+                                    None,
+                                    None,
+                                    memory_usage_data,
+                                    representation,
+                                )
+                            submit_new_ready_nodes()
+                            continue
 
-                    node = self.scheduler.mapping[node_id]
-                    if self._is_task_node(node):
-                        task_results[node_id].task_time = result["task_time"]
-                        task_results[node_id].train_score = result["scores"][
-                            0
-                        ].average_scores
-                        task_results[node_id].val_score = result["scores"][
-                            1
-                        ].average_scores
-                        task_results[node_id].test_score = result["scores"][
-                            2
-                        ].average_scores
-                        if self.enable_checkpointing:
-                            self.checkpoint_manager.increment(node_id)
-                            self.checkpoint_manager.checkpoint_if_due(task_results)
-                            self._checkpoint_memory_usage(
-                                node_id,
-                                peak_bytes,
-                                gpu_peak_bytes,
-                                "task",
-                                memory_usage_data,
-                                None,
-                            )
+                        peak_bytes = result["peak_bytes"]
+                        gpu_peak_bytes = result["gpu_peak_bytes"]
+                        node = self.scheduler.mapping[node_id]
+                        if self._is_task_node(node):
+                            task_results[node_id].task_time = result["task_time"]
+                            task_results[node_id].train_score = result["scores"][
+                                0
+                            ].average_scores
+                            task_results[node_id].val_score = result["scores"][
+                                1
+                            ].average_scores
+                            task_results[node_id].test_score = result["scores"][
+                                2
+                            ].average_scores
+                            if self.enable_checkpointing:
+                                self.checkpoint_manager.increment(node_id)
+                                self.checkpoint_manager.checkpoint_if_due(task_results)
+                                self._checkpoint_memory_usage(
+                                    node_id,
+                                    peak_bytes,
+                                    gpu_peak_bytes,
+                                    "task",
+                                    memory_usage_data,
+                                    None,
+                                )
 
-                        parent_node_ids = self.scheduler.get_valid_parents(node_id)
-                        if len(parent_node_ids) > 0:
+                            parent_node_ids = self.scheduler.get_valid_parents(node_id)
                             for parent_node_id in parent_node_ids:
                                 self.result_cache.dec_ref(parent_node_id)
-                                if (
-                                    parent_node_id in self.result_cache.ref_count
-                                    and self.result_cache.ref_count[parent_node_id] == 0
-                                ):
-                                    self.result_cache.clear(parent_node_id)
-                        self.scheduler.complete_node(node_id)
-
-                    else:
-                        transformed_modality = result["result"]
-                        actual_stats = self._infer_actual_output_stats(
-                            transformed_modality
-                        )
-                        estimated_stats = self.scheduler.node_stats.get(node_id)
-
-                        if actual_stats is not None and (
-                            estimated_stats is None
-                            or not getattr(
-                                estimated_stats, "output_shape_is_known", True
-                            )
-                        ):
-                            self.scheduler.update_node_stats_and_reestimate_descendants(
-                                node_id, actual_stats
-                            )
-                        if self.enable_checkpointing:
-                            self._checkpoint_memory_usage(
+                            self.scheduler.complete_node(node_id)
+                        else:
+                            transformed_modality = result["result"]
+                            self._handle_modality_result(
+                                transformed_modality,
                                 node_id,
                                 peak_bytes,
                                 gpu_peak_bytes,
-                                result["operation_name"],
                                 memory_usage_data,
-                                transformed_modality.data,
+                                result["operation_name"],
                             )
-                        before_bytes = self.result_cache.get_memory_total_memory_usage()
-                        self._manage_result_cache(node_id, transformed_modality)
-                        after_bytes = self.result_cache.get_memory_total_memory_usage()
-                        self.scheduler.update_cpu_memory_in_use(
-                            after_bytes - before_bytes
-                        )
-                        self.scheduler.complete_node(node_id)
 
-                    submit_new_ready_nodes()
-        assert len(self.result_cache.ref_count.keys()) == 0
+                        submit_new_ready_nodes()
+                    except Exception:
+                        parent_node_ids = []
+                        if not isinstance(node_id, list):
+                            parent_node_ids = self.scheduler.get_valid_parents(node_id)
+                        for parent_node_id in parent_node_ids:
+                            self.result_cache.dec_ref(parent_node_id)
+                        if not isinstance(node_id, list):
+                            self.scheduler.add_failed_node(node_id)
+                        raise
+                    finally:
+                        self._release_for_future(retained_shm)
+
+        assert not self.result_cache.ref_count
+        assert not self.result_cache._shm_retain_count
 
         self.result_cache.cleanup_all()
         self._cleanup_leaf_shared_memory()
-        return list(task_results.values())
+        return {"task_results": list(task_results.values())}
+
+    def _handle_modality_result(
+        self,
+        transformed_modality: Any,
+        node_id: str,
+        peak_bytes: int,
+        gpu_peak_bytes: int,
+        memory_usage_data,
+        operation_name: str,
+    ):
+        actual_stats = self._infer_actual_output_stats(transformed_modality)
+        estimated_stats = self.scheduler.node_stats.get(node_id)
+
+        if actual_stats is not None and (
+            estimated_stats is None
+            or not getattr(estimated_stats, "output_shape_is_known", True)
+        ):
+            self.scheduler.update_node_stats_and_reestimate_descendants(
+                node_id, actual_stats
+            )
+        if self.enable_checkpointing:
+            self._checkpoint_memory_usage(
+                node_id,
+                peak_bytes,
+                gpu_peak_bytes,
+                operation_name,
+                memory_usage_data,
+                transformed_modality.data,
+            )
+        before_bytes = self.result_cache.get_memory_total_memory_usage()
+        self._manage_result_cache(node_id, transformed_modality)
+        after_bytes = self.result_cache.get_memory_total_memory_usage()
+        self.scheduler.update_cpu_memory_in_use(after_bytes - before_bytes)
+        self.scheduler.complete_node(node_id)
 
     def _materialize_leaf_modalities_in_shared_memory(self):
         self._leaf_shm_names = []
@@ -587,21 +756,13 @@ class NodeExecutor:
 
     def _manage_result_cache(self, node_id: str, result: Any):
         parent_node_ids = self.scheduler.get_valid_parents(node_id)
-        if len(parent_node_ids) > 0:
-            for parent_node_id in parent_node_ids:
-                self.result_cache.dec_ref(parent_node_id)
+        for parent_node_id in parent_node_ids:
+            self.result_cache.dec_ref(parent_node_id)
 
         if self.scheduler.get_children(node_id):
             for _ in self.scheduler.get_children(node_id):
                 self.result_cache.inc_ref(node_id)
             self.result_cache.add_result(node_id, result)
-
-        for parent_node_id in parent_node_ids:
-            if (
-                parent_node_id in self.result_cache.ref_count
-                and self.result_cache.ref_count[parent_node_id] == 0
-            ):
-                self.result_cache.clear(parent_node_id)
 
     def _get_nodes_by_ids(self, nodes_ids: List[str]) -> List[RepresentationNode]:
         return [self.scheduler.mapping[node_id] for node_id in nodes_ids]

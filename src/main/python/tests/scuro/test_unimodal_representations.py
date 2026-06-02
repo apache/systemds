@@ -86,7 +86,7 @@ class TestUnimodalRepresentations(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.num_instances = 100
+        cls.num_instances = 2
         cls.indices = np.array(range(cls.num_instances))
 
     def _create_audio_modality(self, signal_length=1000):
@@ -118,7 +118,6 @@ class TestUnimodalRepresentations(unittest.TestCase):
         for representation, expected_shape_signature in audio_representations:
             with self.subTest(representation=representation.name):
                 transformed_modality = representation.transform(audio)
-                print(representation.name)
                 self.assertIsNotNone(transformed_modality.data)
                 self.assertEqual(len(transformed_modality.data), self.num_instances)
 

@@ -64,15 +64,7 @@ class TimeseriesLoader(BaseLoader):
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
 
-        if self.file_format == "npy":
-            data = self._load_npy(file)
-        elif self.file_format in ["txt", "csv"]:
-            with open(file, "r") as f:
-                first_line = f.readline()
-            if any(name in first_line for name in self.signal_names):
-                data = self._load_csv_with_header(file)
-            else:
-                data = self._load_txt(file)
+        data = self._load_data(file)
 
         if data.ndim > 1 and len(self.signal_names) == 1:
             data = data.flatten()
@@ -95,6 +87,18 @@ class TimeseriesLoader(BaseLoader):
                     )
                 )
                 self.data.append(data[i])
+
+    def _load_data(self, file: str) -> np.ndarray:
+        if self.file_format == "npy":
+            data = self._load_npy(file)
+        elif self.file_format in ["txt", "csv"]:
+            with open(file, "r") as f:
+                first_line = f.readline()
+            if any(name in first_line for name in self.signal_names):
+                data = self._load_csv_with_header(file)
+            else:
+                data = self._load_txt(file)
+        return data
 
     def _normalize_signals(self, data: np.ndarray) -> np.ndarray:
         if data.ndim == 1:
@@ -145,14 +149,16 @@ class TimeseriesLoader(BaseLoader):
         return data
 
     def get_stats(self, source_path: str):
-        pass  # TODO: Implement this
-        # self.file_sanity_check(source_path)
-        # max_length = 0
-        # num_instances = 0
-        # num_signals = 0
-        # for file in os.listdir(source_path):
-        #     data = self._load_npy(source_path + file)
-        #     max_length = max(max_length, data.shape[0])
-        #     num_instances += 1
-        #     num_signals = max(num_signals, data.shape[1])
-        # return TimeseriesStats(max_length, num_instances, num_signals)
+        self.file_sanity_check(source_path)
+        max_length = 0
+        num_instances = 0
+        num_signals = 0
+        for file_name in self.indices:
+            file = source_path + file_name + "." + self.file_format
+            data = self._load_data(file)
+            max_length = max(max_length, data.shape[0])
+            num_instances += 1
+            num_signals = max(num_signals, data.shape[1])
+        return TimeseriesStats(
+            max_length, num_instances, num_signals, (max_length,), True
+        )

@@ -409,7 +409,8 @@ public enum Builtins {
 	UPPER_TRI("upper.tri", false, true),
 	EINSUM("einsum", false, false),
 	XDUMMY1("xdummy1", true), //error handling test
-	XDUMMY2("xdummy2", true); //error handling test
+	XDUMMY2("xdummy2", true), //error handling test
+	LHS("lhs",true);
 
 	Builtins(String name, boolean script) {
 		this(name, null, script, false, ReturnType.SINGLE_RETURN);

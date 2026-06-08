@@ -78,6 +78,7 @@ public class DMLConfig
 	public static final String PARALLEL_ENCODE_NUM_THREADS  = "sysds.parallel.encode.numThreads";
 	public static final String PARALLEL_TOKENIZE = "sysds.parallel.tokenize";
 	public static final String PARALLEL_TOKENIZE_NUM_BLOCKS = "sysds.parallel.tokenize.numBlocks";
+	public static final String FRAME_TO_MATRIX_WARN_CAST = "sysds.frame.tomatrix.warncast";
 	public static final String COMPRESSED_LINALG    = "sysds.compressed.linalg";
 	public static final String COMPRESSED_LINALG_INTERMEDIATE    = "sysds.compressed.linalg.intermediate";
 	public static final String COMPRESSED_LOSSY     = "sysds.compressed.lossy";
@@ -159,6 +160,7 @@ public class DMLConfig
 		_defaultVals.put(IO_COMPRESSION_CODEC,   "none");
 		_defaultVals.put(PARALLEL_TOKENIZE,      "false");
 		_defaultVals.put(PARALLEL_TOKENIZE_NUM_BLOCKS, "64");
+		_defaultVals.put(FRAME_TO_MATRIX_WARN_CAST, "false");
 		_defaultVals.put(PARALLEL_ENCODE,        "true" );
 		_defaultVals.put(PARALLEL_ENCODE_STAGED, "false" );
 		_defaultVals.put(PARALLEL_ENCODE_APPLY_BLOCKS, "-1");
@@ -456,7 +458,7 @@ public class DMLConfig
 	public String getConfigInfo()  {
 		String[] tmpConfig = new String[] { 
 			LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL, DEFAULT_BLOCK_SIZE,
-			CP_PARALLEL_OPS, CP_PARALLEL_IO, PARALLEL_ENCODE, NATIVE_BLAS, NATIVE_BLAS_DIR,
+			CP_PARALLEL_OPS, CP_PARALLEL_IO, PARALLEL_ENCODE, FRAME_TO_MATRIX_WARN_CAST, NATIVE_BLAS, NATIVE_BLAS_DIR,
 			COMPRESSED_LINALG, COMPRESSED_LOSSY, COMPRESSED_VALID_COMPRESSIONS, COMPRESSED_OVERLAPPING,
 			COMPRESSED_SAMPLING_RATIO, COMPRESSED_SOFT_REFERENCE_COUNT,
 			COMPRESSED_COCODE, COMPRESSED_TRANSPOSE, COMPRESSED_TRANSFORMENCODE, DAG_LINEARIZATION,

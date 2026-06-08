@@ -25,6 +25,8 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -74,11 +76,15 @@ public class MatrixBlockFromFrame {
 			if(k == -1)
 				k = InfrastructureAnalyzer.getLocalParallelism();
 
+			// Read once on the calling thread: the thread-local config is not visible to pool workers.
+			final boolean warnCast = ConfigurationManager.getDMLConfig()
+				.getBooleanValue(DMLConfig.FRAME_TO_MATRIX_WARN_CAST);
+
 			long nnz = 0;
 			if(k == 1)
-				nnz = convert(frame, ret, n, 0, m);
+				nnz = convert(frame, ret, n, 0, m, warnCast);
 			else
-				nnz = convertParallel(frame, ret, m, n, k);
+				nnz = convertParallel(frame, ret, m, n, k, warnCast);
 
 			ret.setNonZeros(nnz);
 			ret.examSparsity();
@@ -99,13 +105,14 @@ public class MatrixBlockFromFrame {
 		return ret;
 	}
 
-	private static long convert(FrameBlock frame, MatrixBlock mb, int n, int rl, int ru) {
-		try {
+	private static long convert(FrameBlock frame, MatrixBlock mb, int n, int rl, int ru, boolean warnCast) {
+		// Strict (default): let number format errors propagate and fail the conversion.
+		if(!warnCast)
+			return convertStrict(frame, mb, n, rl, ru);
 
-			if(mb.getDenseBlock().isContiguous())
-				return convertContiguous(frame, mb, n, rl, ru);
-			else
-				return convertGeneric(frame, mb, n, rl, ru);
+		// Warn-only: on number format errors fall back to writing NaN for the incompatible cells.
+		try {
+			return convertStrict(frame, mb, n, rl, ru);
 		}
 		catch(NumberFormatException | DMLRuntimeException e) {
 			synchronized(WARNED_FOR_FAILED_CAST){
@@ -117,11 +124,18 @@ public class MatrixBlockFromFrame {
 				}
 			}
 			return convertSafeCast(frame, mb, n, rl, ru);
-
 		}
 	}
 
-	private static long convertParallel(FrameBlock frame, MatrixBlock mb, int m, int n, int k) throws Exception {
+	private static long convertStrict(FrameBlock frame, MatrixBlock mb, int n, int rl, int ru) {
+		if(mb.getDenseBlock().isContiguous())
+			return convertContiguous(frame, mb, n, rl, ru);
+		else
+			return convertGeneric(frame, mb, n, rl, ru);
+	}
+
+	private static long convertParallel(FrameBlock frame, MatrixBlock mb, int m, int n, int k, boolean warnCast)
+		throws Exception {
 		ExecutorService pool = CommonThreadPool.get(k);
 		try {
 			List<Future<Long>> tasks = new ArrayList<>();
@@ -130,7 +144,7 @@ public class MatrixBlockFromFrame {
 			for(int i = 0; i < m; i += blkz) {
 				final int start = i;
 				final int end = Math.min(i + blkz, m);
-				tasks.add(pool.submit(() -> convert(frame, mb, n, start, end)));
+				tasks.add(pool.submit(() -> convert(frame, mb, n, start, end, warnCast)));
 			}
 
 			long nnz = 0;

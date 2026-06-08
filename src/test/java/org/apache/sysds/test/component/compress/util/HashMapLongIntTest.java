@@ -20,6 +20,7 @@
 package org.apache.sysds.test.component.compress.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.HashSet;
@@ -80,5 +81,63 @@ public class HashMapLongIntTest {
 		assertEquals(9, s.size());
 		assertEquals(4, a.get(4));
 		assertEquals(-1, a.get(13));
+	}
+
+	@Test
+	public void absentSignaledByMinusOneSentinel() {
+		// Design contract: get / putIfAbsent signal "absent" or "no previous value"
+		// with the primitive sentinel -1 rather than a nullable Integer. This is a
+		// deliberate performance choice to avoid boxing on the hot path, so the
+		// tests pin the -1 behavior down.
+		HashMapLongInt a = new HashMapLongInt(16);
+
+		// lookup of an absent key returns the sentinel
+		assertEquals(-1, a.get(1));
+		assertEquals(-1, a.get(Long.MAX_VALUE));
+
+		// inserting a previously-absent key returns the sentinel (no prior value)
+		assertEquals(-1, a.putIfAbsent(1, 100));
+
+		// a populated map still returns the sentinel for any missing key
+		assertEquals(-1, a.get(2));
+
+		// Consequence of the sentinel: -1 is reserved and must not be stored as a
+		// value, since a stored -1 reads back as the absent sentinel.
+		HashMapLongInt b = new HashMapLongInt(16);
+		b.putIfAbsent(7, -1);
+		assertEquals(1, b.size()); // the entry really is stored
+		assertEquals(-1, b.get(7)); // ...but reads back as the absent sentinel
+	}
+
+	@Test
+	public void emptyIterator() {
+		HashMapLongInt a = new HashMapLongInt(4);
+		assertFalse(a.iterator().hasNext());
+	}
+
+	@Test
+	public void reallocateBucket() {
+		// capacity 1 forces every key into a single bucket, growing it past the
+		// initial 4 cells and exercising reallocateBucket.
+		HashMapLongInt a = new HashMapLongInt(1);
+		for(int i = 1; i <= 10; i++)
+			assertEquals(-1, a.putIfAbsent(i, i * 2));
+		assertEquals(10, a.size());
+		for(int i = 1; i <= 10; i++)
+			assertEquals(i * 2, a.get(i));
+		// re-insert an existing key returns its stored value without growing
+		assertEquals(20, a.putIfAbsent(10, 999));
+		assertEquals(10, a.size());
+	}
+
+	@Test
+	public void toStringContainsEntries() {
+		HashMapLongInt a = new HashMapLongInt(16);
+		a.putIfAbsent(2, 20);
+		a.putIfAbsent(3, 30);
+		String s = a.toString();
+		assertTrue(s.contains("HashMapLongInt"));
+		assertTrue(s.contains("2->20"));
+		assertTrue(s.contains("3->30"));
 	}
 }

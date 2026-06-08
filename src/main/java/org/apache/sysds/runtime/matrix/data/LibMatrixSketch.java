@@ -37,6 +37,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class LibMatrixSketch {
 	private static final long PAR_UNIQUE_NUMCELL_THRESHOLD = 1024 * 16;
+	private static final long PAR_UNIQUE_MAX_LOCAL_BYTES_FRACTION = 4;
 
 	/**
 	 * Computes unique values, rows, or columns with the original single-threaded behavior.
@@ -187,17 +188,22 @@ public class LibMatrixSketch {
 		if( blkIn.getNumColumns() != 1 )
 			throw new NotImplementedException("Unique only support single-column vectors yet");
 
-		ExecutorService pool = CommonThreadPool.get(getNumThreads(k, blkIn.getNumRows()));
+		int numThreads = getNumThreads(k, blkIn.getNumRows());
+		ExecutorService pool = CommonThreadPool.get(numThreads);
 		try {
 			ArrayList<UniqueValueTask> tasks = new ArrayList<>();
-			for( int[] range : getBalancedRanges(blkIn.getNumRows(), k) )
+			for( int[] range : getBalancedRanges(blkIn.getNumRows(), numThreads) )
 				tasks.add(new UniqueValueTask(blkIn, range[0], range[1]));
 
 			// Merge after local deduplication to avoid a shared synchronized set in the workers.
 			HashSet<Double> hashSet = new HashSet<>();
 			List<Future<HashSet<Double>>> rtasks = pool.invokeAll(tasks);
-			for( Future<HashSet<Double>> task : rtasks )
-				hashSet.addAll(task.get());
+			for( int i = 0; i < rtasks.size(); i++ ) {
+				HashSet<Double> localSet = rtasks.get(i).get();
+				hashSet.addAll(localSet);
+				localSet.clear();
+				rtasks.set(i, null);
+			}
 
 			return createRowColOutput(hashSet);
 		}
@@ -218,18 +224,23 @@ public class LibMatrixSketch {
 	 * @return matrix block containing exact unique rows
 	 */
 	private static MatrixBlock getUniqueRowsParallel(MatrixBlock blkIn, int k) {
-		ExecutorService pool = CommonThreadPool.get(getNumThreads(k, blkIn.getNumRows()));
+		int numThreads = getNumThreads(k, blkIn.getNumRows());
+		ExecutorService pool = CommonThreadPool.get(numThreads);
 		try {
 			ArrayList<UniqueRowTask> tasks = new ArrayList<>();
-			for( int[] range : getBalancedRanges(blkIn.getNumRows(), k) )
+			for( int[] range : getBalancedRanges(blkIn.getNumRows(), numThreads) )
 				tasks.add(new UniqueRowTask(blkIn, range[0], range[1]));
 
 			// Global merge is intentionally single-threaded and ordered for correctness.
 			LinkedHashMap<RowKey, double[]> retainedRows = new LinkedHashMap<>();
 			List<Future<LinkedHashMap<RowKey, double[]>>> rtasks = pool.invokeAll(tasks);
-			for( Future<LinkedHashMap<RowKey, double[]>> task : rtasks )
-				for( java.util.Map.Entry<RowKey, double[]> entry : task.get().entrySet() )
+			for( int i = 0; i < rtasks.size(); i++ ) {
+				LinkedHashMap<RowKey, double[]> localRows = rtasks.get(i).get();
+				for( java.util.Map.Entry<RowKey, double[]> entry : localRows.entrySet() )
 					retainedRows.putIfAbsent(entry.getKey(), entry.getValue());
+				localRows.clear();
+				rtasks.set(i, null);
+			}
 
 			return createRowOutput(retainedRows.values(), blkIn.getNumColumns());
 		}
@@ -250,18 +261,23 @@ public class LibMatrixSketch {
 	 * @return matrix block containing exact unique columns
 	 */
 	private static MatrixBlock getUniqueColumnsParallel(MatrixBlock blkIn, int k) {
-		ExecutorService pool = CommonThreadPool.get(getNumThreads(k, blkIn.getNumColumns()));
+		int numThreads = getNumThreads(k, blkIn.getNumColumns());
+		ExecutorService pool = CommonThreadPool.get(numThreads);
 		try {
 			ArrayList<UniqueColumnTask> tasks = new ArrayList<>();
-			for( int[] range : getBalancedRanges(blkIn.getNumColumns(), k) )
+			for( int[] range : getBalancedRanges(blkIn.getNumColumns(), numThreads) )
 				tasks.add(new UniqueColumnTask(blkIn, range[0], range[1]));
 
 			// Global merge is intentionally single-threaded and ordered for correctness.
 			LinkedHashMap<ColKey, double[]> retainedColumns = new LinkedHashMap<>();
 			List<Future<LinkedHashMap<ColKey, double[]>>> rtasks = pool.invokeAll(tasks);
-			for( Future<LinkedHashMap<ColKey, double[]>> task : rtasks )
-				for( java.util.Map.Entry<ColKey, double[]> entry : task.get().entrySet() )
+			for( int i = 0; i < rtasks.size(); i++ ) {
+				LinkedHashMap<ColKey, double[]> localColumns = rtasks.get(i).get();
+				for( java.util.Map.Entry<ColKey, double[]> entry : localColumns.entrySet() )
 					retainedColumns.putIfAbsent(entry.getKey(), entry.getValue());
+				localColumns.clear();
+				rtasks.set(i, null);
+			}
 
 			return createColumnOutput(retainedColumns.values(), blkIn.getNumRows());
 		}
@@ -287,10 +303,11 @@ public class LibMatrixSketch {
 
 		switch(dir) {
 			case RowCol:
+				return blkIn.getNumRows() > 1 && isLocalDedupMemoryBudgetSafe(blkIn);
 			case Row:
-				return blkIn.getNumRows() > 1;
+				return blkIn.getNumRows() > 1 && isLocalDedupMemoryBudgetSafe(blkIn);
 			case Col:
-				return blkIn.getNumColumns() > 1;
+				return blkIn.getNumColumns() > 1 && isLocalDedupMemoryBudgetSafe(blkIn);
 			default:
 				throw new IllegalArgumentException("Unrecognized direction: " + dir);
 		}
@@ -321,6 +338,20 @@ public class LibMatrixSketch {
 	 */
 	private static int getNumThreads(int k, int len) {
 		return Math.max(1, Math.min(k, len));
+	}
+
+	/**
+	 * Conservative memory guard for parallel paths with thread-local sets or maps.
+	 * This does not try to predict object overhead; it simply avoids starting local
+	 * deduplication when the raw cell values already take a large fraction of the heap.
+	 *
+	 * @param blkIn input matrix block
+	 * @return true if local deduplication is small enough for the parallel path
+	 */
+	private static boolean isLocalDedupMemoryBudgetSafe(MatrixBlock blkIn) {
+		long copiedValueBytes = ((long) blkIn.getNumRows()) * blkIn.getNumColumns() * Double.BYTES;
+		long maxLocalBytes = Runtime.getRuntime().maxMemory() / PAR_UNIQUE_MAX_LOCAL_BYTES_FRACTION;
+		return copiedValueBytes <= maxLocalBytes;
 	}
 
 	/**
@@ -532,14 +563,16 @@ public class LibMatrixSketch {
 	 */
 	private static class RowKey {
 		private final double[] _values;
+		private final int _hash;
 
 		private RowKey(double[] values) {
 			_values = values;
+			_hash = hashValues(values);
 		}
 
 		@Override
 		public int hashCode() {
-			return hashValues(_values);
+			return _hash;
 		}
 
 		@Override
@@ -554,14 +587,16 @@ public class LibMatrixSketch {
 	 */
 	private static class ColKey {
 		private final double[] _values;
+		private final int _hash;
 
 		private ColKey(double[] values) {
 			_values = values;
+			_hash = hashValues(values);
 		}
 
 		@Override
 		public int hashCode() {
-			return hashValues(_values);
+			return _hash;
 		}
 
 		@Override

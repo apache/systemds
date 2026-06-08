@@ -62,17 +62,20 @@ public class DecoderComposite extends Decoder
 
 	@Override
 	public FrameBlock decode(final MatrixBlock in, final FrameBlock out, final int k) {
+		if(k <= 1)
+			return decode(in, out);
 		final ExecutorService pool = CommonThreadPool.get(k);
 		out.ensureAllocatedColumns(in.getNumRows());
 		try {
 			final List<Future<?>> tasks = new ArrayList<>();
 			int blz = Math.max(in.getNumRows() / k, 1000);
-			for(Decoder decoder : _decoders){
-				for(int i = 0; i < in.getNumRows(); i += blz){
-					final int start = i;
-					final int end = Math.min(in.getNumRows(), i + blz);
-					tasks.add(pool.submit(() -> decoder.decode(in, out, start, end)));
-				}
+			// Parallelize over row blocks (not over decoders): all decoders must
+			// run in order within a block, e.g. recode-on-output depends on the
+			// category indexes produced by the preceding dummycode decoder.
+			for(int i = 0; i < in.getNumRows(); i += blz){
+				final int start = i;
+				final int end = Math.min(in.getNumRows(), i + blz);
+				tasks.add(pool.submit(() -> decode(in, out, start, end)));
 			}
 			for(Future<?> f : tasks)
 				f.get();

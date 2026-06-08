@@ -49,9 +49,9 @@ public class DecoderBin extends Decoder {
 	private double[][] _binMins = null;
 	private double[][] _binMaxs = null;
 
-	// public DecoderBin() {
-	// 	super(null, null);
-	// }
+	public DecoderBin() {
+		super(null, null);
+	}
 
 	protected DecoderBin(ValueType[] schema, int[] binCols, int[] dcCols) {
 		super(schema, binCols);

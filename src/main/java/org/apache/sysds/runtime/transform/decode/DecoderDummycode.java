@@ -91,9 +91,11 @@ public class DecoderDummycode extends Decoder {
 		final int[] aix = sb.indexes(i);
 
 		for(int j = 0; j < _colList.length; j++) { // for each decode column.
-			// find k, the index in aix, within the range of low and high
-			final int low = _clPos[j];
-			final int high = _cuPos[j];
+			// find k, the index in aix, within the range of low and high.
+			// _clPos/_cuPos are 1-based matrix positions (the dense path reads
+			// in.get(i, k-1)); the sparse indexes in aix are 0-based, so shift.
+			final int low = _clPos[j] - 1;
+			final int high = _cuPos[j] - 1;
 			int h = Arrays.binarySearch(aix, apos, alen, low); // start h at column.
 			if(h < 0) // search gt col index (see binary search)
 				h = Math.abs(h + 1);
@@ -101,7 +103,7 @@ public class DecoderDummycode extends Decoder {
 			if(h < alen && aix[h] >= low && aix[h] < high) {
 				int k = aix[h];
 				int col = _colList[j] - 1;
-				out.getColumn(col).set(i, k - _clPos[j] + 1);
+				out.getColumn(col).set(i, k - low + 1);
 			}
 			// limit the binary search.
 			apos = h;

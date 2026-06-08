@@ -49,7 +49,7 @@ public class DecoderPassThrough extends Decoder
 		_dcCols = dcCols;
 	}
 
-	// public DecoderPassThrough() { super(null, null); }
+	public DecoderPassThrough() { super(null, null); }
 
 	@Override
 	public FrameBlock decode(MatrixBlock in, FrameBlock out) {

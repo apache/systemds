@@ -49,9 +49,9 @@ public class DecoderRecode extends Decoder
 	private HashMap<Long, Object>[] _rcMaps = null;
 	private boolean _onOut = false;
 
-	// public DecoderRecode() {
-	// 	super(null, null);
-	// }
+	public DecoderRecode() {
+		super(null, null);
+	}
 
 	protected DecoderRecode(ValueType[] schema, boolean onOut, int[] rcCols) {
 		super(schema, rcCols);

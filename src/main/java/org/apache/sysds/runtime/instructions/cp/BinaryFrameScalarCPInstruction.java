@@ -66,17 +66,33 @@ public class BinaryFrameScalarCPInstruction extends BinaryCPInstruction {
 
 			JSONObject jSpec = new JSONObject(spec.getStringValue());
 
-			if(!jSpec.containsKey("ids") && jSpec.getBoolean("ids")) {
+			if(!jSpec.containsKey("ids") || !jSpec.getBoolean("ids")) {
 				throw new DMLRuntimeException("not supported non ID based spec for get_categorical_mask");
 			}
 
 			String recode = TfMethod.RECODE.toString();
 			String dummycode = TfMethod.DUMMYCODE.toString();
+			String hash = TfMethod.HASH.toString();
 
 			int[] lengths = new int[nCol];
 			// assume all columns encode to at least one column.
 			Arrays.fill(lengths, 1);
 			boolean[] categorical = new boolean[nCol];
+
+			// feature-hashed columns map to K buckets; a plain hashed column
+			// produces a single (categorical) bucket-id column, while a hashed
+			// column that is additionally dummycoded expands to K columns.
+			boolean[] hashed = new boolean[nCol];
+			int K = 0;
+			if(jSpec.containsKey(hash)) {
+				K = jSpec.getInt("K");
+				JSONArray a = jSpec.getJSONArray(hash);
+				for(Object aa : a) {
+					int av = (Integer) aa - 1;
+					hashed[av] = true;
+					categorical[av] = true;
+				}
+			}
 
 			if(jSpec.containsKey(recode)) {
 				JSONArray a = jSpec.getJSONArray(recode);
@@ -90,14 +106,20 @@ public class BinaryFrameScalarCPInstruction extends BinaryCPInstruction {
 				JSONArray a = jSpec.getJSONArray(dummycode);
 				for(Object aa : a) {
 					int av = (Integer) aa - 1;
-					ColumnMetadata d = f.getColumnMetadata()[av];
-					String v = f.getString(0, av);
 					int ndist;
-					if(v.length() > 1 && v.charAt(0) == '¿') {
-						ndist = UtilFunctions.parseToInt(v.substring(1));
+					if(hashed[av]) {
+						// feature hashing followed by dummycoding yields K columns
+						ndist = K;
 					}
 					else {
-						ndist = d.isDefault() ? 0 : (int) d.getNumDistinct();
+						ColumnMetadata d = f.getColumnMetadata()[av];
+						String v = f.getString(0, av);
+						if(v.length() > 1 && v.charAt(0) == '¿') {
+							ndist = UtilFunctions.parseToInt(v.substring(1));
+						}
+						else {
+							ndist = d.isDefault() ? 0 : (int) d.getNumDistinct();
+						}
 					}
 					lengths[av] = ndist;
 					categorical[av] = true;

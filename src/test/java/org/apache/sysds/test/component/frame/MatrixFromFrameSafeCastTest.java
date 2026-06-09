@@ -20,6 +20,7 @@
 package org.apache.sysds.test.component.frame;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.spy;
@@ -158,6 +159,66 @@ public class MatrixFromFrameSafeCastTest {
 	}
 
 	@Test
+	public void strictThrowsParallelWhenWarnCastDisabled() {
+		// default behavior must also fail fast on the multi-threaded path
+		setWarnCast(false);
+		FrameBlock fb = mixedFrame();
+
+		Exception e = assertThrows(DMLRuntimeException.class,
+			() -> MatrixBlockFromFrame.convertToMatrixBlock(fb, 4));
+		assertTrue(e.getMessage().contains("Failed to convert FrameBlock to MatrixBlock"));
+	}
+
+	@Test
+	public void warnCastValidFrameConvertsWithoutFallback() {
+		// warn-cast enabled but every cell is parseable: the strict path succeeds and the NaN
+		// fallback must never trigger (covers the try-succeeds branch of convert).
+		Array<?> c1 = ArrayFactory.create(new String[] {"1.0", "2.0", "3.0"});
+		Array<?> c2 = ArrayFactory.create(new String[] {"4.0", "5.0", "6.0"});
+		FrameBlock fb = new FrameBlock(new Array<?>[] {c1, c2});
+
+		MatrixBlock mb = MatrixBlockFromFrame.convertToMatrixBlock(fb, 1);
+
+		compare(new double[][] {{1.0, 4.0}, {2.0, 5.0}, {3.0, 6.0}}, mb);
+		assertFalse("No cells failed to parse, so the fallback must not have been used",
+			MatrixBlockFromFrame.WARNED_FOR_FAILED_CAST);
+
+		final List<LoggingEvent> log = LoggingUtils.reinsert(appender);
+		long warnings = log.stream()
+			.filter(l -> l.getMessage().toString().contains("falling back to NaN on incompatible cells"))
+			.count();
+		assertEquals(0, warnings);
+	}
+
+	@Test
+	public void safeCastZeroValues() {
+		// zero-valued parseable cells must not contribute to the non-zero count even on the safe-cast
+		// path (covers the ': 0' branch of the nnz ternary), while unparseable cells still become NaN.
+		Array<?> c1 = ArrayFactory.create(new String[] {"0.0", "abc"});
+		Array<?> c2 = ArrayFactory.create(new String[] {"2.0", "0.0"});
+		FrameBlock fb = new FrameBlock(new Array<?>[] {c1, c2});
+
+		MatrixBlock mb = MatrixBlockFromFrame.convertToMatrixBlock(fb, 1);
+
+		compare(new double[][] {{0.0, 2.0}, {NA, 0.0}}, mb);
+		// non-zeros: 2.0 and the NaN cell count, the two explicit zeros do not
+		assertEquals(2, mb.getNonZeros());
+	}
+
+	@Test
+	public void safeCastAllInvalid() {
+		// every cell fails to parse: the whole matrix becomes NaN and each NaN counts as a non-zero
+		Array<?> c1 = ArrayFactory.create(new String[] {"abc", "def"});
+		Array<?> c2 = ArrayFactory.create(new String[] {"ghi", "jkl"});
+		FrameBlock fb = new FrameBlock(new Array<?>[] {c1, c2});
+
+		MatrixBlock mb = MatrixBlockFromFrame.convertToMatrixBlock(fb, 1);
+
+		compare(new double[][] {{NA, NA}, {NA, NA}}, mb);
+		assertEquals(4, mb.getNonZeros());
+	}
+
+	@Test
 	public void privateConstructor() throws Exception {
 		Constructor<MatrixBlockFromFrame> c = MatrixBlockFromFrame.class.getDeclaredConstructor();
 		assertTrue("Constructor should be private", Modifier.isPrivate(c.getModifiers()));
@@ -169,10 +230,17 @@ public class MatrixFromFrameSafeCastTest {
 	 * Verify that every parseable cell matches its expected value and every unparseable cell became NaN.
 	 */
 	private static void compareSafeCast(MatrixBlock mb) {
-		assertEquals(EXPECTED.length, mb.getNumRows());
-		assertEquals(EXPECTED[0].length, mb.getNumColumns());
-		for(int i = 0; i < EXPECTED.length; i++)
-			for(int j = 0; j < EXPECTED[i].length; j++)
-				assertEquals("cell (" + i + "," + j + ")", EXPECTED[i][j], mb.get(i, j), 0.0);
+		compare(EXPECTED, mb);
+	}
+
+	/**
+	 * Verify that the matrix matches the expected values cell by cell, treating NaN cells as expected NaN.
+	 */
+	private static void compare(double[][] expected, MatrixBlock mb) {
+		assertEquals(expected.length, mb.getNumRows());
+		assertEquals(expected[0].length, mb.getNumColumns());
+		for(int i = 0; i < expected.length; i++)
+			for(int j = 0; j < expected[i].length; j++)
+				assertEquals("cell (" + i + "," + j + ")", expected[i][j], mb.get(i, j), 0.0);
 	}
 }

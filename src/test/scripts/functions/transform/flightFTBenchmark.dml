@@ -1,0 +1,35 @@
+Forig = read($1, data_type="frame", format="csv", header=TRUE);
+# Num: Binning+DC, Cat: DC, All: Scale
+jspec1 = read($2, data_type="scalar", value_type="string");
+F = Forig[,1:150];
+print("("+nrow(F)+", "+ncol(F)+")");
+lim = 10;
+R = matrix(0, rows=lim, cols=1);
+[X_en ,Meta] = transformencode(target=F, spec=jspec1);
+print("Meta rows: " + nrow(Meta) + ", cols: " + ncol(Meta))
+print("Meta rows: " + nrow(X_en) + ", cols: " + ncol(X_en))
+
+for (i in 1:lim) {
+  print("INFO: starting transformdecode");
+  t1 = time();
+  decoded = transformdecode(target=X_en, spec=jspec1, meta=Meta);
+  t2 = time();
+  R[i,1] = floor((t2-t1)/1000000);
+  print("Elapsed time for transformations using SystemDS = "+floor((t2-t1)/1000000)+" millsec");
+}
+
+R = order(target=R, by=1);
+res = R[1:5,];
+write(res, "kdd_dml.dat", format="csv", sep="\t");
+print("("+nrow(X_en)+", "+ncol(X_en)+")");
+
+avg = matrix(0, rows=1, cols=1);
+avg[1,1] = floor((sum(res)/5) / 1000);
+write(avg, "4e_T2_Base.dat", format="csv", sep="\t");
+
+# Sort timings and take best 5
+R = order(target=R, by=1);
+res = R[1:5,];
+
+print("Decoded shape: " + nrow(decoded) + ", " + ncol(decoded) + ")");
+print(R)

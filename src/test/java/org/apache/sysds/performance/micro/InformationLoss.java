@@ -37,6 +37,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysds.runtime.transform.decode.ColumnDecoder;
+import org.apache.sysds.runtime.transform.decode.ColumnDecoderFactory;
 import org.apache.sysds.runtime.transform.decode.Decoder;
 import org.apache.sysds.runtime.transform.decode.DecoderFactory;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
@@ -141,10 +143,11 @@ public class InformationLoss {
 		MultiColumnEncoder encoder = //
 			EncoderFactory.createEncoder(spec, f.getColumnNames(), f.getNumColumns(), null);
 		MatrixBlock binned = encoder.encode(f, 16, true);
-		Decoder d = DecoderFactory.createDecoder(spec, f.getColumnNames(false), f.getSchema(), encoder.getMetaData(null),
+		ColumnDecoder d = ColumnDecoderFactory.createDecoder(spec, f.getColumnNames(false), f.getSchema(), encoder.getMetaData(null),
+		//Decoder d = DecoderFactory.createDecoder(spec, f.getColumnNames(false), f.getSchema(), encoder.getMetaData(null),
 			binned.getNumColumns());
 		FrameBlock dr = new FrameBlock(f.getSchema());
-		d.decode(binned, dr, 16);
+		d.columnDecode(binned, dr, 16);
 		return dr;
 	}
 

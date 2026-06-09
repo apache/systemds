@@ -75,7 +75,7 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	}
 
 	protected enum TransformType{
-		BIN, RECODE, DUMMYCODE, FEATURE_HASH, PASS_THROUGH, UDF, WORD_EMBEDDING, BAG_OF_WORDS, N_A
+		BIN, RECODE, DUMMYCODE, FEATURE_HASH, PASS_THROUGH, UDF, WORD_EMBEDDING, BAG_OF_WORDS, RAGGED, N_A
 	}
 
 	protected ColumnEncoder(int colID) {
@@ -447,7 +447,7 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	}
 
 	public enum EncoderType {
-		Recode, FeatureHash, PassThrough, Bin, Dummycode, Omit, MVImpute, Composite, WordEmbedding, BagOfWords
+		Recode, FeatureHash, PassThrough, Bin, Dummycode, Omit, MVImpute, Composite, WordEmbedding, BagOfWords, Ragged
 	}
 
 	/*

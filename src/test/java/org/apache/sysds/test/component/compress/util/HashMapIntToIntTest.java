@@ -24,8 +24,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Set;
 
 import org.apache.sysds.runtime.compress.utils.HashMapIntToInt;
@@ -298,6 +301,25 @@ public class HashMapIntToIntTest {
 	}
 
 	@Test
+	public void resizeWithEmptyBucketsInOldTable() {
+		// A resize only fires from the collision-append path, so dense sequential
+		// keys fill every bucket before the load factor is exceeded and the old
+		// table is always full at rehash time. Here we instead pile keys that are
+		// all congruent mod 16 into a single chain: the load factor (0.75) is
+		// crossed while 15 of the 16 buckets stay empty, exercising the
+		// n == null (skip empty bucket) branch of resize()'s rehash loop.
+		HashMapIntToInt a = new HashMapIntToInt(16);
+		final int n = 13; // 13 > 16 * 0.75 triggers exactly one resize
+		for(int i = 0; i < n; i++)
+			assertEquals(-1, a.putI(i * 16, i)); // every key maps to bucket 0 at capacity 16
+		assertEquals(n, a.size());
+
+		// every entry survived the rehash over a table that contained empty buckets
+		for(int i = 0; i < n; i++)
+			assertEquals(i, a.getI(i * 16));
+	}
+
+	@Test
 	public void emptyEntrySetIteration() {
 		HashMapIntToInt a = new HashMapIntToInt(16);
 		int cnt = 0;
@@ -352,5 +374,85 @@ public class HashMapIntToIntTest {
 	@Test(expected = UnsupportedOperationException.class)
 	public void valuesUnsupported() {
 		new HashMapIntToInt(4).values();
+	}
+
+	@Test
+	public void randomKeysMatchReference1() {
+		randomKeysMatchReference(1, 1, 2000);
+	}
+
+	@Test
+	public void randomKeysMatchReference16() {
+		randomKeysMatchReference(2, 16, 2000);
+	}
+
+	@Test
+	public void randomKeysMatchReferenceSmallDomain() {
+		// a small key domain relative to the entry count forces many overwrites
+		// and unevenly loaded buckets rather than a clean one-key-per-bucket layout
+		randomKeysMatchReference(3, 4, 3000);
+	}
+
+	private void randomKeysMatchReference(long seed, int capacity, int inserts) {
+		// Cross-check against java.util.HashMap under randomized, value-shifted keys
+		// so bucket load is genuinely uneven (collisions, chains, and empty buckets
+		// coexist) instead of the perfectly balanced layout that dense keys produce.
+		// Values are kept >= 0 because the primitive accessors reserve -1 as the
+		// "absent" sentinel.
+		Random r = new Random(seed);
+		HashMapIntToInt a = new HashMapIntToInt(capacity);
+		Map<Integer, Integer> ref = new HashMap<>();
+
+		for(int i = 0; i < inserts; i++) {
+			int key = r.nextInt(inserts); // domain may be smaller than #inserts -> overwrites
+			int value = r.nextInt(Integer.MAX_VALUE); // never -1
+			Integer prev = ref.put(key, value);
+			int prevI = a.putI(key, value);
+			if(prev == null)
+				assertEquals(-1, prevI); // first time we see the key
+			else
+				assertEquals(prev.intValue(), prevI); // overwrite returns previous value
+		}
+
+		assertEquals(ref.size(), a.size());
+		for(Entry<Integer, Integer> e : ref.entrySet()) {
+			assertEquals(e.getValue().intValue(), a.getI(e.getKey()));
+			assertTrue(a.containsKey(e.getKey()));
+		}
+
+		// iteration visits exactly the reference entries, nothing more or less
+		Map<Integer, Integer> seen = new HashMap<>();
+		for(Entry<Integer, Integer> e : a.entrySet())
+			assertNull("duplicate key from iterator: " + e.getKey(), seen.put(e.getKey(), e.getValue()));
+		assertEquals(ref, seen);
+
+		// a few keys outside the inserted domain must report absent
+		for(int i = 0; i < 50; i++)
+			assertEquals(-1, a.getI(inserts + r.nextInt(inserts) + 1));
+	}
+
+	@Test
+	public void randomPutIfAbsentKeepsFirstValue() {
+		// putIfAbsentI must preserve the first value stored for a key even under
+		// randomized, colliding inserts; mirror that contract with a reference map.
+		Random r = new Random(7);
+		HashMapIntToInt a = new HashMapIntToInt(2);
+		Map<Integer, Integer> ref = new HashMap<>();
+		final int inserts = 2000;
+
+		for(int i = 0; i < inserts; i++) {
+			int key = r.nextInt(inserts / 4); // small domain -> frequent collisions
+			int value = r.nextInt(Integer.MAX_VALUE); // never -1
+			if(ref.containsKey(key))
+				assertEquals(ref.get(key).intValue(), a.putIfAbsentI(key, value)); // keep first
+			else {
+				assertEquals(-1, a.putIfAbsentI(key, value));
+				ref.put(key, value);
+			}
+		}
+
+		assertEquals(ref.size(), a.size());
+		for(Entry<Integer, Integer> e : ref.entrySet())
+			assertEquals(e.getValue().intValue(), a.getI(e.getKey()));
 	}
 }

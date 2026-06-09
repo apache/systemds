@@ -362,7 +362,7 @@ public class HashMapIntToInt implements Map<Integer, Integer> {
 			if(e.next != null)
 				next = e.next;
 			else {
-				for(; ++bucketId < buckets.length; bucketId++) {
+				for(bucketId++; bucketId < buckets.length; bucketId++) {
 					if(buckets[bucketId] != null) {
 						next = buckets[bucketId];
 						break;

@@ -607,17 +607,25 @@ public class StringArray extends Array<String> {
 
 	private static double getAsDouble(String s) {
 		try {
-
 			return DoubleArray.parseDouble(s);
 		}
 		catch(Exception e) {
-			String ls = s.toLowerCase();
-			if(ls.equals("true") || ls.equals("t"))
+			// Fallback for boolean-like tokens. Dispatch on length first so non-boolean strings are
+			// rejected immediately, and avoid allocating a lower-cased copy by comparing case-insensitively
+			// (single char compare for the 1-char tokens).
+			final int len = s.length();
+			if(len == 1) {
+				final char c = s.charAt(0);
+				if(c == 't' || c == 'T')
+					return 1;
+				else if(c == 'f' || c == 'F')
+					return 0;
+			}
+			else if(len == 4 && s.compareToIgnoreCase("true") == 0)
 				return 1;
-			else if(ls.equals("false") || ls.equals("f"))
+			else if(len == 5 && s.compareToIgnoreCase("false") == 0)
 				return 0;
-			else
-				throw new DMLRuntimeException("Unable to change to double: " + s, e);
+			throw new DMLRuntimeException("Unable to change to double: " + s, e);
 		}
 	}
 

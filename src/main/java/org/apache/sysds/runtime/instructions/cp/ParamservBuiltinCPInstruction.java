@@ -56,8 +56,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.spark.network.server.TransportServer;
 import org.apache.spark.util.LongAccumulator;
 import org.apache.sysds.api.DMLScript;
@@ -92,12 +90,13 @@ import org.apache.sysds.runtime.controlprogram.paramserv.homomorphicEncryption.P
 import org.apache.sysds.runtime.controlprogram.paramserv.rpc.PSRpcFactory;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.util.ProgramConverter;
+import org.apache.sysds.utils.ParameterizedLogger;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 import org.apache.sysds.utils.stats.ParamServStatistics;
 import org.apache.sysds.utils.stats.Timing;
 
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
-	private static final Log LOG = LogFactory.getLog(ParamservBuiltinCPInstruction.class.getName());
+	private static final ParameterizedLogger LOG = ParameterizedLogger.getLogger(ParamservBuiltinCPInstruction.class);
 
 	public static final int DEFAULT_BATCH_SIZE = 64;
 	private static final PSFrequency DEFAULT_UPDATE_FREQUENCY = PSFrequency.EPOCH;
@@ -159,14 +158,12 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		int nbatches = getNbatches();
 		int numBackupWorkers = getNumBackupWorkers();
 
-		if( LOG.isInfoEnabled() ) {
-			LOG.info("[+] Update Type: " + updateType);
-			LOG.info("[+] Frequency: " + freq);
-			LOG.info("[+] Data Partitioning: " + federatedPSScheme);
-			LOG.info("[+] Runtime Balancing: " + runtimeBalancing);
-			LOG.info("[+] Weighting: " + weighting);
-			LOG.info("[+] Seed: " + seed);
-		}
+		LOG.info("[+] Update Type: {}", updateType);
+		LOG.info("[+] Frequency: {}", freq);
+		LOG.info("[+] Data Partitioning: {}", federatedPSScheme);
+		LOG.info("[+] Runtime Balancing: {}", runtimeBalancing);
+		LOG.info("[+] Weighting: {}", weighting);
+		LOG.info("[+] Seed: {}", seed);
 		if (tSetup != null)
 			ParamServStatistics.accSetupTime((long) tSetup.stop());
 
@@ -612,10 +609,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		List<MatrixObject> pfs = result.pFeatures;
 		List<MatrixObject> pls = result.pLabels;
 		if (pfs.size() < workers.size()) {
-			if (LOG.isWarnEnabled()) {
-				LOG.warn(String.format("There is only %d batches of data but has %d workers. "
-					+ "Hence, reset the number of workers with %d.", pfs.size(), workers.size(), pfs.size()));
-			}
+			LOG.warn("There is only {} batches of data but has {} workers. "
+					+ "Hence, reset the number of workers with {}.", pfs.size(), workers.size(), pfs.size());
 			if (getUpdateType().isSBP() && pfs.size() <= getNumBackupWorkers()) {
 				throw new DMLRuntimeException(
 					"Effective number of workers is smaller or equal to the number of backup workers."

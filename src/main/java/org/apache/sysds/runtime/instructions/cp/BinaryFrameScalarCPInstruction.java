@@ -70,6 +70,19 @@ public class BinaryFrameScalarCPInstruction extends BinaryCPInstruction {
 				throw new DMLRuntimeException("not supported non ID based spec for get_categorical_mask");
 			}
 
+			// get_categorical_mask only models the column expansion of recode/dummycode/hash.
+			// Methods that change the output arity (bin expands under dummycode, word_embedding and
+			// bag_of_words map to many columns) or are user-defined (udf) would produce a mask with
+			// the wrong number of columns, so reject them explicitly instead of emitting a silently
+			// incorrect result. impute and omit are intentionally allowed: they do not alter the
+			// output column count or the categorical flag of a column.
+			for(TfMethod m : new TfMethod[] {TfMethod.BIN, TfMethod.WORD_EMBEDDING, TfMethod.BAG_OF_WORDS,
+				TfMethod.UDF}) {
+				if(jSpec.containsKey(m.toString()))
+					throw new DMLRuntimeException(
+						"unsupported transform method '" + m + "' for get_categorical_mask");
+			}
+
 			String recode = TfMethod.RECODE.toString();
 			String dummycode = TfMethod.DUMMYCODE.toString();
 			String hash = TfMethod.HASH.toString();

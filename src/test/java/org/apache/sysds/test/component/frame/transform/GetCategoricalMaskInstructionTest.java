@@ -99,6 +99,50 @@ public class GetCategoricalMaskInstructionTest {
 	}
 
 	@Test
+	public void unsupportedBinMethodThrows() {
+		// bin expands to bin-count columns under dummycode, which the mask does not model
+		FrameBlock meta = new FrameBlock(new ValueType[] {ValueType.STRING}, new String[][] {{"a"}});
+		assertThrowsMessage("unsupported transform method 'bin'",
+			() -> run(meta, "{\"ids\": true, \"bin\": [{\"id\": 1, \"method\": \"equi-width\", \"numbins\": 3}]}"));
+	}
+
+	@Test
+	public void unsupportedWordEmbeddingMethodThrows() {
+		// word_embedding maps a column to an embedding vector (many columns), not a single mask entry
+		FrameBlock meta = new FrameBlock(new ValueType[] {ValueType.STRING}, new String[][] {{"a"}});
+		assertThrowsMessage("unsupported transform method 'word_embedding'",
+			() -> run(meta, "{\"ids\": true, \"word_embedding\": [1]}"));
+	}
+
+	@Test
+	public void unsupportedBagOfWordsMethodThrows() {
+		// bag_of_words expands to one column per dictionary token
+		FrameBlock meta = new FrameBlock(new ValueType[] {ValueType.STRING}, new String[][] {{"a"}});
+		assertThrowsMessage("unsupported transform method 'bag_of_words'",
+			() -> run(meta, "{\"ids\": true, \"bag_of_words\": [1]}"));
+	}
+
+	@Test
+	public void unsupportedUdfMethodThrows() {
+		// udf output arity is user-defined and cannot be inferred from the spec
+		FrameBlock meta = new FrameBlock(new ValueType[] {ValueType.STRING}, new String[][] {{"a"}});
+		assertThrowsMessage("unsupported transform method 'udf'",
+			() -> run(meta, "{\"ids\": true, \"udf\": {\"name\": \"f\", \"ids\": [1]}}"));
+	}
+
+	@Test
+	public void imputeAndOmitAreAccepted() {
+		// impute and omit do not change the output column count or categorical flag, so a spec that
+		// only adds them on top of a recoded column must still succeed and mark that column categorical
+		FrameBlock meta = new FrameBlock(new ValueType[] {ValueType.STRING}, new String[][] {{"a"}});
+		MatrixBlock res = run(meta, "{\"ids\": true, \"recode\": [1], \"impute\": [{\"id\": 1, \"method\": \"global_mode\"}], \"omit\": [1]}");
+
+		assertEquals(1, res.getNumRows());
+		assertEquals(1, res.getNumColumns());
+		assertEquals(1.0, res.get(0, 0), 0.0);
+	}
+
+	@Test
 	public void unsupportedOpcodeThrows() {
 		// any frame-scalar binary opcode other than get_categorical_mask must be rejected
 		ExecutionContext ec = ExecutionContextFactory.createContext();

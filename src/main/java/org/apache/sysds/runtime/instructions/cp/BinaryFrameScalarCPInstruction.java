@@ -31,11 +31,14 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.MultiThreadedOperator;
 import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
 public class BinaryFrameScalarCPInstruction extends BinaryCPInstruction {
 	// private static final Log LOG = LogFactory.getLog(BinaryFrameFrameCPInstruction.class.getName());
+
+	private static final TfMethod[] UNSUPPORTED_MASK_METHODS = new TfMethod[] {TfMethod.BIN,
+		TfMethod.WORD_EMBEDDING, TfMethod.BAG_OF_WORDS, TfMethod.UDF};
 
 	protected BinaryFrameScalarCPInstruction(MultiThreadedOperator op, CPOperand in1, CPOperand in2, CPOperand out,
 		String opcode, String istr) {
@@ -58,108 +61,146 @@ public class BinaryFrameScalarCPInstruction extends BinaryCPInstruction {
 		ec.releaseFrameInput(input1.getName());
 	}
 
+	private static void validate(JSONObject jSpec) {
+		try {
+			if(!jSpec.containsKey("ids") || !jSpec.getBoolean("ids"))
+				throw new DMLRuntimeException("not supported non ID based spec for get_categorical_mask");
+
+			for(TfMethod m : UNSUPPORTED_MASK_METHODS)
+				if(jSpec.containsKey(m.toString()))
+					throw new DMLRuntimeException("unsupported transform method '" + m + "' for get_categorical_mask");
+		}
+		catch(JSONException e) {
+			throw new DMLRuntimeException(e);
+		}
+	}
+
 	public void processGetCategorical(ExecutionContext ec, FrameBlock f, ScalarObject spec) {
 		try {
-
-			// MatrixBlock ret = new MatrixBlock();
-			int nCol = f.getNumColumns();
-
+			// 1. extract the spec, 2. validate it
 			JSONObject jSpec = new JSONObject(spec.getStringValue());
+			validate(jSpec);
 
-			if(!jSpec.containsKey("ids") || !jSpec.getBoolean("ids")) {
-				throw new DMLRuntimeException("not supported non ID based spec for get_categorical_mask");
-			}
+			// 3.-5. fold each supported transform method into the per-column mask state
+			CategoricalMask mask = new CategoricalMask(f, jSpec);
+			mask.hash();
+			mask.recode();
+			mask.dummycode();
 
-			// get_categorical_mask only models the column expansion of recode/dummycode/hash.
-			// Methods that change the output arity (bin expands under dummycode, word_embedding and
-			// bag_of_words map to many columns) or are user-defined (udf) would produce a mask with
-			// the wrong number of columns, so reject them explicitly instead of emitting a silently
-			// incorrect result. impute and omit are intentionally allowed: they do not alter the
-			// output column count or the categorical flag of a column.
-			for(TfMethod m : new TfMethod[] {TfMethod.BIN, TfMethod.WORD_EMBEDDING, TfMethod.BAG_OF_WORDS,
-				TfMethod.UDF}) {
-				if(jSpec.containsKey(m.toString()))
-					throw new DMLRuntimeException(
-						"unsupported transform method '" + m + "' for get_categorical_mask");
-			}
-
-			String recode = TfMethod.RECODE.toString();
-			String dummycode = TfMethod.DUMMYCODE.toString();
-			String hash = TfMethod.HASH.toString();
-
-			int[] lengths = new int[nCol];
-			// assume all columns encode to at least one column.
-			Arrays.fill(lengths, 1);
-			boolean[] categorical = new boolean[nCol];
-
-			// feature-hashed columns map to K buckets; a plain hashed column
-			// produces a single (categorical) bucket-id column, while a hashed
-			// column that is additionally dummycoded expands to K columns.
-			boolean[] hashed = new boolean[nCol];
-			int K = 0;
-			if(jSpec.containsKey(hash)) {
-				K = jSpec.getInt("K");
-				JSONArray a = jSpec.getJSONArray(hash);
-				for(Object aa : a) {
-					int av = (Integer) aa - 1;
-					hashed[av] = true;
-					categorical[av] = true;
-				}
-			}
-
-			if(jSpec.containsKey(recode)) {
-				JSONArray a = jSpec.getJSONArray(recode);
-				for(Object aa : a) {
-					int av = (Integer) aa - 1;
-					categorical[av] = true;
-				}
-			}
-
-			if(jSpec.containsKey(dummycode)) {
-				JSONArray a = jSpec.getJSONArray(dummycode);
-				for(Object aa : a) {
-					int av = (Integer) aa - 1;
-					int ndist;
-					if(hashed[av]) {
-						// feature hashing followed by dummycoding yields K columns
-						ndist = K;
-					}
-					else {
-						ColumnMetadata d = f.getColumnMetadata()[av];
-						String v = f.getString(0, av);
-						if(v.length() > 1 && v.charAt(0) == '¿') {
-							ndist = UtilFunctions.parseToInt(v.substring(1));
-						}
-						else {
-							ndist = d.isDefault() ? 0 : (int) d.getNumDistinct();
-						}
-					}
-					lengths[av] = ndist;
-					categorical[av] = true;
-				}
-			}
-
-			// get total size after mapping
-
-			int sumLengths = 0;
-			for(int i : lengths) {
-				sumLengths += i;
-			}
-
-			MatrixBlock ret = new MatrixBlock(1, sumLengths, false);
-			ret.allocateDenseBlock();
-			int off = 0;
-			for(int i = 0; i < lengths.length; i++) {
-				for(int j = 0; j < lengths[i]; j++) {
-					ret.set(0, off++, categorical[i] ? 1 : 0);
-				}
-			}
-
-			ec.setMatrixOutput(output.getName(), ret);
-
+			// 6.-7. size and materialize the output mask
+			ec.setMatrixOutput(output.getName(), mask.toMatrixBlock());
 		}
 		catch(Exception e) {
 			throw new DMLRuntimeException(e);
+		}
+	}
+
+	/**
+	 * Accumulates, per input column, how many output columns it expands to (lengths) and whether those
+	 * output columns are categorical (categorical). The arrays are allocated lazily: a column that no
+	 * method touches keeps the implicit default of a single, non-categorical output column.
+	 */
+	private static final class CategoricalMask {
+		private final FrameBlock f;
+		private final JSONObject jSpec;
+		private final int nCol;
+
+		private int[] lengths = null;
+		private boolean[] categorical = null;
+
+		// feature-hashed columns map to K buckets; a plain hashed column produces a single
+		// (categorical) bucket-id column, while a hashed column that is additionally dummycoded
+		// expands to K columns.
+		private boolean[] hashed = null;
+		private int K = 0;
+
+		private CategoricalMask(FrameBlock f, JSONObject jSpec) {
+			this.f = f;
+			this.jSpec = jSpec;
+			this.nCol = f.getNumColumns();
+		}
+
+		private void hash() throws JSONException {
+			String hash = TfMethod.HASH.toString();
+			if(!jSpec.containsKey(hash))
+				return;
+			K = jSpec.getInt("K");
+			hashed = new boolean[nCol];
+			ensureCategorical();
+			for(Object aa : jSpec.getJSONArray(hash)) {
+				int av = (Integer) aa - 1;
+				hashed[av] = true;
+				categorical[av] = true;
+			}
+		}
+
+		private void recode() throws JSONException {
+			String recode = TfMethod.RECODE.toString();
+			if(!jSpec.containsKey(recode))
+				return;
+			ensureCategorical();
+			for(Object aa : jSpec.getJSONArray(recode)) {
+				int av = (Integer) aa - 1;
+				categorical[av] = true;
+			}
+		}
+
+		private void dummycode() throws JSONException {
+			String dummycode = TfMethod.DUMMYCODE.toString();
+			if(!jSpec.containsKey(dummycode))
+				return;
+			ensureCategorical();
+			ensureLengths();
+			for(Object aa : jSpec.getJSONArray(dummycode)) {
+				int av = (Integer) aa - 1;
+				lengths[av] = distinctCount(av);
+				categorical[av] = true;
+			}
+		}
+
+		private int distinctCount(int av) {
+			if(hashed != null && hashed[av])
+				// feature hashing followed by dummycoding yields K columns
+				return K;
+			ColumnMetadata d = f.getColumnMetadata()[av];
+			String v = f.getString(0, av);
+			if(v.length() > 1 && v.charAt(0) == '¿')
+				return UtilFunctions.parseToInt(v.substring(1));
+			return d.isDefault() ? 0 : (int) d.getNumDistinct();
+		}
+
+		private int sumLengths() {
+			if(lengths == null)
+				return nCol;
+			int sum = 0;
+			for(int i = 0; i < nCol; i++)
+				sum += lengths[i];
+			return sum;
+		}
+
+		private MatrixBlock toMatrixBlock() {
+			MatrixBlock ret = new MatrixBlock(1, sumLengths(), false);
+			ret.allocateDenseBlock();
+			int off = 0;
+			for(int i = 0; i < nCol; i++) {
+				int len = (lengths == null) ? 1 : lengths[i];
+				double val = (categorical != null && categorical[i]) ? 1 : 0;
+				for(int j = 0; j < len; j++)
+					ret.set(0, off++, val);
+			}
+			return ret;
+		}
+
+		private void ensureCategorical() {
+			if(categorical == null)
+				categorical = new boolean[nCol];
+		}
+
+		private void ensureLengths() {
+			if(lengths == null) {
+				lengths = new int[nCol];
+				Arrays.fill(lengths, 1);
+			}
 		}
 	}
 }

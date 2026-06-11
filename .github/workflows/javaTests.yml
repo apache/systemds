@@ -50,7 +50,10 @@ concurrency:
 jobs:
   java_tests:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # Job cap kept above the per-fork surefire timeout (test-forkedProcessTimeout,
+    # 600s) so surefire can kill hung forks and finish the remaining tests in a
+    # suite before GitHub Actions cancels the whole job.
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:

@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.BinaryFrameScalarCPInstruction;
@@ -82,6 +83,80 @@ public class GetCategoricalMaskInstructionTest {
 		assertEquals(1, res.getNumRows());
 		assertEquals(1, res.getNumColumns());
 		assertEquals(0.0, res.get(0, 0), 0.0);
+	}
+
+	@Test
+	public void noMethodAllColumnsPassThrough() {
+		// a spec with only "ids" touches no column: every column is a single, non-categorical output
+		FrameBlock meta = metaWithDistinct(3, new int[] {0, 0, 0});
+		MatrixBlock res = run(meta, "{\"ids\": true}");
+
+		assertMask(res, new double[] {0, 0, 0});
+	}
+
+	@Test
+	public void recodeInterleavedWithPassThrough() {
+		// categorical (recode, 1 col each) interleaved with continuous pass-through columns
+		FrameBlock meta = metaWithDistinct(5, new int[] {0, 0, 0, 0, 0});
+		MatrixBlock res = run(meta, "{\"ids\": true, \"recode\": [1, 4]}");
+
+		assertMask(res, new double[] {1, 0, 0, 1, 0});
+	}
+
+	@Test
+	public void leadingPassThroughThenDummycodeOffsets() {
+		// the dummycode expansion must start at the correct offset after three continuous columns
+		FrameBlock meta = metaWithDistinct(4, new int[] {0, 0, 0, 3});
+		MatrixBlock res = run(meta, "{\"ids\": true, \"dummycode\": [4]}");
+
+		assertMask(res, new double[] {0, 0, 0, 1, 1, 1});
+	}
+
+	@Test
+	public void multipleDummycodeVaryingDistinctCounts() {
+		// several dummycoded columns of different widths, all categorical, no pass-through
+		FrameBlock meta = metaWithDistinct(3, new int[] {2, 4, 1});
+		MatrixBlock res = run(meta, "{\"ids\": true, \"dummycode\": [1, 2, 3]}");
+
+		assertMask(res, new double[] {1, 1, 1, 1, 1, 1, 1});
+	}
+
+	@Test
+	public void dummycodeAndPassThroughAndRecodeInterleaved() {
+		// dummycode(3) | pass-through | recode | dummycode(2): exercises every offset transition
+		FrameBlock meta = metaWithDistinct(4, new int[] {3, 0, 0, 2});
+		MatrixBlock res = run(meta, "{\"ids\": true, \"recode\": [3], \"dummycode\": [1, 4]}");
+
+		assertMask(res, new double[] {1, 1, 1, 0, 1, 1, 1});
+	}
+
+	@Test
+	public void recodeAndDummycodeOnSameColumnExpands() {
+		// a column listed in both recode and dummycode must expand to its dummycode width, not collapse
+		FrameBlock meta = metaWithDistinct(2, new int[] {4, 0});
+		MatrixBlock res = run(meta, "{\"ids\": true, \"recode\": [1], \"dummycode\": [1]}");
+
+		assertMask(res, new double[] {1, 1, 1, 1, 0});
+	}
+
+	@Test
+	public void hashOnlyColumnStaysSingleCategorical() {
+		// a hashed-but-not-dummycoded column is a single categorical column; K must not widen it
+		FrameBlock meta = metaWithDistinct(3, new int[] {0, 0, 0});
+		MatrixBlock res = run(meta, "{\"ids\": true, \"hash\": [2], \"K\": 5}");
+
+		assertMask(res, new double[] {0, 1, 0});
+	}
+
+	@Test
+	public void hashDummycodeRecodePassThroughMixed() {
+		// col1: hash+dummycode -> K=3 (metadata ignored); col2: pass-through; col3: dummycode(9);
+		// col4: pass-through; col5: recode. Verifies hashed columns use K while plain dummycode uses
+		// the metadata distinct count, with correct offsets across the whole row.
+		FrameBlock meta = metaWithDistinct(5, new int[] {0, 0, 9, 0, 0});
+		MatrixBlock res = run(meta, "{\"ids\": true, \"recode\": [5], \"dummycode\": [1, 3], \"hash\": [1], \"K\": 3}");
+
+		assertMask(res, new double[] {1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1});
 	}
 
 	@Test
@@ -143,6 +218,14 @@ public class GetCategoricalMaskInstructionTest {
 	}
 
 	@Test
+	public void malformedSpecWrapsJsonException() {
+		// "ids" present but not a boolean makes spec parsing throw a JSONException, which must be
+		// wrapped as a DMLRuntimeException rather than propagating raw
+		FrameBlock meta = new FrameBlock(new ValueType[] {ValueType.STRING}, new String[][] {{"a"}});
+		assertThrowsMessage("was not a boolean", () -> run(meta, "{\"ids\": 5, \"recode\": [1]}"));
+	}
+
+	@Test
 	public void unsupportedOpcodeThrows() {
 		// any frame-scalar binary opcode other than get_categorical_mask must be rejected
 		ExecutionContext ec = ExecutionContextFactory.createContext();
@@ -165,6 +248,37 @@ public class GetCategoricalMaskInstructionTest {
 			assertTrue("Exception chain [" + chain + "] should contain \"" + expected + "\"",
 				chain.toString().contains(expected));
 		}
+	}
+
+	/** Assert the mask is a single row equal to the expected values (which also fixes its width). */
+	private static void assertMask(MatrixBlock res, double[] expected) {
+		assertEquals(1, res.getNumRows());
+		assertEquals(expected.length, res.getNumColumns());
+		// compare per cell rather than via getDenseBlockValues(): an all-zero mask has nnz == 0 and
+		// therefore no materialized dense block
+		double[] actual = new double[expected.length];
+		for(int i = 0; i < expected.length; i++)
+			actual[i] = res.get(0, i);
+		assertArrayEquals(expected, actual, 0.0);
+	}
+
+	/**
+	 * Build a single-row metadata frame of nCol string columns. A positive distinct[i] is written to
+	 * that column's metadata as the recode distinct count (the path real transformencode uses), while
+	 * a zero leaves the column with default metadata (a continuous / non-dummycoded column).
+	 */
+	private static FrameBlock metaWithDistinct(int nCol, int[] distinct) {
+		ValueType[] schema = new ValueType[nCol];
+		String[][] data = new String[1][nCol];
+		for(int i = 0; i < nCol; i++) {
+			schema[i] = ValueType.STRING;
+			data[0][i] = "v";
+		}
+		FrameBlock fb = new FrameBlock(schema, data);
+		for(int i = 0; i < nCol; i++)
+			if(distinct[i] > 0)
+				fb.setColumnMetadata(i, new ColumnMetadata(distinct[i]));
+		return fb;
 	}
 
 	private static MatrixBlock run(FrameBlock meta, String spec) {

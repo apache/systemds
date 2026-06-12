@@ -65,6 +65,7 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
+import io.netty.util.concurrent.DefaultThreadFactory;
 
 @SuppressWarnings("deprecation")
 public class FederatedWorker {
@@ -99,9 +100,14 @@ public class FederatedWorker {
 		LOG.info("Setting up Federated Worker on port " + _port);
 		int par_conn = ConfigurationManager.getDMLConfig().getIntValue(DMLConfig.FEDERATED_PAR_CONN);
 		final int EVENT_LOOP_THREADS = (par_conn > 0) ? par_conn : InfrastructureAnalyzer.getLocalParallelism();
-		NioEventLoopGroup bossGroup = new NioEventLoopGroup(1);
+		// Use daemon threads for the Netty event loops. When the worker runs in-JVM (e.g. in tests)
+		// this guarantees a leaked worker can never keep the JVM alive after the owning thread is
+		// gone. In a standalone worker process the main thread keeps the JVM alive and drives the
+		// lifecycle, so daemon event loops have no effect on production shutdown.
+		NioEventLoopGroup bossGroup = new NioEventLoopGroup(1,
+			new DefaultThreadFactory("fed-worker-boss", true));
 		ThreadPoolExecutor workerTPE = new ThreadPoolExecutor(1, Integer.MAX_VALUE, 10, TimeUnit.SECONDS,
-			new SynchronousQueue<Runnable>(true));
+			new SynchronousQueue<Runnable>(true), new DefaultThreadFactory("fed-worker-pool", true));
 		NioEventLoopGroup workerGroup = new NioEventLoopGroup(EVENT_LOOP_THREADS, workerTPE);
 
 		final boolean ssl = ConfigurationManager.isFederatedSSL();

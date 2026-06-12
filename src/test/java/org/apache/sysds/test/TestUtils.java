@@ -3489,15 +3489,23 @@ public class TestUtils {
 		}
 	}
 
+	/** Upper bound (ms) on how long {@link #shutdownThread(Thread)} waits for a worker to stop. */
+	private static final long THREAD_SHUTDOWN_JOIN_MS = 30_000;
+
 	public static void shutdownThread(Thread t) {
 		// kill the worker
 		if( t != null ) {
 			t.interrupt();
 			try {
-				t.join();
+				// Bounded join: workers are daemon threads, so even if one ignores the interrupt
+				// we must not block cleanup (and the JVM) indefinitely waiting for it.
+				t.join(THREAD_SHUTDOWN_JOIN_MS);
+				if( t.isAlive() )
+					LOG.warn("Federated worker thread " + t.getName()
+						+ " did not stop within " + THREAD_SHUTDOWN_JOIN_MS + "ms; leaving it as a daemon.");
 			}
 			catch (InterruptedException e) {
-				e.printStackTrace();
+				Thread.currentThread().interrupt();
 			}
 		}
 	}

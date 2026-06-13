@@ -102,7 +102,8 @@ public class TopKCompressor implements MatrixCompressor {
                 int linearIdx = data.indices[i];
                 int row = linearIdx / data.numCols;
                 int col = linearIdx % data.numCols;
-                result.setValue(row, col, data.values[i]);
+                //result.setValue(row, col, data.values[i]);
+                result.set(row, col, data.values[i]);
             }
 
             result.examSparsity();

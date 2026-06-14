@@ -2762,6 +2762,22 @@ public class DMLTranslator
 		case TYPEOF:
 		case DET:
 		case DETECTSCHEMA:
+		case SET_NAMES:
+			currBuiltinOp = new BinaryOp(
+					target.getName(),
+					target.getDataType(),
+					target.getValueType(),
+					OpOp2.SET_COLNAMES, expr, expr2
+			);
+			break;
+		case GET_NAMES:
+			currBuiltinOp = new UnaryOp(
+					target.getName(),
+					target.getDataType(),
+					target.getValueType(),
+					OpOp1.COLNAMES, expr
+			);
+			break;
 		case COLNAMES:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(),
 				target.getValueType(), OpOp1.valueOf(source.getOpCode().name()), expr);

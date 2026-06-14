@@ -83,6 +83,8 @@ public enum Builtins {
 	COLMEAN("colMeans", false),
 	COLMIN("colMins", false),
 	COLNAMES("colnames", false),
+	SET_NAMES("setNames", false),
+	GET_NAMES("getNames", false),
 	COLPROD("colProds", false),
 	COLSD("colSds", false),
 	COLSUM("colSums", false),

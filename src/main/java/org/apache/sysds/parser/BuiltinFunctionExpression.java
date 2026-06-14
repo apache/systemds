@@ -1095,7 +1095,28 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 		case TYPEOF:
 		case DETECTSCHEMA:
 		case COLNAMES:
+		case GET_NAMES:
 			checkNumParameters(1);
+			checkMatrixFrameParam(getFirstExpr());
+			output.setDataType(DataType.FRAME);
+			output.setDimensions(1, id.getDim2());
+			output.setBlocksize (id.getBlocksize());
+			output.setValueType(ValueType.STRING);
+			break;
+		case SET_NAMES:
+			//check if we use 2 parameters (Frame on which nemas are set and vector for names)
+			checkNumParameters(2);
+
+			// check if first paramters is a frame
+			checkMatrixFrameParam(getFirstExpr());
+
+			// check if second paramters is a vector 1xn Frame
+			checkMatrixFrameParam(getSecondExpr());
+
+			//output should be a frame
+			output.setDataType(DataType.FRAME);
+
+
 			checkMatrixFrameParam(getFirstExpr());
 			output.setDataType(DataType.FRAME);
 			output.setDimensions(1, id.getDim2());

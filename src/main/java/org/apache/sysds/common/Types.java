@@ -640,7 +640,8 @@ public interface Types {
 		LOG_NZ(false), //sparse-safe log; ppred(X,0,"!=")*log(X,0.5)
 		MINUS1_MULT(false), //1-X*Y
 		QUANTIZE_COMPRESS(false), //quantization-fused compression
-		UNION_DISTINCT(false);
+		UNION_DISTINCT(false),
+		SET_COLNAMES(false);
 
 		private final boolean _validOuter;
 		

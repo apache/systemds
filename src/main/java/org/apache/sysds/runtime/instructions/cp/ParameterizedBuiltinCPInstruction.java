@@ -158,6 +158,9 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			|| opcode.equals(Opcodes.TOSTRING.toString()) || opcode.equals(Opcodes.NVLIST.toString()) || opcode.equals(Opcodes.AUTODIFF.toString())) {
 			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
 		}
+		else if(opcode.equals(Opcodes.LLMPREDICT.toString())) {
+			return new LlmPredictCPInstruction(paramsMap, out, opcode, str);
+		}
 		else if(Opcodes.PARAMSERV.toString().equals(opcode)) {
 			return new ParamservBuiltinCPInstruction(null, paramsMap, out, opcode, str);
 		}
@@ -324,6 +327,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			ec.setFrameOutput(output.getName(), fbout);
 			ec.releaseFrameInput(params.get("target"));
 		}
+
 		else if(opcode.equalsIgnoreCase(Opcodes.TRANSFORMAPPLY.toString())) {
 			// acquire locks
 			FrameBlock data = ec.getFrameInput(params.get("target"));

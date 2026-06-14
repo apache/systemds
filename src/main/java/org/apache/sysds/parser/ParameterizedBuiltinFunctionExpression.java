@@ -61,6 +61,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		pbHopMap.put(Builtins.GROUPEDAGG, ParamBuiltinOp.GROUPEDAGG);
 		pbHopMap.put(Builtins.RMEMPTY, ParamBuiltinOp.RMEMPTY);
 		pbHopMap.put(Builtins.REPLACE, ParamBuiltinOp.REPLACE);
+		pbHopMap.put(Builtins.LLMPREDICT, ParamBuiltinOp.LLMPREDICT);
 		pbHopMap.put(Builtins.LOWER_TRI, ParamBuiltinOp.LOWER_TRI);
 		pbHopMap.put(Builtins.UPPER_TRI, ParamBuiltinOp.UPPER_TRI);
 		
@@ -210,6 +211,10 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		case ORDER:
 			validateOrder(output, conditional);
 			break;
+
+		case LLMPREDICT:
+			validateLlmPredict(output, conditional);
+			break;	
 
 		case TOKENIZE:
 			validateTokenize(output, conditional);
@@ -612,6 +617,42 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDataType(DataType.FRAME);
 		output.setValueType(ValueType.STRING);
 		output.setDimensions(-1, -1);
+	}
+
+	private void validateLlmPredict(DataIdentifier output, boolean conditional)
+	{
+		Set<String> valid = new HashSet<>(Arrays.asList(
+			"target", "url", "model", "max_tokens", "temperature", "top_p", "concurrency"));
+		checkInvalidParameters(getOpCode(), getVarParams(), valid);
+		checkDataType(false, "llmPredict", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
+		checkStringParam(false, "llmPredict", "url", conditional);
+
+		// validate numeric parameter types at compile time (when literal).
+		// Note: no range validation -- different LLM servers accept different
+		// ranges (e.g. vLLM allows temperature=0.0, OpenAI requires >0).
+		// Runtime errors from the server are more informative than
+		// compile-time checks locked to one server's rules.
+		checkNumericScalarParam("llmPredict", "max_tokens", conditional);
+		checkNumericScalarParam("llmPredict", "temperature", conditional);
+		checkNumericScalarParam("llmPredict", "top_p", conditional);
+		checkNumericScalarParam("llmPredict", "concurrency", conditional);
+
+		output.setDataType(DataType.FRAME);
+		output.setValueType(ValueType.STRING);
+		output.setDimensions(-1, -1);
+	}
+
+	private void checkNumericScalarParam(String fname, String pname, boolean conditional) {
+		Expression expr = getVarParam(pname);
+		if(expr == null) return;
+		if(expr instanceof DataIdentifier) {
+			DataIdentifier di = (DataIdentifier) expr;
+			if(di.getDataType() != null && !di.getDataType().isScalar()) {
+				raiseValidateError(
+					String.format("Function %s: parameter '%s' must be a scalar, got %s.",
+						fname, pname, di.getDataType()), conditional);
+			}
+		}
 	}
 
 	// example: A = transformapply(target=X, meta=M, spec=s)

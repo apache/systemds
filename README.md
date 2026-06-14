@@ -69,17 +69,6 @@ The project originally had a six-week implementation plan, but the schedule is n
 
 All team members should review each other's code weekly. Each major task should begin with a failing correctness test and should be developed in small commits.
 
-### Updated Scope
-
-| Topic | Plan Update |
-| --- | --- |
-| Overall plan | Keep the three-person split and compress the schedule to four weeks. |
-| Development workflow | Start with failing tests, compare OOC against CP, then implement until tests pass. |
-| TSMM direction | Both `t(X) %*% X` and `X %*% t(X)` are required. Right TSMM is no longer optional. |
-| Spark benchmarking | Remove Spark benchmarking from scope. Focus on CP vs OOC. |
-| Performance tests | Include performance test code in the PR, not only benchmark numbers. |
-| PR timing | Open a draft PR early enough for review; target end of Week 3. |
-| PR description | Include tests run, benchmark setup, benchmark numbers, and known limitations. |
 
 ### Four-Week Deliverables by Person
 
@@ -279,27 +268,3 @@ Benchmark output should include:
 - Benchmark results are included in the PR description.
 - Draft PR is opened by the end of Week 3 for feedback.
 - Final PR follows Apache SystemDS style conventions.
-
-### Main Risks
-
-| Risk | Mitigation |
-| --- | --- |
-| Four weeks is tight for two operators | Start with failing tests immediately and open draft PR by Week 3. |
-| TSMM LEFT and RIGHT indexing is complex | Treat both directions as required from Week 1, not as an optional add-on. |
-| OOC stream joins cause memory pressure | Reuse existing OOC primitives and avoid full materialization. |
-| Benchmarks are noisy | Use warm-up runs and repeat measurements. |
-| PR becomes too large | Keep covariance, TSMM, tests, and benchmarks in separate commits. |
-| Review feedback arrives late | Request early review as soon as the Week 3 draft PR is open. |
-
-### Notes from Meetings
-
-- The covariance operator already exists in CP and Spark, but not in OOC.
-- The implementation should be guided by existing CP/Spark covariance code and OOC central moment code.
-- Start by writing failing tests and comparing against CP output.
-- TSMM OOC currently only handles cases where the output is a single tile.
-- TSMM must support both `t(X) %*% X` and `X %*% t(X)`.
-- Good TSMM references are `MMultOOCInstruction` and `Tsmm2SPInstruction`.
-- Spark benchmarking is not required and has been removed from this plan.
-- Performance test code should ideally be included in the PR.
-- Benchmark numbers should be documented in the PR description.
-- Open the draft PR early, ideally by the end of Week 3, so there is time for one non-grading review before the deadline.

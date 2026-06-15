@@ -1110,31 +1110,8 @@ public class ColGroupFactory {
 		for(int col = 0; col < numCols; col++) {
 			final int colIdx = colIndexes.get(col);
 			double[] column = PiecewiseLinearUtils.getColumn(in, colIdx);
-			PiecewiseLinearUtils.SegmentedRegression fit = PiecewiseLinearUtils.compressSegmentedLeastSquares(column,
+			PiecewiseLinearUtils.SegmentedRegression fit = PiecewiseLinearUtils.compressSuccessivePiecewiseLinear(column,
 				cs);
-			breakpointsPerCol[col] = fit.getBreakpoints();
-			interceptsPerCol[col] = fit.getIntercepts();
-			slopesPerCol[col] = fit.getSlopes();
-
-		}
-		return ColGroupPiecewiseLinearCompressed.create(colIndexes, breakpointsPerCol, slopesPerCol, interceptsPerCol,
-			numRows);
-
-	}
-
-	public static AColGroup compressPiecewiseLinearFunctionalSuccessive(IColIndex colIndexes, MatrixBlock in,
-		CompressionSettings cs) {
-		final int numRows = in.getNumRows();
-		final int numCols = colIndexes.size();
-		int[][] breakpointsPerCol = new int[numCols][];
-		double[][] slopesPerCol = new double[numCols][];
-		double[][] interceptsPerCol = new double[numCols][];
-
-		for(int col = 0; col < numCols; col++) {
-			final int colIdx = colIndexes.get(col);
-			double[] column = PiecewiseLinearUtils.getColumn(in, colIdx);
-			PiecewiseLinearUtils.SegmentedRegression fit = PiecewiseLinearUtils.compressSuccessivePiecewiseLinear(
-				column, cs);
 			breakpointsPerCol[col] = fit.getBreakpoints();
 			interceptsPerCol[col] = fit.getIntercepts();
 			slopesPerCol[col] = fit.getSlopes();

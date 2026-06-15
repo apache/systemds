@@ -94,13 +94,13 @@ public class PiecewiseLinearCompressionPerformanceTest {
 		cs.setPiecewiseTargetLoss(loss);
 		IColIndex colIndexes = ColIndexFactory.create(numCol);
 
-		ColGroupFactory.compressPiecewiseLinearFunctionalSuccessive(colIndexes, mb, cs);
+		ColGroupFactory.compressPiecewiseLinearFunctional(colIndexes, mb, cs);
 
 		Timing t = new Timing();
 		AColGroup cg = null;
 		t.start();
 		for(int i = 0; i < REPS; i++)
-			cg = ColGroupFactory.compressPiecewiseLinearFunctionalSuccessive(colIndexes, mb, cs);
+			cg = ColGroupFactory.compressPiecewiseLinearFunctional(colIndexes, mb, cs);
 		double time = t.stop() / REPS;
 
 		long size = cg.getExactSizeOnDisk();
@@ -109,34 +109,6 @@ public class PiecewiseLinearCompressionPerformanceTest {
 			: String.format("larger +%.0f%%", 100.0 * size / origSize - 100);
 
 		System.out.printf("  successive  loss=%.0e  %5.1f segs  %6.2f MB (%s)  %6.1f ms  MSE=%.2e%n",
-			loss, avgSegments(cg), size / 1e6, saving, time, reconstructionMSE(mb, cg));
-	}
-
-	/**
-	 * benchmarks dynamic programming compression for a given matrix and target loss
-	 * no repetition, because DP is too slow due complexity
-	 * reports segments, compressed data size, runtime and reconstruction
-	 * @param mb original matrix to compress
-	 * @param loss target loss param
-	 */
-	private static void benchmarkDP(MatrixBlock mb, double loss) {
-		long origSize = mb.getInMemorySize();
-		int numColumns = mb.getNumColumns();
-		CompressionSettings cs = new CompressionSettingsBuilder().create();
-		cs.setPiecewiseTargetLoss(loss);
-		IColIndex colIndexes = ColIndexFactory.create(numColumns);
-
-		Timing t = new Timing();
-		t.start();
-		AColGroup cg = ColGroupFactory.compressPiecewiseLinearFunctional(colIndexes, mb, cs);
-		double time = t.stop();
-
-		long size = cg.getExactSizeOnDisk();
-		String saving = size < origSize
-			? String.format("saved %3.0f%%", 100.0 - 100.0 * size / origSize)
-			: String.format("LARGER +%.0f%%", 100.0 * size / origSize - 100);
-
-		System.out.printf("  DP          loss=%.0e  %5.1f segs  %6.2f MB (%s)  %6.1f ms  MSE=%.2e%n",
 			loss, avgSegments(cg), size / 1e6, saving, time, reconstructionMSE(mb, cg));
 	}
 
@@ -157,12 +129,5 @@ public class PiecewiseLinearCompressionPerformanceTest {
 			for(double loss : LOSSES)
 				benchmarkSuccessive(mb, loss);
 		}
-
-		// DP quality reference on small matrix
-		System.out.println("\n=== DP: quality reference (nrows=1000, ncols=10) ===");
-		MatrixBlock mbSmall = generateTestMatrix(1000, 10);
-		System.out.printf("original=%.2f MB%n", mbSmall.getInMemorySize() / 1e6);
-		for(double loss : LOSSES)
-			benchmarkDP(mbSmall, loss);
 	}
 }

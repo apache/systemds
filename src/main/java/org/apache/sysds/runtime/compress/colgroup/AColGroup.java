@@ -88,7 +88,7 @@ public abstract class AColGroup implements Serializable {
 	 */
 	protected static enum ColGroupType {
 		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, SDCSingle, SDCSingleZeros, SDCZeros, SDCFOR, DDCFOR, DeltaDDC,
-		LinearFunctional, PiecewiseLinear;
+		LinearFunctional, PiecewiseLinear, DDCLZW;
 	}
 
 	/** The ColGroup indexes contained in the ColGroup */

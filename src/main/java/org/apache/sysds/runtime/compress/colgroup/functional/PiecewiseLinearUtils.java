@@ -51,29 +51,6 @@ public class PiecewiseLinearUtils {
         return column;
     }
 
-    public static SegmentedRegression compressSegmentedLeastSquares(double[] column, CompressionSettings cs) {
-        //compute Breakpoints for a Column with dynamic Programming
-        final List<Integer> breakpointsList = computeBreakpoints(cs, column);
-        final int[] breakpoints = breakpointsList.stream().mapToInt(Integer::intValue).toArray();
-
-        //get values for Regression
-        final int numSeg = breakpoints.length - 1;
-        final double[] slopes = new double[numSeg];
-        final double[] intercepts = new double[numSeg];
-
-        // Regress per Segment
-        for (int seg = 0; seg < numSeg; seg++) {
-            final int SegStart = breakpoints[seg];
-            final int SegEnd = breakpoints[seg + 1];
-
-            final double[] line = regressSegment(column, SegStart, SegEnd);
-            slopes[seg] = line[0]; //slope regession line
-            intercepts[seg] = line[1]; //intercept regression line
-        }
-
-        return new SegmentedRegression(breakpoints, slopes, intercepts);
-    }
-
     public static SegmentedRegression compressSuccessivePiecewiseLinear(double[] column, CompressionSettings cs) {
         //compute Breakpoints for a Column with a sukzessive breakpoints algorithm
 

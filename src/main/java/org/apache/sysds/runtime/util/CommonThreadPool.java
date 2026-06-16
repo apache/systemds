@@ -29,6 +29,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -141,9 +142,24 @@ public class CommonThreadPool implements ExecutorService {
 				incorrectPoolUse = true;
 			}
 
-			return Executors.newFixedThreadPool(k);
+			return Executors.newFixedThreadPool(k, daemonThreadFactory());
 
 		}
+	}
+
+	/**
+	 * Thread factory that produces daemon threads. The ForkJoinPool-backed pools already use daemon
+	 * threads; the fallback {@link Executors#newFixedThreadPool} and {@link Executors#newCachedThreadPool}
+	 * pools default to non-daemon threads, which can keep the JVM (e.g. a surefire test fork) alive
+	 * if a caller forgets to shut the pool down. Making them daemon keeps that behavior uniform.
+	 */
+	private static ThreadFactory daemonThreadFactory() {
+		final ThreadFactory base = Executors.defaultThreadFactory();
+		return r -> {
+			Thread t = base.newThread(r);
+			t.setDaemon(true);
+			return t;
+		};
 	}
 
 	/**
@@ -180,7 +196,7 @@ public class CommonThreadPool implements ExecutorService {
 			// It is guaranteed not to be shut down because of the synchronized barrier
 			return asyncPool;
 		else {
-			asyncPool = Executors.newCachedThreadPool();
+			asyncPool = Executors.newCachedThreadPool(daemonThreadFactory());
 			return asyncPool;
 		}
 	}

@@ -69,6 +69,7 @@ public class LineageFedReuseAlg extends AutomatedTestBase {
 		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
+		Thread[] workers = null;
 		try {
 			// generated lm data
 			MatrixBlock X = MatrixBlock.randOperations(rows, cols, 1.0, 0, 1, "uniform", 7);
@@ -93,7 +94,7 @@ public class LineageFedReuseAlg extends AutomatedTestBase {
 			int port3 = getRandomAvailablePort();
 			int port4 = getRandomAvailablePort();
 			String[] otherargs = new String[] {"-lineage", "reuse_full"};
-			Thread[] workers = startLocalFedWorkerThreads(new int[] {port1, port2}, otherargs, FED_WORKER_WAIT);
+			workers = startLocalFedWorkerThreads(new int[] {port1, port2}, otherargs, FED_WORKER_WAIT);
 
 			TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 			loadTestConfiguration(config);
@@ -134,10 +135,9 @@ public class LineageFedReuseAlg extends AutomatedTestBase {
 			assertTrue(fed_tsmmCount > fed_tsmmCount_reuse);
 			assertTrue(mmCount > mmCount_reuse);
 			assertTrue(fed_mmCount > fed_mmCount_reuse);
-
-			TestUtils.shutdownThreads(workers);
 		}
 		finally {
+			TestUtils.shutdownThreads(workers);
 			resetExecMode(oldExec);
 			ColumnEncoderRecode.SORT_RECODE_MAP = oldSort;
 		}

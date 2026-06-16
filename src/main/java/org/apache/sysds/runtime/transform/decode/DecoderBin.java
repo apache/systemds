@@ -43,7 +43,6 @@ public class DecoderBin extends Decoder {
 	private static final long serialVersionUID = -3784249774608228805L;
 
 	// a) column bin boundaries
-	private int[] _numBins;
 	private int[] _dcCols = null;
 	private int[] _srcCols = null;
 	private double[][] _binMins = null;
@@ -108,7 +107,6 @@ public class DecoderBin extends Decoder {
 	@Override
 	public void initMetaData(FrameBlock meta) {
 		//initialize bin boundaries
-		_numBins = new int[_colList.length];
 		_binMins = new double[_colList.length][];
 		_binMaxs = new double[_colList.length][];
 		
@@ -162,29 +160,46 @@ public class DecoderBin extends Decoder {
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
 		super.writeExternal(out);
+		// bin boundaries; the per-column bin count is the length of the boundary arrays
 		for( int i=0; i<_colList.length; i++ ) {
-			int len = _numBins[i];
+			int len = _binMins[i].length;
 			out.writeInt(len);
 			for(int j=0; j<len; j++) {
 				out.writeDouble(_binMins[i][j]);
 				out.writeDouble(_binMaxs[i][j]);
 			}
 		}
+		// source-column mapping derived from dummycode/hash domain sizes (rebuilt in initMetaData,
+		// but persisted here because Spark broadcasts the decoder without re-running initMetaData)
+		out.writeInt(_srcCols.length);
+		for(int i = 0; i < _srcCols.length; i++)
+			out.writeInt(_srcCols[i]);
+
+		out.writeInt(_dcCols == null ? 0 : _dcCols.length);
+		for(int i = 0; _dcCols != null && i < _dcCols.length; i++)
+			out.writeInt(_dcCols[i]);
 	}
 
 	@Override
 	public void readExternal(ObjectInput in) throws IOException {
 		super.readExternal(in);
-		_numBins = new int[_colList.length];
 		_binMins = new double[_colList.length][];
 		_binMaxs = new double[_colList.length][];
 		for( int i=0; i<_colList.length; i++ ) {
 			int len = in.readInt();
-			_numBins[i] = len;
+			_binMins[i] = new double[len];
+			_binMaxs[i] = new double[len];
 			for(int j=0; j<len; j++) {
 				_binMins[i][j] = in.readDouble();
 				_binMaxs[i][j] = in.readDouble();
 			}
 		}
+		_srcCols = new int[in.readInt()];
+		for(int i = 0; i < _srcCols.length; i++)
+			_srcCols[i] = in.readInt();
+
+		_dcCols = new int[in.readInt()];
+		for(int i = 0; i < _dcCols.length; i++)
+			_dcCols[i] = in.readInt();
 	}
 }

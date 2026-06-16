@@ -139,6 +139,8 @@ public class DecoderFactory
 			return DecoderType.Recode.ordinal();
 		else if( decoder instanceof DecoderPassThrough )
 			return DecoderType.PassThrough.ordinal();
+		else if( decoder instanceof DecoderBin )
+			return DecoderType.Bin.ordinal();
 		throw new DMLRuntimeException("Unsupported decoder type: "
 			+ decoder.getClass().getCanonicalName());
 	}
@@ -148,6 +150,7 @@ public class DecoderFactory
 		
 		// create instance
 		switch(dtype) {
+			case Bin:         return new DecoderBin();
 			case Dummycode:   return new DecoderDummycode(null, null);
 			case PassThrough: return new DecoderPassThrough(null, null, null);
 			case Recode:      return new DecoderRecode(null, false, null);

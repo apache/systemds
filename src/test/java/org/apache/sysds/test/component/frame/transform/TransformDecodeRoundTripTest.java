@@ -21,6 +21,11 @@ package org.apache.sysds.test.component.frame.transform;
 
 import static org.junit.Assert.fail;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
@@ -99,10 +104,44 @@ public class TransformDecodeRoundTripTest {
 	 */
 	@Test
 	public void binWithDummycodeOnOtherColumnConsistency() {
-		final String spec = "{ids:true, bin:[{id:1, method:equi-width, numbins:4}], dummycode:[2]}";
+		// bin column (1) precedes the dummycode column (2): the bin decoder takes the direct
+		// source-column path because no expanded column sits before it
+		final FrameBlock original = TestUtils.generateRandomFrameBlock(150,
+			new ValueType[] {ValueType.FP32, ValueType.UINT4, ValueType.UINT8}, 4242);
+		binConsistency("{ids:true, bin:[{id:1, method:equi-width, numbins:4}], dummycode:[2]}", original);
+	}
+
+	/**
+	 * Dummycode on an earlier column (1) shifts the bin column (2) to the right in the encoded matrix. The bin decoder
+	 * must walk the dummycode domain sizes to recover the bin column's true source position. This drives the
+	 * non-magic offset branch of the bin source-column mapping.
+	 */
+	@Test
+	public void binAfterDummycodeOnEarlierColumnConsistency() {
+		final FrameBlock original = TestUtils.generateRandomFrameBlock(150,
+			new ValueType[] {ValueType.UINT4, ValueType.FP32, ValueType.UINT8}, 4242);
+		binConsistency("{ids:true, recode:[1], dummycode:[1], bin:[{id:2, method:equi-width, numbins:4}]}", original);
+	}
+
+	/**
+	 * Same right-shift as above, but the earlier column is feature-hashed before being dummycoded. The hash domain
+	 * size is stored as the magic "¿K" metadata value, so the bin source-column mapping must take the magic-value
+	 * branch to compute the offset.
+	 */
+	@Test
+	public void binAfterHashDummycodeOnEarlierColumnConsistency() {
+		final FrameBlock original = TestUtils.generateRandomFrameBlock(150,
+			new ValueType[] {ValueType.UINT4, ValueType.FP32, ValueType.UINT8}, 4242);
+		binConsistency("{ids:true, hash:[1], K:6, dummycode:[1], bin:[{id:2, method:equi-width, numbins:4}]}",
+			original);
+	}
+
+	/**
+	 * Encode then decode the dense, parallel and sparse paths and assert they agree. Bin output is lossy, so only
+	 * cross-mode consistency and row count are asserted (not exact reconstruction).
+	 */
+	private void binConsistency(String spec, FrameBlock original) {
 		try {
-			final FrameBlock original = TestUtils.generateRandomFrameBlock(150,
-				new ValueType[] {ValueType.FP32, ValueType.UINT4, ValueType.UINT8}, 4242);
 			final String[] colnames = original.getColumnNames();
 
 			final MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, colnames, original.getNumColumns(),
@@ -131,6 +170,93 @@ public class TransformDecodeRoundTripTest {
 		catch(Exception e) {
 			e.printStackTrace();
 			fail(spec + " : " + e.getMessage());
+		}
+	}
+
+	/**
+	 * The bin encoder always emits codes &gt;= 1, but the decoder defensively handles a 0 code by mapping it to the
+	 * first bin's lower boundary. Inject a 0 into an otherwise validly encoded matrix to exercise that branch.
+	 */
+	@Test
+	public void binDecodeZeroCodeUsesFirstBinBoundary() {
+		final String spec = "{ids:true, bin:[{id:1, method:equi-width, numbins:4}]}";
+		try {
+			final FrameBlock original = TestUtils.generateRandomFrameBlock(50, new ValueType[] {ValueType.FP32}, 13);
+			final String[] colnames = original.getColumnNames();
+			final MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, colnames, original.getNumColumns(),
+				null);
+			final MatrixBlock encoded = encoder.encode(original, 1);
+			if(encoded.isInSparseFormat())
+				encoded.sparseToDense();
+			final FrameBlock meta = encoder.getMetaData(null);
+
+			encoded.set(0, 0, 0); // force a 0 bin code
+
+			final Decoder decoder = DecoderFactory.createDecoder(spec, colnames, null, meta, encoded.getNumColumns());
+			final FrameBlock decoded = decoder.decode(encoded, new FrameBlock(decoder.getSchema()), 1);
+
+			final double first = Double.parseDouble(decoded.get(0, 0).toString());
+			final double second = Double.parseDouble(decoded.get(1, 0).toString());
+			// the 0-coded row decodes to the first bin lower bound, which is <= any properly binned center
+			org.junit.Assert.assertTrue("0-code must map to the lowest bin boundary", first <= second);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(spec + " : " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Spark broadcasts the decoder to executors via Java serialization without re-running initMetaData, so the
+	 * decoder must round-trip all of its decode state through writeExternal/readExternal. Decode with a freshly
+	 * deserialized decoder and assert it matches the in-memory decode. Covers plain bin and bin-with-dummycode
+	 * (the latter exercises the serialized _srcCols/_dcCols source-column mapping).
+	 */
+	@Test
+	public void binDecoderSurvivesSerialization() {
+		final FrameBlock original = TestUtils.generateRandomFrameBlock(80, new ValueType[] {ValueType.FP32}, 21);
+		serializeRoundTrip("{ids:true, bin:[{id:1, method:equi-width, numbins:4}]}", original);
+	}
+
+	@Test
+	public void binWithDummycodeDecoderSurvivesSerialization() {
+		final FrameBlock original = TestUtils.generateRandomFrameBlock(80,
+			new ValueType[] {ValueType.UINT4, ValueType.FP32}, 21);
+		serializeRoundTrip("{ids:true, recode:[1], dummycode:[1], bin:[{id:2, method:equi-width, numbins:4}]}",
+			original);
+	}
+
+	private void serializeRoundTrip(String spec, FrameBlock original) {
+		try {
+			final String[] colnames = original.getColumnNames();
+			final MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, colnames, original.getNumColumns(),
+				null);
+			final MatrixBlock encoded = encoder.encode(original, 1);
+			if(encoded.isInSparseFormat())
+				encoded.sparseToDense();
+			final FrameBlock meta = encoder.getMetaData(null);
+
+			final Decoder decoder = DecoderFactory.createDecoder(spec, colnames, null, meta, encoded.getNumColumns());
+			final FrameBlock expected = decoder.decode(encoded, new FrameBlock(decoder.getSchema()), 1);
+
+			final Decoder restored = serializeDeserialize(decoder);
+			final FrameBlock actual = restored.decode(encoded, new FrameBlock(restored.getSchema()), 1);
+
+			TestUtils.compareFrames(expected, actual, false);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(spec + " : " + e.getMessage());
+		}
+	}
+
+	private static Decoder serializeDeserialize(Decoder decoder) throws Exception {
+		final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		try(ObjectOutputStream oos = new ObjectOutputStream(bos)) {
+			oos.writeObject(decoder);
+		}
+		try(ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()))) {
+			return (Decoder) ois.readObject();
 		}
 	}
 

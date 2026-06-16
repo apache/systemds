@@ -117,7 +117,7 @@ public class TransformDecodeTest {
 
 	@Test
 	public void testBinSingleBin() {
-		// numbins:1 forces the key==0 branch in the bin decoder
+		// numbins:1 collapses every value into a single bin, exercising the degenerate boundary handling
 		decodeConsistency("{ids:true, bin:[{id:1, method:equi-width, numbins:1}]}");
 	}
 

@@ -828,7 +828,7 @@ public class BinaryOp extends MultiThreadedHop {
 				&& (supportsMatrixScalarOperations() || op == OpOp2.APPLY_SCHEMA)  // supported operation
 				&& sparkIn.getParent().size() == 1 // only one parent
 				&& !HopRewriteUtils.isSingleBlock(sparkIn) // single block triggered exec
-				&& sparkIn.optFindExecType() == ExecType.SPARK // input was spark op.
+				&& sparkIn.hasSparkOutput() // input was spark op.
 				&& !(sparkIn instanceof DataOp) // input is not checkpoint
 			) {
 				// pull operation into spark

@@ -508,13 +508,12 @@ public class UnaryOp extends MultiThreadedHop
 		//spark-specific decision refinement (execute unary w/ spark input and 
 		//single parent also in spark because it's likely cheap and reduces intermediates)
 		if(_etype == ExecType.CP // currently CP instruction
-			&& _etype != ExecType.SPARK /// currently not SP.
 			&& _etypeForced != ExecType.CP // not forced as CP instruction
 			&& getInput(0).hasSparkOutput() // input is a spark instruction
 			&& (getDataType().isMatrix() || getDataType().isFrame()) // output is a matrix or frame
 			&& !isDisallowedSparkOps() // is invalid spark instruction
-			// && !(getInput().get(0) instanceof DataOp) // input is not checkpoint
-			// && getInput(0).getParent().size() <= 1// unary is only parent
+			&& !(getInput(0) instanceof DataOp) // input is not checkpoint
+			&& getInput(0).getParent().size() == 1 // unary is only parent
 		) {
 			//pull unary operation into spark 
 			_etype = ExecType.SPARK;

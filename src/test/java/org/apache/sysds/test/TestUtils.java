@@ -3522,7 +3522,8 @@ public class TestUtils {
 					forciblyDestroyed.waitFor(); // Wait until it's definitely terminated
 				}
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				LOG.warn("Interrupted while shutting down federated worker process", e);
+				Thread.currentThread().interrupt();
 			}
 		}
 	}

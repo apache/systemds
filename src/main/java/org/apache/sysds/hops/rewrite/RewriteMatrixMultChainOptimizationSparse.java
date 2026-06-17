@@ -22,8 +22,8 @@ package org.apache.sysds.hops.rewrite;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.HopsException;
 import org.apache.sysds.hops.estim.MMNode;
@@ -128,18 +128,7 @@ public class RewriteMatrixMultChainOptimizationSparse extends RewriteMatrixMultC
 	}
 	
 	private static boolean getInputMatrices(Hop hop, List<Hop> chain, MMNode[] sketchArray, ProgramRewriteStatus state) {
-		boolean inputsAvail = true;
-		LocalVariableMap vars = state.getVariables();
-		
-		for( int i=0; i<chain.size(); i++ ) {
-			inputsAvail &= HopRewriteUtils.isData(chain.get(0), OpOpData.TRANSIENTREAD);
-			if( inputsAvail )
-				sketchArray[i] = new MMNode(getMatrix(chain.get(i).getName(), vars));
-			else 
-				break;
-		}
-		
-		return inputsAvail;
+		throw new NotImplementedException("Not implemeneted yet. Prior implementation did not work.");
 	}
 	
 	private static MatrixBlock getMatrix(String name, LocalVariableMap vars) {

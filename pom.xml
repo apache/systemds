@@ -411,6 +411,8 @@
 					<!-- 1C means the number of threads times 1 possible maximum forks for testing-->
 					<forkCount>${test-forkCount}</forkCount>
 					<reuseForks>false</reuseForks>
+					<!-- Deterministic class order so a fork hang reproduces at a stable boundary. -->
+					<runOrder>alphabetical</runOrder>
 					<!-- Kill hung test forks before CI cancels the whole job. -->
 					<forkedProcessTimeoutInSeconds>${test-forkedProcessTimeout}</forkedProcessTimeoutInSeconds>
 					<!-- Force-kill forks that still have live threads after the test class completes. -->

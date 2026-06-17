@@ -51,15 +51,94 @@ if [ "$compile_transient_failure" = true ]; then
 else
 	echo "No transient Maven repository error detected; no retry needed."
 fi
-mvn -ntp -B test -D maven.test.skip=false -D automatedtestbase.outputbuffering=true -D test=$1 2>&1 \
+# Outer guard: catch test-fork hangs that surefire's own timeouts miss, dump
+# stacks for diagnosis, and kill the run before the job cap (kept just above the
+# 600s per-fork timeout; MAX_RUNTIME is the absolute ceiling under the cap).
+STALL_LIMIT="${SYSDS_TEST_STALL_LIMIT:-660}"
+MAX_RUNTIME="${SYSDS_TEST_MAX_RUNTIME:-1600}"
+dump_dir="/github/workspace/target/thread-dumps"
+mkdir -p "$dump_dir"
+jstack_bin="${JAVA_HOME:+$JAVA_HOME/bin/}jstack"
+
+# Emit the pid of a process and all of its descendants.
+proc_tree() {
+	local pid=$1 child
+	for child in $(pgrep -P "$pid" 2>/dev/null); do proc_tree "$child"; done
+	echo "$pid"
+}
+
+# SIGQUIT every JVM in the test tree (stacks relayed into $log) plus a jstack file.
+dump_thread_stacks() {
+	local reason="$1" root="$2" ts pid comm cmd
+	ts=$(date +%Y%m%d-%H%M%S)
+	echo "================ HARD-GUARD THREAD DUMP: $reason ($ts) ================"
+	for pid in $(proc_tree "$root"); do
+		[ -r "/proc/$pid/comm" ] || continue
+		comm=$(cat "/proc/$pid/comm" 2>/dev/null)
+		case "$comm" in
+			java|java.bin) ;;
+			*) continue ;;
+		esac
+		cmd=$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null | cut -c1-160)
+		echo "---- SIGQUIT dump: pid=$pid comm=$comm cmd=$cmd ----"
+		kill -3 "$pid" 2>/dev/null
+		timeout 30 "$jstack_bin" -l "$pid" > "$dump_dir/jstack_${pid}_${ts}.txt" 2>&1 || true
+	done
+	# Let the JVMs flush their dumps into the relayed output stream.
+	sleep 12
+	echo "================ END HARD-GUARD THREAD DUMP ($reason) ================"
+}
+
+# Background the run so the guard can watch it; $1 stays unquoted to keep the extra -D flags it carries.
+( mvn -ntp -B test -D maven.test.skip=false -D automatedtestbase.outputbuffering=true -D test=$1 2>&1 \
 	| stdbuf -oL grep -Ev "already exists in destination.|Using incubator" \
-	| tee $log
+	| tee $log ) &
+runner=$!
+
+guard_tripped=false
+start=$(date +%s)
+prev_lines=-1
+idle=0
+interval=15
+while kill -0 "$runner" 2>/dev/null; do
+	sleep "$interval"
+	now=$(date +%s)
+	runtime=$((now - start))
+	lines=$(wc -l < "$log" 2>/dev/null || echo 0)
+	if [ "$lines" -eq "$prev_lines" ]; then
+		idle=$((idle + interval))
+	else
+		idle=0
+		prev_lines=$lines
+	fi
+
+	reason=""
+	if [ "$idle" -ge "$STALL_LIMIT" ]; then
+		reason="no test output for ${idle}s (stall limit ${STALL_LIMIT}s)"
+	elif [ "$runtime" -ge "$MAX_RUNTIME" ]; then
+		reason="exceeded absolute runtime ${runtime}s (max ${MAX_RUNTIME}s)"
+	fi
+
+	if [ -n "$reason" ]; then
+		guard_tripped=true
+		{
+			echo ""
+			echo "##[error] HARD GUARD TRIPPED: $reason"
+			echo "Last test classes seen before the stall:"
+			grep -E "Running org.apache" "$log" | tail -5
+		} | tee -a "$log"
+		dump_thread_stacks "$reason" "$runner" 2>&1 | tee -a "$log"
+		for pid in $(proc_tree "$runner"); do kill -9 "$pid" 2>/dev/null; done
+		break
+	fi
+done
+wait "$runner" 2>/dev/null
 
 
 grep_args="SUCCESS"
 grepvals="$( tail -n 100 $log | grep $grep_args)"
 
-if [[ $grepvals == *"SUCCESS"* ]]; then
+if [ "$guard_tripped" = false ] && [[ $grepvals == *"SUCCESS"* ]]; then
 	# Merge Federated test runs.
 	# if merged jacoco exist temporarily rename to not overwrite.
 	[ -f target/jacoco.exec ] && mv target/jacoco.exec target/jacoco_main.exec

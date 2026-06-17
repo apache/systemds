@@ -29,6 +29,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
@@ -91,6 +93,9 @@ import org.junit.runners.Parameterized;
 @RunWith(value = Parameterized.class)
 public class ColGroupTest extends ColGroupBase {
 	protected static final Log LOG = LogFactory.getLog(ColGroupTest.class.getName());
+
+	/** Tracks already-logged "not implemented" column group type pairs to avoid duplicate log spam. */
+	private static final Set<String> loggedNotImplemented = ConcurrentHashMap.newKeySet();
 
 	public ColGroupTest(AColGroup base, AColGroup other, int nRow) {
 		super(base, other, nRow);
@@ -1282,12 +1287,18 @@ public class ColGroupTest extends ColGroupBase {
 			compare(bt, ot);
 		}
 		catch(NotImplementedException e) {
-			LOG.error("not implemented: " + base.getClass().getSimpleName() + " or: " + other.getClass().getSimpleName());
+			logNotImplementedOnce();
 		}
 		catch(Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
+	}
+
+	private void logNotImplementedOnce() {
+		final String pair = base.getClass().getSimpleName() + " or: " + other.getClass().getSimpleName();
+		if(loggedNotImplemented.add(pair))
+			LOG.error("not implemented: " + pair);
 	}
 
 	@Test

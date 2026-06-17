@@ -78,6 +78,12 @@ public class DecoderFactory
 			// remove hash recoded. // todo potentially wrong and remove?
 			rcIDs = except(rcIDs, hcIDs);
 
+			// dummycoded hash columns: domain size K lives in the meta cell, so the decoders
+			// need to know which dummycoded columns to read it from
+			List<Integer> hcdcIDs = new ArrayList<>(dcIDs);
+			hcdcIDs.retainAll(hcIDs);
+			int[] hashCols = ArrayUtils.toPrimitive(hcdcIDs.toArray(new Integer[0]));
+
 			int len = dcIDs.isEmpty() ? Math.min(meta.getNumColumns(), clen) : meta.getNumColumns();
 
 			// set the remaining columns to passthrough.
@@ -86,8 +92,9 @@ public class DecoderFactory
 			ptIDs = except(ptIDs, rcIDs);
 			// binned columns
 			ptIDs = except(ptIDs, binIDs);
-			// hashed columns
-			ptIDs = except(ptIDs, hcIDs); // remove hashed columns
+			// dummycoded columns (incl. dummycoded hash) are rebuilt by the dummycode decoder;
+			// hash columns without dummycode stay in passthrough so their bucket code survives
+			ptIDs = except(ptIDs, dcIDs);
 
 			//create default schema if unspecified (with double columns for pass-through)
 			if( schema == null ) {
@@ -102,11 +109,11 @@ public class DecoderFactory
 			if( !binIDs.isEmpty() ) {
 				ldecoders.add(new DecoderBin(schema, 
 					ArrayUtils.toPrimitive(binIDs.toArray(new Integer[0])),
-					ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0]))));
+					ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0])), hashCols));
 			}
 			if( !dcIDs.isEmpty() ) {
 				ldecoders.add(new DecoderDummycode(schema, 
-					ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0]))));
+					ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0])), hashCols));
 			}
 			if( !rcIDs.isEmpty() ) {
 				// todo figure out if we need to handle rc columns with regards to dictionary offsets.
@@ -116,7 +123,7 @@ public class DecoderFactory
 			if( !ptIDs.isEmpty() ) {
 				ldecoders.add(new DecoderPassThrough(schema, 
 					ArrayUtils.toPrimitive(ptIDs.toArray(new Integer[0])),
-					ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0]))));
+					ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0])), hashCols));
 			}
 			
 			//create composite decoder of all created decoders

@@ -28,7 +28,6 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
-import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -53,8 +52,13 @@ public class DecoderBin extends Decoder {
 	}
 
 	protected DecoderBin(ValueType[] schema, int[] binCols, int[] dcCols) {
+		this(schema, binCols, dcCols, null);
+	}
+
+	protected DecoderBin(ValueType[] schema, int[] binCols, int[] dcCols, int[] hashCols) {
 		super(schema, binCols);
 		_dcCols = dcCols;
+		_dcHashCols = hashCols;
 	}
 
 	@Override
@@ -139,14 +143,8 @@ public class DecoderBin extends Decoder {
 					ix1 ++;
 				}
 				else { //_colList[ix1] > _dcCols[ix2]
-					ColumnMetadata d =meta.getColumnMetadata()[_dcCols[ix2]-1];
-					String v = meta.getString(0, _dcCols[ix2]-1);
-					if(v.length() > 1 && v.charAt(0) == '¿'){
-						off += UtilFunctions.parseToLong(v.substring(1)) -1;
-					}
-					else {
-						off += d.isDefault() ? -1 : d.getNumDistinct() - 1;
-					}
+					int dcCol = _dcCols[ix2];
+					off += getNumDummycodeDistinct(meta, dcCol, isHashCol(dcCol)) - 1;
 					ix2 ++;
 				}
 			}
@@ -169,8 +167,7 @@ public class DecoderBin extends Decoder {
 				out.writeDouble(_binMaxs[i][j]);
 			}
 		}
-		// source-column mapping derived from dummycode/hash domain sizes (rebuilt in initMetaData,
-		// but persisted here because Spark broadcasts the decoder without re-running initMetaData)
+		// source-column mapping (rebuilt in initMetaData, but persisted for Spark broadcast)
 		out.writeInt(_srcCols.length);
 		for(int i = 0; i < _srcCols.length; i++)
 			out.writeInt(_srcCols[i]);

@@ -28,13 +28,16 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
  * Base class for all transform decoders providing both a row and block
@@ -48,9 +51,36 @@ public abstract class Decoder implements Externalizable{
 	protected ValueType[] _schema;
 	protected int[] _colList;
 	protected String[] _colnames = null;
+	// dummycoded columns that were feature-hashed: domain size K is read from the meta cell, not
+	// numDistinct. Only used during initMetaData (driver side), so not serialized.
+	protected transient int[] _dcHashCols = null;
+
 	protected Decoder(ValueType[] schema, int[] colList) {
 		_schema = schema;
 		_colList = colList;
+	}
+
+	protected boolean isHashCol(int colID) {
+		return ArrayUtils.contains(_dcHashCols, colID);
+	}
+
+	/**
+	 * Domain size of a dummycoded source column: the hash domain K from the meta cell for
+	 * feature-hashed columns, otherwise the column's {@code numDistinct} (0 when unset).
+	 *
+	 * @param meta   transform meta frame
+	 * @param colID  1-based column id of the dummycoded source column
+	 * @param isHash whether the column was feature-hashed
+	 * @return the domain size, never negative
+	 */
+	protected static int getNumDummycodeDistinct(FrameBlock meta, int colID, boolean isHash) {
+		if(isHash) {
+			Object o = meta.get(0, colID - 1);
+			return (o == null) ? 0 : (int) UtilFunctions.parseToLong(o.toString());
+		}
+		ColumnMetadata d = meta.getColumnMetadata()[colID - 1];
+		int ndist = d.isDefault() ? 0 : (int) d.getNumDistinct();
+		return Math.max(ndist, 0);
 	}
 
 	public ValueType[] getSchema() {

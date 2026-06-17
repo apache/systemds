@@ -260,6 +260,41 @@ public class TransformDecodeRoundTripTest {
 		}
 	}
 
+	/**
+	 * Feature hashing is non-invertible, so the decode contract for a hash column that is NOT dummycoded is that the
+	 * encoded bucket code passes through unchanged. Regression test: a hash-only column must not be dropped from the
+	 * decoded frame (it previously was, because hash columns were excluded from passthrough).
+	 */
+	@Test
+	public void hashWithoutDummycodeDecodesToBucketCode() {
+		final String spec = "{ids:true, hash:[1], K:8}";
+		try {
+			final FrameBlock original = categoricalFrame();
+			final String[] colnames = original.getColumnNames();
+			final MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, colnames, original.getNumColumns(),
+				null);
+			final MatrixBlock encoded = encoder.encode(original, 1);
+			if(encoded.isInSparseFormat())
+				encoded.sparseToDense();
+			final FrameBlock meta = encoder.getMetaData(null);
+
+			final Decoder decoder = DecoderFactory.createDecoder(spec, colnames, null, meta, encoded.getNumColumns());
+			final FrameBlock decoded = decoder.decode(encoded, new FrameBlock(decoder.getSchema()), 1);
+
+			org.junit.Assert.assertEquals(1, decoded.getNumColumns());
+			for(int i = 0; i < original.getNumRows(); i++) {
+				final Object v = decoded.get(i, 0);
+				org.junit.Assert.assertNotNull("hash column must survive decode at row " + i, v);
+				org.junit.Assert.assertEquals("hash bucket code must pass through at row " + i, encoded.get(i, 0),
+					Double.parseDouble(v.toString()), 0.0);
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(spec + " : " + e.getMessage());
+		}
+	}
+
 	private static FrameBlock decodeOnce(String spec, String[] colnames, FrameBlock meta, MatrixBlock in, int k) {
 		final Decoder decoder = DecoderFactory.createDecoder(spec, colnames, null, meta, in.getNumColumns());
 		return decoder.decode(in, new FrameBlock(decoder.getSchema()), k);

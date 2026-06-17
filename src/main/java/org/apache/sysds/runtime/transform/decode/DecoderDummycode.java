@@ -29,9 +29,7 @@ import java.util.List;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
-import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
  * Simple atomic decoder for dummycoded columns. This decoder builds internally inverted column mappings from the given
@@ -45,8 +43,13 @@ public class DecoderDummycode extends Decoder {
 	private int[] _cuPos = null;
 
 	protected DecoderDummycode(ValueType[] schema, int[] dcCols) {
+		this(schema, dcCols, null);
+	}
+
+	protected DecoderDummycode(ValueType[] schema, int[] dcCols, int[] hashCols) {
 		// dcCols refers to column IDs in output (non-dc)
 		super(schema, dcCols);
+		_dcHashCols = hashCols;
 	}
 
 	@Override
@@ -91,9 +94,7 @@ public class DecoderDummycode extends Decoder {
 		final int[] aix = sb.indexes(i);
 
 		for(int j = 0; j < _colList.length; j++) { // for each decode column.
-			// find k, the index in aix, within the range of low and high.
-			// _clPos/_cuPos are 1-based matrix positions (the dense path reads
-			// in.get(i, k-1)); the sparse indexes in aix are 0-based, so shift.
+			// find the set bit in [low, high); _clPos/_cuPos are 1-based, aix is 0-based
 			final int low = _clPos[j] - 1;
 			final int high = _cuPos[j] - 1;
 			int h = Arrays.binarySearch(aix, apos, alen, low); // start h at column.
@@ -166,17 +167,8 @@ public class DecoderDummycode extends Decoder {
 		_cuPos = new int[_colList.length]; // col upper pos
 		for(int j = 0, off = 0; j < _colList.length; j++) {
 			int colID = _colList[j];
-			ColumnMetadata d = meta.getColumnMetadata()[colID - 1];
-			String v = meta.getString(0, colID - 1);
-			int ndist;
-			if(v.length() > 1 && v.charAt(0) == '¿') {
-				ndist = UtilFunctions.parseToInt(v.substring(1));
-			}
-			else {
-				ndist = d.isDefault() ? 0 : (int) d.getNumDistinct();
-			}
-
-			ndist = ndist < -1 ? 0 : ndist; // safety if all values was null.
+			// hash columns store the domain size K in the meta cell; others use numDistinct
+			int ndist = getNumDummycodeDistinct(meta, colID, isHashCol(colID));
 
 			_clPos[j] = off + colID;
 			_cuPos[j] = _clPos[j] + ndist;

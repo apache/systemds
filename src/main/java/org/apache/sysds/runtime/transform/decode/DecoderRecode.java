@@ -124,7 +124,6 @@ public class DecoderRecode extends Decoder
 	public void initMetaData(FrameBlock meta) {
 		//initialize recode maps according to schema
 		_rcMaps = new HashMap[_colList.length];
-		long[] max = new long[_colList.length];
 		for( int j=0; j<_colList.length; j++ ) {
 			HashMap<Long, Object> map = new HashMap<>();
 			for( int i=0; i<meta.getNumRows(); i++ ) {
@@ -136,7 +135,6 @@ public class DecoderRecode extends Decoder
 					Object obj = UtilFunctions.stringToObject(_schema[_colList[j]-1], tmp[0]);
 					long lval = Long.parseLong(tmp[1]);
 					map.put(lval, obj);
-					max[j] = Math.max(lval, max[j]);
 				}
 				catch(Exception e){
 					throw new DMLRuntimeException("Failed to reinitialize recode map from: " + (meta.getColumn(_colList[j]-1)), e);
@@ -144,17 +142,6 @@ public class DecoderRecode extends Decoder
 			}
 			_rcMaps[j] = map;
 		}
-		
-		//convert to direct lookup arrays
-		// if( Arrays.stream(max).allMatch(v -> v < Integer.MAX_VALUE) ) {
-		// 	_rcMapsDirect = new Object[_rcMaps.length][];
-		// 	for( int i=0; i<_rcMaps.length; i++ ) {
-		// 		Object[] arr = new Object[(int)max[i]];
-		// 		for(Entry<Long,Object> e1 : _rcMaps[i].entrySet())
-		// 			arr[e1.getKey().intValue()-1] = e1.getValue();
-		// 		_rcMapsDirect[i] = arr;
-		// 	}
-		// }
 	}
 	
 	/**

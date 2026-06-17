@@ -28,9 +28,7 @@ import java.util.List;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
-import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
  * Simple atomic decoder for passing through numeric columns to the output.
@@ -45,8 +43,13 @@ public class DecoderPassThrough extends Decoder
 	private int[] _srcCols = null;
 
 	protected DecoderPassThrough(ValueType[] schema, int[] ptCols, int[] dcCols) {
+		this(schema, ptCols, dcCols, null);
+	}
+
+	protected DecoderPassThrough(ValueType[] schema, int[] ptCols, int[] dcCols, int[] hashCols) {
 		super(schema, ptCols);
 		_dcCols = dcCols;
+		_dcHashCols = hashCols;
 	}
 
 	public DecoderPassThrough() { super(null, null); }
@@ -112,14 +115,8 @@ public class DecoderPassThrough extends Decoder
 					ix1 ++;
 				}
 				else { //_colList[ix1] > _dcCols[ix2]
-					ColumnMetadata d =meta.getColumnMetadata()[_dcCols[ix2]-1];
-					String v = meta.getString( 0,_dcCols[ix2]-1);
-					if(v.length() > 1 && v.charAt(0) == '¿'){
-						off += UtilFunctions.parseToLong(v.substring(1)) -1;
-					}
-					else {
-						off += d.isDefault() ? -1 : d.getNumDistinct() - 1;
-					}
+					int dcCol = _dcCols[ix2];
+					off += getNumDummycodeDistinct(meta, dcCol, isHashCol(dcCol)) - 1;
 					ix2 ++;
 				}
 			}

@@ -610,9 +610,7 @@ public class StringArray extends Array<String> {
 			return DoubleArray.parseDouble(s);
 		}
 		catch(Exception e) {
-			// Fallback for boolean-like tokens. Dispatch on length first so non-boolean strings are
-			// rejected immediately, and avoid allocating a lower-cased copy by comparing case-insensitively
-			// (single char compare for the 1-char tokens).
+			// fallback for boolean-like tokens, without allocating a lower-cased copy
 			final int len = s.length();
 			if(len == 1) {
 				final char c = s.charAt(0);

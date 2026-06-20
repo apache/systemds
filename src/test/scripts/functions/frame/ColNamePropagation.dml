@@ -1,0 +1,5 @@
+X1 = read($1, rows=$2, cols=$3, data_type="frame", format="csv", header=TRUE);
+X2 = read($4, rows=$2, cols=$5, data_type="frame", format="csv", header=TRUE);
+Y = cbind(X1, X2);
+B = getNames(Y);
+write(B, $6, format="binary");

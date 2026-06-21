@@ -1,0 +1,76 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+# Applies a fitted Yeo-Johnson power transformation.
+# Transforms each feature using its previously estimated lambda parameter.
+#
+# INPUT:
+# -------------------------------------------------------------------------------------
+#   X    Input feature matrix of shape n-by-m
+#   lambdas  Precomputed lambda parameters of shape 1-by-m, one per column
+# -------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -------------------------------------------------------------------------------------
+#   Y    Power-transformed matrix of shape n-by-m
+# -------------------------------------------------------------------------------------
+
+
+m_powerTransformApply = function(Matrix[Double] X, Matrix[Double] lambdas)
+    return (Matrix[Double] Y)
+{
+    n = nrow(X)
+    m = ncol(X)
+
+    Y = matrix(0.0, rows=n, cols=m)
+
+    #临界点处理（0和2）
+    eps = 1e-12
+
+    #逐列变化循环
+    for (j in 1:m){
+        x = X[,j]
+        lambda_j = as.scalar(lambdas[1,j])
+        nonnegative = x >= 0
+
+        #使用中间值输入 避免评价算法或者分数幂超出有效域
+        x_pos = ifelse(nonnegative, x, 0.0)
+        x_neg = ifelse(nonnegative, 0.0, x)
+
+        #对非负值的转化 (x>=0)
+        if (abs(lambda_j) < eps) {
+            y_pos = log(x_pos + 1)
+        }
+        else {
+            y_pos = ((x_pos + 1)^lambda_j - 1) / lambda_j
+        }
+
+        #对负值转化 (x<0)
+        if (abs(lambda_j - 2) < eps) {
+            y_neg = -log(1 - x_neg)
+        }
+        else {
+            y_neg = -((1 - x_neg)^(2 - lambda_j) - 1) / (2 - lambda_j)
+        }
+
+        #俩支线合并
+        Y[,j] = ifelse(nonnegative, y_pos, y_neg)
+    }
+}

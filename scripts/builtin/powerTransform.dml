@@ -1,0 +1,160 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+# Power transformation using the Yeo-Johnson method.
+# Reduces feature skewness by estimating and applying an optimal transformation parameter for each column.
+#
+# INPUT:
+# -------------------------------------------------------------------------------------
+#   X    Input feature matrix of shape n-by-m
+# -------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -------------------------------------------------------------------------------------
+#   Y    Power-transformed matrix of shape n-by-m
+#   lambdas  Estimated lambda parameters of shape 1-by-m, one per column
+# -------------------------------------------------------------------------------------
+
+m_powerTransform = function(Matrix[Double] X)
+  return (Matrix[Double] Y, Matrix[Double] lambdas)
+{
+  m = ncol(X)
+  lambdas = matrix(1.0, rows=1, cols=m) #初始设置为0，后续为每一列替换为最优的lambdas
+
+
+# 分开给每一列估计lambda
+  for (j in 1:m){
+    x = X[,j]
+
+    #考虑常数列，方差为0，不优化，拉姆达直接等于1
+    if (max(x) == min(x)) {
+        lambdas[1,j] = 1.0;
+    }
+    else{
+      lambdas[1,j]= ptEstimateLambda(x);
+    }
+}
+# 把参数传给Apply
+  Y = powerTransformApply(X, lambdas);
+}
+
+
+
+
+#暂时使用黄金分割搜索最佳lambda，后期换成Brent
+
+
+ptEstimateLambda = function(Matrix[Double] x)
+    return (Double lambda)
+{
+    lower = -2.0;
+    upper = 2.0;
+
+    lambda = ptGoldenSectionSearch(x, lower, upper);
+}
+
+#计算负对数似然值，越低lambdas越好
+
+ptYJNegLogLikelihood = function(
+    Matrix[Double] x,
+    Double lambda)
+  return (Double negLogLikelihood)
+{
+    #powerTransformApply要求lambda参数是矩阵形式
+    lambdaMatrix = matrix(lambda, rows=1, cols=1);
+
+    #使用这个lambda一次YJ变换之后，得到虚拟结果y,后续会打分
+    y = powerTransformApply(x, lambdaMatrix);
+
+    #安全检查,方差小于0时惩罚性给极大值的打分
+    n = nrow(x);
+    yMean = mean(y);
+    yVariance = sum((y - yMean)^2) / n;
+
+    if (yVariance <= 0.0) {
+        negLogLikelihood = 1e300
+    }
+
+    #安全检查通过后正式开始打分
+    #目标函数分两部分
+
+    else {
+        # Variance Term
+        logLikelihood = -n / 2.0 * log(yVariance);
+
+        # Jacobian term
+        jacobian = (lambda - 1.0) * sum(sign(x) * log(abs(x) + 1.0));
+
+        # 组合
+        logLikelihood = logLikelihood + jacobian;
+        #取反输出
+        negLogLikelihood = -logLikelihood;
+    }
+}
+
+#暂时使用黄金分割寻找最优lambdas，后期替换成Brent
+ptGoldenSectionSearch = function(
+    Matrix[Double] x,
+    Double lower,
+    Double upper)
+  return (Double lambdaOptimal)
+{
+  #黄金分割率，精度，最大尝试次数
+  goldenRatio = 0.6180339887498949;
+  tolerance = 1e-6;
+  maxIterations = 100;
+
+  a = lower;
+  b = upper;
+
+  c = b - goldenRatio * (b - a);
+  d = a + goldenRatio * (b - a);
+
+  fc = ptYJNegLogLikelihood(x, c);
+  fd = ptYJNegLogLikelihood(x, d);
+
+  iteration = 0;
+  while (((b - a) > tolerance) & (iteration < maxIterations)) {
+
+    if (fc < fd) {
+      b = d;
+      d = c;
+      fd = fc;
+      c = b - goldenRatio * (b - a);
+      fc = ptYJNegLogLikelihood(x, c);
+    }
+    else {
+      a = c;
+      c = d;
+      fc = fd;
+      d = a + goldenRatio * (b - a);
+      fd = ptYJNegLogLikelihood(x, d);
+    }
+
+    iteration = iteration + 1;
+  }
+
+  #收缩后留下最优的
+  if (fc < fd) {
+    lambdaOptimal = c; # 谁的得分低，谁就是最终冠军
+  } else {
+    lambdaOptimal = d;
+  }
+}

@@ -26,16 +26,20 @@
 # INPUT:
 # -------------------------------------------------------------------------------------------------
 # N      The number of samples to be taken
+# d      The number of dimension
 #         
 # -------------------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # ------------------------------------------------------------------------------------------------------
-# M          A N x N matrix M
-#            Contains N*(N-1) 0s and N 1s
+# M          A N x d matrix M
+#            Contains the coordinates of sampled points
 # ------------------------------------------------------------------------------------------------------
 
-lhs = function(Integer N)
+lhs = function(Integer N, Integer d)
   return (Matrix[Double] M) {
-    M = table(seq(1,N),sample(N,N))
+    M = sample(N,N)
+    for (i in 1:d-1) {
+        M = cbind(M,sample(N,N));
+    }
   }

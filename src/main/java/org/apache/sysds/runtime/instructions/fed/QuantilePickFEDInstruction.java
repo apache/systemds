@@ -234,7 +234,7 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 	public <T> void processRowQPick(ExecutionContext ec) {
 		MatrixObject in = ec.getMatrixObject(input1);
 		FederationMap fedMap = in.getFedMapping();
-		boolean average = _type == OperationTypes.MEDIAN;
+		boolean average = _type == OperationTypes.MEDIAN || _type == OperationTypes.VALUEPICK;
 
 		double[] quantiles = input2 != null ? (input2.isMatrix() ? ec.getMatrixInput(input2).getDenseBlockValues() :
 			input2.isScalar() ? new double[] {ec.getScalarInput(input2).getDoubleValue()} : null) :

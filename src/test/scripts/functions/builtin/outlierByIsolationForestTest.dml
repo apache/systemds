@@ -20,13 +20,107 @@
 #-------------------------------------------------------------
 
 X = read($X)
+test_case = $test_case
 
-model = outlierByIsolationForest(X=X, n_trees=$n_trees, subsampling_size=$subsampling_size, seed=$seed)
-M = as.matrix(model['model'])
-subsampling_size_out = as.scalar(model['subsampling_size'])
+# test_case meanings:
+# 1: basic model
+# 2: anomaly ranking
+# 3: subsampling clamp
+# 4: single-row apply
+# 5: single-tree model
+# 6: constant data
+# 7: seed reproducibility
 
-scores = outlierByIsolationForestApply(iForestModel=model, X=X)
+if (test_case == 2) {
+    # Train on the provided normal data.
+    model = outlierByIsolationForest(
+        X = X,
+        n_trees = $n_trees,
+        subsampling_size = $subsampling_size,
+        seed = $seed
+    )
 
-write(scores, $output)
-write(M, $model_output)
-write(subsampling_size_out, $subsampling_size_output)
+    M = as.matrix(model["model"])
+    subsampling_size_out = as.scalar(model["subsampling_size"])
+
+    # Score two normal points and two obvious outliers.
+    X_normal = X[1:2, ]
+    X_outliers = matrix(10, rows = 2, cols = ncol(X))
+    X_test = rbind(X_normal, X_outliers)
+
+    scores = outlierByIsolationForestApply(
+        iForestModel = model,
+        X = X_test
+    )
+
+    normal_mean = mean(scores[1:2, 1])
+    anomaly_mean = mean(scores[3:4, 1])
+
+    assert(anomaly_mean > normal_mean)
+
+    write(scores, $output)
+    write(M, $model_output)
+    write(subsampling_size_out, $subsampling_size_output)
+}
+
+if (test_case == 7) {
+    # Same input and same seed should produce the same forest.
+    model1 = outlierByIsolationForest(
+        X = X,
+        n_trees = $n_trees,
+        subsampling_size = $subsampling_size,
+        seed = $seed
+    )
+
+    model2 = outlierByIsolationForest(
+        X = X,
+        n_trees = $n_trees,
+        subsampling_size = $subsampling_size,
+        seed = $seed
+    )
+
+    M1 = as.matrix(model1["model"])
+    M2 = as.matrix(model2["model"])
+
+    subsampling_size_out = as.scalar(model1["subsampling_size"])
+
+    diff = sum(abs(M1 - M2))
+    assert(diff == 0)
+
+    scores = outlierByIsolationForestApply(
+        iForestModel = model1,
+        X = X
+    )
+
+    write(scores, $output)
+    write(M1, $model_output)
+    write(subsampling_size_out, $subsampling_size_output)
+}
+
+if (test_case != 2 & test_case != 7) {
+    model = outlierByIsolationForest(
+        X = X,
+        n_trees = $n_trees,
+        subsampling_size = $subsampling_size,
+        seed = $seed
+    )
+
+    M = as.matrix(model["model"])
+    subsampling_size_out = as.scalar(model["subsampling_size"])
+
+    X_apply = X
+
+    if (test_case == 4) {
+        # Single-row apply test.
+        X_apply = X[1, ]
+    }
+
+    scores = outlierByIsolationForestApply(
+        iForestModel = model,
+        X = X_apply
+    )
+
+    write(scores, $output)
+    write(M, $model_output)
+    write(subsampling_size_out, $subsampling_size_output)
+}

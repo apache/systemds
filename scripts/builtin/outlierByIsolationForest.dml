@@ -75,11 +75,24 @@ s_outlierByIsolationForest = function(Matrix[Double] X, Integer n_trees, Integer
   iForestModel = m_outlierByIsolationForest(X, n_trees, subsampling_size, seed)
 }
 
+# modification 1: Use the actual subsampling size for training and scoring normalization.
+
 m_outlierByIsolationForest = function(Matrix[Double] X, Integer n_trees, Integer subsampling_size, Integer seed = -1)
-  return(List[Unknown] iForestModel)
+return(List[Unknown] iForestModel)
 {
-  M = m_iForest(X, n_trees, subsampling_size, seed)
-  iForestModel = list(model=M, subsampling_size=subsampling_size)
+    s_warning_assert_outlierByIsolationForest(nrow(X) > 1, "iForest: X must contain at least two rows.")
+    s_warning_assert_outlierByIsolationForest(ncol(X) > 0, "iForest: X must contain at least one feature column.")
+    s_warning_assert_outlierByIsolationForest(n_trees > 0, "iForest: n_trees must be positive.")
+    s_warning_assert_outlierByIsolationForest(subsampling_size > 1, "iForest: subsampling_size must be greater than 1.")
+
+    actual_subsampling_size = as.integer(ifelse(subsampling_size > nrow(X), nrow(X), subsampling_size))
+
+    M = m_iForest(X, n_trees, actual_subsampling_size, seed)
+
+    iForestModel = list(
+        model = M,
+        subsampling_size = actual_subsampling_size
+    )
 }
 
 # This function implements isolation forest for numerical input features as
@@ -122,32 +135,32 @@ m_outlierByIsolationForest = function(Matrix[Double] X, Integer n_trees, Integer
 # ---------------------------------------------------------------------------------------------
 # M    Matrix containing the learned iForest in linearized form
 # ---------------------------------------------------------------------------------------------
+
+# modification 2: Build exactly n_trees iTrees. Each tree gets a deterministic but distinct seed.
+
 m_iForest = function(Matrix[Double] X, Integer n_trees, Integer subsampling_size, Integer seed = -1)
-  return(Matrix[Double] M)
+return(Matrix[Double] M)
 {
-  # check assumptions
-  s_warning_assert_outlierByIsolationForest(n_trees > 0, "iForest: Requirement n_trees > 0 not satisfied! ntrees: "+toString(n_trees))
-  s_warning_assert_outlierByIsolationForest(subsampling_size > 1 & subsampling_size <= nrow(X), "iForest: Requirement 0 < subsampling_size <= nrow(X) not satisfied! subsampling_size: "+toString(subsampling_size)+"; nrow(X): "+toString(nrow(X)))
+    s_warning_assert_outlierByIsolationForest(n_trees > 0, "iForest: n_trees must be positive.")
+    s_warning_assert_outlierByIsolationForest(subsampling_size > 1, "iForest: subsampling_size must be greater than 1.")
+    s_warning_assert_outlierByIsolationForest(subsampling_size <= nrow(X), "iForest: subsampling_size must be <= nrow(X).")
 
-  height_limit = ceil(log(subsampling_size, 2))
-  tree_size = 2*(2^(height_limit+1)-1)
+    height_limit = ceil(log(subsampling_size, 2))
+    tree_size = 2 * (2^(height_limit + 1) - 1)
 
-  # initialize the model
-  M = matrix(-1, cols=tree_size, rows=n_trees)
-  seeds = matrix(seq(1, n_trees), cols=n_trees, rows=1)*seed
+    M = matrix(-1, rows = n_trees, cols = tree_size)
 
-  parfor ( i_iTree in 1:n_trees, taskpartitioner="STATIC") {
-    # subsample rows
-    tree_seed = ifelse(seed == -1, -1, as.scalar(seeds[1, i_iTree]))
-    X_subsample = s_sampleRows(X, subsampling_size, tree_seed)
+    parfor (i_iTree in 1:n_trees, taskpartitioner="STATIC") {
+        tree_seed = ifelse(seed == -1, -1, seed + i_iTree)
 
-    # Build iTree
-    tree_seed = ifelse(seed == -1, -1, tree_seed+42)
-    M_tree = m_iTree(X_subsample, height_limit, tree_seed)
+        X_subsample = s_sampleRows(X, subsampling_size, tree_seed)
 
-    # Add iTree to the model
-    M[i_iTree, 1:ncol(M_tree)] = M_tree
-  }
+        split_seed = ifelse(seed == -1, -1, seed + 1000003 * i_iTree)
+
+        M_tree = m_iTree(X_subsample, height_limit, split_seed)
+
+        M[i_iTree, 1:ncol(M_tree)] = M_tree
+    }
 }
 
 # This function implements isolation trees for numerical input features as
@@ -215,6 +228,18 @@ m_iForest = function(Matrix[Double] X, Integer n_trees, Integer subsampling_size
 # ---------------------------------------------------------------------------------------------
 # M    Matrix M containing the learned tree in linearized form
 # ---------------------------------------------------------------------------------------------
+
+# modification 3: A node is splittable only if at least one feature has positive range.
+
+s_hasSplittableFeature = function(Matrix[Double] X_node)
+return(Boolean hasSplittableFeature)
+{
+    ranges = colMaxs(X_node) - colMins(X_node)
+    hasSplittableFeature = max(ranges) > 0
+}
+
+# modification 6:
+
 m_iTree = function(Matrix[Double] X, Integer max_depth, Integer seed = -1)
   return(Matrix[Double] M)
 {
@@ -248,18 +273,26 @@ m_iTree = function(Matrix[Double] X, Integer max_depth, Integer seed = -1)
       # External Node: Add node to model
       M = s_addExternalINode(X_node, node_id, M)
     }
+
+    # modification 6: # Materialize an internal node only if the split creates two non-empty children.
+
     else {
-      # Internal Node: Draw split criterion, add node to model and queue child nodes
-      seed = ifelse(seed == -1, -1, node_id*seed)
-      [split_feature, split_value] = s_drawSplitPoint(X_node, seed)
-      M = s_addInternalINode(node_id, split_feature, split_value, M)
-      [left_id, X_left, right_id, X_right] = s_splitINode(X_node, node_id, split_feature, split_value)
+        node_seed = ifelse(seed == -1, -1, seed + node_id)
 
-      node_queue = append(node_queue, list(left_id, X_left))
-      node_queue = append(node_queue, list(right_id, X_right))
+        [split_feature, split_value] = s_drawSplitPoint(X_node, node_seed)
+        [left_id, X_left, right_id, X_right] = s_splitINode(X_node, node_id, split_feature, split_value)
+
+        if (nrow(X_left) == 0 | nrow(X_right) == 0) {
+            M = s_addExternalINode(X_node, node_id, M)
+        }
+        else {
+            M = s_addInternalINode(node_id, split_feature, split_value, M)
+
+            node_queue = append(node_queue, list(left_id, X_left))
+            node_queue = append(node_queue, list(right_id, X_right))
+        }
     }
-  }
-
+}
   # Prune the model to the actual tree depth
   tree_depth = floor(log(max_id, 2))
   M = M[1, 1:2*(2^(tree_depth+1) - 1)];
@@ -282,17 +315,36 @@ m_iTree = function(Matrix[Double] X, Integer max_depth, Integer seed = -1)
 # split_feature   Index of the feature used for splitting the node
 # split_value     Feature value used for splitting the node
 # ---------------------------------------------------------------------------------------------
+
+# modification 5: Draw the split feature only from columns that can separate the current node.
+
 s_drawSplitPoint = function(Matrix[Double] X, Integer seed = -1)
-  return(Integer split_feature, Double split_value)
+return(Integer split_feature, Double split_value)
 {
-  # find random feature and a value between the min and max values of that feature to split the node by
-  split_feature = as.integer(as.scalar(sample(ncol(X), 1, FALSE, seed)))
-  split_value = as.scalar(rand(
-    rows=1, cols=1,
-    min=min(X[, split_feature]),
-    max=max(X[, split_feature]),
-    seed=seed
-  ))
+    ranges = colMaxs(X) - colMins(X)
+    feature_ids = matrix(seq(1, ncol(X)), rows = 1, cols = ncol(X))
+
+    valid_features = removeEmpty(
+        target = feature_ids,
+        margin = "cols",
+        select = ranges > 0,
+        empty.return = FALSE
+    )
+
+    feature_idx_seed = seed
+    feature_idx = as.integer(as.scalar(sample(ncol(valid_features), 1, FALSE, feature_idx_seed)))
+    split_feature = as.integer(as.scalar(valid_features[1, feature_idx]))
+
+    feature_min = min(X[, split_feature])
+    feature_max = max(X[, split_feature])
+
+    split_value = as.scalar(rand(
+        rows = 1,
+        cols = 1,
+        min = feature_min,
+        max = feature_max,
+        seed = seed
+    ))
 }
 
 # Adds a external (leaf) node to the linearized iTree model `M`. In the linerized form,
@@ -368,14 +420,18 @@ s_addInternalINode = function(Integer node_id, Integer split_feature, Double spl
 #                  This is the case when a max depth is reached or the number of rows
 #                  in the feature matrix corresponding to the node <= 1
 # ---------------------------------------------------------------------------------------------
-s_isExternalINode = function(Matrix[Double] X_node, Integer node_id, Integer max_depth)
-  return(Boolean isExternalNode)
-{
-  s_warning_assert_outlierByIsolationForest(max_depth > 0, "s_isExternalINode: Requirement `max_depth > 0` not satisfied!")
-  s_warning_assert_outlierByIsolationForest(node_id > 0, "s_isExternalINode: Requirement `node_id > 0` not satisfied!")
 
-  node_depth = floor(log(node_id, 2))
-  isExternalNode = node_depth >= max_depth | nrow(X_node) <= 1
+# modification 4: Stop if the depth limit is reached, the node is isolated, or no feature can produce a valid split.
+
+s_isExternalINode = function(Matrix[Double] X_node, Integer node_id, Integer max_depth)
+return(Boolean isExternalNode)
+{
+    s_warning_assert_outlierByIsolationForest(max_depth > 0, "s_isExternalINode: max_depth must be positive.")
+    s_warning_assert_outlierByIsolationForest(node_id > 0, "s_isExternalINode: node_id must be positive.")
+
+    node_depth = floor(log(node_id, 2))
+
+    isExternalNode = node_depth >= max_depth | nrow(X_node) <= 1 | !s_hasSplittableFeature(X_node)
 }
 
 
@@ -401,6 +457,9 @@ s_isExternalINode = function(Matrix[Double] X_node, Integer node_id, Integer max
 # X_right    Matrix corresponding to the left node resulting from the split with rows where
 #            value for feature `split_feature` > value `split_value`
 # ---------------------------------------------------------------------------------------------
+
+
+
 s_splitINode = function(Matrix[Double] X_node, Integer node_id, Integer split_feature, Double split_value)
   return(Integer left_id, Matrix[Double] X_left, Integer right_id, Matrix[Double] X_right)
 {
@@ -408,7 +467,9 @@ s_splitINode = function(Matrix[Double] X_node, Integer node_id, Integer split_fe
   s_warning_assert_outlierByIsolationForest(node_id > 0, "s_splitINode: Requirement `nrow(X_node) > 0` not satisfied!")
   s_warning_assert_outlierByIsolationForest(split_feature > 0, "s_splitINode: Requirement `split_feature > 0` not satisfied!")
 
-  left_rows_mask = X_node[, split_feature] <= split_value
+  # modification 7: Follow the original iTree convention < and >=
+
+  left_rows_mask = X_node[, split_feature] < split_value
 
   # In the lineraized form of the iTree model, nodes need to be ordered by depth
   # Since iTrees are binary trees we can use 2*node_id/2*node_id+1 for left/right child ids
@@ -436,16 +497,21 @@ s_splitINode = function(Matrix[Double] X_node, Integer node_id, Integer split_fe
 # ---------------------------------------------------------------------------------------------
 # X_sampled    Sampled rows from X
 # ---------------------------------------------------------------------------------------------
-s_sampleRows = function(Matrix[Double] X, Integer size, Integer seed = -1)
-  return(Matrix[Double] X_extracted)
-{
-  s_warning_assert_outlierByIsolationForest(size > 0 & nrow(X) >= size, "s_sampleRows: Requirements `size > 0 & nrow(X) >= size` not satisfied")
-  random_vector = rand(rows=nrow(X), cols=1, seed=seed)
-  X_rand = cbind(X, random_vector)
 
-  # order by random vector and return `size` nr of rows`
-  X_rand = order(target=X_rand, by=ncol(X_rand))
-  X_extracted = X_rand[1:size, 1:ncol(X)]
+# modification 8: Split two conditions.
+
+s_sampleRows = function(Matrix[Double] X, Integer size, Integer seed = -1)
+return(Matrix[Double] X_extracted)
+{
+    s_warning_assert_outlierByIsolationForest(size > 0, "s_sampleRows: size must be positive.")
+    s_warning_assert_outlierByIsolationForest(nrow(X) >= size, "s_sampleRows: size must be <= nrow(X).")
+
+    random_vector = rand(rows = nrow(X), cols = 1, seed = seed)
+    X_rand = cbind(X, random_vector)
+
+    X_rand = order(target = X_rand, by = ncol(X_rand))
+
+    X_extracted = X_rand[1:size, 1:ncol(X)]
 }
 
 # Function that gives a warning if a assertion is violated. This is used instead of `assert` and

@@ -36,14 +36,14 @@ m_powerTransform = function(Matrix[Double] X)
   return (Matrix[Double] Y, Matrix[Double] lambdas)
 {
   m = ncol(X)
-  lambdas = matrix(1.0, rows=1, cols=m) #初始设置为0，后续为每一列替换为最优的lambdas
+  lambdas = matrix(1.0, rows=1, cols=m) # Initialize first, then replace each column with the best lambdas
 
 
-# 分开给每一列估计lambda
+# Estimate lambda for each column separately
   for (j in 1:m){
     x = X[,j]
 
-    #考虑常数列，方差为0，不优化，拉姆达直接等于1
+    # For constant columns, variance is 0, so skip optimization and use lambda = 1
     if (max(x) == min(x)) {
         lambdas[1,j] = 1.0;
     }
@@ -51,14 +51,12 @@ m_powerTransform = function(Matrix[Double] X)
       lambdas[1,j]= ptEstimateLambda(x);
     }
 }
-# 把参数传给Apply
+# Pass the parameters to Apply
   Y = powerTransformApply(X, lambdas);
 }
 
 
 
-
-#暂时使用黄金分割搜索最佳lambda，后期换成Brent
 
 
 ptEstimateLambda = function(Matrix[Double] x)
@@ -70,20 +68,20 @@ ptEstimateLambda = function(Matrix[Double] x)
     lambda = ptGoldenSectionSearch(x, lower, upper);
 }
 
-#计算负对数似然值，越低lambdas越好
+# Compute negative log likelihood; lower lambda score is better
 
 ptYJNegLogLikelihood = function(
     Matrix[Double] x,
     Double lambda)
   return (Double negLogLikelihood)
 {
-    #powerTransformApply要求lambda参数是矩阵形式
+    # powerTransformApply needs lambda as a matrix
     lambdaMatrix = matrix(lambda, rows=1, cols=1);
 
-    #使用这个lambda一次YJ变换之后，得到虚拟结果y,后续会打分
+    # Apply one YJ transform with this lambda and use the temporary y for scoring
     y = powerTransformApply(x, lambdaMatrix);
 
-    #安全检查,方差小于0时惩罚性给极大值的打分
+    # Safety check; give a huge penalty score when variance is below 0
     n = nrow(x);
     yMean = mean(y);
     yVariance = sum((y - yMean)^2) / n;
@@ -92,8 +90,8 @@ ptYJNegLogLikelihood = function(
         negLogLikelihood = 1e300
     }
 
-    #安全检查通过后正式开始打分
-    #目标函数分两部分
+    # Start scoring after the safety check passes
+    # The objective has two parts
 
     else {
         # Variance Term
@@ -102,21 +100,21 @@ ptYJNegLogLikelihood = function(
         # Jacobian term
         jacobian = (lambda - 1.0) * sum(sign(x) * log(abs(x) + 1.0));
 
-        # 组合
+        # Combine
         logLikelihood = logLikelihood + jacobian;
-        #取反输出
+        # Return the negative value
         negLogLikelihood = -logLikelihood;
     }
 }
 
-#暂时使用黄金分割寻找最优lambdas，后期替换成Brent
+# Temporarily use golden section search for best lambdas; replace with Brent later
 ptGoldenSectionSearch = function(
     Matrix[Double] x,
     Double lower,
     Double upper)
   return (Double lambdaOptimal)
 {
-  #黄金分割率，精度，最大尝试次数
+  # Golden ratio, tolerance, and max attempts
   goldenRatio = 0.6180339887498949;
   tolerance = 1e-6;
   maxIterations = 100;
@@ -151,9 +149,9 @@ ptGoldenSectionSearch = function(
     iteration = iteration + 1;
   }
 
-  #收缩后留下最优的
+  # Keep the best one after shrinking
   if (fc < fd) {
-    lambdaOptimal = c; # 谁的得分低，谁就是最终冠军
+    lambdaOptimal = c; # Whoever has the lower score wins
   } else {
     lambdaOptimal = d;
   }

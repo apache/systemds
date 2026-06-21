@@ -41,20 +41,20 @@ m_powerTransformApply = function(Matrix[Double] X, Matrix[Double] lambdas)
 
     Y = matrix(0.0, rows=n, cols=m)
 
-    #临界点处理（0和2）
+    # Handle boundary points (0 and 2)
     eps = 1e-12
 
-    #逐列变化循环
+    # Loop over columns for transformation
     for (j in 1:m){
         x = X[,j]
         lambda_j = as.scalar(lambdas[1,j])
         nonnegative = x >= 0
 
-        #使用中间值输入 避免评价算法或者分数幂超出有效域
+        # Use intermediate inputs to avoid invalid domains in scoring or fractional powers
         x_pos = ifelse(nonnegative, x, 0.0)
         x_neg = ifelse(nonnegative, 0.0, x)
 
-        #对非负值的转化 (x>=0)
+        # Transform nonnegative values (x>=0)
         if (abs(lambda_j) < eps) {
             y_pos = log(x_pos + 1)
         }
@@ -62,7 +62,7 @@ m_powerTransformApply = function(Matrix[Double] X, Matrix[Double] lambdas)
             y_pos = ((x_pos + 1)^lambda_j - 1) / lambda_j
         }
 
-        #对负值转化 (x<0)
+        # Transform negative values (x<0)
         if (abs(lambda_j - 2) < eps) {
             y_neg = -log(1 - x_neg)
         }
@@ -70,7 +70,7 @@ m_powerTransformApply = function(Matrix[Double] X, Matrix[Double] lambdas)
             y_neg = -((1 - x_neg)^(2 - lambda_j) - 1) / (2 - lambda_j)
         }
 
-        #俩支线合并
+        # Combine the two branches
         Y[,j] = ifelse(nonnegative, y_pos, y_neg)
     }
 }

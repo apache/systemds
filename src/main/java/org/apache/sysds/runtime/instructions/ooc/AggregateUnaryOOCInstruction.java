@@ -35,7 +35,6 @@ import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.ooc.stream.StreamContext;
 import org.apache.sysds.runtime.util.IndexRange;
 
 import java.util.HashMap;
@@ -119,9 +118,10 @@ public class AggregateUnaryOOCInstruction extends ComputationOOCInstruction {
 			});
 
 			// global reduce
-			submitOOCTask(() -> {
-				IndexedMatrixValue partial;
-				while ((partial = qLocal.dequeue()) != LocalTaskQueue.NO_MORE_TASKS) {
+			addOutStream(qOut);
+			submitOOCTasks(qLocal, callback -> {
+				IndexedMatrixValue partial = callback.get();
+				synchronized(aggTracker) {
 					long idx = aggun.isRowAggregate() ? partial.getIndexes().getRowIndex() : partial.getIndexes()
 						.getColumnIndex();
 
@@ -150,8 +150,7 @@ public class AggregateUnaryOOCInstruction extends ComputationOOCInstruction {
 						corrs.remove(idx);
 					}
 				}
-				qOut.closeInput();
-			}, new StreamContext().addOutStream(qOut));
+			}).thenRun(qOut::closeInput);
 		}
 		// full aggregation
 		else {

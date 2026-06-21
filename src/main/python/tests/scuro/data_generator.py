@@ -78,6 +78,7 @@ class TestDataLoader(BaseLoader):
                 max(d.shape[1] for d in data),
                 max(d.shape[2] for d in data),
                 max(d.shape[3] for d in data),
+                chunk_size if chunk_size is not None else len(data),
                 len(data),
             )
         elif modality_type == ModalityType.TIMESERIES:

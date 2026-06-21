@@ -30,6 +30,11 @@ from systemds.scuro.drsearch.operator_registry import (
     register_representation,
     register_context_representation_operator,
 )
+from systemds.scuro.utils.static_variables import (
+    NP_ARRAY_HEADER_BYTES,
+    PY_LIST_HEADER_BYTES,
+    PY_LIST_SLOT_BYTES,
+)
 
 
 @register_representation(ModalityType.AUDIO)
@@ -81,8 +86,18 @@ class MFCC(UnimodalRepresentation):
             hop_length=self.hop_length,
             n_mels=self.n_mels,
         )
-        mfcc = (mfcc - np.mean(mfcc)) / np.std(mfcc)
-        return mfcc.T
+        if mfcc.ndim == 2:
+            mean = np.mean(mfcc, keepdims=True)
+            std = np.std(mfcc, keepdims=True)
+        else:
+            mean = np.mean(mfcc, axis=(1, 2), keepdims=True)
+            std = np.std(mfcc, axis=(1, 2), keepdims=True)
+        mfcc = (mfcc - mean) / np.maximum(std, 1e-8)
+
+        if instance.ndim == 1:
+            return mfcc.T
+
+        return mfcc.transpose(0, 2, 1)
 
     def get_output_stats(self, input_stats) -> RepresentationStats:
         num_instances = getattr(input_stats, "num_instances", 0)
@@ -101,3 +116,51 @@ class MFCC(UnimodalRepresentation):
             num_frames = max(int(num_frames), 1)
 
         return RepresentationStats(num_instances, (num_frames, self.n_mfcc))
+
+    def estimate_peak_memory_bytes(self, input_stats) -> dict:
+        n = int(getattr(input_stats, "num_instances", 0))
+        if hasattr(input_stats, "max_length"):
+            signal_length = int(getattr(input_stats, "max_length", 0))
+        elif hasattr(input_stats, "output_shape") and input_stats.output_shape:
+            signal_length = int(input_stats.output_shape[0])
+        else:
+            signal_length = 0
+
+        if signal_length <= 0:
+            num_frames = 1
+        else:
+            num_frames = 1 + max(int((signal_length - 1) // self.hop_length), 0)
+            num_frames = max(int(num_frames), 1)
+
+        out_elem = np.dtype(np.float32).itemsize
+        n_fft = 2048
+        num_freq_bins = 1 + n_fft // 2
+        output_payload_per_instance = num_frames * self.n_mfcc * out_elem
+        retained_output_bytes = PY_LIST_HEADER_BYTES + n * (
+            output_payload_per_instance + NP_ARRAY_HEADER_BYTES + PY_LIST_SLOT_BYTES
+        )
+
+        input_copy_bytes = max(signal_length, 1) * out_elem
+        stft_bytes = num_frames * num_freq_bins * np.dtype(np.complex64).itemsize
+        magnitude_bytes = num_frames * num_freq_bins * out_elem
+        mel_projection_bytes = num_frames * self.n_mels * out_elem
+        dct_output_bytes = output_payload_per_instance
+        norm_workspace_bytes = max(dct_output_bytes, 256 * 1024)
+        fft_workspace_bytes = max(2 * 1024 * 1024, stft_bytes // 2)
+
+        transient_one_instance = (
+            input_copy_bytes
+            + stft_bytes
+            + magnitude_bytes
+            + mel_projection_bytes
+            + dct_output_bytes
+            + norm_workspace_bytes
+            + fft_workspace_bytes
+        )
+        cpu_peak = int(
+            (retained_output_bytes + transient_one_instance) * 1.15 + 16 * 1024 * 1024
+        )
+        return {
+            "cpu_peak_bytes": cpu_peak,
+            "gpu_peak_bytes": 0,
+        }

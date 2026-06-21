@@ -42,6 +42,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
     runs-on: ${{ matrix.os }}
@@ -174,7 +178,8 @@ jobs:
           nltk \
           fvcore \
           scikit-optimize \
-          flair 
+          flair \
+          optuna 
         kill $KA 
         cd src/main/python
         python -m unittest discover -s tests/scuro -p 'test_*.py' -v

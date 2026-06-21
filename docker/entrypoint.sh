@@ -28,8 +28,29 @@ cd /github/workspace
 
 export MAVEN_OPTS="-Xmx512m"
 
+# Printed when Maven fails to download an artifact (transient repo/network
+# error), unlike genuine compilation or test failures which fail fast.
+transient_mvn_error="Could not transfer artifact"
+
 log="/tmp/sysdstest.log"
-mvn -ntp -B test-compile 2>&1 | stdbuf -oL grep -E "BUILD|Total time:|---|Building SystemDS"
+compile_log="$(mktemp)"
+# test-compile downloads all dependencies; retry once on a transient repo
+# error so the test run below can resolve them from the local cache.
+mvn -ntp -B test-compile 2>&1 | tee "$compile_log" | stdbuf -oL grep -E "BUILD|Total time:|---|Building SystemDS"
+compile_status=${PIPESTATUS[0]}
+
+# True only when test-compile failed because of a transient repository download.
+compile_transient_failure=false
+[ "$compile_status" -ne 0 ] && grep -qE "$transient_mvn_error" "$compile_log" && compile_transient_failure=true
+rm -f "$compile_log"
+
+if [ "$compile_transient_failure" = true ]; then
+	echo "Transient Maven repository error; retrying test-compile in 15s..."
+	sleep 15
+	mvn -ntp -B test-compile 2>&1 | stdbuf -oL grep -E "BUILD|Total time:|---|Building SystemDS"
+else
+	echo "No transient Maven repository error detected; no retry needed."
+fi
 mvn -ntp -B test -D maven.test.skip=false -D automatedtestbase.outputbuffering=true -D test=$1 2>&1 \
 	| stdbuf -oL grep -Ev "already exists in destination.|Using incubator" \
 	| tee $log

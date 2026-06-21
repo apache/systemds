@@ -27,7 +27,7 @@ from systemds.scuro.utils.torch_dataset import CustomDataset
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.representation import RepresentationStats
-from typing import Tuple, Any
+from typing import Tuple, Any, Union
 import torch.utils.data
 import torch
 from torchvision.models.video import r3d_18, s3d
@@ -35,6 +35,13 @@ import torchvision.models as models
 import numpy as np
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.operator_registry import register_representation
+from systemds.scuro.dataloader.video_loader import VideoStats
+import math
+
+
+class Identity(torch.nn.Module):
+    def forward(self, input_: torch.Tensor) -> torch.Tensor:
+        return input_
 
 
 @register_representation([ModalityType.VIDEO])
@@ -53,14 +60,52 @@ class X3D(UnimodalRepresentation):
         for param in self.model.parameters():
             param.requires_grad = False
 
-        class Identity(torch.nn.Module):
-            def forward(self, input_: torch.Tensor) -> torch.Tensor:
-                return input_
-
         self.model.fc = Identity()
 
     def get_output_stats(self, input_stats) -> RepresentationStats:
-        return RepresentationStats(input_stats.num_instances, (512,))
+        embedding_dim = 400 * math.floor((max(input_stats.max_length, 14) - 5) / 8)
+        return RepresentationStats(input_stats.num_instances, (embedding_dim,))
+
+    def estimate_output_memory_bytes(self, input_stats: VideoStats) -> int:
+        embedding_dim = 400 * math.floor((max(input_stats.max_length, 14) - 5) / 8)
+        return input_stats.num_instances * embedding_dim * self.data_type.itemsize
+
+    def estimate_peak_memory_bytes(self, input_stats: VideoStats) -> dict:
+        temporal = max(input_stats.max_length, 14)
+        input_bytes = (
+            self.data_type.itemsize
+            * input_stats.max_channels
+            * temporal
+            * input_stats.max_height
+            * input_stats.max_width
+        )
+        output_bytes = self.estimate_output_memory_bytes(input_stats)
+        n = max(input_stats.num_instances, 1)
+        output_bytes_batch = output_bytes / n
+
+        batch_peak_bytes = (input_bytes + 512 * self.data_type.itemsize) * 2
+
+        safety_margin_bytes = 100 * 1024 * 1024
+
+        param_size = 0
+        for param in self.model.parameters():
+            param_size += param.nelement() * param.element_size()
+
+        buffer_size = 0
+        for buffer in self.model.buffers():
+            buffer_size += buffer.nelement() * buffer.element_size()
+
+        size_all_bytes = param_size + buffer_size
+
+        cpu_peak = (
+            size_all_bytes * 2 * self.data_type.itemsize
+            + output_bytes_batch
+            + output_bytes
+            + input_bytes
+            + safety_margin_bytes
+        )
+        gpu_peak = (size_all_bytes * self.data_type.itemsize + batch_peak_bytes) * 6
+        return {"cpu_peak_bytes": int(cpu_peak), "gpu_peak_bytes": int(gpu_peak)}
 
     @property
     def model_name(self):
@@ -85,6 +130,7 @@ class X3D(UnimodalRepresentation):
         for m in ["c3d", "s3d"]:
             parameters["model_name"].append(m)
 
+        # TODO: add embedding dimensions for each layer
         if high_level:
             parameters["layer_name"] = [
                 "features.1",
@@ -155,11 +201,9 @@ class X3D(UnimodalRepresentation):
             values = activation
             pooled = torch.nn.functional.adaptive_avg_pool2d(values, (1, 1))
 
-            embeddings[video_id].extend(
+            embeddings[video_id] = (
                 torch.flatten(pooled, 1).detach().cpu().numpy().flatten()
             )
-
-            embeddings[video_id] = np.array(embeddings[video_id])
 
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type

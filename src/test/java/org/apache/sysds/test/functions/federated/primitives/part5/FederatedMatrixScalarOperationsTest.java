@@ -209,7 +209,7 @@ public class FederatedMatrixScalarOperationsTest extends AutomatedTestBase {
 			compareResults();
 		}
 		catch(InterruptedException e) {
-			e.printStackTrace();
+			Thread.currentThread().interrupt();
 			assert (false);
 		}
 		finally {

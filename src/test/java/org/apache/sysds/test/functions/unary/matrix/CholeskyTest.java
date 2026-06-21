@@ -23,7 +23,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -110,8 +109,9 @@ public class CholeskyTest extends AutomatedTestBase
 			//run tests and compare results
 			runTest(true, false, null, -1);
 			HashMap<CellIndex, Double> dmlOut = readDMLMatrixFromOutputDir("D");
-			MatrixValue.CellIndex index = dmlOut.keySet().iterator().next();
-			double d = dmlOut.get(index);
+			// D is the 1x1 residual sum(A-B); an exact 0.0 result is not written to
+			// the sparse output, so an empty map corresponds to a perfect residual.
+			double d = dmlOut.isEmpty() ? 0.0 : dmlOut.values().iterator().next();
 			Assert.assertEquals(0, d, 1e-5);
 		}
 		finally {

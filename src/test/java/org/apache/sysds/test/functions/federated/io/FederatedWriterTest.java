@@ -83,8 +83,7 @@ public class FederatedWriterTest extends AutomatedTestBase {
 		fullDMLScriptName = "";
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
-		Thread t2 = startLocalFedWorkerThread(port2);
+		Thread[] workers = startLocalFedWorkerThreads(new int[] {port1, port2}, null, FED_WORKER_WAIT);
 
 		try {
 
@@ -122,6 +121,6 @@ public class FederatedWriterTest extends AutomatedTestBase {
 			resetExecMode(oldPlatform);
 		}
 
-		TestUtils.shutdownThreads(t1, t2);
+		TestUtils.shutdownThreads(workers);
 	}
 }

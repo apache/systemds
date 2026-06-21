@@ -155,6 +155,7 @@ public enum Builtins {
 	GAUSSIAN_CLASSIFIER("gaussianClassifier", true),
 	GET_ACCURACY("getAccuracy", true),
 	GET_NAMES("getNames", false),
+	GET_CATEGORICAL_MASK("getCategoricalMask", false),
 	GLM("glm", true),
 	GLM_PREDICT("glmPredict", true),
 	GLOVE("glove", true),

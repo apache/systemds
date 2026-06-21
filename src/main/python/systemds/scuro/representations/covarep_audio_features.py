@@ -30,6 +30,11 @@ from systemds.scuro.drsearch.operator_registry import (
     register_representation,
     register_context_representation_operator,
 )
+from systemds.scuro.utils.static_variables import (
+    NP_ARRAY_HEADER_BYTES,
+    PY_LIST_HEADER_BYTES,
+    PY_LIST_SLOT_BYTES,
+)
 
 
 @register_representation(ModalityType.AUDIO)
@@ -97,11 +102,32 @@ class Spectral(UnimodalRepresentation):
         return RepresentationStats(num_instances, (num_frames, 4))
 
     def estimate_peak_memory_bytes(self, input_stats) -> dict:
-        # TODO
-        return {
-            "cpu_peak_bytes": 0,
-            "gpu_peak_bytes": 0,
-        }
+        num_frames = 1 + max((input_stats.max_length - 1) // int(self.hop_length), 0)
+        num_frames = max(int(num_frames), 1)
+
+        out_elem = np.dtype(np.float32).itemsize
+        output_payload_per_instance = num_frames * 4 * out_elem
+        retained_output_bytes = PY_LIST_HEADER_BYTES + input_stats.num_instances * (
+            output_payload_per_instance + NP_ARRAY_HEADER_BYTES + PY_LIST_SLOT_BYTES
+        )
+
+        num_freq_bins = 1 + 2048 // 2
+        stft_bytes = num_frames * num_freq_bins * np.dtype(np.complex64).itemsize
+        magnitude_bytes = num_frames * num_freq_bins * np.dtype(np.float32).itemsize
+        per_feature_bytes = num_frames * out_elem
+        stacked_bytes = 4 * num_frames * out_elem
+        fft_workspace_bytes = max(2 * 1024 * 1024, stft_bytes // 2)
+        transient_one_instance = (
+            4 * per_feature_bytes
+            + stacked_bytes
+            + stft_bytes
+            + magnitude_bytes
+            + fft_workspace_bytes
+        )
+        cpu_peak = int(
+            (retained_output_bytes + transient_one_instance) * 1.15 + 16 * 1024 * 1024
+        )
+        return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}
 
 
 @register_representation(ModalityType.AUDIO)
@@ -145,14 +171,26 @@ class ZeroCrossing(UnimodalRepresentation):
             num_frames = 1 + max(int((signal_length - 1) // self.hop_length), 0)
             num_frames = max(int(num_frames), 1)
 
-        return RepresentationStats(num_instances, (num_frames, 1))
+        return RepresentationStats(num_instances, (1, num_frames))
 
     def estimate_peak_memory_bytes(self, input_stats) -> dict:
-        # TODO
-        return {
-            "cpu_peak_bytes": 0,
-            "gpu_peak_bytes": 0,
-        }
+        num_frames = 1 + max((input_stats.max_length - 1) // int(self.hop_length), 0)
+
+        out_elem = np.dtype(np.float32).itemsize
+        output_payload_per_instance = num_frames * out_elem
+        retained_output_bytes = PY_LIST_HEADER_BYTES + input_stats.num_instances * (
+            output_payload_per_instance + NP_ARRAY_HEADER_BYTES + PY_LIST_SLOT_BYTES
+        )
+        framed_bytes = 2048 * num_frames * np.dtype(np.float32).itemsize
+        crossings_mask_bytes = 2048 * num_frames
+        output_instance_bytes = output_payload_per_instance
+        transient_one_instance = (
+            framed_bytes + crossings_mask_bytes + output_instance_bytes
+        )
+        cpu_peak = int(
+            (retained_output_bytes + transient_one_instance) * 1.15 + 8 * 1024 * 1024
+        )
+        return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}
 
 
 @register_representation(ModalityType.AUDIO)
@@ -197,14 +235,28 @@ class RMSE(UnimodalRepresentation):
             num_frames = 1 + max(int((signal_length - 1) // self.hop_length), 0)
             num_frames = max(int(num_frames), 1)
 
-        return RepresentationStats(num_instances, (num_frames, 1))
+        return RepresentationStats(num_instances, (1, num_frames))
 
     def estimate_peak_memory_bytes(self, input_stats) -> dict:
-        # TODO
-        return {
-            "cpu_peak_bytes": 0,
-            "gpu_peak_bytes": 0,
-        }
+        num_frames = 1 + max((input_stats.max_length - 1) // int(self.hop_length), 0)
+        num_frames = max(int(num_frames), 1)
+        out_elem = np.dtype(np.float32).itemsize
+        output_payload_per_instance = num_frames * out_elem
+        retained_output_bytes = PY_LIST_HEADER_BYTES + input_stats.num_instances * (
+            output_payload_per_instance + NP_ARRAY_HEADER_BYTES + PY_LIST_SLOT_BYTES
+        )
+        frame_len = int(self.frame_length)
+        framed_bytes = frame_len * num_frames * np.dtype(np.float32).itemsize
+        squared_bytes = framed_bytes
+        mean_bytes = num_frames * np.dtype(np.float32).itemsize
+        output_instance_bytes = output_payload_per_instance
+        transient_one_instance = (
+            framed_bytes + squared_bytes + mean_bytes + output_instance_bytes
+        )
+        cpu_peak = int(
+            (retained_output_bytes + transient_one_instance) * 1.15 + 8 * 1024 * 1024
+        )
+        return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}
 
 
 @register_representation(ModalityType.AUDIO)
@@ -251,11 +303,33 @@ class Pitch(UnimodalRepresentation):
             num_frames = 1 + max(int((signal_length - 1) // self.hop_length), 0)
             num_frames = max(int(num_frames), 1)
 
-        return RepresentationStats(num_instances, (num_frames, 1))
+        return RepresentationStats(num_instances, (1, num_frames))
 
     def estimate_peak_memory_bytes(self, input_stats) -> dict:
-        # TODO
-        return {
-            "cpu_peak_bytes": 0,
-            "gpu_peak_bytes": 0,
-        }
+        num_frames = 1 + max((input_stats.max_length - 1) // int(self.hop_length), 0)
+        num_frames = max(int(num_frames), 1)
+        out_elem = np.dtype(np.float32).itemsize
+        output_payload_per_instance = num_frames * out_elem
+        retained_output_bytes = PY_LIST_HEADER_BYTES + input_stats.num_instances * (
+            output_payload_per_instance + NP_ARRAY_HEADER_BYTES + PY_LIST_SLOT_BYTES
+        )
+        n_fft = 2048
+        num_freq_bins = 1 + n_fft // 2
+        stft_bytes = num_frames * num_freq_bins * np.dtype(np.complex64).itemsize
+        pitches_bytes = num_frames * num_freq_bins * np.dtype(np.float32).itemsize
+        magnitudes_bytes = pitches_bytes
+        argmax_idx_bytes = num_frames * np.dtype(np.int64).itemsize
+        gathered_pitch_bytes = output_payload_per_instance
+        fft_workspace_bytes = max(2 * 1024 * 1024, stft_bytes // 2)
+        transient_one_instance = (
+            stft_bytes
+            + pitches_bytes
+            + magnitudes_bytes
+            + argmax_idx_bytes
+            + gathered_pitch_bytes
+            + fft_workspace_bytes
+        )
+        cpu_peak = int(
+            (retained_output_bytes + transient_one_instance) * 1.15 + 16 * 1024 * 1024
+        )
+        return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}

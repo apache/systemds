@@ -55,18 +55,22 @@ class Hadamard(Fusion):
         if not stats_list:
             return RepresentationStats(0, (0,))
 
-        def num_elements(stats: RepresentationStats) -> int:
-            n = 1
-            for d in stats.output_shape:
-                n *= d
-            return n
+        max_dim = max([stats.output_shape[-1] for stats in stats_list])
+        return RepresentationStats(stats_list[0].num_instances, (max_dim,))
 
-        largest = max(stats_list, key=num_elements)
-        return RepresentationStats(largest.num_instances, largest.output_shape)
+    def estimate_peak_memory_bytes(self, input_stats_list) -> dict:
+        elem_size = np.dtype(np.float64).itemsize
 
-    def estimate_peak_memory_bytes(self, input_stats) -> dict:
-        # TODO
-        return {
-            "cpu_peak_bytes": 0,
-            "gpu_peak_bytes": 0,
-        }
+        def stats_payload_bytes(s: RepresentationStats) -> int:
+            numel = int(np.prod(s.output_shape)) if len(s.output_shape) > 0 else 1
+            return int(s.num_instances * numel * elem_size)
+
+        stacked_input_bytes = sum(stats_payload_bytes(s) for s in input_stats_list)
+        out_stats = self.get_output_stats(input_stats_list)
+        output_bytes = stats_payload_bytes(out_stats)
+        reduction_workspace_bytes = output_bytes
+        cpu_peak = int(
+            (stacked_input_bytes + output_bytes + reduction_workspace_bytes) * 1.15
+            + 8 * 1024 * 1024
+        )
+        return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}

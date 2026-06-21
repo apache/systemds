@@ -32,7 +32,7 @@ from systemds.scuro.drsearch.operator_registry import register_fusion_operator
 
 @register_fusion_operator()
 class Average(Fusion):
-    def __init__(self):
+    def __init__(self, params=None):
         """
         Combines modalities using averaging
         """
@@ -41,10 +41,10 @@ class Average(Fusion):
         self.associative = True
         self.commutative = True
 
-    def execute(self, modalities: List[Modality]):
-        data = copy.deepcopy(modalities[0].data)
+    def execute(self, modalities: List[Modality], labels=None):
+        data = np.asarray(copy.deepcopy(modalities[0].data), dtype=float)
         for i in range(1, len(modalities)):
-            data += modalities[i].data
+            data += np.asarray(modalities[i].data, dtype=float)
 
         data /= len(modalities)
 

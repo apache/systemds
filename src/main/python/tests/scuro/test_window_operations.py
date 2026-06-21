@@ -93,7 +93,7 @@ class TestWindowOperations(unittest.TestCase):
         self.run_window_aggregation_for_modality(ModalityType.TEXT, window_size)
 
     def run_window_aggregation_for_modality(self, modality_type, window_size):
-        r = self.data_generator.create1DModality(40, 100, modality_type)
+        r = self.data_generator.create1DModality(40, 5000, modality_type)
         for aggregation in self.aggregations:
             windowed_modality = r.window_aggregation(window_size, aggregation)
 

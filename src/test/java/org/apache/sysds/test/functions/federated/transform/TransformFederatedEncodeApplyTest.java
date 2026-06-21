@@ -230,7 +230,7 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 			default: throw new RuntimeException("Not supported type");
 		}
 
-		Thread t1 = null, t2 = null, t3 = null, t4 = null;
+		Thread[] workers = null;
 		try {
 			getAndLoadTestConfiguration(TEST_NAME1);
 
@@ -239,10 +239,7 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 			int port3 = getRandomAvailablePort();
 			int port4 = getRandomAvailablePort();
 			String[] otherargs = lineage ? new String[] {"-lineage", "reuse_full"} : null;
-			t1 = startLocalFedWorkerThread(port1, otherargs);
-			t2 = startLocalFedWorkerThread(port2, otherargs);
-			t3 = startLocalFedWorkerThread(port3, otherargs);
-			t4 = startLocalFedWorkerThread(port4, otherargs);
+			workers = startLocalFedWorkerThreads(new int[] {port1, port2, port3, port4}, otherargs);
 
 			FileFormatPropertiesCSV ffpCSV = new FileFormatPropertiesCSV(true, DataExpression.DEFAULT_DELIM_DELIMITER,
 				DataExpression.DEFAULT_DELIM_FILL, DataExpression.DEFAULT_DELIM_FILL_VALUE, DATASET.equals(DATASET1) ?
@@ -345,7 +342,7 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 			throw new RuntimeException(ex);
 		}
 		finally {
-			TestUtils.shutdownThreads(t1, t2, t3, t4);
+			TestUtils.shutdownThreads(workers);
 			resetExecMode(rtold);
 		}
 	}

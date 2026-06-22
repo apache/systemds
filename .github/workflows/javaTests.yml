@@ -98,18 +98,30 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v6
 
-    - name: ${{ matrix.tests }}
-      uses: ./.github/action/
-      id: test
-      with:
-        test-to-run: ${{ matrix.tests }}
-
     - name: Clean Github Artifact Name of Asterisks
       run: |
         ARTIFACT_NAME="transient_jacoco"
         ARTIFACT_NAME+="-${{ matrix.tests }}"
         ARTIFACT_NAME=${ARTIFACT_NAME//\*/x} # replace * with x
         echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
+
+    - name: ${{ matrix.tests }}
+      uses: ./.github/action/
+      id: test
+      with:
+        test-to-run: ${{ matrix.tests }}
+
+    - name: Save Java Test Diagnostics as Artifact
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: diagnostics-${{ env.ARTIFACT_NAME }}
+        path: |
+          target/sysdstest.log
+          target/thread-dumps/**
+          target/surefire-reports/**
+        if-no-files-found: ignore
+        retention-days: 7
 
     - name: Save Java Test Coverage as Artifact
       uses: actions/upload-artifact@v7

@@ -32,7 +32,9 @@ export MAVEN_OPTS="-Xmx512m"
 # error), unlike genuine compilation or test failures which fail fast.
 transient_mvn_error="Could not transfer artifact"
 
-log="/tmp/sysdstest.log"
+target_dir="/github/workspace/target"
+mkdir -p "$target_dir"
+log="$target_dir/sysdstest.log"
 compile_log="$(mktemp)"
 # test-compile downloads all dependencies; retry once on a transient repo
 # error so the test run below can resolve them from the local cache.
@@ -56,7 +58,7 @@ fi
 # 600s per-fork timeout; MAX_RUNTIME is the absolute ceiling under the cap).
 STALL_LIMIT="${SYSDS_TEST_STALL_LIMIT:-660}"
 MAX_RUNTIME="${SYSDS_TEST_MAX_RUNTIME:-1600}"
-dump_dir="/github/workspace/target/thread-dumps"
+dump_dir="$target_dir/thread-dumps"
 mkdir -p "$dump_dir"
 jstack_bin="${JAVA_HOME:+$JAVA_HOME/bin/}jstack"
 
@@ -69,7 +71,7 @@ proc_tree() {
 
 # SIGQUIT every JVM in the test tree (stacks relayed into $log) plus a jstack file.
 dump_thread_stacks() {
-	local reason="$1" root="$2" ts pid comm cmd
+	local reason="$1" root="$2" ts pid comm cmd jstack_file
 	ts=$(date +%Y%m%d-%H%M%S)
 	echo "================ HARD-GUARD THREAD DUMP: $reason ($ts) ================"
 	for pid in $(proc_tree "$root"); do
@@ -82,7 +84,14 @@ dump_thread_stacks() {
 		cmd=$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null | cut -c1-160)
 		echo "---- SIGQUIT dump: pid=$pid comm=$comm cmd=$cmd ----"
 		kill -3 "$pid" 2>/dev/null
-		timeout 30 "$jstack_bin" -l "$pid" > "$dump_dir/jstack_${pid}_${ts}.txt" 2>&1 || true
+		jstack_file="$dump_dir/jstack_${pid}_${ts}.txt"
+		if timeout 30 "$jstack_bin" -l "$pid" > "$jstack_file" 2>&1; then
+			echo "---- jstack dump: pid=$pid file=$jstack_file ----"
+		else
+			echo "---- jstack dump failed or timed out: pid=$pid file=$jstack_file ----"
+		fi
+		cat "$jstack_file" || true
+		echo "---- end jstack dump: pid=$pid ----"
 	done
 	# Let the JVMs flush their dumps into the relayed output stream.
 	sleep 12

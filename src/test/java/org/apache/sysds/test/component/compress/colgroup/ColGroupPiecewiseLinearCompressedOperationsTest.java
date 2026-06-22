@@ -131,9 +131,12 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 
 	@Test
 	public void testComputeSum() {
-		double[] sumsComp = new double[numCols];
+		double[] sumsComp = new double[1];
 		piecewiseLinearColGroup.computeSum(sumsComp, numRows);
-		assertArrayEquals(sumsComp, computeSums(decompressedMB), DELTA);
+		double expectedTotal = 0;
+		for(double s : computeSums(decompressedMB))
+			expectedTotal += s;
+		assertEquals(expectedTotal, sumsComp[0], DELTA);
 	}
 
 	@Test

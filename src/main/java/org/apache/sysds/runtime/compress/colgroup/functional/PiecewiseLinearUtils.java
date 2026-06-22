@@ -274,20 +274,13 @@ public class PiecewiseLinearUtils {
 
                 double sse = Math.max(0.0,sumY2 - alpha * sumY - beta * sumXY); //sum of least squares
                 if(sse  > segmentLength * targetMSE){
-                    int bestEnd = (segmentLength > 2) ? n-1 : n;
-                    breakpoints.add(bestEnd);
-
-                    if (bestEnd == n - 1) {
-                        segmentLength = 1;
-                        sumX = x;
-                        sumY = Y;
-                        sumX2 = x * x;
-                        sumY2 = Y * Y;
-                        sumXY = x * Y;
-                    } else {
-                        segmentLength = 0;
-                        sumX = sumY = sumX2 = sumY2 = sumXY = 0.0;
-                    }
+                    breakpoints.add(n);
+                    segmentLength = 1;
+                    sumX = x;
+                    sumY = Y;
+                    sumX2 = x * x;
+                    sumY2 = Y * Y;
+                    sumXY = x * Y;
                 }
             }
         }

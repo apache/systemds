@@ -1122,6 +1122,11 @@ public class ColGroupFactory {
 
 	}
 
+	public static AColGroup compressPiecewiseLinearFunctionalSuccessive(IColIndex colIndexes, MatrixBlock in,
+		CompressionSettings cs) {
+		return compressPiecewiseLinearFunctional(colIndexes, in, cs);
+	}
+
 	private AColGroup compressSDCFromSparseTransposedBlock(IColIndex cols, int nrUniqueEstimate, double tupleSparsity) {
 		if(cols.size() > 1)
 			return compressMultiColSDCFromSparseTransposedBlock(cols, nrUniqueEstimate, tupleSparsity);

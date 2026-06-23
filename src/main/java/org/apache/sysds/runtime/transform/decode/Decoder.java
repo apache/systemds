@@ -25,6 +25,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -83,6 +84,29 @@ public abstract class Decoder implements Externalizable{
 		return Math.max(ndist, 0);
 	}
 
+	/**
+	 * Maps output column ids ({@code _colList}) to source positions in the encoded matrix, shifting past the column
+	 * expansion of any dummycoded columns that precede them. Returns {@code _colList} directly when none apply.
+	 */
+	protected int[] buildSrcCols(FrameBlock meta, int[] dcCols) {
+		if(dcCols == null || dcCols.length == 0)
+			return _colList;
+		int[] srcCols = new int[_colList.length];
+		int ix1 = 0, ix2 = 0, off = 0;
+		while(ix1 < _colList.length) {
+			if(ix2 >= dcCols.length || _colList[ix1] < dcCols[ix2]) {
+				srcCols[ix1] = _colList[ix1] + off;
+				ix1++;
+			}
+			else { // skip past the dummycode expansion
+				int dcCol = dcCols[ix2];
+				off += getNumDummycodeDistinct(meta, dcCol, isHashCol(dcCol)) - 1;
+				ix2++;
+			}
+		}
+		return srcCols;
+	}
+
 	public ValueType[] getSchema() {
 		return _schema;
 	}
@@ -131,8 +155,12 @@ public abstract class Decoder implements Externalizable{
 				f.get();
 			return out;
 		}
-		catch(Exception e) {
-			throw new RuntimeException(e);
+		catch(InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new DMLRuntimeException("Parallel decode interrupted", e);
+		}
+		catch(ExecutionException e) {
+			throw new DMLRuntimeException("Parallel decode failed", e);
 		}
 		finally {
 			pool.shutdown();

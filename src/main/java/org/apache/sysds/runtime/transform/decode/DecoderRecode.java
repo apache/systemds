@@ -137,7 +137,9 @@ public class DecoderRecode extends Decoder
 					map.put(lval, obj);
 				}
 				catch(Exception e){
-					throw new DMLRuntimeException("Failed to reinitialize recode map from: " + (meta.getColumn(_colList[j]-1)), e);
+					// avoid dumping the full recode-map column (large, may hold sensitive values)
+					throw new DMLRuntimeException("Failed to reinitialize recode map for column "
+						+ _colList[j] + " at meta row " + i, e);
 				}
 			}
 			_rcMaps[j] = map;

@@ -105,26 +105,7 @@ public class DecoderPassThrough extends Decoder
 	
 	@Override
 	public void initMetaData(FrameBlock meta) {
-		if( _dcCols.length > 0 ) {
-			//prepare source column id mapping w/ dummy coding
-			_srcCols = new int[_colList.length];
-			int ix1 = 0, ix2 = 0, off = 0;
-			while( ix1<_colList.length ) {
-				if( ix2>=_dcCols.length || _colList[ix1] < _dcCols[ix2] ) {
-					_srcCols[ix1] = _colList[ix1] + off;
-					ix1 ++;
-				}
-				else { //_colList[ix1] > _dcCols[ix2]
-					int dcCol = _dcCols[ix2];
-					off += getNumDummycodeDistinct(meta, dcCol, isHashCol(dcCol)) - 1;
-					ix2 ++;
-				}
-			}
-		}
-		else {
-			//prepare direct source column mapping
-			_srcCols = _colList;
-		}
+		_srcCols = buildSrcCols(meta, _dcCols);
 	}
 
 	@Override
@@ -136,8 +117,8 @@ public class DecoderPassThrough extends Decoder
 		for(int i = 0; i < _srcCols.length; i++)
 			os.writeInt(_srcCols[i]);
 
-		os.writeInt(_dcCols.length);
-		for(int i = 0; i < _dcCols.length; i++)
+		os.writeInt(_dcCols == null ? 0 : _dcCols.length);
+		for(int i = 0; _dcCols != null && i < _dcCols.length; i++)
 			os.writeInt(_dcCols[i]);
 	}
 

@@ -41,7 +41,7 @@ public class DecoderBin extends Decoder {
 
 	private static final long serialVersionUID = -3784249774608228805L;
 
-	// a) column bin boundaries
+	// dummycoded source columns and the resulting output->source column mapping
 	private int[] _dcCols = null;
 	private int[] _srcCols = null;
 	private double[][] _binMins = null;
@@ -119,27 +119,7 @@ public class DecoderBin extends Decoder {
 			}
 		}
 
-
-		if( _dcCols.length > 0 ) {
-			//prepare source column id mapping w/ dummy coding
-			_srcCols = new int[_colList.length];
-			int ix1 = 0, ix2 = 0, off = 0;
-			while( ix1<_colList.length ) {
-				if( ix2>=_dcCols.length || _colList[ix1] < _dcCols[ix2] ) {
-					_srcCols[ix1] = _colList[ix1] + off;
-					ix1 ++;
-				}
-				else { //_colList[ix1] > _dcCols[ix2]
-					int dcCol = _dcCols[ix2];
-					off += getNumDummycodeDistinct(meta, dcCol, isHashCol(dcCol)) - 1;
-					ix2 ++;
-				}
-			}
-		}
-		else {
-			//prepare direct source column mapping
-			_srcCols = _colList;
-		}
+		_srcCols = buildSrcCols(meta, _dcCols);
 	}
 
 	@Override

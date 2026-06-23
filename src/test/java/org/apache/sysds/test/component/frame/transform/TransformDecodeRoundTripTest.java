@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.component.frame.transform;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
@@ -319,7 +321,8 @@ public class TransformDecodeRoundTripTest {
 				fail("expected a corrupt recode entry to be rejected");
 			}
 			catch(DMLRuntimeException expected) {
-				// expected: the recode-map reconstruction wraps the parse failure
+				assertTrue("error should identify the recode map reinitialization, got: " + messageChain(expected),
+					messageChain(expected).contains("recode map"));
 			}
 		}
 		catch(Exception e) {
@@ -476,14 +479,22 @@ public class TransformDecodeRoundTripTest {
 				decoder.decode(broken, new FrameBlock(decoder.getSchema()), 4);
 				fail("expected the parallel decode wrapper to propagate the worker failure");
 			}
-			catch(RuntimeException expected) {
-				// expected: worker exception surfaced through the parallel decode wrapper
+			catch(DMLRuntimeException expected) {
+				assertNotNull("parallel decode wrapper must retain the worker exception as cause",
+					expected.getCause());
 			}
 		}
 		catch(Exception e) {
 			e.printStackTrace();
 			fail(spec + " : " + e.getMessage());
 		}
+	}
+
+	private static String messageChain(Throwable t) {
+		final StringBuilder sb = new StringBuilder();
+		for(Throwable c = t; c != null; c = c.getCause())
+			sb.append(c.getMessage()).append('\n');
+		return sb.toString();
 	}
 
 	private static FrameBlock decodeOnce(String spec, String[] colnames, FrameBlock meta, MatrixBlock in, int k) {

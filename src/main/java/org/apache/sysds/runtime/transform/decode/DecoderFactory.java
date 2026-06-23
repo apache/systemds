@@ -75,7 +75,8 @@ public class DecoderFactory
 					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.DUMMYCODE.toString(), minCol, maxCol)));
 			// only specially treat the columns with both recode and dictionary
 			rcIDs = unionDistinct(rcIDs, dcIDs);
-			// remove hash recoded. // todo potentially wrong and remove?
+			// hashing is a lossy, one-way transform with no inverse recode map, so hash columns
+			// are never recode-decoded; exclude them from the recode set
 			rcIDs = except(rcIDs, hcIDs);
 
 			// dummycoded hash columns: domain size K lives in the meta cell, so the decoders
@@ -116,7 +117,7 @@ public class DecoderFactory
 					ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0])), hashCols));
 			}
 			if( !rcIDs.isEmpty() ) {
-				// todo figure out if we need to handle rc columns with regards to dictionary offsets.
+				// recode on output (after dummycode rebuilds the categorical columns) when dummycoding is present
 				ldecoders.add(new DecoderRecode(schema, !dcIDs.isEmpty(),
 					ArrayUtils.toPrimitive(rcIDs.toArray(new Integer[0]))));
 			}

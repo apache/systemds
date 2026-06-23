@@ -41,8 +41,9 @@ public class DecoderBin extends Decoder {
 
 	private static final long serialVersionUID = -3784249774608228805L;
 
-	// a) column bin boundaries
-	private int[] _numBins;
+	// dummycoded source columns and the resulting output->source column mapping
+	private int[] _dcCols = null;
+	private int[] _srcCols = null;
 	private double[][] _binMins = null;
 	private double[][] _binMaxs = null;
 
@@ -50,8 +51,10 @@ public class DecoderBin extends Decoder {
 		super(null, null);
 	}
 
-	protected DecoderBin(ValueType[] schema, int[] binCols) {
+	protected DecoderBin(ValueType[] schema, int[] binCols, int[] dcCols, int[] hashCols) {
 		super(schema, binCols);
+		_dcCols = dcCols;
+		_dcHashCols = hashCols;
 	}
 
 	@Override
@@ -66,14 +69,19 @@ public class DecoderBin extends Decoder {
 		for( int i=rl; i< ru; i++ ) {
 			for( int j=0; j<_colList.length; j++ ) {
 				final Array<?> a = out.getColumn(_colList[j] - 1);
-				final double val = in.get(i, _colList[j] - 1);
+				final double val = in.get(i, _srcCols[j] - 1);
 				if(!Double.isNaN(val)){
 					final int key = (int) Math.round(val);
-					double bmin = _binMins[j][key - 1];
-					double bmax = _binMaxs[j][key - 1];
-					double oval = bmin + (bmax - bmin) / 2 // bin center
-						+ (val - key) * (bmax - bmin); // bin fractions
-					a.set(i, oval);
+					if(key == 0){
+						a.set(i, _binMins[j][key]);
+					}
+					else{
+						double bmin = _binMins[j][key - 1];
+						double bmax = _binMaxs[j][key - 1];
+						double oval = bmin + (bmax - bmin) / 2 // bin center
+							+ (val - key) * (bmax - bmin); // bin fractions
+						a.set(i, oval);
+					}
 				}
 				else 
 					a.set(i, val); // NaN
@@ -90,7 +98,6 @@ public class DecoderBin extends Decoder {
 	@Override
 	public void initMetaData(FrameBlock meta) {
 		//initialize bin boundaries
-		_numBins = new int[_colList.length];
 		_binMins = new double[_colList.length][];
 		_binMaxs = new double[_colList.length][];
 		
@@ -111,34 +118,52 @@ public class DecoderBin extends Decoder {
 				_binMaxs[j][i] = Double.parseDouble(parts[1]);
 			}
 		}
+
+		_srcCols = buildSrcCols(meta, _dcCols);
 	}
 
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
 		super.writeExternal(out);
+		// bin boundaries; the per-column bin count is the length of the boundary arrays
 		for( int i=0; i<_colList.length; i++ ) {
-			int len = _numBins[i];
+			int len = _binMins[i].length;
 			out.writeInt(len);
 			for(int j=0; j<len; j++) {
 				out.writeDouble(_binMins[i][j]);
 				out.writeDouble(_binMaxs[i][j]);
 			}
 		}
+		// source-column mapping (rebuilt in initMetaData, but persisted for Spark broadcast)
+		out.writeInt(_srcCols.length);
+		for(int i = 0; i < _srcCols.length; i++)
+			out.writeInt(_srcCols[i]);
+
+		out.writeInt(_dcCols == null ? 0 : _dcCols.length);
+		for(int i = 0; _dcCols != null && i < _dcCols.length; i++)
+			out.writeInt(_dcCols[i]);
 	}
 
 	@Override
 	public void readExternal(ObjectInput in) throws IOException {
 		super.readExternal(in);
-		_numBins = new int[_colList.length];
 		_binMins = new double[_colList.length][];
 		_binMaxs = new double[_colList.length][];
 		for( int i=0; i<_colList.length; i++ ) {
 			int len = in.readInt();
-			_numBins[i] = len;
+			_binMins[i] = new double[len];
+			_binMaxs[i] = new double[len];
 			for(int j=0; j<len; j++) {
 				_binMins[i][j] = in.readDouble();
 				_binMaxs[i][j] = in.readDouble();
 			}
 		}
+		_srcCols = new int[in.readInt()];
+		for(int i = 0; i < _srcCols.length; i++)
+			_srcCols[i] = in.readInt();
+
+		_dcCols = new int[in.readInt()];
+		for(int i = 0; i < _dcCols.length; i++)
+			_dcCols[i] = in.readInt();
 	}
 }

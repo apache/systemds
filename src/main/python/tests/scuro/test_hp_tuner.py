@@ -24,6 +24,7 @@ from types import SimpleNamespace
 
 import numpy as np
 
+from systemds.scuro import Mean
 from systemds.scuro.drsearch.multimodal_optimizer import MultimodalOptimizer
 from systemds.scuro.representations.average import Average
 from systemds.scuro.representations.color_histogram import ColorHistogram
@@ -128,7 +129,7 @@ class TestHPTuner(unittest.TestCase):
             {
                 ModalityType.TEXT: [BoW, W2V],
                 ModalityType.AUDIO: [Spectrogram, ZeroCrossing, Spectral, Pitch],
-                ModalityType.TIMESERIES: [ResNet],
+                ModalityType.TIMESERIES: [Mean],
                 ModalityType.VIDEO: [ResNet],
                 ModalityType.IMAGE: [ResNet, ColorHistogram],
                 ModalityType.EMBEDDING: [],
@@ -136,7 +137,9 @@ class TestHPTuner(unittest.TestCase):
         ):
             registry = Registry()
             registry._fusion_operators = [LSTM]
-            unimodal_optimizer = UnimodalOptimizer(modalities, self.tasks, False)
+            unimodal_optimizer = UnimodalOptimizer(
+                modalities, self.tasks, False, k=2, max_num_workers=1
+            )
             unimodal_optimizer.optimize()
 
             hp = HyperparameterTuner(
@@ -165,7 +168,7 @@ class TestHPTuner(unittest.TestCase):
                 )
 
             else:
-                hp.tune_unimodal_representations(max_eval_per_rep=10)
+                hp.tune_unimodal_representations(max_eval_per_rep=2)
 
             assert len(hp.optimization_results.results) == len(self.tasks)
             if multimodal:

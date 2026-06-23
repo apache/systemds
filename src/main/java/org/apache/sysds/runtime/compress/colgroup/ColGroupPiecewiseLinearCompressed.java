@@ -457,14 +457,24 @@ public class ColGroupPiecewiseLinearCompressed extends AColGroupCompressed {
 		return false;
 	}
 
+	private AColGroup decompress(){
+		IColIndex columns = ColIndexFactory.create(numRows);
+
+		MatrixBlock mb = new MatrixBlock(numRows, getNumCols(), false);
+		decompressToDenseBlock(mb.getDenseBlock(), 0, numRows, 0, 0);
+		return ColGroupUncompressed.create(mb, columns);
+	}
+
 	@Override
 	public AColGroup unaryOperation(UnaryOperator op) {
-		throw new NotImplementedException("unaryOperation not supported for PiecewiseLinear");
+		AColGroup uncompressed = decompress();
+		return uncompressed.unaryOperation(op);
 	}
 
 	@Override
 	public AColGroup replace(double pattern, double replace) {
-		throw new NotImplementedException("replace not supported for PiecewiseLinear");
+		AColGroup uncompressed = decompress();
+		return uncompressed.replace(pattern, replace);
 	}
 
 	/**

@@ -61,6 +61,20 @@ public class FrameToStringTest {
 		assertTrue("expected 22.0000 padded: " + out, out.contains("22.0000\n"));
 		assertTrue("expected 5.2441 rounded: " + out, out.contains("5.2441\n"));
 	}
+
+	@Test
+	public void testNegativeDecimalUsesDefaultFormatting() {
+		FrameBlock f = new FrameBlock(new ValueType[]{ValueType.FP64}, new String[]{"C1"});
+		f.ensureAllocatedColumns(2);
+		f.set(0, 0, 22.0);                // integer-valued: no fraction digits when unconstrained
+		f.set(1, 0, 5.244058388023880);   // default cap of three fraction digits
+		// decimal < 0 leaves DecimalFormat unconstrained (no min/max fraction digits set)
+		String out = DataConverter.toString(f, false, " ", "\n", 2, 1, -1);
+		assertTrue("expected unpadded 22: " + out, out.contains("22\n"));
+		assertFalse("integer value must not be padded: " + out, out.contains("22.0"));
+		assertTrue("expected default 5.244: " + out, out.contains("5.244\n"));
+		assertFalse("must not print a fourth digit: " + out, out.contains("5.2441"));
+	}
 	
 	private FrameBlock createFrameBlock() {
 		FrameBlock f = new FrameBlock(new ValueType[]{ValueType.STRING, ValueType.STRING});

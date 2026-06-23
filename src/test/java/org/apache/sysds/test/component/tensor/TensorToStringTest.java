@@ -49,4 +49,18 @@ public class TensorToStringTest {
 		assertTrue("expected 22.0000 padded: " + out, out.contains("22.0000"));
 		assertTrue("expected 5.2441 rounded: " + out, out.contains("5.2441"));
 	}
+
+	@Test
+	public void testNegativeDecimalUsesDefaultFormatting() {
+		TensorBlock tb = new TensorBlock(ValueType.FP64, new int[]{1, 2});
+		tb.allocateBlock();
+		tb.set(0, 0, 22.0);                // integer-valued: no fraction digits when unconstrained
+		tb.set(0, 1, 5.244058388023880);   // default cap of three fraction digits
+		// decimal < 0 leaves DecimalFormat unconstrained (no min/max fraction digits set)
+		String out = DataConverter.toString(tb, false, " ", "\n", "[", "]", 1, 2, -1);
+		assertTrue("expected unpadded 22: " + out, out.contains("22"));
+		assertFalse("integer value must not be padded: " + out, out.contains("22.0"));
+		assertTrue("expected default 5.244: " + out, out.contains("5.244"));
+		assertFalse("must not print a fourth digit: " + out, out.contains("5.2441"));
+	}
 }

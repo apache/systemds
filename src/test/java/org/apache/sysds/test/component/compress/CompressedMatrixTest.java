@@ -725,6 +725,65 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		removeEmptyOperations(false, false, s);
 	}
 
+	@Test
+	public void removeEmptyOperationsSelectRowsEmptyReturn() {
+		assumeTrue(rows < 5000);
+		MatrixBlock s = TestUtils.generateTestMatrixBlock(rows, 1, 1, 1, 0.05, 321);
+		removeEmptyOperations(true, true, s);
+	}
+
+	@Test
+	public void removeEmptyOperationsSelectColsEmptyReturn() {
+		assumeTrue(rows < 5000);
+		MatrixBlock s = TestUtils.generateTestMatrixBlock(1, cols, 1, 1, 0.5, 321);
+		removeEmptyOperations(false, true, s);
+	}
+
+	@Test
+	public void removeEmptyOperationsSelectRowsDense() {
+		assumeTrue(rows < 5000);
+		MatrixBlock s = TestUtils.generateTestMatrixBlock(rows, 1, 1, 1, 0.6, 654);
+		removeEmptyOperations(true, false, s);
+	}
+
+	@Test
+	public void removeEmptyOperationsSelectAllRows() {
+		assumeTrue(rows < 5000);
+		MatrixBlock s = TestUtils.generateTestMatrixBlock(rows, 1, 1, 1, 1.0, 13);
+		removeEmptyOperations(true, false, s);
+	}
+
+	@Test
+	public void removeEmptyOperationsSelectAllCols() {
+		assumeTrue(rows < 5000);
+		MatrixBlock s = TestUtils.generateTestMatrixBlock(1, cols, 1, 1, 1.0, 13);
+		removeEmptyOperations(false, false, s);
+	}
+
+	@Test
+	public void removeEmptyOperationsSelectNoRows() {
+		assumeTrue(rows < 5000);
+		removeEmptyOperations(true, false, new MatrixBlock(rows, 1, true));
+	}
+
+	@Test
+	public void removeEmptyOperationsSelectNoRowsEmptyReturn() {
+		assumeTrue(rows < 5000);
+		removeEmptyOperations(true, true, new MatrixBlock(rows, 1, true));
+	}
+
+	@Test
+	public void removeEmptyOperationsSelectNoCols() {
+		assumeTrue(rows < 5000);
+		removeEmptyOperations(false, false, new MatrixBlock(1, cols, true));
+	}
+
+	@Test
+	public void removeEmptyOperationsSelectNoColsEmptyReturn() {
+		assumeTrue(rows < 5000);
+		removeEmptyOperations(false, true, new MatrixBlock(1, cols, true));
+	}
+
 	public void removeEmptyOperations(boolean rows, boolean emptyReturn, MatrixBlock select) {
 		try {
 			MatrixBlock a = cmb.removeEmptyOperations(null, rows, emptyReturn, select);

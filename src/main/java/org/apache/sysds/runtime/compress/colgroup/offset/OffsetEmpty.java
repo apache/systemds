@@ -93,7 +93,7 @@ public class OffsetEmpty extends AOffset {
 
 	@Override
 	public OffsetSliceInfo slice(int l, int u) {
-		return EMPTY_SLICE;
+		return emptySlice();
 	}
 
 	@Override

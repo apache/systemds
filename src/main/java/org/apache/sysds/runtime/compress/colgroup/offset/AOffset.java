@@ -55,8 +55,25 @@ public abstract class AOffset implements Serializable {
 
 	protected static final Log LOG = LogFactory.getLog(AOffset.class.getName());
 
-	/** Cached final empty slice to return in cases of empty slice returns to avoid object allocation */
-	protected static final OffsetSliceInfo EMPTY_SLICE = new OffsetSliceInfo(-1, -1, new OffsetEmpty());
+	/**
+	 * Lazy holder for the cached empty slice. The empty slice is built on first use rather than in AOffset's
+	 * static initializer: instantiating the OffsetEmpty subclass from AOffset's {@code <clinit>} forms a
+	 * superclass/subclass class-initialization cycle that deadlocks when several threads first touch the offset
+	 * classes concurrently (e.g. parallel tests). Deferring it to first use guarantees AOffset is already
+	 * initialized by the time OffsetEmpty is loaded, so no cycle exists.
+	 */
+	private static final class EmptySliceHolder {
+		static final OffsetSliceInfo EMPTY_SLICE = new OffsetSliceInfo(-1, -1, new OffsetEmpty());
+	}
+
+	/**
+	 * Get the cached empty slice, returned for empty slice results to avoid object allocation.
+	 *
+	 * @return the shared empty {@link OffsetSliceInfo}
+	 */
+	protected static OffsetSliceInfo emptySlice() {
+		return EmptySliceHolder.EMPTY_SLICE;
+	}
 
 	/** The skip list stride size, aka how many indexes skipped for each index. */
 	protected static final int SKIP_STRIDE = 1000;
@@ -570,12 +587,12 @@ public abstract class AOffset implements Serializable {
 				return new OffsetSliceInfo(0, s, moveIndex(l));
 		}
 		else if (u < first)
-			return EMPTY_SLICE;
+			return emptySlice();
 
 		final AIterator it = getIteratorSkipCache(l);
 
 		if(it == null || it.value() >= u)
-			return EMPTY_SLICE;
+			return emptySlice();
 
 		if(u >= last) // If including the last do not iterate.
 			return constructSliceReturn(l, u, it.getDataIndex(), s - 1, it.getOffsetsIndex(), getLength(), it.value(),

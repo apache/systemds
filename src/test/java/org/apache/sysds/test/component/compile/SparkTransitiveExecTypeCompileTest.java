@@ -24,8 +24,10 @@ import org.apache.sysds.runtime.controlprogram.Program;
 import org.junit.Test;
 
 /**
- * Verifies the transitive Spark exec-type refinement in {@link org.apache.sysds.hops.UnaryOp}: a CP-by-estimate unary on
- * a Spark-resident input is pulled into Spark only when it is the sole consumer ({@code getParent().size() == 1}).
+ * Verifies the transitive Spark exec-type refinement in {@link org.apache.sysds.hops.UnaryOp} and
+ * {@link org.apache.sysds.hops.BinaryOp}: a CP-by-estimate unary or matrix-scalar binary on a Spark-resident input is
+ * pulled into Spark only when it is the sole consumer ({@code getParent().size() == 1}) and the operation is eligible.
+ * Cumulative (and cast) operations are explicitly excluded from the pull and must stay CP.
  */
 public class SparkTransitiveExecTypeCompileTest extends CompilerTestBase {
 
@@ -55,5 +57,46 @@ public class SparkTransitiveExecTypeCompileTest extends CompilerTestBase {
 		assertSpark(prog, "uack+"); // input still has a Spark output ...
 		assertCP(prog, "round");    // ... but the multi-parent guard keeps both unaries in CP
 		assertCP(prog, "abs");
+	}
+
+	// A tall, Spark-resident column vector that is still small enough (40 KB) to be CP by memory
+	// estimate: rowSums over a very wide matrix runs on Spark, but its 1-column result fits in CP.
+	private static final String TALL_VECTOR_HEADER =
+		"X = rand(rows=5000, cols=200000, seed=1);\n" + // ~8GB -> rand and rowSums run on Spark
+		"c = rowSums(X);\n";                            // 5000x1 Spark-resident vector (opcode uark+)
+
+	@Test
+	public void cumulativeUnaryStaysCP() {
+		String dml = TALL_VECTOR_HEADER +
+			"r = cumsum(c);\n" +            // sole consumer of the Spark-resident vector, CP by estimate ...
+			"print(as.scalar(r[2500,1]));\n"; // ... consume via indexing (avoids the sum(cumsum) rewrite)
+		Program prog = compile(dml, null, ExecMode.HYBRID, SMALL_MEM_BUDGET);
+
+		assertSpark(prog, "uark+");   // input genuinely has a Spark output
+		assertCP(prog, "ucumk+"); // ... but cumulative ops are excluded from the transitive pull
+	}
+
+	@Test
+	public void singleConsumerBinaryPulledIntoSpark() {
+		String dml = TALL_VECTOR_HEADER +
+			"r = c + 2.0;\n" + // matrix-scalar on the Spark-resident vector, sole consumer -> pulled into Spark
+			"print(as.scalar(r[2500,1]));\n";
+		Program prog = compile(dml, null, ExecMode.HYBRID, SMALL_MEM_BUDGET);
+
+		assertSpark(prog, "uark+"); // input genuinely has a Spark output (multi-block column vector)
+		assertSpark(prog, "+");     // matrix-scalar binary pulled into Spark (CP by estimate, single consumer)
+	}
+
+	@Test
+	public void multiConsumerBinaryStaysCP() {
+		String dml = TALL_VECTOR_HEADER +
+			"a = c + 2.0;\n" + // c now has two consumers (+ and *) ...
+			"b = c * 3.0;\n" +
+			"print(as.scalar(a[2500,1]) + as.scalar(b[2500,1]));\n";
+		Program prog = compile(dml, null, ExecMode.HYBRID, SMALL_MEM_BUDGET);
+
+		assertSpark(prog, "uark+"); // input still has a Spark output ...
+		assertCP(prog, "+");        // ... but the multi-parent guard keeps both binaries in CP
+		assertCP(prog, "*");
 	}
 }

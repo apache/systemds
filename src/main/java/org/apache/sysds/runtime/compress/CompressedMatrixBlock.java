@@ -58,6 +58,7 @@ import org.apache.sysds.runtime.compress.lib.CLALibDecompress;
 import org.apache.sysds.runtime.compress.lib.CLALibMMChain;
 import org.apache.sysds.runtime.compress.lib.CLALibMatrixMult;
 import org.apache.sysds.runtime.compress.lib.CLALibMerge;
+import org.apache.sysds.runtime.compress.lib.CLALibRemoveEmpty;
 import org.apache.sysds.runtime.compress.lib.CLALibReplace;
 import org.apache.sysds.runtime.compress.lib.CLALibReorg;
 import org.apache.sysds.runtime.compress.lib.CLALibReshape;
@@ -871,9 +872,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock removeEmptyOperations(MatrixBlock ret, boolean rows, boolean emptyReturn, MatrixBlock select) {
-		printDecompressWarning("removeEmptyOperations");
-		MatrixBlock tmp = getUncompressed();
-		return tmp.removeEmptyOperations(ret, rows, emptyReturn, select);
+		return CLALibRemoveEmpty.rmempty(this, ret, rows, emptyReturn, select);
 	}
 
 	@Override

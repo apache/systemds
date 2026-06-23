@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.lib;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -75,10 +76,17 @@ public class CLALibRemoveEmpty {
 
 		final List<AColGroup> inG = in.getColGroups();
 		final List<AColGroup> retG = new ArrayList<>(inG.size());
-		for(int i = 0; i < inG.size(); i++) {
-			AColGroup tmp = inG.get(i).removeEmptyCols(selectV);
-			if(tmp != null)
-				retG.add(tmp);
+		try {
+			for(int i = 0; i < inG.size(); i++) {
+				AColGroup tmp = inG.get(i).removeEmptyCols(selectV);
+				if(tmp != null)
+					retG.add(tmp);
+			}
+		}
+		catch(NotImplementedException e) {
+			// Some column-group encodings (e.g. OLE/RLE) do not support index-only column removal;
+			// decompress and remove on the uncompressed representation instead of failing.
+			return fallback(in, false, emptyReturn, select, ret);
 		}
 		return new CompressedMatrixBlock(in.getNumRows(), cOut, -1, in.isOverlapping(), retG);
 
@@ -108,8 +116,15 @@ public class CLALibRemoveEmpty {
 
 		final List<AColGroup> inG = in.getColGroups();
 		final List<AColGroup> retG = new ArrayList<>(inG.size());
-		for(int i = 0; i < inG.size(); i++) {
-			retG.add(inG.get(i).removeEmptyRows(selectV, rOut));
+		try {
+			for(int i = 0; i < inG.size(); i++) {
+				retG.add(inG.get(i).removeEmptyRows(selectV, rOut));
+			}
+		}
+		catch(NotImplementedException e) {
+			// Some column-group encodings (e.g. OLE/RLE) do not support index-only row removal;
+			// decompress and remove on the uncompressed representation instead of failing.
+			return fallback(in, true, emptyReturn, select, ret);
 		}
 
 		return new CompressedMatrixBlock(rOut, in.getNumColumns(), -1, in.isOverlapping(), retG);

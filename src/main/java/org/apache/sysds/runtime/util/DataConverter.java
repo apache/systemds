@@ -884,6 +884,23 @@ public class DataConverter {
 		}
 	}
 
+	/**
+	 * Creates a non-grouping {@link DecimalFormat} for printing values. When {@code decimal >= 0}
+	 * both the minimum and maximum fraction digits are pinned to {@code decimal}, so values are
+	 * printed with exactly that many decimals; otherwise the {@link DecimalFormat} defaults apply.
+	 * @param decimal number of decimal places to print, -1 for default
+	 * @return a configured {@link DecimalFormat}
+	 */
+	private static DecimalFormat createDecimalFormat(int decimal) {
+		DecimalFormat df = new DecimalFormat();
+		df.setGroupingUsed(false);
+		if (decimal >= 0) {
+			df.setMinimumFractionDigits(decimal);
+			df.setMaximumFractionDigits(decimal);
+		}
+		return df;
+	}
+
 	public static String toString(MatrixBlock mb) {
 		return toString(mb, false, " ", "\n", mb.getNumRows(), mb.getNumColumns(), 3);
 	}
@@ -913,12 +930,7 @@ public class DataConverter {
 		if (colsToPrint >= 0)
 			colLength = colsToPrint < clen ? colsToPrint : clen;
 
-		DecimalFormat df = new DecimalFormat();
-		df.setGroupingUsed(false);
-		if (decimal >= 0){
-			df.setMinimumFractionDigits(decimal);
-			df.setMaximumFractionDigits(decimal);
-		}
+		DecimalFormat df = createDecimalFormat(decimal);
 
 		if (sparse){ // Sparse Print Format
 			if (mb.isInSparseFormat()){	// Block is in sparse format
@@ -998,12 +1010,7 @@ public class DataConverter {
 		if (colsToPrint >= 0)
 			colLength = Math.min(colsToPrint, clen);
 
-		DecimalFormat df = new DecimalFormat();
-		df.setGroupingUsed(false);
-		if (decimal >= 0){
-			df.setMinimumFractionDigits(decimal);
-			df.setMaximumFractionDigits(decimal);
-		}
+		DecimalFormat df = createDecimalFormat(decimal);
 
 		if (sparse){ // Sparse Print Format
 			// TODO use sparse iterator for sparse block
@@ -1149,12 +1156,7 @@ public class DataConverter {
 		sb.append(lineseparator);
 
 		//print data
-		DecimalFormat df = new DecimalFormat();
-		df.setGroupingUsed(false);
-		if (decimal >= 0) {
-			df.setMinimumFractionDigits(decimal);
-			df.setMaximumFractionDigits(decimal);
-		}
+		DecimalFormat df = createDecimalFormat(decimal);
 
 		Iterator<Object[]> iter = IteratorFactory.getObjectRowIterator(fb, 0, rowLength);
 		while( iter.hasNext() ) {

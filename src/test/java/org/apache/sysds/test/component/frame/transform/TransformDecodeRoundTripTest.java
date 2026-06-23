@@ -27,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.concurrent.CountDownLatch;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -487,6 +488,65 @@ public class TransformDecodeRoundTripTest {
 		catch(Exception e) {
 			e.printStackTrace();
 			fail(spec + " : " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Interrupting a worker mid parallel-decode must restore the caller's interrupt flag (which {@code Future.get}
+	 * clears when it throws) and surface the failure as a {@link DMLRuntimeException}. The same minimal decoder also
+	 * exercises the base sub-range contract, which rejects decoders that do not implement column sub-ranging.
+	 */
+	@Test
+	public void parallelDecodeInterruptionRestoresFlagAndRejectsSubRange() {
+		final Thread caller = Thread.currentThread();
+		final CountDownLatch release = new CountDownLatch(1);
+		final Decoder decoder = new Decoder(new ValueType[] {ValueType.FP64}, new int[] {1}) {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public FrameBlock decode(MatrixBlock in, FrameBlock out) {
+				return out;
+			}
+
+			@Override
+			public void decode(MatrixBlock in, FrameBlock out, int rl, int ru) {
+				// interrupt the thread blocked in Future.get and stay unfinished so the interrupt is observed
+				caller.interrupt();
+				try {
+					release.await();
+				}
+				catch(InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+			}
+
+			@Override
+			public void initMetaData(FrameBlock meta) {
+				// no meta data needed
+			}
+		};
+
+		try {
+			decoder.subRangeDecoder(1, 2, 0);
+			fail("a decoder without sub-range support must reject the request");
+		}
+		catch(DMLRuntimeException expected) {
+			assertTrue(messageChain(expected).contains("sub-range"));
+		}
+
+		final MatrixBlock in = new MatrixBlock(1, 1, false);
+		in.allocateDenseBlock();
+		try {
+			decoder.decode(in, new FrameBlock(decoder.getSchema()), 2);
+			fail("an interrupted parallel decode must throw");
+		}
+		catch(DMLRuntimeException expected) {
+			assertTrue("the interrupt flag must be restored", Thread.currentThread().isInterrupted());
+			assertNotNull(expected.getCause());
+		}
+		finally {
+			release.countDown();
+			Thread.interrupted(); // clear so the interrupt does not leak into other tests
 		}
 	}
 

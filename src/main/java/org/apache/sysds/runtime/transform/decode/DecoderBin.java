@@ -51,10 +51,6 @@ public class DecoderBin extends Decoder {
 		super(null, null);
 	}
 
-	protected DecoderBin(ValueType[] schema, int[] binCols, int[] dcCols) {
-		this(schema, binCols, dcCols, null);
-	}
-
 	protected DecoderBin(ValueType[] schema, int[] binCols, int[] dcCols, int[] hashCols) {
 		super(schema, binCols);
 		_dcCols = dcCols;

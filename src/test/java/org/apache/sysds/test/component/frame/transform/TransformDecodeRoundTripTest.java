@@ -29,6 +29,7 @@ import java.io.ObjectOutputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.decode.Decoder;
@@ -287,6 +288,196 @@ public class TransformDecodeRoundTripTest {
 				org.junit.Assert.assertNotNull("hash column must survive decode at row " + i, v);
 				org.junit.Assert.assertEquals("hash bucket code must pass through at row " + i, encoded.get(i, 0),
 					Double.parseDouble(v.toString()), 0.0);
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(spec + " : " + e.getMessage());
+		}
+	}
+
+	/**
+	 * A corrupt recode meta entry (no token/code separator) must surface as a {@link DMLRuntimeException} during
+	 * meta-data initialization rather than a raw parsing exception, so callers get an actionable error. Covers the
+	 * defensive try/catch added around the recode-map reconstruction.
+	 */
+	@Test
+	public void recodeInitMetaDataRejectsCorruptEntry() {
+		final String spec = "{ids:true, recode:[1]}";
+		try {
+			final FrameBlock original = categoricalFrame();
+			final String[] colnames = original.getColumnNames();
+			final MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, colnames, original.getNumColumns(),
+				null);
+			encoder.encode(original, 1);
+			final FrameBlock meta = encoder.getMetaData(null);
+			// overwrite the first recode entry with a value lacking the token/code separator
+			meta.set(0, 0, "corrupt-entry-without-separator");
+
+			try {
+				DecoderFactory.createDecoder(spec, colnames, null, meta, original.getNumColumns());
+				fail("expected a corrupt recode entry to be rejected");
+			}
+			catch(DMLRuntimeException expected) {
+				// expected: the recode-map reconstruction wraps the parse failure
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(spec + " : " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Federated transform-decode slices a global decoder per worker via {@link Decoder#updateIndexRanges} and
+	 * {@link Decoder#subRangeDecoder}. For a single worker covering the whole matrix, the dummycode expansion must
+	 * collapse the encoded column count down to the decoded column count, and the resulting sub-range decoder must
+	 * reproduce the global decode exactly. Exercises the dummycode index-range and sub-range mapping.
+	 */
+	@Test
+	public void dummycodeSubRangeFullRangeMatchesGlobalDecode() {
+		final String spec = "{ids:true, recode:[1], dummycode:[1]}";
+		try {
+			final FrameBlock original = TestUtils.generateRandomFrameBlock(60,
+				new ValueType[] {ValueType.UINT4, ValueType.FP32}, 91);
+			final String[] colnames = original.getColumnNames();
+			final MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, colnames, original.getNumColumns(),
+				null);
+			final MatrixBlock encoded = encoder.encode(original, 1);
+			if(encoded.isInSparseFormat())
+				encoded.sparseToDense();
+			final FrameBlock meta = encoder.getMetaData(null);
+
+			final Decoder global = DecoderFactory.createDecoder(spec, colnames, null, meta, encoded.getNumColumns());
+			final FrameBlock full = global.decode(encoded, new FrameBlock(global.getSchema()), 1);
+
+			// single worker covering the whole matrix: map encoded column range to decoded column range
+			final long[] beginDims = {0, 0};
+			final long[] endDims = {encoded.getNumRows(), encoded.getNumColumns()};
+			global.updateIndexRanges(beginDims, endDims);
+
+			org.junit.Assert.assertEquals("begin column must stay at 0", 0, beginDims[1]);
+			org.junit.Assert.assertEquals("dummycode expansion must collapse to the decoded column count",
+				full.getNumColumns(), (int) endDims[1]);
+
+			final Decoder sub = global.subRangeDecoder(1, (int) endDims[1] + 1, 0);
+			final FrameBlock subDecoded = sub.decode(encoded, new FrameBlock(sub.getSchema()), 1);
+			TestUtils.compareFrames(full, subDecoded, false);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(spec + " : " + e.getMessage());
+		}
+	}
+
+	/**
+	 * A federated worker holding only the columns after a dummycoded column must shift its index range left by the
+	 * dummycode expansion and receive a sub-range decoder containing just the trailing pass-through columns (the
+	 * dummycode and recode decoders drop out). Mirrors the {@code updateIndexRanges} + {@code subRangeDecoder} call
+	 * sequence in federated transform-decode, covering the index-range shift for a fully-preceding dummycode column and
+	 * the empty sub-range branch.
+	 */
+	@Test
+	public void dummycodeSubRangeExcludingDummycodedColumnKeepsRemaining() {
+		final String spec = "{ids:true, recode:[1], dummycode:[1]}";
+		try {
+			final FrameBlock original = TestUtils.generateRandomFrameBlock(40,
+				new ValueType[] {ValueType.UINT4, ValueType.FP32, ValueType.FP32}, 73);
+			final String[] colnames = original.getColumnNames();
+			final MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, colnames, original.getNumColumns(),
+				null);
+			final MatrixBlock encoded = encoder.encode(original, 1);
+			if(encoded.isInSparseFormat())
+				encoded.sparseToDense();
+			final FrameBlock meta = encoder.getMetaData(null);
+
+			final Decoder global = DecoderFactory.createDecoder(spec, colnames, null, meta, encoded.getNumColumns());
+
+			// the dummycode column expands to (encodedCols - 2) one-hot columns; a worker owning only the two trailing
+			// pass-through columns starts after that expanded block in encoded column space
+			final int dcWidth = encoded.getNumColumns() - 2;
+			final long[] beginDims = {0, dcWidth};
+			final long[] endDims = {encoded.getNumRows(), dcWidth + 2};
+			final int colStartBefore = (int) beginDims[1];
+			global.updateIndexRanges(beginDims, endDims);
+
+			// after collapsing the preceding dummycode expansion, the worker maps to decoded columns 2..3
+			org.junit.Assert.assertEquals(1, beginDims[1]);
+			org.junit.Assert.assertEquals(3, endDims[1]);
+
+			final Decoder sub = global.subRangeDecoder((int) beginDims[1] + 1, (int) endDims[1] + 1, colStartBefore);
+			org.junit.Assert.assertNotNull("pass-through columns must still yield a decoder", sub);
+			org.junit.Assert.assertEquals("only the two trailing pass-through columns remain", 2,
+				sub.getSchema().length);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(spec + " : " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Two recode columns with different domain sizes leave trailing empty (null) cells in the shorter column's
+	 * recode-map column. Reconstructing that map must stop at the first null rather than read past it. Recode is
+	 * lossless, so the decode must reconstruct the original frame exactly.
+	 */
+	@Test
+	public void recodeMultiColumnWithTrailingNullMapEntries() {
+		final String spec = "{ids:true, recode:[1, 2]}";
+		try {
+			final FrameBlock original = new FrameBlock(new ValueType[] {ValueType.STRING, ValueType.STRING});
+			final String[] high = {"a", "b", "c", "d", "e", "f", "g", "h"};
+			final String[] low = {"x", "y"};
+			final int n = 16;
+			original.ensureAllocatedColumns(n);
+			for(int i = 0; i < n; i++) {
+				original.set(i, 0, high[i % high.length]);
+				original.set(i, 1, low[i % low.length]);
+			}
+			final String[] colnames = original.getColumnNames();
+			final MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, colnames, original.getNumColumns(),
+				null);
+			final MatrixBlock encoded = encoder.encode(original, 1);
+			if(encoded.isInSparseFormat())
+				encoded.sparseToDense();
+			final FrameBlock meta = encoder.getMetaData(null);
+
+			final Decoder decoder = DecoderFactory.createDecoder(spec, colnames, null, meta, encoded.getNumColumns());
+			final FrameBlock decoded = decoder.decode(encoded, new FrameBlock(decoder.getSchema()), 1);
+			TestUtils.compareFrames(original, decoded, false);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(spec + " : " + e.getMessage());
+		}
+	}
+
+	/**
+	 * The parallel decode path runs per-row-block decode tasks on a thread pool; a failure inside a worker must not be
+	 * swallowed but resurface as an unchecked exception to the caller. Feeding a matrix with far fewer columns than the
+	 * decoder expects forces an out-of-range access in a worker, which the parallel wrapper must propagate.
+	 */
+	@Test
+	public void parallelDecodeWrapsWorkerException() {
+		final String spec = "{ids:true, recode:[1], dummycode:[1]}";
+		try {
+			final FrameBlock original = categoricalFrame();
+			final String[] colnames = original.getColumnNames();
+			final MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, colnames, original.getNumColumns(),
+				null);
+			final MatrixBlock encoded = encoder.encode(original, 1);
+			final FrameBlock meta = encoder.getMetaData(null);
+			final Decoder decoder = DecoderFactory.createDecoder(spec, colnames, null, meta, encoded.getNumColumns());
+
+			// far fewer columns than the dummycode decoder reads -> a parallel worker accesses out of range
+			final MatrixBlock broken = new MatrixBlock(2, 1, false);
+			broken.allocateDenseBlock();
+			try {
+				decoder.decode(broken, new FrameBlock(decoder.getSchema()), 4);
+				fail("expected the parallel decode wrapper to propagate the worker failure");
+			}
+			catch(RuntimeException expected) {
+				// expected: worker exception surfaced through the parallel decode wrapper
 			}
 		}
 		catch(Exception e) {

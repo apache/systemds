@@ -28,9 +28,8 @@ import org.junit.Test;
  * Verifies the transitive Spark exec-type refinement in {@link org.apache.sysds.hops.UnaryOp} and
  * {@link org.apache.sysds.hops.BinaryOp}: a CP-by-estimate unary or matrix-scalar binary on a Spark-resident input is
  * pulled into Spark only when it is the sole consumer ({@code getParent().size() == 1}) and the operation is eligible.
- * Cumulative (and cast) operations are explicitly excluded from the pull and must stay CP. The
- * {@code ALLOW_TRANSITIVE_SPARK_EXEC_TYPE} flag gates the pull for both unary and binary ops, so disabling it must keep
- * an otherwise-pullable op in CP.
+ * Cumulative (and cast) operations are excluded and stay CP. The {@code ALLOW_TRANSITIVE_SPARK_EXEC_TYPE} flag gates
+ * the pull, so disabling it keeps an otherwise-pullable op in CP.
  */
 public class SparkTransitiveExecTypeCompileTest extends CompilerTestBase {
 
@@ -106,23 +105,23 @@ public class SparkTransitiveExecTypeCompileTest extends CompilerTestBase {
 	@Test
 	public void transitiveDisabledUnaryStaysCP() {
 		String dml = DML_HEADER +
-			"r = round(v);\n" + // would be pulled into Spark with the flag on (see singleConsumerUnary...) ...
+			"r = round(v);\n" + // pullable unary, but flag is off
 			"print(sum(r));\n";
 		Program prog = compileWithTransitive(dml, false);
 
-		assertSpark(prog, "uack+"); // input still has a Spark output ...
-		assertCP(prog, "round");    // ... but the disabled kill-switch keeps the unary in CP
+		assertSpark(prog, "uack+");
+		assertCP(prog, "round"); // flag off keeps the unary in CP
 	}
 
 	@Test
 	public void transitiveDisabledBinaryStaysCP() {
 		String dml = TALL_VECTOR_HEADER +
-			"r = c + 2.0;\n" + // would be pulled into Spark with the flag on (see singleConsumerBinary...) ...
+			"r = c + 2.0;\n" + // pullable matrix-scalar, but flag is off
 			"print(as.scalar(r[2500,1]));\n";
 		Program prog = compileWithTransitive(dml, false);
 
-		assertSpark(prog, "uark+"); // input still has a Spark output ...
-		assertCP(prog, "+");        // ... but the disabled kill-switch keeps the binary in CP
+		assertSpark(prog, "uark+");
+		assertCP(prog, "+"); // flag off keeps the binary in CP
 	}
 
 	/** Compile with {@code ALLOW_TRANSITIVE_SPARK_EXEC_TYPE} forced to {@code enabled}, restoring it afterwards. */

@@ -507,7 +507,7 @@ public class UnaryOp extends MultiThreadedHop
 
 		//spark-specific decision refinement (execute unary w/ spark input and 
 		//single parent also in spark because it's likely cheap and reduces intermediates)
-		if(transitive // transitive Spark refinement enabled (kill-switch, mirrors BinaryOp)
+		if(transitive // transitive refinement enabled
 			&& _etype == ExecType.CP // currently CP instruction
 			&& _etypeForced != ExecType.CP // not forced as CP instruction
 			&& getInput(0).hasSparkOutput() // input is a spark instruction

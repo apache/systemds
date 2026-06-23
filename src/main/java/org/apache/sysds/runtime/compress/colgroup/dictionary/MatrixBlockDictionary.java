@@ -2812,20 +2812,34 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	public static double[] sliceColumns(MatrixBlock mb, IntArrayList selectedColumns) {
-		//TODO: Optimize to allow sparse outputs. and change output type to MatrixBlock.
+		// TODO: Optimize to allow sparse outputs. and change output type to MatrixBlock.
 		final int outC = selectedColumns.size();
-		if((long) mb.getNumRows() * outC > (long) Integer.MAX_VALUE)
+		final int nRow = mb.getNumRows();
+		if((long) nRow * outC > (long) Integer.MAX_VALUE)
 			throw new NotImplementedException("Not supported large output blocks for slicing dictionary columns");
-		mb.sparseToDense();
-		final DenseBlock db = mb.getDenseBlock();
-		final double[] ret = new double[mb.getNumRows() * outC];
+		final double[] ret = new double[nRow * outC];
+		if(mb.isEmpty())
+			return ret;
 
-		for(int i = 0; i < mb.getNumRows(); i++) {
-			double[] vals = db.values(i);
-			int offIn = db.pos(i);
-			int offOut = i * outC;
-			for(int j = 0; j < outC; j++) {
-				ret[offOut + j] = vals[offIn + selectedColumns.get(j)];
+		// Read through the current representation without mutating the (shared, immutable) dictionary block.
+		if(mb.isInSparseFormat()) {
+			final SparseBlock sb = mb.getSparseBlock();
+			for(int i = 0; i < nRow; i++) {
+				if(sb.isEmpty(i))
+					continue;
+				final int offOut = i * outC;
+				for(int j = 0; j < outC; j++)
+					ret[offOut + j] = sb.get(i, selectedColumns.get(j));
+			}
+		}
+		else {
+			final DenseBlock db = mb.getDenseBlock();
+			for(int i = 0; i < nRow; i++) {
+				final double[] vals = db.values(i);
+				final int offIn = db.pos(i);
+				final int offOut = i * outC;
+				for(int j = 0; j < outC; j++)
+					ret[offOut + j] = vals[offIn + selectedColumns.get(j)];
 			}
 		}
 		return ret;

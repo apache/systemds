@@ -21,6 +21,7 @@ package org.apache.sysds.test.component.compress;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -710,18 +711,18 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 	@Test
 	public void removeEmptyOperationsSelect1() {
-		if(rows < 5000) {
-			MatrixBlock s = TestUtils.generateTestMatrixBlock(rows, 1, 1, 1, 0.05, 321);
-			removeEmptyOperations(true, false, s);
-		}
+		// limit to smaller row counts to keep the dense selection vector generation cheap
+		assumeTrue(rows < 5000);
+		MatrixBlock s = TestUtils.generateTestMatrixBlock(rows, 1, 1, 1, 0.05, 321);
+		removeEmptyOperations(true, false, s);
 	}
 
 	@Test
 	public void removeEmptyOperationsSelect2() {
-		if(rows < 5000) {
-			MatrixBlock s = TestUtils.generateTestMatrixBlock(1, cols, 1, 1, 0.5, 321);
-			removeEmptyOperations(false, false, s);
-		}
+		// limit to smaller row counts to keep the dense selection vector generation cheap
+		assumeTrue(rows < 5000);
+		MatrixBlock s = TestUtils.generateTestMatrixBlock(1, cols, 1, 1, 0.5, 321);
+		removeEmptyOperations(false, false, s);
 	}
 
 	public void removeEmptyOperations(boolean rows, boolean emptyReturn, MatrixBlock select) {

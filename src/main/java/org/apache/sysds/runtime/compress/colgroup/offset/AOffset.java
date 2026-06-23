@@ -813,8 +813,6 @@ public abstract class AOffset implements Serializable {
 			selectMTmp.appendValue(it.getDataIndex());
 		}
 
-		// throw new RuntimeException("\n\n\n" + Arrays.toString(selectV) + " \n\n " + this + "\n\n " + newOff + " \n " +
-		// selectMTmp + "\n\n " + "\n\n ");
 		return new RemoveEmptyOffsetsTmp(OffsetFactory.createOffset(newOff), selectMTmp);
 	}
 

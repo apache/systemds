@@ -238,7 +238,6 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 			return;
 		else if(it.value() >= ru)
 			return;
-		// _indexes.cacheIterator(it, ru);
 		else if(ru > last) {
 			final int apos = sb.pos(0);
 			final int alen = sb.size(0) + apos;

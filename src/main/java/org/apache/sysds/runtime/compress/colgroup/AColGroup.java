@@ -1001,7 +1001,7 @@ public abstract class AColGroup implements Serializable {
 	 * Whenever possible only modify the column index, and reduce the dictionaries of the column groups.
 	 * 
 	 * @param selectV The selection vector
-	 * @return The new column group
+	 * @return The new column group, or {@code null} if no column of this group is selected
 	 */
 	public AColGroup removeEmptyCols(boolean[] selectV) {
 		if(!inSelection(selectV))

@@ -991,6 +991,17 @@ public class LibMatrixReorg {
 			return removeEmptyColumns(in, ret, select, emptyReturn);
 	}
 
+	/**
+	 * Handle the early-termination cases of removeEmpty that do not require scanning for empty rows/columns.
+	 *
+	 * @param in          The input matrix
+	 * @param ret         The output matrix, reused for the empty-input case
+	 * @param rows        If removing based on rows, or columns
+	 * @param emptyReturn Return a row/column of zeros for empty input
+	 * @param select      An optional selection vector
+	 * @return The early-abort result, or {@code null} if no early termination applies and the caller must continue.
+	 *         For the select-all case the returned block is the input {@code in} itself (a shallow alias, not a copy).
+	 */
 	public static MatrixBlock rmemptyEarlyAbort(MatrixBlock in, MatrixBlock ret, boolean rows, boolean emptyReturn, MatrixBlock select){
 		//check for empty inputs 
 		//(the semantics of removeEmpty are that for an empty m-by-n matrix, the output 

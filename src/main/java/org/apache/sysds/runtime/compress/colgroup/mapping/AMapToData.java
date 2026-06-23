@@ -1045,25 +1045,21 @@ public abstract class AMapToData implements Serializable {
 	}
 
 	public AMapToData removeEmpty(final boolean[] selectV, final int rOut) {
-		try{
+		final int s = size();
+		int trueCount = 0;
+		for(int i = 0; i < s; i++)
+			if(selectV[i])
+				trueCount++;
+		if(trueCount != rOut)
+			throw new DMLRuntimeException(
+				"Invalid removeEmpty: number of selected rows " + trueCount + " does not match argument rOut " + rOut);
 
-			final AMapToData ret = MapToFactory.create(rOut, getUnique());
-			final int s = size();
-			int t = 0;
-			for(int i = 0; i < s; i++)
-				if(selectV[i] == true)
-					ret.set(t++, getIndex(i));
-			
-			return ret;
-		}
-		catch(ArrayIndexOutOfBoundsException e){
-
-			int trueCount = 0;
-			for(boolean a : selectV){
-				if(a) trueCount ++;
-			}
-			throw new DMLRuntimeException("actual number of true values " + trueCount + " vs argument " + rOut,e);
-		}
+		final AMapToData ret = MapToFactory.create(rOut, getUnique());
+		int t = 0;
+		for(int i = 0; i < s; i++)
+			if(selectV[i])
+				ret.set(t++, getIndex(i));
+		return ret;
 	}
 
 	/**

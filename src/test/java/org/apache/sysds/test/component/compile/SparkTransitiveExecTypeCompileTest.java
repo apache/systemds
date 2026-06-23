@@ -20,6 +20,7 @@
 package org.apache.sysds.test.component.compile;
 
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.controlprogram.Program;
 import org.junit.Test;
 
@@ -27,7 +28,9 @@ import org.junit.Test;
  * Verifies the transitive Spark exec-type refinement in {@link org.apache.sysds.hops.UnaryOp} and
  * {@link org.apache.sysds.hops.BinaryOp}: a CP-by-estimate unary or matrix-scalar binary on a Spark-resident input is
  * pulled into Spark only when it is the sole consumer ({@code getParent().size() == 1}) and the operation is eligible.
- * Cumulative (and cast) operations are explicitly excluded from the pull and must stay CP.
+ * Cumulative (and cast) operations are explicitly excluded from the pull and must stay CP. The
+ * {@code ALLOW_TRANSITIVE_SPARK_EXEC_TYPE} flag gates the pull for both unary and binary ops, so disabling it must keep
+ * an otherwise-pullable op in CP.
  */
 public class SparkTransitiveExecTypeCompileTest extends CompilerTestBase {
 
@@ -98,5 +101,39 @@ public class SparkTransitiveExecTypeCompileTest extends CompilerTestBase {
 		assertSpark(prog, "uark+"); // input still has a Spark output ...
 		assertCP(prog, "+");        // ... but the multi-parent guard keeps both binaries in CP
 		assertCP(prog, "*");
+	}
+
+	@Test
+	public void transitiveDisabledUnaryStaysCP() {
+		String dml = DML_HEADER +
+			"r = round(v);\n" + // would be pulled into Spark with the flag on (see singleConsumerUnary...) ...
+			"print(sum(r));\n";
+		Program prog = compileWithTransitive(dml, false);
+
+		assertSpark(prog, "uack+"); // input still has a Spark output ...
+		assertCP(prog, "round");    // ... but the disabled kill-switch keeps the unary in CP
+	}
+
+	@Test
+	public void transitiveDisabledBinaryStaysCP() {
+		String dml = TALL_VECTOR_HEADER +
+			"r = c + 2.0;\n" + // would be pulled into Spark with the flag on (see singleConsumerBinary...) ...
+			"print(as.scalar(r[2500,1]));\n";
+		Program prog = compileWithTransitive(dml, false);
+
+		assertSpark(prog, "uark+"); // input still has a Spark output ...
+		assertCP(prog, "+");        // ... but the disabled kill-switch keeps the binary in CP
+	}
+
+	/** Compile with {@code ALLOW_TRANSITIVE_SPARK_EXEC_TYPE} forced to {@code enabled}, restoring it afterwards. */
+	private Program compileWithTransitive(String dml, boolean enabled) {
+		final boolean old = OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE;
+		OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = enabled;
+		try {
+			return compile(dml, null, ExecMode.HYBRID, SMALL_MEM_BUDGET);
+		}
+		finally {
+			OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = old;
+		}
 	}
 }

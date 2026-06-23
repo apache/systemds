@@ -820,9 +820,9 @@ public class BinaryOp extends MultiThreadedHop {
 			&& _etypeForced != ExecType.FED // not federated
 			&& (getDataType().isMatrix() || getDataType().isFrame()) // output should be a matrix or frame
 		) {
-			final boolean v1 = getInput(0).isScalarOrVectorBellowBlockSize();
-			final boolean v2 = getInput(1).isScalarOrVectorBellowBlockSize();
-			final boolean left = v1 == true; // left side is the vector or scalar
+			final boolean v1 = getInput(0).isScalarOrVectorBelowBlockSize();
+			final boolean v2 = getInput(1).isScalarOrVectorBelowBlockSize();
+			final boolean left = v1; // left side is the vector or scalar
 			final Hop sparkIn = getInput(left ? 1 : 0);
 			if((v1 ^ v2) // XOR only one side is allowed to be a vector or a scalar.
 				&& (supportsMatrixScalarOperations() || op == OpOp2.APPLY_SCHEMA)  // supported operation

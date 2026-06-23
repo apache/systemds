@@ -1045,10 +1045,10 @@ public abstract class Hop implements ParseInfo {
 	// ========================================================================================
 
 	
-	protected boolean isScalarOrVectorBellowBlockSize(){
-		return getDataType().isScalar() || (dimsKnown() && 
+	protected boolean isScalarOrVectorBelowBlockSize(){
+		return getDataType().isScalar() || (dimsKnown() &&
 			(( _dc.getRows() == 1 && _dc.getCols() < ConfigurationManager.getBlocksize())
-			|| _dc.getCols() == 1 && _dc.getRows() < ConfigurationManager.getBlocksize()));
+			|| ( _dc.getCols() == 1 && _dc.getRows() < ConfigurationManager.getBlocksize())));
 	}
 
 	protected boolean isVector() {

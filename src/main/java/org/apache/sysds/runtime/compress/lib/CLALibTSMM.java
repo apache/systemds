@@ -81,7 +81,7 @@ public final class CLALibTSMM {
 			final double[] constV = new double[numColumns];
 			final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(groups, constV);
 			tsmmColGroups(filteredGroups, ret, numRows, overlapping, k);
-			addCorrectionLayer(filteredGroups, ret, numRows, numColumns, constV, k);
+			addCorrectionLayer(filteredGroups, ret, numRows, numColumns, constV);
 		}
 		else {
 
@@ -101,7 +101,7 @@ public final class CLALibTSMM {
 	}
 
 	private static void addCorrectionLayer(List<AColGroup> filteredGroups, MatrixBlock result, int nRows, int nCols,
-		double[] constV, int k) {
+		double[] constV) {
 		final double[] retV = result.getDenseBlockValues();
 		final double[] filteredColSum = CLALibUtils.getColSum(filteredGroups, nCols, nRows);
 		addCorrectionLayer(constV, filteredColSum, nRows, retV);

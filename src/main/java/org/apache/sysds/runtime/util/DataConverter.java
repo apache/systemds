@@ -917,6 +917,7 @@ public class DataConverter {
 		df.setGroupingUsed(false);
 		if (decimal >= 0){
 			df.setMinimumFractionDigits(decimal);
+			df.setMaximumFractionDigits(decimal);
 		}
 
 		if (sparse){ // Sparse Print Format
@@ -1001,6 +1002,7 @@ public class DataConverter {
 		df.setGroupingUsed(false);
 		if (decimal >= 0){
 			df.setMinimumFractionDigits(decimal);
+			df.setMaximumFractionDigits(decimal);
 		}
 
 		if (sparse){ // Sparse Print Format
@@ -1149,8 +1151,10 @@ public class DataConverter {
 		//print data
 		DecimalFormat df = new DecimalFormat();
 		df.setGroupingUsed(false);
-		if (decimal >= 0)
+		if (decimal >= 0) {
 			df.setMinimumFractionDigits(decimal);
+			df.setMaximumFractionDigits(decimal);
+		}
 
 		Iterator<Object[]> iter = IteratorFactory.getObjectRowIterator(fb, 0, rowLength);
 		while( iter.hasNext() ) {

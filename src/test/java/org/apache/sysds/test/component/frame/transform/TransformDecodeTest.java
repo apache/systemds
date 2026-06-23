@@ -123,8 +123,8 @@ public class TransformDecodeTest {
 
 	@Test
 	public void testHashToDummy() {
-		// feature-hash columns carry their domain size as the magic "¿K" metadata value, which the dummycode decoder
-		// must parse to reconstruct the one-hot column ranges
+		// feature-hash columns store their domain size K as a plain integer in the single meta cell, which the
+		// dummycode decoder reads (instead of numDistinct) to reconstruct the one-hot column ranges
 		decodeConsistency("{ids:true, hash:[1], K:8, dummycode:[1]}");
 	}
 

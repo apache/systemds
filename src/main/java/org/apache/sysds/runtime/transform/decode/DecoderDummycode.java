@@ -74,8 +74,7 @@ public class DecoderDummycode extends Decoder {
 					if(in.get(i, k - 1) != 0) {
 						int col = _colList[j] - 1;
 						out.getColumn(col).set(i, k - _clPos[j] + 1);
-						// if the non zero is found, we can skip the rest of k.
-						continue;
+						break; // one-hot: exactly one set bit per group, stop scanning
 					}
 	}
 

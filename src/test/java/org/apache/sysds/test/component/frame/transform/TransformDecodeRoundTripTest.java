@@ -125,8 +125,8 @@ public class TransformDecodeRoundTripTest {
 
 	/**
 	 * Same right-shift as above, but the earlier column is feature-hashed before being dummycoded. The hash domain
-	 * size is stored as the magic "¿K" metadata value, so the bin source-column mapping must take the magic-value
-	 * branch to compute the offset.
+	 * size K is stored as a plain integer in the single meta cell, so the bin source-column mapping reads it (instead
+	 * of numDistinct) to compute the offset.
 	 */
 	@Test
 	public void binAfterHashDummycodeOnEarlierColumnConsistency() {

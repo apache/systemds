@@ -75,25 +75,16 @@ public class DecoderBin extends Decoder {
 				final Array<?> a = out.getColumn(_colList[j] - 1);
 				final double val = in.get(i, _srcCols[j] - 1);
 				if(!Double.isNaN(val)){
-					try{
-
-						final int key = (int) Math.round(val);
-						if(key == 0){
-							a.set(i, _binMins[j][key]);
-						}
-						else{
-							double bmin = _binMins[j][key - 1];
-							double bmax = _binMaxs[j][key - 1];
-							double oval = bmin + (bmax - bmin) / 2 // bin center
-								+ (val - key) * (bmax - bmin); // bin fractions
-							a.set(i, oval);
-						}
+					final int key = (int) Math.round(val);
+					if(key == 0){
+						a.set(i, _binMins[j][key]);
 					}
-					catch(Exception e){
-						LOG.error(a);
-						LOG.error(in.slice(0, in.getNumRows()-1, _colList[j]-1,_colList[j]-1));
-						LOG.error( val);
-						throw e;
+					else{
+						double bmin = _binMins[j][key - 1];
+						double bmax = _binMaxs[j][key - 1];
+						double oval = bmin + (bmax - bmin) / 2 // bin center
+							+ (val - key) * (bmax - bmin); // bin fractions
+						a.set(i, oval);
 					}
 				}
 				else 

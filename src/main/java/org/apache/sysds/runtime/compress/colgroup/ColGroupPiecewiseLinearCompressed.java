@@ -2,6 +2,8 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
@@ -19,6 +21,9 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.utils.MemoryEstimates;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -281,12 +286,12 @@ public class ColGroupPiecewiseLinearCompressed extends AColGroupCompressed {
 
 	@Override
 	public CompressionType getCompType() {
-		return CompressionType.PiecewiseLinear;
+		return CompressionType.PiecewiseLinearCompressed;
 	}
 
 	@Override
 	protected ColGroupType getColGroupType() {
-		return ColGroupType.PiecewiseLinear;
+		return ColGroupType.PiecewiseLinearCompressed;
 	}
 
 	/**
@@ -475,6 +480,62 @@ public class ColGroupPiecewiseLinearCompressed extends AColGroupCompressed {
 	public AColGroup replace(double pattern, double replace) {
 		AColGroup uncompressed = decompress();
 		return uncompressed.replace(pattern, replace);
+	}
+
+
+	public static int[][] read2DIntegerArray( DataInput in, int numRows)  throws IOException{
+		int[][] twoDimArray = new int[numRows][];
+		for (int i = 0; i < numRows; i++){
+			int twoDimArray_lenght = in.readInt();
+			for (int j = 0; j < twoDimArray_lenght; j++){
+				twoDimArray[i][j] = in.readInt();
+			}
+		}
+		return twoDimArray;
+	}
+	public static double[][] read2DDoubleArray( DataInput in, int numRows)  throws IOException{
+		double[][] twoDimArray = new double[numRows][];
+		for (int i = 0; i < numRows; i++){
+			int twoDimArray_lenght = in.readInt();
+			for (int j = 0; j < twoDimArray_lenght; j++){
+				twoDimArray[i][j] = in.readDouble();
+			}
+		}
+		return twoDimArray;
+	}
+
+	public static ColGroupPiecewiseLinearCompressed read(DataInput in) throws IOException {
+		IColIndex colIndices = ColIndexFactory.read(in);
+		int numRows = in.readInt();
+		int[][] breakpointsPerCol=read2DIntegerArray(in, numRows);
+		double[][] slopesPerCol = read2DDoubleArray(in, numRows);
+		double [][] interceptsPerCol = read2DDoubleArray(in, numRows);
+
+		return new ColGroupPiecewiseLinearCompressed(colIndices, breakpointsPerCol, slopesPerCol, interceptsPerCol, numRows);
+	}
+
+	@Override
+	public void write(DataOutput out) throws IOException {
+		super.write(out);
+		out.writeInt(numRows);
+		for(int[] breakpoints : breakpointsPerCol){
+			out.writeInt(breakpoints.length);
+			for (int i : breakpoints) {
+				out.writeInt(i);
+			}
+		}
+		for(double[] slopes : slopesPerCol) {
+			out.writeInt(slopes.length);
+			for (double i : slopes) {
+				out.writeDouble(i);
+			}
+		}
+		for(double[] intercepts : interceptsPerCol) {
+			out.writeInt(intercepts.length);
+			for (double i : intercepts) {
+				out.writeDouble(i);
+			}
+		}
 	}
 
 	/**

@@ -751,40 +751,17 @@ public class ColGroupSDCSingle extends ASDC {
 	public AColGroup sort() {
 		if(getNumCols() > 1)
 			throw new NotImplementedException();
-		// TODO restore support for run length encoding.
 
+		// Only a single non-default value exists, so sorting is a contiguous block of that value placed before the
+		// default values if it is smaller than the default, and after them otherwise.
 		final int[] counts = getCounts();
-		// get the sort index
-		final int[] r = _dict.sort();
+		final int nondefault = counts[0];
+		final int defaultLength = _numRows - nondefault;
+		final int base = _dict.getValue(0, 0, 1) >= _defaultTuple[0] ? defaultLength : 0;
 
-		// find default value position.
-		// todo use binary search for minor improvements.
-		final double def = _defaultTuple[0];
-		int defIdx = counts.length;
-		int nondefault = 0;
-		for(int i = 0; i < r.length; i++) {
-			if(defIdx == counts.length && _dict.getValue(r[i], 0, 1) >= def) {
-				defIdx = i;
-			}
-			nondefault += counts[i];
-		}
-
-		int defaultLength = _numRows - nondefault;
-		int[] offsets = new int[nondefault];
-
-		int off = 0;
-		for(int i = 0; i < counts.length; i++) {
-			if(i < defIdx) {
-				for(int j = 0; j < counts[r[i]]; j++) {
-					offsets[off] = off;
-				}
-			}
-			else {// if( i >= defIdx){
-				for(int j = 0; j < counts[r[i]]; j++) {
-					offsets[off] = off + defaultLength;
-				}
-			}
-		}
+		final int[] offsets = new int[nondefault];
+		for(int j = 0; j < nondefault; j++)
+			offsets[j] = base + j;
 
 		AOffset o = OffsetFactory.createOffset(offsets);
 		return ColGroupSDCSingle.create(_colIndexes, _numRows, _dict, _defaultTuple, o, counts);

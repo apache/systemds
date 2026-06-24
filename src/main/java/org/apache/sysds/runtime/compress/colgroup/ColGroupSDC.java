@@ -42,6 +42,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.RemoveEmptyOffsetsTmp;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
@@ -508,10 +509,10 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 		AOffset indexes, AMapToData data, int[] counts, int def, int nVal) {
 
 		if(d == null) {
-			if(def <= 0){
+			if(def <= 0) {
 				if(max > 0)
 					return ColGroupEmpty.create(max);
-				else 
+				else
 					return null;
 			}
 			else if(def > max && max > 0)
@@ -871,6 +872,23 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 			res[i] = create(ci, _numRows / multiplier, _dict, _defaultTuple, offs[i], maps[i], null);
 		}
 		return res;
+	}
+
+	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+		final RemoveEmptyOffsetsTmp offsetTmp = _indexes.removeEmptyRows(selectV, rOut);
+		final AMapToData nm = _data.removeEmpty(offsetTmp.select);
+		return ColGroupSDC.create(_colIndexes, rOut, _dict, _defaultTuple, offsetTmp.retOffset, nm, null);
+	}
+
+	@Override
+	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns) {
+		double[] ref = new double[selectedColumns.size()];
+		for(int i = 0; i < selectedColumns.size(); i++) {
+			ref[i] = _defaultTuple[selectedColumns.get(i)];
+		}
+		return ColGroupSDC.create(newColumnIDs, _numRows, _dict.sliceColumns(selectedColumns, getNumCols()), ref,
+			_indexes, _data, null);
 	}
 
 	@Override

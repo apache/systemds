@@ -1009,4 +1009,17 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		for(int rix = rl; rix < ru; rix++)
 			c[rix] *= preAgg[it.next()];
 	}
+
+	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+		ColGroupDDC g = (ColGroupDDC) convertToDDC();
+		return g.removeEmptyRows(selectV, rOut);
+	}
+
+	@Override
+	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs,
+		org.apache.sysds.runtime.compress.utils.IntArrayList selectedColumns) {
+		ColGroupDDC g = (ColGroupDDC) convertToDDC();
+		return g.removeEmptyColsSubset(newColumnIDs, selectedColumns);
+	}
 }

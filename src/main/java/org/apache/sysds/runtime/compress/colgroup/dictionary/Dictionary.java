@@ -31,6 +31,7 @@ import java.util.Set;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -1339,6 +1340,12 @@ public class Dictionary extends ACachingMBDictionary {
 		System.arraycopy(_values, 0, retV, 0, _values.length);
 		System.arraycopy(row, 0, retV, _values.length, row.length);
 		return new Dictionary(retV);
+	}
+
+	@Override
+	public IDictionary sliceColumns(IntArrayList selectedColumns, int nCol) {
+		// TODO: make specialized version for this.
+		return getMBDict(nCol).sliceColumns(selectedColumns, nCol);
 	}
 
 }

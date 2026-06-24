@@ -27,8 +27,6 @@ import java.math.MathContext;
 import java.util.Arrays;
 import java.util.Set;
 
-import jdk.incubator.vector.DoubleVector;
-import jdk.incubator.vector.VectorSpecies;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ArrayIndex;
@@ -36,6 +34,7 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.RangeIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.SingleIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.TwoIndex;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
@@ -60,6 +59,9 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
+
+import jdk.incubator.vector.DoubleVector;
+import jdk.incubator.vector.VectorSpecies;
 
 public class MatrixBlockDictionary extends ADictionary {
 
@@ -2799,6 +2801,48 @@ public class MatrixBlockDictionary extends ADictionary {
 				ret[offOut + sIdx[k]] += v * sVals[k];
 			}
 		}
+	}
+
+	@Override
+	public IDictionary sliceColumns(IntArrayList selectedColumns, int nCol) {
+
+		final double[] ret = sliceColumns(_data, selectedColumns);
+
+		return new Dictionary(ret);
+	}
+
+	public static double[] sliceColumns(MatrixBlock mb, IntArrayList selectedColumns) {
+		// TODO: Optimize to allow sparse outputs. and change output type to MatrixBlock.
+		final int outC = selectedColumns.size();
+		final int nRow = mb.getNumRows();
+		if((long) nRow * outC > (long) Integer.MAX_VALUE)
+			throw new NotImplementedException("Not supported large output blocks for slicing dictionary columns");
+		final double[] ret = new double[nRow * outC];
+		if(mb.isEmpty())
+			return ret;
+
+		// Read through the current representation without mutating the (shared, immutable) dictionary block.
+		if(mb.isInSparseFormat()) {
+			final SparseBlock sb = mb.getSparseBlock();
+			for(int i = 0; i < nRow; i++) {
+				if(sb.isEmpty(i))
+					continue;
+				final int offOut = i * outC;
+				for(int j = 0; j < outC; j++)
+					ret[offOut + j] = sb.get(i, selectedColumns.get(j));
+			}
+		}
+		else {
+			final DenseBlock db = mb.getDenseBlock();
+			for(int i = 0; i < nRow; i++) {
+				final double[] vals = db.values(i);
+				final int offIn = db.pos(i);
+				final int offOut = i * outC;
+				for(int j = 0; j < outC; j++)
+					ret[offOut + j] = vals[offIn + selectedColumns.get(j)];
+			}
+		}
+		return ret;
 	}
 
 }

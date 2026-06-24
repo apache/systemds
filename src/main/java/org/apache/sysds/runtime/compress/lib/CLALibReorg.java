@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.functionobjects.SortIndex;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -65,12 +66,19 @@ public class CLALibReorg {
             // the compressed matrix. https://issues.apache.org/jira/browse/SYSTEMDS-3025
 			return transpose(cmb, ret, op.getNumThreads());
 		}
-		else {
-			String message = !warned ? op.getClass().getSimpleName() + " -- " + op.fn.getClass().getSimpleName() : null;
-			MatrixBlock tmp = cmb.getUncompressed(message, op.getNumThreads());
-			warned = true;
-			return tmp.reorgOperations(op, ret, startRow, startColumn, length);
+		else if(op.fn instanceof SortIndex) {
+			// order: keep the result compressed when a single column / single group is sorted ascending.
+			MatrixBlock res = CLALibSort.sort(cmb, (SortIndex) op.fn);
+			if(res != null)
+				return res;
+			// otherwise fall through to the decompression fallback below.
 		}
+
+		// Decompression fallback for reorg operations not supported directly on the compressed representation.
+		String message = !warned ? op.getClass().getSimpleName() + " -- " + op.fn.getClass().getSimpleName() : null;
+		MatrixBlock tmp = cmb.getUncompressed(message, op.getNumThreads());
+		warned = true;
+		return tmp.reorgOperations(op, ret, startRow, startColumn, length);
 	}
 
 	private static MatrixBlock transpose(CompressedMatrixBlock cmb, MatrixBlock ret, int k) {

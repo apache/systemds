@@ -22,35 +22,45 @@ package org.apache.sysds.runtime.compress.lib;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.functionobjects.SortIndex;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixValue;
 
-public class CLALibSort {
+public final class CLALibSort {
 
-	public static MatrixBlock sort(CompressedMatrixBlock mb, MatrixValue weights, MatrixBlock result, int k) {
-		// force uncompressed weights
-		weights = CompressedMatrixBlock.getUncompressed(weights);
-
-		if(mb.getNumColumns() == 1 && mb.getColGroups().size() == 1 && weights == null) {
-			return sortSingleCol(mb, k);
-		}
-
-		// fallback to uncompressed.
-		return CompressedMatrixBlock//
-			.getUncompressed(mb, "sortOperations")//
-			.sortOperations(weights, result);
+	private CLALibSort() {
+		// private constructor for utility class.
 	}
 
-	private static MatrixBlock sortSingleCol(CompressedMatrixBlock mb, int k) {
+	/**
+	 * Sort (order) a compressed matrix in place of the {@code order} built-in, while keeping the result compressed.
+	 *
+	 * The compressed fast-path only supports the case the user can benefit from: a single column held in a single column
+	 * group, sorted ascending and returning the sorted values (not the index permutation). For everything else (multiple
+	 * columns, multiple column groups, descending order, index return, or a column-group encoding without a sort
+	 * implementation) this returns {@code null} so the caller can fall back to a decompressed reorg.
+	 *
+	 * @param mb the compressed matrix to sort
+	 * @param fn the sort specification carried by the reorg operator
+	 * @return the sorted compressed matrix, or {@code null} if the compressed fast-path does not apply
+	 */
+	public static MatrixBlock sort(CompressedMatrixBlock mb, SortIndex fn) {
+		final boolean singleColumn = mb.getNumColumns() == 1 && mb.getColGroups().size() == 1;
+		if(!singleColumn || fn.getDecreasing() || fn.getIndexReturn())
+			return null;
 
-		AColGroup g = mb.getColGroups().get(0);
-
-		AColGroup r = g.sort();
-
-		List<AColGroup> rg = new ArrayList<>();
-		rg.add(r);
-		return new CompressedMatrixBlock(mb.getNumRows(), mb.getNumColumns(), mb.getNonZeros(), false, rg);
+		try {
+			final AColGroup g = mb.getColGroups().get(0);
+			final AColGroup sorted = g.sort();
+			final List<AColGroup> rg = new ArrayList<>(1);
+			rg.add(sorted);
+			return new CompressedMatrixBlock(mb.getNumRows(), mb.getNumColumns(), mb.getNonZeros(), false, rg);
+		}
+		catch(NotImplementedException e) {
+			// the column-group encoding does not implement sort -> let the caller decompress.
+			return null;
+		}
 	}
 }

@@ -27,6 +27,7 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.functionobjects.SortIndex;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixValue;
 
 public final class CLALibSort {
 
@@ -51,16 +52,102 @@ public final class CLALibSort {
 		if(!singleColumn || fn.getDecreasing() || fn.getIndexReturn())
 			return null;
 
+		final AColGroup sorted = sortSingleColumn(mb);
+		if(sorted == null)
+			return null;
+
+		final List<AColGroup> rg = new ArrayList<>(1);
+		rg.add(sorted);
+		return new CompressedMatrixBlock(mb.getNumRows(), mb.getNumColumns(), mb.getNonZeros(), false, rg);
+	}
+
+	/**
+	 * Compute the sorted value/weight table used by the quantile/median/IQM operations (the {@code sort} / qsort lop),
+	 * exploiting compression to sort the few distinct values instead of all rows.
+	 *
+	 * The compressed fast-path applies to an unweighted sort of a single column held in a single column group. The
+	 * produced table is bit-for-bit identical to {@link MatrixBlock#sortOperations(MatrixValue, MatrixBlock, int)}: a
+	 * {@code (1 + nnz) x 2} matrix holding one row per non-zero value (weight 1) plus a single collapsed row for the
+	 * zeros (weight = number of zeros), sorted ascending by value. For every other case (weights present, multiple
+	 * columns or groups, or an encoding without a sort implementation) it falls back to a decompressed sort.
+	 *
+	 * @param mb      the compressed matrix to sort
+	 * @param weights optional per-row weights, or {@code null}
+	 * @param result  the result matrix (reused by the fallback)
+	 * @param k       the parallelization degree
+	 * @return the sorted value/weight table
+	 */
+	public static MatrixBlock sort(CompressedMatrixBlock mb, MatrixValue weights, MatrixBlock result, int k) {
+		final MatrixBlock w = CompressedMatrixBlock.getUncompressed(weights);
+		if(w == null && mb.getNumColumns() == 1 && mb.getColGroups().size() == 1) {
+			final MatrixBlock fast = sortTableSingleColumn(mb, k);
+			if(fast != null)
+				return fast;
+		}
+
+		// fallback to uncompressed sort.
+		return CompressedMatrixBlock.getUncompressed(mb, "sortOperations", k).sortOperations(w, result, k);
+	}
+
+	private static AColGroup sortSingleColumn(CompressedMatrixBlock mb) {
 		try {
-			final AColGroup g = mb.getColGroups().get(0);
-			final AColGroup sorted = g.sort();
-			final List<AColGroup> rg = new ArrayList<>(1);
-			rg.add(sorted);
-			return new CompressedMatrixBlock(mb.getNumRows(), mb.getNumColumns(), mb.getNonZeros(), false, rg);
+			return mb.getColGroups().get(0).sort();
 		}
 		catch(NotImplementedException e) {
 			// the column-group encoding does not implement sort -> let the caller decompress.
 			return null;
 		}
+	}
+
+	private static MatrixBlock sortTableSingleColumn(CompressedMatrixBlock mb, int k) {
+		final long lnnz = mb.getNonZeros();
+		if(lnnz < 0) // unknown number of non-zeros, cannot size the table.
+			return null;
+
+		final AColGroup sorted = sortSingleColumn(mb);
+		if(sorted == null)
+			return null;
+
+		final int nRows = mb.getNumRows();
+		final int nnz = (int) lnnz;
+		final int zeroCount = nRows - nnz;
+
+		// decompress the already-sorted single column once (ascending, zeros contiguous).
+		final List<AColGroup> rg = new ArrayList<>(1);
+		rg.add(sorted);
+		final MatrixBlock sortedCol = new CompressedMatrixBlock(nRows, 1, lnnz, false, rg).decompress(k);
+
+		// build the value/weight table: one row per non-zero value, plus a single collapsed zero row.
+		final MatrixBlock tdw = new MatrixBlock(1 + nnz, 2, false);
+		tdw.allocateDenseBlock();
+		int w = 0;
+		boolean zeroWritten = false;
+		for(int i = 0; i < nRows; i++) {
+			final double v = sortedCol.get(i, 0);
+			if(v < 0) {
+				tdw.set(w, 0, v);
+				tdw.set(w, 1, 1);
+				w++;
+			}
+			else {
+				if(!zeroWritten) {
+					tdw.set(w, 0, 0);
+					tdw.set(w, 1, zeroCount);
+					w++;
+					zeroWritten = true;
+				}
+				if(v != 0) {
+					tdw.set(w, 0, v);
+					tdw.set(w, 1, 1);
+					w++;
+				}
+			}
+		}
+		if(!zeroWritten) { // all values negative: the zero row sorts to the end.
+			tdw.set(w, 0, 0);
+			tdw.set(w, 1, zeroCount);
+		}
+		tdw.recomputeNonZeros();
+		return tdw;
 	}
 }

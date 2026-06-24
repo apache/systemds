@@ -126,6 +126,79 @@ public class CompressedSortTest {
 		runFallback(generate(ROWS, 3, 6, 1.0, 1, 30, 31), CompressionType.DDC, ASC);
 	}
 
+	@Test
+	public void quantileTableDDC() {
+		runQuantile(generate(ROWS, 1, 8, 1.0, 1, 50, 7), CompressionType.DDC);
+	}
+
+	@Test
+	public void quantileTableDDCWithNegatives() {
+		runQuantile(generate(ROWS, 1, 10, 1.0, -25, 25, 13), CompressionType.DDC);
+	}
+
+	@Test
+	public void quantileTableSDCZeros() {
+		runQuantile(generate(ROWS, 1, 6, 0.2, 1, 40, 23), CompressionType.SDC);
+	}
+
+	@Test
+	public void quantileTableSDCWithNegatives() {
+		runQuantile(generate(ROWS, 1, 8, 0.3, -20, 20, 41), CompressionType.SDC);
+	}
+
+	@Test
+	public void quantileTableAllNegative() {
+		runQuantile(generate(ROWS, 1, 8, 0.4, -50, -1, 57), CompressionType.SDC);
+	}
+
+	@Test
+	public void quantileTableConst() {
+		MatrixBlock mb = new MatrixBlock(ROWS, 1, false);
+		for(int i = 0; i < ROWS; i++)
+			mb.set(i, 0, 3);
+		mb.recomputeNonZeros();
+		runQuantile(mb, CompressionType.CONST);
+	}
+
+	@Test
+	public void quantileWeightedFallback() {
+		MatrixBlock mb = generate(ROWS, 1, 8, 1.0, 1, 50, 7);
+		MatrixBlock weights = new MatrixBlock(ROWS, 1, false);
+		Random r = new Random(123);
+		for(int i = 0; i < ROWS; i++)
+			weights.set(i, 0, r.nextInt(4) + 1);
+		weights.recomputeNonZeros();
+		MatrixBlock expected = new MatrixBlock(mb).sortOperations(weights, new MatrixBlock(), 1);
+
+		CompressedMatrixBlock cmb = compress(mb, CompressionType.DDC);
+		MatrixBlock actual = cmb.sortOperations(weights, new MatrixBlock(), 1);
+
+		expected.recomputeNonZeros();
+		actual.recomputeNonZeros();
+		TestUtils.compareMatrices(expected, actual, 0.0, "weighted sortOperations fallback");
+	}
+
+	private void runQuantile(MatrixBlock mb, CompressionType ct) {
+		// reference is computed on a copy because compression may consume the input.
+		MatrixBlock expected = new MatrixBlock(mb).sortOperations(null, new MatrixBlock(), 1);
+
+		CompressedMatrixBlock cmb = compress(mb, ct);
+		assertEquals("Expected a single column group", 1, cmb.getColGroups().size());
+
+		MatrixBlock actual = cmb.sortOperations(null, new MatrixBlock(), 1);
+
+		// sortOperations leaves the non-zero count unmaintained; recompute so the value comparison reads the data.
+		expected.recomputeNonZeros();
+		actual.recomputeNonZeros();
+
+		// the value/weight table must match the uncompressed reference bit-for-bit ...
+		TestUtils.compareMatrices(expected, actual, 0.0, "sortOperations table " + ct);
+		// ... so the downstream median/quantile picks are identical.
+		assertEquals("median " + ct, expected.median(), actual.median(), 0.0);
+		assertEquals("q25 " + ct, expected.pickValue(0.25), actual.pickValue(0.25), 0.0);
+		assertEquals("q90 " + ct, expected.pickValue(0.90), actual.pickValue(0.90), 0.0);
+	}
+
 	private void runCompressed(MatrixBlock mb, CompressionType ct) {
 		CompressedMatrixBlock cmb = compress(mb, ct);
 		assertEquals("Expected a single column group", 1, cmb.getColGroups().size());

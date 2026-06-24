@@ -308,11 +308,8 @@ public class ColGroupFactory {
 				return compressLinearFunctional(colIndexes, in, cs);
 			}
 		}
-		else if(ct == CompressionType.PiecewiseLinear) {
+		else if(ct == CompressionType.PiecewiseLinearCompressed) {
 			return compressPiecewiseLinearFunctional(colIndexes, in, cs);
-		}
-		else if(ct == CompressionType.PiecewiseLinearSuccessive) {
-			return compressPiecewiseLinearFunctionalSuccessive(colIndexes, in, cs);
 		}
 		else if(ct == CompressionType.DDCFOR) {
 			AColGroup g = directCompressDDC(colIndexes, cg);

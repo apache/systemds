@@ -339,7 +339,7 @@ public class ColGroupPiecewiseLinearCompressedTest extends AutomatedTestBase {
 		EstimationFactors facts = new EstimationFactors(2, 10);
 
 		CompressedSizeInfoColGroup info = new CompressedSizeInfoColGroup(cols, facts,
-			AColGroup.CompressionType.PiecewiseLinear);
+			AColGroup.CompressionType.PiecewiseLinearCompressed);
 
 		List<CompressedSizeInfoColGroup> infos = Arrays.asList(info);
 		CompressedSizeInfo csi = new CompressedSizeInfo(infos);
@@ -357,7 +357,7 @@ public class ColGroupPiecewiseLinearCompressedTest extends AutomatedTestBase {
 		}
 
 		CompressionSettings cs = new CompressionSettingsBuilder().addValidCompression(
-			AColGroup.CompressionType.PiecewiseLinear).create();
+			AColGroup.CompressionType.PiecewiseLinearCompressed).create();
 
 		CompressedSizeInfo csi = createTestCompressedSizeInfo();
 

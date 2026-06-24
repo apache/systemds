@@ -62,16 +62,25 @@ public class BuiltinLHSTest extends AutomatedTestBase
 
 	
 	@Test
-	public void testTwoDim() {
-		runLhsTest(5,2);
+	public void testRandomTwoDim() {
+		runLhsTest(5,2,5,"random");
 	}
 
 	@Test
-	public void testMultiDim() {
-		runLhsTest(10,4);
+	public void testRandomMultiDim() {
+		runLhsTest(10,4,5,"random");
 	}
 
-	private void runLhsTest(int N,int d)
+	@Test
+	public void testImproved() {
+		runLhsTest(10,4,5,"improved");
+	}
+	@Test
+	public void testMaximin() {
+		runLhsTest(10,4,5,"maximin");
+	}
+
+	private void runLhsTest(int N,int d, int repetitions, String method)
 	{
 		ExecMode platformOld = setExecMode(ExecMode.HYBRID);
 
@@ -80,7 +89,7 @@ public class BuiltinLHSTest extends AutomatedTestBase
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", Integer.toString(N), Integer.toString(d), output("C")};
+			programArgs = new String[]{"-args", Integer.toString(N), Integer.toString(d), Integer.toString(repetitions), method ,output("C")};
 
 			//execute test
 			runTest(true, false, null, -1);

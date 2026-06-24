@@ -36,10 +36,139 @@
 #            Contains the coordinates of sampled points
 # ------------------------------------------------------------------------------------------------------
 
-lhs = function(Integer N, Integer d)
+minLhsDistance = function(Matrix[Double] M)
+  return (Double minD) {
+    D = dist(M) + diag(matrix(1/0, rows = nrow(M), cols = 1))
+    minD = min(D)
+  }
+
+lhs = function(Integer N = 10, Integer d = 2, String method = "random", Integer random_repetitions = 1)
   return (Matrix[Double] M) {
-    M = sample(N,N)
-    for (i in 1:d-1) {
-        M = cbind(M,sample(N,N));
+
+    if (method == "random"){
+
+      current_best = 0
+      M = matrix(0,rows = N, cols = d)
+      for (i in 1:random_repetitions) {
+
+        newM = matrix(0,rows = N, cols = d)
+        for (i in 1:d) {
+            newM[,i] = sample(N,N);
+        }
+
+        current = minLhsDistance(newM)
+        if(current > current_best){
+          M = newM
+          current_best = current
+        }
+      }
     }
+
+    else if (method == "improved"){
+      
+      # optimal distance
+      opt2 = (N / (N^(1/d)))^2
+
+      # available ints per column
+      available_coords = seq(1,N) %*% matrix(1,rows = 1, cols = d)
+
+      # generate first point at random
+      first_sample = sample(N,d,TRUE)
+      M = t(first_sample)
+
+      # replace used ints for each column, with last sample
+      # in subsequent runs we only look at the first N-1,N-2,... rows
+      replacement_mask = table(first_sample,seq(1,N),N,d)
+      available_coords = (1 - replacement_mask) * available_coords + (matrix(1,rows = N, cols = 1) %*% (available_coords[N,])) * replacement_mask
+
+      # for the next N -2 points:
+      # generate reps candidates and choose the candidate,
+      # for which the minimal distance to the already chosen points
+      # is closest to the optimum distance
+      # and update the available_coords matrix
+
+      for (i in 2:N-1){
+          coords_left = N - i + 1
+          current_best = 1/0
+          row = matrix(0,rows = 1, cols = d)
+          replacement_mask = matrix(0,rows = coords_left, cols = d)
+
+          for(j in 1:random_repetitions){
+              # random mask for coordinates generation
+              rand = table(sample(coords_left,d,TRUE),seq(1,N),N,d)
+              
+              # get coordinates and flatten to row vector    
+              vals_matrix = rand * available_coords
+              row_candidate =  matrix(1,rows = 1, cols = N) %*% vals_matrix
+              
+              # calculate minimal squared euclidean distance between candidate and already picked points
+              minD = min(rowSums((M - (matrix(1, rows = nrow(M), cols = 1) %*% row_candidate))^2))
+
+              # check if current candidate is better then the best
+              if(abs(opt2-minD) < current_best){
+                  row = row_candidate
+                  current_best = abs(opt2-minD)
+                  replacement_mask = rand
+              }
+          }
+          M = rbind(M,row)
+          # replace chosen coords with last, not picked coords
+          available_coords= (1 - replacement_mask) * available_coords + (matrix(1,rows = N, cols = 1) %*% (available_coords[coords_left,])) * replacement_mask
+      }
+      print(available_coords)
+      # for the last point there is only one choice left
+      M = rbind(M,available_coords[1,])
+    }
+    
+    else if (method == "maximin"){
+
+      # available ints per column
+      available_coords = seq(1,N) %*% matrix(1,rows = 1, cols = d)
+
+      # generate first point at random
+      first_sample = sample(N,d,TRUE)
+      M = t(first_sample)
+
+      # replace used ints for each column, with last sample
+      # in subsequent runs we only look at the first N-1,N-2,... rows
+      replacement_mask = table(first_sample,seq(1,N),N,d)
+      available_coords = (1 - replacement_mask) * available_coords + (matrix(1,rows = N, cols = 1) %*% (available_coords[N,])) * replacement_mask
+
+      # for the next N -2 points:
+      # generate reps candidates and choose the candidate,
+      # for which the minimal distance to the already chosen points is maximal
+      # and update the available_coords matrix
+
+      for (i in 2:N-1){
+          coords_left = N - i + 1
+          current_best = 0
+          row = matrix(0,rows = 1, cols = d)
+          replacement_mask = matrix(0,rows = coords_left, cols = d)
+
+          for(j in 1:random_repetitions){
+              # random mask for coordinates generation
+              rand = table(sample(coords_left,d,TRUE),seq(1,N),N,d)
+              
+              # get coordinates and flatten to row vector    
+              vals_matrix = rand * available_coords
+              row_candidate =  matrix(1,rows = 1, cols = N) %*% vals_matrix
+              
+              # calculate minimal squared euclidean distance between candidate and already picked points
+              minD = min(rowSums((M - (matrix(1, rows = nrow(M), cols = 1) %*% row_candidate))^2))
+
+              # check if current candidate is better then the best
+              if(minD > current_best){
+                  row = row_candidate
+                  current_best = minD
+                  replacement_mask = rand
+              }
+          }
+          M = rbind(M,row)
+          # replace chosen coords with last, not picked coords
+          available_coords= (1 - replacement_mask) * available_coords + (matrix(1,rows = N, cols = 1) %*% (available_coords[coords_left,])) * replacement_mask
+      }
+      # for the last point there is only one choice left
+      M = rbind(M,available_coords[1,])
+    }
+    
   }

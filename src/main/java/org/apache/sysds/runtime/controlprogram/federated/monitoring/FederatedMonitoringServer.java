@@ -34,6 +34,7 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.cors.CorsConfigBuilder;
 import io.netty.handler.codec.http.cors.CorsHandler;
+import io.netty.util.concurrent.DefaultThreadFactory;
 
 public class FederatedMonitoringServer {
 	protected static Logger log = Logger.getLogger(FederatedMonitoringServer.class);
@@ -51,8 +52,10 @@ public class FederatedMonitoringServer {
 
 	public void run() {
 		log.info("Setting up Federated Monitoring Backend on port " + _port);
-		EventLoopGroup bossGroup = new NioEventLoopGroup();
-		EventLoopGroup workerGroup = new NioEventLoopGroup();
+		// Daemon event loops so a leaked in-JVM (test) monitoring server cannot block JVM exit. This mirrors
+		// the daemon factory used for the federated worker and client in FederatedWorker and FederatedData.
+		EventLoopGroup bossGroup = new NioEventLoopGroup(0, new DefaultThreadFactory("fed-monitoring-boss", true));
+		EventLoopGroup workerGroup = new NioEventLoopGroup(0, new DefaultThreadFactory("fed-monitoring-pool", true));
 
 		try {
 			var corsConfig = CorsConfigBuilder.forAnyOrigin()

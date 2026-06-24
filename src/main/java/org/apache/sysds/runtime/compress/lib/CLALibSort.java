@@ -26,8 +26,10 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.functionobjects.SortIndex;
+import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
+import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 
 public final class CLALibSort {
 
@@ -80,7 +82,7 @@ public final class CLALibSort {
 	public static MatrixBlock sort(CompressedMatrixBlock mb, MatrixValue weights, MatrixBlock result, int k) {
 		final MatrixBlock w = CompressedMatrixBlock.getUncompressed(weights);
 		if(w == null && mb.getNumColumns() == 1 && mb.getColGroups().size() == 1) {
-			final MatrixBlock fast = sortTableSingleColumn(mb, k);
+			final MatrixBlock fast = sortTableSingleColumn(mb, result, k);
 			if(fast != null)
 				return fast;
 		}
@@ -99,7 +101,7 @@ public final class CLALibSort {
 		}
 	}
 
-	private static MatrixBlock sortTableSingleColumn(CompressedMatrixBlock mb, int k) {
+	private static MatrixBlock sortTableSingleColumn(CompressedMatrixBlock mb, MatrixBlock result, int k) {
 		final long lnnz = mb.getNonZeros();
 		if(lnnz < 0) // unknown number of non-zeros, cannot size the table.
 			return null;
@@ -147,7 +149,17 @@ public final class CLALibSort {
 			tdw.set(w, 0, 0);
 			tdw.set(w, 1, zeroCount);
 		}
-		tdw.recomputeNonZeros();
-		return tdw;
+
+		// Emit through the same reorg used by MatrixBlock.sortOperations so the produced table is
+		// bit-for-bit identical to the uncompressed path, including its (intentionally unmaintained)
+		// non-zero metadata. This keeps downstream quantile/median consumers and result comparisons
+		// consistent regardless of whether the input was compressed.
+		if(result == null)
+			result = new MatrixBlock(1 + nnz, 2, false);
+		else
+			result.reset(1 + nnz, 2, false);
+		final ReorgOperator rop = new ReorgOperator(new SortIndex(1, false, false), k);
+		LibMatrixReorg.reorg(tdw, result, rop);
+		return result;
 	}
 }

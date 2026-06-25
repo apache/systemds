@@ -1022,4 +1022,10 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		ColGroupDDC g = (ColGroupDDC) convertToDDC();
 		return g.removeEmptyColsSubset(newColumnIDs, selectedColumns);
 	}
+
+	@Override
+	public AColGroup sort() {
+		ColGroupDDC g = (ColGroupDDC) convertToDDC();
+		return g.sort();
+	}
 }

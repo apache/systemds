@@ -2845,4 +2845,13 @@ public class MatrixBlockDictionary extends ADictionary {
 		return ret;
 	}
 
+	@Override
+	public int[] sort() {
+		if(_data.getNumColumns() > 1)
+			throw new RuntimeException("Not supported sort on multicolumn dictionaries");
+		_data.sparseToDense();
+
+		return Dictionary.sort(_data.getDenseBlockValues());
+	}
+
 }

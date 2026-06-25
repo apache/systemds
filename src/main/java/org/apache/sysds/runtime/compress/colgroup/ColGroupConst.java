@@ -769,4 +769,9 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns) {
 		return ColGroupConst.create(newColumnIDs, _dict.sliceColumns(selectedColumns, getNumCols()));
 	}
+
+	@Override
+	public AColGroup sort() {
+		return this;
+	}
 }

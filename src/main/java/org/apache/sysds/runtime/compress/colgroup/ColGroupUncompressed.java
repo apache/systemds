@@ -56,6 +56,7 @@ import org.apache.sysds.runtime.functionobjects.CM;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
+import org.apache.sysds.runtime.functionobjects.SortIndex;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
@@ -65,6 +66,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
+import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
@@ -1330,5 +1332,15 @@ public class ColGroupUncompressed extends AColGroup {
 			sb.append(" don't print uncompressed matrix because it is to big.");
 
 		return sb.toString();
+	}
+
+	@Override
+	public AColGroup sort() {
+		if(getNumCols() > 1)
+			throw new NotImplementedException();
+		// sortOperations builds a value/weight table for quantiles; for an ascending column sort we reorder the rows.
+		MatrixBlock sorted = _data.reorgOperations(new ReorgOperator(new SortIndex(1, false, false), 1),
+			new MatrixBlock(), 0, 0, 0);
+		return create(sorted, _colIndexes);
 	}
 }

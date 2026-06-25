@@ -1071,4 +1071,24 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 		sb.append(_indexes.toString());
 		return sb.toString();
 	}
+
+	@Override
+	public AColGroup sort() {
+		if(getNumCols() > 1)
+			throw new NotImplementedException();
+
+		// Only a single non-default value exists, so sorting is a contiguous block of that value placed before the
+		// zeros (default) if it is negative, and after the zeros otherwise.
+		final int[] counts = getCounts();
+		final int nondefault = counts[0];
+		final int defaultLength = _numRows - nondefault;
+		final int base = _dict.getValue(0, 0, 1) >= 0 ? defaultLength : 0;
+
+		final int[] offsets = new int[nondefault];
+		for(int j = 0; j < nondefault; j++)
+			offsets[j] = base + j;
+
+		AOffset o = OffsetFactory.createOffset(offsets);
+		return ColGroupSDCSingleZeros.create(_colIndexes, _numRows, _dict, o, counts);
+	}
 }

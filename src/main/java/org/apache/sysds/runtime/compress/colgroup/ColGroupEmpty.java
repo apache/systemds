@@ -488,4 +488,9 @@ public class ColGroupEmpty extends AColGroupCompressed
 	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns){
 		return new ColGroupEmpty(newColumnIDs);
 	}
+
+	@Override
+	public AColGroup sort() {
+		return this;
+	}
 }

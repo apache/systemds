@@ -203,6 +203,40 @@ public class CompressedSortTest {
 		TestUtils.compareMatrices(expected, actual, 0.0, "weighted sortOperations fallback");
 	}
 
+	@Test
+	public void pickDirectlyOnCompressedColumnDDC() {
+		runDirectPick(generate(ROWS, 1, 8, 1.0, 1, 50, 7), CompressionType.DDC);
+	}
+
+	@Test
+	public void pickDirectlyOnCompressedColumnSDCZeros() {
+		runDirectPick(generate(ROWS, 1, 6, 0.2, 1, 40, 23), CompressionType.SDC);
+	}
+
+	@Test
+	public void pickDirectlyOnCompressedColumnWithNegatives() {
+		runDirectPick(generate(ROWS, 1, 8, 0.3, -20, 20, 41), CompressionType.SDC);
+	}
+
+	/**
+	 * Quantile picking normally runs on the uncompressed value/weight table produced by sortOperations, so the
+	 * inherited (no longer overridden) pickValue path is never reached on a compressed block through that flow. This
+	 * exercises it directly: the single column is sorted while staying compressed, then pickValue is invoked on the
+	 * CompressedMatrixBlock itself and must match the uncompressed sorted column element for element. median() is not
+	 * used here because it requires the two-column weighted representation.
+	 */
+	private void runDirectPick(MatrixBlock mb, CompressionType ct) {
+		CompressedMatrixBlock cmb = compress(mb, ct);
+		MatrixBlock sortedC = cmb.reorgOperations(ASC, new MatrixBlock(), 0, 0, 0);
+		assertTrue("Expected the sorted result to stay compressed for " + ct, sortedC instanceof CompressedMatrixBlock);
+		MatrixBlock sortedU = mb.reorgOperations(ASC, new MatrixBlock(), 0, 0, 0);
+
+		for(double q : new double[] {0.0, 0.25, 0.5, 0.75, 0.9, 1.0}) {
+			assertEquals("pick q=" + q + " " + ct, sortedU.pickValue(q, false), sortedC.pickValue(q, false), 0.0);
+			assertEquals("pick avg q=" + q + " " + ct, sortedU.pickValue(q, true), sortedC.pickValue(q, true), 0.0);
+		}
+	}
+
 	private void runQuantile(MatrixBlock mb, CompressionType ct) {
 		// reference is computed on a copy because compression may consume the input.
 		MatrixBlock expected = new MatrixBlock(mb).sortOperations(null, new MatrixBlock(), 1);

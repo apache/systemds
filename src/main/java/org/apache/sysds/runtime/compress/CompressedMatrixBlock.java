@@ -1202,7 +1202,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock sparseToDense(int k) {
-		return this; // do nothing
+		// a compressed block has no sparse representation to convert; return unchanged
+		return this;
 	}
 
 	@Override

@@ -1315,7 +1315,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		else if( !sparse && sparseDst )
 			denseToSparse(allowCSR, k);
 	}
-
+	
 	public static boolean evalSparseFormatInMemory(DataCharacteristics dc) {
 		return evalSparseFormatInMemory(dc.getRows(), dc.getCols(), dc.getNonZeros());
 	}
@@ -4759,7 +4759,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * Pick the quantiles out of this matrix. If this matrix contains two columns it is weighted quantile picking.
 	 * If a single column it is unweighted.
 	 * 
-	 * Note the values are assumed to be sorted
+	 * Note the values are assumed to be sorted.
 	 * 
 	 * @param quantiles The quantiles to pick
 	 * @param ret The result matrix
@@ -4789,11 +4789,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		
 		return output;
 	}
-		
+	
 	/**
-	 * Pick the median quantile from this matrix. if this matrix is two columns, it is weighted picking else it is unweighted.
+	 * Pick the median value from this matrix, using the weight column to locate the median position.
 	 * 
-	 * Note the values are assumed to be sorted
+	 * Note the values are assumed to be sorted.
 	 * 
 	 * @return The median value
 	 */
@@ -4803,9 +4803,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 
 	/**
-	 * Pick a specific quantile from this matrix. if this matrix is two columns, it is weighted picking else it is unweighted.
+	 * Pick a specific quantile from this matrix. If this matrix has two columns it is weighted picking, otherwise it is unweighted.
 	 * 
-	 * Note the values are assumed to be sorted
+	 * Note the values are assumed to be sorted.
 	 * 
 	 * @param quantile The quantile to pick
 	 * @return The quantile
@@ -4815,9 +4815,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 	
 	/**
-	 * Pick a specific quantile from this matrix. if this matrix is two columns, it is weighted picking else it is unweighted.
+	 * Pick a specific quantile from this matrix. If this matrix has two columns it is weighted picking, otherwise it is unweighted.
 	 * 
-	 * Note the values are assumed to be sorted
+	 * Note the values are assumed to be sorted.
 	 * 
 	 * @param quantile The quantile to pick
 	 * @param average If the quantile is averaged.
@@ -4830,11 +4830,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 
 	private double pickUnweightedValue(double quantile, boolean average) {
-		double pos = quantile * rlen;
+		final int rows = getNumRows();
+		double pos = quantile * rows;
 		if(average && (int) pos != pos)
-			return (get((int) Math.floor(pos), 0) + get(Math.min(rlen - 1, (int) Math.ceil(pos)), 0)) / 2;
+			return (get((int) Math.floor(pos), 0) + get(Math.min(rows - 1, (int) Math.ceil(pos)), 0)) / 2;
 		else
-			return get(Math.min(rlen - 1, (int) Math.round(pos)), 0);
+			return get(Math.min(rows - 1, (int) Math.round(pos)), 0);
 	}
 
 	private double pickWeightedValue(double quantile, boolean average) {
@@ -5391,8 +5392,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * (i1,j1,v2) from input2 (that)
 	 * (w)  from scalar_input3 (scalarThat2)
 	 *
-	 * @param thatMatrix matrix value, the vector to encode via table
-	 * @param thatScalar scalar double, w, that is the weight to multiply on the encoded values
+	 * @param thatMatrix matrix value
+	 * @param thatScalar scalar double
 	 * @param resultBlock result matrix block
 	 * @return resultBlock
 	 */

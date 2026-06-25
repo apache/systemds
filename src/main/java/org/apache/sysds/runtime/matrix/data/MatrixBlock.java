@@ -4791,13 +4791,16 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 	
 	/**
-	 * Pick the median value from this matrix, using the weight column to locate the median position.
+	 * Pick the median value from this matrix. If this matrix has two columns it is weighted picking using the
+	 * weight column, otherwise it is unweighted over the single column.
 	 * 
 	 * Note the values are assumed to be sorted.
 	 * 
 	 * @return The median value
 	 */
 	public double median() {
+		if(getNumColumns() == 1)
+			return pickValue(0.5, getNumRows() % 2 == 0);
 		double sum_wt = sumWeightForQuantile();
 		return pickValue(0.5, sum_wt%2==0);
 	}
@@ -4830,12 +4833,16 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 
 	private double pickUnweightedValue(double quantile, boolean average) {
+		// Mirror the weighted convention (pickWeightedValue) with an implicit weight of 1 per value, so a single
+		// column yields the same quantile as the equivalent two-column (value, weight) representation: take the
+		// ceil-based rank and only average adjacent order statistics when an even number of values straddles it.
 		final int rows = getNumRows();
-		double pos = quantile * rows;
-		if(average && (int) pos != pos)
-			return (get((int) Math.floor(pos), 0) + get(Math.min(rows - 1, (int) Math.ceil(pos)), 0)) / 2;
-		else
-			return get(Math.min(rows - 1, (int) Math.round(pos)), 0);
+		average = average && (rows % 2 == 0);
+		final int pos = (int) Math.ceil(quantile * rows); // 1-based rank
+		final int i = Math.min(Math.max(pos - 1, 0), rows - 1);
+		if(average && pos > 0 && pos < rows)
+			return (get(i, 0) + get(i + 1, 0)) / 2;
+		return get(i, 0);
 	}
 
 	private double pickWeightedValue(double quantile, boolean average) {

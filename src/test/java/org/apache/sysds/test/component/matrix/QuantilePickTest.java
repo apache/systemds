@@ -25,10 +25,12 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
 
 /**
- * Tests the single-column (unweighted) branch of {@link MatrixBlock#pickValue(double, boolean)}.
- * The values are assumed to be sorted in ascending order, mirroring the contract used by the
- * quantile pick instructions. The two-column (weighted) branch is exercised separately through the
- * compressed sort tests.
+ * Tests the single-column (unweighted) branch of {@link MatrixBlock#pickValue(double, boolean)} and
+ * {@link MatrixBlock#median()}. The values are assumed to be sorted in ascending order, mirroring the contract used
+ * by the quantile pick instructions. The unweighted branch uses the same ceil-based rank as the two-column weighted
+ * branch (with an implicit weight of 1 per value), so a single column yields the same quantile as the equivalent
+ * (value, weight) representation. The two-column (weighted) branch is exercised separately through the compressed
+ * sort tests.
  */
 public class QuantilePickTest {
 
@@ -42,46 +44,77 @@ public class QuantilePickTest {
 
 	@Test
 	public void pickOddLengthNoAverage() {
-		// pos = quantile * rlen; Math.round(pos), clamped to rlen-1.
+		// rank = ceil(quantile * 5), value at (rank-1).
 		MatrixBlock mb = singleColumn(new double[] {10, 20, 30, 40, 50}, false);
-		assertEquals(10, mb.pickValue(0.0, false), 0); // pos 0.0 -> idx 0
-		assertEquals(20, mb.pickValue(0.2, false), 0); // pos 1.0 -> idx 1
-		assertEquals(40, mb.pickValue(0.5, false), 0); // pos 2.5 -> round 3 -> idx 3
-		assertEquals(50, mb.pickValue(1.0, false), 0); // pos 5.0 -> clamp idx 4
+		assertEquals("q=0.0", 10, mb.pickValue(0.0, false), 0); // rank 0 -> idx 0
+		assertEquals("q=0.2", 10, mb.pickValue(0.2, false), 0); // rank ceil(1.0)=1 -> idx 0
+		assertEquals("q=0.5", 30, mb.pickValue(0.5, false), 0); // rank ceil(2.5)=3 -> idx 2
+		assertEquals("q=0.75", 40, mb.pickValue(0.75, false), 0); // rank ceil(3.75)=4 -> idx 3
+		assertEquals("q=1.0", 50, mb.pickValue(1.0, false), 0); // rank ceil(5.0)=5 -> idx 4
 	}
 
 	@Test
-	public void pickOddLengthAverage() {
+	public void pickOddLengthAverageSuppressed() {
+		// Odd number of values -> averaging is suppressed, so average matches no-average.
 		MatrixBlock mb = singleColumn(new double[] {10, 20, 30, 40, 50}, false);
-		// pos 2.5 is non-integer -> average of floor(2.5)=2 and ceil(2.5)=3 -> (30+40)/2
-		assertEquals(35, mb.pickValue(0.5, true), 0);
-		// integer pos -> no averaging
-		assertEquals(20, mb.pickValue(0.2, true), 0);
+		assertEquals("q=0.5 avg", 30, mb.pickValue(0.5, true), 0);
+		assertEquals("q=0.75 avg", 40, mb.pickValue(0.75, true), 0);
 	}
 
 	@Test
 	public void pickEvenLengthAverage() {
+		// Even number of values -> averaging of adjacent order statistics applies.
 		MatrixBlock mb = singleColumn(new double[] {10, 20, 30, 40}, false);
-		// pos 1.5 -> average of idx 1 and idx 2 -> (20+30)/2
-		assertEquals(25, mb.pickValue(0.375, true), 0);
-		// pos 2.0 integer -> idx 2
-		assertEquals(30, mb.pickValue(0.5, true), 0);
+		assertEquals("q=0.25 avg", 15, mb.pickValue(0.25, true), 0); // rank 1 -> (idx0+idx1)/2
+		assertEquals("q=0.375 avg", 25, mb.pickValue(0.375, true), 0); // rank ceil(1.5)=2 -> (idx1+idx2)/2
+		assertEquals("q=0.5 avg", 25, mb.pickValue(0.5, true), 0); // rank 2 -> (idx1+idx2)/2
+		assertEquals("q=0.75 avg", 35, mb.pickValue(0.75, true), 0); // rank 3 -> (idx2+idx3)/2
+	}
+
+	@Test
+	public void pickEvenLengthNoAverage() {
+		MatrixBlock mb = singleColumn(new double[] {10, 20, 30, 40}, false);
+		assertEquals("q=0.25", 10, mb.pickValue(0.25, false), 0); // rank 1 -> idx 0
+		assertEquals("q=0.5", 20, mb.pickValue(0.5, false), 0); // rank 2 -> idx 1
+		assertEquals("q=0.75", 30, mb.pickValue(0.75, false), 0); // rank 3 -> idx 2
 	}
 
 	@Test
 	public void pickAverageClampedAtTop() {
-		// pos 4.75 -> ceil clamps to rlen-1, so the averaged pair is (idx4, idx4).
-		MatrixBlock mb = singleColumn(new double[] {10, 20, 30, 40, 50}, false);
-		assertEquals(50, mb.pickValue(0.95, true), 0);
+		// Top quantile: rank reaches the last element so there is no successor to average with.
+		MatrixBlock even = singleColumn(new double[] {10, 20, 30, 40}, false);
+		assertEquals("even q=0.95 avg", 40, even.pickValue(0.95, true), 0); // rank ceil(3.8)=4 -> idx 3, no avg
+		assertEquals("even q=1.0 avg", 40, even.pickValue(1.0, true), 0);
+		MatrixBlock odd = singleColumn(new double[] {10, 20, 30, 40, 50}, false);
+		assertEquals("odd q=0.95 avg", 50, odd.pickValue(0.95, true), 0); // odd -> avg suppressed
+	}
+
+	@Test
+	public void pickSingleElement() {
+		MatrixBlock mb = singleColumn(new double[] {42}, false);
+		assertEquals("q=0.0", 42, mb.pickValue(0.0, false), 0);
+		assertEquals("q=0.5", 42, mb.pickValue(0.5, false), 0);
+		assertEquals("q=1.0", 42, mb.pickValue(1.0, false), 0);
+		assertEquals("q=0.5 avg", 42, mb.pickValue(0.5, true), 0);
+		assertEquals("median", 42, mb.median(), 0);
 	}
 
 	@Test
 	public void pickSparseSingleColumnWithZeros() {
 		// Sorted ascending including leading zeros, stored sparse.
 		MatrixBlock mb = singleColumn(new double[] {0, 0, 10, 20, 30}, true);
-		assertEquals(0, mb.pickValue(0.0, false), 0); // pos 0.0 -> idx 0 (zero)
-		assertEquals(20, mb.pickValue(0.5, false), 0); // pos 2.5 -> round 3 -> idx 3
-		assertEquals(30, mb.pickValue(1.0, false), 0); // pos 5.0 -> clamp idx 4
+		assertEquals("q=0.0", 0, mb.pickValue(0.0, false), 0); // rank 0 -> idx 0 (zero)
+		assertEquals("q=0.5", 10, mb.pickValue(0.5, false), 0); // rank ceil(2.5)=3 -> idx 2
+		assertEquals("q=0.75", 20, mb.pickValue(0.75, false), 0); // rank ceil(3.75)=4 -> idx 3
+		assertEquals("q=1.0", 30, mb.pickValue(1.0, false), 0); // rank 5 -> idx 4
+	}
+
+	@Test
+	public void medianSingleColumn() {
+		// Odd length -> middle element; even length -> average of the two middle elements.
+		assertEquals("odd median", 30, singleColumn(new double[] {10, 20, 30, 40, 50}, false).median(), 0);
+		assertEquals("even median", 25, singleColumn(new double[] {10, 20, 30, 40}, false).median(), 0);
+		assertEquals("sparse median", 10, singleColumn(new double[] {0, 0, 10, 20, 30}, true).median(), 0);
 	}
 
 	@Test

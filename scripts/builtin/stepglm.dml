@@ -88,12 +88,11 @@ stepGLM = function (
                     Int moi = 200,
                     Int mii = 0,
                     Double thr = 0.01,
-) 
-    return (
-            Double AIC,
-            Matrix[Double] B, 
-            Matrix[Double] S, 
-            Matrix[Double] O,
+) return (
+          Double AIC,
+          Matrix[Double] B, 
+          Matrix[Double] S, 
+          Matrix[Double] O,
         )
     {
         intercept_status = icpt;

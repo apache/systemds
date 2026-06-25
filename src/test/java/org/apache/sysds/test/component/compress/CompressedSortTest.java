@@ -51,6 +51,7 @@ public class CompressedSortTest {
 
 	private static final ReorgOperator ASC = new ReorgOperator(new SortIndex(1, false, false), 1);
 	private static final ReorgOperator DESC = new ReorgOperator(new SortIndex(1, true, false), 1);
+	private static final ReorgOperator INDEX = new ReorgOperator(new SortIndex(1, false, true), 1);
 
 	@Test
 	public void sortDDC() {
@@ -127,6 +128,18 @@ public class CompressedSortTest {
 	}
 
 	@Test
+	public void sortIndexReturnFallback() {
+		// returning the sort permutation (index.return=TRUE) is not supported by the fast-path -> decompress fallback
+		runFallback(generate(ROWS, 1, 8, 1.0, 1, 50, 7), CompressionType.DDC, INDEX);
+	}
+
+	@Test
+	public void sortUnsupportedEncodingFallback() {
+		// OLE does not implement colgroup sort -> the fast-path declines and the order falls back to decompression
+		runFallback(generate(ROWS, 1, 8, 0.3, 1, 40, 23), CompressionType.OLE, ASC);
+	}
+
+	@Test
 	public void quantileTableDDC() {
 		runQuantile(generate(ROWS, 1, 8, 1.0, 1, 50, 7), CompressionType.DDC);
 	}
@@ -152,12 +165,24 @@ public class CompressedSortTest {
 	}
 
 	@Test
+	public void quantileTableAllNegativeDense() {
+		// dense column with no zeros -> the collapsed zero row carries weight 0
+		runQuantile(generate(ROWS, 1, 8, 1.0, -50, -1, 57), CompressionType.DDC);
+	}
+
+	@Test
 	public void quantileTableConst() {
 		MatrixBlock mb = new MatrixBlock(ROWS, 1, false);
 		for(int i = 0; i < ROWS; i++)
 			mb.set(i, 0, 3);
 		mb.recomputeNonZeros();
 		runQuantile(mb, CompressionType.CONST);
+	}
+
+	@Test
+	public void quantileTableUnsupportedEncodingFallback() {
+		// OLE does not implement colgroup sort -> the quantile table is built via the decompressed fallback
+		runQuantile(generate(ROWS, 1, 8, 0.3, 1, 40, 23), CompressionType.OLE);
 	}
 
 	@Test

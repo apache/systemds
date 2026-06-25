@@ -119,36 +119,22 @@ public final class CLALibSort {
 		rg.add(sorted);
 		final MatrixBlock sortedCol = new CompressedMatrixBlock(nRows, 1, lnnz, false, rg).decompress(k);
 
-		// build the value/weight table: one row per non-zero value, plus a single collapsed zero row.
+		// build the value/weight table: one row per non-zero value (weight 1) plus a single
+		// collapsed zero row (weight = number of zeros). The row order is irrelevant because the
+		// table is sorted by the reorg below, exactly as MatrixBlock.sortOperations does.
 		final MatrixBlock tdw = new MatrixBlock(1 + nnz, 2, false);
 		tdw.allocateDenseBlock();
 		int w = 0;
-		boolean zeroWritten = false;
 		for(int i = 0; i < nRows; i++) {
 			final double v = sortedCol.get(i, 0);
-			if(v < 0) {
+			if(v != 0) {
 				tdw.set(w, 0, v);
 				tdw.set(w, 1, 1);
 				w++;
 			}
-			else {
-				if(!zeroWritten) {
-					tdw.set(w, 0, 0);
-					tdw.set(w, 1, zeroCount);
-					w++;
-					zeroWritten = true;
-				}
-				if(v != 0) {
-					tdw.set(w, 0, v);
-					tdw.set(w, 1, 1);
-					w++;
-				}
-			}
 		}
-		if(!zeroWritten) { // all values negative: the zero row sorts to the end.
-			tdw.set(w, 0, 0);
-			tdw.set(w, 1, zeroCount);
-		}
+		tdw.set(w, 0, 0); // collapsed zero row (weight 0 when the column is dense)
+		tdw.set(w, 1, zeroCount);
 
 		// Emit through the same reorg used by MatrixBlock.sortOperations so the produced table is
 		// bit-for-bit identical to the uncompressed path, including its (intentionally unmaintained)

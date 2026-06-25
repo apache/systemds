@@ -801,6 +801,10 @@ public class LibMatrixMult
 		//pre-processing
 		ret.sparse = wt.isBasic()?mW.sparse:false;
 		ret.allocateBlock();
+		//ensure the dense output is allocated up-front so the kernels below
+		//(and the parallel tasks in the k-variant) never lazily allocate it
+		if(ret.getDenseBlock() == null)
+			ret.allocateDenseBlock();
 		
 		//core weighted div mm computation
 		boolean scalarX = wt.hasScalar();
@@ -849,6 +853,10 @@ public class LibMatrixMult
 		//pre-processing
 		ret.sparse = wt.isBasic()?mW.sparse:false;
 		ret.allocateBlock();
+		//allocate the dense output single-threaded before dispatching tasks, so the
+		//shared result block is safely published and tasks never race to allocate it
+		if(ret.getDenseBlock() == null)
+			ret.allocateDenseBlock();
 
 		if (!ret.isThreadSafe()){
 			matrixMultWDivMM(mW, mU, mV, mX, ret, wt);
@@ -3620,11 +3628,6 @@ public class LibMatrixMult
 		DenseBlock v = mV.getDenseBlock();
 		DenseBlock x = (mX==null) ? null : mX.getDenseBlock();
 		DenseBlock c = ret.getDenseBlock();
-		
-		if(c == null){
-			ret.allocateDenseBlock();
-			c = ret.getDenseBlock();
-		}
 
 		//approach: iterate over non-zeros of w, selective mm computation
 		//cache-conscious blocking: due to blocksize constraint (default 1000),
@@ -3772,11 +3775,6 @@ public class LibMatrixMult
 
 		//output always in dense representation
 		DenseBlock c = ret.getDenseBlock();
-
-		if(c == null){
-			ret.allocateDenseBlock();
-			c = ret.getDenseBlock();
-		}
 		
 		//approach: iterate over non-zeros of w, selective mm computation
 		if( mW.sparse ) //SPARSE

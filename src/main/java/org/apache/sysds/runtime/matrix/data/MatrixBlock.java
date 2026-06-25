@@ -2955,14 +2955,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		boolean sparseDst = evalSparseFormatOnDisk();
 		return !sparse || !sparseDst
 			|| (sparse && sparseBlock instanceof SparseBlockCSR)
-			|| (sparse && sparseBlock instanceof SparseBlockMCSR);
-			// || (sparse && sparseBlock instanceof SparseBlockMCSR
-			// 	&& getInMemorySize() / MAX_SHALLOW_SERIALIZE_OVERHEAD 
-			// 	<= getExactSerializedSize())
-			// || (sparse && sparseBlock instanceof SparseBlockMCSR
-			// 	&& nonZeros < Integer.MAX_VALUE //CSR constraint
-			// 	&& inclConvert && CONVERT_MCSR_TO_CSR_ON_DEEP_SERIALIZE
-			// 	&& !isUltraSparseSerialize(sparseDst));
+			|| (sparse && sparseBlock instanceof SparseBlockMCSR
+				&& getInMemorySize() / MAX_SHALLOW_SERIALIZE_OVERHEAD 
+				<= getExactSerializedSize())
+			|| (sparse && sparseBlock instanceof SparseBlockMCSR
+				&& nonZeros < Integer.MAX_VALUE //CSR constraint
+				&& inclConvert && CONVERT_MCSR_TO_CSR_ON_DEEP_SERIALIZE
+				&& !isUltraSparseSerialize(sparseDst));
 	}
 	
 	@Override 
@@ -4796,8 +4795,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * 
 	 * Note the values are assumed to be sorted
 	 * 
-	 * @param quantile The quantile to pick
-	 * @return The quantile
+	 * @return The median value
 	 */
 	public double median() {
 		double sum_wt = sumWeightForQuantile();

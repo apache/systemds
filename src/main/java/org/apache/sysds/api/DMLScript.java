@@ -508,6 +508,11 @@ public class DMLScript
 		ExecutionContext ec = null;
 		try {
 			ec = ExecutionContextFactory.createContext(rtprog);
+			//register as an active user of the shared spark context; balanced by
+			//exitSparkExecution() in the finally block so a concurrent execution
+			//cannot stop the context mid-job
+			if(ec instanceof SparkExecutionContext)
+				SparkExecutionContext.enterSparkExecution();
 			ScriptExecutorUtils.executeRuntimeProgram(rtprog, ec, ConfigurationManager.getDMLConfig(), STATISTICS ? STATISTICS_COUNT : 0, null);
 		}
 		finally {
@@ -516,8 +521,12 @@ public class DMLScript
 			FederatedData.clearWorkGroup();
 			//stop spark context (after cleanup of federated workers and other pools,
 			//otherwise federated spark cleanups in local tests throw errors in same JVM)
-			if(ec != null && ec instanceof SparkExecutionContext)
+			if(ec != null && ec instanceof SparkExecutionContext) {
+				//release our registration, then stop the context if no other
+				//execution is still using it
+				SparkExecutionContext.exitSparkExecution();
 				((SparkExecutionContext) ec).close();
+			}
 			LOG.info("END DML run " + getDateTime() );
 		}
 	}

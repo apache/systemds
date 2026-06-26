@@ -134,18 +134,18 @@ stepGLM = function (
 
         if (intercept_status == 0) {
             # Compute AIC of an empty model with no features and no intercept (all Ys are zero)
-            [AIC_best, ignore_B1, ignore_S1, ignore_O1] = glm_fit (X_global, Y, 0, num_features, columns_fixed_ordered);
+            [AIC_best, ignore_B1, ignore_S1, ignore_O1] = glm_fit (X=X_global, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
         } else {
             # compute AIC of an empty model with only intercept (all Ys are constant)
             all_ones = matrix (1, rows = num_records, cols = 1);
-            [AIC_best, ignore_beta2, ignore_S2, ignore_O2] = glm_fit (all_ones, Y, 0, num_features, columns_fixed_ordered);
+            [AIC_best, ignore_beta2, ignore_S2, ignore_O2] = glm_fit (X=all_ones, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
         }
         #print ("Best AIC without any features: " + AIC_best);
 
         # First pass to examine single features
         AICs = matrix (AIC_best, rows = 1, cols = num_features);
         parfor (i in 1:num_features) { 	
-            [AIC_1, ignore_beta3, ignore_S3, ignore_O3] = glm_fit (X_orig[,i], Y, intercept_status, num_features, columns_fixed_ordered);
+            [AIC_1, ignore_beta3, ignore_S3, ignore_O3] = glm_fit (X=X_orig[,i], Y=Y, intercept_status=intercept_status, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
             AICs[1,i] = AIC_1;
         }
 
@@ -163,11 +163,11 @@ stepGLM = function (
             #print ("AIC of an empty model is " + AIC_best + " and adding no feature achieves more than " + (thr * 100) + "% decrease in AIC!");
             if (intercept_status == 0) {
                 # Compute AIC of an empty model with no features and no intercept (all Ys are zero)
-                [AIC_best, ignore_beta4, ignore_S4, ignore_O4] = glm_fit (X_global, Y, 0, num_features, columns_fixed_ordered);
+                [AIC_best, ignore_beta4, ignore_S4, ignore_O4] = glm_fit (X=X_global, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
             } else {
                 # compute AIC of an empty model with only intercept (all Ys are constant)
                 ###all_ones = matrix (1, rows = num_records, cols = 1);
-                [AIC_best, ignore_beta5, ignore_S5, ignore_O5] = glm_fit (all_ones, Y, 0, num_features, columns_fixed_ordered);
+                [AIC_best, ignore_beta5, ignore_S5, ignore_O5] = glm_fit (X=all_ones, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
             }
         };
 
@@ -184,7 +184,7 @@ stepGLM = function (
                     # Construct the feature matrix
                     X_loop = cbind (X_global, X_orig[,i]);
 
-                    [AIC_2, ignore_beta6, ignore_S6, ignore_O6] = glm_fit (X_loop, Y, intercept_status, num_features, columns_fixed_ordered);
+                    [AIC_2, ignore_beta6, ignore_S6, ignore_O6] = glm_fit (X=X_loop, Y=Y, intercept_status=intercept_status, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
                     AICs[1,i] = AIC_2;
                 }		
             }
@@ -216,7 +216,7 @@ stepGLM = function (
 
         # run GLM with selected set of features
         print ("Running GLM with selected features...");
-        [AIC, B, S, O] = glm_fit (X_global, Y, intercept_status, num_features, columns_fixed_ordered);
+        [AIC, B, S, O] = glm_fit (X=X_global, Y=Y, intercept_status=intercept_status, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
     }
 
 
@@ -834,7 +834,7 @@ glm_dist = function (Matrix[double] linear_terms, Matrix[double] Y,
                             + t_gp * (-0.284496736 # "Handbook of Mathematical Functions", ed. by M. Abramowitz and I.A. Stegun,
                                       + t_gp * ( 1.421413741 # U.S. Nat-l Bureau of Standards, 10th print (Dec 1972), Sec. 7.1.26, p. 299
                                                 + t_gp * (-1.453152027 
-                                                          + t_gp *   1.061405429))));
+                                                          + t_gp * 1.061405429))));
             the_gauss_exp = exp (- (linear_terms ^ 2) / 2.0);
             vec1 = 0.25 * pt_gp * (2 - the_gauss_exp * pt_gp);
             vec2 = Y [, 1] - rowSums (Y) * is_lt_pos + the_gauss_exp * pt_gp * rowSums (Y) * (is_lt_pos - 0.5);
@@ -1040,7 +1040,7 @@ binomial_probability_two_column =
                             + t_gp * (-0.284496736 # "Handbook of Mathematical Functions", ed. by M. Abramowitz and I.A. Stegun,
                                       + t_gp * ( 1.421413741 # U.S. Nat-l Bureau of Standards, 10th print (Dec 1972), Sec. 7.1.26, p. 299
                                                 + t_gp * (-1.453152027 
-                                                          + t_gp *   1.061405429))));
+                                                          + t_gp * 1.061405429))));
             the_gauss_exp = exp (- (finite_linear_terms ^ 2) / 2.0);
             Y_prob = lt_pos_neg + ((the_gauss_exp * pt_gp) %*% ones_2) * (0.5 - lt_pos_neg);
             } else { if (link_type == 4)    { # Binomial.cloglog
@@ -1193,5 +1193,3 @@ straightenX =
 
       w = (nrow(X) / sum (w_X * z_LS)) * z_LS;
     }
-
-

@@ -182,7 +182,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 			}
 			case CONTAINS:
 			case CDF:
-			case INVCDF: 
+			case INVCDF:
 			case REPLACE:
 			case LOWER_TRI:
 			case UPPER_TRI:
@@ -194,7 +194,9 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 			case TOSTRING:
 			case PARAMSERV:
 			case LIST:
-			case AUTODIFF:{
+			case AUTODIFF:
+			case DP_LAPLACE:
+			case DP_GAUSSIAN:{
 				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(
 					inputlops, _op, getDataType(), getValueType(), et);
 				if( isMultiThreadedOpType() )
@@ -688,7 +690,11 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 				return new MatrixCharacteristics(dc.getRows(), dc.getCols(), -1, dc.getLength());
 			}
 		}
-		
+		else if( _op == ParamBuiltinOp.DP_LAPLACE || _op == ParamBuiltinOp.DP_GAUSSIAN ) {
+			if( dc.dimsKnown() )
+				ret = new MatrixCharacteristics(dc.getRows(), dc.getCols(), -1, dc.getLength());
+		}
+
 		return ret;
 	}
 	@Override
@@ -758,7 +764,8 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 		if (_op == ParamBuiltinOp.TRANSFORMCOLMAP || _op == ParamBuiltinOp.TRANSFORMMETA
 				|| _op == ParamBuiltinOp.TOSTRING || _op == ParamBuiltinOp.LIST
 				|| _op == ParamBuiltinOp.CDF || _op == ParamBuiltinOp.INVCDF
-				|| _op == ParamBuiltinOp.PARAMSERV) {
+				|| _op == ParamBuiltinOp.PARAMSERV
+				|| _op == ParamBuiltinOp.DP_LAPLACE || _op == ParamBuiltinOp.DP_GAUSSIAN) {
 			_etype = ExecType.CP;
 		}
 

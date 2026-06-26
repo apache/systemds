@@ -48,7 +48,8 @@ public abstract class CPInstruction extends Instruction {
 		EvictLineageCache, EINSUM,
 		NoOp,
 		Union,
-		QuantizeCompression
+		QuantizeCompression,
+		DPBuiltin
 	 }
 
 	protected final CPType _cptype;

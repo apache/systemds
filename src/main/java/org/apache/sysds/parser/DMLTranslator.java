@@ -2310,6 +2310,10 @@ public class DMLTranslator
 		if (source.getThirdExpr() != null) {
 			expr3 = processExpression(source.getThirdExpr(), null, hops);
 		}
+		Hop expr4 = null;
+		if (source.getFourthExpr() != null) {
+			expr4 = processExpression(source.getFourthExpr(), null, hops);
+		}
 
 		Hop currBuiltinOp = null;
 		target = (target == null) ? createTarget(source) : target;
@@ -2589,6 +2593,25 @@ public class DMLTranslator
 		case DECOMPRESS:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.FP64, OpOp1.DECOMPRESS, expr);
 			break;
+		case DP_LAPLACE: {
+			LinkedHashMap<String, Hop> dpLaplaceParams = new LinkedHashMap<>();
+			dpLaplaceParams.put("target", expr);
+			dpLaplaceParams.put("sensitivity", expr2);
+			dpLaplaceParams.put("epsilon", expr3);
+			currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), DataType.MATRIX,
+				ValueType.FP64, ParamBuiltinOp.DP_LAPLACE, dpLaplaceParams);
+			break;
+		}
+		case DP_GAUSSIAN: {
+			LinkedHashMap<String, Hop> dpGaussianParams = new LinkedHashMap<>();
+			dpGaussianParams.put("target", expr);
+			dpGaussianParams.put("sensitivity", expr2);
+			dpGaussianParams.put("epsilon", expr3);
+			dpGaussianParams.put("delta", expr4);
+			currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), DataType.MATRIX,
+				ValueType.FP64, ParamBuiltinOp.DP_GAUSSIAN, dpGaussianParams);
+			break;
+		}
 		case QUANTIZE_COMPRESS:
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.valueOf(source.getOpCode().name()), expr, expr2);
 			break;

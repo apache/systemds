@@ -204,7 +204,19 @@ public class ParameterizedBuiltin extends Lop
 				compileGenericParamMap(sb, _inputParams);
 				break;
 			}
-			
+			case DP_LAPLACE: {
+				sb.append(Opcodes.DP_LAPLACE);
+				sb.append(OPERAND_DELIMITOR);
+				compileGenericParamMap(sb, _inputParams);
+				break;
+			}
+			case DP_GAUSSIAN: {
+				sb.append(Opcodes.DP_GAUSSIAN);
+				sb.append(OPERAND_DELIMITOR);
+				compileGenericParamMap(sb, _inputParams);
+				break;
+			}
+
 			default:
 				throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + _operation);
 		}

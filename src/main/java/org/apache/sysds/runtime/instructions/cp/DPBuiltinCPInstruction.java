@@ -102,10 +102,7 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
             String opcode,
             String istr,
             LinkedHashMap<String, String> params) {
-        // input1 = the aggregate matrix; input2/3 unused at this level
-        // (scalars come from _params, not CPOperand fields, so that they
-        //  can be either literals or DML variable names transparently).
-        super(null, input, null, null, output, opcode, istr);
+        super(CPType.DPBuiltin, null, input, null, output, opcode, istr);
         _params = params;
     }
 

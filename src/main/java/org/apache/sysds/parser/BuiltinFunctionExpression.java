@@ -2005,6 +2005,31 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			}
 			else 
 				raiseValidateError("Local instruction not allowed in dml script");
+		case DP_LAPLACE: {
+			checkNumParameters(3);
+			checkMatrixParam(getFirstExpr());
+			checkScalarParam(getSecondExpr());
+			checkScalarParam(getThirdExpr());
+			output.setDataType(DataType.MATRIX);
+			output.setValueType(ValueType.FP64);
+			output.setDimensions(
+				getFirstExpr().getOutput().getDim1(),
+				getFirstExpr().getOutput().getDim2());
+			break;
+		}
+		case DP_GAUSSIAN: {
+			checkNumParameters(4);
+			checkMatrixParam(getFirstExpr());
+			checkScalarParam(getSecondExpr());
+			checkScalarParam(getThirdExpr());
+			checkScalarParam(getFourthExpr());
+			output.setDataType(DataType.MATRIX);
+			output.setValueType(ValueType.FP64);
+			output.setDimensions(
+				getFirstExpr().getOutput().getDim1(),
+				getFirstExpr().getOutput().getDim2());
+			break;
+		}
 		case COMPRESS:
 		case DECOMPRESS:
 			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND){

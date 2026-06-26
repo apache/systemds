@@ -65,6 +65,7 @@ import org.apache.sysds.runtime.instructions.cp.UaggOuterChainCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnionCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.DPBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.EinsumCPInstruction;
 import org.apache.sysds.runtime.instructions.cpfile.MatrixIndexingCPFileInstruction;
 
@@ -226,7 +227,10 @@ public class CPInstructionParser extends InstructionParser {
 			
 			case EINSUM:
 				return EinsumCPInstruction.parseInstruction(str);
-				
+
+			case DPBuiltin:
+				return DPBuiltinCPInstruction.parseInstruction(str);
+
 			default:
 				throw new DMLRuntimeException("Invalid CP Instruction Type: " + cptype );
 		}

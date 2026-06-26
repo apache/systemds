@@ -62,6 +62,7 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.runtime.privacy.dp.RDPAccountant;
 import org.apache.sysds.utils.Statistics;
 
 import java.util.ArrayList;
@@ -89,6 +90,8 @@ public class ExecutionContext {
 	protected Lineage _lineage;
 
 	protected SEALClient _seal_client;
+
+	private RDPAccountant _rdpAccountant = null;
 
 	//parfor temporary functions (created by eval)
 	protected Set<String> _fnNames;
@@ -142,6 +145,12 @@ public class ExecutionContext {
 
 	public void setLineage(Lineage lineage) {
 		_lineage = lineage;
+	}
+
+	public RDPAccountant getRDPAccountant() {
+		if (_rdpAccountant == null)
+			_rdpAccountant = new RDPAccountant(1.0, 1e-5);
+		return _rdpAccountant;
 	}
 
 	public boolean isAutoCreateVars() {

@@ -47,7 +47,6 @@
 #
 # B     Matrix    ---      Estimated regression parameters (betas)
 # S     Matrix    ---      The selected features ordered as computed by the algorithm
-# O     String    ---      The statistics
 # ---------------------------------------------------------------------------------------------
 
 # THE StepGLM SCRIPT CURRENTLY SUPPORTS BERNOULLI DISTRIBUTION FAMILY AND THE FOLLOWING LINK FUNCTIONS ONLY!
@@ -76,6 +75,7 @@
 # DEVIANCE_SCALED       Deviance from the saturated model, scaled by the DISPERSION value
 # -------------------------------------------------------------------------------------------
 
+source("./scripts/builtin/glm.dlm") as glm;
 
 stepGLM = function (
                     Matrix[Double] X, 
@@ -92,16 +92,12 @@ stepGLM = function (
           Double AIC,
           Matrix[Double] B, 
           Matrix[Double] S, 
-          String O
         )
     {
         intercept_status = icpt;
         bernoulli_No_label = yneg;
         distribution_type = 2;
 
-        # currently only the forward selection strategy in supported: start from one feature and iteratively add 
-        # features until AIC improves
-        dir = "forward";
 
         if (distribution_type == 2 & ncol(Y) == 1) {
             is_Y_negative = (Y == bernoulli_No_label);
@@ -121,10 +117,6 @@ stepGLM = function (
 
         # BEGIN STEPWISE GENERALIZED LINEAR MODELS 
 
-        if (dir != "forward") {  
-            stop ("Currently only forward selection strategy is supported!");
-        }
-
         continue = TRUE;
         columns_fixed = matrix (0, rows = 1, cols = num_features);
         columns_fixed_ordered = matrix (0, rows = 1, cols = 1);
@@ -134,18 +126,18 @@ stepGLM = function (
 
         if (intercept_status == 0) {
             # Compute AIC of an empty model with no features and no intercept (all Ys are zero)
-            [AIC_best, ignore_B1, ignore_S1, ignore_O1] = glm_fit (X=X_global, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
+            [AIC_best, ignore_B1, ignore_S1, ignore_O1] = glm::m_glm(X=X_global, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
         } else {
             # compute AIC of an empty model with only intercept (all Ys are constant)
             all_ones = matrix (1, rows = num_records, cols = 1);
-            [AIC_best, ignore_beta2, ignore_S2, ignore_O2] = glm_fit (X=all_ones, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
+            [AIC_best, ignore_beta2, ignore_S2, ignore_O2] = glm::m_glm(X=all_ones, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
         }
         #print ("Best AIC without any features: " + AIC_best);
 
         # First pass to examine single features
         AICs = matrix (AIC_best, rows = 1, cols = num_features);
         parfor (i in 1:num_features) { 	
-            [AIC_1, ignore_beta3, ignore_S3, ignore_O3] = glm_fit (X=X_orig[,i], Y=Y, intercept_status=intercept_status, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
+            [AIC_1, ignore_beta3, ignore_S3, ignore_O3] = glm::m_glm(X=X_orig[,i], Y=Y, intercept_status=intercept_status, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
             AICs[1,i] = AIC_1;
         }
 
@@ -163,11 +155,11 @@ stepGLM = function (
             #print ("AIC of an empty model is " + AIC_best + " and adding no feature achieves more than " + (thr * 100) + "% decrease in AIC!");
             if (intercept_status == 0) {
                 # Compute AIC of an empty model with no features and no intercept (all Ys are zero)
-                [AIC_best, ignore_beta4, ignore_S4, ignore_O4] = glm_fit (X=X_global, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
+                [AIC_best, ignore_beta4, ignore_S4, ignore_O4] = glm::m_glm(X=X_global, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
             } else {
                 # compute AIC of an empty model with only intercept (all Ys are constant)
                 ###all_ones = matrix (1, rows = num_records, cols = 1);
-                [AIC_best, ignore_beta5, ignore_S5, ignore_O5] = glm_fit (X=all_ones, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
+                [AIC_best, ignore_beta5, ignore_S5, ignore_O5] = glm::m_glm(X=all_ones, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
             }
         };
 
@@ -184,7 +176,7 @@ stepGLM = function (
                     # Construct the feature matrix
                     X_loop = cbind (X_global, X_orig[,i]);
 
-                    [AIC_2, ignore_beta6, ignore_S6, ignore_O6] = glm_fit (X=X_loop, Y=Y, intercept_status=intercept_status, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
+                    [AIC_2, ignore_beta6, ignore_S6, ignore_O6] = glm::m_glm(X=X_loop, Y=Y, intercept_status=intercept_status, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
                     AICs[1,i] = AIC_2;
                 }		
             }
@@ -216,7 +208,7 @@ stepGLM = function (
 
         # run GLM with selected set of features
         print ("Running GLM with selected features...");
-        [AIC, B, S, O] = glm_fit (X=X_global, Y=Y, intercept_status=intercept_status, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
+        [AIC, B, S, O] = glm::m_glm(X=X_global, Y=Y, intercept_status=intercept_status, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
     }
 
 

@@ -1,0 +1,40 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Optimizer-specific checks that util.dml does not provide. Like the helpers in
+# util.dml, these stay quiet on success and print "ERROR:" on failure.
+
+check_finite = function(matrix[double] X, string name) {
+  n = length(X)
+  # NaN is never equal to itself, and the DBL_MAX bound catches +/-Inf
+  if (sum(X == X) < n | sum(abs(X) <= 1.7976931348623157e308) < n) {
+    print("ERROR: [" + name + "] contains a NaN or Inf")
+  }
+}
+
+check_decreasing = function(matrix[double] losses, string name) {
+  n = nrow(losses)
+  deltas = losses[2:n,] - losses[1:n-1,]
+  # NaN deltas are not < 0 either, so a blown-up run fails here too
+  if (sum(deltas < 0) < n - 1) {
+    print("ERROR: [" + name + "] loss is not strictly decreasing")
+  }
+}

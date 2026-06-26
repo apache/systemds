@@ -43,6 +43,7 @@ import org.apache.sysds.runtime.instructions.ooc.MapMMChainOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.ReorgOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.TeeOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.AppendOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.ReshapeOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.QuaternaryOOCInstruction;
 
 public class OOCInstructionParser extends InstructionParser {
@@ -97,7 +98,7 @@ public class OOCInstructionParser extends InstructionParser {
 			case Reorg:
 				return ReorgOOCInstruction.parseInstruction(str);
 			case Reshape:
-				return ReorgOOCInstruction.parseInstruction(str);
+				return ReshapeOOCInstruction.parseInstruction(str);
 			case Tee:
 				return TeeOOCInstruction.parseInstruction(str);
 			case CentralMoment:

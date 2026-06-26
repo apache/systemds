@@ -99,6 +99,7 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 			// Capture a short context to help identify origin
 			OOCWatchdog.registerOpen(_watchdogId, toString(), getCtxMsg(), this);
 		}
+		activateIndexing();
 		_downstreamRelays = null;
 		source.setSubscriber(tmp -> {
 			try(tmp) {

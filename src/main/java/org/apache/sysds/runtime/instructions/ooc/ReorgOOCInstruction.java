@@ -41,31 +41,17 @@ public class ReorgOOCInstruction extends ComputationOOCInstruction {
 	private final CPOperand _col;
 	private final CPOperand _desc;
 	private final CPOperand _ixret;
-	// reshape-specific attributes
-	private final CPOperand _opRows;
-	private final CPOperand _opCols;
-	//private final CPOperand _opDims;
-	private final CPOperand _opByRow;
 
 	protected ReorgOOCInstruction(ReorgOperator op, CPOperand in1, CPOperand out, String opcode, String istr) {
-		this(op, in1, out, null, null, null, null, null, null, null, opcode, istr);
-	}
-
-	private ReorgOOCInstruction(Operator op, CPOperand in, CPOperand out, CPOperand opRows, CPOperand opCols,
-		CPOperand opDims, CPOperand opByRow, String opcode, String istr) {
-		this(op, in, out, null, null, null, opRows, opCols, opDims, opByRow, opcode, istr);
+		this(op, in1, out, null, null, null, opcode, istr);
 	}
 
 	private ReorgOOCInstruction(Operator op, CPOperand in, CPOperand out, CPOperand col, CPOperand desc, CPOperand ixret,
-		CPOperand opRows, CPOperand opCols, CPOperand opDims, CPOperand opByRow, String opcode, String istr) {
+		String opcode, String istr) {
 		super(OOCType.Reorg, op, in, out, opcode, istr);
 		_col = col;
 		_desc = desc;
 		_ixret = ixret;
-		_opRows = opRows;
-		_opCols = opCols;
-		//_opDims = opDims;
-		_opByRow = opByRow;
 	}
 
 	public static ReorgOOCInstruction parseInstruction(String str) {
@@ -92,35 +78,13 @@ public class ReorgOOCInstruction extends ComputationOOCInstruction {
 			CPOperand ixret = new CPOperand(parts[4]);
 			int k = Integer.parseInt(parts[6]);
 			return new ReorgOOCInstruction(new ReorgOperator(new SortIndex(1, false, false), k),
-				in, out, col, desc, ixret, null, null, null, null, opcode, str);
-		}
-		else if(opcode.equalsIgnoreCase(Opcodes.RESHAPE.toString())) {
-			InstructionUtils.checkNumFields(parts, 6);
-			in.split(parts[1]);
-			CPOperand rows = new CPOperand(parts[2]);
-			CPOperand cols = new CPOperand(parts[3]);
-			CPOperand dims = new CPOperand(parts[4]);
-			CPOperand byRow = new CPOperand(parts[5]);
-			out.split(parts[6]);
-			return new ReorgOOCInstruction(new Operator(true), in, out, rows, cols, dims, byRow, opcode, str);
+				in, out, col, desc, ixret, opcode, str);
 		}
 		else
 			throw new NotImplementedException();
 	}
 
 	public void processInstruction( ExecutionContext ec ) {
-		if(getOpcode().equalsIgnoreCase(Opcodes.RESHAPE.toString())) {
-			// TODO Make reshape truly out-of-core
-			int rows = (int) ec.getScalarInput(_opRows).getLongValue();
-			int cols = (int) ec.getScalarInput(_opCols).getLongValue();
-			boolean byRow = ec.getScalarInput(_opByRow).getBooleanValue();
-			MatrixBlock in = ec.getMatrixInput(input1.getName());
-			MatrixBlock out = in.reshape(rows, cols, byRow);
-			ec.releaseMatrixInput(input1.getName());
-			ec.setMatrixOutput(output.getName(), out);
-			return;
-		}
-
 		// Create thread and process the transpose/sort operation
 		MatrixObject min = ec.getMatrixObject(input1);
 		ReorgOperator r_op = (ReorgOperator) _optr;

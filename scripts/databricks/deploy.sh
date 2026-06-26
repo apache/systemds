@@ -144,7 +144,7 @@ JVMOPTS="${JVMOPTS:---add-modules=jdk.incubator.vector \
 
 # Notebooks to import (space-separated, relative to this dir). Language is
 # detected from the extension (.scala -> SCALA, .py -> PYTHON).
-NB_FILES="${NB_FILES:-SystemDS_MLContext_Demo.scala SystemDS_vs_SparkML_LinReg.scala SystemDS_Delta_E2E.scala SystemDS_Python_Demo.py}"
+NB_FILES="${NB_FILES:-SystemDS_MLContext_Demo.scala SystemDS_Delta_E2E.scala}"
 
 #-------------------------------------------------------------
 # Steps.

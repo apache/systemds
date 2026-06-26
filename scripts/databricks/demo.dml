@@ -20,18 +20,22 @@
 #-------------------------------------------------------------
 
 # SystemDS on Databricks smoke test.
-# Generates a large random matrix and does a distributed-friendly
-# matrix product + aggregation so that SystemDS exercises Spark
-# operations when run on a cluster.
+# Reads a matrix from storage and computes column sums and a Gram-matrix trace,
+# so the read path plus a few distributed-friendly operations are exercised.
 #
 # Args (all optional, with defaults):
-#   -nvargs nr=<rows> nc=<cols> out=<output-path>
+#   -nvargs in=<input-matrix-path> fmt=<format> out=<output-path>
+#
+# `in` is any path readable from the cluster driver (a UC volume, /Workspace,
+# or dbfs:) and `fmt` any SystemDS-supported matrix format (csv, binary,
+# libsvm, mm, ...). Example:
+#   in=/Volumes/<catalog>/<schema>/<volume>/demo_input.csv fmt=csv
 
-nr = ifdef($nr, 20000)
-nc = ifdef($nc, 1000)
+in  = ifdef($in, "demo_input.csv")
+fmt = ifdef($fmt, "csv")
 out = ifdef($out, "demo_result.txt")
 
-X = rand(rows=nr, cols=nc, min=0.0, max=1.0, sparsity=0.5, seed=42)
+X = read(in, format=fmt)
 
 # Column sums and a Gram-matrix trace: both push work through Spark
 # instructions for large inputs.
@@ -40,7 +44,7 @@ gramTrace = sum(X * X)
 
 s = sum(colSums) + gramTrace
 
-print("rows=" + nr + " cols=" + nc)
+print("rows=" + nrow(X) + " cols=" + ncol(X))
 print("result=" + s)
 
 write(s, out, format="text")

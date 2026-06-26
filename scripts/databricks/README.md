@@ -29,10 +29,8 @@ SystemDS jar runs unchanged.
 | --- | --- |
 | `deploy.sh` | Create a UC volume, upload `SystemDS.jar`, create a single-user cluster, install the Delta Kernel libraries, and import the demo notebooks. |
 | `SystemDS_MLContext_Demo.scala` | Notebook: Unity Catalog round-trip using the SystemDS MLContext (Scala) API. Reads a table, runs a configurable DML script, writes the result back. |
-| `SystemDS_vs_SparkML_LinReg.scala` | Notebook: head-to-head benchmark — linear regression with categorical encoding (`transformencode` + `lm`) vs a Spark ML `OneHotEncoder` + `LinearRegression` pipeline, timing encode + train. |
 | `SystemDS_Delta_E2E.scala` | Notebook: end-to-end Delta → linear regression on one Delta table. SystemDS reads it natively as a frame (`read(format="delta")`) → `transformencode` → `lm`; Spark ML reads the same table → `OneHotEncoder` → `LinearRegression`. Times read + encode + train for both. |
-| `SystemDS_Python_Demo.py` | Notebook: SystemDS Python API running in-process on the driver. |
-| `demo.dml` | Standalone DML smoke test (random matrix product + aggregation). |
+| `demo.dml` | Standalone DML smoke test: reads a matrix from storage, computes column sums and a Gram-matrix trace. |
 | `.env.example` | Template for your local configuration. |
 
 ## Prerequisites
@@ -78,7 +76,7 @@ Anything already exported in your shell overrides values from `.env`.
 | `CLUSTER_NAME` | `systemds` | Cluster name. |
 | `JAR_LOCAL` | `<repo-root>/target/SystemDS.jar` | Jar to upload. |
 | `NB_DIR` | `/Users/<you>` | Workspace folder to import notebooks into. |
-| `NB_FILES` | _(the 4 demo notebooks)_ | Space-separated notebooks to import; language detected from extension. |
+| `NB_FILES` | _(the 2 demo notebooks)_ | Space-separated notebooks to import; language detected from extension. |
 | `DELTA_KERNEL_VERSION` | `3.3.2` | Delta Kernel Maven library version installed by `deploy.sh libs` (>= 3.3.2; must match `pom.xml`). |
 | `USER_NAME` | _(auto-detected)_ | Databricks user. |
 
@@ -169,7 +167,6 @@ Indicative single-node (`i3.xlarge`, 1M rows) numbers — single cold run, no wa
 
 | workload | Spark ML | SystemDS | speedup |
 | --- | --- | --- | --- |
-| `SystemDS_vs_SparkML_LinReg`, 130 features (encode + train) | 20.6 s | 11.0 s | ~1.9× |
 | `SystemDS_Delta_E2E`, 700 features (read + encode + train) | 116.6 s | 55.4 s | ~2.1× |
 
 The Spark side is the same speed on Spark 3.5.2 (DBR 16.4) and Spark 4.0.0

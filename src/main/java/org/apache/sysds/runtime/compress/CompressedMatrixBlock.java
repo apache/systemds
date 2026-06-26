@@ -619,8 +619,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	public MatrixBlock transposeSelfMatrixMultOperations(MatrixBlock out, MMTSJType tstype, int k) {
 		// check for transpose type
 		if(tstype == MMTSJType.LEFT) {
-			CLALibTSMM.leftMultByTransposeSelf(this, out, k);
-			return out;
+			return CLALibTSMM.leftMultByTransposeSelf(this, out, k);
 		}
 		else {
 			throw new DMLRuntimeException("Invalid MMTSJ type '" + tstype.toString() + "'.");

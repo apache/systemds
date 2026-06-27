@@ -122,12 +122,20 @@ public class ReaderDeltaParallel extends ReaderDelta {
 		for( int i=0; i<nfiles; i++ ) {
 			final Row scanFileRow = handle.scanFiles.get(i);
 			final int base = rowOffset[i];
+			//exclusive upper row bound for this file's slice; a file decoding more
+			//rows than its numRecords statistic would otherwise overflow into the
+			//next file's region (concurrent overlapping writes) or off the array
+			final int limit = base + (int) handle.numRecords[i];
 			tasks.add(() -> {
 				int[] cur = new int[] {base};
 				Engine eng = DeltaKernelUtils.createEngine();
 				DeltaKernelUtils.readScanFile(eng, handle.scanState, handle.physicalReadSchema, scanFileRow,
-					(cols, size, selected) ->
-						cur[0] += extractBatchInto(cols, size, selected, types, ncol, dv, cur[0]));
+					(cols, size, selected) -> {
+						if( cur[0] + DeltaKernelUtils.countSelected(size, selected) > limit )
+							throw new DMLRuntimeException("Delta file produced more rows than its "
+								+ "numRecords statistic; refusing parallel direct read of " + fname);
+						cur[0] += extractBatchInto(cols, size, selected, types, ncol, dv, cur[0]);
+					});
 				return null;
 			});
 		}
@@ -181,7 +189,7 @@ public class ReaderDeltaParallel extends ReaderDelta {
 		MatrixBlock ret = createOutputMatrixBlock(nrow, ncol, Math.max(nrow, 1), lestnnz, true, false);
 		if( nrow > 0 && ncol > 0 )
 			fillDense(ret, ordered);
-		ret.recomputeNonZeros();
+		ret.recomputeNonZeros(_numThreads);
 		ret.examSparsity();
 		return ret;
 	}

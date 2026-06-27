@@ -77,7 +77,7 @@ import org.apache.sysds.utils.stats.Timing;
 
 public final class CLALibBinaryCellOp {
 	private static final Log LOG = LogFactory.getLog(CLALibBinaryCellOp.class.getName());
-	public static final int DECOMPRESSION_BLEN = 16384 / 2;
+	public static final int DECOMPRESSION_BLEN = 8192;
 
 	private CLALibBinaryCellOp() {
 		// empty private constructor.
@@ -427,7 +427,12 @@ public final class CLALibBinaryCellOp {
 		MatrixBlock ret = new MatrixBlock(nRows, nCols, shouldBeSparseOut, -1).allocateBlock();
 
 		if(shouldBeSparseOut) {
-			if(!m1.isOverlapping() && MatrixBlock.evalSparseFormatInMemory(nRows, nCols, m1.getNonZeros())) {
+			// The sparse-sparse path only visits the stored non-zeros of m1, so it is correct only when the operation
+			// maps a zero in m1 to a zero output for every value of the vector m2 (i.e. it does not introduce non-zeros
+			// from m1's zeros). Otherwise fall back to the dense-scan sparse path that evaluates every cell.
+			final boolean sparseSafeOnM1Zeros = left ? op.isRowSafeLeft(m2) : op.isRowSafeRight(m2);
+			if(sparseSafeOnM1Zeros && !m1.isOverlapping() &&
+				MatrixBlock.evalSparseFormatInMemory(nRows, nCols, m1.getNonZeros())) {
 				if(k <= 1)
 					nnz = binaryMVColSingleThreadSparseSparse(m1, m2, op, left, ret);
 				else
@@ -1059,31 +1064,35 @@ public final class CLALibBinaryCellOp {
 
 		private final void processBlock(final int rl, final int ru, final List<AColGroup> groups, final AIterator[] its) {
 			decompressToTmpBlock(rl, ru, tmp.getSparseBlock(), groups, its);
-			processDense(rl, ru);
+			// decompressing multiple column groups can leave the temp rows with unsorted column indices, so sort
+			// before reading them in stored order into the (column-sorted) output sparse block.
+			tmp.sortSparseRows(0, ru - rl);
+			processSparse(rl, ru);
 			tmp.reset();
 		}
 
 		private final void processBlockLeft(final int rl, final int ru, final List<AColGroup> groups,
 			final AIterator[] its) {
 			decompressToTmpBlock(rl, ru, tmp.getSparseBlock(), groups, its);
-			processDenseLeft(rl, ru);
+			tmp.sortSparseRows(0, ru - rl);
+			processSparseLeft(rl, ru);
 			tmp.reset();
 		}
 
-		private final void processDense(final int rl, final int ru) {
+		private final void processSparse(final int rl, final int ru) {
 			final SparseBlock sb = _ret.getSparseBlock();
 			final SparseBlock _tmpSparse = tmp.getSparseBlock();
 			final double[] _m2Dense = _m2.getDenseBlockValues();
 			for(int row = rl; row < ru; row++) {
 				final double vr = _m2Dense[row];
 				final int tmpOff = (row - rl);
-				if(!_tmpSparse.isEmpty(tmpOff)){
+				if(!_tmpSparse.isEmpty(tmpOff)) {
 					int[] aoff = _tmpSparse.indexes(tmpOff);
 					double[] aval = _tmpSparse.values(tmpOff);
 					int apos = _tmpSparse.pos(tmpOff);
 					int alen = apos + _tmpSparse.size(tmpOff);
 
-					for(int j = apos; j < alen; j++){
+					for(int j = apos; j < alen; j++) {
 						sb.append(row, aoff[j], _op.fn.execute(aval[j], vr));
 					}
 				}
@@ -1091,21 +1100,20 @@ public final class CLALibBinaryCellOp {
 			}
 		}
 
-		private final void processDenseLeft(final int rl, final int ru) {
-			final int nCol = _m1.getNumColumns();
+		private final void processSparseLeft(final int rl, final int ru) {
 			final SparseBlock sb = _ret.getSparseBlock();
 			final SparseBlock _tmpSparse = tmp.getSparseBlock();
 			final double[] _m2Dense = _m2.getDenseBlockValues();
 			for(int row = rl; row < ru; row++) {
 				final double vr = _m2Dense[row];
-				final int tmpOff = (row - rl) * nCol;
-				if(!_tmpSparse.isEmpty(tmpOff)){
+				final int tmpOff = (row - rl);
+				if(!_tmpSparse.isEmpty(tmpOff)) {
 					int[] aoff = _tmpSparse.indexes(tmpOff);
 					double[] aval = _tmpSparse.values(tmpOff);
 					int apos = _tmpSparse.pos(tmpOff);
 					int alen = apos + _tmpSparse.size(tmpOff);
-					for(int j = apos; j < alen; j++){
-						sb.append(row, aoff[j], _op.fn.execute(vr,aval[j]));
+					for(int j = apos; j < alen; j++) {
+						sb.append(row, aoff[j], _op.fn.execute(vr, aval[j]));
 					}
 				}
 			}

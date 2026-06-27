@@ -64,7 +64,8 @@ public class CompressedMatrixBlockFactory {
 
 	private static final Log LOG = LogFactory.getLog(CompressedMatrixBlockFactory.class.getName());
 
-	private static final Object asyncCompressLock = new Object(); 
+	/** Global lock serializing all async compressions to bound concurrent compression memory/CPU. */
+	private static final Object asyncCompressLock = new Object();
 
 	/** Timing object to measure the time of each phase in the compression */
 	private final Timing time = new Timing(true);
@@ -188,7 +189,7 @@ public class CompressedMatrixBlockFactory {
 			// method call or code to be async
 			try {
 				CacheableData<?> data = ec.getCacheableData(varName);
-				synchronized(asyncCompressLock){ // synchronize on the data object to not allow multiple compressions of the same matrix.
+				synchronized(asyncCompressLock) { // global lock: serialize all async compressions (not per-matrix)
 					if(data instanceof MatrixObject) {
 						LOG.debug("Compressing Async");
 						MatrixObject mo = (MatrixObject) data;

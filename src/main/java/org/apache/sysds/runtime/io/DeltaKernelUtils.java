@@ -29,6 +29,7 @@ import java.util.function.Function;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.util.HDFSTool;
 
@@ -157,6 +158,17 @@ public class DeltaKernelUtils {
 		return n;
 	}
 
+	/** Floor on the adaptive writer target file size. Below this the per-file metadata/open
+	 * overhead (and tiny-file proliferation) outweighs the extra read parallelism. */
+	public static final long ADAPTIVE_WRITER_MIN_FILE_SIZE = 4L * 1024 * 1024;
+
+	private static Configuration buildConf(Configuration base, int batchSize, long targetFileSize) {
+		Configuration c = new Configuration(base);
+		c.setInt(CONF_READER_BATCH_SIZE, batchSize);
+		c.setLong(CONF_WRITER_TARGET_FILE_SIZE, targetFileSize);
+		return c;
+	}
+
 	private static synchronized Configuration deltaConf() {
 		Configuration base = ConfigurationManager.getCachedJobConf();
 		int batchSize = ConfigurationManager.getDeltaReaderBatchSize();
@@ -164,10 +176,7 @@ public class DeltaKernelUtils {
 		if(cachedConf == null || cachedConfBase != base
 			|| cachedBatchSize != batchSize || cachedTargetFileSize != targetFileSize)
 		{
-			Configuration c = new Configuration(base);
-			c.setInt(CONF_READER_BATCH_SIZE, batchSize);
-			c.setLong(CONF_WRITER_TARGET_FILE_SIZE, targetFileSize);
-			cachedConf = c;
+			cachedConf = buildConf(base, batchSize, targetFileSize);
 			cachedConfBase = base;
 			cachedBatchSize = batchSize;
 			cachedTargetFileSize = targetFileSize;
@@ -177,6 +186,40 @@ public class DeltaKernelUtils {
 
 	public static Engine createEngine() {
 		return DefaultEngine.create(deltaConf());
+	}
+
+	/**
+	 * Compute the parquet target data-file size (bytes) for writing a table of the given
+	 * estimated size. With adaptive sizing enabled the writer aims for roughly one data
+	 * file per expected parallel reader (so the native per-file parallel read can use all
+	 * threads), clamped to {@code [ADAPTIVE_WRITER_MIN_FILE_SIZE, configuredTarget]} so it
+	 * never exceeds the configured/expected target nor produces excessively tiny files.
+	 *
+	 * @param estimatedBytes estimate of the table's size (the block in-memory size is a fine proxy)
+	 * @return the target max parquet data-file size in bytes
+	 */
+	public static long adaptiveWriterTargetFileSize(long estimatedBytes) {
+		long configured = ConfigurationManager.getDeltaWriterTargetFileSize();
+		if(!ConfigurationManager.isDeltaWriterAdaptiveFileSize() || estimatedBytes <= 0)
+			return configured;
+		int par = Math.max(1, OptimizerUtils.getParallelBinaryReadParallelism());
+		long perReader = Math.max(1, estimatedBytes / par);
+		//never above the configured cap, never below the floor (unless the cap itself is lower)
+		return Math.min(configured, Math.max(ADAPTIVE_WRITER_MIN_FILE_SIZE, perReader));
+	}
+
+	/**
+	 * Create an engine for writing a table of the given estimated size, configured with an
+	 * adaptive target data-file size (see {@link #adaptiveWriterTargetFileSize(long)}). A fresh
+	 * (uncached) configuration is built since writes happen once per table, not per data file.
+	 *
+	 * @param estimatedBytes estimate of the table's size (the block in-memory size is a fine proxy)
+	 * @return a Delta Kernel engine for the write
+	 */
+	public static Engine createWriteEngine(long estimatedBytes) {
+		Configuration c = buildConf(ConfigurationManager.getCachedJobConf(),
+			ConfigurationManager.getDeltaReaderBatchSize(), adaptiveWriterTargetFileSize(estimatedBytes));
+		return DefaultEngine.create(c);
 	}
 
 	/**

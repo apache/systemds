@@ -24,6 +24,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
@@ -51,9 +52,6 @@ import io.delta.kernel.utils.CloseableIterator;
  */
 public class FrameWriterDelta extends FrameWriter {
 
-	/** Number of frame rows materialized per columnar batch handed to the engine. */
-	private static final int BATCH_ROWS = 4096;
-
 	@Override
 	public void writeFrameToHDFS(FrameBlock src, String fname, long rlen, long clen)
 		throws IOException, DMLRuntimeException
@@ -75,9 +73,11 @@ public class FrameWriterDelta extends FrameWriter {
 			nullable[c] = cols[c].containsNull();
 		}
 
-		Engine engine = DeltaKernelUtils.createEngine();
+		int batchRows = ConfigurationManager.getDeltaWriterBatchSize();
+		//size data files adaptively (toward one file per parallel reader) for faster parallel reads
+		Engine engine = DeltaKernelUtils.createWriteEngine(src.getInMemorySize());
 		DeltaKernelUtils.commit(engine, DeltaKernelUtils.qualify(fname), schema,
-			new FrameBatchIterator(cols, nullable, schema, nrow, ncol));
+			new FrameBatchIterator(cols, nullable, schema, nrow, ncol, batchRows));
 	}
 
 	private static StructType buildSchema(ValueType[] vtSchema, String[] names, int ncol) {
@@ -107,14 +107,16 @@ public class FrameWriterDelta extends FrameWriter {
 		private final StructType _schema;
 		private final int _nrow;
 		private final int _ncol;
+		private final int _batchRows;
 		private int _pos = 0;
 
-		FrameBatchIterator(Array<?>[] cols, boolean[] nullable, StructType schema, int nrow, int ncol) {
+		FrameBatchIterator(Array<?>[] cols, boolean[] nullable, StructType schema, int nrow, int ncol, int batchRows) {
 			_cols = cols;
 			_nullable = nullable;
 			_schema = schema;
 			_nrow = nrow;
 			_ncol = ncol;
+			_batchRows = batchRows;
 		}
 
 		@Override
@@ -126,7 +128,7 @@ public class FrameWriterDelta extends FrameWriter {
 		public FilteredColumnarBatch next() {
 			if( !hasNext() )
 				throw new NoSuchElementException();
-			int size = Math.min(BATCH_ROWS, _nrow - _pos);
+			int size = Math.min(_batchRows, _nrow - _pos);
 			ColumnarBatch batch = new FrameColumnarBatch(_cols, _nullable, _schema, _pos, size, _ncol);
 			_pos += size;
 			return new FilteredColumnarBatch(batch, Optional.empty());

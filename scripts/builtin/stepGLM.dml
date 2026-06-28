@@ -45,37 +45,18 @@
 # OUTPUT: Matrix beta, whose size depends on icpt:
 #     icpt=0: ncol(X) x 1;  icpt=1: (ncol(X) + 1) x 1;  icpt=2: (ncol(X) + 1) x 2
 #
+# AIC   Double    ---      AIC value
 # B     Matrix    ---      Estimated regression parameters (betas)
 # S     Matrix    ---      The selected features ordered as computed by the algorithm
 # ---------------------------------------------------------------------------------------------
 
 # THE StepGLM SCRIPT CURRENTLY SUPPORTS BERNOULLI DISTRIBUTION FAMILY AND THE FOLLOWING LINK FUNCTIONS ONLY!
-# 	- LOG
+# - LOG
 #	- LOGIT
 #	- PROBIT
 #	- CLOGLOG
 
-# In addition, in the last run of GLM some statistics are provided in CSV format, one comma-separated name-value
-# pair per each line, as follows:
-#
-# NAME                  MEANING
-# -------------------------------------------------------------------------------------------
-# TERMINATION_CODE      A positive integer indicating success/failure as follows:
-#                       1 = Converged successfully; 2 = Maximum number of iterations reached; 
-#                       3 = Input (X, Y) out of range; 4 = Distribution/link is not supported
-# BETA_MIN              Smallest beta value (regression coefficient), excluding the intercept
-# BETA_MIN_INDEX        Column index for the smallest beta value
-# BETA_MAX              Largest beta value (regression coefficient), excluding the intercept
-# BETA_MAX_INDEX        Column index for the largest beta value
-# INTERCEPT             Intercept value, or NaN if there is no intercept (if icpt=0)
-# DISPERSION            Dispersion used to scale deviance, provided as "disp" input parameter
-#                       or estimated (same as DISPERSION_EST) if the "disp" parameter is <= 0
-# DISPERSION_EST        Dispersion estimated from the dataset
-# DEVIANCE_UNSCALED     Deviance from the saturated model, assuming dispersion == 1.0
-# DEVIANCE_SCALED       Deviance from the saturated model, scaled by the DISPERSION value
-# -------------------------------------------------------------------------------------------
-
-source("./scripts/builtin/glm.dlm") as glm;
+source("./scripts/builtin/glm.dml") as glm;
 
 stepGLM = function (
                     Matrix[Double] X, 
@@ -91,7 +72,7 @@ stepGLM = function (
 ) return (
           Double AIC,
           Matrix[Double] B, 
-          Matrix[Double] S, 
+          Matrix[Double] S
         )
     {
         intercept_status = icpt;
@@ -126,18 +107,18 @@ stepGLM = function (
 
         if (intercept_status == 0) {
             # Compute AIC of an empty model with no features and no intercept (all Ys are zero)
-            [AIC_best, ignore_B1, ignore_S1, ignore_O1] = glm::m_glm(X=X_global, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
+            [AIC_best, ignore_B1, ignore_S1] = internal_glm(X=X_global, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
         } else {
             # compute AIC of an empty model with only intercept (all Ys are constant)
             all_ones = matrix (1, rows = num_records, cols = 1);
-            [AIC_best, ignore_beta2, ignore_S2, ignore_O2] = glm::m_glm(X=all_ones, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
+            [AIC_best, ignore_beta2, ignore_S2] = internal_glm(X=all_ones, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
         }
         #print ("Best AIC without any features: " + AIC_best);
 
         # First pass to examine single features
         AICs = matrix (AIC_best, rows = 1, cols = num_features);
         parfor (i in 1:num_features) { 	
-            [AIC_1, ignore_beta3, ignore_S3, ignore_O3] = glm::m_glm(X=X_orig[,i], Y=Y, intercept_status=intercept_status, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
+            [AIC_1, ignore_beta3, ignore_S3] = internal_glm(X=X_orig[,i], Y=Y, intercept_status=intercept_status, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
             AICs[1,i] = AIC_1;
         }
 
@@ -155,11 +136,11 @@ stepGLM = function (
             #print ("AIC of an empty model is " + AIC_best + " and adding no feature achieves more than " + (thr * 100) + "% decrease in AIC!");
             if (intercept_status == 0) {
                 # Compute AIC of an empty model with no features and no intercept (all Ys are zero)
-                [AIC_best, ignore_beta4, ignore_S4, ignore_O4] = glm::m_glm(X=X_global, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
+                [AIC_best, ignore_beta4, ignore_S4] = internal_glm(X=X_global, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
             } else {
                 # compute AIC of an empty model with only intercept (all Ys are constant)
                 ###all_ones = matrix (1, rows = num_records, cols = 1);
-                [AIC_best, ignore_beta5, ignore_S5, ignore_O5] = glm::m_glm(X=all_ones, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
+                [AIC_best, ignore_beta5, ignore_S5] = internal_glm(X=all_ones, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
             }
         };
 
@@ -176,7 +157,7 @@ stepGLM = function (
                     # Construct the feature matrix
                     X_loop = cbind (X_global, X_orig[,i]);
 
-                    [AIC_2, ignore_beta6, ignore_S6, ignore_O6] = glm::m_glm(X=X_loop, Y=Y, intercept_status=intercept_status, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
+                    [AIC_2, ignore_beta6, ignore_S6] = internal_glm(X=X_loop, Y=Y, intercept_status=intercept_status, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
                     AICs[1,i] = AIC_2;
                 }		
             }
@@ -208,7 +189,84 @@ stepGLM = function (
 
         # run GLM with selected set of features
         print ("Running GLM with selected features...");
-        [AIC, B, S, O] = glm::m_glm(X=X_global, Y=Y, intercept_status=intercept_status, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
+        [AIC, B, S] = internal_glm(X=X_global, Y=Y, intercept_status=intercept_status, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
     }
 
+compute_AIC = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] B, Int link, Int icpt)
+    return (Double aic)
+{
+    # Isolate unscaled parameters; accounts for m_glm returning 2 columns when icpt=2
+    beta = B[, 1];
 
+    if (icpt > 0) {
+        ones = matrix(1, rows=nrow(X), cols=1);
+        X_design = cbind(X, ones);
+    } else {
+        X_design = X;
+    }
+
+    eta = X_design %*% beta;
+
+    # Map inverse link functions 
+    if (link == 1) {
+        # log, see https://en.wikipedia.org/wiki/Generalized_linear_model#Link_function
+        mu = exp(eta); 
+    } else if (link == 2) { 
+        # logit, see https://en.wikipedia.org/wiki/Generalized_linear_model#Link_function
+        mu = 1 / (1 + exp(-eta)); 
+    } else if (link == 3) { 
+        # probit approximation, page 1487 in "Qualitative Response Models: A Survey (1981)" by Takeshi Amemiya
+        mu = 1 / (1 + exp(-1.6 * eta));
+    } else if (link == 4) { 
+        # cloglog, see https://search.r-project.org/CRAN/refmans/VGAM/html/clogloglink.html
+        mu = 1 - exp(-exp(eta)); 
+    } else {
+        stop("Unsupported link function code: " + link);
+        mu = eta; 
+    }
+
+    # Constrain to prevent numerical discontinuity in log(0)
+    mu = max(mu, 1e-15);
+    mu = min(mu, 1 - 1e-15);
+
+    Y_yes = Y[, 1];
+    Y_neg = Y[, 2];
+
+    LL = sum(Y_yes * log(mu) + Y_neg * log(1 - mu));
+    k = nrow(beta);
+    
+    aic = 2 * k - 2 * LL;
+}
+
+internal_glm = function (
+    Matrix[Double] X, 
+    Matrix[Double] Y, 
+    Int intercept_status, 
+    Double num_features_orig, 
+    Matrix[Double] Selected, 
+    Int link, 
+    Double disp, 
+    Double tol, 
+    Int moi, 
+    Int mii
+) return (
+    Double AIC, 
+    Matrix[Double] B, 
+    Matrix[Double] S
+) {
+    # bernoulli family parameters, see table in ./scripts/builtin/m_glm.dml for details. 
+    new_link = link;
+    new_lpow = 1.0;
+    
+    if (link == 1) {
+        new_link = 1; 
+        new_lpow = 0.0; 
+    }
+    B = glm::m_glm(X=X, Y=Y, dfam=2, vpow=0.0, link=new_link, lpow=new_lpow, yneg=0.0, 
+              icpt=intercept_status, disp=disp, reg=0.0, tol=tol, 
+              moi=moi, mii=mii, verbose=FALSE);
+
+    AIC = compute_AIC(X, Y, B, link, intercept_status);
+    
+    S = Selected;
+}

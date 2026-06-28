@@ -71,6 +71,9 @@ public class DMLConfig
 	public static final String CP_PARALLEL_OPS      = "sysds.cp.parallel.ops";
 	public static final String CP_PARALLEL_IO       = "sysds.cp.parallel.io";
 	public static final String IO_COMPRESSION_CODEC = "sysds.io.compression.encoding";
+	public static final String DELTA_READER_BATCH_SIZE = "sysds.io.delta.reader.batchsize"; // int: rows per parquet read batch
+	public static final String DELTA_WRITER_BATCH_SIZE = "sysds.io.delta.writer.batchsize"; // int: matrix rows materialized per columnar batch handed to the engine
+	public static final String DELTA_WRITER_TARGET_FILE_SIZE = "sysds.io.delta.writer.targetfilesize"; // long: target data-file size in bytes (smaller -> more files -> more parallel-read throughput)
 	public static final String PARALLEL_ENCODE      = "sysds.parallel.encode";  // boolean: enable multi-threaded transformencode and apply
 	public static final String PARALLEL_ENCODE_STAGED = "sysds.parallel.encode.staged";
 	public static final String PARALLEL_ENCODE_APPLY_BLOCKS = "sysds.parallel.encode.applyBlocks";
@@ -158,6 +161,9 @@ public class DMLConfig
 		_defaultVals.put(CP_PARALLEL_OPS,        "true" );
 		_defaultVals.put(CP_PARALLEL_IO,         "true" );
 		_defaultVals.put(IO_COMPRESSION_CODEC,   "none");
+		_defaultVals.put(DELTA_READER_BATCH_SIZE, "4096"); // rows per parquet read batch (Delta Kernel default 1024)
+		_defaultVals.put(DELTA_WRITER_BATCH_SIZE, "4096"); // matrix rows materialized per columnar batch handed to the engine
+		_defaultVals.put(DELTA_WRITER_TARGET_FILE_SIZE, String.valueOf(64L * 1024 * 1024)); // 64MB target data-file size (Delta Kernel default 128MB) -> more files -> more parallel-read throughput
 		_defaultVals.put(PARALLEL_TOKENIZE,      "false");
 		_defaultVals.put(PARALLEL_TOKENIZE_NUM_BLOCKS, "64");
 		_defaultVals.put(FRAME_TO_MATRIX_WARN_CAST, "false");

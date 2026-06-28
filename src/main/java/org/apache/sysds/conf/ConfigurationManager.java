@@ -258,6 +258,21 @@ public class ConfigurationManager{
 		return getDMLConfig().getIntValue(DMLConfig.FEDERATED_TIMEOUT);
 	}
 
+	/** @return rows per parquet read batch for the native Delta reader */
+	public static int getDeltaReaderBatchSize() {
+		return getDMLConfig().getIntValue(DMLConfig.DELTA_READER_BATCH_SIZE);
+	}
+
+	/** @return matrix rows materialized per columnar batch for the native Delta writer */
+	public static int getDeltaWriterBatchSize() {
+		return getDMLConfig().getIntValue(DMLConfig.DELTA_WRITER_BATCH_SIZE);
+	}
+
+	/** @return target data-file size (bytes) for the native Delta writer */
+	public static long getDeltaWriterTargetFileSize() {
+		return Long.parseLong(getDMLConfig().getTextValue(DMLConfig.DELTA_WRITER_TARGET_FILE_SIZE));
+	}
+
 	public static boolean isFederatedSSL(){
 		return getDMLConfig().getBooleanValue(DMLConfig.USE_SSL_FEDERATED_COMMUNICATION);
 	}

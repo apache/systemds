@@ -46,6 +46,8 @@
 		<jackson.version>2.15.4</jackson.version>
 		<scala.version>2.12.18</scala.version>
 		<scala.binary.version>2.12</scala.binary.version>
+		<delta-kernel.version>3.3.2</delta-kernel.version>
+		<parquet.version>1.13.1</parquet.version>
 		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
 		<project.build.outputTimestamp>1</project.build.outputTimestamp>
 		<enableGPU>false</enableGPU>
@@ -968,6 +970,48 @@
 	</profiles>
 
 	<dependencies>
+		<!-- Delta Lake native (Spark-free) read/write via Delta Kernel -->
+		<dependency>
+			<groupId>io.delta</groupId>
+			<artifactId>delta-kernel-api</artifactId>
+			<version>${delta-kernel.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.delta</groupId>
+			<artifactId>delta-kernel-defaults</artifactId>
+			<version>${delta-kernel.version}</version>
+		</dependency>
+		<!-- Delta Kernel needs parquet >= 1.13 (the version Spark 3.5.x ships);
+		     declared directly via ${parquet.version} so Maven's nearest-wins
+		     mediation does not downgrade it to an older transitive version. The
+		     jackson trio Delta Kernel relies on is pinned globally via
+		     ${jackson.version}. -->
+		<dependency>
+			<groupId>org.apache.parquet</groupId>
+			<artifactId>parquet-hadoop</artifactId>
+			<version>${parquet.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.parquet</groupId>
+			<artifactId>parquet-column</artifactId>
+			<version>${parquet.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.parquet</groupId>
+			<artifactId>parquet-common</artifactId>
+			<version>${parquet.version}</version>
+		</dependency>
+		<!-- Delta's Spark connector, test-only: an independent (reference) Delta engine
+		     used purely to cross-check that tables our Delta Kernel writer produces are
+		     readable by Spark/Delta, and that tables Spark/Delta writes (including
+		     deletion vectors and multiple commits) are readable by our reader. Delta
+		     3.3.x targets Spark 3.5.x, matching ${spark.version}. -->
+		<dependency>
+			<groupId>io.delta</groupId>
+			<artifactId>delta-spark_${scala.binary.version}</artifactId>
+			<version>${delta-kernel.version}</version>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcuda</artifactId>

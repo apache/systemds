@@ -15,24 +15,27 @@ Y = (rand(rows=N, cols=1, min=0.0, max=1.0, seed=456) < P_y) * 1.0;
 
 [AIC, B, S] = stepGLM::stepGLM(X=X, Y=Y, link=2, yneg=0.0, icpt=0, tol=1e-6, disp=0.0, moi=200, mii=0, thr=0.01);
 
+print("\n\n\n\n\n\n\nTest Results:");
 print("Optimal AIC: " + AIC);
 print("Selected Feature Indices:\n" + toString(S));
 print("Estimated Coefficients:\n" + toString(B));
 
-epsilon = 0.5;
 beta_est = matrix(0, rows=P, cols=1);
 for (i in 1:nrow(B)) {
     idx = as.scalar(S[1, i]);
-    if (nrow(S) > 1) { idx = as.scalar(S[i, 1]); }
     beta_est[idx, 1] = B[i, 1];
 }
 
+# Case 01
 if (nrow(B) != 3 | sum(beta_est != 0 & beta_true == 0) > 0 | sum(beta_est == 0 & beta_true != 0) > 0) {
     stop("Test failed: Inexact feature support recovery.");
 }
+print("passed test 1")
 
+# Case 02
+epsilon = 0.5;
 if (max(abs(beta_est - beta_true)) > epsilon) {
     stop("Test failed: Parameter estimates exceed tolerance bound epsilon = " + epsilon + ".");
 }
+print("passed test 2")
 
-print("Automated convergence and estimation validation passed.");

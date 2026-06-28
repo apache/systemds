@@ -1001,6 +1001,17 @@
 			<artifactId>parquet-common</artifactId>
 			<version>${parquet.version}</version>
 		</dependency>
+		<!-- Delta's Spark connector, test-only: an independent (reference) Delta engine
+		     used purely to cross-check that tables our Delta Kernel writer produces are
+		     readable by Spark/Delta, and that tables Spark/Delta writes (including
+		     deletion vectors and multiple commits) are readable by our reader. Delta
+		     3.3.x targets Spark 3.5.x, matching ${spark.version}. -->
+		<dependency>
+			<groupId>io.delta</groupId>
+			<artifactId>delta-spark_${scala.binary.version}</artifactId>
+			<version>${delta-kernel.version}</version>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcuda</artifactId>

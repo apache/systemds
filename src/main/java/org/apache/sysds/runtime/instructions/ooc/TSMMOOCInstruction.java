@@ -19,18 +19,22 @@
 
 package org.apache.sysds.runtime.instructions.ooc;
 
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.lops.MMTSJ;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
+import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -48,7 +52,7 @@ public class TSMMOOCInstruction extends ComputationOOCInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields(parts, 3);
 		String opcode = parts[0];
-		CPOperand in1 = new CPOperand(parts[1]); // the large matrix (streamed), columns <= blocksize
+		CPOperand in1 = new CPOperand(parts[1]); // the large matrix (streamed)
 		CPOperand out = new CPOperand(parts[2]);
 		MMTSJ.MMTSJType mmtsjType = MMTSJ.MMTSJType.valueOf(parts[3]);
 
@@ -59,39 +63,77 @@ public class TSMMOOCInstruction extends ComputationOOCInstruction {
 	}
 
 	@Override
-	public void processInstruction( ExecutionContext ec ) {
+	public void processInstruction(ExecutionContext ec) {
 		MatrixObject min = ec.getMatrixObject(input1);
-		int nRows = (int) min.getDataCharacteristics().getRows();
-		int nCols = (int) min.getDataCharacteristics().getCols();
-		int bLen = min.getDataCharacteristics().getBlocksize();
-		
-		OOCStream<IndexedMatrixValue> qIn = min.getStreamHandle();
+		int numRowBlocks = Math.toIntExact(min.getDataCharacteristics().getNumRowBlocks());
+		int numColBlocks = Math.toIntExact(min.getDataCharacteristics().getNumColBlocks());
+		int blocksPerJoinGroup = _type.isLeft() ? numColBlocks : numRowBlocks;
+		int partialsPerOutput = _type.isLeft() ? numRowBlocks : numColBlocks;
+
+		OOCStreamable<IndexedMatrixValue> inputStreamable = min.getStreamable();
+		boolean createdCache = !inputStreamable.hasStreamCache();
+		CachingStream inputCache = createdCache ? new CachingStream(min.getStreamHandle())
+			: inputStreamable.getStreamCache();
+
+		OOCStream<List<IndexedMatrixValue>> groupedPartials = createWritableStream();
+		OOCStream<IndexedMatrixValue> partials = createWritableStream();
+		OOCStream<IndexedMatrixValue> out = createWritableStream();
+		ec.getMatrixObject(output).setStreamHandle(out);
+
+		joinManyOOC(inputCache.getReadStream(), inputCache.getReadStream(), groupedPartials,
+			this::createPartialOutputTiles, this::getJoinIndex, this::getJoinIndex,
+			blocksPerJoinGroup, blocksPerJoinGroup);
+		expandOOC(groupedPartials, partials, values -> values);
+
 		BinaryOperator plus = InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString());
+		CompletableFuture<Void> outFuture = groupedReduceOOC(partials, out, (left, right) -> {
+			MatrixBlock result = ((MatrixBlock) left.getValue()).binaryOperationsInPlace(plus, right.getValue());
+			left.setValue(result);
+			return left;
+		}, partialsPerOutput);
 
-		//validation check TODO extend compiler to not create OOC otherwise
-		if(    (_type.isLeft() && nCols > bLen)
-			|| (_type.isRight() && nRows > bLen) )
-		{
-			throw new UnsupportedOperationException();
+		outFuture.whenComplete((result, error) -> {
+			if(createdCache)
+				inputCache.scheduleDeletion();
+		});
+	}
+
+	private long getJoinIndex(IndexedMatrixValue value) {
+		return _type.isLeft() ? value.getIndexes().getRowIndex() : value.getIndexes().getColumnIndex();
+	}
+
+	private long getOutputIndex(IndexedMatrixValue value) {
+		return _type.isLeft() ? value.getIndexes().getColumnIndex() : value.getIndexes().getRowIndex();
+	}
+
+	private List<IndexedMatrixValue> createPartialOutputTiles(IndexedMatrixValue left, IndexedMatrixValue right) {
+		long leftIndex = getOutputIndex(left);
+		long rightIndex = getOutputIndex(right);
+		if(leftIndex > rightIndex)
+			return List.of();
+
+		MatrixBlock leftBlock = (MatrixBlock) left.getValue();
+		MatrixBlock rightBlock = (MatrixBlock) right.getValue();
+		if(leftIndex == rightIndex) {
+			MatrixBlock diagonal = leftBlock.transposeSelfMatrixMultOperations(new MatrixBlock(), _type);
+			return List.of(new IndexedMatrixValue(new MatrixIndexes(leftIndex, rightIndex), diagonal));
 		}
-		
-		//int dim = _type.isLeft() ? nCols : nRows;
-		MatrixBlock resultBlock = null;
 
-		OOCStream<MatrixBlock> tmpStream = createWritableStream();
-
-		mapOOC(qIn, tmpStream,
-			tmp -> ((MatrixBlock) tmp.getValue())
-				.transposeSelfMatrixMultOperations(new MatrixBlock(), _type));
-
-		MatrixBlock tmp;
-		while ((tmp = tmpStream.dequeue()) != LocalTaskQueue.NO_MORE_TASKS) {
-			if (resultBlock == null)
-				resultBlock = tmp;
-			else
-				resultBlock.binaryOperationsInPlace(plus, tmp);
+		MatrixBlock partial;
+		if(_type.isLeft()) {
+			MatrixBlock leftTranspose = LibMatrixReorg.transpose(leftBlock);
+			partial = leftTranspose.aggregateBinaryOperations(leftTranspose, rightBlock, new MatrixBlock(),
+				(AggregateBinaryOperator) _optr);
+		}
+		else {
+			MatrixBlock rightTranspose = LibMatrixReorg.transpose(rightBlock);
+			partial = leftBlock.aggregateBinaryOperations(leftBlock, rightTranspose, new MatrixBlock(),
+				(AggregateBinaryOperator) _optr);
 		}
 
-		ec.setMatrixOutput(output.getName(), resultBlock);
+		MatrixBlock mirror = LibMatrixReorg.transpose(partial);
+		return List.of(
+			new IndexedMatrixValue(new MatrixIndexes(leftIndex, rightIndex), partial),
+			new IndexedMatrixValue(new MatrixIndexes(rightIndex, leftIndex), mirror));
 	}
 }

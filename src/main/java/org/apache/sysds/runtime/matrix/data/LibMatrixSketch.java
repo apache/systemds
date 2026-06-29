@@ -38,6 +38,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 public class LibMatrixSketch {
 	private static final long PAR_UNIQUE_NUMCELL_THRESHOLD = 1024 * 16;
 	private static final long PAR_UNIQUE_MAX_LOCAL_BYTES_FRACTION = 4;
+	private static final long PAR_UNIQUE_LOCAL_BYTES_OVERHEAD = 2;
 
 	/**
 	 * Computes unique values, rows, or columns with the original single-threaded behavior.
@@ -342,14 +343,18 @@ public class LibMatrixSketch {
 
 	/**
 	 * Conservative memory guard for parallel paths with thread-local sets or maps.
-	 * This does not try to predict object overhead; it simply avoids starting local
-	 * deduplication when the raw cell values already take a large fraction of the heap.
+	 * The estimate includes a small overhead factor for key and map objects, so the
+	 * parallel path is avoided before local deduplication becomes too memory-heavy.
 	 *
 	 * @param blkIn input matrix block
 	 * @return true if local deduplication is small enough for the parallel path
 	 */
 	private static boolean isLocalDedupMemoryBudgetSafe(MatrixBlock blkIn) {
-		long copiedValueBytes = ((long) blkIn.getNumRows()) * blkIn.getNumColumns() * Double.BYTES;
+		long numCells = ((long) blkIn.getNumRows()) * blkIn.getNumColumns();
+		if( numCells > Long.MAX_VALUE / Double.BYTES / PAR_UNIQUE_LOCAL_BYTES_OVERHEAD )
+			return false;
+
+		long copiedValueBytes = numCells * Double.BYTES * PAR_UNIQUE_LOCAL_BYTES_OVERHEAD;
 		long maxLocalBytes = Runtime.getRuntime().maxMemory() / PAR_UNIQUE_MAX_LOCAL_BYTES_FRACTION;
 		return copiedValueBytes <= maxLocalBytes;
 	}

@@ -48,6 +48,12 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.compress.CompressionConfig;
+import org.apache.sysds.runtime.compress.CompressionFactory;
+import org.apache.sysds.runtime.compress.CompressionType;
+import org.apache.sysds.runtime.compress.CompressedMatrix;
+import org.apache.sysds.runtime.compress.MatrixCompressor;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.util.IndexRange;
@@ -138,6 +144,27 @@ public class FederationMap {
 		// is fine, because with broadcast all data on all workers)
 		data.setFedMapping(copyWithNewIDAndRange(
 			cb.getNumRows(), cb.getNumColumns(), id, FType.BROADCAST));
+
+		// === COMPRESSION INTEGRATION ===
+		// Attempt TopK compression if the block is a MatrixBlock
+		if(cb instanceof MatrixBlock) {
+			try {
+				CompressionConfig config = CompressionConfig.builder()
+					.enable(true)
+					.withType(CompressionType.TOPK)
+					.withSparsity(0.01)
+					.build();
+				MatrixCompressor compressor = CompressionFactory.create(config);
+				CompressedMatrix compressed = compressor.compress((MatrixBlock) cb);
+				MatrixBlock decompressed = compressor.decompress(compressed);
+				return new FederatedRequest(RequestType.PUT_VAR, lineageItem, id, decompressed);
+			}
+			catch(Exception ex) {
+				// Fall back to uncompressed on any error
+			}
+		}
+		// === END COMPRESSION INTEGRATION ===
+
 		return new FederatedRequest(RequestType.PUT_VAR, lineageItem, id, cb);
 	}
 

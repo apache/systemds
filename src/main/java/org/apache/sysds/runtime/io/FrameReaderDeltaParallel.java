@@ -31,10 +31,8 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
-import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
-import io.delta.kernel.data.ColumnVector;
 import io.delta.kernel.data.Row;
 import io.delta.kernel.engine.Engine;
 import io.delta.kernel.types.DataType;
@@ -251,119 +249,4 @@ public class FrameReaderDeltaParallel extends FrameReaderDelta {
 		}
 	}
 
-	/** Allocate a pre-sized typed column array matching the target value type. */
-	private static Object allocColumn(ValueType vt, int n) {
-		switch( vt ) {
-			case FP64:    return new double[n];
-			case FP32:    return new float[n];
-			case INT64:   return new long[n];
-			case INT32:   return new int[n];
-			case BOOLEAN: return new boolean[n];
-			default:      return new String[n]; // STRING
-		}
-	}
-
-	/** Wrap a fully populated typed column array into a frame {@link Array}. */
-	private static Array<?> createColumn(ValueType vt, Object full) {
-		switch( vt ) {
-			case FP64:    return ArrayFactory.create((double[]) full);
-			case FP32:    return ArrayFactory.create((float[]) full);
-			case INT64:   return ArrayFactory.create((long[]) full);
-			case INT32:   return ArrayFactory.create((int[]) full);
-			case BOOLEAN: return ArrayFactory.create((boolean[]) full);
-			default:      return ArrayFactory.create((String[]) full); // STRING
-		}
-	}
-
-	/**
-	 * Decode the live (selected, after deletion vector) rows of one column batch
-	 * directly into a pre-sized typed array starting at absolute row {@code destOff}.
-	 * Null numeric cells keep the array default (0); string nulls are stored as null.
-	 */
-	private static void extractColumnInto(ColumnVector col, int size, boolean[] selected,
-		int readCode, Object dest, int destOff)
-	{
-		switch( readCode ) {
-			case R_DOUBLE: {
-				double[] a = (double[]) dest;
-				int lr = destOff;
-				for( int r=0; r<size; r++ ) {
-					if( selected != null && !selected[r] ) continue;
-					if( !col.isNullAt(r) ) a[lr] = col.getDouble(r);
-					lr++;
-				}
-				break;
-			}
-			case R_FLOAT: {
-				float[] a = (float[]) dest;
-				int lr = destOff;
-				for( int r=0; r<size; r++ ) {
-					if( selected != null && !selected[r] ) continue;
-					if( !col.isNullAt(r) ) a[lr] = col.getFloat(r);
-					lr++;
-				}
-				break;
-			}
-			case R_LONG: {
-				long[] a = (long[]) dest;
-				int lr = destOff;
-				for( int r=0; r<size; r++ ) {
-					if( selected != null && !selected[r] ) continue;
-					if( !col.isNullAt(r) ) a[lr] = col.getLong(r);
-					lr++;
-				}
-				break;
-			}
-			case R_INT: {
-				int[] a = (int[]) dest;
-				int lr = destOff;
-				for( int r=0; r<size; r++ ) {
-					if( selected != null && !selected[r] ) continue;
-					if( !col.isNullAt(r) ) a[lr] = col.getInt(r);
-					lr++;
-				}
-				break;
-			}
-			case R_SHORT: {
-				int[] a = (int[]) dest;
-				int lr = destOff;
-				for( int r=0; r<size; r++ ) {
-					if( selected != null && !selected[r] ) continue;
-					if( !col.isNullAt(r) ) a[lr] = col.getShort(r);
-					lr++;
-				}
-				break;
-			}
-			case R_BYTE: {
-				int[] a = (int[]) dest;
-				int lr = destOff;
-				for( int r=0; r<size; r++ ) {
-					if( selected != null && !selected[r] ) continue;
-					if( !col.isNullAt(r) ) a[lr] = col.getByte(r);
-					lr++;
-				}
-				break;
-			}
-			case R_BOOLEAN: {
-				boolean[] a = (boolean[]) dest;
-				int lr = destOff;
-				for( int r=0; r<size; r++ ) {
-					if( selected != null && !selected[r] ) continue;
-					if( !col.isNullAt(r) ) a[lr] = col.getBoolean(r);
-					lr++;
-				}
-				break;
-			}
-			default: { // R_STRING
-				String[] a = (String[]) dest;
-				int lr = destOff;
-				for( int r=0; r<size; r++ ) {
-					if( selected != null && !selected[r] ) continue;
-					a[lr] = col.isNullAt(r) ? null : col.getString(r);
-					lr++;
-				}
-				break;
-			}
-		}
-	}
 }

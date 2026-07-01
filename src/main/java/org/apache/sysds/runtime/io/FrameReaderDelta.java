@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 
 import io.delta.kernel.data.ColumnVector;
+import io.delta.kernel.data.Row;
 import io.delta.kernel.engine.Engine;
 import io.delta.kernel.types.DataType;
 
@@ -63,57 +64,113 @@ public class FrameReaderDelta extends FrameReader {
 	{
 		Engine engine = DeltaKernelUtils.createEngine();
 		String tablePath = DeltaKernelUtils.qualify(fname);
+		DeltaKernelUtils.ScanHandle handle = DeltaKernelUtils.openScan(engine, tablePath);
 
-		//per-batch, per-column extracted arrays (boxing free)
-		ArrayList<Object[]> batchCols = new ArrayList<>();
-		ArrayList<Integer> batchSizes = new ArrayList<>();
-		int[] nrowH = new int[1];
-		ValueType[][] vtH = new ValueType[1][];
-		String[][] nameH = new String[1][];
-		int[][] readCodeH = new int[1][];
+		//derive per-column read codes, value types and names once from the schema
+		final int ncol = handle.schema.length();
+		final int[] readCodes = new int[ncol];
+		final ValueType[] vt = new ValueType[ncol];
+		final String[] cnames = new String[ncol];
+		for( int c=0; c<ncol; c++ ) {
+			DataType dt = handle.schema.at(c).getDataType();
+			readCodes[c] = readCode(dt, handle.schema.at(c).getName());
+			vt[c] = valueType(readCodes[c]);
+			cnames[c] = handle.schema.at(c).getName();
+		}
 
-		DeltaKernelUtils.scan(engine, tablePath, sch -> {
-			int ncol = sch.length();
-			int[] readCode = new int[ncol];
-			ValueType[] vt = new ValueType[ncol];
-			String[] cnames = new String[ncol];
-			for( int c=0; c<ncol; c++ ) {
-				DataType dt = sch.at(c).getDataType();
-				readCode[c] = readCode(dt, sch.at(c).getName());
-				vt[c] = valueType(readCode[c]);
-				cnames[c] = sch.at(c).getName();
-			}
-			vtH[0] = vt;
-			nameH[0] = cnames;
-			readCodeH[0] = readCode;
-			return (cols, size, selected) -> {
-				int n = DeltaKernelUtils.countSelected(size, selected);
-				Object[] extracted = new Object[ncol];
-				for( int c=0; c<ncol; c++ )
-					extracted[c] = extractColumn(cols[c], size, selected, n, readCode[c]);
-				batchCols.add(extracted);
-				batchSizes.add(n);
-				nrowH[0] += n;
-			};
-		});
+		//fast path: exact per-file row counts are known from metadata (no deletion
+		//vectors) -> pre-size one typed array per column and decode each file
+		//straight into its row offset, avoiding the per-batch extract + concatenate.
+		if( handle.hasExactRowCounts() ) {
+			long total = 0;
+			for( long r : handle.numRecords )
+				total += r;
+			//empty table: the typed column arrays cannot be zero-length, so return a
+			//schema-only frame with the discovered schema/names and zero rows.
+			if( total == 0 )
+				return new FrameBlock(vt, cnames, 0);
+			if( total <= Integer.MAX_VALUE )
+				return readDirect(fname, engine, handle, ncol, readCodes, vt, cnames, (int) total);
+		}
 
-		ValueType[] vt = vtH[0];
-		String[] discoveredNames = nameH[0];
-		int ncol = vt.length;
+		//fallback: row counts unknown or deletion vectors present -> decode into
+		//per-batch arrays and concatenate per column in file order.
+		return readBuffered(engine, handle, ncol, readCodes, vt, cnames);
+	}
+
+	/**
+	 * Fast path: decode each data file straight into pre-sized typed column arrays
+	 * at a metadata-derived row offset. One allocation per column, single pass, no
+	 * intermediate per-batch buffers or serial concatenation.
+	 */
+	private FrameBlock readDirect(String fname, Engine engine, DeltaKernelUtils.ScanHandle handle,
+		int ncol, int[] readCodes, ValueType[] vt, String[] cnames, int nrow) throws IOException
+	{
+		final Object[] dest = new Object[ncol];
+		for( int c=0; c<ncol; c++ )
+			dest[c] = allocColumn(vt[c], nrow);
+
+		int base = 0;
+		for( int i=0; i<handle.scanFiles.size(); i++ ) {
+			//exclusive upper row bound for this file's slice; a file decoding more
+			//rows than its numRecords statistic would otherwise overflow into the
+			//next file's region or off the array
+			final int limit = base + (int) handle.numRecords[i];
+			final int[] cur = new int[] {base};
+			DeltaKernelUtils.readScanFile(engine, handle.scanState, handle.physicalReadSchema,
+				handle.scanFiles.get(i), (cols, size, selected) -> {
+					if( cur[0] + DeltaKernelUtils.countSelected(size, selected) > limit )
+						throw new DMLRuntimeException("Delta file produced more rows than its "
+							+ "numRecords statistic; refusing direct read of " + fname);
+					for( int c=0; c<ncol; c++ )
+						extractColumnInto(cols[c], size, selected, readCodes[c], dest[c], cur[0]);
+					cur[0] += DeltaKernelUtils.countSelected(size, selected);
+				});
+			base = limit;
+		}
+
+		Array<?>[] columns = new Array<?>[ncol];
+		for( int c=0; c<ncol; c++ )
+			columns[c] = createColumn(vt[c], dest[c]);
+		FrameBlock ret = new FrameBlock(columns);
+		ret.setColumnNames(cnames);
+		return ret;
+	}
+
+	/**
+	 * Fallback path: decode each batch into per-batch typed arrays and concatenate
+	 * them per column in file order. Used when exact per-file row counts are not
+	 * available (missing statistics or deletion vectors present), so the output
+	 * cannot be pre-sized up front.
+	 */
+	private FrameBlock readBuffered(Engine engine, DeltaKernelUtils.ScanHandle handle,
+		int ncol, int[] readCodes, ValueType[] vt, String[] cnames) throws IOException
+	{
+		final ArrayList<Object[]> batchCols = new ArrayList<>();
+		final ArrayList<Integer> batchSizes = new ArrayList<>();
+		final int[] nrowH = new int[1];
+		for( Row scanFileRow : handle.scanFiles ) {
+			DeltaKernelUtils.readScanFile(engine, handle.scanState, handle.physicalReadSchema, scanFileRow,
+				(cols, size, selected) -> {
+					int n = DeltaKernelUtils.countSelected(size, selected);
+					Object[] extracted = new Object[ncol];
+					for( int c=0; c<ncol; c++ )
+						extracted[c] = extractColumn(cols[c], size, selected, n, readCodes[c]);
+					batchCols.add(extracted);
+					batchSizes.add(n);
+					nrowH[0] += n;
+				});
+		}
+
 		int nrow = nrowH[0];
-
-		//empty table: the typed column arrays cannot be zero-length, so return a
-		//schema-only frame with the discovered schema/names and zero rows.
+		//empty table: return a schema-only frame with the discovered schema/names.
 		if( nrow == 0 )
-			return new FrameBlock(vt, discoveredNames, 0);
-
-		//concatenate the per-batch column arrays into one typed array per column
+			return new FrameBlock(vt, cnames, 0);
 		Array<?>[] columns = new Array<?>[ncol];
 		for( int c=0; c<ncol; c++ )
 			columns[c] = buildColumn(vt[c], nrow, batchCols, batchSizes, c);
-
 		FrameBlock ret = new FrameBlock(columns);
-		ret.setColumnNames(discoveredNames);
+		ret.setColumnNames(cnames);
 		return ret;
 	}
 
@@ -289,6 +346,122 @@ public class FrameReaderDelta extends FrameReader {
 			case R_BYTE:    return ValueType.INT32;
 			case R_BOOLEAN: return ValueType.BOOLEAN;
 			default:        return ValueType.STRING;
+		}
+	}
+
+	/** Allocate a pre-sized typed column array matching the target value type. */
+	static Object allocColumn(ValueType vt, int n) {
+		switch( vt ) {
+			case FP64:    return new double[n];
+			case FP32:    return new float[n];
+			case INT64:   return new long[n];
+			case INT32:   return new int[n];
+			case BOOLEAN: return new boolean[n];
+			default:      return new String[n]; // STRING
+		}
+	}
+
+	/** Wrap a fully populated typed column array into a frame {@link Array}. */
+	static Array<?> createColumn(ValueType vt, Object full) {
+		switch( vt ) {
+			case FP64:    return ArrayFactory.create((double[]) full);
+			case FP32:    return ArrayFactory.create((float[]) full);
+			case INT64:   return ArrayFactory.create((long[]) full);
+			case INT32:   return ArrayFactory.create((int[]) full);
+			case BOOLEAN: return ArrayFactory.create((boolean[]) full);
+			default:      return ArrayFactory.create((String[]) full); // STRING
+		}
+	}
+
+	/**
+	 * Decode the live (selected, after deletion vector) rows of one column batch
+	 * directly into a pre-sized typed array starting at absolute row {@code destOff}.
+	 * Null numeric cells keep the array default (0); string nulls are stored as null.
+	 */
+	static void extractColumnInto(ColumnVector col, int size, boolean[] selected,
+		int readCode, Object dest, int destOff)
+	{
+		switch( readCode ) {
+			case R_DOUBLE: {
+				double[] a = (double[]) dest;
+				int lr = destOff;
+				for( int r=0; r<size; r++ ) {
+					if( selected != null && !selected[r] ) continue;
+					if( !col.isNullAt(r) ) a[lr] = col.getDouble(r);
+					lr++;
+				}
+				break;
+			}
+			case R_FLOAT: {
+				float[] a = (float[]) dest;
+				int lr = destOff;
+				for( int r=0; r<size; r++ ) {
+					if( selected != null && !selected[r] ) continue;
+					if( !col.isNullAt(r) ) a[lr] = col.getFloat(r);
+					lr++;
+				}
+				break;
+			}
+			case R_LONG: {
+				long[] a = (long[]) dest;
+				int lr = destOff;
+				for( int r=0; r<size; r++ ) {
+					if( selected != null && !selected[r] ) continue;
+					if( !col.isNullAt(r) ) a[lr] = col.getLong(r);
+					lr++;
+				}
+				break;
+			}
+			case R_INT: {
+				int[] a = (int[]) dest;
+				int lr = destOff;
+				for( int r=0; r<size; r++ ) {
+					if( selected != null && !selected[r] ) continue;
+					if( !col.isNullAt(r) ) a[lr] = col.getInt(r);
+					lr++;
+				}
+				break;
+			}
+			case R_SHORT: {
+				int[] a = (int[]) dest;
+				int lr = destOff;
+				for( int r=0; r<size; r++ ) {
+					if( selected != null && !selected[r] ) continue;
+					if( !col.isNullAt(r) ) a[lr] = col.getShort(r);
+					lr++;
+				}
+				break;
+			}
+			case R_BYTE: {
+				int[] a = (int[]) dest;
+				int lr = destOff;
+				for( int r=0; r<size; r++ ) {
+					if( selected != null && !selected[r] ) continue;
+					if( !col.isNullAt(r) ) a[lr] = col.getByte(r);
+					lr++;
+				}
+				break;
+			}
+			case R_BOOLEAN: {
+				boolean[] a = (boolean[]) dest;
+				int lr = destOff;
+				for( int r=0; r<size; r++ ) {
+					if( selected != null && !selected[r] ) continue;
+					if( !col.isNullAt(r) ) a[lr] = col.getBoolean(r);
+					lr++;
+				}
+				break;
+			}
+			default: { // R_STRING
+				String[] a = (String[]) dest;
+				int lr = destOff;
+				for( int r=0; r<size; r++ ) {
+					if( selected != null && !selected[r] ) continue;
+					a[lr] = col.isNullAt(r) ? null : col.getString(r);
+					lr++;
+				}
+				break;
+			}
 		}
 	}
 

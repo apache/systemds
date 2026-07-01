@@ -28,9 +28,7 @@ import java.util.List;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
-import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
  * Simple atomic decoder for passing through numeric columns to the output.
@@ -45,8 +43,13 @@ public class DecoderPassThrough extends Decoder
 	private int[] _srcCols = null;
 
 	protected DecoderPassThrough(ValueType[] schema, int[] ptCols, int[] dcCols) {
+		this(schema, ptCols, dcCols, null);
+	}
+
+	protected DecoderPassThrough(ValueType[] schema, int[] ptCols, int[] dcCols, int[] hashCols) {
 		super(schema, ptCols);
 		_dcCols = dcCols;
+		_dcHashCols = hashCols;
 	}
 
 	public DecoderPassThrough() { super(null, null); }
@@ -61,13 +64,12 @@ public class DecoderPassThrough extends Decoder
 	@Override
 	public void decode(MatrixBlock in, FrameBlock out, int rl, int ru) {
 		int clen = Math.min(_colList.length, out.getNumColumns());
-		for( int i=rl; i<ru; i++ ) {
-			for( int j=0; j<clen; j++ ) {
-				int srcColID = _srcCols[j];
-				int tgtColID = _colList[j];
-				double val = in.get(i, srcColID-1);
-				out.set(i, tgtColID-1,
-					UtilFunctions.doubleToObject(_schema[tgtColID-1], val));
+		for(int i = rl; i < ru; i++) {
+			for(int j = 0; j < clen; j++) {
+				int srcColID = _srcCols[j] - 1;
+				int tgtColID = _colList[j] - 1;
+				double val = in.get(i, srcColID);
+				out.getColumn(tgtColID).set(i, val);
 			}
 		}
 	}
@@ -103,26 +105,7 @@ public class DecoderPassThrough extends Decoder
 	
 	@Override
 	public void initMetaData(FrameBlock meta) {
-		if( _dcCols.length > 0 ) {
-			//prepare source column id mapping w/ dummy coding
-			_srcCols = new int[_colList.length];
-			int ix1 = 0, ix2 = 0, off = 0;
-			while( ix1<_colList.length ) {
-				if( ix2>=_dcCols.length || _colList[ix1] < _dcCols[ix2] ) {
-					_srcCols[ix1] = _colList[ix1] + off;
-					ix1 ++;
-				}
-				else { //_colList[ix1] > _dcCols[ix2]
-					ColumnMetadata d =meta.getColumnMetadata()[_dcCols[ix2]-1];
-					off += d.isDefault() ? -1 : d.getNumDistinct() - 1;
-					ix2 ++;
-				}
-			}
-		}
-		else {
-			//prepare direct source column mapping
-			_srcCols = _colList;
-		}
+		_srcCols = buildSrcCols(meta, _dcCols);
 	}
 
 	@Override
@@ -134,8 +117,8 @@ public class DecoderPassThrough extends Decoder
 		for(int i = 0; i < _srcCols.length; i++)
 			os.writeInt(_srcCols[i]);
 
-		os.writeInt(_dcCols.length);
-		for(int i = 0; i < _dcCols.length; i++)
+		os.writeInt(_dcCols == null ? 0 : _dcCols.length);
+		for(int i = 0; _dcCols != null && i < _dcCols.length; i++)
 			os.writeInt(_dcCols[i]);
 	}
 

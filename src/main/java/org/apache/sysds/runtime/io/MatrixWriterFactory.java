@@ -94,6 +94,9 @@ public class MatrixWriterFactory{
 			case COMPRESSED:
 				return WriterCompressed.create(props);
 
+			case DELTA:
+				return new WriterDelta();
+
 			default:
 				throw new DMLRuntimeException("Failed to create matrix writer for unknown format: " + fmt.toString());
 		}

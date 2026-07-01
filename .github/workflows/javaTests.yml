@@ -59,8 +59,8 @@ jobs:
         tests: [
           "org.apache.sysds.test.applications.**",
           "**.test.usertest.**",
-          "**.component.c**.** -Dtest-threadCount=1 -Dtest-forkCount=1",
-          "**.component.e**.**,**.component.f**.**,**.component.m**.**,**.component.o**.**",
+          "**.component.c**.**",
+          "**.component.e**.**,**.component.f**.**,**.component.i**.**,**.component.m**.**,**.component.o**.**",
           "**.component.p**.**,**.component.r**.**,**.component.s**.**,**.component.t**.**,**.component.u**.**",
           "**.functions.a**.**,**.functions.binary.matrix.**,**.functions.binary.scalar.**,**.functions.binary.tensor.**",
           "**.functions.blocks.**,**.functions.data.rand.**,",
@@ -75,7 +75,7 @@ jobs:
           "**.functions.federated.primitives.part3.** -Dtest-threadCount=1 -Dtest-forkCount=1",
           "**.functions.federated.primitives.part4.** -Dtest-threadCount=1 -Dtest-forkCount=1",
           "**.functions.federated.primitives.part5.** -Dtest-threadCount=1 -Dtest-forkCount=1",
-          "**.functions.federated.monitoring.**,**.functions.federated.multitenant.**",
+          "**.functions.federated.monitoring.**,**.functions.federated.multitenant.** -Dtest-threadCount=1 -Dtest-forkCount=1",
           "**.functions.federated.codegen.**,**.functions.federated.FederatedTestObjectConstructor",
           "**.functions.codegenalg.partone.**",
           "**.functions.builtin.part1.**",
@@ -96,7 +96,7 @@ jobs:
     name: ${{ matrix.tests }}
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
 
     - name: ${{ matrix.tests }}
       uses: ./.github/action/
@@ -132,10 +132,10 @@ jobs:
         javadist: ['adopt']
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
 
     - name: Cache Maven Dependencies
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       with:
         path: ~/.m2/repository
         key: ${{ runner.os }}-maven-test-${{ hashFiles('**/pom.xml') }}

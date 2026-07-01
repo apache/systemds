@@ -21,6 +21,7 @@ package org.apache.sysds.test.component.compress;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -687,4 +688,113 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			fail(e.getMessage());
 		}
 	}
+
+	@Test
+	public void removeEmptyOperationsBase1() {
+		removeEmptyOperations(false, false, null);
+	}
+
+	@Test
+	public void removeEmptyOperationsBase2() {
+		removeEmptyOperations(true, false, null);
+	}
+
+	@Test
+	public void removeEmptyOperationsBase3() {
+		removeEmptyOperations(false, true, null);
+	}
+
+	@Test
+	public void removeEmptyOperationsBase4() {
+		removeEmptyOperations(true, true, null);
+	}
+
+	@Test
+	public void removeEmptyOperationsSelect1() {
+		// limit to smaller row counts to keep the dense selection vector generation cheap
+		assumeTrue(rows < 5000);
+		MatrixBlock s = TestUtils.generateTestMatrixBlock(rows, 1, 1, 1, 0.05, 321);
+		removeEmptyOperations(true, false, s);
+	}
+
+	@Test
+	public void removeEmptyOperationsSelect2() {
+		// limit to smaller row counts to keep the dense selection vector generation cheap
+		assumeTrue(rows < 5000);
+		MatrixBlock s = TestUtils.generateTestMatrixBlock(1, cols, 1, 1, 0.5, 321);
+		removeEmptyOperations(false, false, s);
+	}
+
+	@Test
+	public void removeEmptyOperationsSelectRowsEmptyReturn() {
+		assumeTrue(rows < 5000);
+		MatrixBlock s = TestUtils.generateTestMatrixBlock(rows, 1, 1, 1, 0.05, 321);
+		removeEmptyOperations(true, true, s);
+	}
+
+	@Test
+	public void removeEmptyOperationsSelectColsEmptyReturn() {
+		assumeTrue(rows < 5000);
+		MatrixBlock s = TestUtils.generateTestMatrixBlock(1, cols, 1, 1, 0.5, 321);
+		removeEmptyOperations(false, true, s);
+	}
+
+	@Test
+	public void removeEmptyOperationsSelectRowsDense() {
+		assumeTrue(rows < 5000);
+		MatrixBlock s = TestUtils.generateTestMatrixBlock(rows, 1, 1, 1, 0.6, 654);
+		removeEmptyOperations(true, false, s);
+	}
+
+	@Test
+	public void removeEmptyOperationsSelectAllRows() {
+		assumeTrue(rows < 5000);
+		MatrixBlock s = TestUtils.generateTestMatrixBlock(rows, 1, 1, 1, 1.0, 13);
+		removeEmptyOperations(true, false, s);
+	}
+
+	@Test
+	public void removeEmptyOperationsSelectAllCols() {
+		assumeTrue(rows < 5000);
+		MatrixBlock s = TestUtils.generateTestMatrixBlock(1, cols, 1, 1, 1.0, 13);
+		removeEmptyOperations(false, false, s);
+	}
+
+	@Test
+	public void removeEmptyOperationsSelectNoRows() {
+		assumeTrue(rows < 5000);
+		removeEmptyOperations(true, false, new MatrixBlock(rows, 1, true));
+	}
+
+	@Test
+	public void removeEmptyOperationsSelectNoRowsEmptyReturn() {
+		assumeTrue(rows < 5000);
+		removeEmptyOperations(true, true, new MatrixBlock(rows, 1, true));
+	}
+
+	@Test
+	public void removeEmptyOperationsSelectNoCols() {
+		assumeTrue(rows < 5000);
+		removeEmptyOperations(false, false, new MatrixBlock(1, cols, true));
+	}
+
+	@Test
+	public void removeEmptyOperationsSelectNoColsEmptyReturn() {
+		assumeTrue(rows < 5000);
+		removeEmptyOperations(false, true, new MatrixBlock(1, cols, true));
+	}
+
+	public void removeEmptyOperations(boolean rows, boolean emptyReturn, MatrixBlock select) {
+		try {
+			MatrixBlock a = cmb.removeEmptyOperations(null, rows, emptyReturn, select);
+			MatrixBlock b = mb.removeEmptyOperations(null, rows, emptyReturn, select);
+			compareResultMatrices(b, a, 0);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+
+	}
+
 }

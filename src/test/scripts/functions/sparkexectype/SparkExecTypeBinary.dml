@@ -1,0 +1,33 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Binary operations where exactly one operand is a scalar or a small vector and
+# the other operand has a Spark output. These should be pulled into Spark by the
+# transitive exec-type decision (matrix-scalar / matrix-vector broadcasting).
+X = rand(rows=10000, cols=200, seed=42);
+v = rand(rows=1, cols=200, seed=7);   # small row vector (below block size)
+c = rand(rows=10000, cols=1, seed=9); # tall column vector
+
+sp1 = X * 2.0;  # matrix-scalar, spark input
+sp2 = sp1 + v;  # matrix + small row vector, spark input
+sp3 = sp2 - c;  # matrix - column vector, spark input
+R = sum(sp3);
+write(R, $1, format="text");

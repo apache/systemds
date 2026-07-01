@@ -31,6 +31,7 @@ import java.util.Set;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -1339,6 +1340,75 @@ public class Dictionary extends ACachingMBDictionary {
 		System.arraycopy(_values, 0, retV, 0, _values.length);
 		System.arraycopy(row, 0, retV, _values.length, row.length);
 		return new Dictionary(retV);
+	}
+
+	@Override
+	public IDictionary sliceColumns(IntArrayList selectedColumns, int nCol) {
+		// TODO: make specialized version for this.
+		return getMBDict(nCol).sliceColumns(selectedColumns, nCol);
+	}
+
+	@Override
+	public int[] sort() {
+		return sort(_values);
+	}
+
+	protected static int[] sort(double[] values) {
+		int[] indices = new int[values.length];
+		for(int i = 0; i < indices.length; i++) {
+			indices[i] = i;
+		}
+
+		// quicksort with stack
+		int[] stack = new int[values.length];
+
+		int top = -1;
+		stack[++top] = 0;
+		stack[++top] = values.length - 1;
+
+		while(top >= 0) {
+			int high = stack[top--];
+			int low = stack[top--];
+
+			if(low < high) {
+
+				int pivotIndex = partition(indices, values, low, high);
+				// Left side
+				if(pivotIndex - 1 > low) {
+					stack[++top] = low;
+					stack[++top] = pivotIndex - 1;
+				}
+
+				// Right side
+				if(pivotIndex + 1 < high) {
+					stack[++top] = pivotIndex + 1;
+					stack[++top] = high;
+				}
+			}
+		}
+
+		return indices;
+	}
+
+	private static int partition(int[] indices, double[] values, int low, int high) {
+		double pivotValue = values[indices[high]];
+		int i = low - 1;
+
+		for(int j = low; j < high; j++) {
+			if(values[indices[j]] <= pivotValue) {
+				i++;
+				swap(indices, i, j);
+			}
+		}
+
+		swap(indices, i + 1, high);
+		return i + 1;
+	}
+
+	private static void swap(int[] arr, int i, int j) {
+		int tmp = arr[i];
+		arr[i] = arr[j];
+		arr[j] = tmp;
 	}
 
 }

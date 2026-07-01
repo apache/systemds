@@ -60,6 +60,7 @@ import org.apache.sysds.runtime.compress.estim.ComEstFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.lib.CLALibCBind;
+import org.apache.sysds.runtime.compress.lib.CLALibTSMM;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.Divide;
@@ -496,6 +497,51 @@ public abstract class CompressedTestBase extends TestBase {
 
 			// compare result with input
 			compareResultMatricesPercentDistance(ucRet, ret2, 0.99, 0.99);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException(bufferedToString + "\n" + e.getMessage(), e);
+		}
+	}
+
+	@Test
+	public void testTransposeSelfLeftMultOverload() {
+		// Exercises the package-public CLALibTSMM.leftMultByTransposeSelf(cmb, k) entry point (used by the
+		// XtXv mm-chain fast path) across all compression configurations.
+		if(!(cmb instanceof CompressedMatrixBlock))
+			return;
+		try {
+			MatrixBlock ret2 = CLALibTSMM.leftMultByTransposeSelf((CompressedMatrixBlock) cmb, _k);
+			MatrixBlock ucRet2 = mb.transposeSelfMatrixMultOperations(new MatrixBlock(), MMTSJType.LEFT, _k);
+			compareResultMatrices(ucRet2, ret2, overlappingType != OverLapping.NONE ? 256 : 2);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException(bufferedToString + "\n" + e.getMessage(), e);
+		}
+	}
+
+	@Test
+	public void testMatrixMultChainXtXvWide() {
+		// Widen the input beyond 30 columns so the XtXv fast path triggers, validating it against the
+		// uncompressed result for whatever compression the current configuration produces.
+		if(!(cmb instanceof CompressedMatrixBlock))
+			return;
+		try {
+			final int nCol = mb.getNumColumns();
+			final int reps = (int) Math.ceil(31.0 / nCol) + 1;
+			MatrixBlock wide = mb;
+			for(int i = 1; i < reps; i++)
+				wide = wide.append(mb, new MatrixBlock(), true);
+
+			MatrixBlock wideC = CompressedMatrixBlockFactory.compress(wide, _k).getLeft();
+			if(!(wideC instanceof CompressedMatrixBlock))
+				return; // not compressible in this configuration
+
+			MatrixBlock vector1 = TestUtils.generateTestMatrixBlock(wide.getNumColumns(), 1, 0.9, 1.5, 1.0, 3);
+			MatrixBlock ucRet2 = wide.chainMatrixMultOperations(vector1, null, new MatrixBlock(), ChainType.XtXv, _k);
+			MatrixBlock ret2 = wideC.chainMatrixMultOperations(vector1, null, new MatrixBlock(), ChainType.XtXv, _k);
+			compareResultMatricesPercentDistance(ucRet2, ret2, 0.99, 0.99);
 		}
 		catch(Exception e) {
 			e.printStackTrace();

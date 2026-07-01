@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -117,9 +118,20 @@ public class WorkerService {
 
 	private static synchronized void startStatsCollectionProcess(int threadCount, double frequencySeconds) {
 		if (executorService == null) {
-			executorService = Executors.newScheduledThreadPool(threadCount);
+			// Daemon threads so this never-shut-down background stats collector cannot block JVM exit
+			// (e.g. keep a surefire test fork alive after the monitoring tests complete).
+			executorService = Executors.newScheduledThreadPool(threadCount, daemonThreadFactory());
 			executorService.scheduleAtFixedRate(syncWorkerStatisticsRunnable(), 0, Math.round(frequencySeconds * 1000), TimeUnit.MILLISECONDS);
 		}
+	}
+
+	private static ThreadFactory daemonThreadFactory() {
+		final ThreadFactory base = Executors.defaultThreadFactory();
+		return r -> {
+			Thread t = base.newThread(r);
+			t.setDaemon(true);
+			return t;
+		};
 	}
 
 	public static void syncWorkerStatisticsWithDB(StatisticsModel stats, Long id) {

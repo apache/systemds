@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.MapToZero;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.RemoveEmptyOffsetsTmp;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetEmpty;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
@@ -469,10 +470,10 @@ public class ColGroupSDCSingle extends ASDC {
 		IDictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.size());
 		final int def = (int) _defaultTuple[0];
 		if(d == null) {
-			if(def <= 0){
+			if(def <= 0) {
 				if(max > 0)
 					return ColGroupEmpty.create(max);
-				else 
+				else
 					return null;
 			}
 			else if(def > max && max > 0)
@@ -719,6 +720,23 @@ public class ColGroupSDCSingle extends ASDC {
 	}
 
 	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+		// TODO optimize by not constructing boolean array.
+		final RemoveEmptyOffsetsTmp offsetTmp = _indexes.removeEmptyRows(selectV, rOut);
+		return ColGroupSDCSingle.create(_colIndexes, rOut, _dict, _defaultTuple, offsetTmp.retOffset, null);
+	}
+
+	@Override
+	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns) {
+		double[] ref = new double[selectedColumns.size()];
+		for(int i = 0; i < selectedColumns.size(); i++) {
+			ref[i] = _defaultTuple[selectedColumns.get(i)];
+		}
+		return ColGroupSDCSingle.create(newColumnIDs, _numRows, _dict.sliceColumns(selectedColumns, getNumCols()), ref,
+			_indexes, null);
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
@@ -727,5 +745,25 @@ public class ColGroupSDCSingle extends ASDC {
 		sb.append(String.format("\n%15s", "Indexes: "));
 		sb.append(_indexes.toString());
 		return sb.toString();
+	}
+
+	@Override
+	public AColGroup sort() {
+		if(getNumCols() > 1)
+			throw new NotImplementedException();
+
+		// Only a single non-default value exists, so sorting is a contiguous block of that value placed before the
+		// default values if it is smaller than the default, and after them otherwise.
+		final int[] counts = getCounts();
+		final int nondefault = counts[0];
+		final int defaultLength = _numRows - nondefault;
+		final int base = _dict.getValue(0, 0, 1) >= _defaultTuple[0] ? defaultLength : 0;
+
+		final int[] offsets = new int[nondefault];
+		for(int j = 0; j < nondefault; j++)
+			offsets[j] = base + j;
+
+		AOffset o = OffsetFactory.createOffset(offsets);
+		return ColGroupSDCSingle.create(_colIndexes, _numRows, _dict, _defaultTuple, o, counts);
 	}
 }

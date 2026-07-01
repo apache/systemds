@@ -146,7 +146,9 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 			return meta;
 
 		meta.ensureAllocatedColumns(1);
+		// store the hash domain size K in the single meta cell
 		meta.set(0, _colID - 1, String.valueOf(_K));
+
 		return meta;
 	}
 

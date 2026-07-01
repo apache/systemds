@@ -22,36 +22,23 @@ package org.apache.sysds.test.applications.nn;
 import static org.apache.sysds.api.mlcontext.ScriptFactory.dmlFromFile;
 import static org.junit.Assert.assertTrue;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.mlcontext.Script;
-import org.apache.sysds.test.functions.mlcontext.MLContextTestBase;
+import org.junit.Test;
 
-public abstract class BaseTest extends MLContextTestBase {
-	protected static final Log LOG = LogFactory.getLog(BaseTest.class.getName());
-
-	protected static final String ERROR_STRING = "ERROR:";
-
-	protected void run(String name) {
-		run(name, false);
+public class NNOptimizerMNISTTest extends TestFolder {
+	@Test
+	public void mnist_optimizer_test() {
+		this.inject_optimizer_adapter_module_and_run("sgd");
+		this.inject_optimizer_adapter_module_and_run("adam");
 	}
 
-	protected void run(String name, boolean printStdOut) {
-		Script script = dmlFromFile(getBaseFilePath() + name);
+	private void inject_optimizer_adapter_module_and_run(String optimizer) {
+		Script script = dmlFromFile(getBaseFilePath() + "component/optim/mnist_optimizer_check.dml");
+		String moduleImportStatement = String.format("source(\"src/test/scripts/applications/nn/component/optim/adapters/%s.dml\") as optimizer", optimizer);
+		String newScriptString = script.getScriptString().replace("# INSERT ADAPTER-MODULE #", moduleImportStatement);
+		script.setScriptString(newScriptString);
 		String stdOut = executeAndCaptureStdOut(script).getRight();
-		if(printStdOut){
-			LOG.error(stdOut);
-		}
-		assertTrue(stdOut, !stdOut.contains(ERROR_STRING));
+		LOG.info(stdOut);
+		assertTrue(stdOut, !stdOut.contains(BaseTest.ERROR_STRING));
 	}
-
-	protected void run(String name, String[] var, Object[] val) {
-		Script script = dmlFromFile(getBaseFilePath() + name);
-		for(int i = 0; i < var.length; i++)
-			script.in(var[i], val[i]);
-		String stdOut = executeAndCaptureStdOut(script).getRight();
-		assertTrue(stdOut, !stdOut.contains(ERROR_STRING));
-	}
-
-	protected abstract String getBaseFilePath();
 }

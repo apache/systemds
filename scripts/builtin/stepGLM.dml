@@ -58,7 +58,7 @@
 
 source("./scripts/builtin/glm.dml") as glm;
 
-stepGLM = function (
+m_stepGLM = function (
                     Matrix[Double] X, 
                     Matrix[Double] Y, 
                     Int link = 2,

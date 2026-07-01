@@ -333,6 +333,7 @@ public enum Builtins {
 	STATSNA("statsNA", true),
 	STRATSTATS("stratstats", true),
 	STEPLM("steplm",true, ReturnType.MULTI_RETURN),
+	STEPGLM("stepGLM",true, ReturnType.MULTI_RETURN),
 	STFT("stft", false, ReturnType.MULTI_RETURN),
 	SQRT("sqrt", false),
 	SQRT_MATRIX("sqrtMatrix", true),

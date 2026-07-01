@@ -38,6 +38,11 @@ public class NNOptimTest extends TestFolder {
 		run("rmsprop.dml");
 	}
 
+	@Test
+	public void sgd_nesterov() {
+		run("sgd_nesterov.dml");
+	}
+
 	@Override
 	protected void run(String name) {
 		super.run("component/optim/" + name);

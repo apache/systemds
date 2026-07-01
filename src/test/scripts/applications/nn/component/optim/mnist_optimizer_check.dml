@@ -21,8 +21,6 @@
 
 # INSERT ADAPTER-MODULE #
 
-source("src/test/scripts/applications/nn/component/optim/optim_check.dml") as ch
-
 lr = 0.01
 mu = 0.9
 decay_rate = 0.99

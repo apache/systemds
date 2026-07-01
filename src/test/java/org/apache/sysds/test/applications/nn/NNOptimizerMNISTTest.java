@@ -22,17 +22,40 @@ package org.apache.sysds.test.applications.nn;
 import static org.apache.sysds.api.mlcontext.ScriptFactory.dmlFromFile;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Arrays;
+import java.util.Collection;
+
 import org.apache.sysds.api.mlcontext.Script;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
+@RunWith(value = Parameterized.class)
 public class NNOptimizerMNISTTest extends TestFolder {
   /*
    * TODO: add instruction how to add optimizer + architecture
    */
-	@Test
+
+	// region: parameters
+
+	private final String optimizer;
+
+	public NNOptimizerMNISTTest(String optimizer) {
+		this.optimizer = optimizer;
+	}
+
+	@Parameters
+	public static Collection<String> data() {
+		return Arrays.asList("adagrad", "adam", "adamw", "lars", "rmsprop", "sgd", "sgd_momentum", "sgd_nesterov");
+  }
+
+	// endregion
+
+  @Test
 	public void mnist_optimizer_test() {
-		this.inject_optimizer_adapter_module_and_run("sgd");
-		this.inject_optimizer_adapter_module_and_run("adam");
+		if (this.optimizer != null)
+			this.inject_optimizer_adapter_module_and_run(this.optimizer);
 	}
 
 	private void inject_optimizer_adapter_module_and_run(String optimizer) {
@@ -41,7 +64,6 @@ public class NNOptimizerMNISTTest extends TestFolder {
 		String newScriptString = script.getScriptString().replace("# INSERT ADAPTER-MODULE #", moduleImportStatement);
 		script.setScriptString(newScriptString);
 		String stdOut = executeAndCaptureStdOut(script).getRight();
-		LOG.info(stdOut);
 		assertTrue(stdOut, !stdOut.contains(BaseTest.ERROR_STRING));
 	}
 }

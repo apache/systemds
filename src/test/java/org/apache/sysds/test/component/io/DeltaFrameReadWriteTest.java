@@ -48,6 +48,7 @@ import org.apache.sysds.runtime.io.FrameReaderDelta;
 import org.apache.sysds.runtime.io.FrameReaderDeltaParallel;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.io.FrameWriterDelta;
+import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
 import io.delta.kernel.data.ColumnVector;
@@ -82,6 +83,11 @@ public class DeltaFrameReadWriteTest {
 	// single-file serial fallback.
 	private static final long SMALL_TARGET_FILE_SIZE = 512L * 1024;
 	private static final int ROWS_MULTI_FILE = 150_000;
+
+	// mixed-type schema used by the multi-file round-trip tests; random data is
+	// generated via TestUtils rather than a bespoke per-test generator.
+	private static final ValueType[] MIXED_SCHEMA = {ValueType.STRING, ValueType.INT64, ValueType.FP64,
+		ValueType.BOOLEAN, ValueType.INT32, ValueType.FP32};
 
 	private static FrameBlock writeThenRead(FrameBlock in) throws Exception {
 		Path dir = Files.createTempDirectory("sysds_delta_frame_");
@@ -192,7 +198,7 @@ public class DeltaFrameReadWriteTest {
 		Path dir = Files.createTempDirectory("sysds_delta_frame_par_");
 		String tablePath = new File(dir.toFile(), "table").getAbsolutePath();
 		try {
-			FrameBlock in = genMixedFrame(ROWS_MULTI_FILE, 13);
+			FrameBlock in = TestUtils.generateRandomFrameBlock(ROWS_MULTI_FILE, MIXED_SCHEMA, 13);
 			new FrameWriterDelta().writeFrameToHDFS(in, tablePath, in.getNumRows(), in.getNumColumns());
 			assertMultiFile(tablePath);
 
@@ -219,7 +225,7 @@ public class DeltaFrameReadWriteTest {
 		Path dir = Files.createTempDirectory("sysds_delta_frame_buf_");
 		String tablePath = new File(dir.toFile(), "table").getAbsolutePath();
 		try {
-			FrameBlock in = genMixedFrame(ROWS_MULTI_FILE, 23);
+			FrameBlock in = TestUtils.generateRandomFrameBlock(ROWS_MULTI_FILE, MIXED_SCHEMA, 23);
 			new FrameWriterDelta().writeFrameToHDFS(in, tablePath, in.getNumRows(), in.getNumColumns());
 			assertMultiFile(tablePath);
 
@@ -251,7 +257,7 @@ public class DeltaFrameReadWriteTest {
 		Path dir = Files.createTempDirectory("sysds_delta_frame_sbuf_");
 		String tablePath = new File(dir.toFile(), "table").getAbsolutePath();
 		try {
-			FrameBlock in = genMixedFrame(ROWS_MULTI_FILE, 29);
+			FrameBlock in = TestUtils.generateRandomFrameBlock(ROWS_MULTI_FILE, MIXED_SCHEMA, 29);
 			new FrameWriterDelta().writeFrameToHDFS(in, tablePath, in.getNumRows(), in.getNumColumns());
 			assertMultiFile(tablePath);
 
@@ -331,7 +337,7 @@ public class DeltaFrameReadWriteTest {
 		try {
 			assertEquals("config getter reflects the override", 128, ConfigurationManager.getDeltaReaderBatchSize());
 
-			FrameBlock in = genMixedFrame(5000, 31);
+			FrameBlock in = TestUtils.generateRandomFrameBlock(5000, MIXED_SCHEMA, 31);
 			new FrameWriterDelta().writeFrameToHDFS(in, tablePath, in.getNumRows(), in.getNumColumns());
 			FrameBlock out = new FrameReaderDelta().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1);
 			assertFramesEqual(in, out);
@@ -355,7 +361,7 @@ public class DeltaFrameReadWriteTest {
 			assertEquals("config getter reflects the override", SMALL_TARGET_FILE_SIZE,
 				ConfigurationManager.getDeltaWriterTargetFileSize());
 
-			FrameBlock in = genMixedFrame(ROWS_MULTI_FILE, 41);
+			FrameBlock in = TestUtils.generateRandomFrameBlock(ROWS_MULTI_FILE, MIXED_SCHEMA, 41);
 			new FrameWriterDelta().writeFrameToHDFS(in, tablePath, in.getNumRows(), in.getNumColumns());
 			assertMultiFile(tablePath);
 
@@ -545,23 +551,6 @@ public class DeltaFrameReadWriteTest {
 			ConfigurationManager.clearLocalConfigs();
 			FileUtils.deleteQuietly(dir.toFile());
 		}
-	}
-
-	private static FrameBlock genMixedFrame(int nrow, int seed) {
-		ValueType[] schema = {ValueType.STRING, ValueType.INT64, ValueType.FP64, ValueType.BOOLEAN, ValueType.INT32,
-			ValueType.FP32};
-		String[] names = {"name", "id", "score", "active", "count", "ratio"};
-		FrameBlock fb = alloc(schema, names, nrow);
-		Random rnd = new Random(seed);
-		for(int r = 0; r < nrow; r++) {
-			fb.set(r, 0, "row" + rnd.nextInt(1_000_000));
-			fb.set(r, 1, (long) rnd.nextInt());
-			fb.set(r, 2, rnd.nextDouble() * 200 - 100);
-			fb.set(r, 3, rnd.nextBoolean());
-			fb.set(r, 4, rnd.nextInt());
-			fb.set(r, 5, rnd.nextFloat());
-		}
-		return fb;
 	}
 
 	private static void assertMultiFile(String tablePath) throws Exception {

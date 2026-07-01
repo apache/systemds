@@ -31,6 +31,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
+import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 import io.delta.kernel.data.Row;
@@ -98,20 +99,6 @@ public class FrameReaderDeltaParallel extends FrameReaderDelta {
 	}
 
 	/**
-	 * Whether the metadata-driven direct-write fast path can be used for this
-	 * table (exact per-file row counts and no deletion vectors). Visible for
-	 * testing: the buffered fallback is otherwise only reachable for tables
-	 * lacking row statistics or carrying deletion vectors, which the SystemDS
-	 * Delta writer never produces.
-	 *
-	 * @param handle the opened scan handle
-	 * @return true if the direct path is applicable
-	 */
-	protected boolean useDirectPath(DeltaKernelUtils.ScanHandle handle) {
-		return handle.hasExactRowCounts();
-	}
-
-	/**
 	 * Fast path: each thread decodes one data file straight into the final typed
 	 * column arrays at a metadata-derived row offset. Single allocation per
 	 * column, fully parallel.
@@ -130,7 +117,7 @@ public class FrameReaderDeltaParallel extends FrameReaderDelta {
 		//pre-size one typed array per column for the whole table
 		final Object[] dest = new Object[ncol];
 		for( int c=0; c<ncol; c++ )
-			dest[c] = allocColumn(vt[c], nrow);
+			dest[c] = ArrayFactory.allocateBacking(vt[c], nrow);
 
 		ArrayList<Callable<Object>> tasks = new ArrayList<>(nfiles);
 		for( int i=0; i<nfiles; i++ ) {
@@ -159,7 +146,7 @@ public class FrameReaderDeltaParallel extends FrameReaderDelta {
 
 		Array<?>[] columns = new Array<?>[ncol];
 		for( int c=0; c<ncol; c++ )
-			columns[c] = createColumn(vt[c], dest[c]);
+			columns[c] = ArrayFactory.create(vt[c], dest[c]);
 
 		FrameBlock ret = new FrameBlock(columns);
 		ret.setColumnNames(cnames);
@@ -170,7 +157,7 @@ public class FrameReaderDeltaParallel extends FrameReaderDelta {
 	 * Fallback path: decode each file in parallel into per-file per-column batch
 	 * arrays (used when row counts are unknown or deletion vectors are present),
 	 * then concatenate per column in file order via the shared
-	 * {@link FrameReaderDelta#buildColumn} helper.
+	 * {@link FrameReaderDelta#concatColumn} helper.
 	 */
 	private FrameBlock readBuffered(String fname, DeltaKernelUtils.ScanHandle handle,
 		int ncol, int[] readCodes, ValueType[] vt, String[] cnames) throws IOException
@@ -192,8 +179,13 @@ public class FrameReaderDeltaParallel extends FrameReaderDelta {
 					(cols, size, selected) -> {
 						int n = DeltaKernelUtils.countSelected(size, selected);
 						Object[] extracted = new Object[ncol];
-						for( int c=0; c<ncol; c++ )
-							extracted[c] = extractColumn(cols[c], size, selected, n, readCodes[c]);
+						for( int c=0; c<ncol; c++ ) {
+							//decode into a fresh per-batch array via the shared alloc +
+							//decode primitives (the same ones the direct path uses)
+							Object col = ArrayFactory.allocateBacking(vt[c], n);
+							extractColumnInto(cols[c], size, selected, readCodes[c], col, 0);
+							extracted[c] = col;
+						}
 						fileBatchCols.add(extracted);
 						fileBatchSizes.add(n);
 					});
@@ -217,7 +209,7 @@ public class FrameReaderDeltaParallel extends FrameReaderDelta {
 
 		Array<?>[] columns = new Array<?>[ncol];
 		for( int c=0; c<ncol; c++ )
-			columns[c] = buildColumn(vt[c], nrow, batchCols, batchSizes, c);
+			columns[c] = concatColumn(vt[c], nrow, batchCols, batchSizes, c);
 
 		FrameBlock ret = new FrameBlock(columns);
 		ret.setColumnNames(cnames);

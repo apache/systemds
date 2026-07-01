@@ -81,7 +81,7 @@ public class FrameReaderDelta extends FrameReader {
 		//fast path: exact per-file row counts are known from metadata (no deletion
 		//vectors) -> pre-size one typed array per column and decode each file
 		//straight into its row offset, avoiding the per-batch extract + concatenate.
-		if( handle.hasExactRowCounts() ) {
+		if( useDirectPath(handle) ) {
 			long total = 0;
 			for( long r : handle.numRecords )
 				total += r;
@@ -99,6 +99,21 @@ public class FrameReaderDelta extends FrameReader {
 	}
 
 	/**
+	 * Whether the metadata-driven direct read fast path can be used for this table
+	 * (exact per-file row counts and no deletion vectors, so the output can be
+	 * pre-sized and each file decoded straight into its row offset). Visible for
+	 * testing: the buffered fallback is otherwise only reachable for tables lacking
+	 * row statistics or carrying deletion vectors, which the SystemDS Delta writer
+	 * never produces.
+	 *
+	 * @param handle the opened scan handle
+	 * @return true if the direct path is applicable
+	 */
+	protected boolean useDirectPath(DeltaKernelUtils.ScanHandle handle) {
+		return handle.hasExactRowCounts();
+	}
+
+	/**
 	 * Fast path: decode each data file straight into pre-sized typed column arrays
 	 * at a metadata-derived row offset. One allocation per column, single pass, no
 	 * intermediate per-batch buffers or serial concatenation.
@@ -108,7 +123,7 @@ public class FrameReaderDelta extends FrameReader {
 	{
 		final Object[] dest = new Object[ncol];
 		for( int c=0; c<ncol; c++ )
-			dest[c] = allocColumn(vt[c], nrow);
+			dest[c] = ArrayFactory.allocateBacking(vt[c], nrow);
 
 		int base = 0;
 		for( int i=0; i<handle.scanFiles.size(); i++ ) {
@@ -131,7 +146,7 @@ public class FrameReaderDelta extends FrameReader {
 
 		Array<?>[] columns = new Array<?>[ncol];
 		for( int c=0; c<ncol; c++ )
-			columns[c] = createColumn(vt[c], dest[c]);
+			columns[c] = ArrayFactory.create(vt[c], dest[c]);
 		FrameBlock ret = new FrameBlock(columns);
 		ret.setColumnNames(cnames);
 		return ret;
@@ -154,8 +169,13 @@ public class FrameReaderDelta extends FrameReader {
 				(cols, size, selected) -> {
 					int n = DeltaKernelUtils.countSelected(size, selected);
 					Object[] extracted = new Object[ncol];
-					for( int c=0; c<ncol; c++ )
-						extracted[c] = extractColumn(cols[c], size, selected, n, readCodes[c]);
+					for( int c=0; c<ncol; c++ ) {
+						//decode into a fresh per-batch array via the shared alloc +
+						//decode primitives (the same ones the direct path uses)
+						Object col = ArrayFactory.allocateBacking(vt[c], n);
+						extractColumnInto(cols[c], size, selected, readCodes[c], col, 0);
+						extracted[c] = col;
+					}
 					batchCols.add(extracted);
 					batchSizes.add(n);
 					nrowH[0] += n;
@@ -168,162 +188,36 @@ public class FrameReaderDelta extends FrameReader {
 			return new FrameBlock(vt, cnames, 0);
 		Array<?>[] columns = new Array<?>[ncol];
 		for( int c=0; c<ncol; c++ )
-			columns[c] = buildColumn(vt[c], nrow, batchCols, batchSizes, c);
+			columns[c] = concatColumn(vt[c], nrow, batchCols, batchSizes, c);
 		FrameBlock ret = new FrameBlock(columns);
 		ret.setColumnNames(cnames);
 		return ret;
 	}
 
-	static Object extractColumn(ColumnVector col, int size, boolean[] selected, int n, int readCode) {
-		switch( readCode ) {
-			case R_DOUBLE: {
-				double[] a = new double[n];
-				int lr = 0;
-				for( int r=0; r<size; r++ ) {
-					if( selected != null && !selected[r] ) continue;
-					if( !col.isNullAt(r) ) a[lr] = col.getDouble(r);
-					lr++;
-				}
-				return a;
-			}
-			case R_FLOAT: {
-				float[] a = new float[n];
-				int lr = 0;
-				for( int r=0; r<size; r++ ) {
-					if( selected != null && !selected[r] ) continue;
-					if( !col.isNullAt(r) ) a[lr] = col.getFloat(r);
-					lr++;
-				}
-				return a;
-			}
-			case R_LONG: {
-				long[] a = new long[n];
-				int lr = 0;
-				for( int r=0; r<size; r++ ) {
-					if( selected != null && !selected[r] ) continue;
-					if( !col.isNullAt(r) ) a[lr] = col.getLong(r);
-					lr++;
-				}
-				return a;
-			}
-			case R_INT: {
-				int[] a = new int[n];
-				int lr = 0;
-				for( int r=0; r<size; r++ ) {
-					if( selected != null && !selected[r] ) continue;
-					if( !col.isNullAt(r) ) a[lr] = col.getInt(r);
-					lr++;
-				}
-				return a;
-			}
-			case R_SHORT: {
-				int[] a = new int[n];
-				int lr = 0;
-				for( int r=0; r<size; r++ ) {
-					if( selected != null && !selected[r] ) continue;
-					if( !col.isNullAt(r) ) a[lr] = col.getShort(r);
-					lr++;
-				}
-				return a;
-			}
-			case R_BYTE: {
-				int[] a = new int[n];
-				int lr = 0;
-				for( int r=0; r<size; r++ ) {
-					if( selected != null && !selected[r] ) continue;
-					if( !col.isNullAt(r) ) a[lr] = col.getByte(r);
-					lr++;
-				}
-				return a;
-			}
-			case R_BOOLEAN: {
-				boolean[] a = new boolean[n];
-				int lr = 0;
-				for( int r=0; r<size; r++ ) {
-					if( selected != null && !selected[r] ) continue;
-					if( !col.isNullAt(r) ) a[lr] = col.getBoolean(r);
-					lr++;
-				}
-				return a;
-			}
-			default: { // R_STRING
-				String[] a = new String[n];
-				int lr = 0;
-				for( int r=0; r<size; r++ ) {
-					if( selected != null && !selected[r] ) continue;
-					a[lr] = col.isNullAt(r) ? null : col.getString(r);
-					lr++;
-				}
-				return a;
-			}
-		}
-	}
-
-	static Array<?> buildColumn(ValueType vt, int nrow, ArrayList<Object[]> batchCols,
+	/**
+	 * Concatenate the per-batch typed arrays of one column (in file/batch order)
+	 * into a single pre-sized array and wrap it as a frame {@link Array}. The copy
+	 * is type-agnostic ({@link System#arraycopy} works on the boxed primitive or
+	 * object arrays), so there is no per-type dispatch here: allocation and
+	 * wrapping reuse {@link ArrayFactory#allocateBacking(ValueType, int)} and
+	 * {@link ArrayFactory#create(ValueType, Object)}, the same primitives the
+	 * single-pass direct path uses.
+	 *
+	 * <p>Only the buffered fallback needs this concatenation; the default direct
+	 * path decodes straight into one pre-sized array per column with no
+	 * intermediate per-batch arrays.</p>
+	 */
+	static Array<?> concatColumn(ValueType vt, int nrow, ArrayList<Object[]> batchCols,
 		ArrayList<Integer> batchSizes, int c)
 	{
-		switch( vt ) {
-			case FP64: {
-				double[] all = new double[nrow];
-				int off = 0;
-				for( int b=0; b<batchCols.size(); b++ ) {
-					int n = batchSizes.get(b);
-					System.arraycopy(batchCols.get(b)[c], 0, all, off, n);
-					off += n;
-				}
-				return ArrayFactory.create(all);
-			}
-			case FP32: {
-				float[] all = new float[nrow];
-				int off = 0;
-				for( int b=0; b<batchCols.size(); b++ ) {
-					int n = batchSizes.get(b);
-					System.arraycopy(batchCols.get(b)[c], 0, all, off, n);
-					off += n;
-				}
-				return ArrayFactory.create(all);
-			}
-			case INT64: {
-				long[] all = new long[nrow];
-				int off = 0;
-				for( int b=0; b<batchCols.size(); b++ ) {
-					int n = batchSizes.get(b);
-					System.arraycopy(batchCols.get(b)[c], 0, all, off, n);
-					off += n;
-				}
-				return ArrayFactory.create(all);
-			}
-			case INT32: {
-				int[] all = new int[nrow];
-				int off = 0;
-				for( int b=0; b<batchCols.size(); b++ ) {
-					int n = batchSizes.get(b);
-					System.arraycopy(batchCols.get(b)[c], 0, all, off, n);
-					off += n;
-				}
-				return ArrayFactory.create(all);
-			}
-			case BOOLEAN: {
-				boolean[] all = new boolean[nrow];
-				int off = 0;
-				for( int b=0; b<batchCols.size(); b++ ) {
-					int n = batchSizes.get(b);
-					System.arraycopy(batchCols.get(b)[c], 0, all, off, n);
-					off += n;
-				}
-				return ArrayFactory.create(all);
-			}
-			default: { // STRING
-				String[] all = new String[nrow];
-				int off = 0;
-				for( int b=0; b<batchCols.size(); b++ ) {
-					int n = batchSizes.get(b);
-					System.arraycopy(batchCols.get(b)[c], 0, all, off, n);
-					off += n;
-				}
-				return ArrayFactory.create(all);
-			}
+		Object full = ArrayFactory.allocateBacking(vt, nrow);
+		int off = 0;
+		for( int b=0; b<batchCols.size(); b++ ) {
+			int n = batchSizes.get(b);
+			System.arraycopy(batchCols.get(b)[c], 0, full, off, n);
+			off += n;
 		}
+		return ArrayFactory.create(vt, full);
 	}
 
 	static int readCode(DataType dt, String name) {
@@ -346,30 +240,6 @@ public class FrameReaderDelta extends FrameReader {
 			case R_BYTE:    return ValueType.INT32;
 			case R_BOOLEAN: return ValueType.BOOLEAN;
 			default:        return ValueType.STRING;
-		}
-	}
-
-	/** Allocate a pre-sized typed column array matching the target value type. */
-	static Object allocColumn(ValueType vt, int n) {
-		switch( vt ) {
-			case FP64:    return new double[n];
-			case FP32:    return new float[n];
-			case INT64:   return new long[n];
-			case INT32:   return new int[n];
-			case BOOLEAN: return new boolean[n];
-			default:      return new String[n]; // STRING
-		}
-	}
-
-	/** Wrap a fully populated typed column array into a frame {@link Array}. */
-	static Array<?> createColumn(ValueType vt, Object full) {
-		switch( vt ) {
-			case FP64:    return ArrayFactory.create((double[]) full);
-			case FP32:    return ArrayFactory.create((float[]) full);
-			case INT64:   return ArrayFactory.create((long[]) full);
-			case INT32:   return ArrayFactory.create((int[]) full);
-			case BOOLEAN: return ArrayFactory.create((boolean[]) full);
-			default:      return ArrayFactory.create((String[]) full); // STRING
 		}
 	}
 

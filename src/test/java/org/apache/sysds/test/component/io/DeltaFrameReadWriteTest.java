@@ -236,6 +236,35 @@ public class DeltaFrameReadWriteTest {
 	}
 
 	@Test
+	public void serialBufferedPathMatchesDirectMultiFile() throws Exception {
+		//the direct (pre-sized, metadata-driven) path is always taken for SystemDS-
+		//written tables; force the serial buffered fallback (per-batch extract +
+		//concatenate) to exercise it and assert it matches the direct read.
+		DMLConfig conf = new DMLConfig();
+		conf.setTextValue(DMLConfig.DELTA_WRITER_TARGET_FILE_SIZE, String.valueOf(SMALL_TARGET_FILE_SIZE));
+		ConfigurationManager.setLocalConfig(conf);
+		Path dir = Files.createTempDirectory("sysds_delta_frame_sbuf_");
+		String tablePath = new File(dir.toFile(), "table").getAbsolutePath();
+		try {
+			FrameBlock in = genMixedFrame(ROWS_MULTI_FILE, 29);
+			new FrameWriterDelta().writeFrameToHDFS(in, tablePath, in.getNumRows(), in.getNumColumns());
+			assertMultiFile(tablePath);
+
+			FrameBlock direct = new FrameReaderDelta().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1);
+			//subclass that always declines the direct path -> buffered extract+concat
+			FrameBlock buffered = new FrameReaderDelta() {
+				@Override protected boolean useDirectPath(DeltaKernelUtils.ScanHandle h) { return false; }
+			}.readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1);
+
+			assertFramesEqual(direct, buffered);
+		}
+		finally {
+			ConfigurationManager.clearLocalConfigs();
+			FileUtils.deleteQuietly(dir.toFile());
+		}
+	}
+
+	@Test
 	public void adaptiveTargetFileSizeClampsAndRespectsFlag() {
 		//cap chosen above the 4MB floor so both clamp directions are observable
 		final long cap = 64L * 1024 * 1024;

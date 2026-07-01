@@ -1,0 +1,46 @@
+name: Compression Tests
+
+on:
+  push:
+    branches: [ feature/compression ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build project
+        run: mvn clean package -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
+
+      - name: Run compression tests
+        run: |
+          mvn test \
+            -Dtest=TopKCompressorTest,ProbabilisticQuantizationCompressorTest \
+            -Dmaven.test.failure.ignore=false \
+            -Dmaven.javadoc.skip=true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: target/surefire-reports/

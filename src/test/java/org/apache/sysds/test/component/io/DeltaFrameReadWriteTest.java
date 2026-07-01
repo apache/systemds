@@ -236,6 +236,34 @@ public class DeltaFrameReadWriteTest {
 	}
 
 	@Test
+	public void adaptiveTargetFileSizeClampsAndRespectsFlag() {
+		//cap chosen above the 4MB floor so both clamp directions are observable
+		final long cap = 64L * 1024 * 1024;
+		DMLConfig conf = new DMLConfig();
+		conf.setTextValue(DMLConfig.DELTA_WRITER_TARGET_FILE_SIZE, String.valueOf(cap));
+		conf.setTextValue(DMLConfig.DELTA_WRITER_ADAPTIVE_FILE_SIZE, "true");
+		ConfigurationManager.setLocalConfig(conf);
+		try {
+			assertEquals("estimatedBytes<=0 -> configured cap", cap,
+				DeltaKernelUtils.adaptiveWriterTargetFileSize(0));
+			assertEquals("negative estimate -> configured cap", cap,
+				DeltaKernelUtils.adaptiveWriterTargetFileSize(-1));
+			assertEquals("huge table -> never above the configured cap", cap,
+				DeltaKernelUtils.adaptiveWriterTargetFileSize(Long.MAX_VALUE / 2));
+			assertEquals("tiny table -> never below the floor",
+				DeltaKernelUtils.ADAPTIVE_WRITER_MIN_FILE_SIZE,
+				DeltaKernelUtils.adaptiveWriterTargetFileSize(1));
+
+			conf.setTextValue(DMLConfig.DELTA_WRITER_ADAPTIVE_FILE_SIZE, "false");
+			assertEquals("flag OFF -> always the configured cap regardless of size", cap,
+				DeltaKernelUtils.adaptiveWriterTargetFileSize(1));
+		}
+		finally {
+			ConfigurationManager.clearLocalConfigs();
+		}
+	}
+
+	@Test
 	public void factoryRoutesDeltaToParallelWhenEnabled() {
 		//the factory must pick the parallel frame reader iff parallel CP read is enabled
 		CompilerConfig cc = ConfigurationManager.getCompilerConfig();

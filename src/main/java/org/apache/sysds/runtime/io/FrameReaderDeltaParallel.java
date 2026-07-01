@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.io;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -133,37 +134,30 @@ public class FrameReaderDeltaParallel extends FrameReaderDelta {
 		for( int c=0; c<ncol; c++ )
 			dest[c] = allocColumn(vt[c], nrow);
 
-		//request full parallelism (returns the shared common pool); the number of
-		//tasks (one per data file) naturally caps concurrency. Avoids the per-thread
-		//pool-size caching in CommonThreadPool.get(k) that could otherwise throttle
-		//this reader to a smaller pool created earlier on the same thread.
-		final ExecutorService pool = CommonThreadPool.get(_numThreads);
-		try {
-			ArrayList<Callable<Object>> tasks = new ArrayList<>(nfiles);
-			for( int i=0; i<nfiles; i++ ) {
-				final Row scanFileRow = handle.scanFiles.get(i);
-				final int base = rowOffset[i];
-				tasks.add(() -> {
-					int[] cur = new int[] {base};
-					Engine eng = DeltaKernelUtils.createEngine();
-					DeltaKernelUtils.readScanFile(eng, handle.scanState, handle.physicalReadSchema, scanFileRow,
-						(cols, size, selected) -> {
-							for( int c=0; c<ncol; c++ )
-								extractColumnInto(cols[c], size, selected, readCodes[c], dest[c], cur[0]);
-							cur[0] += DeltaKernelUtils.countSelected(size, selected);
-						});
-					return null;
-				});
-			}
-			for( Future<Object> f : pool.invokeAll(tasks) )
-				f.get();
+		ArrayList<Callable<Object>> tasks = new ArrayList<>(nfiles);
+		for( int i=0; i<nfiles; i++ ) {
+			final Row scanFileRow = handle.scanFiles.get(i);
+			final int base = rowOffset[i];
+			//exclusive upper row bound for this file's slice; a file decoding more
+			//rows than its numRecords statistic would otherwise overflow into the
+			//next file's region (concurrent overlapping writes) or off the array
+			final int limit = base + (int) handle.numRecords[i];
+			tasks.add(() -> {
+				int[] cur = new int[] {base};
+				Engine eng = DeltaKernelUtils.createEngine();
+				DeltaKernelUtils.readScanFile(eng, handle.scanState, handle.physicalReadSchema, scanFileRow,
+					(cols, size, selected) -> {
+						if( cur[0] + DeltaKernelUtils.countSelected(size, selected) > limit )
+							throw new DMLRuntimeException("Delta file produced more rows than its "
+								+ "numRecords statistic; refusing parallel direct read of " + fname);
+						for( int c=0; c<ncol; c++ )
+							extractColumnInto(cols[c], size, selected, readCodes[c], dest[c], cur[0]);
+						cur[0] += DeltaKernelUtils.countSelected(size, selected);
+					});
+				return null;
+			});
 		}
-		catch(Exception ex) {
-			throw new IOException("Failed parallel read of Delta table: " + fname, ex);
-		}
-		finally {
-			pool.shutdown();
-		}
+		awaitFileTasks(tasks, fname);
 
 		Array<?>[] columns = new Array<?>[ncol];
 		for( int c=0; c<ncol; c++ )
@@ -188,39 +182,29 @@ public class FrameReaderDeltaParallel extends FrameReaderDelta {
 		final ArrayList<Object[]>[] fileCols = new ArrayList[nfiles];
 		@SuppressWarnings("unchecked")
 		final ArrayList<Integer>[] fileSizes = new ArrayList[nfiles];
-		final ExecutorService pool = CommonThreadPool.get(_numThreads);
-		try {
-			ArrayList<Callable<Object>> tasks = new ArrayList<>(nfiles);
-			for( int i=0; i<nfiles; i++ ) {
-				final int fi = i;
-				final Row scanFileRow = handle.scanFiles.get(i);
-				tasks.add(() -> {
-					ArrayList<Object[]> bcs = new ArrayList<>();
-					ArrayList<Integer> bss = new ArrayList<>();
-					Engine eng = DeltaKernelUtils.createEngine();
-					DeltaKernelUtils.readScanFile(eng, handle.scanState, handle.physicalReadSchema, scanFileRow,
-						(cols, size, selected) -> {
-							int n = DeltaKernelUtils.countSelected(size, selected);
-							Object[] extracted = new Object[ncol];
-							for( int c=0; c<ncol; c++ )
-								extracted[c] = extractColumn(cols[c], size, selected, n, readCodes[c]);
-							bcs.add(extracted);
-							bss.add(n);
-						});
-					fileCols[fi] = bcs;
-					fileSizes[fi] = bss;
-					return null;
-				});
-			}
-			for( Future<Object> f : pool.invokeAll(tasks) )
-				f.get();
+		ArrayList<Callable<Object>> tasks = new ArrayList<>(nfiles);
+		for( int i=0; i<nfiles; i++ ) {
+			final int fi = i;
+			final Row scanFileRow = handle.scanFiles.get(i);
+			tasks.add(() -> {
+				ArrayList<Object[]> fileBatchCols = new ArrayList<>();
+				ArrayList<Integer> fileBatchSizes = new ArrayList<>();
+				Engine eng = DeltaKernelUtils.createEngine();
+				DeltaKernelUtils.readScanFile(eng, handle.scanState, handle.physicalReadSchema, scanFileRow,
+					(cols, size, selected) -> {
+						int n = DeltaKernelUtils.countSelected(size, selected);
+						Object[] extracted = new Object[ncol];
+						for( int c=0; c<ncol; c++ )
+							extracted[c] = extractColumn(cols[c], size, selected, n, readCodes[c]);
+						fileBatchCols.add(extracted);
+						fileBatchSizes.add(n);
+					});
+				fileCols[fi] = fileBatchCols;
+				fileSizes[fi] = fileBatchSizes;
+				return null;
+			});
 		}
-		catch(Exception ex) {
-			throw new IOException("Failed parallel read of Delta table: " + fname, ex);
-		}
-		finally {
-			pool.shutdown();
-		}
+		awaitFileTasks(tasks, fname);
 
 		//flatten the per-file batches in file order and concatenate per column
 		ArrayList<Object[]> batchCols = new ArrayList<>();
@@ -240,6 +224,31 @@ public class FrameReaderDeltaParallel extends FrameReaderDelta {
 		FrameBlock ret = new FrameBlock(columns);
 		ret.setColumnNames(cnames);
 		return ret;
+	}
+
+	/**
+	 * Run one decode task per data file on the shared common thread pool and await
+	 * completion. Full parallelism is requested (the task count, one per data file,
+	 * naturally caps concurrency); this avoids the per-thread pool-size caching in
+	 * {@code CommonThreadPool.get(k)} that could otherwise throttle this reader to a
+	 * smaller pool created earlier on the same thread.
+	 */
+	private void awaitFileTasks(List<Callable<Object>> tasks, String fname) throws IOException {
+		ExecutorService pool = CommonThreadPool.get(_numThreads);
+		try {
+			for( Future<Object> f : pool.invokeAll(tasks) )
+				f.get();
+		}
+		catch(InterruptedException ex) {
+			Thread.currentThread().interrupt();
+			throw new IOException("Interrupted during parallel read of Delta table: " + fname, ex);
+		}
+		catch(Exception ex) {
+			throw new IOException("Failed parallel read of Delta table: " + fname, ex);
+		}
+		finally {
+			pool.shutdown();
+		}
 	}
 
 	/** Allocate a pre-sized typed column array matching the target value type. */

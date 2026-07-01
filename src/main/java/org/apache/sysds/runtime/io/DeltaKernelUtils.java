@@ -192,8 +192,9 @@ public class DeltaKernelUtils {
 	 * Compute the parquet target data-file size (bytes) for writing a table of the given
 	 * estimated size. With adaptive sizing enabled the writer aims for roughly one data
 	 * file per expected parallel reader (so the native per-file parallel read can use all
-	 * threads), clamped to {@code [ADAPTIVE_WRITER_MIN_FILE_SIZE, configuredTarget]} so it
-	 * never exceeds the configured/expected target nor produces excessively tiny files.
+	 * threads): never above the configured target, and never below
+	 * {@code ADAPTIVE_WRITER_MIN_FILE_SIZE} unless the configured target is itself smaller
+	 * than that floor (in which case the configured target wins).
 	 *
 	 * @param estimatedBytes estimate of the table's size (the block in-memory size is a fine proxy)
 	 * @return the target max parquet data-file size in bytes
@@ -217,6 +218,8 @@ public class DeltaKernelUtils {
 	 * @return a Delta Kernel engine for the write
 	 */
 	public static Engine createWriteEngine(long estimatedBytes) {
+		//the reader batch size is irrelevant on the write path but is set to keep the
+		//conf shape identical to deltaConf(); only the target file size matters here.
 		Configuration c = buildConf(ConfigurationManager.getCachedJobConf(),
 			ConfigurationManager.getDeltaReaderBatchSize(), adaptiveWriterTargetFileSize(estimatedBytes));
 		return DefaultEngine.create(c);

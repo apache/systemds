@@ -31,15 +31,8 @@ import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 
 import io.delta.kernel.data.ColumnVector;
 import io.delta.kernel.engine.Engine;
-import io.delta.kernel.types.BooleanType;
-import io.delta.kernel.types.ByteType;
 import io.delta.kernel.types.DataType;
-import io.delta.kernel.types.DoubleType;
-import io.delta.kernel.types.FloatType;
-import io.delta.kernel.types.IntegerType;
-import io.delta.kernel.types.LongType;
-import io.delta.kernel.types.ShortType;
-import io.delta.kernel.types.StringType;
+
 /**
  * Single-threaded native Delta Lake reader for frames, built on the Spark-free
  * Delta Kernel library. It opens the latest snapshot of a Delta table, reads
@@ -57,9 +50,12 @@ import io.delta.kernel.types.StringType;
 public class FrameReaderDelta extends FrameReader {
 
 	//per-column read codes (how to pull a value out of the Delta column vector);
-	//package visible so the parallel reader can reuse the same dispatch.
-	static final int R_DOUBLE = 0, R_FLOAT = 1, R_LONG = 2, R_INT = 3,
-		R_SHORT = 4, R_BYTE = 5, R_BOOLEAN = 6, R_STRING = 7;
+	//aliases of the shared codes in DeltaKernelUtils so the frame read dispatch stays
+	//in lockstep with the matrix reader's type mapping. Package visible so the parallel
+	//reader can reuse the same dispatch.
+	static final int R_DOUBLE = DeltaKernelUtils.T_DOUBLE, R_FLOAT = DeltaKernelUtils.T_FLOAT,
+		R_LONG = DeltaKernelUtils.T_LONG, R_INT = DeltaKernelUtils.T_INT, R_SHORT = DeltaKernelUtils.T_SHORT,
+		R_BYTE = DeltaKernelUtils.T_BYTE, R_BOOLEAN = DeltaKernelUtils.T_BOOLEAN, R_STRING = DeltaKernelUtils.T_STRING;
 
 	@Override
 	public FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, String[] names, long rlen, long clen)
@@ -102,14 +98,14 @@ public class FrameReaderDelta extends FrameReader {
 		});
 
 		ValueType[] vt = vtH[0];
-		String[] names2 = nameH[0];
+		String[] discoveredNames = nameH[0];
 		int ncol = vt.length;
 		int nrow = nrowH[0];
 
 		//empty table: the typed column arrays cannot be zero-length, so return a
 		//schema-only frame with the discovered schema/names and zero rows.
 		if( nrow == 0 )
-			return new FrameBlock(vt, names2, 0);
+			return new FrameBlock(vt, discoveredNames, 0);
 
 		//concatenate the per-batch column arrays into one typed array per column
 		Array<?>[] columns = new Array<?>[ncol];
@@ -117,7 +113,7 @@ public class FrameReaderDelta extends FrameReader {
 			columns[c] = buildColumn(vt[c], nrow, batchCols, batchSizes, c);
 
 		FrameBlock ret = new FrameBlock(columns);
-		ret.setColumnNames(names2);
+		ret.setColumnNames(discoveredNames);
 		return ret;
 	}
 
@@ -274,16 +270,13 @@ public class FrameReaderDelta extends FrameReader {
 	}
 
 	static int readCode(DataType dt, String name) {
-		if( dt instanceof StringType )  return R_STRING;
-		if( dt instanceof DoubleType )  return R_DOUBLE;
-		if( dt instanceof FloatType )   return R_FLOAT;
-		if( dt instanceof LongType )    return R_LONG;
-		if( dt instanceof IntegerType ) return R_INT;
-		if( dt instanceof ShortType )   return R_SHORT;
-		if( dt instanceof ByteType )    return R_BYTE;
-		if( dt instanceof BooleanType ) return R_BOOLEAN;
-		throw new DMLRuntimeException("Unsupported non-mappable Delta column '" + name
-			+ "' of type " + dt + " for frame read.");
+		//reuse the shared Delta type -> code mapping; frames additionally reject the
+		//types the matrix reader also cannot map (typeCode returns -1)
+		int code = DeltaKernelUtils.typeCode(dt);
+		if( code < 0 )
+			throw new DMLRuntimeException("Unsupported non-mappable Delta column '" + name
+				+ "' of type " + dt + " for frame read.");
+		return code;
 	}
 
 	static ValueType valueType(int readCode) {

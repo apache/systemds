@@ -27,32 +27,32 @@ import org.apache.sysds.test.TestConfiguration;
 
 public class BuiltinSTEPGlmTest extends AutomatedTestBase 
 {
-	private final static String TEST_NAME = "stepGLM";
-	private final static String TEST_DIR = "functions/builtin/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinSTEPGlmTest.class.getSimpleName() + "/";
+  private final static String TEST_NAME = "stepGLM";
+  private final static String TEST_DIR = "functions/builtin/";
+  private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinSTEPGlmTest.class.getSimpleName() + "/";
 
-	@Override
-	public void setUp() {
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{}));
-	}
+  @Override
+  public void setUp() {
+    addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{}));
+  }
 
-	@Test
-	public void testLmMatrixDenseCPlm() {
-		runSTEPGlmTest(ExecType.CP);
-	}
+  @Test
+  public void testLmMatrixDenseCPlm() {
+    runSTEPGlmTest(ExecType.CP);
+  }
 
-	@Test
-	public void testLmMatrixSparseSPlm() {
-		runSTEPGlmTest(ExecType.SPARK);
-	}
+  @Test
+  public void testLmMatrixSparseSPlm() {
+    runSTEPGlmTest(ExecType.SPARK);
+  }
 
-	private void runSTEPGlmTest(ExecType instType) {
-		ExecMode platformOld = setExecMode(instType);
+  private void runSTEPGlmTest(ExecType instType) {
+    ExecMode platformOld = setExecMode(instType);
 
-		try {
-			loadTestConfiguration(getTestConfiguration(TEST_NAME));
+    try {
+      loadTestConfiguration(getTestConfiguration(TEST_NAME));
 
-			String HOME = SCRIPT_DIR + TEST_DIR;
+      String HOME = SCRIPT_DIR + TEST_DIR;
 
       // Pointing to the generated validation DML script
       fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -60,9 +60,9 @@ public class BuiltinSTEPGlmTest extends AutomatedTestBase
 
       // runTest executes the script; fails if the DML script invokes stop()
       runTest(true, false, null, -1);
-		}
-		finally {
-			rtplatform = platformOld;
-		}
-	}
+    }
+    finally {
+      rtplatform = platformOld;
+    }
+  }
 }

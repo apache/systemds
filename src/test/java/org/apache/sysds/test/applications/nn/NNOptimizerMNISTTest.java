@@ -26,6 +26,9 @@ import org.apache.sysds.api.mlcontext.Script;
 import org.junit.Test;
 
 public class NNOptimizerMNISTTest extends TestFolder {
+  /*
+   * TODO: add instruction how to add optimizer + architecture
+   */
 	@Test
 	public void mnist_optimizer_test() {
 		this.inject_optimizer_adapter_module_and_run("sgd");

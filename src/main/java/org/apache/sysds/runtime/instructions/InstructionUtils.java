@@ -686,6 +686,8 @@ public class InstructionUtils {
 			return new BinaryOperator(Builtin.getBuiltinFnObject("valueSwap"));
 		else if( opcode.equalsIgnoreCase(Opcodes.FREPLICATE.toString()))
 			return new BinaryOperator(Builtin.getBuiltinFnObject("freplicate"));
+		else if( opcode.equalsIgnoreCase(Opcodes.SET_COLNAMES.toString()))
+			return new BinaryOperator(Builtin.getBuiltinFnObject("set_colnames"));
 
 		throw new RuntimeException("Unknown binary opcode " + opcode);
 	}
@@ -923,6 +925,9 @@ public class InstructionUtils {
 			return new BinaryOperator(Builtin.getBuiltinFnObject("dropInvalidLength"));
 		else if ( opcode.equalsIgnoreCase(Opcodes.VALUESWAP.toString()) || opcode.equalsIgnoreCase("mapValueSwap") )
 			return new BinaryOperator(Builtin.getBuiltinFnObject("valueSwap"));
+		//TODO: Check what  "|| opcode.equalsIgnoreCase("mapValueSwap"))" does
+		else if (opcode.equalsIgnoreCase(Opcodes.SET_COLNAMES.toString()) || opcode.equalsIgnoreCase("mapValueSwap"))
+			return new BinaryOperator(Builtin.getBuiltinFnObject("set_colnames"));
 
 		throw new DMLRuntimeException("Unknown binary opcode " + opcode);
 	}

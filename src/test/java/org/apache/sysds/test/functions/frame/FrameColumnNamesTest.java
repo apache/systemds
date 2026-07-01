@@ -44,6 +44,8 @@ import org.junit.runners.Parameterized;
 @net.jcip.annotations.NotThreadSafe
 public class FrameColumnNamesTest extends AutomatedTestBase {
 	private final static String TEST_NAME = "ColumnNames";
+	private final static String TEST_NAME_GET = "GetNames";
+	private final static String TEST_NAME_SET = "SetNames";
 	private final static String TEST_DIR = "functions/frame/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + FrameColumnNamesTest.class.getSimpleName() + "/";
 
@@ -60,6 +62,9 @@ public class FrameColumnNamesTest extends AutomatedTestBase {
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));
+		addTestConfiguration(TEST_NAME_GET, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_SET, new String[] {"B"}));
+		addTestConfiguration(TEST_NAME_SET, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_GET, new String[] {"B"}));
+
 	}
 
 	@Test
@@ -71,6 +76,107 @@ public class FrameColumnNamesTest extends AutomatedTestBase {
 	public void testDetectSchemaDoubleSpark() {
 		runGetColNamesTest(_columnNames, ExecType.SPARK);
 	}
+
+	@Test
+	public void testGetNamesCP() {
+		runGetNamesTest(_columnNames,  ExecType.CP);
+	}
+
+	@Test
+	public void testSetNamesCP() {
+		runSetNamesTest(_columnNames,  ExecType.CP);
+	}
+
+	private void runGetNamesTest(String[] columnNames, ExecType et) {
+		Types.ExecMode platformOld = setExecMode(et);
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		setOutputBuffering(true);
+		try {
+			getAndLoadTestConfiguration(TEST_NAME);
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + TEST_NAME_GET + ".dml";
+			programArgs = new String[] {"-args", input("A"), String.valueOf(_rows),
+					Integer.toString(columnNames.length), output("B")};
+
+			Types.ValueType[] schema = Collections.nCopies(
+					columnNames.length, Types.ValueType.FP64).toArray(new Types.ValueType[0]);
+			FrameBlock frame1 = new FrameBlock(schema);
+			frame1.setColumnNames(columnNames);
+			FrameWriter writer = FrameWriterFactory.createFrameWriter(FileFormat.CSV,
+					new FileFormatPropertiesCSV(true, ",", false));
+
+			double[][] A = getRandomMatrix(_rows, schema.length, Double.MIN_VALUE, Double.MAX_VALUE, 0.7, 14123);
+			TestUtils.initFrameData(frame1, A, schema, _rows);
+			writer.writeFrameToHDFS(frame1, input("A"), _rows, schema.length);
+
+			runTest(true, false, null, -1);
+			FrameBlock frame2 = readDMLFrameFromHDFS("B", FileFormat.BINARY);
+
+			// verify output schema
+			for(int i = 0; i < schema.length; i++) {
+				Assert
+						.assertEquals("Wrong result: " + columnNames[i] + ".", columnNames[i], frame2.get(0, i).toString());
+			}
+		}
+		catch(Exception ex) {
+			throw new RuntimeException(ex);
+		}
+		finally {
+			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		}
+	}
+
+	private void runSetNamesTest(String[] columnNames, ExecType et) {
+		Types.ExecMode platformOld = setExecMode(et);
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		setOutputBuffering(true);
+		try {
+			getAndLoadTestConfiguration(TEST_NAME_SET);
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + TEST_NAME_SET + ".dml";
+			programArgs = new String[] {"-args",input("X"),String.valueOf(_rows),Integer.toString(columnNames.length),
+					input("N"),output("B")
+			};
+
+			Types.ValueType[] schema = Collections.nCopies(
+					columnNames.length, Types.ValueType.FP64).toArray(new Types.ValueType[0]);
+
+			FrameBlock frame1 = new FrameBlock(schema);
+			FrameWriter writer = FrameWriterFactory.createFrameWriter(FileFormat.CSV,
+					new FileFormatPropertiesCSV(true, ",", false));
+
+			double[][] A = getRandomMatrix(_rows, schema.length, Double.MIN_VALUE, Double.MAX_VALUE, 0.7, 14123);
+			TestUtils.initFrameData(frame1, A, schema, _rows);
+			writer.writeFrameToHDFS(frame1, input("X"), _rows, schema.length);
+
+			Types.ValueType[] nameSchema = Collections.nCopies(
+					columnNames.length, Types.ValueType.STRING).toArray(new Types.ValueType[0]);
+
+			FrameBlock names = new FrameBlock(nameSchema);
+			names.ensureAllocatedColumns(1);
+			for(int i = 0; i < columnNames.length; i++)
+				names.set(0, i, columnNames[i]);
+			FrameWriter nameWriter = FrameWriterFactory.createFrameWriter(FileFormat.CSV,
+					new FileFormatPropertiesCSV(false, ",", false));
+			System.out.println("N path = " + input("N"));
+			nameWriter.writeFrameToHDFS(names, input("N"), 1, columnNames.length);
+
+			runTest(true, false, null, -1);
+
+			FrameBlock frame2 = readDMLFrameFromHDFS("B", FileFormat.BINARY);
+			for(int i = 0; i < columnNames.length; i++)
+				Assert.assertEquals("Wrong result: " + columnNames[i] + ".", columnNames[i], frame2.get(0, i).toString());
+		}
+		catch(Exception ex) {
+			throw new RuntimeException(ex);
+		}
+		finally {
+			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		}
+	}
+
 
 	private void runGetColNamesTest(String[] columnNames, ExecType et) {
 		Types.ExecMode platformOld = setExecMode(et);

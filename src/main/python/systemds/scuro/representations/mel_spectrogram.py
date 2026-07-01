@@ -36,6 +36,14 @@ from systemds.scuro.utils.static_variables import (
     PY_LIST_SLOT_BYTES,
 )
 
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    message=r"n_fft=\d+ is too (?:small|large) for input signal",
+    module=r"librosa",
+)
+
 
 @register_representation(ModalityType.AUDIO)
 @register_context_representation_operator(ModalityType.AUDIO)
@@ -56,6 +64,7 @@ class MelSpectrogram(UnimodalRepresentation):
         self.n_mels = int(n_mels)
         self.hop_length = int(hop_length)
         self.n_fft = int(n_fft)
+        self.window_size = self.n_fft
 
     def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(

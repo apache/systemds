@@ -259,7 +259,9 @@ class Task:
             val_y = self._gather_by_indices(self.labels, fold_val_indices)
 
             self._run_fold(model, train_X, train_y, val_X, val_y, test_X, test_y)
-
+        if hasattr(model, "clean_up"):
+            model.clean_up()
+            del model
         return [
             self.train_scores.compute_averages(),
             self.val_scores.compute_averages(),

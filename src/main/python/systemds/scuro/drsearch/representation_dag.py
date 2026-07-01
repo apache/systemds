@@ -80,6 +80,7 @@ class RepresentationNode:
     representation_index: int = None
     parameters: Dict[str, Any] = field(default_factory=dict)
     gpu_id: int = None
+    aggregation: AggregatedRepresentation = None
 
 
 @dataclass

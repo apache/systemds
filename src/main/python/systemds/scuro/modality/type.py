@@ -66,6 +66,11 @@ class ModalitySchemas:
         "num_columns": "integer",
     }
 
+    PHYSIOLOGICAL_SCHEMA = {
+        **TEMPORAL_BASE_SCHEMA,
+        "num_columns": "integer",
+    }
+
     _metadata_handlers = {}
 
     @classmethod
@@ -184,6 +189,22 @@ def handle_timeseries_metadata(md, data):
     return md
 
 
+@ModalitySchemas.register_metadata_handler("PHYSIOLOGICAL")
+def handle_physiological_metadata(md, data):
+    new_frequency = calculate_new_frequency(len(data), md["length"], md["frequency"])
+    md.update(
+        {
+            "length": len(data),
+            "num_columns": (
+                data.shape[1] if isinstance(data, np.ndarray) and data.ndim > 1 else 1
+            ),
+            "frequency": new_frequency,
+            "timestamp": create_timestamps(new_frequency, len(data)),
+        }
+    )
+    return md
+
+
 @ModalitySchemas.register_metadata_handler("TEXT")
 def handle_text_metadata(md, data):
     md.update({"length": len(data)})
@@ -205,6 +226,7 @@ class ModalityType(Flag):
         "VIDEO": "create_video_metadata",
         "IMAGE": "create_image_metadata",
         "TIMESERIES": "create_ts_metadata",
+        "PHYSIOLOGICAL": "create_ts_metadata",
         "EMBEDDING": "create_embedding_metadata",
     }
 

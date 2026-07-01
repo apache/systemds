@@ -155,11 +155,21 @@ class WindowAggregation(Window):
         pad=True,
         params=None,
     ):
+        window_size_set = False
+        if isinstance(aggregation_function, Representation) and hasattr(
+            aggregation_function, "window_size"
+        ):
+            window_size = aggregation_function.window_size
+            window_size_set = True
+
         if params is not None:
             if isinstance(
                 params.get("aggregation_function"), (Aggregation, Representation)
             ):
                 aggregation_function = params["aggregation_function"]
+                if hasattr(aggregation_function, "window_size"):
+                    window_size = aggregation_function.window_size
+                    window_size_set = True
             else:
                 nested_agg = {
                     key[len("aggregation_function_") :]: value
@@ -177,7 +187,8 @@ class WindowAggregation(Window):
                     aggregation_function = params.get(
                         "aggregation_function", aggregation_function
                     )
-            window_size = params["window_size"]
+
+            window_size = params["window_size"] if not window_size_set else window_size
             pad = params.get("pad", True)
         super().__init__("WindowAggregation", aggregation_function)
         self.parameters["window_size"] = (4, 128)
@@ -234,6 +245,7 @@ class WindowAggregation(Window):
 
         effective_seq_len = in_shape[0]
         in_numel = effective_seq_len * self._rest_numel(in_shape)
+        output_bytes = self.estimate_output_memory_bytes(input_stats)
         one_instance_bytes = in_numel * np.dtype(self.data_type).itemsize
         input_bytes = one_instance_bytes * input_stats.num_instances
 
@@ -269,6 +281,7 @@ class WindowAggregation(Window):
                 )
             original_lengths.append(windowed_instance.shape[0])
             windowed_data.append(windowed_instance)
+
         if self.pad and not isinstance(windowed_data, np.ndarray):
             target_length = max(original_lengths)
 
@@ -322,7 +335,17 @@ class WindowAggregation(Window):
             full_result = self.aggregation_function.compute_feature(full_batches)
             if tail.size:
                 tail_result = self.aggregation_function.compute_feature(tail)
-                full_result = np.concatenate([full_result, tail_result[None, :]])
+                if tail_result.shape == full_result.shape[1:]:
+                    tail_row = tail_result
+                else:
+                    tail_row = np.zeros_like(full_result[0])
+                    slices = tuple(
+                        slice(0, min(d, s))
+                        for d, s in zip(tail_row.shape, tail_result.shape)
+                    )
+                    tail_row[slices] = tail_result[slices]
+                full_result = np.concatenate([full_result, tail_row[None, :]])
+
         return full_result
 
     def window_aggregate_nested_level(self, instance, new_length):

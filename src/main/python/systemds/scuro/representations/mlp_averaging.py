@@ -54,12 +54,8 @@ class MLPAveraging(DimensionalityReduction):
             "batch_size": [8, 16, 32, 64, 128],
         }
         super().__init__("MLPAveraging", parameters)
-        if params is not None:
-            self.output_dim = params.get("output_dim", output_dim)
-            self.batch_size = params.get("batch_size", batch_size)
-        else:
-            self.output_dim = output_dim
-            self.batch_size = batch_size
+        self.output_dim = output_dim
+        self.batch_size = batch_size
         self.device = None
         self.data_type = np.float32
         self.gpu_id = None
@@ -74,10 +70,7 @@ class MLPAveraging(DimensionalityReduction):
         self.device = get_device(gpu_id)
 
     def get_output_stats(self, input_stats: RepresentationStats) -> RepresentationStats:
-        if (
-            len(input_stats.output_shape) > 1
-            and np.prod(input_stats.output_shape) > self.output_dim
-        ):
+        if len(input_stats.output_shape) > 1:
             return RepresentationStats(
                 input_stats.num_instances,
                 (self.output_dim,),
@@ -94,13 +87,7 @@ class MLPAveraging(DimensionalityReduction):
             )
         return RepresentationStats(
             input_stats.num_instances,
-            (
-                (
-                    np.prod(input_stats.output_shape)
-                    if np.prod(input_stats.output_shape) < self.output_dim
-                    else self.output_dim
-                ),
-            ),
+            (self.output_dim,),
             output_shape_is_known=input_stats.output_shape_is_known,
         )
 

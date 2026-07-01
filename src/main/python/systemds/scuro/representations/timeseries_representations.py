@@ -51,9 +51,13 @@ class TimeSeriesRepresentation(UnimodalRepresentation):
             feature = self.compute_feature(signal)
             result.append(feature)
 
-        transformed_modality.data = np.vstack(np.array(result)).astype(
-            modality.metadata[0]["data_layout"]["type"]
-        )
+        maxlen = max(r.size for r in result)
+        padded_result = [
+            np.pad(r, (0, maxlen - r.size), mode="constant", constant_values=0.0)
+            for r in result
+        ]
+        dtype = modality.metadata[0]["data_layout"]["type"]
+        transformed_modality.data = np.vstack(np.asarray(padded_result)).astype(dtype)
         return transformed_modality
 
     def get_output_stats(self, input_stats):
@@ -71,8 +75,10 @@ class TimeSeriesRepresentation(UnimodalRepresentation):
         }
 
 
-@register_representation([ModalityType.TIMESERIES])
+@register_representation([ModalityType.TIMESERIES, ModalityType.PHYSIOLOGICAL])
 @register_context_representation_operator(ModalityType.TIMESERIES)
+@register_context_representation_operator(ModalityType.PHYSIOLOGICAL)
+@register_context_representation_operator(ModalityType.AUDIO)
 class Mean(TimeSeriesRepresentation):
     def __init__(self, params=None):
         super().__init__("Mean")
@@ -81,8 +87,9 @@ class Mean(TimeSeriesRepresentation):
         return np.array(np.mean(signal, axis=axis))
 
 
-@register_representation([ModalityType.TIMESERIES])
+@register_representation([ModalityType.TIMESERIES, ModalityType.PHYSIOLOGICAL])
 @register_context_representation_operator(ModalityType.TIMESERIES)
+@register_context_representation_operator(ModalityType.PHYSIOLOGICAL)
 class Min(TimeSeriesRepresentation):
     def __init__(self, params=None):
         super().__init__("Min")
@@ -91,8 +98,9 @@ class Min(TimeSeriesRepresentation):
         return np.array(np.min(signal, axis=axis))
 
 
-@register_representation([ModalityType.TIMESERIES])
+@register_representation([ModalityType.TIMESERIES, ModalityType.PHYSIOLOGICAL])
 @register_context_representation_operator(ModalityType.TIMESERIES)
+@register_context_representation_operator(ModalityType.PHYSIOLOGICAL)
 class Max(TimeSeriesRepresentation):
     def __init__(self, params=None):
         super().__init__("Max")
@@ -101,8 +109,9 @@ class Max(TimeSeriesRepresentation):
         return np.array(np.max(signal, axis=axis))
 
 
-@register_representation([ModalityType.TIMESERIES])
+@register_representation([ModalityType.TIMESERIES, ModalityType.PHYSIOLOGICAL])
 @register_context_representation_operator(ModalityType.TIMESERIES)
+@register_context_representation_operator(ModalityType.PHYSIOLOGICAL)
 class Sum(TimeSeriesRepresentation):
     def __init__(self, params=None):
         super().__init__("Sum")
@@ -111,8 +120,10 @@ class Sum(TimeSeriesRepresentation):
         return np.array(np.sum(signal, axis=axis))
 
 
-@register_representation([ModalityType.TIMESERIES])
+@register_representation([ModalityType.TIMESERIES, ModalityType.PHYSIOLOGICAL])
 @register_context_representation_operator(ModalityType.TIMESERIES)
+@register_context_representation_operator(ModalityType.PHYSIOLOGICAL)
+@register_context_representation_operator(ModalityType.AUDIO)
 class Std(TimeSeriesRepresentation):
     def __init__(self, params=None):
         super().__init__("Std")
@@ -121,8 +132,10 @@ class Std(TimeSeriesRepresentation):
         return np.array(np.std(signal, axis=axis))
 
 
-@register_representation([ModalityType.TIMESERIES])
+@register_representation([ModalityType.TIMESERIES, ModalityType.PHYSIOLOGICAL])
 @register_context_representation_operator(ModalityType.TIMESERIES)
+@register_context_representation_operator(ModalityType.PHYSIOLOGICAL)
+@register_context_representation_operator(ModalityType.AUDIO)
 class Skew(TimeSeriesRepresentation):
     def __init__(self, params=None):
         super().__init__("Skew")
@@ -131,12 +144,13 @@ class Skew(TimeSeriesRepresentation):
         return np.array(stats.skew(signal, axis=axis))
 
 
-@register_representation([ModalityType.TIMESERIES])
+@register_representation([ModalityType.TIMESERIES, ModalityType.PHYSIOLOGICAL])
 @register_context_representation_operator(ModalityType.TIMESERIES)
+@register_context_representation_operator(ModalityType.PHYSIOLOGICAL)
 class Quantile(TimeSeriesRepresentation):
     def __init__(self, quantile=0.9, params=None):
         super().__init__(
-            "Qunatile", {"quantile": [0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]}
+            "Qunatile", {"quantile": [0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]}
         )
         self.quantile = quantile
 
@@ -144,8 +158,10 @@ class Quantile(TimeSeriesRepresentation):
         return np.array(np.quantile(signal, self.quantile, axis=axis))
 
 
-@register_representation([ModalityType.TIMESERIES])
+@register_representation([ModalityType.TIMESERIES, ModalityType.PHYSIOLOGICAL])
 @register_context_representation_operator(ModalityType.TIMESERIES)
+@register_context_representation_operator(ModalityType.PHYSIOLOGICAL)
+@register_context_representation_operator(ModalityType.AUDIO)
 class Kurtosis(TimeSeriesRepresentation):
     def __init__(self, params=None):
         super().__init__("Kurtosis")
@@ -154,8 +170,10 @@ class Kurtosis(TimeSeriesRepresentation):
         return np.array(stats.kurtosis(signal, fisher=True, bias=True, axis=axis))
 
 
-@register_representation([ModalityType.TIMESERIES])
+@register_representation([ModalityType.TIMESERIES, ModalityType.PHYSIOLOGICAL])
 @register_context_representation_operator(ModalityType.TIMESERIES)
+@register_context_representation_operator(ModalityType.PHYSIOLOGICAL)
+@register_context_representation_operator(ModalityType.AUDIO)
 class RMS(TimeSeriesRepresentation):
     def __init__(self, params=None):
         super().__init__("RMS")
@@ -164,8 +182,9 @@ class RMS(TimeSeriesRepresentation):
         return np.array(np.sqrt(np.mean(np.square(signal), axis=axis)))
 
 
-@register_representation([ModalityType.TIMESERIES])
+@register_representation([ModalityType.TIMESERIES, ModalityType.PHYSIOLOGICAL])
 @register_context_representation_operator(ModalityType.TIMESERIES)
+@register_context_representation_operator(ModalityType.PHYSIOLOGICAL)
 class ZeroCrossingRate(TimeSeriesRepresentation):
     def __init__(self, params=None):
         super().__init__("ZeroCrossingRate")
@@ -174,8 +193,9 @@ class ZeroCrossingRate(TimeSeriesRepresentation):
         return np.array(np.sum(np.diff(np.signbit(signal), axis=axis) != 0, axis=axis))
 
 
-@register_representation([ModalityType.TIMESERIES])
+@register_representation([ModalityType.TIMESERIES, ModalityType.PHYSIOLOGICAL])
 @register_context_representation_operator(ModalityType.TIMESERIES)
+@register_context_representation_operator(ModalityType.PHYSIOLOGICAL)
 class ACF(TimeSeriesRepresentation):
     def __init__(self, k=1, params=None):
         super().__init__("ACF", {"k": [1, 2, 5, 10, 20, 25, 50, 100, 200, 500]})
@@ -209,8 +229,9 @@ class ACF(TimeSeriesRepresentation):
         return k_vals.tolist()
 
 
-@register_representation([ModalityType.TIMESERIES])
+@register_representation([ModalityType.TIMESERIES, ModalityType.PHYSIOLOGICAL])
 @register_context_representation_operator(ModalityType.TIMESERIES)
+@register_context_representation_operator(ModalityType.PHYSIOLOGICAL)
 class FrequencyMagnitude(TimeSeriesRepresentation):
     def __init__(self, params=None):
         super().__init__("FrequencyMagnitude")
@@ -219,7 +240,8 @@ class FrequencyMagnitude(TimeSeriesRepresentation):
         return np.array(np.abs(np.fft.rfft(signal, axis=axis)))
 
 
-@register_representation([ModalityType.TIMESERIES])
+@register_representation([ModalityType.TIMESERIES, ModalityType.PHYSIOLOGICAL])
+@register_context_representation_operator(ModalityType.PHYSIOLOGICAL)
 @register_context_representation_operator(ModalityType.TIMESERIES)
 class SpectralCentroid(TimeSeriesRepresentation):
     def __init__(self, fs=1.0, params=None):
@@ -240,7 +262,8 @@ class SpectralCentroid(TimeSeriesRepresentation):
         return np.array(num / den)
 
 
-@register_representation([ModalityType.TIMESERIES])
+@register_representation([ModalityType.TIMESERIES, ModalityType.PHYSIOLOGICAL])
+@register_context_representation_operator(ModalityType.PHYSIOLOGICAL)
 @register_context_representation_operator(ModalityType.TIMESERIES)
 class BandpowerFFT(TimeSeriesRepresentation):
     def __init__(self, fs=1.0, f1=0.0, f2=0.5, params=None):

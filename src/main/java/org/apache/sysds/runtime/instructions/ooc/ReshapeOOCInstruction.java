@@ -332,6 +332,7 @@ public class ReshapeOOCInstruction extends ComputationOOCInstruction {
 					}
 				}
 				totalIdx = tmp2;
+				res.recomputeNonZeros();
 				qOut.enqueue(new IndexedMatrixValue(new MatrixIndexes(b + 1, bc + 1), res));
 			}
 			totalIdx = tmp;
@@ -391,8 +392,10 @@ public class ReshapeOOCInstruction extends ComputationOOCInstruction {
 							c++;
 							if(c == outputBlockCol[0].getNumColumns()) {
 								// enqueue filled output blocks and allocate new ones
-								for(int b = 0; b < outputBlockCol.length; b++)
+								for(int b = 0; b < outputBlockCol.length; b++) {
+									outputBlockCol[b].recomputeNonZeros();
 									qOut.enqueue(new IndexedMatrixValue(new MatrixIndexes(b + 1, bc + 1), outputBlockCol[b]));
+								}
 								bc++;
 								// allocate new block col
 								outputBlockCol = allocateSliceBlocks(bc, rows, cols, blen, numBlocksPerRowOut, numBlocksPerColOut, false);

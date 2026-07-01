@@ -37,8 +37,11 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
+import org.apache.sysds.utils.ParameterizedLogger;
 
 public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPInstruction {
+	private static final ParameterizedLogger LOG =
+		ParameterizedLogger.getLogger(MultiReturnParameterizedBuiltinCPInstruction.class);
 	protected final ArrayList<CPOperand> _outputs;
 	protected final boolean _metaReturn;
 	
@@ -106,9 +109,7 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 		ec.setMatrixOutput(getOutput(0).getName(), data);
 		ec.setFrameOutput(getOutput(1).getName(), meta);
 		
-		if(LOG.isDebugEnabled())
-			// debug the size of the output metadata.
-			LOG.debug("Memory size of metadata: " + meta.getInMemorySize());
+		LOG.debug("Memory size of metadata: {}", meta.getInMemorySize());
 	}
 
 	@Override

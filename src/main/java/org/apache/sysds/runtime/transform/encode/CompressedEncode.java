@@ -29,8 +29,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
@@ -64,10 +62,11 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderBin.BinMethod;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.ParameterizedLogger;
 import org.apache.sysds.utils.stats.Timing;
 
 public class CompressedEncode {
-	protected static final Log LOG = LogFactory.getLog(CompressedEncode.class.getName());
+	protected static final ParameterizedLogger LOG = ParameterizedLogger.getLogger(CompressedEncode.class);
 
 	/** Row parallelization threshold for parallel creation of AMapToData for compression */
 	public static int ROW_PARALLELIZATION_THRESHOLD = 10000;
@@ -205,9 +204,8 @@ public class CompressedEncode {
 	private AColGroup encode(ColumnEncoderComposite c) throws Exception {
 		final Timing t = new Timing();
 		AColGroup g = executeEncode(c);
-		if(LOG.isDebugEnabled())
-			LOG.debug(String.format("Encode: columns: %4d estimateDistinct: %6d distinct: %6d size: %6d time: %10f",
-				c._colID, c._estNumDistincts, g.getNumValues(), g.estimateInMemorySize(), t.stop()));
+		LOG.debug("Encode: columns: {%4d} estimateDistinct: {%6d} distinct: {%6d} size: {%6d} time: {%10f}",
+			c._colID, c._estNumDistincts, g.getNumValues(), g.estimateInMemorySize(), t.stop());
 		return g;
 	}
 
@@ -721,8 +719,7 @@ public class CompressedEncode {
 
 		nnz.addAndGet(combinedNNZ);
 		ret.setNonZeros(combinedNNZ);
-		if(LOG.isDebugEnabled())
-			LOG.debug("Combining of : " + ucg.size() + " uncompressed columns Time: " + t.stop());
+		LOG.debug("Combining of : {} uncompressed columns Time: {}", ucg.size(), t.stop());
 
 		return ColGroupUncompressed.create(ret, combinedCols);
 	}
@@ -769,16 +766,13 @@ public class CompressedEncode {
 	}
 
 	private void logging(MatrixBlock mb) {
-		if(LOG.isDebugEnabled()) {
-			LOG.debug(String.format("Uncompressed transform encode Dense size:   %16d", mb.estimateSizeDenseInMemory()));
-			LOG.debug(String.format("Uncompressed transform encode Sparse size:  %16d", mb.estimateSizeSparseInMemory()));
-			LOG.debug(String.format("Compressed transform encode size:           %16d", mb.estimateSizeInMemory()));
-
-			double ratio = Math.min(mb.estimateSizeDenseInMemory(), mb.estimateSizeSparseInMemory()) /
-				mb.estimateSizeInMemory();
-			double denseRatio = mb.estimateSizeDenseInMemory() / mb.estimateSizeInMemory();
-			LOG.debug(String.format("Compression ratio: %10.3f", ratio));
-			LOG.debug(String.format("Dense ratio:       %10.3f", denseRatio));
-		}
+		LOG.debug("Uncompressed transform encode Dense size:   {%16d}", mb.estimateSizeDenseInMemory());
+		LOG.debug("Uncompressed transform encode Sparse size:  {%16d}", mb.estimateSizeSparseInMemory());
+		LOG.debug("Compressed transform encode size:           {%16d}", mb.estimateSizeInMemory());
+		double ratio = Math.min(mb.estimateSizeDenseInMemory(), mb.estimateSizeSparseInMemory()) /
+			mb.estimateSizeInMemory();
+		double denseRatio = mb.estimateSizeDenseInMemory() / mb.estimateSizeInMemory();
+		LOG.debug("Compression ratio: {%10.3f}", ratio);
+		LOG.debug("Dense ratio:       {%10.3f}", denseRatio);
 	}
 }

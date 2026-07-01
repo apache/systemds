@@ -19,11 +19,23 @@
 
 package org.apache.sysds.hops.codegen;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
@@ -97,24 +109,11 @@ import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.NativeHelper;
+import org.apache.sysds.utils.ParameterizedLogger;
 import org.apache.sysds.utils.stats.CodegenStatistics;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map.Entry;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-
 public class SpoofCompiler {
-	private static final Log LOG = LogFactory.getLog(SpoofCompiler.class.getName());
+	private static final ParameterizedLogger LOG = ParameterizedLogger.getLogger(SpoofCompiler.class);
 
 	//internal configuration flags
 	public static CompilerType JAVA_COMPILER           = CompilerType.JANINO;
@@ -539,21 +538,20 @@ public class SpoofCompiler {
 					}
 
 					//explain debug output cplans or generated source code
-					if( LOG.isInfoEnabled() || DMLScript.EXPLAIN.isHopsType(recompile) ) {
-						LOG.info("Codegen EXPLAIN (generated cplan for HopID: " + cplan.getKey() + 
-							", line "+tmp.getValue().getBeginLine() + ", hash="+tmp.getValue().hashCode()+"):");
+					if( DMLScript.EXPLAIN.isHopsType(recompile) ) {
+						LOG.info("Codegen EXPLAIN (generated cplan for HopID: {}, line {}, hash={}):",
+							cplan.getKey(), tmp.getValue().getBeginLine(), tmp.getValue().hashCode());
 						LOG.info(tmp.getValue().getClassname()
 							+ Explain.explainCPlan(cplan.getValue().getValue()));
 					}
-					if( LOG.isInfoEnabled() || DMLScript.EXPLAIN.isRuntimeType(recompile) ) {
-						LOG.info("JAVA Codegen EXPLAIN (generated code for HopID: " + cplan.getKey() +
-							", line "+tmp.getValue().getBeginLine() + ", hash="+tmp.getValue().hashCode()+"):");
+					if( DMLScript.EXPLAIN.isRuntimeType(recompile) ) {
+						LOG.info("JAVA Codegen EXPLAIN (generated code for HopID: {}, line {}, hash={}):",
+							cplan.getKey(), tmp.getValue().getBeginLine(), tmp.getValue().hashCode());
 						LOG.info(CodegenUtils.printWithLineNumber(src));
-						
-						if(API == GeneratorAPI.CUDA) {
-							LOG.info("CUDA Codegen EXPLAIN (generated code for HopID: " + cplan.getKey() +
-									", line " + tmp.getValue().getBeginLine() + ", hash=" + tmp.getValue().hashCode() + "):");
 
+						if(API == GeneratorAPI.CUDA) {
+							LOG.info("CUDA Codegen EXPLAIN (generated code for HopID: {}, line {}, hash={}):",
+								cplan.getKey(), tmp.getValue().getBeginLine(), tmp.getValue().hashCode());
 							LOG.info(CodegenUtils.printWithLineNumber(src_cuda));
 						}
 					}

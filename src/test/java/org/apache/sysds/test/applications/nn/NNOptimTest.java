@@ -33,6 +33,11 @@ public class NNOptimTest extends TestFolder {
 		run("sgd_momentum.dml");
 	}
 
+	@Test
+	public void rmsprop() {
+		run("rmsprop.dml");
+	}
+
 	@Override
 	protected void run(String name) {
 		super.run("component/optim/" + name);

@@ -61,3 +61,7 @@ if (max(abs(beta_est - beta_true)) > epsilon) {
 }
 print("passed test 2")
 
+
+
+#stop("!!!Sucess!!!") # uncomment for letting the test fail
+

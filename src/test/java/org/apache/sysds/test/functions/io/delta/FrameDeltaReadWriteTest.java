@@ -35,11 +35,12 @@ import org.junit.Test;
 /**
  * End-to-end DML test of the native Delta <b>frame</b> read/write path.
  *
- * <p>As in the matrix variant, the write and the read run as two separate
- * SystemDS executions so the read is a genuine disk read rather than an
- * in-memory cache hit. We additionally assert via {@link CacheStatistics} that
- * the write run wrote (delta + text reference) and the read run read (delta +
- * text reference) from HDFS, so a short-circuited path would fail the test.</p>
+ * <p>
+ * As in the matrix variant, the write and the read run as two separate SystemDS executions so the read is a genuine
+ * disk read rather than an in-memory cache hit. We additionally assert via {@link CacheStatistics} that the write run
+ * wrote (delta + text reference) and the read run read (delta + text reference) from HDFS, so a short-circuited path
+ * would fail the test.
+ * </p>
  */
 public class FrameDeltaReadWriteTest extends AutomatedTestBase {
 
@@ -51,10 +52,8 @@ public class FrameDeltaReadWriteTest extends AutomatedTestBase {
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(WRITE_NAME,
-			new TestConfiguration(TEST_CLASS_DIR, WRITE_NAME, new String[] { "ref" }));
-		addTestConfiguration(READ_NAME,
-			new TestConfiguration(TEST_CLASS_DIR, READ_NAME, new String[] { "R" }));
+		addTestConfiguration(WRITE_NAME, new TestConfiguration(TEST_CLASS_DIR, WRITE_NAME, new String[] {"ref"}));
+		addTestConfiguration(READ_NAME, new TestConfiguration(TEST_CLASS_DIR, READ_NAME, new String[] {"R"}));
 	}
 
 	@Test
@@ -81,31 +80,29 @@ public class FrameDeltaReadWriteTest extends AutomatedTestBase {
 			String deltaPath = output("deltaTable");
 			String refPath = output("ref");
 			fullDMLScriptName = HOME + WRITE_NAME + ".dml";
-			programArgs = new String[] { "-stats", "-args",
-				String.valueOf(rows), String.valueOf(cols), String.valueOf(sparsity),
-				deltaPath, refPath };
+			programArgs = new String[] {"-stats", "-args", String.valueOf(rows), String.valueOf(cols),
+				String.valueOf(sparsity), deltaPath, refPath};
 			runTest(true, false, null, -1);
 
-			//the write run must materialize two objects to disk: the frame Delta
-			//table under test + the matrix text reference. FrameWriterDelta genuinely
-			//hitting HDFS is what produces the frame-side write statistic.
+			// the write run must materialize two objects to disk: the frame Delta
+			// table under test + the matrix text reference. FrameWriterDelta genuinely
+			// hitting HDFS is what produces the frame-side write statistic.
 			long hdfsWrites = CacheStatistics.getHDFSWrites();
-			assertTrue("expected >= 2 HDFS writes in the write run (delta frame + reference), got "
-				+ hdfsWrites, hdfsWrites >= 2);
-			//and a real Delta table (transaction log) must have been created
+			assertTrue("expected >= 2 HDFS writes in the write run (delta frame + reference), got " + hdfsWrites,
+				hdfsWrites >= 2);
+			// and a real Delta table (transaction log) must have been created
 			assertTrue("missing Delta transaction log under " + deltaPath,
 				new File(deltaPath, "_delta_log").isDirectory());
 
 			// ---- phase 2: fresh execution reads the Delta frame and compares ----
 			getAndLoadTestConfiguration(READ_NAME);
 			fullDMLScriptName = HOME + READ_NAME + ".dml";
-			programArgs = new String[] { "-stats", "-args",
-				deltaPath, refPath, output("R") };
+			programArgs = new String[] {"-stats", "-args", deltaPath, refPath, output("R")};
 			runTest(true, false, null, -1);
 
 			long hdfsReads = CacheStatistics.getHDFSHits();
-			assertTrue("expected >= 2 HDFS reads in the read run (delta + reference), got "
-				+ hdfsReads, hdfsReads >= 2);
+			assertTrue("expected >= 2 HDFS reads in the read run (delta + reference), got " + hdfsReads,
+				hdfsReads >= 2);
 
 			HashMap<CellIndex, Double> R = readDMLMatrixFromOutputDir("R");
 			double diff = R.getOrDefault(new CellIndex(1, 1), 0.0);

@@ -44,37 +44,35 @@ import io.delta.kernel.types.StructType;
 import io.delta.kernel.utils.CloseableIterator;
 
 /**
- * Single-threaded native Delta Lake writer for frames, built on the Spark-free
- * Delta Kernel library. It creates (or recreates) a Delta table whose schema
- * mirrors the frame schema (per-column {@link ValueType} mapped to a Delta
- * type and the frame column names), streams the {@link FrameBlock} rows as
- * columnar batches into parquet data files, and commits the add-file actions.
+ * Single-threaded native Delta Lake writer for frames, built on the Spark-free Delta Kernel library. It creates (or
+ * recreates) a Delta table whose schema mirrors the frame schema (per-column {@link ValueType} mapped to a Delta type
+ * and the frame column names), streams the {@link FrameBlock} rows as columnar batches into parquet data files, and
+ * commits the add-file actions.
  */
 public class FrameWriterDelta extends FrameWriter {
 
 	@Override
 	public void writeFrameToHDFS(FrameBlock src, String fname, long rlen, long clen)
-		throws IOException, DMLRuntimeException
-	{
-		if( src.getNumRows() != rlen || src.getNumColumns() != clen )
-			throw new IOException("Frame dimensions mismatch with metadata: ("
-				+ src.getNumRows() + "x" + src.getNumColumns() + ") vs (" + rlen + "x" + clen + ").");
+		throws IOException, DMLRuntimeException {
+		if(src.getNumRows() != rlen || src.getNumColumns() != clen)
+			throw new IOException("Frame dimensions mismatch with metadata: (" + src.getNumRows() + "x"
+				+ src.getNumColumns() + ") vs (" + rlen + "x" + clen + ").");
 		int ncol = (int) clen;
 		int nrow = (int) rlen;
 		StructType schema = buildSchema(src.getSchema(), src.getColumnNames(), ncol);
 
-		//snapshot the typed column arrays + per-column nullability once, so the
-		//hot per-cell path can read primitives directly (no boxing) and skip
-		//null-checks on non-nullable columns.
+		// snapshot the typed column arrays + per-column nullability once, so the
+		// hot per-cell path can read primitives directly (no boxing) and skip
+		// null-checks on non-nullable columns.
 		Array<?>[] cols = new Array<?>[ncol];
 		boolean[] nullable = new boolean[ncol];
-		for( int c=0; c<ncol; c++ ) {
+		for(int c = 0; c < ncol; c++) {
 			cols[c] = src.getColumn(c);
 			nullable[c] = cols[c].containsNull();
 		}
 
 		int batchRows = ConfigurationManager.getDeltaWriterBatchSize();
-		//size data files adaptively (toward one file per parallel reader) for faster parallel reads
+		// size data files adaptively (toward one file per parallel reader) for faster parallel reads
 		Engine engine = DeltaKernelUtils.createWriteEngine(src.getInMemorySize());
 		DeltaKernelUtils.commit(engine, DeltaKernelUtils.qualify(fname), schema,
 			new FrameBatchIterator(cols, nullable, schema, nrow, ncol, batchRows));
@@ -82,21 +80,27 @@ public class FrameWriterDelta extends FrameWriter {
 
 	private static StructType buildSchema(ValueType[] vtSchema, String[] names, int ncol) {
 		StructType schema = new StructType();
-		for( int c=0; c<ncol; c++ )
+		for(int c = 0; c < ncol; c++)
 			schema = schema.add(names[c], toDeltaType(vtSchema[c]), true);
 		return schema;
 	}
 
 	static DataType toDeltaType(ValueType vt) {
-		switch( vt ) {
-			case FP64:    return DoubleType.DOUBLE;
-			case FP32:    return FloatType.FLOAT;
-			case INT64:   return LongType.LONG;
+		switch(vt) {
+			case FP64:
+				return DoubleType.DOUBLE;
+			case FP32:
+				return FloatType.FLOAT;
+			case INT64:
+				return LongType.LONG;
 			case INT32:
 			case UINT8:
-			case UINT4:   return IntegerType.INTEGER;
-			case BOOLEAN: return BooleanType.BOOLEAN;
-			default:      return StringType.STRING; //STRING/CHARACTER/HASH*/UNKNOWN
+			case UINT4:
+				return IntegerType.INTEGER;
+			case BOOLEAN:
+				return BooleanType.BOOLEAN;
+			default:
+				return StringType.STRING; // STRING/CHARACTER/HASH*/UNKNOWN
 		}
 	}
 
@@ -126,7 +130,7 @@ public class FrameWriterDelta extends FrameWriter {
 
 		@Override
 		public FilteredColumnarBatch next() {
-			if( !hasNext() )
+			if(!hasNext())
 				throw new NoSuchElementException();
 			int size = Math.min(_batchRows, _nrow - _pos);
 			ColumnarBatch batch = new FrameColumnarBatch(_cols, _nullable, _schema, _pos, size, _ncol);
@@ -136,7 +140,7 @@ public class FrameWriterDelta extends FrameWriter {
 
 		@Override
 		public void close() {
-			//nothing to release
+			// nothing to release
 		}
 	}
 
@@ -165,10 +169,10 @@ public class FrameWriterDelta extends FrameWriter {
 
 		@Override
 		public ColumnVector getColumnVector(int ordinal) {
-			if( ordinal < 0 || ordinal >= _ncol )
+			if(ordinal < 0 || ordinal >= _ncol)
 				throw new IndexOutOfBoundsException("column ordinal " + ordinal);
-			return new FrameColumnVector(_cols[ordinal], _nullable[ordinal],
-				_schema.at(ordinal).getDataType(), _rowStart, _size);
+			return new FrameColumnVector(_cols[ordinal], _nullable[ordinal], _schema.at(ordinal).getDataType(),
+				_rowStart, _size);
 		}
 
 		@Override
@@ -178,10 +182,9 @@ public class FrameWriterDelta extends FrameWriter {
 	}
 
 	/**
-	 * Read-only typed column view over one column {@link Array} row range. Numeric
-	 * values are read through {@link Array#getAsDouble(int)} to avoid boxing, and
-	 * non-nullable columns short-circuit {@code isNullAt} so the kernel never pays
-	 * for a redundant boxed fetch.
+	 * Read-only typed column view over one column {@link Array} row range. Numeric values are read through
+	 * {@link Array#getAsDouble(int)} to avoid boxing, and non-nullable columns short-circuit {@code isNullAt} so the
+	 * kernel never pays for a redundant boxed fetch.
 	 */
 	private static class FrameColumnVector implements ColumnVector {
 		private final Array<?> _col;
@@ -236,7 +239,7 @@ public class FrameWriterDelta extends FrameWriter {
 
 		@Override
 		public long getLong(int rowId) {
-			//exact for INT64 (getAsDouble would lose precision beyond 2^53)
+			// exact for INT64 (getAsDouble would lose precision beyond 2^53)
 			return ((Number) _col.get(_rowStart + rowId)).longValue();
 		}
 
@@ -247,7 +250,7 @@ public class FrameWriterDelta extends FrameWriter {
 
 		@Override
 		public void close() {
-			//nothing to release
+			// nothing to release
 		}
 	}
 }

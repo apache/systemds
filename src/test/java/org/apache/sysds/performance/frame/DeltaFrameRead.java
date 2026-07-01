@@ -38,29 +38,31 @@ import org.apache.sysds.runtime.io.FrameWriterDelta;
 import org.apache.sysds.test.TestUtils;
 
 /**
- * Reads the SAME native Delta frame table from disk repeatedly and reports read
- * throughput. The table is written to a temporary directory ONCE as (untimed)
- * setup; every timed repetition re-opens the latest snapshot and materializes a
- * fresh {@link FrameBlock}, so the numbers reflect the read path only (parquet
- * decode + column materialization), not the write.
+ * Reads the SAME native Delta frame table from disk repeatedly and reports read throughput. The table is written to a
+ * temporary directory ONCE as (untimed) setup; every timed repetition re-opens the latest snapshot and materializes a
+ * fresh {@link FrameBlock}, so the numbers reflect the read path only (parquet decode + column materialization), not
+ * the write.
  *
- * <p>This is the target for an async-profiler run: launch the perf jar under the
- * profiler agent and this loop provides a long, steady-state read workload to
- * sample. See {@code src/test/java/org/apache/sysds/performance/README.md} and
- * the {@code delta-async-profiler} cursor rule.</p>
+ * <p>
+ * This is the target for an async-profiler run: launch the perf jar under the profiler agent and this loop provides a
+ * long, steady-state read workload to sample. See {@code src/test/java/org/apache/sysds/performance/README.md} and the
+ * {@code delta-async-profiler} cursor rule.
+ * </p>
  *
- * <p>Dispatched from {@link org.apache.sysds.performance.Main} (program id 18).</p>
+ * <p>
+ * Dispatched from {@link org.apache.sysds.performance.Main} (program id 18).
+ * </p>
  */
 public class DeltaFrameRead extends APerfTest<Long, FrameBlock> {
 
-	//the Delta reader derives schema/names from the table metadata, so the values
-	//passed here are placeholders (a single detect column) and are ignored.
+	// the Delta reader derives schema/names from the table metadata, so the values
+	// passed here are placeholders (a single detect column) and are ignored.
 	private static final ValueType[] DETECT_SCHEMA = new ValueType[] {ValueType.STRING};
 	private static final String[] DETECT_NAMES = new String[] {"x"};
 
 	private final int k;
 	private final String mode;
-	private final long targetFileSize; //<=0 -> adaptive default sizing
+	private final long targetFileSize; // <=0 -> adaptive default sizing
 
 	private String tablePath;
 	private Path tableDir;
@@ -79,18 +81,17 @@ public class DeltaFrameRead extends APerfTest<Long, FrameBlock> {
 			setup();
 			System.out.println(this);
 			System.out.printf("table: %s%n", tablePath);
-			System.out.printf("layout: files=%d, in-memory=%.1f MB, target=%s%n",
-				files, inMemSize / 1048576.0,
+			System.out.printf("layout: files=%d, in-memory=%.1f MB, target=%s%n", files, inMemSize / 1048576.0,
 				targetFileSize > 0 ? (targetFileSize / 1048576) + "MB(fixed)" : "adaptive");
 
-			if( mode.equals("serial") || mode.equals("both") )
+			if(mode.equals("serial") || mode.equals("both"))
 				execute(() -> readSerial(), "Delta read serial");
-			if( mode.equals("parallel") || mode.equals("both") )
+			if(mode.equals("parallel") || mode.equals("both"))
 				execute(() -> readParallel(), "Delta read parallel(k=" + k + ")");
 		}
 		finally {
 			ConfigurationManager.clearLocalConfigs();
-			if( tableDir != null )
+			if(tableDir != null)
 				FileUtils.deleteQuietly(tableDir.toFile());
 		}
 	}
@@ -101,7 +102,7 @@ public class DeltaFrameRead extends APerfTest<Long, FrameBlock> {
 		inMemSize = fb.getInMemorySize();
 
 		DMLConfig c = new DMLConfig();
-		if( targetFileSize > 0 ) {
+		if(targetFileSize > 0) {
 			c.setTextValue(DMLConfig.DELTA_WRITER_ADAPTIVE_FILE_SIZE, "false");
 			c.setTextValue(DMLConfig.DELTA_WRITER_TARGET_FILE_SIZE, String.valueOf(targetFileSize));
 		}
@@ -115,8 +116,7 @@ public class DeltaFrameRead extends APerfTest<Long, FrameBlock> {
 
 	private void readSerial() {
 		try {
-			FrameBlock fb = new FrameReaderDelta()
-				.readFrameFromHDFS(tablePath, DETECT_SCHEMA, DETECT_NAMES, -1, -1);
+			FrameBlock fb = new FrameReaderDelta().readFrameFromHDFS(tablePath, DETECT_SCHEMA, DETECT_NAMES, -1, -1);
 			ret.add(fb.getInMemorySize());
 		}
 		catch(Exception e) {
@@ -126,8 +126,8 @@ public class DeltaFrameRead extends APerfTest<Long, FrameBlock> {
 
 	private void readParallel() {
 		try {
-			FrameBlock fb = new FrameReaderDeltaParallel()
-				.readFrameFromHDFS(tablePath, DETECT_SCHEMA, DETECT_NAMES, -1, -1);
+			FrameBlock fb = new FrameReaderDeltaParallel().readFrameFromHDFS(tablePath, DETECT_SCHEMA, DETECT_NAMES, -1,
+				-1);
 			ret.add(fb.getInMemorySize());
 		}
 		catch(Exception e) {
@@ -136,7 +136,7 @@ public class DeltaFrameRead extends APerfTest<Long, FrameBlock> {
 	}
 
 	private static long countParquet(String tablePath) throws Exception {
-		try( Stream<Path> s = Files.walk(new File(tablePath).toPath()) ) {
+		try(Stream<Path> s = Files.walk(new File(tablePath).toPath())) {
 			return s.filter(p -> p.toString().endsWith(".parquet")).count();
 		}
 	}
@@ -160,7 +160,7 @@ public class DeltaFrameRead extends APerfTest<Long, FrameBlock> {
 		int remove = (int) Math.floor(v.length * 0.05);
 		double total = 0;
 		int el = v.length - remove * 2;
-		for( int i = remove; i < v.length - remove; i++ )
+		for(int i = remove; i < v.length - remove; i++)
 			total += v[i];
 		return total / Math.max(el, 1);
 	}
@@ -172,8 +172,8 @@ public class DeltaFrameRead extends APerfTest<Long, FrameBlock> {
 
 	/** Build a representative mixed-schema frame (string + numeric columns). */
 	public static IGenerate<FrameBlock> mixedFrame(int rows, long seed) {
-		ValueType[] schema = new ValueType[] {ValueType.STRING, ValueType.INT64, ValueType.FP64,
-			ValueType.BOOLEAN, ValueType.INT32, ValueType.FP32};
+		ValueType[] schema = new ValueType[] {ValueType.STRING, ValueType.INT64, ValueType.FP64, ValueType.BOOLEAN,
+			ValueType.INT32, ValueType.FP32};
 		return new ConstFrame(TestUtils.generateRandomFrameBlock(rows, schema, seed));
 	}
 }

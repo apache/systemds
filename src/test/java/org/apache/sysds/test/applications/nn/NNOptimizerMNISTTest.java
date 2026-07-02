@@ -62,7 +62,7 @@ public class NNOptimizerMNISTTest extends TestFolder {
 	private void inject_optimizer_adapter_module_and_run(String optimizer) {
 		Script script = dmlFromFile(getBaseFilePath() + "component/optim/mnist_optimizer_check.dml");
 		String moduleImportStatement = String.format("source(\"src/test/scripts/applications/nn/component/optim/adapters/%s.dml\") as optimizer", optimizer);
-		String newScriptString = script.getScriptString().replace("# INSERT ADAPTER-MODULE #", moduleImportStatement);
+		String newScriptString = script.getScriptString().replaceFirst("(?m)^.*# INSERT ADAPTER-MODULE #.*$", moduleImportStatement);
 		script.setScriptString(newScriptString);
 		String stdOut = executeAndCaptureStdOut(script).getRight();
 		assertTrue(stdOut, !stdOut.contains(BaseTest.ERROR_STRING));

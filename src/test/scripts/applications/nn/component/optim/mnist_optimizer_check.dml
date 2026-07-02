@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-# INSERT ADAPTER-MODULE #
+source("src/test/scripts/applications/nn/component/optim/adapters/sgd.dml") as optimizer # INSERT ADAPTER-MODULE #
 
 lr = 0.01
 mu = 0.9

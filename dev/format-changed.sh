@@ -31,15 +31,15 @@
 # lines you actually edited.
 #
 # "Changed" = lines that differ from the base branch (the merge target),
-# including your committed-on-branch, staged, unstaged and untracked edits. The
-# base defaults to upstream/main (the apache/systemds PR target); run
+# including your committed-on-branch, staged, unstaged and untracked edits. Run
 # `git fetch upstream main` first so the diff is accurate, or pass an explicit,
-# current base ref if the default is stale/behind your branch point.
+# current base ref if the default is stale/behind your branch point. The base-ref
+# fallback order lives in one place: see resolve_base() in dev/format_changed.py.
 #
 # Usage:
 #   dev/format-changed.sh [base-ref]
-#     base-ref  branch/commit to diff against (default: upstream/main, else
-#               origin/main, else main)
+#     base-ref  branch/commit to diff against (default: resolved by
+#               dev/format_changed.py)
 #
 set -euo pipefail
 

@@ -268,8 +268,6 @@ public class DeltaFrameSparkInteropTest {
 	}
 
 	private static long countParquet(String tablePath) throws Exception {
-		try(java.util.stream.Stream<Path> s = Files.walk(new File(tablePath).toPath())) {
-			return s.filter(p -> p.toString().endsWith(".parquet")).count();
-		}
+		return DeltaFrameTestUtils.countParquet(tablePath);
 	}
 }

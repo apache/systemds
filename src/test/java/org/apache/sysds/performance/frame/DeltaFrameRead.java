@@ -22,7 +22,6 @@ package org.apache.sysds.performance.frame;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.sysds.common.Types.ValueType;
@@ -36,6 +35,7 @@ import org.apache.sysds.runtime.io.FrameReaderDelta;
 import org.apache.sysds.runtime.io.FrameReaderDeltaParallel;
 import org.apache.sysds.runtime.io.FrameWriterDelta;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.test.component.io.DeltaFrameTestUtils;
 
 /**
  * Reads the SAME native Delta frame table from disk repeatedly and reports read throughput. The table is written to a
@@ -45,8 +45,8 @@ import org.apache.sysds.test.TestUtils;
  *
  * <p>
  * This is the target for an async-profiler run: launch the perf jar under the profiler agent and this loop provides a
- * long, steady-state read workload to sample. See {@code src/test/java/org/apache/sysds/performance/README.md} and the
- * {@code delta-async-profiler} cursor rule.
+ * long, steady-state read workload to sample. See {@code src/test/java/org/apache/sysds/performance/README.md} for how
+ * to run this under async-profiler.
  * </p>
  *
  * <p>
@@ -111,7 +111,7 @@ public class DeltaFrameRead extends APerfTest<Long, FrameBlock> {
 		tableDir = Files.createTempDirectory("sysds_delta_frame_read_");
 		tablePath = new File(tableDir.toFile(), "table").getAbsolutePath();
 		new FrameWriterDelta().writeFrameToHDFS(fb, tablePath, fb.getNumRows(), fb.getNumColumns());
-		files = countParquet(tablePath);
+		files = DeltaFrameTestUtils.countParquet(tablePath);
 	}
 
 	private void readSerial() {
@@ -135,15 +135,9 @@ public class DeltaFrameRead extends APerfTest<Long, FrameBlock> {
 		}
 	}
 
-	private static long countParquet(String tablePath) throws Exception {
-		try(Stream<Path> s = Files.walk(new File(tablePath).toPath())) {
-			return s.filter(p -> p.toString().endsWith(".parquet")).count();
-		}
-	}
-
 	@Override
 	protected String makeResString() {
-		throw new RuntimeException("Do not call");
+		throw new UnsupportedOperationException("Use makeResString(double[]) with the timed measurements instead.");
 	}
 
 	@Override

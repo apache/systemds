@@ -36,7 +36,6 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 
 import io.delta.kernel.data.Row;
 import io.delta.kernel.engine.Engine;
-import io.delta.kernel.types.DataType;
 
 /**
  * Parallel native Delta Lake frame reader. Delta tables are stored as one or more parquet data files; this reader
@@ -66,21 +65,13 @@ public class FrameReaderDeltaParallel extends FrameReaderDelta {
 		DeltaKernelUtils.ScanHandle handle = DeltaKernelUtils.openScan(engine, tablePath);
 
 		final int nfiles = handle.scanFiles.size();
-		// nothing to gain from parallelism for single-file (or empty) tables
+		// nothing to gain from parallelism for single-file (or empty) tables: reuse
+		// the already-opened engine + scan handle instead of re-opening the snapshot.
 		if(_numThreads <= 1 || nfiles <= 1)
-			return super.readFrameFromHDFS(fname, schema, names, rlen, clen);
+			return readWithHandle(fname, engine, handle);
 
 		// derive per-column read codes, value types and names once from the schema
-		final int ncol = handle.schema.length();
-		final int[] readCodes = new int[ncol];
-		final ValueType[] vt = new ValueType[ncol];
-		final String[] cnames = new String[ncol];
-		for(int c = 0; c < ncol; c++) {
-			DataType dt = handle.schema.at(c).getDataType();
-			readCodes[c] = readCode(dt, handle.schema.at(c).getName());
-			vt[c] = valueType(readCodes[c]);
-			cnames[c] = handle.schema.at(c).getName();
-		}
+		final ReadPlan plan = planColumns(handle);
 
 		// fast path: exact per-file row counts are known from metadata -> pre-size
 		// one typed array per column and let each thread decode directly into its
@@ -90,18 +81,20 @@ public class FrameReaderDeltaParallel extends FrameReaderDelta {
 			for(long r : handle.numRecords)
 				total += r;
 			if(total > 0 && total <= Integer.MAX_VALUE)
-				return readDirect(fname, handle, ncol, readCodes, vt, cnames, (int) total);
+				return readDirect(fname, handle, plan, (int) total);
 		}
 
-		return readBuffered(fname, handle, ncol, readCodes, vt, cnames);
+		return readBuffered(fname, handle, plan);
 	}
 
 	/**
 	 * Fast path: each thread decodes one data file straight into the final typed column arrays at a metadata-derived
 	 * row offset. Single allocation per column, fully parallel.
 	 */
-	private FrameBlock readDirect(String fname, DeltaKernelUtils.ScanHandle handle, int ncol, int[] readCodes,
-		ValueType[] vt, String[] cnames, int nrow) throws IOException {
+	private FrameBlock readDirect(String fname, DeltaKernelUtils.ScanHandle handle, ReadPlan plan, int nrow)
+		throws IOException {
+		final int ncol = plan.ncol;
+		final int[] readCodes = plan.readCodes;
 		final int nfiles = handle.scanFiles.size();
 		final int[] rowOffset = new int[nfiles];
 		int acc = 0;
@@ -113,7 +106,7 @@ public class FrameReaderDeltaParallel extends FrameReaderDelta {
 		// pre-size one typed array per column for the whole table
 		final Object[] dest = new Object[ncol];
 		for(int c = 0; c < ncol; c++)
-			dest[c] = ArrayFactory.allocateBacking(vt[c], nrow);
+			dest[c] = ArrayFactory.allocateBacking(plan.vt[c], nrow);
 
 		ArrayList<Callable<Object>> tasks = new ArrayList<>(nfiles);
 		for(int i = 0; i < nfiles; i++) {
@@ -128,13 +121,19 @@ public class FrameReaderDeltaParallel extends FrameReaderDelta {
 				Engine eng = DeltaKernelUtils.createEngine();
 				DeltaKernelUtils.readScanFile(eng, handle.scanState, handle.physicalReadSchema, scanFileRow,
 					(cols, size, selected) -> {
-						if(cur[0] + DeltaKernelUtils.countSelected(size, selected) > limit)
+						int n = DeltaKernelUtils.countSelected(size, selected);
+						if(cur[0] + n > limit)
 							throw new DMLRuntimeException("Delta file produced more rows than its "
 								+ "numRecords statistic; refusing parallel direct read of " + fname);
 						for(int c = 0; c < ncol; c++)
 							extractColumnInto(cols[c], size, selected, readCodes[c], dest[c], cur[0]);
-						cur[0] += DeltaKernelUtils.countSelected(size, selected);
+						cur[0] += n;
 					});
+				// fail loud on underflow too: fewer decoded rows than the statistic
+				// would leave this slice's tail at the array default (0/null).
+				if(cur[0] != limit)
+					throw new DMLRuntimeException("Delta file produced " + (cur[0] - base) + " rows, expected "
+						+ (limit - base) + " from its numRecords statistic; refusing parallel direct read of " + fname);
 				return null;
 			});
 		}
@@ -142,10 +141,10 @@ public class FrameReaderDeltaParallel extends FrameReaderDelta {
 
 		Array<?>[] columns = new Array<?>[ncol];
 		for(int c = 0; c < ncol; c++)
-			columns[c] = ArrayFactory.create(vt[c], dest[c]);
+			columns[c] = ArrayFactory.create(plan.vt[c], dest[c]);
 
 		FrameBlock ret = new FrameBlock(columns);
-		ret.setColumnNames(cnames);
+		ret.setColumnNames(plan.cnames);
 		return ret;
 	}
 
@@ -154,8 +153,10 @@ public class FrameReaderDeltaParallel extends FrameReaderDelta {
 	 * unknown or deletion vectors are present), then concatenate per column in file order via the shared
 	 * {@link FrameReaderDelta#concatColumn} helper.
 	 */
-	private FrameBlock readBuffered(String fname, DeltaKernelUtils.ScanHandle handle, int ncol, int[] readCodes,
-		ValueType[] vt, String[] cnames) throws IOException {
+	private FrameBlock readBuffered(String fname, DeltaKernelUtils.ScanHandle handle, ReadPlan plan)
+		throws IOException {
+		final int ncol = plan.ncol;
+		final int[] readCodes = plan.readCodes;
 		final int nfiles = handle.scanFiles.size();
 		@SuppressWarnings("unchecked")
 		final ArrayList<Object[]>[] fileCols = new ArrayList[nfiles];
@@ -176,7 +177,7 @@ public class FrameReaderDeltaParallel extends FrameReaderDelta {
 						for(int c = 0; c < ncol; c++) {
 							// decode into a fresh per-batch array via the shared alloc +
 							// decode primitives (the same ones the direct path uses)
-							Object col = ArrayFactory.allocateBacking(vt[c], n);
+							Object col = ArrayFactory.allocateBacking(plan.vt[c], n);
 							extractColumnInto(cols[c], size, selected, readCodes[c], col, 0);
 							extracted[c] = col;
 						}
@@ -203,10 +204,10 @@ public class FrameReaderDeltaParallel extends FrameReaderDelta {
 
 		Array<?>[] columns = new Array<?>[ncol];
 		for(int c = 0; c < ncol; c++)
-			columns[c] = concatColumn(vt[c], nrow, batchCols, batchSizes, c);
+			columns[c] = concatColumn(plan.vt[c], nrow, batchCols, batchSizes, c);
 
 		FrameBlock ret = new FrameBlock(columns);
-		ret.setColumnNames(cnames);
+		ret.setColumnNames(plan.cnames);
 		return ret;
 	}
 

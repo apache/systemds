@@ -239,7 +239,10 @@ public class FrameWriterDelta extends FrameWriter {
 
 		@Override
 		public long getLong(int rowId) {
-			// exact for INT64 (getAsDouble would lose precision beyond 2^53)
+			// exact for INT64 (getAsDouble would lose precision beyond 2^53). This boxes one
+			// Number per cell because Array exposes no primitive getAsLong; a boxing-free
+			// getAsLong on Array would remove this write-path allocation (follow-up). The
+			// kernel only calls this after isNullAt() is false, so the cell is never null here.
 			return ((Number) _col.get(_rowStart + rowId)).longValue();
 		}
 

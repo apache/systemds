@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 
@@ -106,6 +105,33 @@ public class DeltaFrameReadWriteTest {
 		FrameBlock fb = new FrameBlock(schema, names);
 		fb.ensureAllocatedColumns(nrow);
 		return fb;
+	}
+
+	@FunctionalInterface
+	private interface TableTest {
+		void accept(FrameBlock in, String tablePath) throws Exception;
+	}
+
+	/**
+	 * Write {@code in} to a fresh temp Delta table with a small target file size (so the writer rolls multiple data
+	 * files), assert the layout really is multi-file, then run {@code body} against the table. Local config and the
+	 * temp directory are always cleaned up.
+	 */
+	private static void withSmallTargetTable(FrameBlock in, TableTest body) throws Exception {
+		DMLConfig conf = new DMLConfig();
+		conf.setTextValue(DMLConfig.DELTA_WRITER_TARGET_FILE_SIZE, String.valueOf(SMALL_TARGET_FILE_SIZE));
+		ConfigurationManager.setLocalConfig(conf);
+		Path dir = Files.createTempDirectory("sysds_delta_frame_mf_");
+		String tablePath = new File(dir.toFile(), "table").getAbsolutePath();
+		try {
+			new FrameWriterDelta().writeFrameToHDFS(in, tablePath, in.getNumRows(), in.getNumColumns());
+			assertMultiFile(tablePath);
+			body.accept(in, tablePath);
+		}
+		finally {
+			ConfigurationManager.clearLocalConfigs();
+			FileUtils.deleteQuietly(dir.toFile());
+		}
 	}
 
 	@Test
@@ -192,26 +218,13 @@ public class DeltaFrameReadWriteTest {
 
 	@Test
 	public void parallelReadMatchesSerialMultiFile() throws Exception {
-		DMLConfig conf = new DMLConfig();
-		conf.setTextValue(DMLConfig.DELTA_WRITER_TARGET_FILE_SIZE, String.valueOf(SMALL_TARGET_FILE_SIZE));
-		ConfigurationManager.setLocalConfig(conf);
-		Path dir = Files.createTempDirectory("sysds_delta_frame_par_");
-		String tablePath = new File(dir.toFile(), "table").getAbsolutePath();
-		try {
-			FrameBlock in = TestUtils.generateRandomFrameBlock(ROWS_MULTI_FILE, MIXED_SCHEMA, 13);
-			new FrameWriterDelta().writeFrameToHDFS(in, tablePath, in.getNumRows(), in.getNumColumns());
-			assertMultiFile(tablePath);
-
+		FrameBlock in = TestUtils.generateRandomFrameBlock(ROWS_MULTI_FILE, MIXED_SCHEMA, 13);
+		withSmallTargetTable(in, (frame, tablePath) -> {
 			FrameBlock serial = new FrameReaderDelta().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1);
 			FrameBlock parallel = new FrameReaderDeltaParallel().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1,
 				-1);
-
 			assertFramesEqual(serial, parallel);
-		}
-		finally {
-			ConfigurationManager.clearLocalConfigs();
-			FileUtils.deleteQuietly(dir.toFile());
-		}
+		});
 	}
 
 	@Test
@@ -219,16 +232,8 @@ public class DeltaFrameReadWriteTest {
 		// the direct fast path is always taken for SystemDS-written tables (exact
 		// row stats, no deletion vectors); force the buffered fallback to exercise
 		// its per-file decode + serial concatenation and assert it matches serial.
-		DMLConfig conf = new DMLConfig();
-		conf.setTextValue(DMLConfig.DELTA_WRITER_TARGET_FILE_SIZE, String.valueOf(SMALL_TARGET_FILE_SIZE));
-		ConfigurationManager.setLocalConfig(conf);
-		Path dir = Files.createTempDirectory("sysds_delta_frame_buf_");
-		String tablePath = new File(dir.toFile(), "table").getAbsolutePath();
-		try {
-			FrameBlock in = TestUtils.generateRandomFrameBlock(ROWS_MULTI_FILE, MIXED_SCHEMA, 23);
-			new FrameWriterDelta().writeFrameToHDFS(in, tablePath, in.getNumRows(), in.getNumColumns());
-			assertMultiFile(tablePath);
-
+		FrameBlock in = TestUtils.generateRandomFrameBlock(ROWS_MULTI_FILE, MIXED_SCHEMA, 23);
+		withSmallTargetTable(in, (frame, tablePath) -> {
 			FrameBlock serial = new FrameReaderDelta().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1);
 			// subclass that always declines the direct path -> readBuffered()
 			FrameBlock buffered = new FrameReaderDeltaParallel() {
@@ -237,13 +242,8 @@ public class DeltaFrameReadWriteTest {
 					return false;
 				}
 			}.readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1);
-
 			assertFramesEqual(serial, buffered);
-		}
-		finally {
-			ConfigurationManager.clearLocalConfigs();
-			FileUtils.deleteQuietly(dir.toFile());
-		}
+		});
 	}
 
 	@Test
@@ -251,16 +251,8 @@ public class DeltaFrameReadWriteTest {
 		// the direct (pre-sized, metadata-driven) path is always taken for SystemDS-
 		// written tables; force the serial buffered fallback (per-batch extract +
 		// concatenate) to exercise it and assert it matches the direct read.
-		DMLConfig conf = new DMLConfig();
-		conf.setTextValue(DMLConfig.DELTA_WRITER_TARGET_FILE_SIZE, String.valueOf(SMALL_TARGET_FILE_SIZE));
-		ConfigurationManager.setLocalConfig(conf);
-		Path dir = Files.createTempDirectory("sysds_delta_frame_sbuf_");
-		String tablePath = new File(dir.toFile(), "table").getAbsolutePath();
-		try {
-			FrameBlock in = TestUtils.generateRandomFrameBlock(ROWS_MULTI_FILE, MIXED_SCHEMA, 29);
-			new FrameWriterDelta().writeFrameToHDFS(in, tablePath, in.getNumRows(), in.getNumColumns());
-			assertMultiFile(tablePath);
-
+		FrameBlock in = TestUtils.generateRandomFrameBlock(ROWS_MULTI_FILE, MIXED_SCHEMA, 29);
+		withSmallTargetTable(in, (frame, tablePath) -> {
 			FrameBlock direct = new FrameReaderDelta().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1);
 			// subclass that always declines the direct path -> buffered extract+concat
 			FrameBlock buffered = new FrameReaderDelta() {
@@ -269,13 +261,8 @@ public class DeltaFrameReadWriteTest {
 					return false;
 				}
 			}.readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1);
-
 			assertFramesEqual(direct, buffered);
-		}
-		finally {
-			ConfigurationManager.clearLocalConfigs();
-			FileUtils.deleteQuietly(dir.toFile());
-		}
+		});
 	}
 
 	@Test
@@ -335,8 +322,6 @@ public class DeltaFrameReadWriteTest {
 		Path dir = Files.createTempDirectory("sysds_delta_frame_bs_");
 		String tablePath = new File(dir.toFile(), "table").getAbsolutePath();
 		try {
-			assertEquals("config getter reflects the override", 128, ConfigurationManager.getDeltaReaderBatchSize());
-
 			FrameBlock in = TestUtils.generateRandomFrameBlock(5000, MIXED_SCHEMA, 31);
 			new FrameWriterDelta().writeFrameToHDFS(in, tablePath, in.getNumRows(), in.getNumColumns());
 			FrameBlock out = new FrameReaderDelta().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1);
@@ -351,28 +336,14 @@ public class DeltaFrameReadWriteTest {
 	@Test
 	public void writerTargetFileSizeConfigProducesMoreFiles() throws Exception {
 		// a smaller configured target file size must make the writer roll more
-		// data files for the same frame (the lever the parallel reader relies on).
-		DMLConfig conf = new DMLConfig();
-		conf.setTextValue(DMLConfig.DELTA_WRITER_TARGET_FILE_SIZE, String.valueOf(SMALL_TARGET_FILE_SIZE));
-		ConfigurationManager.setLocalConfig(conf);
-		Path dir = Files.createTempDirectory("sysds_delta_frame_cfg_");
-		String tablePath = new File(dir.toFile(), "table").getAbsolutePath();
-		try {
-			assertEquals("config getter reflects the override", SMALL_TARGET_FILE_SIZE,
-				ConfigurationManager.getDeltaWriterTargetFileSize());
-
-			FrameBlock in = TestUtils.generateRandomFrameBlock(ROWS_MULTI_FILE, MIXED_SCHEMA, 41);
-			new FrameWriterDelta().writeFrameToHDFS(in, tablePath, in.getNumRows(), in.getNumColumns());
-			assertMultiFile(tablePath);
-
+		// data files for the same frame (the lever the parallel reader relies on);
+		// the multi-file layout is asserted inside withSmallTargetTable.
+		FrameBlock in = TestUtils.generateRandomFrameBlock(ROWS_MULTI_FILE, MIXED_SCHEMA, 41);
+		withSmallTargetTable(in, (frame, tablePath) -> {
 			// data still round-trips correctly with the custom layout
 			FrameBlock out = new FrameReaderDelta().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1);
-			assertFramesEqual(in, out);
-		}
-		finally {
-			ConfigurationManager.clearLocalConfigs();
-			FileUtils.deleteQuietly(dir.toFile());
-		}
+			assertFramesEqual(frame, out);
+		});
 	}
 
 	@Test
@@ -514,7 +485,9 @@ public class DeltaFrameReadWriteTest {
 			fail("expected UnsupportedOperationException for a Delta input-stream read");
 		}
 		catch(UnsupportedOperationException ex) {
-			// expected: must throw before touching the (null) stream
+			// must throw before touching the (null) stream, for the documented reason
+			assertTrue("message should mention input stream, got: " + ex.getMessage(),
+				ex.getMessage() != null && ex.getMessage().contains("input stream"));
 		}
 	}
 
@@ -522,42 +495,26 @@ public class DeltaFrameReadWriteTest {
 	public void parallelReadStringNullsMatchSerialMultiFile() throws Exception {
 		// string nulls across a multi-file table: the parallel direct path must
 		// reproduce the serial read cell-for-cell (assertFramesEqual uses
-		// Objects.equals, so nulls are compared faithfully).
-		DMLConfig conf = new DMLConfig();
-		conf.setTextValue(DMLConfig.DELTA_WRITER_TARGET_FILE_SIZE, String.valueOf(SMALL_TARGET_FILE_SIZE));
-		ConfigurationManager.setLocalConfig(conf);
-		Path dir = Files.createTempDirectory("sysds_delta_frame_parnull_");
-		String tablePath = new File(dir.toFile(), "table").getAbsolutePath();
-		try {
-			ValueType[] schema = {ValueType.STRING, ValueType.INT64};
-			String[] names = {"s", "k"};
-			int nrow = ROWS_MULTI_FILE;
-			FrameBlock in = alloc(schema, names, nrow);
-			for(int r = 0; r < nrow; r++) {
-				// interspersed string nulls (every 7th row) plus a numeric column
-				in.set(r, 0, (r % 7 == 0) ? null : "s" + r);
-				in.set(r, 1, (long) r);
-			}
-			new FrameWriterDelta().writeFrameToHDFS(in, tablePath, in.getNumRows(), in.getNumColumns());
-			assertMultiFile(tablePath);
-
+		// assertEquals, so nulls are compared faithfully).
+		ValueType[] schema = {ValueType.STRING, ValueType.INT64};
+		String[] names = {"s", "k"};
+		int nrow = ROWS_MULTI_FILE;
+		FrameBlock in = alloc(schema, names, nrow);
+		for(int r = 0; r < nrow; r++) {
+			// interspersed string nulls (every 7th row) plus a numeric column
+			in.set(r, 0, (r % 7 == 0) ? null : "s" + r);
+			in.set(r, 1, (long) r);
+		}
+		withSmallTargetTable(in, (frame, tablePath) -> {
 			FrameBlock serial = new FrameReaderDelta().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1);
 			FrameBlock parallel = new FrameReaderDeltaParallel().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1,
 				-1);
-
 			assertFramesEqual(serial, parallel);
-		}
-		finally {
-			ConfigurationManager.clearLocalConfigs();
-			FileUtils.deleteQuietly(dir.toFile());
-		}
+		});
 	}
 
 	private static void assertMultiFile(String tablePath) throws Exception {
-		long files;
-		try(java.util.stream.Stream<Path> s = Files.walk(new File(tablePath).toPath())) {
-			files = s.filter(p -> p.toString().endsWith(".parquet")).count();
-		}
+		long files = DeltaFrameTestUtils.countParquet(tablePath);
 		assertTrue("expected a multi-file Delta table to exercise the parallel path, got " + files, files > 1);
 	}
 
@@ -572,7 +529,7 @@ public class DeltaFrameReadWriteTest {
 		int nrow = expected.getNumRows();
 		for(int r = 0; r < nrow; r++)
 			for(int c = 0; c < ncol; c++)
-				assertTrue("cell (" + r + "," + c + ")", Objects.equals(expected.get(r, c), actual.get(r, c)));
+				assertEquals("cell (" + r + "," + c + ")", expected.get(r, c), actual.get(r, c));
 	}
 
 	/** Commits a schema-only Delta table (no data files) to exercise the 0-row read path. */

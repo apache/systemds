@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,34 +17,16 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime;
+package org.apache.sysds.test.component.format;
 
-import org.apache.sysds.api.DMLException;
+/** Fully compliant probe; it must NOT be flagged even though it is a new file. */
+public class FormatProbeOk2 {
 
-/**
- * This exception should be thrown to flag runtime errors -- DML equivalent to java.lang.RuntimeException.
- */
-public class DMLRuntimeException extends DMLException 
-{
-	private static final long serialVersionUID = 1L;
-
-	public static DMLRuntimeException of(Throwable t) {
-		return t instanceof DMLRuntimeException ? (DMLRuntimeException) t : new DMLRuntimeException(t);
+	public int square(int a) {
+		return a * a;
 	}
 
-	public DMLRuntimeException(String string) {
-		super(string);
-	}
-	
-	public DMLRuntimeException(Throwable e) {
-		super(e);
-	}
-
-	public DMLRuntimeException(String string, Exception ex){
-		super(string,ex);
-	}
-
-	public String describe(int code) {
-		return "DMLRuntimeException code="+code+", message="+getMessage() ;
+	public int cube(int a) {
+		return a * a * a;
 	}
 }

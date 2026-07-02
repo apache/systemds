@@ -44,21 +44,49 @@ import sys
 FMT_VERSION = "2.24.1"
 CONFIG = "dev/CodeStyle_eclipse.xml"
 EXCLUDE_FILE = "dev/format-exclude.txt"
-SRC_RE = re.compile(r"^src/(main|test)/java/.+\.java$")
+SRC_PREFIX = r"src/(main|test)/java/"
+SRC_RE = re.compile(r"^" + SRC_PREFIX + r".+\.java$")
 
 
-def sh(*args, check=False):
-	return subprocess.run(args, capture_output=True, text=True, check=check).stdout
+# --- small process / IO helpers ------------------------------------------------
 
+def git(*args, check=True):
+	# core.quotePath=false so non-ASCII paths are emitted verbatim (not \NNN
+	# escaped), otherwise SRC_RE would silently skip them and bypass the check.
+	proc = subprocess.run(["git", "-c", "core.quotePath=false", *args],
+			capture_output=True, text=True)
+	if check and proc.returncode != 0:
+		sys.exit(f"ERROR: `git {' '.join(args)}` failed:\n{proc.stderr.strip()}")
+	return proc.stdout
+
+
+def read_text(path):
+	# newline="" keeps line endings byte-exact so a check-mode restore (or a
+	# fix-mode non-flagged file) round-trips without CRLF->LF rewrites.
+	with open(path, encoding="utf-8", newline="") as fh:
+		return fh.read()
+
+
+def write_text(path, text):
+	with open(path, "w", encoding="utf-8", newline="") as fh:
+		fh.write(text)
+
+
+def strip_src_prefix(path):
+	return re.sub(r"^" + SRC_PREFIX, "", path)
+
+
+# --- exemption list ------------------------------------------------------------
 
 def load_excludes():
 	# glob patterns of files exempt from the style check, one per line
 	patterns = []
 	if os.path.exists(EXCLUDE_FILE):
-		for line in open(EXCLUDE_FILE, encoding="utf-8"):
-			s = line.strip()
-			if s and not s.startswith("#"):
-				patterns.append(s)
+		with open(EXCLUDE_FILE, encoding="utf-8") as fh:
+			for line in fh:
+				s = line.strip()
+				if s and not s.startswith("#"):
+					patterns.append(s)
 	return patterns
 
 
@@ -67,28 +95,85 @@ def is_excluded(path, patterns):
 	return any(fnmatch.fnmatch(path, p) or fnmatch.fnmatch(base, p) for p in patterns)
 
 
+# --- git ref / file discovery --------------------------------------------------
+
+def ref_exists(ref):
+	return subprocess.run(["git", "rev-parse", "--verify", "--quiet", ref + "^{commit}"],
+			capture_output=True).returncode == 0
+
+
 def resolve_base(explicit):
 	if explicit:
+		if not ref_exists(explicit):
+			sys.exit(f"Base ref not found: {explicit}")
 		return explicit
 	for ref in ("upstream/main", "origin/main", "main"):
-		if subprocess.run(["git", "rev-parse", "--verify", "--quiet", ref],
-				capture_output=True).returncode == 0:
+		if ref_exists(ref):
 			return ref
 	sys.exit("Could not determine a base ref; pass one explicitly.")
 
 
-def changed_ranges(mergebase, path):
-	# line ranges (1-based, inclusive) touched on the working-tree side, i.e.
-	# committed-on-branch plus staged/unstaged edits, relative to the base.
-	out = sh("git", "diff", "-U0", mergebase, "--", path)
+def merge_base(base):
+	mb = git("merge-base", base, "HEAD", check=False).strip()
+	return mb or base
+
+
+def base_has(mergebase, path):
+	return subprocess.run(["git", "cat-file", "-e", f"{mergebase}:{path}"],
+			capture_output=True).returncode == 0
+
+
+def discover_files(mergebase):
+	tracked = [f for f in git("diff", "--name-only", "--diff-filter=ACMR",
+			mergebase, "--").splitlines() if SRC_RE.match(f)]
+	untracked = [f for f in git("ls-files", "--others", "--exclude-standard").splitlines()
+			if SRC_RE.match(f)]
+	seen = set(tracked)
+	files = tracked + [f for f in untracked if f not in seen]
+
+	patterns = load_excludes()
+	skipped = [f for f in files if is_excluded(f, patterns)]
+	files = [f for f in files if not is_excluded(f, patterns)]
+	return files, skipped, set(untracked)
+
+
+# --- changed-line ranges (pure parsing, unit-tested) ---------------------------
+
+def _hunk_range(header):
+	# parse the new-side (+) range of a `@@ -a,b +c,d @@` unified-diff header;
+	# returns a 1-based inclusive (start, end), or None for pure deletions / non-headers
+	m = re.match(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@", header)
+	if not m:
+		return None
+	start = int(m.group(1))
+	count = int(m.group(2)) if m.group(2) is not None else 1
+	return (start, start + count - 1) if count > 0 else None
+
+
+def parse_hunks(diff_text):
+	# all new-side ranges in a single-file unified diff (used by tests and below)
 	ranges = []
+	for line in diff_text.splitlines():
+		r = _hunk_range(line)
+		if r is not None:
+			ranges.append(r)
+	return ranges
+
+
+def changed_ranges(mergebase, files):
+	# one batched `git diff` for all files, split per file on the `+++ b/` header
+	ranges = {f: [] for f in files}
+	if not files:
+		return ranges
+	out = git("diff", "-U0", mergebase, "--", *files)
+	current = None
 	for line in out.splitlines():
-		m = re.match(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@", line)
-		if m:
-			start = int(m.group(1))
-			count = int(m.group(2)) if m.group(2) is not None else 1
-			if count > 0:
-				ranges.append((start, start + count - 1))
+		if line.startswith("+++ b/"):
+			current = line[len("+++ b/"):]
+		elif current is not None:
+			r = _hunk_range(line)
+			if r is not None and current in ranges:
+				ranges[current].append(r)
 	return ranges
 
 
@@ -104,112 +189,131 @@ def overlaps(i1, i2, ranges):
 	return False
 
 
-def main():
-	args = [a for a in sys.argv[1:]]
-	mode = "check"
-	if "--fix" in args:
-		mode = "fix"
-		args.remove("--fix")
-	if "--check" in args:
-		args.remove("--check")
-	base = resolve_base(args[0] if args else None)
+def line_scoped_result(original_text, formatted_text, ranges):
+	# reconstruct a file that keeps original content everywhere except on the
+	# formatting hunks that intersect the PR-edited ranges; returns the new text
+	# plus the kept hunks (for reporting). Pure function -- no IO.
+	a = original_text.splitlines(keepends=True)
+	b = formatted_text.splitlines(keepends=True)
+	sm = difflib.SequenceMatcher(None, a, b, autojunk=False)
+	result = []
+	kept = []
+	for tag, i1, i2, j1, j2 in sm.get_opcodes():
+		if tag == "equal":
+			result.extend(a[i1:i2])
+		elif overlaps(i1, i2, ranges):
+			result.extend(b[j1:j2])
+			kept.append((i1, len(a[i1:i2]), len(b[j1:j2]), a[i1:i2], b[j1:j2]))
+		else:
+			result.extend(a[i1:i2])
+	return "".join(result), kept
 
-	os.chdir(sh("git", "rev-parse", "--show-toplevel").strip())
-	mergebase = sh("git", "merge-base", base, "HEAD").strip() or base
 
-	files = [f for f in sh("git", "diff", "--name-only", "--diff-filter=ACMR",
-			mergebase, "--").splitlines() if SRC_RE.match(f)]
-	# include untracked new java files too (local pre-commit use)
-	files += [f for f in sh("git", "ls-files", "--others", "--exclude-standard").splitlines()
-			if SRC_RE.match(f) and f not in files]
+# --- formatter -----------------------------------------------------------------
 
-	excludes = load_excludes()
-	skipped = [f for f in files if is_excluded(f, excludes)]
-	files = [f for f in files if not is_excluded(f, excludes)]
-	if skipped:
-		print(f"Skipping style-exempt files ({EXCLUDE_FILE}):")
-		for f in skipped:
-			print(f"  {f}")
-
-	if not files:
-		print(f"No changed Java source files to check (base: {base}).")
-		return 0
-
-	# snapshot originals so we can format in place then restore exactly, without
-	# disturbing any unrelated working-tree state
-	original = {f: open(f, encoding="utf-8").read() for f in files}
-
-	# capture the PR-edited line ranges BEFORE we reformat the working tree,
-	# otherwise git would report the whole reformatted file as changed
-	ranges_by_file = {}
-	for f in files:
-		ranges = changed_ranges(mergebase, f)
-		if not ranges:
-			base_has = subprocess.run(["git", "cat-file", "-e", f"{mergebase}:{f}"],
-					capture_output=True).returncode == 0
-			if not base_has:  # brand-new/untracked file: treat every line as edited
-				ranges = [(1, max(1, len(original[f].splitlines())))]
-		ranges_by_file[f] = ranges
-
-	includes = ",".join(re.sub(r"^src/(main|test)/java/", "", f) for f in files)
+def run_formatter(files):
+	includes = ",".join(strip_src_prefix(f) for f in files)
 	subprocess.run(["mvn", "-q", "-ntp", "-B",
 			f"net.revelc.code.formatter:formatter-maven-plugin:{FMT_VERSION}:format",
 			f"-Dconfigfile={os.getcwd()}/{CONFIG}",
 			"-Dmaven.compiler.source=17", "-Dmaven.compiler.target=17",
 			f"-Dformatter.includes={includes}"], check=True)
 
-	formatted = {f: open(f, encoding="utf-8").read() for f in files}
 
-	any_issue = False
+def print_report(path, kept):
+	print(f"\n--- a/{path}")
+	print(f"+++ b/{path}")
+	for i1, n_old, n_new, olds, news in kept:
+		print(f"@@ -{i1 + 1},{n_old} +{i1 + 1},{n_new} @@ (changed lines)")
+		for ln in olds:
+			print("-" + ln.rstrip("\n"))
+		for ln in news:
+			print("+" + ln.rstrip("\n"))
+
+
+# --- CLI -----------------------------------------------------------------------
+
+def parse_args(argv):
+	mode = "check"
+	positionals = []
+	for a in argv:
+		if a == "--fix":
+			mode = "fix"
+		elif a == "--check":
+			mode = "check"
+		elif a.startswith("-"):
+			sys.exit(f"Unknown option: {a}  (usage: format_changed.py [--check|--fix] [base-ref])")
+		else:
+			positionals.append(a)
+	if len(positionals) > 1:
+		sys.exit(f"Expected at most one base ref, got: {positionals}")
+	return mode, (positionals[0] if positionals else None)
+
+
+def compute_ranges(mergebase, files, untracked, originals):
+	batched = changed_ranges(mergebase, files)
+	ranges_by_file = {}
 	for f in files:
-		a = original[f].splitlines(keepends=True)
-		b = formatted[f].splitlines(keepends=True)
-		ranges = ranges_by_file[f]
+		r = batched[f]
+		if not r and (f in untracked or not base_has(mergebase, f)):
+			# brand-new/untracked file has no base version: treat every line as edited
+			r = [(1, max(1, len(originals[f].splitlines())))]
+		ranges_by_file[f] = r
+	return ranges_by_file
 
-		sm = difflib.SequenceMatcher(None, a, b, autojunk=False)
-		result = []
-		kept_hunks = []
-		for tag, i1, i2, j1, j2 in sm.get_opcodes():
-			if tag == "equal":
-				result.extend(a[i1:i2])
-			elif overlaps(i1, i2, ranges):
-				result.extend(b[j1:j2])
-				kept_hunks.append((tag, i1, i2, j1, j2, a[i1:i2], b[j1:j2]))
-			else:
-				result.extend(a[i1:i2])
 
-		# In fix mode, always write the reconstructed content: for non-flagged
-		# files this equals the original (undoing mvn's whole-file reformat);
-		# for flagged files it applies only the changed-line formatting.
-		if mode == "fix":
-			with open(f, "w", encoding="utf-8") as out:
-				out.write("".join(result))
+def main():
+	mode, base_arg = parse_args(sys.argv[1:])
+	os.chdir(git("rev-parse", "--show-toplevel").strip())
+	base = resolve_base(base_arg)
+	mergebase = merge_base(base)
 
-		if not kept_hunks:
-			continue
-		any_issue = True
-		if mode == "check":
-			print(f"\n--- a/{f}")
-			print(f"+++ b/{f}")
-			for tag, i1, i2, j1, j2, olds, news in kept_hunks:
-				print(f"@@ -{i1 + 1},{len(olds)} +{i1 + 1},{len(news)} @@ (changed lines)")
-				for ln in olds:
-					print("-" + ln.rstrip("\n"))
-				for ln in news:
-					print("+" + ln.rstrip("\n"))
+	files, skipped, untracked = discover_files(mergebase)
+	if skipped:
+		print(f"Skipping style-exempt files ({EXCLUDE_FILE}):")
+		for f in skipped:
+			print(f"  {f}")
+	if not files:
+		print(f"No changed Java source files to check (base: {base}).")
+		return 0
 
-	# in check mode we only inspected; restore every file to its original content
-	if mode == "check":
+	originals = {f: read_text(f) for f in files}
+	ranges_by_file = compute_ranges(mergebase, files, untracked, originals)
+
+	reports = []
+	wrote_fix = False
+	try:
+		try:
+			run_formatter(files)
+		except subprocess.CalledProcessError as e:
+			sys.exit(f"ERROR: could not run the Eclipse formatter (is `mvn` on PATH?): {e}")
+
+		results = {}
 		for f in files:
-			with open(f, "w", encoding="utf-8") as out:
-				out.write(original[f])
+			result, kept = line_scoped_result(originals[f], read_text(f), ranges_by_file[f])
+			results[f] = result
+			if kept:
+				reports.append((f, kept))
 
-	if any_issue and mode == "check":
+		if mode == "fix":
+			for f in files:
+				write_text(f, results[f])
+			wrote_fix = True
+	finally:
+		# never leave mvn's whole-file reformat on disk: check mode is read-only,
+		# and fix mode must restore originals unless it fully wrote the scoped results
+		if mode == "check" or (mode == "fix" and not wrote_fix):
+			for f in files:
+				write_text(f, originals[f])
+
+	if reports and mode == "check":
+		for path, kept in reports:
+			print_report(path, kept)
 		print("\nERROR: the changes above are required on lines this PR edited "
 			"(per dev/CodeStyle_eclipse.xml).")
 		print("Fix locally with:  dev/format-changed.sh")
 		return 1
-	if any_issue and mode == "fix":
+	if reports and mode == "fix":
 		print("Applied changed-line formatting. Review and commit the result.")
 	else:
 		print("All PR-edited Java lines are correctly formatted.")

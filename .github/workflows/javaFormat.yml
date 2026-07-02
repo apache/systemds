@@ -32,8 +32,16 @@ on:
   pull_request:
     paths:
       - '**/*.java'
+      - 'dev/format_changed.py'
+      - 'dev/format-changed.sh'
+      - 'dev/format-exclude.txt'
+      - 'dev/tests/**'
+      - '.github/workflows/javaFormat.yml'
     branches:
       - main
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -55,6 +63,16 @@ jobs:
         distribution: adopt
         java-version: '17'
         cache: 'maven'
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Unit-test the format checker
+      run: |
+        python -m pip install --quiet pytest
+        python -m pytest dev/tests -q
 
     - name: Check formatting of PR-edited lines
       env:

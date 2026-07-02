@@ -21,7 +21,8 @@ package org.apache.sysds.test.functions.ooc;
 
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.MMTSJ;
+import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.io.MatrixWriter;
 import org.apache.sysds.runtime.io.MatrixWriterFactory;
@@ -36,76 +37,107 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 public class TransposeSelfMMTest extends AutomatedTestBase {
-	private final static String TEST_NAME1 = "TSMM";
+	private static final String TEST_NAME_LEFT = "TSMM";
+	private static final String TEST_NAME_RIGHT = "TSMMRight";
 	private final static String TEST_DIR = "functions/ooc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + TransposeSelfMMTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-8;
 	private static final String INPUT_NAME = "X";
-	private static final String OUTPUT_NAME = "res";
+	private static final String OUTPUT_NAME_CP = "res_cp";
+	private static final String OUTPUT_NAME_OOC = "res_ooc";
 
-	private final static int rows = 2143;
-	private final static int cols = 123;
+	private static final int SINGLE_TILE_ROWS = 2143;
+	private static final int SINGLE_TILE_COLS = 123;
+	private static final int SINGLE_TILE_BLOCK_SIZE = 1000;
+	private static final int MULTI_TILE_ROWS = 1501;
+	private static final int MULTI_TILE_COLS = 1301;
+	private static final int MULTI_TILE_BLOCK_SIZE = 500;
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.1;
-	private final int k = 1;
 
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		TestConfiguration config = new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1);
-		addTestConfiguration(TEST_NAME1, config);
+		addTestConfiguration(TEST_NAME_LEFT, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_LEFT));
+		addTestConfiguration(TEST_NAME_RIGHT, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_RIGHT));
 	}
 
 	@Test
-	public void testTsmmDense() {
-		runTSMMTest(cols, false);
-	}
-	
-	@Test
-	public void testTsmmSparse() {
-		runTSMMTest(cols, false);
+	public void testTsmmLeftDenseSingleTile() {
+		runTSMMTest(MMTSJType.LEFT, SINGLE_TILE_ROWS, SINGLE_TILE_COLS, SINGLE_TILE_BLOCK_SIZE, false);
 	}
 
-	private void runTSMMTest(int cols, boolean sparse )
-	{
+	@Test
+	public void testTsmmLeftSparseSingleTile() {
+		runTSMMTest(MMTSJType.LEFT, SINGLE_TILE_ROWS, SINGLE_TILE_COLS, SINGLE_TILE_BLOCK_SIZE, true);
+	}
+
+	@Test
+	public void testTsmmRightDenseSingleTile() {
+		runTSMMTest(MMTSJType.RIGHT, SINGLE_TILE_COLS, SINGLE_TILE_ROWS, SINGLE_TILE_BLOCK_SIZE, false);
+	}
+
+	@Test
+	public void testTsmmLeftDenseMultiTile() {
+		runTSMMTest(MMTSJType.LEFT, MULTI_TILE_ROWS, MULTI_TILE_COLS, MULTI_TILE_BLOCK_SIZE, false);
+	}
+
+	@Test
+	public void testTsmmLeftSparseMultiTile() {
+		runTSMMTest(MMTSJType.LEFT, MULTI_TILE_ROWS, MULTI_TILE_COLS, MULTI_TILE_BLOCK_SIZE, true);
+	}
+
+	@Test
+	public void testTsmmRightDenseMultiTile() {
+		runTSMMTest(MMTSJType.RIGHT, MULTI_TILE_ROWS, MULTI_TILE_COLS, MULTI_TILE_BLOCK_SIZE, false);
+	}
+
+	@Test
+	public void testTsmmRightSparseMultiTile() {
+		runTSMMTest(MMTSJType.RIGHT, MULTI_TILE_ROWS, MULTI_TILE_COLS, MULTI_TILE_BLOCK_SIZE, true);
+	}
+
+	private void runTSMMTest(MMTSJType type, int rows, int cols, int blockSize, boolean sparse) {
 		Types.ExecMode platformOld = setExecMode(Types.ExecMode.SINGLE_NODE);
 
-		try
-		{
-			getAndLoadTestConfiguration(TEST_NAME1);
+		try {
+			String testName = type.isLeft() ? TEST_NAME_LEFT : TEST_NAME_RIGHT;
+			getAndLoadTestConfiguration(testName);
+			setDefaultBlockSizeInConfig(blockSize);
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-			programArgs = new String[]{"-explain", "-stats", "-ooc",
-							"-args", input(INPUT_NAME), output(OUTPUT_NAME)};
+			fullDMLScriptName = HOME + testName + ".dml";
 
-			// 1. Generate the data in-memory as MatrixBlock objects
 			double[][] A_data = getRandomMatrix(rows, cols, 0, 1, sparse?sparsity2:sparsity1, 10);
-
-			// 2. Convert the double arrays to MatrixBlock objects
 			MatrixBlock A_mb = DataConverter.convertToMatrixBlock(A_data);
-
-			// 3. Create a binary matrix writer
 			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(Types.FileFormat.BINARY);
-
-			// 4. Write matrix A to a binary SequenceFile
-			writer.writeMatrixToHDFS(A_mb, input(INPUT_NAME), rows, cols, 1000, A_mb.getNonZeros());
+			writer.writeMatrixToHDFS(A_mb, input(INPUT_NAME), rows, cols, blockSize, A_mb.getNonZeros());
 			HDFSTool.writeMetaDataFile(input(INPUT_NAME + ".mtd"), Types.ValueType.FP64,
-				new MatrixCharacteristics(rows, cols, 1000, A_mb.getNonZeros()), Types.FileFormat.BINARY);
+				new MatrixCharacteristics(rows, cols, blockSize, A_mb.getNonZeros()), Types.FileFormat.BINARY);
 
+			programArgs = new String[] {"-stats", "-args", input(INPUT_NAME), output(OUTPUT_NAME_CP)};
 			runTest(true, false, null, -1);
 
-			//check tsmm OOC
+			programArgs = new String[] {"-explain", "-stats", "-ooc",
+				"-args", input(INPUT_NAME), output(OUTPUT_NAME_OOC)};
+			runTest(true, false, null, -1);
+
 			Assert.assertTrue("OOC wasn't used for TSMM",
 				heavyHittersContainsString(Instruction.OOC_INST_PREFIX + Opcodes.TSMM));
-			
-			//compare results
-			MatrixBlock ret1 = DataConverter.readMatrixFromHDFS(output(OUTPUT_NAME),
-				Types.FileFormat.BINARY, cols, cols, 1000, cols*cols);
-			MatrixBlock ret2 = new MatrixBlock(rows, rows, false);
-			A_mb.transposeSelfMatrixMultOperations(ret2, MMTSJ.MMTSJType.LEFT, k);
-			TestUtils.compareMatrices(ret1, ret2, eps);
+
+			MatrixCharacteristics meta = readDMLMetaDataFile(OUTPUT_NAME_OOC);
+			int outputDim = assertOutputMetadata(type, meta, rows, cols, blockSize);
+			assertDeepMultiTileOutput(meta);
+
+			MatrixBlock actual = DataConverter.readMatrixFromHDFS(output(OUTPUT_NAME_OOC),
+				Types.FileFormat.BINARY, outputDim, outputDim, blockSize);
+			MatrixBlock expected = DataConverter.readMatrixFromHDFS(output(OUTPUT_NAME_CP),
+				Types.FileFormat.BINARY, outputDim, outputDim, blockSize);
+			TestUtils.compareMatrices(actual, expected, eps);
+			assertSymmetricOffDiagonal(actual, outputDim, blockSize);
 		}
 		catch (IOException e) {
 			throw new RuntimeException(e);
@@ -113,5 +145,41 @@ public class TransposeSelfMMTest extends AutomatedTestBase {
 		finally {
 			resetExecMode(platformOld);
 		}
+	}
+
+	private static int assertOutputMetadata(MMTSJType type, MatrixCharacteristics meta, int inputRows, int inputCols,
+		int blockSize) {
+		int outputDim = type.isLeft() ? inputCols : inputRows;
+		Assert.assertEquals(type + " TSMM output row metadata", outputDim, meta.getRows());
+		Assert.assertEquals(type + " TSMM output column metadata", outputDim, meta.getCols());
+		Assert.assertEquals(type + " TSMM output blocksize metadata", blockSize, meta.getBlocksize());
+		return outputDim;
+	}
+
+	private static void assertSymmetricOffDiagonal(MatrixBlock actual, int outputDim, int blockSize) {
+		if(outputDim <= blockSize)
+			return;
+
+		int[] rows = new int[] {0, Math.min(blockSize - 1, outputDim - 1)};
+		int[] cols = new int[] {blockSize, outputDim - 1};
+		for(int row : rows)
+			for(int col : cols)
+				Assert.assertEquals(actual.get(row, col), actual.get(col, row), eps);
+	}
+
+	private static void assertDeepMultiTileOutput(MatrixCharacteristics meta) {
+		if(meta.getRows() <= meta.getBlocksize())
+			return;
+
+		Assert.assertTrue("Multi-tile TSMM tests should cover at least three output row blocks",
+			meta.getNumRowBlocks() >= 3);
+		Assert.assertTrue("Multi-tile TSMM tests should cover at least three output column blocks",
+			meta.getNumColBlocks() >= 3);
+	}
+
+	private void setDefaultBlockSizeInConfig(int blockSize) throws IOException {
+		DMLConfig config = new DMLConfig(getCurConfigFile().getPath());
+		config.setTextValue(DMLConfig.DEFAULT_BLOCK_SIZE, String.valueOf(blockSize));
+		Files.write(getCurConfigFile().toPath(), config.serializeDMLConfig().getBytes(StandardCharsets.UTF_8));
 	}
 }

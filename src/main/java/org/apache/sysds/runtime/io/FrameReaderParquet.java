@@ -20,15 +20,23 @@ package org.apache.sysds.runtime.io;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.parquet.example.data.Group;
+import org.apache.parquet.column.ColumnDescriptor;
+import org.apache.parquet.column.ColumnReader;
+import org.apache.parquet.column.impl.ColumnReadStoreImpl;
+import org.apache.parquet.column.page.PageReadStore;
 import org.apache.parquet.hadoop.ParquetFileReader;
-import org.apache.parquet.hadoop.ParquetReader;
-import org.apache.parquet.hadoop.example.GroupReadSupport;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.apache.parquet.hadoop.util.HadoopInputFile;
+import org.apache.parquet.io.api.Binary;
+import org.apache.parquet.io.api.Converter;
+import org.apache.parquet.io.api.GroupConverter;
+import org.apache.parquet.io.api.PrimitiveConverter;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType;
 import org.apache.sysds.common.Types.ValueType;
@@ -78,7 +86,7 @@ public class FrameReaderParquet extends FrameReader {
 	/**
 	 * Reads data from a Parquet file on HDFS and fills the provided FrameBlock.
 	 * The method retrieves the Parquet schema from the file footer, maps the required column names
-	 * to their corresponding indices, and then uses a ParquetReader to iterate over each row.
+	 * to their corresponding indices, and then uses the column API to iterate over each column.
 	 * Data is extracted based on the column type and set into the output FrameBlock.
 	 *
 	 * @param path   The HDFS path to the Parquet file.
@@ -89,63 +97,145 @@ public class FrameReaderParquet extends FrameReader {
 	 * @param clen   The expected number of columns.
 	 */
 	protected void readParquetFrameFromHDFS(Path path, Configuration conf, FrameBlock dest, ValueType[] schema, long rlen, long clen) throws IOException {
-		// Retrieve schema from Parquet footer
-		ParquetMetadata metadata = ParquetFileReader.open(HadoopInputFile.fromPath(path, conf)).getFooter();
-		MessageType parquetSchema = metadata.getFileMetaData().getSchema();
+		int row = readSingleParquetFile(path, conf, dest, clen, 0);
 
-		// Map column names to Parquet schema indices
+		// Check frame dimensions
+		if (row != rlen) {
+			throw new IOException("Mismatch in row count: expected " + rlen + ", but got " + row);
+		}
+	}
+
+	// Constants for decoding legacy INT96 timestamps
+	private static final int JULIAN_EPOCH_OFFSET_DAYS = 2_440_588;
+	private static final long MILLIS_IN_DAY = TimeUnit.DAYS.toMillis(1);
+	private static final long NANOS_PER_MILLISECOND = TimeUnit.MILLISECONDS.toNanos(1);
+
+	/**
+	 * Reads a single Parquet file into the destination FrameBlock using the column API.
+	 * Iterates row groups; within each row group reads each requested column and writes the
+	 * value into the FrameBlock.
+	 *
+	 * @param path      The HDFS path to the Parquet file.
+	 * @param conf      The Hadoop configuration.
+	 * @param dest      The FrameBlock to populate.
+	 * @param clen      The number of columns.
+	 * @param rowOffset The starting row offset in the destination FrameBlock.
+	 * @return The number of rows read.
+	 */
+	protected int readSingleParquetFile(Path path, Configuration conf, FrameBlock dest,
+		long clen, long rowOffset) throws IOException
+	{
 		String[] columnNames = dest.getColumnNames();
-		int[] columnIndices = new int[columnNames.length];
-		for (int i = 0; i < columnNames.length; i++) {
-			columnIndices[i] = parquetSchema.getFieldIndex(columnNames[i]);
-		}
 
-		// Read data usind ParquetReader
-		try (ParquetReader<Group> rowReader = ParquetReader.builder(new GroupReadSupport(), path)
-				.withConf(conf)
-				.build()) {
+		try (ParquetFileReader reader = ParquetFileReader.open(HadoopInputFile.fromPath(path, conf))) {
+			ParquetMetadata metadata = reader.getFooter();
+			MessageType parquetSchema = metadata.getFileMetaData().getSchema();
+			String createdBy = metadata.getFileMetaData().getCreatedBy();
 
-			Group group;
-			int row = 0;
-			while ((group = rowReader.read()) != null) {
+			// Map each requested frame column (by name) to its Parquet column descriptor.
+			ColumnDescriptor[] descriptors = new ColumnDescriptor[(int) clen];
+			for (int col = 0; col < clen; col++) {
+				ColumnDescriptor desc = parquetSchema.getColumnDescription(new String[]{ columnNames[col] });
+				// Nested columns cannot be represented by a flat FrameBlock column
+				if (desc.getMaxRepetitionLevel() > 0)
+					throw new IOException("Nested Parquet columns are not supported: " + columnNames[col]);
+				descriptors[col] = desc;
+			}
+
+			// no-op converter tree, only used by ColumnReadStoreImpl to resolve a converter per column
+			GroupConverter rootConverter = newNoOpRootConverter(parquetSchema);
+
+			int row = (int) rowOffset;
+			PageReadStore pages;
+
+			while (true) {
+				pages = reader.readNextRowGroup();
+
+				if (pages == null) 
+					break;
+
+				int rowsInGroup = (int) pages.getRowCount();
+				ColumnReadStoreImpl colStore = new ColumnReadStoreImpl(pages, rootConverter, parquetSchema, createdBy);
+
 				for (int col = 0; col < clen; col++) {
-					int colIndex = columnIndices[col];
-					if (group.getFieldRepetitionCount(colIndex) > 0) {
-						PrimitiveType.PrimitiveTypeName type = parquetSchema.getType(columnNames[col]).asPrimitiveType().getPrimitiveTypeName();
-						switch (type) {
-							case INT32:
-								dest.set(row, col, group.getInteger(colIndex, 0));
-								break;
-							case INT64:
-								dest.set(row, col, group.getLong(colIndex, 0));
-								break;
-							case FLOAT:
-								dest.set(row, col, group.getFloat(colIndex, 0));
-								break;
-							case DOUBLE:
-								dest.set(row, col, group.getDouble(colIndex, 0));
-								break;
-							case BOOLEAN:
-								dest.set(row, col, group.getBoolean(colIndex, 0));
-								break;
-							case BINARY:
-								dest.set(row, col, group.getBinary(colIndex, 0).toStringUsingUTF8());
-								break;
-							default:
-								throw new IOException("Unsupported data type: " + type);
-						}
-					} else {
-						dest.set(row, col, null);
-					}
+					ColumnDescriptor desc = descriptors[col];
+					ColumnReader creader = colStore.getColumnReader(desc);
+					int maxDef = desc.getMaxDefinitionLevel();
+					PrimitiveType.PrimitiveTypeName ptype = desc.getPrimitiveType().getPrimitiveTypeName();
+					readColumn(dest, creader, col, row, rowsInGroup, maxDef, ptype);
 				}
-				row++;
+				row += rowsInGroup;
 			}
-
-			// Check frame dimensions
-			if (row != rlen) {
-				throw new IOException("Mismatch in row count: expected " + rlen + ", but got " + row);
-			}
+			return row - (int) rowOffset;
 		}
+	}
+
+	/**
+	 * Reads one column of a row group, writing each value (or null) into the destination FrameBlock.
+	 */
+	private void readColumn(FrameBlock dest, ColumnReader creader, int col, int rowStart,
+		int rowsInGroup, int maxDef, PrimitiveType.PrimitiveTypeName ptype) throws IOException
+	{
+		for (int i = 0; i < rowsInGroup; i++) {
+			int row = rowStart + i;
+			if (creader.getCurrentDefinitionLevel() == maxDef) {
+				switch (ptype) {
+					case INT32:
+						dest.set(row, col, creader.getInteger());
+						break;
+					case INT64:
+						dest.set(row, col, creader.getLong());
+						break;
+					case FLOAT:
+						dest.set(row, col, creader.getFloat());
+						break;
+					case DOUBLE:
+						dest.set(row, col, creader.getDouble());
+						break;
+					case BOOLEAN:
+						dest.set(row, col, creader.getBoolean());
+						break;
+					case INT96: {
+						// Legacy INT96 timestamp, narrowed to epoch millis.
+						// See https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#timestamp
+						Binary binary = creader.getBinary();
+						ByteBuffer buf = ByteBuffer.wrap(binary.getBytes()).order(ByteOrder.LITTLE_ENDIAN);
+						long nanosOfDay = buf.getLong();
+						int julianDay = buf.getInt();
+						long millis = (julianDay - JULIAN_EPOCH_OFFSET_DAYS) * MILLIS_IN_DAY
+							+ nanosOfDay / NANOS_PER_MILLISECOND;
+						dest.set(row, col, millis);
+						break;
+					}
+					case BINARY:
+						dest.set(row, col, creader.getBinary().toStringUsingUTF8());
+						break;
+					default:
+						throw new IOException("Unsupported data type: " + ptype);
+				}
+			}
+			else {
+				dest.set(row, col, null);
+			}
+			creader.consume();
+		}
+	}
+
+	/**
+	 * Builds a no-op converter tree matching the (flat) Parquet schema. The converter
+	 * callbacks are never invoked because values are read through the typed creader.getX accessors in readColumn().
+	 * The tree merely serves to satisfy the ColumnReadStoreImpl constructor
+	 */
+	private static GroupConverter newNoOpRootConverter(MessageType schema) {
+		final int n = schema.getFieldCount();
+		final PrimitiveConverter[] leaves = new PrimitiveConverter[n];
+		for (int i = 0; i < n; i++)
+			leaves[i] = new PrimitiveConverter() {};
+		return new GroupConverter() {
+			@Override public Converter getConverter(int fieldIndex) { return leaves[fieldIndex]; }
+			@Override public void start() {}
+			@Override public void end() {}
+		};
 	}
 
 	//not implemented

@@ -22,6 +22,7 @@ package org.apache.sysds.test.functions.io.parquet;
 import org.junit.Assert;
 import org.junit.Test;
 
+import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.io.FrameReader;
@@ -76,11 +77,11 @@ public class FrameParquetSchemaTest extends AutomatedTestBase {
 
 		// Populate frame block
 		Object[][] rows = new Object[][] {
-			{ 1.0,	1.1f, 10,  100L,  true,  "A" },
-			{ 2.0,	2.1f, 20,  200L,  false, "B" },
-			{ 3.0,	3.1f, 30,  300L,  true,  "C" },
-			{ 4.0,	4.1f, 40,  400L,  false, "D" },
-			{ 5.0,	5.1f, 50,  500L,  true,  "E" }
+			{ 1.0,    1.1f, 10,  100L,  true,  "A" },
+			{ 2.0,    2.1f, 20,  200L,  false, "B" },
+			{ 3.0,    3.1f, 30,  300L,  true,  "C" },
+			{ 4.0,    4.1f, 40,  400L,  false, "D" },
+			{ 5.0,    5.1f, 50,  500L,  true,  "E" }
 		};
 
 		for (Object[] row : rows) {
@@ -115,7 +116,7 @@ public class FrameParquetSchemaTest extends AutomatedTestBase {
 		}
 
 		// Compare the original and the read frame blocks
-		compareFrameBlocks(fb, fbRead, 1e-6);
+		TestUtils.compareFrames(fb, fbRead, false);
 	}
 
 	/**
@@ -138,11 +139,11 @@ public class FrameParquetSchemaTest extends AutomatedTestBase {
 		FrameBlock fb = new FrameBlock(schema);
 
 		Object[][] rows = new Object[][] {
-			{ 1.0,	1.1f, 10,  100L,  true,  "A" },
-			{ 2.0,	2.1f, 20,  200L,  false, "B" },
-			{ 3.0,	3.1f, 30,  300L,  true,  "C" },
-			{ 4.0,	4.1f, 40,  400L,  false, "D" },
-			{ 5.0,	5.1f, 50,  500L,  true,  "E" }
+			{ 1.0,    1.1f, 10,  100L,  true,  "A" },
+			{ 2.0,    2.1f, 20,  200L,  false, "B" },
+			{ 3.0,    3.1f, 30,  300L,  true,  "C" },
+			{ 4.0,    4.1f, 40,  400L,  false, "D" },
+			{ 5.0,    5.1f, 50,  500L,  true,  "E" }
 		};
 
 		for (Object[] row : rows) {
@@ -172,52 +173,6 @@ public class FrameParquetSchemaTest extends AutomatedTestBase {
 			Assert.fail("Failed to read frame block from Parquet (parallel): " + e.getMessage());
 		}
 
-		compareFrameBlocks(fb, fbRead, 1e-6);
-	}
-
-	private void compareFrameBlocks(FrameBlock expected, FrameBlock actual, double eps) {
-		Assert.assertEquals("Number of rows mismatch", expected.getNumRows(), actual.getNumRows());
-		Assert.assertEquals("Number of columns mismatch", expected.getNumColumns(), actual.getNumColumns());
-
-		int rows = expected.getNumRows();
-		int cols = expected.getNumColumns();
-
-		for (int i = 0; i < rows; i++) {
-			for (int j = 0; j < cols; j++) {
-				Object expVal = expected.get(i, j);
-				Object actVal = actual.get(i, j);
-				ValueType vt = expected.getSchema()[j];
-
-				// Handle nulls first
-				if(expVal == null || actVal == null) {
-					Assert.assertEquals("Mismatch at (" + i + "," + j + ")", expVal, actVal);
-				} else {
-					switch(vt) {
-						case FP64:
-						case FP32:
-							double dExp = ((Number) expVal).doubleValue();
-							double dAct = ((Number) actVal).doubleValue();
-							Assert.assertEquals("Mismatch at (" + i + "," + j + ")", dExp, dAct, eps);
-							break;
-						case INT32:
-						case INT64:
-							long lExp = ((Number) expVal).longValue();
-							long lAct = ((Number) actVal).longValue();
-							Assert.assertEquals("Mismatch at (" + i + "," + j + ")", lExp, lAct);
-							break;
-						case BOOLEAN:
-							boolean bExp = (Boolean) expVal;
-							boolean bAct = (Boolean) actVal;
-							Assert.assertEquals("Mismatch at (" + i + "," + j + ")", bExp, bAct);
-							break;
-						case STRING:
-							Assert.assertEquals("Mismatch at (" + i + "," + j + ")", expVal.toString(), actVal.toString());
-							break;
-						default:
-							Assert.fail("Unsupported type in comparison: " + vt);
-					}
-				}
-			}
-		}
+		TestUtils.compareFrames(fb, fbRead, false);
 	}
 }

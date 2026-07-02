@@ -35,14 +35,14 @@ import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 /**
- * Multi-threaded frame parquet reader.
+ * Multi-threaded frame parquet writer.
  * 
  */
 public class FrameWriterParquetParallel extends FrameWriterParquet {
 
 	/**
 	 * Writes the FrameBlock data to HDFS in parallel. 
-	 * The method estimates the number of output partitions by comparing the total number of cells in the FrameBlock with the
+	 * The method estimates the number of output partitions by comparing the estimated output size of the FrameBlock with the
 	 * HDFS block size. It then determines the number of threads to use based on the parallelism configuration and the
 	 * number of partitions. In case of parallelism, it divides the FrameBlock into chunks and a thread pool is created to
 	 * execute a write task for each partition concurrently.
@@ -55,14 +55,14 @@ public class FrameWriterParquetParallel extends FrameWriterParquet {
 	protected void writeParquetFrameToHDFS(Path path, Configuration conf, FrameBlock src) 
 		throws IOException, DMLRuntimeException 
 	{
-		// Estimate number of output partitions
-		int numPartFiles = Math.max((int) (src.getNumRows() * src.getNumColumns() / InfrastructureAnalyzer.getHDFSBlockSize()), 1);
-		
+		// Estimate output partitions from output size in bytes
+		int numPartFiles = Math.max((int) (OptimizerUtils.estimateSizeExactFrame(src.getNumRows(), src.getNumColumns())
+			/ InfrastructureAnalyzer.getHDFSBlockSize()), 1);
+
 		// Determine parallelism
 		int numThreads = Math.min(OptimizerUtils.getParallelBinaryWriteParallelism(), numPartFiles);
 
-		// Fall back to sequential write if numThreads <= 1
-		if (numThreads <= 1) {
+		if (!_forcedParallel && numThreads <= 1) {
 			super.writeParquetFrameToHDFS(path, conf, src);
 			return;
 		}

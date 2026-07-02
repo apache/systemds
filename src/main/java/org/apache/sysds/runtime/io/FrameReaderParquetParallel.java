@@ -20,6 +20,8 @@ package org.apache.sysds.runtime.io;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -27,9 +29,10 @@ import java.util.concurrent.Future;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.parquet.example.data.Group;
-import org.apache.parquet.hadoop.ParquetReader;
-import org.apache.parquet.hadoop.example.GroupReadSupport;
+import org.apache.parquet.hadoop.ParquetFileReader;
+import org.apache.parquet.hadoop.metadata.BlockMetaData;
+import org.apache.parquet.hadoop.metadata.ParquetMetadata;
+import org.apache.parquet.hadoop.util.HadoopInputFile;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -59,14 +62,35 @@ public class FrameReaderParquetParallel extends FrameReaderParquet {
 	protected void readParquetFrameFromHDFS(Path path, Configuration conf, FrameBlock dest, ValueType[] schema, long rlen, long clen) throws IOException, DMLRuntimeException {
 		FileSystem fs = IOUtilFunctions.getFileSystem(path);
 		Path[] files = IOUtilFunctions.getSequenceFilePaths(fs, path);
+		Arrays.sort(files, Comparator.comparing(Path::getName));
 		int numThreads = Math.min(OptimizerUtils.getParallelBinaryReadParallelism(), files.length);
 		
+		long[] offsets = new long[files.length];
+		long cumulative = 0;
+		
+		for (int i = 0; i < files.length; i++) {
+			long fileRows = 0;
+		
+			try (ParquetFileReader reader =
+					ParquetFileReader.open(HadoopInputFile.fromPath(files[i], conf))) {
+		
+				ParquetMetadata meta = reader.getFooter();
+		
+				for (BlockMetaData block : meta.getBlocks()) {
+					fileRows += block.getRowCount();
+				}
+			}
+		
+			offsets[i] = cumulative;
+			cumulative += fileRows;
+		}
+
 		// Create and execute read tasks
 		ExecutorService pool = CommonThreadPool.get(numThreads);
 		try {
 			List<ReadFileTask> tasks = new ArrayList<>();
-			for (Path file : files) {
-				tasks.add(new ReadFileTask(file, conf, dest, schema, clen));
+			for (int i = 0; i < files.length; i++) {
+				tasks.add(new ReadFileTask(files[i], conf, dest, clen, offsets[i]));
 			}
 
 			for (Future<Object> task : pool.invokeAll(tasks)) {
@@ -83,35 +107,21 @@ public class FrameReaderParquetParallel extends FrameReaderParquet {
 		private Path path;
 		private Configuration conf;
 		private FrameBlock dest;
-		@SuppressWarnings("unused")
-		private ValueType[] schema;
 		private long clen;
+		private long rowOffset;
 
-		public ReadFileTask(Path path, Configuration conf, FrameBlock dest, ValueType[] schema, long clen) {
+		public ReadFileTask(Path path, Configuration conf, FrameBlock dest, long clen, long rowOffset) {
 			this.path = path;
 			this.conf = conf;
 			this.dest = dest;
-			this.schema = schema;
 			this.clen = clen;
+			this.rowOffset = rowOffset;
 		}
 
 		// When executed, a ParquetReader for the assigned file opens and iterates over each row processing every column.
 		@Override
 		public Object call() throws Exception {
-			try (ParquetReader<Group> reader = ParquetReader.builder(new GroupReadSupport(), path).withConf(conf).build()) {
-				Group group;
-				int row = 0;
-				while ((group = reader.read()) != null) {
-					for (int col = 0; col < clen; col++) {
-						if (group.getFieldRepetitionCount(col) > 0) {
-							dest.set(row, col, group.getValueToString(col, 0));
-						} else {
-							dest.set(row, col, null);
-						}
-					}
-					row++;
-				}
-			}
+			FrameReaderParquetParallel.super.readSingleParquetFile(path, conf, dest, clen, rowOffset);
 			return null;
 		}
 	}

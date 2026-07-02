@@ -42,128 +42,128 @@ import java.util.Random;
  */
 public class ProbabilisticQuantizationCompressor implements MatrixCompressor {
 
-    private final int bitsPerValue;  // 2, 4, or 8
-    private final Random rng;
+	private final int bitsPerValue;  // 2, 4, or 8
+	private final Random rng;
 
-    public ProbabilisticQuantizationCompressor(int bitsPerValue) {
-        if (bitsPerValue != 2 && bitsPerValue != 4 && bitsPerValue != 8) {
-            throw new IllegalArgumentException("bitsPerValue must be 2, 4, or 8");
-        }
-        this.bitsPerValue = bitsPerValue;
-        this.rng = new Random(42);  // Fixed seed for reproducibility
-    }
+	public ProbabilisticQuantizationCompressor(int bitsPerValue) {
+		if (bitsPerValue != 2 && bitsPerValue != 4 && bitsPerValue != 8) {
+			throw new IllegalArgumentException("bitsPerValue must be 2, 4, or 8");
+		}
+		this.bitsPerValue = bitsPerValue;
+		this.rng = new Random(42);  // Fixed seed for reproducibility
+	}
 
-    @Override
-    public CompressedMatrix compress(MatrixBlock input) throws CompressionException {
-        try {
-            int numRows = input.getNumRows();
-            int numCols = input.getNumColumns();
-            int totalElements = numRows * numCols;
+	@Override
+	public CompressedMatrix compress(MatrixBlock input) throws CompressionException {
+		try {
+			int numRows = input.getNumRows();
+			int numCols = input.getNumColumns();
+			int totalElements = numRows * numCols;
 
-            // Find min and max for normalization
-            double[] minMax = findMinMax(input, numRows, numCols);
-            double min = minMax[0];
-            double max = minMax[1];
+			// Find min and max for normalization
+			double[] minMax = findMinMax(input, numRows, numCols);
+			double min = minMax[0];
+			double max = minMax[1];
 
-            int levels = 1 << bitsPerValue;  // 2^bits
+			int levels = 1 << bitsPerValue;  // 2^bits
 
-            // Quantize each element probabilistically
-            byte[] quantized = new byte[totalElements];
-            for (int i = 0; i < numRows; i++) {
-                for (int j = 0; j < numCols; j++) {
-                    double value = input.get(i, j);
-                    quantized[i * numCols + j] = probabilisticRound(value, min, max, levels);
-                }
-            }
+			// Quantize each element probabilistically
+			byte[] quantized = new byte[totalElements];
+			for (int i = 0; i < numRows; i++) {
+				for (int j = 0; j < numCols; j++) {
+					double value = input.get(i, j);
+					quantized[i * numCols + j] = probabilisticRound(value, min, max, levels);
+				}
+			}
 
-            double ratio = 32.0 / bitsPerValue;  // vs 32-bit float
+			double ratio = 32.0 / bitsPerValue;  // vs 32-bit float
 
-            QuantizedData data = new QuantizedData(
-                quantized, min, max, levels, bitsPerValue, numRows, numCols);
+			QuantizedData data = new QuantizedData(
+				quantized, min, max, levels, bitsPerValue, numRows, numCols);
 
-            return new CompressedMatrix(
-                CompressionType.PROBABILISTIC_QUANTIZATION,
-                numRows, numCols, data, ratio);
+			return new CompressedMatrix(
+				CompressionType.PROBABILISTIC_QUANTIZATION,
+				numRows, numCols, data, ratio);
 
-        } catch (Exception e) {
-            throw new CompressionException(
-                "Quantization compression failed: " + e.getMessage(), e);
-        }
-    }
+		} catch (Exception e) {
+			throw new CompressionException(
+				"Quantization compression failed: " + e.getMessage(), e);
+		}
+	}
 
-    @Override
-    public MatrixBlock decompress(CompressedMatrix compressed) throws DecompressionException {
-        try {
-            QuantizedData data = (QuantizedData) compressed.getCompressedData();
-            MatrixBlock result = new MatrixBlock(data.numRows, data.numCols, false);
-            result.allocateDenseBlock();
+	@Override
+	public MatrixBlock decompress(CompressedMatrix compressed) throws DecompressionException {
+		try {
+			QuantizedData data = (QuantizedData) compressed.getCompressedData();
+			MatrixBlock result = new MatrixBlock(data.numRows, data.numCols, false);
+			result.allocateDenseBlock();
 
-            for (int i = 0; i < data.numRows; i++) {
-                for (int j = 0; j < data.numCols; j++) {
-                    byte levelIndex = data.quantizedValues[i * data.numCols + j];
-                    double value = data.reconstructValue(levelIndex);
-                    result.set(i, j, value);
-                }
-            }
+			for (int i = 0; i < data.numRows; i++) {
+				for (int j = 0; j < data.numCols; j++) {
+					byte levelIndex = data.quantizedValues[i * data.numCols + j];
+					double value = data.reconstructValue(levelIndex);
+					result.set(i, j, value);
+				}
+			}
 
-            result.examSparsity();
-            return result;
+			result.examSparsity();
+			return result;
 
-        } catch (ClassCastException e) {
-            throw new DecompressionException(
-                "Invalid compressed data type for Quantization", e);
-        } catch (Exception e) {
-            throw new DecompressionException(
-                "Quantization decompression failed: " + e.getMessage(), e);
-        }
-    }
+		} catch (ClassCastException e) {
+			throw new DecompressionException(
+				"Invalid compressed data type for Quantization", e);
+		} catch (Exception e) {
+			throw new DecompressionException(
+				"Quantization decompression failed: " + e.getMessage(), e);
+		}
+	}
 
-    // -----------------------------------------------------------------------
-    // Private helpers
-    // -----------------------------------------------------------------------
+	// -----------------------------------------------------------------------
+	// Private helpers
+	// -----------------------------------------------------------------------
 
-    /**
-     * Stochastic rounding: for value x between levels q_i and q_{i+1}:
-     *   P(round up)   = (x - q_i) / (q_{i+1} - q_i)
-     *   P(round down) = 1 - P(round up)
-     * This gives E[output] = x (unbiased).
-     */
-    private byte probabilisticRound(double value, double min, double max, int levels) {
-        // Handle constant matrix edge case
-        if (max - min < 1e-10) return 0;
+	/**
+	 * Stochastic rounding: for value x between levels q_i and q_{i+1}:
+	 *   P(round up)   = (x - q_i) / (q_{i+1} - q_i)
+	 *   P(round down) = 1 - P(round up)
+	 * This gives E[output] = x (unbiased).
+	 */
+	private byte probabilisticRound(double value, double min, double max, int levels) {
+		// Handle constant matrix edge case
+		if (max - min < 1e-10) return 0;
 
-        // Normalize to [0, 1]
-        double normalized = (value - min) / (max - min);
+		// Normalize to [0, 1]
+		double normalized = (value - min) / (max - min);
 
-        // Find bounding level indices
-        double scaled = normalized * (levels - 1);
-        int lowerIdx = (int) scaled;
-        int upperIdx = lowerIdx + 1;
+		// Find bounding level indices
+		double scaled = normalized * (levels - 1);
+		int lowerIdx = (int) scaled;
+		int upperIdx = lowerIdx + 1;
 
-        if (lowerIdx == upperIdx) {
-            return (byte) lowerIdx;
-        }
+		if (lowerIdx == upperIdx) {
+			return (byte) lowerIdx;
+		}
 
-        // Probabilistic decision
-        double probUp = scaled - lowerIdx;
-        return (rng.nextDouble() < probUp) ? (byte) upperIdx : (byte) lowerIdx;
-    }
+		// Probabilistic decision
+		double probUp = scaled - lowerIdx;
+		return (rng.nextDouble() < probUp) ? (byte) upperIdx : (byte) lowerIdx;
+	}
 
-    /** Find min and max values across the entire matrix */
-    private double[] findMinMax(MatrixBlock input, int numRows, int numCols) {
-        double min = Double.MAX_VALUE;
-        double max = -Double.MAX_VALUE;
+	/** Find min and max values across the entire matrix */
+	private double[] findMinMax(MatrixBlock input, int numRows, int numCols) {
+		double min = Double.MAX_VALUE;
+		double max = -Double.MAX_VALUE;
 
-        for (int i = 0; i < numRows; i++) {
-            for (int j = 0; j < numCols; j++) {
-                double val = input.get(i, j);
-                if (val < min) min = val;
-                if (val > max) max = val;
-            }
-        }
+		for (int i = 0; i < numRows; i++) {
+			for (int j = 0; j < numCols; j++) {
+				double val = input.get(i, j);
+				if (val < min) min = val;
+				if (val > max) max = val;
+			}
+		}
 
-        // Handle all-zero matrix
-        if (min == Double.MAX_VALUE) { min = 0; max = 0; }
-        return new double[]{min, max};
-    }
+		// Handle all-zero matrix
+		if (min == Double.MAX_VALUE) { min = 0; max = 0; }
+		return new double[]{min, max};
+	}
 }

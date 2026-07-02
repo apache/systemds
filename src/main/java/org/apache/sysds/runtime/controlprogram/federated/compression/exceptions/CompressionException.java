@@ -24,13 +24,13 @@ package org.apache.sysds.runtime.controlprogram.federated.compression.exceptions
  */
 public class CompressionException extends Exception {
 
-    private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
-    public CompressionException(String message) {
-        super(message);
-    }
+	public CompressionException(String message) {
+		super(message);
+	}
 
-    public CompressionException(String message, Throwable cause) {
-        super(message, cause);
-    }
+	public CompressionException(String message, Throwable cause) {
+		super(message, cause);
+	}
 }

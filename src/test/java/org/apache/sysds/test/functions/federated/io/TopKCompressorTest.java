@@ -16,145 +16,108 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.sysds.test.functions.federated.io;
 
 import org.apache.sysds.runtime.controlprogram.federated.compression.CompressedMatrix;
 import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionType;
 import org.apache.sysds.runtime.controlprogram.federated.compression.TopK.TopKCompressor;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
-public class TopKCompressorTest extends AutomatedTestBase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-    @Override
-    public void setUp() {}
+public class TopKCompressorTest {
 
-    @Override
-    public void tearDown() {}
+	@Test
+	public void testTopKBasicProperties() throws Exception {
+		MatrixBlock input = createRandomMatrix(10, 20);
+		TopKCompressor compressor = new TopKCompressor(0.1);
+		CompressedMatrix compressed = compressor.compress(input);
+		MatrixBlock result = compressor.decompress(compressed);
 
-    // -----------------------------------------------------------------------
-    // Basic properties (merged from testCompressionTypeIsTopK,
-    // testDimensionsPreservedAfterDecompression, testCompressionRatioIsPositive)
-    // -----------------------------------------------------------------------
+		assertEquals(CompressionType.TOPK, compressed.getType());
+		assertEquals(10, result.getNumRows());
+		assertEquals(20, result.getNumColumns());
+		assertTrue(compressed.getCompressionRatio() > 0);
+	}
 
-    @Test
-    public void testTopKBasicProperties() throws Exception {
-        MatrixBlock input = createRandomMatrix(10, 20);
-        TopKCompressor compressor = new TopKCompressor(0.1);
-        CompressedMatrix compressed = compressor.compress(input);
+	@Test
+	public void testTopKKeepsLargestElements() throws Exception {
+		MatrixBlock input = new MatrixBlock(3, 3, false);
+		input.allocateDenseBlock();
+		input.set(0, 0, 10.0);
+		input.set(1, 1, 5.0);
+		input.set(2, 2, 1.0);
+		input.examSparsity();
 
-        assertEquals(CompressionType.TOPK, compressed.getType());
+		TopKCompressor compressor = new TopKCompressor(0.22);
+		CompressedMatrix compressed = compressor.compress(input);
+		MatrixBlock result = compressor.decompress(compressed);
 
-        MatrixBlock result = compressor.decompress(compressed);
-        assertEquals(10, result.getNumRows());
-        assertEquals(20, result.getNumColumns());
+		assertEquals(10.0, result.get(0, 0), 1e-10);
+		assertEquals(5.0, result.get(1, 1), 1e-10);
+		assertEquals(0.0, result.get(2, 2), 1e-10);
+	}
 
-        assertTrue("Compression ratio must be > 0",
-            compressed.getCompressionRatio() > 0);
-    }
+	@Test
+	public void testLowerSparsityGivesHigherRatio() throws Exception {
+		MatrixBlock input = createRandomMatrix(100, 100);
 
-    // -----------------------------------------------------------------------
-    // Basic compression / decompression
-    // -----------------------------------------------------------------------
+		TopKCompressor c1 = new TopKCompressor(0.1);
+		TopKCompressor c2 = new TopKCompressor(0.01);
 
-    @Test
-    public void testTopKKeepsLargestElements() throws Exception {
-        // 3x3 matrix with three distinct magnitudes
-        MatrixBlock input = new MatrixBlock(3, 3, false);
-        input.allocateDenseBlock();
-        input.set(0, 0, 10.0);  // Largest
-        input.set(1, 1, 5.0);   // Medium
-        input.set(2, 2, 1.0);   // Smallest
-        input.examSparsity();
+		double ratio1 = c1.compress(input).getCompressionRatio();
+		double ratio2 = c2.compress(input).getCompressionRatio();
 
-        // Keep top 2 of 9 elements (~22% sparsity)
-        TopKCompressor compressor = new TopKCompressor(0.22);
-        CompressedMatrix compressed = compressor.compress(input);
-        MatrixBlock result = compressor.decompress(compressed);
+		assertTrue(ratio2 > ratio1);
+	}
 
-        // Largest two values must be preserved exactly
-        assertEquals(10.0, result.get(0, 0), 1e-10);
-        assertEquals(5.0,  result.get(1, 1), 1e-10);
+	@Test
+	public void testAllZeroMatrix() throws Exception {
+		MatrixBlock input = new MatrixBlock(5, 5, false);
+		input.allocateDenseBlock();
+		input.examSparsity();
 
-        // Smallest should be zeroed out
-        assertEquals(0.0, result.get(2, 2), 1e-10);
-    }
+		TopKCompressor compressor = new TopKCompressor(0.1);
+		CompressedMatrix compressed = compressor.compress(input);
+		MatrixBlock result = compressor.decompress(compressed);
 
-    // -----------------------------------------------------------------------
-    // Compression ratio
-    // -----------------------------------------------------------------------
+		for(int i = 0; i < 5; i++)
+			for(int j = 0; j < 5; j++)
+				assertEquals(0.0, result.get(i, j), 1e-10);
+	}
 
-    @Test
-    public void testLowerSparsityGivesHigherRatio() throws Exception {
-        MatrixBlock input = createRandomMatrix(100, 100);
+	@Test
+	public void testSparsityOfOneKeepsEverything() throws Exception {
+		MatrixBlock input = createRandomMatrix(5, 5);
+		TopKCompressor compressor = new TopKCompressor(1.0);
+		CompressedMatrix compressed = compressor.compress(input);
+		MatrixBlock result = compressor.decompress(compressed);
 
-        TopKCompressor c1 = new TopKCompressor(0.1);
-        TopKCompressor c2 = new TopKCompressor(0.01);
+		for(int i = 0; i < 5; i++)
+			for(int j = 0; j < 5; j++)
+				assertEquals(input.get(i, j), result.get(i, j), 1e-10);
+	}
 
-        double ratio1 = c1.compress(input).getCompressionRatio();
-        double ratio2 = c2.compress(input).getCompressionRatio();
+	@Test(expected = IllegalArgumentException.class)
+	public void testInvalidSparsityThrowsException() {
+		new TopKCompressor(0.0);
+	}
 
-        assertTrue("1% sparsity should compress more than 10%", ratio2 > ratio1);
-    }
+	@Test(expected = IllegalArgumentException.class)
+	public void testSparsityAboveOneThrowsException() {
+		new TopKCompressor(1.5);
+	}
 
-    // -----------------------------------------------------------------------
-    // Edge cases
-    // -----------------------------------------------------------------------
-
-    @Test
-    public void testAllZeroMatrix() throws Exception {
-        MatrixBlock input = new MatrixBlock(5, 5, false);
-        input.allocateDenseBlock();
-        input.examSparsity();
-
-        TopKCompressor compressor = new TopKCompressor(0.1);
-        CompressedMatrix compressed = compressor.compress(input);
-        MatrixBlock result = compressor.decompress(compressed);
-
-        // All zeros in → all zeros out
-        for (int i = 0; i < 5; i++)
-            for (int j = 0; j < 5; j++)
-                assertEquals(0.0, result.get(i, j), 1e-10);
-    }
-
-    @Test
-    public void testSparsityOfOneKeepsEverything() throws Exception {
-        MatrixBlock input = createRandomMatrix(5, 5);
-        TopKCompressor compressor = new TopKCompressor(1.0);
-        CompressedMatrix compressed = compressor.compress(input);
-        MatrixBlock result = compressor.decompress(compressed);
-
-        // With sparsity=1.0, all values should be preserved
-        for (int i = 0; i < 5; i++)
-            for (int j = 0; j < 5; j++)
-                assertEquals(input.get(i, j), result.get(i, j), 1e-10);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testInvalidSparsityThrowsException() {
-        new TopKCompressor(0.0);  // Must be > 0
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testSparsityAboveOneThrowsException() {
-        new TopKCompressor(1.5);  // Must be <= 1
-    }
-
-    // -----------------------------------------------------------------------
-    // Helpers
-    // -----------------------------------------------------------------------
-
-    private MatrixBlock createRandomMatrix(int rows, int cols) {
-        MatrixBlock m = new MatrixBlock(rows, cols, false);
-        m.allocateDenseBlock();
-        java.util.Random rng = new java.util.Random(42);
-        for (int i = 0; i < rows; i++)
-            for (int j = 0; j < cols; j++)
-                m.set(i, j, rng.nextGaussian() * 10);
-        m.examSparsity();
-        return m;
-    }
+	private MatrixBlock createRandomMatrix(int rows, int cols) {
+		MatrixBlock m = new MatrixBlock(rows, cols, false);
+		m.allocateDenseBlock();
+		java.util.Random rng = new java.util.Random(42);
+		for(int i = 0; i < rows; i++)
+			for(int j = 0; j < cols; j++)
+				m.set(i, j, rng.nextGaussian() * 10);
+		m.examSparsity();
+		return m;
+	}
 }

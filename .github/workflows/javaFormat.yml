@@ -21,11 +21,12 @@
 
 name: Java Format
 
-# Only the Java files changed by a pull request are checked: the Eclipse
-# formatter (dev/CodeStyle_eclipse.xml) is applied to them and the job fails if
-# that produces any change. The existing tree is not yet fully formatter-clean,
-# so validating everything would fail unrelated PRs; scoping to the diff keeps
-# the check actionable and lets the codebase converge file-by-file.
+# Only the exact lines a pull request edits are checked: the Eclipse formatter
+# (dev/CodeStyle_eclipse.xml) is applied and the job fails only if it would
+# change a line the PR touched. The existing tree is not yet fully
+# formatter-clean, so validating whole files (let alone the whole tree) would
+# fail unrelated PRs; scoping to the edited lines keeps the check actionable and
+# lets the codebase converge line-by-line.
 
 on:
   pull_request:
@@ -55,48 +56,18 @@ jobs:
         java-version: '17'
         cache: 'maven'
 
-    - name: Determine changed Java files
-      id: changed
+    - name: Check formatting of PR-edited lines
       env:
         BASE_SHA: ${{ github.event.pull_request.base.sha }}
       run: |
-        # PR changes = diff between the merge-base and HEAD, limited to still
-        # present (.java) files under the two maven source roots.
-        INCLUDES=$(git diff --name-only --diff-filter=ACMR "$BASE_SHA"...HEAD \
-          | grep -E '^src/(main|test)/java/.+\.java$' \
-          | sed -E 's#^src/(main|test)/java/##' \
-          | paste -sd, - || true)
-        echo "includes=$INCLUDES" >> "$GITHUB_OUTPUT"
-        if [ -z "$INCLUDES" ]; then
-          echo "No changed Java source files to check."
-        else
-          echo "Checking formatting of:"
-          echo "$INCLUDES" | tr ',' '\n' | sed 's/^/  /'
+        # Fails only if the Eclipse formatter would change a line this PR edited.
+        # See dev/format_changed.py for the line-scoping logic.
+        if ! python3 dev/format_changed.py --check "$BASE_SHA"; then
+          echo "::error::Some lines edited by this PR are not formatted per dev/CodeStyle_eclipse.xml."
+          echo "Fix only your edited lines locally and commit the result:"
+          echo ""
+          echo "  dev/format-changed.sh"
+          echo ""
+          echo "(Do NOT run a bare 'mvn formatter:format' -- it reformats the whole tree.)"
+          exit 1
         fi
-
-    - name: Apply Eclipse formatter to changed files
-      if: steps.changed.outputs.includes != ''
-      run: |
-        mvn -ntp -B \
-          net.revelc.code.formatter:formatter-maven-plugin:2.24.1:format \
-          -Dconfigfile="$PWD/dev/CodeStyle_eclipse.xml" \
-          -Dmaven.compiler.source=17 -Dmaven.compiler.target=17 \
-          -Dformatter.includes="${{ steps.changed.outputs.includes }}"
-
-    - name: Fail if formatting changed anything
-      if: steps.changed.outputs.includes != ''
-      run: |
-        if git diff --quiet; then
-          echo "All changed Java files are correctly formatted."
-          exit 0
-        fi
-        echo "::error::Some changed Java files are not formatted per dev/CodeStyle_eclipse.xml."
-        echo "Format only your changed files locally and commit the result:"
-        echo ""
-        echo "  dev/format-changed.sh"
-        echo ""
-        echo "(Do NOT run a bare 'mvn formatter:format' -- it reformats the whole tree.)"
-        echo ""
-        echo "Required formatting changes (apply this diff):"
-        git --no-pager diff
-        exit 1

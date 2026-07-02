@@ -42,17 +42,18 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.RightIndex;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
-import org.apache.sysds.runtime.compress.CompressionConfig;
-import org.apache.sysds.runtime.compress.CompressionFactory;
-import org.apache.sysds.runtime.compress.CompressionType;
-import org.apache.sysds.runtime.compress.CompressedMatrix;
-import org.apache.sysds.runtime.compress.MatrixCompressor;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionConfig;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionFactory;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionType;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressedMatrix;
+import org.apache.sysds.runtime.controlprogram.federated.compression.MatrixCompressor;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem;
@@ -147,7 +148,7 @@ public class FederationMap {
 
 		// === COMPRESSION INTEGRATION ===
 		// Attempt TopK compression if the block is a MatrixBlock
-		if(cb instanceof MatrixBlock) {
+		if(DMLScript.FEDERATED_COMPRESSION && cb instanceof MatrixBlock) {
 			try {
 				CompressionConfig config = CompressionConfig.builder()
 					.enable(true)

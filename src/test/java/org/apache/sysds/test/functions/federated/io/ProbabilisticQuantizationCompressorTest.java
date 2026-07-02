@@ -1,53 +1,63 @@
-package org.apache.sysds.runtime.compress.Quantization;
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 
-import org.apache.sysds.runtime.compress.CompressedMatrix;
-import org.apache.sysds.runtime.compress.CompressionType;
+package org.apache.sysds.test.functions.federated.io;
+
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressedMatrix;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionType;
+import org.apache.sysds.runtime.controlprogram.federated.compression.Quantization.ProbabilisticQuantizationCompressor;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-/**
- * Unit tests for ProbabilisticQuantizationCompressor.
- * Verifies compression ratio, reconstruction accuracy,
- * unbiasedness property, and edge case handling.
- *
- *
- */
-public class ProbabilisticQuantizationCompressorTest {
+public class ProbabilisticQuantizationCompressorTest extends AutomatedTestBase {
+
+    @Override
+    public void setUp() {}
+
+    @Override
+    public void tearDown() {}
 
     // -----------------------------------------------------------------------
-    // Basic compression / decompression
+    // Basic properties (merged from testCompressionTypeIsProbabilisticQuantization,
+    // testDimensionsPreservedAfterDecompression, testReconstructedValuesWithinOriginalRange,
+    // testCompressionRatio4Bit)
     // -----------------------------------------------------------------------
 
     @Test
-    public void testCompressionTypeIsProbabilisticQuantization() throws Exception {
-        MatrixBlock input = createRandomMatrix(4, 4);
-        ProbabilisticQuantizationCompressor compressor =
-            new ProbabilisticQuantizationCompressor(4);
-        CompressedMatrix compressed = compressor.compress(input);
-        assertEquals(CompressionType.PROBABILISTIC_QUANTIZATION, compressed.getType());
-    }
-
-    @Test
-    public void testDimensionsPreservedAfterDecompression() throws Exception {
+    public void testQuantizationBasicProperties() throws Exception {
         MatrixBlock input = createRandomMatrix(10, 20);
         ProbabilisticQuantizationCompressor compressor =
             new ProbabilisticQuantizationCompressor(4);
         CompressedMatrix compressed = compressor.compress(input);
-        MatrixBlock result = compressor.decompress(compressed);
 
+        assertEquals(CompressionType.PROBABILISTIC_QUANTIZATION, compressed.getType());
+
+        MatrixBlock result = compressor.decompress(compressed);
         assertEquals(10, result.getNumRows());
         assertEquals(20, result.getNumColumns());
-    }
-
-    @Test
-    public void testReconstructedValuesWithinOriginalRange() throws Exception {
-        MatrixBlock input = createRandomMatrix(20, 20);
 
         // Find original min/max
         double origMin = Double.MAX_VALUE;
         double origMax = -Double.MAX_VALUE;
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 20; j++) {
                 double v = input.get(i, j);
                 if (v < origMin) origMin = v;
@@ -55,18 +65,16 @@ public class ProbabilisticQuantizationCompressorTest {
             }
         }
 
-        ProbabilisticQuantizationCompressor compressor =
-            new ProbabilisticQuantizationCompressor(4);
-        MatrixBlock result = compressor.decompress(compressor.compress(input));
-
         // All reconstructed values must be within [min, max]
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 20; j++) {
                 double v = result.get(i, j);
                 assertTrue("Value below min: " + v, v >= origMin - 1e-9);
                 assertTrue("Value above max: " + v, v <= origMax + 1e-9);
             }
         }
+
+        assertEquals(8.0, compressed.getCompressionRatio(), 1e-10);
     }
 
     // -----------------------------------------------------------------------
@@ -80,15 +88,6 @@ public class ProbabilisticQuantizationCompressorTest {
             new ProbabilisticQuantizationCompressor(2);
         CompressedMatrix compressed = compressor.compress(input);
         assertEquals(16.0, compressed.getCompressionRatio(), 1e-10);
-    }
-
-    @Test
-    public void testCompressionRatio4Bit() throws Exception {
-        MatrixBlock input = createRandomMatrix(10, 10);
-        ProbabilisticQuantizationCompressor compressor =
-            new ProbabilisticQuantizationCompressor(4);
-        CompressedMatrix compressed = compressor.compress(input);
-        assertEquals(8.0, compressed.getCompressionRatio(), 1e-10);
     }
 
     @Test

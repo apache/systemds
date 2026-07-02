@@ -131,6 +131,8 @@ public class DMLScript
 	public static double      GPU_MEMORY_UTILIZATION_FACTOR = 0.9;
 	// Set GPU memory allocator to use
 	public static String      GPU_MEMORY_ALLOCATOR       = "cuda";
+	// Enable/disable federated compression
+	public static boolean FEDERATED_COMPRESSION = false;
 	// Enable/disable lineage tracing
 	public static boolean     LINEAGE                    = DMLOptions.defaultOptions.lineage;
 	// Enable/disable deduplicate lineage items

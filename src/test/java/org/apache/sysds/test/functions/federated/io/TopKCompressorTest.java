@@ -1,19 +1,60 @@
-package org.apache.sysds.runtime.compress.TopK;
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 
-import org.apache.sysds.runtime.compress.CompressedMatrix;
-import org.apache.sysds.runtime.compress.CompressionType;
+package org.apache.sysds.test.functions.federated.io;
+
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressedMatrix;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionType;
+import org.apache.sysds.runtime.controlprogram.federated.compression.TopK.TopKCompressor;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-/**
- * Unit tests for TopKCompressor.
- * Verifies compression ratio, reconstruction accuracy,
- * and correct handling of edge cases.
- *
- *
- */
-public class TopKCompressorTest {
+public class TopKCompressorTest extends AutomatedTestBase {
+
+    @Override
+    public void setUp() {}
+
+    @Override
+    public void tearDown() {}
+
+    // -----------------------------------------------------------------------
+    // Basic properties (merged from testCompressionTypeIsTopK,
+    // testDimensionsPreservedAfterDecompression, testCompressionRatioIsPositive)
+    // -----------------------------------------------------------------------
+
+    @Test
+    public void testTopKBasicProperties() throws Exception {
+        MatrixBlock input = createRandomMatrix(10, 20);
+        TopKCompressor compressor = new TopKCompressor(0.1);
+        CompressedMatrix compressed = compressor.compress(input);
+
+        assertEquals(CompressionType.TOPK, compressed.getType());
+
+        MatrixBlock result = compressor.decompress(compressed);
+        assertEquals(10, result.getNumRows());
+        assertEquals(20, result.getNumColumns());
+
+        assertTrue("Compression ratio must be > 0",
+            compressed.getCompressionRatio() > 0);
+    }
 
     // -----------------------------------------------------------------------
     // Basic compression / decompression
@@ -42,37 +83,9 @@ public class TopKCompressorTest {
         assertEquals(0.0, result.get(2, 2), 1e-10);
     }
 
-    @Test
-    public void testCompressionTypeIsTopK() throws Exception {
-        MatrixBlock input = createDenseMatrix(4, 4, 1.0);
-        TopKCompressor compressor = new TopKCompressor(0.5);
-        CompressedMatrix compressed = compressor.compress(input);
-        assertEquals(CompressionType.TOPK, compressed.getType());
-    }
-
-    @Test
-    public void testDimensionsPreservedAfterDecompression() throws Exception {
-        MatrixBlock input = createRandomMatrix(10, 20);
-        TopKCompressor compressor = new TopKCompressor(0.1);
-        CompressedMatrix compressed = compressor.compress(input);
-        MatrixBlock result = compressor.decompress(compressed);
-
-        assertEquals(10, result.getNumRows());
-        assertEquals(20, result.getNumColumns());
-    }
-
     // -----------------------------------------------------------------------
     // Compression ratio
     // -----------------------------------------------------------------------
-
-    @Test
-    public void testCompressionRatioIsPositive() throws Exception {
-        MatrixBlock input = createRandomMatrix(50, 50);
-        TopKCompressor compressor = new TopKCompressor(0.01);
-        CompressedMatrix compressed = compressor.compress(input);
-        assertTrue("Compression ratio must be > 0",
-            compressed.getCompressionRatio() > 0);
-    }
 
     @Test
     public void testLowerSparsityGivesHigherRatio() throws Exception {
@@ -141,16 +154,6 @@ public class TopKCompressorTest {
         for (int i = 0; i < rows; i++)
             for (int j = 0; j < cols; j++)
                 m.set(i, j, rng.nextGaussian() * 10);
-        m.examSparsity();
-        return m;
-    }
-
-    private MatrixBlock createDenseMatrix(int rows, int cols, double fillValue) {
-        MatrixBlock m = new MatrixBlock(rows, cols, false);
-        m.allocateDenseBlock();
-        for (int i = 0; i < rows; i++)
-            for (int j = 0; j < cols; j++)
-                m.set(i, j, fillValue);
         m.examSparsity();
         return m;
     }

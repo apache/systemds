@@ -1,0 +1,79 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/optim/adagrad.dml") as adagrad
+source("src/test/scripts/applications/nn/util.dml") as test_util
+source("src/test/scripts/applications/nn/component/optim/optim_check.dml") as ch
+
+test_adagrad = function() {
+  lr = 0.1
+  epsilon = 1e-8
+
+  # the cache starts at zero, same shape as the parameters
+  X  = matrix("1 2 3  4 5 6", rows=2, cols=3)
+  c0 = adagrad::init(X)
+  test_util::check_all_close(c0, matrix(0, rows=2, cols=3), 1e-12)
+
+  # first step (cache=0): cache1 = dX^2 and X1 = X - lr*dX / (sqrt(cache1)+eps)
+  dX = matrix("0.5 -0.5 0.5  -1 1 -1", rows=2, cols=3)
+  [X1, c1] = adagrad::update(X, dX, lr, epsilon, c0)
+  test_util::check_all_close(c1, dX^2, 1e-12)
+  test_util::check_all_close(X1, X - lr*dX / (sqrt(dX^2) + epsilon), 1e-12)
+  ch::check_finite(X1, "adagrad/finite")
+
+  # a zero gradient leaves both the parameters and the cache untouched
+  [Xz, cz] = adagrad::update(X, matrix(0, rows=2, cols=3), lr, epsilon, c0)
+  test_util::check_all_close(Xz, X, 1e-12)
+  test_util::check_all_close(cz, c0, 1e-12)
+
+  # the cache accumulates squared gradients, so it never shrinks; a second
+  # step with the same gradient must have cache2 = cache1 + dX^2
+  [X2, c2] = adagrad::update(X1, dX, lr, epsilon, c1)
+  if (min(c2 - c1) < 0) {
+    test_util::fail("adagrad/cache_nondecreasing: cache shrank between steps")
+  }
+  test_util::check_all_close(c2, c1 + dX^2, 1e-12)
+  test_util::check_all_close(X2, X1 - lr*dX / (sqrt(c2) + epsilon), 1e-12)
+
+  # the growing cache shrinks the effective learning rate, so with a constant
+  # gradient the second update should move the parameters less than the first
+  if (max(abs(X2 - X1)) >= max(abs(X1 - X))) {
+    test_util::fail("adagrad/step_shrinks: second step did not shrink vs. first")
+  }
+
+  # minimizing 0.5*||W||^2 (its gradient is just W) should drive the loss down
+  # to well below its starting value; adagrad needs a larger lr than sgd here
+  # because the cache damps the effective step size
+  W = matrix("3 -4 5  -6 7 -8", rows=2, cols=3)
+  cache = adagrad::init(W)
+  init_loss = 0.5 * sum(W^2)
+  losses = matrix(0, rows=300, cols=1)
+  for (i in 1:300) {
+    [W, cache] = adagrad::update(W, W, 0.5, epsilon, cache)
+    losses[i,] = 0.5 * sum(W^2)
+  }
+  ch::check_decreasing(losses, "adagrad/descent")
+  if (0.5 * sum(W^2) >= 0.01 * init_loss) {
+    test_util::fail("adagrad/converged: loss was not reduced enough")
+  }
+}
+
+test_adagrad()

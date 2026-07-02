@@ -20,25 +20,46 @@
 package org.apache.sysds.test.functions.io.parquet;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.util.Map;
 
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
-import org.apache.sysds.runtime.frame.data.columns.Array;
-import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.io.FrameReaderParquet;
 import org.apache.sysds.runtime.io.FrameReaderParquetParallel;
 import org.apache.sysds.runtime.io.FrameWriterParquet;
 import org.apache.sysds.runtime.io.FrameWriterParquetParallel;
 import org.apache.sysds.test.functions.io.parquet.ParquetTestUtils.ParquetMetadataInfo;
 import org.junit.After;
-import org.junit.Assert;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class WriteParquetTest {
 
 	private static final String TEMP_FILE     = System.getProperty("java.io.tmpdir") + "/systemds_write_parquet_test.parquet";
 	private static final String TEMP_PAR_PATH = System.getProperty("java.io.tmpdir") + "/systemds_write_parquet_test_par";
+
+	// See ParquetTestUtils.generatePublicTestFiles(): these are generated with Spark's DataFrameWriter 
+	private static File testFileDir;
+	private static String[] PUBLIC_FILES;
+
+	@BeforeClass
+	public static void generateTestFiles() throws Exception {
+		testFileDir = Files.createTempDirectory("systemds_parquet_public_test_files").toFile();
+		Map<String, String> files = ParquetTestUtils.generatePublicTestFiles(testFileDir);
+		PUBLIC_FILES = new String[] { files.get("userdata1"), files.get("alltypes_plain"), files.get("all") };
+	}
+
+	@AfterClass
+	public static void cleanupTestFiles() {
+		File[] children = testFileDir.listFiles();
+		if (children != null)
+			for (File f : children)
+				f.delete();
+		testFileDir.delete();
+	}
 
 	@After
 	public void cleanup() {
@@ -54,13 +75,7 @@ public class WriteParquetTest {
 
 	@Test
 	public void testRoundtripPublicFiles() throws Exception {
-		String[] files = {
-			"src/test/resources/datasets/parquet/userdata1.parquet",
-			"src/test/resources/datasets/parquet/alltypes_plain.parquet",
-			"src/test/resources/datasets/parquet/all.parquet"
-		};
-
-		for (String filename : files) {
+		for (String filename : PUBLIC_FILES) {
 			ParquetMetadataInfo info = ParquetTestUtils.inferMetadata(filename);
 
 			FrameReaderParquet reader = new FrameReaderParquet();

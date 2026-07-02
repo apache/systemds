@@ -22,6 +22,7 @@ package org.apache.sysds.test.functions.io.parquet;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.sysds.common.Types.ValueType;
@@ -32,16 +33,32 @@ import org.apache.sysds.runtime.io.FrameWriterParquet;
 import org.apache.sysds.runtime.io.FrameWriterParquetParallel;
 import org.apache.sysds.test.functions.io.parquet.ParquetTestUtils.ParquetMetadataInfo;
 import org.apache.sysds.test.TestUtils;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class ReadParquetTest {
 
-	private static final String[] FILENAMES = {
-		"src/test/resources/datasets/parquet/userdata1.parquet",           // https://github.com/duckdb/duckdb/blob/main/data/parquet-testing/userdata1.parquet
-		"src/test/resources/datasets/parquet/alltypes_plain.parquet",      // https://github.com/apache/parquet-testing/blob/master/data/alltypes_plain.parquet
-		"src/test/resources/datasets/parquet/all.parquet"                  // https://huggingface.co/datasets/cardiffnlp/databench/blob/main/data/002_Titanic/all.parquet
-	};
+	// Generated once per test class with Spark's DataFrameWriter
+	private static File testFileDir;
+	private static String[] FILENAMES;
+
+	@BeforeClass
+	public static void generateTestFiles() throws Exception {
+		testFileDir = Files.createTempDirectory("systemds_parquet_public_test_files").toFile();
+		Map<String, String> files = ParquetTestUtils.generatePublicTestFiles(testFileDir);
+		FILENAMES = new String[] { files.get("userdata1"), files.get("alltypes_plain"), files.get("all") };
+	}
+
+	@AfterClass
+	public static void cleanupTestFiles() {
+		File[] children = testFileDir.listFiles();
+		if (children != null)
+			for (File f : children)
+				f.delete();
+		testFileDir.delete();
+	}
 
 	@Test
 	public void testReadParquet() throws Exception {
@@ -58,8 +75,8 @@ public class ReadParquetTest {
 
 	@Test
 	public void testInt96ColumnsDecodedCorrectly() throws Exception {
-		assertColumnIsEpochMillis("src/test/resources/datasets/parquet/userdata1.parquet", 0);
-		assertColumnIsEpochMillis("src/test/resources/datasets/parquet/alltypes_plain.parquet", 10);
+		assertColumnIsEpochMillis(FILENAMES[0], 0);  // userdata1: registration_dttm
+		assertColumnIsEpochMillis(FILENAMES[1], 9);  // alltypes_plain: timestamp_col
 	}
 
 	private void assertColumnIsEpochMillis(String filename, int colIdx) throws Exception {

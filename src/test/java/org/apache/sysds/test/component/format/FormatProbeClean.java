@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,34 +17,28 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime;
-
-import org.apache.sysds.api.DMLException;
+package org.apache.sysds.test.component.format;
 
 /**
- * This exception should be thrown to flag runtime errors -- DML equivalent to java.lang.RuntimeException.
+ * Temporary probe used to verify the Java Format CI check: this file is written to comply with
+ * dev/CodeStyle_eclipse.xml and should therefore NOT be flagged.
  */
-public class DMLRuntimeException extends DMLException 
-{
-	private static final long serialVersionUID = 1L;
+public class FormatProbeClean {
 
-	public static DMLRuntimeException of(Throwable t) {
-		return t instanceof DMLRuntimeException ? (DMLRuntimeException) t : new DMLRuntimeException(t);
+	public int add(int a, int b) {
+		int result = a + b;
+		return result;
 	}
 
-	public DMLRuntimeException(String string) {
-		super(string);
-	}
-	
-	public DMLRuntimeException(Throwable e) {
-		super(e);
+	public String describe(int a, int b) {
+		return "sum=" + add(a, b);
 	}
 
-	public DMLRuntimeException(String string, Exception ex){
-		super(string,ex);
+	public int sub(int a, int b) {
+		return a - b;
 	}
 
-	public String describe(int code) {
-		return "DMLRuntimeException code="+code+", message="+getMessage() ;
+	public int  div( int a,int b ){
+		return a/b ;
 	}
 }

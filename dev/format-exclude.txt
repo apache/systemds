@@ -1,0 +1,14 @@
+# Files exempt from the Java Format check (dev/format_changed.py).
+#
+# One pattern per line; blank lines and lines starting with '#' are ignored.
+# Each pattern is matched (glob / fnmatch) against the repo-relative path AND
+# against the bare file name, so both of these work:
+#
+#   src/main/java/org/apache/sysds/conf/DMLConfig.java
+#   *DMLConfig.java
+#
+# Use this only for files whose non-standard layout is intentional and must not
+# be reformatted (e.g. hand-aligned tables of constants).
+
+# Hand-aligned configuration constants; intentional non-standard formatting.
+src/main/java/org/apache/sysds/conf/DMLConfig.java

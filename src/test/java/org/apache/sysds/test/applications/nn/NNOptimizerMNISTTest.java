@@ -32,7 +32,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(value = Parameterized.class)
-@net.jcip.annotations.NotThreadSafe // test is flaky because LocalFileUtils::createWorkingDirectory creates non-unique tmp dir
+@net.jcip.annotations.NotThreadSafe
 public class NNOptimizerMNISTTest extends TestFolder {
   /*
    * TODO: add instruction how to add optimizer + architecture

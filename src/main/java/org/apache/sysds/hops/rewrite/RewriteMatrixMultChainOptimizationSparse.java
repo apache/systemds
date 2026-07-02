@@ -111,10 +111,8 @@ public class RewriteMatrixMultChainOptimizationSparse extends RewriteMatrixMultC
 					}
 				}
 
-				if( LOG.isTraceEnabled() ){
+				if(LOG.isTraceEnabled())
 					LOG.trace("mmchainoptsparse [i="+(i+1)+",j="+(j+1)+"]: costs = "+dpMatrix[i][j]+", split = "+(split[i][j]+1));
-					System.out.println("mmchainoptsparse [i="+(i+1)+",j="+(j+1)+"]: costs = "+dpMatrix[i][j]+", split = "+(split[i][j]+1));
-				}
 			}
 		}
 

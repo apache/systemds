@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.rewrite;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.log4j.spi.LoggingEvent;
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
@@ -28,17 +29,18 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.test.LoggingUtils;
+import org.apache.sysds.test.LoggingUtils.TestAppender;
 
 import org.junit.Assert;
 import org.junit.runners.Parameterized;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
@@ -123,7 +125,10 @@ public class RewriteMatrixMultChainOptSparseTest extends AutomatedTestBase {
 
 
 			//execute tests
-			ByteArrayOutputStream stdout = this.runTestCatchStdout();
+			TestAppender appender = LoggingUtils.overwrite(); // capture log output
+			runTest(true, false, null, -1);
+			List<LoggingEvent> log_out = LoggingUtils.reinsert(appender); // revert the logger to print to stdout
+
 			runRScript(true);
 
 			//compare matrices
@@ -132,12 +137,14 @@ public class RewriteMatrixMultChainOptSparseTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			if(rewrites) {
-				Assert.assertTrue(bufferContainsString(stdout, "mmchainoptsparse"));
+				Assert.assertTrue(log_out.stream().anyMatch(
+					l -> l.getMessage().toString().contains("mmchainoptsparse")));
 				Assert.assertTrue(heavyHittersContainsSubString(Opcodes.MMCHAIN.toString()) ||
 					heavyHittersContainsSubString("sp_mapmmchain"));
 			}
 			else {
-				Assert.assertFalse(bufferContainsString(stdout, "mmchainopt"));
+				Assert.assertFalse(log_out.stream().anyMatch(
+					l -> l.getMessage().toString().contains("mmchainoptsparse")));
 				Assert.assertFalse(heavyHittersContainsSubString(Opcodes.MMCHAIN.toString()) ||
 					heavyHittersContainsSubString("sp_mapmmchain"));
 			}
@@ -147,16 +154,5 @@ public class RewriteMatrixMultChainOptSparseTest extends AutomatedTestBase {
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = oldFlag2;
 			Recompiler.reinitRecompiler();
 		}
-	}
-
-	private ByteArrayOutputStream runTestCatchStdout() {
-		ByteArrayOutputStream buff = new ByteArrayOutputStream();
-		PrintStream ps = new PrintStream(buff);
-		PrintStream old = System.out;
-		System.setOut(ps);
-		runTest(true, false, null, -1);
-		System.out.flush();
-		System.setOut(old);
-		return buff;
 	}
 }

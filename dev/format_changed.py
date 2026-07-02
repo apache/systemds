@@ -35,6 +35,7 @@
 # Usage: dev/format_changed.py [--check|--fix] [base-ref]
 #
 import difflib
+import fnmatch
 import os
 import re
 import subprocess
@@ -42,11 +43,28 @@ import sys
 
 FMT_VERSION = "2.24.1"
 CONFIG = "dev/CodeStyle_eclipse.xml"
+EXCLUDE_FILE = "dev/format-exclude.txt"
 SRC_RE = re.compile(r"^src/(main|test)/java/.+\.java$")
 
 
 def sh(*args, check=False):
 	return subprocess.run(args, capture_output=True, text=True, check=check).stdout
+
+
+def load_excludes():
+	# glob patterns of files exempt from the style check, one per line
+	patterns = []
+	if os.path.exists(EXCLUDE_FILE):
+		for line in open(EXCLUDE_FILE, encoding="utf-8"):
+			s = line.strip()
+			if s and not s.startswith("#"):
+				patterns.append(s)
+	return patterns
+
+
+def is_excluded(path, patterns):
+	base = os.path.basename(path)
+	return any(fnmatch.fnmatch(path, p) or fnmatch.fnmatch(base, p) for p in patterns)
 
 
 def resolve_base(explicit):
@@ -104,8 +122,17 @@ def main():
 	# include untracked new java files too (local pre-commit use)
 	files += [f for f in sh("git", "ls-files", "--others", "--exclude-standard").splitlines()
 			if SRC_RE.match(f) and f not in files]
+
+	excludes = load_excludes()
+	skipped = [f for f in files if is_excluded(f, excludes)]
+	files = [f for f in files if not is_excluded(f, excludes)]
+	if skipped:
+		print(f"Skipping style-exempt files ({EXCLUDE_FILE}):")
+		for f in skipped:
+			print(f"  {f}")
+
 	if not files:
-		print(f"No changed Java source files (base: {base}).")
+		print(f"No changed Java source files to check (base: {base}).")
 		return 0
 
 	# snapshot originals so we can format in place then restore exactly, without

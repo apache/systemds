@@ -20,34 +20,39 @@
 
 package org.apache.sysds.runtime.instructions.spark.data;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.io.Serializable;
 
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
+import org.apache.sysds.runtime.ooc.cache.io.SpillableObject;
 
-public class IndexedMatrixValue implements Serializable
+public class IndexedMatrixValue implements SpillableObject, Serializable
 {
 	private static final long serialVersionUID = 6723389820806752110L;
 
 	private MatrixIndexes _indexes = null;
 	private MatrixValue   _value = null;
-	
+
 	public IndexedMatrixValue() {
 		_indexes = new MatrixIndexes();
 	}
-	
+
 	public IndexedMatrixValue(Class<? extends MatrixValue> cls) {
 		this();
-		
+
 		//create new value object for given class
 		try {
 			_value=cls.getDeclaredConstructor().newInstance();
-		} 
+		}
 		catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public IndexedMatrixValue(MatrixIndexes ind, MatrixValue b) {
 		this();
 		_indexes.setIndexes(ind);
@@ -55,14 +60,14 @@ public class IndexedMatrixValue implements Serializable
 	}
 
 	public IndexedMatrixValue(IndexedMatrixValue that) {
-		this(that._indexes, that._value); 
+		this(that._indexes, that._value);
 	}
 
-	
+
 	public MatrixIndexes getIndexes() {
 		return _indexes;
 	}
-	
+
 	public MatrixValue getValue() {
 		return _value;
 	}
@@ -70,14 +75,38 @@ public class IndexedMatrixValue implements Serializable
 	public void setValue(MatrixValue value) {
 		_value = value;
 	}
-	
+
 	public void set(MatrixIndexes indexes2, MatrixValue block2) {
 		_indexes.setIndexes(indexes2);
 		_value = block2;
 	}
-	
+
 	@Override
 	public String toString() {
 		return "("+_indexes.getRowIndex()+", "+_indexes.getColumnIndex()+"): \n"+_value;
+	}
+
+	@Override
+	public boolean tryWrite(DataOutput dataOutput) throws IOException {
+		MatrixIndexes ix = _indexes;
+		MatrixValue value = _value;
+		if(ix == null || value == null)
+			return false;
+		ix.write(dataOutput);
+		value.write(dataOutput);
+		return true;
+	}
+
+	@Override
+	public void discard() {
+		_value = null;
+	}
+
+	@Override
+	public void read(DataInput dataInput) throws IOException {
+		_indexes = new  MatrixIndexes();
+		_value = new  MatrixBlock();
+		_indexes.readFields(dataInput);
+		_value.readFields(dataInput);
 	}
 }

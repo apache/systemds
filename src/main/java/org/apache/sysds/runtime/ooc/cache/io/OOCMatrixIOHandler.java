@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.ooc.cache;
+package org.apache.sysds.runtime.ooc.cache.io;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.hadoop.fs.FileSystem;
@@ -32,6 +32,8 @@ import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.io.MatrixReader;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.ooc.cache.BlockEntry;
+import org.apache.sysds.runtime.ooc.cache.BlockKey;
 import org.apache.sysds.runtime.ooc.stats.OOCEventLog;
 import org.apache.sysds.runtime.ooc.stream.SourceOOCStream;
 import org.apache.sysds.runtime.util.FastBufferedDataInputStream;

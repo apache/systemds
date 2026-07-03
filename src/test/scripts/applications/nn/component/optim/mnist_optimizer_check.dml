@@ -36,3 +36,29 @@ dX = rand(rows=4, cols=3, min=-0.1, max=0.1, seed=13)
 state = optimizer::init_state(X)
 [X_upd, state] = optimizer::update_state(X, dX, lr, state, mu, decay_rate,
     epsilon, beta1, beta2, lambda, trust_coeff)
+
+input = 784
+hidden = 100
+output = 10
+
+mnist_dataset = read("src/test/resources/datasets/MNIST/mnist_test.csv", format="csv", header=TRUE)
+mnist_dataset_len = nrow(mnist_dataset)
+
+mnist_labels = mnist_dataset[, 1]
+mnist_labels = table(seq(1, mnist_dataset_len), mnist_labels + 1, mnist_dataset_len, output)
+mnist_pixels = mnist_dataset[, 2:ncol(mnist_dataset)] / 255.0
+
+# 90% train-, 10% testdata
+n_train = floor(mnist_dataset_len * 0.9)
+n_test = mnist_dataset_len-n_train
+print(n_test)
+
+train_labels = mnist_labels[1:n_train, ]
+train_pixels = mnist_pixels[1:n_train, ]
+test_labels = mnist_labels[(n_train+1):mnist_dataset_len, ]
+test_pixels = mnist_pixels[(n_train+1):mnist_dataset_len, ]
+print(nrow(test_pixels))
+print(nrow(train_pixels))
+
+print(test_labels[1,])
+print(sum(test_pixels[1,] > 0))

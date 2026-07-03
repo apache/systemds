@@ -43,8 +43,4 @@ public class DMLRuntimeException extends DMLException
 	public DMLRuntimeException(String string, Exception ex){
 		super(string,ex);
 	}
-
-	public String describe(int code) {
-		return "DMLRuntimeException code="+code+", message="+getMessage() ;
-	}
 }

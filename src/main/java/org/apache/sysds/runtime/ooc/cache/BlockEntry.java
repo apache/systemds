@@ -32,7 +32,7 @@ public final class BlockEntry {
 	private int _retainHintCount;
 	private int _referenceCount; // The number of references from different managing instances (e.g. CachingStream)
 
-	BlockEntry(BlockKey key, long size, Object data) {
+	public BlockEntry(BlockKey key, long size, Object data) {
 		this._key = key;
 		this._size = size;
 		this._pinCount = 0;
@@ -68,11 +68,11 @@ public final class BlockEntry {
 		throw new IllegalStateException("Cannot get the data of an unpinned entry");
 	}
 
-	Object getDataUnsafe() {
+	public Object getDataUnsafe() {
 		return _data;
 	}
 
-	void setDataUnsafe(Object data) {
+	public void setDataUnsafe(Object data) {
 		if(data != null && _data != null)
 			throw new IllegalStateException("Cannot overwrite data");
 		_data = data;
@@ -86,15 +86,15 @@ public final class BlockEntry {
 		return _pinCount > 0;
 	}
 
-	synchronized int addReference() {
+	public synchronized int addReference() {
 		return ++_referenceCount;
 	}
 
-	synchronized int forget() {
+	public synchronized int forget() {
 		return --_referenceCount;
 	}
 
-	synchronized void setState(BlockState state) {
+	public synchronized void setState(BlockState state) {
 		_state = state;
 	}
 
@@ -126,7 +126,7 @@ public final class BlockEntry {
 	 * Tries to clear the underlying data if it is not pinned
 	 * @return the number of cleared bytes (or 0 if could not clear or data was already cleared)
 	 */
-	synchronized long clear() {
+	public synchronized long clear() {
 		if (_pinCount != 0 || _data == null)
 			return 0;
 		if (_data instanceof IndexedMatrixValue)
@@ -140,7 +140,7 @@ public final class BlockEntry {
 	 * Pins the underlying data in memory
 	 * @return the new number of pins (0 if pin was unsuccessful)
 	 */
-	synchronized int pin() {
+	public synchronized int pin() {
 		if (_data == null)
 			return 0;
 		_pinCount++;
@@ -151,7 +151,7 @@ public final class BlockEntry {
 	 * Tries to increment pin-count if already pinned. Unpinned entries are not affected
 	 * by this operation. This allows bypassing the global cache lock.
 	 */
-	synchronized boolean fastPin() {
+	public synchronized boolean fastPin() {
 		if(_pinCount == 0)
 			return false;
 		_pinCount++;
@@ -162,7 +162,7 @@ public final class BlockEntry {
 	 * Unpins the underlying data
 	 * @return true if the data is now unpinned
 	 */
-	synchronized boolean unpin() {
+	public synchronized boolean unpin() {
 		if (_pinCount <= 0)
 			throw new IllegalStateException("Cannot unpin data if it was not pinned");
 		_pinCount--;
@@ -173,7 +173,7 @@ public final class BlockEntry {
 	 * Tries to unpin but guarantees that it will not
 	 * remove the last pin. This allows bypassing the global cache lock.
 	 */
-	synchronized boolean fastUnpin() {
+	public synchronized boolean fastUnpin() {
 		if(_pinCount <= 1)
 			return false;
 		_pinCount--;

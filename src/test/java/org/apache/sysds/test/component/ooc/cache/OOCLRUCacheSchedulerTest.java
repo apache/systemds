@@ -25,7 +25,7 @@ import org.apache.sysds.runtime.ooc.cache.BlockEntry;
 import org.apache.sysds.runtime.ooc.cache.BlockKey;
 import org.apache.sysds.runtime.ooc.cache.BlockState;
 import org.apache.sysds.runtime.ooc.cache.OOCIOHandler;
-import org.apache.sysds.runtime.ooc.cache.OOCLRUCacheScheduler;
+import org.apache.sysds.runtime.ooc.cache.legacy.OOCLRUCacheScheduler;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

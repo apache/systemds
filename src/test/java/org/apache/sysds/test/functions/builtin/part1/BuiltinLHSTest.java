@@ -63,24 +63,33 @@ public class BuiltinLHSTest extends AutomatedTestBase
 	
 	@Test
 	public void testRandomTwoDim() {
-		runLhsTest(5,2,5,"random");
+		runLhsTest(5,2,5,"random","opt");
 	}
 
 	@Test
 	public void testRandomMultiDim() {
-		runLhsTest(10,4,5,"random");
+		runLhsTest(10,4,5,"random","opt");
 	}
 
 	@Test
 	public void testImproved() {
-		runLhsTest(10,4,5,"improved");
+		runLhsTest(10,4,5,"build","opt");
+	}
+	@Test
+	public void testSumInv() {
+		runLhsTest(10,4,5,"build","sum_inv");
 	}
 	@Test
 	public void testMaximin() {
-		runLhsTest(10,4,5,"maximin");
+		runLhsTest(10,4,5,"build","maximin");
 	}
 
-	private void runLhsTest(int N,int d, int repetitions, String method)
+	@Test
+	public void testCPsweep() {
+		runLhsTest(10,4,5,"cp_sweep","sum_inv");
+	}
+
+	private void runLhsTest(int N,int d, int repetitions, String method, String goal)
 	{
 		ExecMode platformOld = setExecMode(ExecMode.HYBRID);
 
@@ -89,7 +98,7 @@ public class BuiltinLHSTest extends AutomatedTestBase
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", Integer.toString(N), Integer.toString(d), Integer.toString(repetitions), method ,output("C")};
+			programArgs = new String[]{"-args", Integer.toString(N), Integer.toString(d), Integer.toString(repetitions), method, goal, output("C")};
 
 			//execute test
 			runTest(true, false, null, -1);

@@ -23,5 +23,6 @@ N = $1
 d = $2
 reps = $3
 method = $4
-M = lhs(N = N,d = d,random_repetitions = reps, method = method)
-write(M, $5)
+goal = $5
+M = lhs(N = N,d = d,reps = reps, method = method, goal = goal)
+write(M, $6)

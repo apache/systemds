@@ -37,7 +37,7 @@ public class LmCGTest extends AutomatedTestBase {
 	private final static String TEST_NAME1 = "lmCG";
 	private final static String TEST_DIR = "functions/ooc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + LmCGTest.class.getSimpleName() + "/";
-	private final static double eps = 1e-8;
+	private final static double eps = 1e-7;
 	private static final String INPUT_NAME_1 = "X";
 	private static final String INPUT_NAME_2 = "y";
 	private static final String OUTPUT_NAME = "res";

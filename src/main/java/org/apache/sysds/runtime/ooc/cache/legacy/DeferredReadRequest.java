@@ -17,7 +17,9 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.ooc.cache;
+package org.apache.sysds.runtime.ooc.cache.legacy;
+
+import org.apache.sysds.runtime.ooc.cache.BlockEntry;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

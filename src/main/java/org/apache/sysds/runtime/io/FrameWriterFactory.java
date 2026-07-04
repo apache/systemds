@@ -52,6 +52,8 @@ public class FrameWriterFactory {
 				return new FrameWriterProto();
 			case PARQUET:
 				return binaryParallel ? new FrameWriterParquetParallel() : new FrameWriterParquet();
+			case DELTA:
+				return new FrameWriterDelta();
 			default:
 				throw new DMLRuntimeException("Failed to create frame writer for unknown format: " + fmt.toString());
 		}

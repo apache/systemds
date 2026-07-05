@@ -88,7 +88,10 @@ public class BuiltinLHSTest extends AutomatedTestBase
 	public void testCPsweep() {
 		runLhsTest(10,4,5,"cp_sweep","sum_inv");
 	}
-
+	@Test
+	public void testGenetic() {
+		runLhsTest(10,4,5,"genetic","sum_inv");
+	}
 	private void runLhsTest(int N,int d, int repetitions, String method, String goal)
 	{
 		ExecMode platformOld = setExecMode(ExecMode.HYBRID);

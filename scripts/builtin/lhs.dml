@@ -25,9 +25,14 @@
 # 
 # INPUT:
 # -------------------------------------------------------------------------------------------------
-# N      The number of samples to be taken
-# d      The number of dimension
-#         
+# N                         Number of samples to be taken
+# d                         Number of dimensions
+# method                    Method to be used for sampling ("random", "improved", "maximin" or "genetic")
+# random_repetitions        Number of random repetitions
+# genetic_generations       Number of generations ("genetic" method)
+# genetic_population_size   Size of the population ("genetic" method)
+# genetic_mutation_rate     Mutation rate, between 0 and 1 ("genetic" method)
+# 
 # -------------------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -42,7 +47,41 @@ minLhsDistance = function(Matrix[Double] M)
     minD = min(D)
   }
 
-lhs = function(Integer N = 10, Integer d = 2, String method = "random", Integer random_repetitions = 1)
+sOptimality = function(Matrix[Double] M)
+  return (Double score) {
+    D = dist(M)
+    score = sum(D) / (nrow(M) * (nrow(M) - 1))
+  }
+
+designStart = function(Integer index, Integer N)
+  return (Integer start) {
+    start = (index - 1) * N + 1
+  }
+designEnd = function(Integer index, Integer N)
+  return (Integer end) {
+    end = index * N
+  }
+getDesignByIndex = function(Matrix[Double] population, Integer index, Integer N)
+  return (Matrix[Double] design) {
+    start = designStart(index, N)
+    end = designEnd(index, N)
+    design = population[start:end,]
+  }
+attemptGeneticMutation = function(Matrix[Double] design, Double mutation_rate)
+  return (Matrix[Double] design) {
+  if (as.scalar(rand(rows=1, cols=1, min=0, max=1)) < mutation_rate) {
+    column_to_mutate = as.scalar(sample(ncol(design), 1))
+    rows_to_mutate = sample(nrow(design), 2)
+    row1 = as.scalar(rows_to_mutate[1,1])
+    row2 = as.scalar(rows_to_mutate[2,1])
+
+    tmp = design[row1, column_to_mutate]
+    design[row1, column_to_mutate] = design[row2, column_to_mutate]
+    design[row2, column_to_mutate] = tmp
+    }
+  }
+
+lhs = function(Integer N = 10, Integer d = 2, String method = "random", Integer random_repetitions = 1, Integer genetic_generations = 5, Integer genetic_population_size = 10, Double genetic_mutation_rate = 0.25)
   return (Matrix[Double] M) {
 
     if (method == "random"){
@@ -171,4 +210,91 @@ lhs = function(Integer N = 10, Integer d = 2, String method = "random", Integer 
       M = rbind(M,available_coords[1,])
     }
     
+    # Reference: https://bertcarnell.github.io/lhs/reference/geneticLHS.html
+    else if (method == "genetic") {
+      population = matrix(0, rows=genetic_population_size*N, cols=d)
+      scores = matrix(0, rows=genetic_population_size, cols=1)
+
+      # 1. Generate initial random Latin Hypercube designs and store them all in the population matrix
+      for (p in 1:genetic_population_size) {
+        design = lhs(N = N, d = d, method = "random", random_repetitions = random_repetitions)
+        population_start = designStart(p, N)
+        population_end = designEnd(p, N)
+        population[population_start:population_end,] = design
+
+        # 2. Calculate the S-optimality score for each design
+        scores[p,1] = sOptimality(design)
+      }
+
+      for (generation in 1:genetic_generations) {
+        # 3. Put the best design in the first position of survivors and throw away the worst half of the remaining population
+        survivors_cutoff = floor(genetic_population_size / 2) + 1
+        survivors = matrix(0, rows=survivors_cutoff * N, cols=d)
+        for (survivor in 1:survivors_cutoff) {
+          current_best_index = as.scalar(rowIndexMax(t(scores)))
+          current_best_design = getDesignByIndex(population, current_best_index, N)
+
+          # Put the current best design in the survivors matrix, then set its score to -inf so that it is not selected again
+          survivors_start = designStart(survivor, N)
+          survivors_end = designEnd(survivor, N)
+          survivors[survivors_start:survivors_end,] = current_best_design
+          scores[current_best_index, 1] = -1/0
+        }
+
+        # 4. Create new designs from the survivors
+        new_population = matrix(0, rows=genetic_population_size * N, cols=d)
+        best_design = survivors[1:N,]
+        new_population[1:N,] = best_design
+        next_free_slot = 2
+
+        # 4.1: First: use each other survivor as base and replace one of its columns with a random column from the best design.
+        for (survivor_index in 2:survivors_cutoff) {
+          new_design = getDesignByIndex(survivors, survivor_index, N)
+          source_col = as.scalar(sample(d, 1))
+          target_col = as.scalar(sample(d, 1))
+          new_design[,target_col] = best_design[,source_col]
+
+          # 5. Attempt to mutate the child design by switching two elements in a random column.
+          new_design = attemptGeneticMutation(new_design, genetic_mutation_rate)
+
+          # Store the generated child design in the new population
+          new_population_start = designStart(next_free_slot, N)
+          new_population_end = designEnd(next_free_slot, N)
+          new_population[new_population_start:new_population_end,] = new_design
+          next_free_slot = next_free_slot + 1
+        }
+
+        # 4.2: For the empty positions, use the best design as base and replace one column with one from a survivor.
+        for (survivor_index in 2:survivors_cutoff) {
+          if (next_free_slot <= genetic_population_size) {
+            source_design = getDesignByIndex(survivors, survivor_index, N)
+            new_design = best_design
+            source_col = as.scalar(sample(d, 1))
+            target_col = as.scalar(sample(d, 1))
+            new_design[,target_col] = source_design[,source_col]
+
+            # 5. Attempt to mutate the child design by switching two elements in a random column.
+            new_design = attemptGeneticMutation(new_design, genetic_mutation_rate)
+
+            # Store the generated child design in the new population
+            new_population_start = designStart(next_free_slot, N)
+            new_population_end = designEnd(next_free_slot, N)
+            new_population[new_population_start:new_population_end,] = new_design
+            next_free_slot = next_free_slot + 1
+          }
+        }
+
+        population = new_population
+
+        # Score the new population
+        for (p in 1:genetic_population_size) {
+          design = getDesignByIndex(population, p, N)
+          scores[p,1] = sOptimality(design)
+        }
+      }
+
+      # Return the best design from the final population
+      best_index = as.scalar(rowIndexMax(t(scores)))
+      M = getDesignByIndex(population, best_index, N)
+    }
   }

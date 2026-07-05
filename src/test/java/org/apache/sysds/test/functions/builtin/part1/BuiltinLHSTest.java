@@ -79,7 +79,10 @@ public class BuiltinLHSTest extends AutomatedTestBase
 	public void testMaximin() {
 		runLhsTest(10,4,5,"maximin");
 	}
-
+	@Test
+	public void testGenetic() {
+		runLhsTest(10,4,5,"genetic");
+	}
 	private void runLhsTest(int N,int d, int repetitions, String method)
 	{
 		ExecMode platformOld = setExecMode(ExecMode.HYBRID);

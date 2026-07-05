@@ -154,7 +154,6 @@ lhs = function(Integer N = 10, Integer d = 2, String method = "random", Integer 
           # replace chosen coords with last, not picked coords
           available_coords= (1 - replacement_mask) * available_coords + (matrix(1,rows = N, cols = 1) %*% (available_coords[coords_left,])) * replacement_mask
       }
-      print(available_coords)
       # for the last point there is only one choice left
       M = rbind(M,available_coords[1,])
     }

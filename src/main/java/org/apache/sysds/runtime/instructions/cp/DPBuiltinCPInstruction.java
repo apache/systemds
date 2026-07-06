@@ -114,7 +114,7 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
      * Reconstructs a {@code DPBuiltinCPInstruction} from its serialised
      * instruction string produced by the LOP layer.
      *
-     * <p>Expected format (INSTRUCTION_DELIM = '\u00b0'):
+     * <p>Expected format (OPERAND_DELIM = '\u00b0'):
      * <pre>
      *   dp_gaussian°target=mVar1·MATRIX·FP64°sensitivity=1.0·SCALAR·FP64·true
      *              °epsilon=0.5·SCALAR·FP64·true°delta=1e-5·SCALAR·FP64·true

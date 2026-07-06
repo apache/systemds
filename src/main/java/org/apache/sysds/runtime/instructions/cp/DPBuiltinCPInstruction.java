@@ -25,7 +25,7 @@ import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
-import org.apache.sysds.runtime.privacy.dp.RDPAccountant;
+import org.apache.sysds.runtime.privacy.dp.DPBudgetAccountant;
 
 import java.util.LinkedHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -42,7 +42,7 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * <p>The instruction receives a materialised matrix (the aggregate result),
  * injects calibrated noise element-wise, records the release with the
- * session-scoped {@link RDPAccountant}, and returns the noisy matrix.
+ * session-scoped {@link DPBudgetAccountant}, and returns the noisy matrix.
  *
  * <p>Noise is generated in Java and added via a {@code MatrixBlock} binary
  * operation so that the output allocation path is identical to every other
@@ -64,8 +64,8 @@ import java.util.concurrent.ThreadLocalRandom;
  *       add opcode-to-type mappings and a parse branch that returns a
  *       {@code DPBuiltinCPInstruction}</li>
  *   <li>{@code org.apache.sysds.runtime.controlprogram.context.ExecutionContext}
- *       – add {@code getRDPAccountant()} returning a session-scoped
- *       {@link RDPAccountant} (lazy-initialised field)</li>
+ *       – add {@code getDPBudgetAccountant()} returning a session-scoped
+ *       {@link DPBudgetAccountant} (lazy-initialised field)</li>
  * </ul>
  */
 public class DPBuiltinCPInstruction extends ComputationCPInstruction {
@@ -169,7 +169,7 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
      *   <li>Generate a noise {@link MatrixBlock} of the same shape.</li>
      *   <li>Add noise element-wise using the existing binary-operator path.</li>
      *   <li>Record the release with the session-scoped
-     *       {@link RDPAccountant}; throw if budget is exhausted.</li>
+     *       {@link DPBudgetAccountant}; throw if budget is exhausted.</li>
      *   <li>Write the noisy block back to the variable table and release
      *       the input pin.</li>
      * </ol>
@@ -200,9 +200,9 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
         inBlock.binaryOperations(plusOp, noiseBlock, outBlock);
 
         // ── 5. Record release and enforce budget ────────────────────────────
-        // getRDPAccountant() returns a lazy-initialised RDPAccountant that is
+        // getDPBudgetAccountant() returns a lazy-initialised DPBudgetAccountant that is
         // owned by this ExecutionContext (added in a companion EC patch).
-        RDPAccountant accountant = ec.getRDPAccountant();
+        DPBudgetAccountant accountant = ec.getDPBudgetAccountant();
         accountant.compose(epsilon, delta, sensitivity); // throws on exhaustion
 
         // ── 6. Write output and release input pin ───────────────────────────

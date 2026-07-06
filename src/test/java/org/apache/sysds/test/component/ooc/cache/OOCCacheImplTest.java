@@ -19,22 +19,18 @@
 
 package org.apache.sysds.test.component.ooc.cache;
 
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+import static org.apache.sysds.test.component.ooc.cache.OOCCacheTestUtils.await;
+
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BooleanSupplier;
 
 import org.apache.sysds.runtime.ooc.cache.BlockEntry;
 import org.apache.sysds.runtime.ooc.cache.BlockKey;
 import org.apache.sysds.runtime.ooc.cache.OOCCache;
 import org.apache.sysds.runtime.ooc.cache.OOCCacheImpl;
-import org.apache.sysds.runtime.ooc.cache.OOCFuture;
-import org.apache.sysds.runtime.ooc.cache.io.OOCIOHandler;
 import org.apache.sysds.runtime.ooc.memory.GlobalMemoryBroker;
 import org.apache.sysds.runtime.ooc.memory.SyncMemoryAllowance;
+import org.apache.sysds.test.component.ooc.cache.OOCCacheTestUtils.RecordingOOCIOHandler;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -46,7 +42,7 @@ public class OOCCacheImplTest {
 	private static final long BYTES = 1_000;
 	private static final long WAIT_TIMEOUT_SEC = 10;
 
-	private RecordingIOHandler _io;
+	private RecordingOOCIOHandler _io;
 	private GlobalMemoryBroker _broker;
 	private SyncMemoryAllowance _producer;
 	private SyncMemoryAllowance _reader;
@@ -54,7 +50,7 @@ public class OOCCacheImplTest {
 
 	@Before
 	public void setUp() {
-		_io = new RecordingIOHandler();
+		_io = new RecordingOOCIOHandler();
 		_broker = new GlobalMemoryBroker(8 * BYTES);
 		_producer = new SyncMemoryAllowance(_broker, 4 * BYTES);
 		_reader = new SyncMemoryAllowance(_broker, 4 * BYTES);
@@ -92,7 +88,7 @@ public class OOCCacheImplTest {
 		Assert.assertEquals(0, _cache.getOwnedCacheSize());
 		Assert.assertEquals(BYTES, _producer.getUsedMemory());
 
-		await(_cache.unpin(entry, _producer));
+		await(_cache.unpin(entry, _producer), WAIT_TIMEOUT_SEC);
 		Assert.assertEquals(BYTES, _cache.getOwnedCacheSize());
 		Assert.assertEquals(0, _producer.getUsedMemory());
 
@@ -103,7 +99,7 @@ public class OOCCacheImplTest {
 		Assert.assertEquals(BYTES, _reader.getUsedMemory());
 		Assert.assertEquals(0, _io.readCount());
 
-		await(_cache.unpin(pinned, _reader));
+		await(_cache.unpin(pinned, _reader), WAIT_TIMEOUT_SEC);
 		Assert.assertEquals(BYTES, _cache.getOwnedCacheSize());
 		Assert.assertEquals(0, _reader.getUsedMemory());
 	}
@@ -116,8 +112,8 @@ public class OOCCacheImplTest {
 
 		_producer.reserveBlocking(BYTES);
 		BlockEntry entry = _cache.putPinned(key, payload, BYTES, _producer);
-		await(_cache.unpin(entry, _producer));
-		waitFor(() -> _io.evictionCount() == 1 && BlockEntryTestAccess.getDataUnsafe(entry) == null);
+		await(_cache.unpin(entry, _producer), WAIT_TIMEOUT_SEC);
+		await(() -> _io.evictionCount() == 1 && BlockEntryTestAccess.getDataUnsafe(entry) == null, WAIT_TIMEOUT_SEC);
 		Assert.assertEquals(0, _producer.getUsedMemory());
 
 		BlockEntry pinned = _cache.pin(key, _reader).get(WAIT_TIMEOUT_SEC, TimeUnit.SECONDS);
@@ -128,7 +124,7 @@ public class OOCCacheImplTest {
 		Assert.assertEquals(1, _io.readCount());
 		Assert.assertEquals(BYTES, _reader.getUsedMemory());
 
-		await(_cache.unpin(pinned, _reader));
+		await(_cache.unpin(pinned, _reader), WAIT_TIMEOUT_SEC);
 		Assert.assertEquals(0, _reader.getUsedMemory());
 	}
 
@@ -140,8 +136,8 @@ public class OOCCacheImplTest {
 
 		_producer.reserveBlocking(BYTES);
 		BlockEntry entry = _cache.putPinned(key, payload, BYTES, _producer);
-		await(_cache.unpin(entry, _producer));
-		waitFor(() -> _io.evictionCount() == 1 && BlockEntryTestAccess.getDataUnsafe(entry) == null);
+		await(_cache.unpin(entry, _producer), WAIT_TIMEOUT_SEC);
+		await(() -> _io.evictionCount() == 1 && BlockEntryTestAccess.getDataUnsafe(entry) == null, WAIT_TIMEOUT_SEC);
 
 		BlockEntry pinned = _cache.pinIfLive(STREAM_ID, BLOCK_ID, _reader);
 
@@ -203,7 +199,7 @@ public class OOCCacheImplTest {
 		BlockEntry entry = _cache.putPinned(key, "drop", BYTES, _producer);
 
 		Assert.assertEquals(0, _cache.dereference(entry));
-		await(_cache.unpin(entry, _producer));
+		await(_cache.unpin(entry, _producer), WAIT_TIMEOUT_SEC);
 
 		Assert.assertEquals(0, _producer.getUsedMemory());
 		Assert.assertNull(_cache.pin(key, _reader).get(WAIT_TIMEOUT_SEC, TimeUnit.SECONDS));
@@ -217,8 +213,8 @@ public class OOCCacheImplTest {
 
 		_producer.reserveBlocking(BYTES);
 		BlockEntry entry = _cache.putPinned(key, "fail-read", BYTES, _producer);
-		await(_cache.unpin(entry, _producer));
-		waitFor(() -> _io.evictionCount() == 1 && BlockEntryTestAccess.getDataUnsafe(entry) == null);
+		await(_cache.unpin(entry, _producer), WAIT_TIMEOUT_SEC);
+		await(() -> _io.evictionCount() == 1 && BlockEntryTestAccess.getDataUnsafe(entry) == null, WAIT_TIMEOUT_SEC);
 
 		_io.failReads(true);
 		try {
@@ -243,92 +239,5 @@ public class OOCCacheImplTest {
 		_cache.shutdown();
 		_io.reset();
 		_cache = new OOCCacheImpl(_io, 0, 0);
-	}
-
-	private static void await(OOCCache.UnpinHandle handle) throws Exception {
-		if(!handle.isCommitted())
-			handle.getCompletionFuture().get(WAIT_TIMEOUT_SEC, TimeUnit.SECONDS);
-	}
-
-	private static void waitFor(BooleanSupplier condition) throws Exception {
-		long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(WAIT_TIMEOUT_SEC);
-		while(!condition.getAsBoolean() && System.nanoTime() < deadline)
-			Thread.sleep(1);
-		Assert.assertTrue(condition.getAsBoolean());
-	}
-
-	private static final class RecordingIOHandler implements OOCIOHandler {
-		private final Map<BlockKey, Object> _spilled = new ConcurrentHashMap<>();
-		private final AtomicInteger _evictions = new AtomicInteger();
-		private final AtomicInteger _reads = new AtomicInteger();
-		private volatile boolean _failReads;
-
-		@Override
-		public void shutdown() {
-			_spilled.clear();
-		}
-
-		@Override
-		public CompletableFuture<Void> scheduleEviction(BlockEntry block) {
-			_spilled.put(block.getKey(), BlockEntryTestAccess.getDataUnsafe(block));
-			_evictions.incrementAndGet();
-			return CompletableFuture.completedFuture(null);
-		}
-
-		@Override
-		public OOCFuture<BlockEntry> scheduleRead(BlockEntry block) {
-			_reads.incrementAndGet();
-			if(_failReads)
-				return OOCFuture.failed(new IllegalStateException("read failed"));
-			Object data = _spilled.get(block.getKey());
-			if(data == null)
-				return OOCFuture.completed(null);
-			BlockEntryTestAccess.setDataUnsafe(block, data);
-			return OOCFuture.completed(block);
-		}
-
-		@Override
-		public void prioritizeRead(BlockKey key, double priority) {
-		}
-
-		@Override
-		public CompletableFuture<Boolean> scheduleDeletion(BlockEntry block) {
-			_spilled.remove(block.getKey());
-			return CompletableFuture.completedFuture(true);
-		}
-
-		@Override
-		public void registerSourceLocation(BlockKey key, SourceBlockDescriptor descriptor) {
-		}
-
-		@Override
-		public CompletableFuture<SourceReadResult> scheduleSourceRead(SourceReadRequest request) {
-			return CompletableFuture.failedFuture(new UnsupportedOperationException());
-		}
-
-		@Override
-		public CompletableFuture<SourceReadResult> continueSourceRead(SourceReadContinuation continuation,
-			long maxBytesInFlight) {
-			return CompletableFuture.failedFuture(new UnsupportedOperationException());
-		}
-
-		private int evictionCount() {
-			return _evictions.get();
-		}
-
-		private int readCount() {
-			return _reads.get();
-		}
-
-		private void failReads(boolean failReads) {
-			_failReads = failReads;
-		}
-
-		private void reset() {
-			_spilled.clear();
-			_evictions.set(0);
-			_reads.set(0);
-			_failReads = false;
-		}
 	}
 }

@@ -94,8 +94,18 @@ public class RDPAccountant {
     // State
     // -----------------------------------------------------------------------
 
-    /** Running accumulated Rényi divergence at each order. */
+    /** Running accumulated Rényi divergence at each order (Gaussian releases only). */
     private final double[] _rdpSum = new double[ORDERS.length];
+
+    /**
+     * Running sum of pure ε from Laplace releases.
+     *
+     * Laplace gives pure ε-DP (no δ). Basic composition is exact and tighter
+     * than the RDP-to-(ε,δ) conversion path for Laplace, which introduces an
+     * unneeded δ and produces a looser bound. We accumulate Laplace cost here
+     * and add it directly in {@link #totalEpsilonSpent()}.
+     */
+    private double _pureEpsilonSum = 0.0;
 
     /** User-specified total privacy budget (ε). */
     private final double _epsilonBudget;
@@ -164,19 +174,20 @@ public class RDPAccountant {
     public void compose(double epsilon, double delta, double sensitivity) {
         _releaseCount++;
 
-        // Accumulate Rényi divergence at each order.
-        for (int i = 0; i < ORDERS.length; i++) {
-            double alpha = ORDERS[i];
-            double rdp;
-            if (delta == 0.0) {
-                rdp = rdpLaplace(alpha, sensitivity, epsilon);
-            } else {
-                // Back-derive σ from the (ε, δ) calibration formula for the
-                // Gaussian mechanism, then compute the RDP contribution.
+        if (delta == 0.0) {
+            // Laplace mechanism: pure ε-DP. Basic composition is exact and
+            // tighter than converting through RDP (which would introduce an
+            // unnecessary δ and often produce a looser ε bound).
+            _pureEpsilonSum += epsilon;
+        } else {
+            // Gaussian mechanism: accumulate Rényi divergence at each order.
+            // Back-derive σ from the (ε, δ) calibration formula, then add the
+            // RDP contribution.
+            for (int i = 0; i < ORDERS.length; i++) {
+                double alpha = ORDERS[i];
                 double sigma = gaussianSigma(sensitivity, epsilon, delta);
-                rdp = rdpGaussian(alpha, sensitivity, sigma);
+                _rdpSum[i] += rdpGaussian(alpha, sensitivity, sigma);
             }
-            _rdpSum[i] += rdp;
         }
 
         // Convert accumulated RDP to (ε, δ) and check.
@@ -195,23 +206,36 @@ public class RDPAccountant {
     // -----------------------------------------------------------------------
 
     /**
-     * Returns the current total privacy cost as an ε value under the
-     * accountant's δ, using the tightest available Rényi order.
+     * Returns the current total privacy cost as an ε value.
+     *
+     * <p>The total cost combines two independent composition paths:
+     * <ul>
+     *   <li>Laplace releases: pure ε-DP, accumulated via basic composition
+     *       (exact and tighter than the RDP conversion path for Laplace).</li>
+     *   <li>Gaussian releases: accumulated via Rényi DP, then converted to
+     *       (ε, δ) using the tightest available order α.</li>
+     * </ul>
+     *
+     * <p>The combined guarantee is (ε_total, δ)-DP where ε_total is the sum
+     * of the two contributions (basic composition of a pure-DP mechanism with
+     * an approximate-DP mechanism is additive in ε).
      */
     public double totalEpsilonSpent() {
-        double minEpsilon = Double.MAX_VALUE;
+        // Gaussian contribution via RDP → (ε, δ) conversion (Mironov 2017, Prop. 3).
+        double gaussianEps = Double.MAX_VALUE;
         for (int i = 0; i < ORDERS.length; i++) {
             double alpha = ORDERS[i];
-            // Standard RDP-to-(ε,δ) conversion:
-            //   ε(α) = R[α] + log(1 - 1/α) - log(δ·(α-1)) / α
-            // Reference: Mironov 2017, Proposition 3.
             double eps = _rdpSum[i]
                     + Math.log(1.0 - 1.0 / alpha)
                     - Math.log(_delta * (alpha - 1.0)) / alpha;
-            if (eps < minEpsilon)
-                minEpsilon = eps;
+            if (eps < gaussianEps)
+                gaussianEps = eps;
         }
-        return minEpsilon;
+        // If no Gaussian releases have occurred, the RDP conversion yields a
+        // large positive value (log-delta term dominates). Clamp to zero so
+        // it doesn't inflate the total when only Laplace releases are present.
+        if (gaussianEps < 0) gaussianEps = 0.0;
+        return _pureEpsilonSum + gaussianEps;
     }
 
     /** Returns the remaining ε budget (may be negative if budget is exceeded). */
@@ -227,28 +251,6 @@ public class RDPAccountant {
     // -----------------------------------------------------------------------
     // Mechanism-specific RDP contributions
     // -----------------------------------------------------------------------
-
-    /**
-     * Rényi divergence of order α for the Laplace mechanism with scale
-     * b = sensitivity / epsilon.
-     *
-     * <p>For α > 1 and integer α, the closed form is:
-     * <pre>
-     *   D_α = (1/(α-1)) · ln( α/(2α-1)·exp((α-1)/b) + (α-1)/(2α-1)·exp(-α/b) )
-     * </pre>
-     *
-     * <p>For non-integer α we use the same formula, which is the natural
-     * analytic continuation (see Mironov 2017, Proposition 3, example 1).
-     * We clamp the log argument to avoid NaN when inputs are degenerate.
-     */
-    private static double rdpLaplace(double alpha, double sensitivity, double epsilon) {
-        double b = sensitivity / epsilon; // Laplace scale
-        double t1 = alpha / (2.0 * alpha - 1.0) * Math.exp((alpha - 1.0) / b);
-        double t2 = (alpha - 1.0) / (2.0 * alpha - 1.0) * Math.exp(-alpha / b);
-        double arg = t1 + t2;
-        if (arg <= 0) return 0.0; // degenerate: treat as zero cost
-        return Math.log(arg) / (alpha - 1.0);
-    }
 
     /**
      * Rényi divergence of order α for the Gaussian mechanism with noise

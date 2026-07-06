@@ -17,40 +17,8 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.ooc.memory;
+package org.apache.sysds.runtime.ooc.cache.collections;
 
-import org.apache.sysds.runtime.ooc.cache.OOCFuture;
-
-public interface MemoryAllowance {
-	boolean tryReserve(long bytes);
-
-	void reserveBlocking(long bytes);
-
-	OOCFuture<Void> reserveAsync(long bytes);
-
-	void release(long bytes);
-
-	long getUsedMemory();
-
-	long getGrantedMemory();
-
-	long getTargetMemory();
-
-	void setTargetMemory(long targetMemory);
-
-	void shutdown();
-
-	boolean isShutdown();
-
-	default void destroy() {
-		shutdown();
-	}
-
-	default long getFreeMemory() {
-		return Math.max(0, getGrantedMemory() - getUsedMemory());
-	}
-
-	default boolean isUnderPressure() {
-		return getGrantedMemory() > getTargetMemory();
-	}
+public interface IndexedObjectPredicate<T> {
+	boolean test(int idx, T value);
 }

@@ -41,8 +41,7 @@ import static org.junit.Assert.*;
  * </ol>
  *
  * <p>The DML integration tests require a built SystemDS jar and are separated
- * into a companion class {@code DPBuiltinDMLTest} (shown at the bottom of
- * this file as a skeleton).
+ * into a companion class {@link org.apache.sysds.test.functions.privacy.dp.DPBuiltinDMLTest}.
  */
 public class DPBuiltinCPInstructionTest {
 
@@ -370,99 +369,3 @@ public class DPBuiltinCPInstructionTest {
         return s / (xs.length - 1);
     }
 }
-
-
-// ==========================================================================
-// 3. DML integration test skeleton
-// ==========================================================================
-//
-// Full integration tests extend AutomatedTestBase and drive the DML runner.
-// Each test:
-//   (a) Writes a DML script to a temp file.
-//   (b) Provides input matrices via TestUtils.
-//   (c) Calls runTest() and reads the output MatrixBlock.
-//   (d) Verifies that the noisy result differs from the clean result by a
-//       statistically plausible amount (not zero, not astronomically large).
-//
-// The test below is a skeleton that compiles but needs the full SystemDS
-// test infrastructure to run.
-
-/*
-package org.apache.sysds.test.functions.privacy.dp;
-
-import org.apache.sysds.common.Types;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.test.AutomatedTestBase;
-import org.apache.sysds.test.TestConfiguration;
-import org.apache.sysds.test.TestUtils;
-import org.junit.Test;
-
-public class DPBuiltinDMLTest extends AutomatedTestBase {
-
-    private static final String TEST_DIR   = "functions/privacy/dp/";
-    private static final String TEST_CLASS = TEST_DIR + DPBuiltinDMLTest.class.getSimpleName() + "/";
-    private static final String DML_LAPLACE =
-        "X = read($1);\n"
-      + "result = dp_laplace(colMeans(X), sensitivity=1.0, epsilon=$2);\n"
-      + "write(result, $3, format=\"binary\");\n";
-    private static final String DML_GAUSSIAN =
-        "X = read($1);\n"
-      + "result = dp_gaussian(colMeans(X), sensitivity=1.0, epsilon=$2, delta=1e-5);\n"
-      + "write(result, $3, format=\"binary\");\n";
-
-    @Override
-    public void setUp() {
-        addTestConfiguration("DPLaplace",  new TestConfiguration(TEST_CLASS, "DPLaplace"));
-        addTestConfiguration("DPGaussian", new TestConfiguration(TEST_CLASS, "DPGaussian"));
-    }
-
-    @Test
-    public void testLaplaceOutputDiffersFromCleanMean() {
-        runDPTest("DPLaplace", DML_LAPLACE, "0.5");
-    }
-
-    @Test
-    public void testGaussianOutputDiffersFromCleanMean() {
-        runDPTest("DPGaussian", DML_GAUSSIAN, "0.5");
-    }
-
-    @Test
-    public void testHighEpsilonIsCloserToTruth() {
-        // Higher ε → less noise → result closer to the true mean.
-        double noisyLow  = maxAbsDiff("DPGaussian", DML_GAUSSIAN, "0.1");
-        double noisyHigh = maxAbsDiff("DPGaussian", DML_GAUSSIAN, "4.0");
-        assertTrue("ε=4 should give less noise than ε=0.1", noisyHigh < noisyLow);
-    }
-
-    private void runDPTest(String testName, String dml, String epsilonStr) {
-        getAndLoadTestConfiguration(testName);
-        int rows = 100, cols = 10;
-        double[][] data = TestUtils.generateTestMatrix(rows, cols, 0, 1, 1.0, 42);
-        writeInputMatrixWithMTD("X", data, false);
-        writeScriptFile(testName + ".dml", dml);
-        programArgs = new String[]{ input("X"), epsilonStr, output("result") };
-        runTest(true, false, null, -1);
-        MatrixBlock result = readDMLMatrixFromHDFS("result");
-        // The noisy result should be a (1 × cols) row vector.
-        assertEquals(1, result.getNumRows());
-        assertEquals(cols, result.getNumColumns());
-        // Must differ from the exact mean by a non-trivial amount.
-        // (A single-seed exact-equality check is fragile; use range check.)
-        double maxNoise = maxAbsValue(result);
-        assertTrue("Result should not be exactly zero", maxNoise > 0);
-    }
-
-    private double maxAbsDiff(String testName, String dml, String epsilonStr) {
-        // Omitted for brevity: run the test, compute max |noisy - clean|.
-        return 0; // placeholder
-    }
-
-    private static double maxAbsValue(MatrixBlock m) {
-        double max = 0;
-        for (int r = 0; r < m.getNumRows(); r++)
-            for (int c = 0; c < m.getNumColumns(); c++)
-                max = Math.max(max, Math.abs(m.get(r, c)));
-        return max;
-    }
-}
-*/

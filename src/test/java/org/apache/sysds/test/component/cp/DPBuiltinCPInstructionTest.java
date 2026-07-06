@@ -154,7 +154,7 @@ public class DPBuiltinCPInstructionTest {
                 acc1.totalEpsilonSpent() < acc2.totalEpsilonSpent());
     }
 
-    // --- Item 1: constructor error paths ------------------------------------
+    // --- Constructor error paths ------------------------------------
 
     @Test(expected = DMLRuntimeException.class)
     public void testConstructorRejectsZeroEpsilonBudget() {
@@ -176,7 +176,7 @@ public class DPBuiltinCPInstructionTest {
         new DPBudgetAccountant(1.0, 1.0);
     }
 
-    // --- Item 2: single-argument convenience constructor -------------------
+    // --- Single-argument convenience constructor -------------------
 
     @Test
     public void testConvenienceConstructorDefaultsDeltaTo1e5() {
@@ -191,8 +191,6 @@ public class DPBuiltinCPInstructionTest {
                 twoArg.totalEpsilonSpent(), oneArg.totalEpsilonSpent(), EPS);
     }
 
-    // --- Item 3: budget exhaustion via Gaussian releases -------------------
-
     @Test(expected = DMLRuntimeException.class)
     public void testGaussianBudgetExhaustionThrows() {
         // Budget = 0.1. Each Gaussian release costs more than 0.005, so 20
@@ -202,8 +200,6 @@ public class DPBuiltinCPInstructionTest {
             acc.compose(0.3, 1e-5, 1.0);
         }
     }
-
-    // --- Item 4: mixed Laplace + Gaussian composition ----------------------
 
     @Test
     public void testMixedCompositionExceedsEitherAlone() {
@@ -226,7 +222,7 @@ public class DPBuiltinCPInstructionTest {
                 mixed.totalEpsilonSpent() > gauOnly.totalEpsilonSpent());
     }
 
-    // --- Item 6: release count across multiple mixed releases --------------
+    // --- Release count across multiple mixed releases --------------
 
     @Test
     public void testReleaseCountTracksAllReleases() {
@@ -242,7 +238,7 @@ public class DPBuiltinCPInstructionTest {
         assertEquals(5, acc.releaseCount());
     }
 
-    // --- Item 8: edge-case inputs for rdpGaussian / gaussianSigma ----------
+    // --- Edge-case inputs for rdpGaussian / gaussianSigma ----------
 
     @Test
     public void testGaussianSensitivityCancelsInRDP() {
@@ -277,11 +273,6 @@ public class DPBuiltinCPInstructionTest {
     // is near zero and the empirical variance matches the theoretical value
     // within a reasonable tolerance.
     //
-    // Note: these tests exercise the static fill* methods indirectly by
-    // calling the noise-generation logic via reflection or by making the
-    // methods package-private. The simplest approach for a student project
-    // is to make fillLaplaceNoise / fillGaussianNoise package-private and
-    // call them directly from the test (same package).
 
     @Test
     public void testLaplaceNoiseMeanNearZero() {

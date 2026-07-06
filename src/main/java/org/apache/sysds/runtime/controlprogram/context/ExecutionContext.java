@@ -62,7 +62,7 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.util.HDFSTool;
-import org.apache.sysds.runtime.privacy.dp.RDPAccountant;
+import org.apache.sysds.runtime.privacy.dp.DPBudgetAccountant;
 import org.apache.sysds.utils.Statistics;
 
 import java.util.ArrayList;
@@ -91,7 +91,7 @@ public class ExecutionContext {
 
 	protected SEALClient _seal_client;
 
-	private RDPAccountant _rdpAccountant = null;
+	private DPBudgetAccountant _dpBudgetAccountant = null;
 
 	//parfor temporary functions (created by eval)
 	protected Set<String> _fnNames;
@@ -147,10 +147,10 @@ public class ExecutionContext {
 		_lineage = lineage;
 	}
 
-	public RDPAccountant getRDPAccountant() {
-		if (_rdpAccountant == null)
-			_rdpAccountant = new RDPAccountant(1.0, 1e-5);
-		return _rdpAccountant;
+	public DPBudgetAccountant getDPBudgetAccountant() {
+		if (_dpBudgetAccountant == null)
+			_dpBudgetAccountant = new DPBudgetAccountant(1.0, 1e-5);
+		return _dpBudgetAccountant;
 	}
 
 	public boolean isAutoCreateVars() {

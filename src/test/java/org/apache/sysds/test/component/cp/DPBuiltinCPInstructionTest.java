@@ -20,17 +20,17 @@
 package org.apache.sysds.test.component.cp;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.privacy.dp.RDPAccountant;
+import org.apache.sysds.runtime.privacy.dp.DPBudgetAccountant;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
 /**
- * Tests for {@code DPBuiltinCPInstruction} and {@code RDPAccountant}.
+ * Tests for {@code DPBuiltinCPInstruction} and {@code DPBudgetAccountant}.
  *
  * <p>The tests are grouped into three levels:
  * <ol>
- *   <li><b>Unit tests on RDPAccountant</b> — verify composition, conversion,
+ *   <li><b>Unit tests on DPBudgetAccountant</b> — verify composition, conversion,
  *       and budget enforcement in isolation, with no dependency on the full
  *       SystemDS runtime.</li>
  *   <li><b>Noise distribution tests</b> — verify that the noise blocks
@@ -49,12 +49,12 @@ public class DPBuiltinCPInstructionTest {
     private static final double EPS = 1e-9;
 
     // =======================================================================
-    // 1. RDPAccountant unit tests
+    // 1. DPBudgetAccountant unit tests
     // =======================================================================
 
     @Test
     public void testAccountantInitialisesAtZeroCost() {
-        RDPAccountant acc = new RDPAccountant(1.0, 1e-5);
+        DPBudgetAccountant acc = new DPBudgetAccountant(1.0, 1e-5);
         // No releases yet: total cost should be a large negative number
         // (conversion formula gives -∞ when rdpSum = 0 for all orders),
         // so remainingBudget() should exceed the budget.
@@ -66,7 +66,7 @@ public class DPBuiltinCPInstructionTest {
     @Test
     public void testSingleLaplaceReleaseDoesNotExceedBudget() {
         // epsilon=0.5, budget=1.0: one release should consume < budget.
-        RDPAccountant acc = new RDPAccountant(1.0, 1e-5);
+        DPBudgetAccountant acc = new DPBudgetAccountant(1.0, 1e-5);
         acc.compose(0.5, 0.0, 1.0); // Laplace, sensitivity=1
         assertEquals(1, acc.releaseCount());
         assertTrue("Single release within budget",
@@ -75,7 +75,7 @@ public class DPBuiltinCPInstructionTest {
 
     @Test
     public void testSingleGaussianReleaseDoesNotExceedBudget() {
-        RDPAccountant acc = new RDPAccountant(1.0, 1e-5);
+        DPBudgetAccountant acc = new DPBudgetAccountant(1.0, 1e-5);
         acc.compose(0.5, 1e-5, 1.0); // Gaussian
         assertEquals(1, acc.releaseCount());
         assertTrue("Single Gaussian release within budget",
@@ -86,7 +86,7 @@ public class DPBuiltinCPInstructionTest {
     public void testBudgetExhaustionThrows() {
         // Budget = 0.1, but we try to make 10 releases at epsilon=0.5 each.
         // After enough releases the budget must be exceeded.
-        RDPAccountant acc = new RDPAccountant(0.1, 1e-5);
+        DPBudgetAccountant acc = new DPBudgetAccountant(0.1, 1e-5);
         for (int i = 0; i < 10; i++) {
             acc.compose(0.5, 0.0, 1.0); // will throw before the 10th
         }
@@ -94,7 +94,7 @@ public class DPBuiltinCPInstructionTest {
 
     @Test
     public void testCompositionIsMonotonicallyIncreasing() {
-        RDPAccountant acc = new RDPAccountant(100.0, 1e-5); // large budget
+        DPBudgetAccountant acc = new DPBudgetAccountant(100.0, 1e-5); // large budget
         double prev = acc.totalEpsilonSpent();
         for (int i = 0; i < 5; i++) {
             acc.compose(0.3, 1e-5, 1.0);
@@ -114,8 +114,8 @@ public class DPBuiltinCPInstructionTest {
         double eps = 0.5;
         double delta = 1e-5;
 
-        RDPAccountant gaussian = new RDPAccountant(100.0, delta);
-        RDPAccountant laplace  = new RDPAccountant(100.0, delta);
+        DPBudgetAccountant gaussian = new DPBudgetAccountant(100.0, delta);
+        DPBudgetAccountant laplace  = new DPBudgetAccountant(100.0, delta);
 
         for (int i = 0; i < 5; i++) {
             gaussian.compose(eps, delta, 1.0);
@@ -130,7 +130,7 @@ public class DPBuiltinCPInstructionTest {
 
     @Test
     public void testRemainingBudgetDecreasesMonotonically() {
-        RDPAccountant acc = new RDPAccountant(2.0, 1e-5);
+        DPBudgetAccountant acc = new DPBudgetAccountant(2.0, 1e-5);
         double prev = acc.remainingBudget();
         for (int i = 0; i < 3; i++) {
             acc.compose(0.2, 1e-5, 1.0);
@@ -146,8 +146,8 @@ public class DPBuiltinCPInstructionTest {
         // Sensitivity determines noise scale but NOT the budget consumed — that is set
         // entirely by the caller's epsilon parameter.
         // A release at epsilon=1.0 costs more budget than one at epsilon=0.5.
-        RDPAccountant acc1 = new RDPAccountant(100.0, 1e-5);
-        RDPAccountant acc2 = new RDPAccountant(100.0, 1e-5);
+        DPBudgetAccountant acc1 = new DPBudgetAccountant(100.0, 1e-5);
+        DPBudgetAccountant acc2 = new DPBudgetAccountant(100.0, 1e-5);
         acc1.compose(0.5, 0.0, 1.0); // epsilon=0.5, Laplace
         acc2.compose(1.0, 0.0, 1.0); // epsilon=1.0, same sensitivity
 
@@ -159,22 +159,22 @@ public class DPBuiltinCPInstructionTest {
 
     @Test(expected = DMLRuntimeException.class)
     public void testConstructorRejectsZeroEpsilonBudget() {
-        new RDPAccountant(0.0, 1e-5);
+        new DPBudgetAccountant(0.0, 1e-5);
     }
 
     @Test(expected = DMLRuntimeException.class)
     public void testConstructorRejectsNegativeEpsilonBudget() {
-        new RDPAccountant(-0.5, 1e-5);
+        new DPBudgetAccountant(-0.5, 1e-5);
     }
 
     @Test(expected = DMLRuntimeException.class)
     public void testConstructorRejectsDeltaZero() {
-        new RDPAccountant(1.0, 0.0);
+        new DPBudgetAccountant(1.0, 0.0);
     }
 
     @Test(expected = DMLRuntimeException.class)
     public void testConstructorRejectsDeltaOne() {
-        new RDPAccountant(1.0, 1.0);
+        new DPBudgetAccountant(1.0, 1.0);
     }
 
     // --- Item 2: single-argument convenience constructor -------------------
@@ -184,8 +184,8 @@ public class DPBuiltinCPInstructionTest {
         // The one-arg form delegates to (epsilonBudget, 1e-5). A Gaussian
         // release whose per-release delta matches that default must produce
         // identical totalEpsilonSpent() from both construction paths.
-        RDPAccountant oneArg = new RDPAccountant(10.0);
-        RDPAccountant twoArg = new RDPAccountant(10.0, 1e-5);
+        DPBudgetAccountant oneArg = new DPBudgetAccountant(10.0);
+        DPBudgetAccountant twoArg = new DPBudgetAccountant(10.0, 1e-5);
         oneArg.compose(0.5, 1e-5, 1.0);
         twoArg.compose(0.5, 1e-5, 1.0);
         assertEquals("Convenience constructor must default to delta=1e-5",
@@ -198,7 +198,7 @@ public class DPBuiltinCPInstructionTest {
     public void testGaussianBudgetExhaustionThrows() {
         // Budget = 0.1. Each Gaussian release costs more than 0.005, so 20
         // releases must exceed the budget well before the loop ends.
-        RDPAccountant acc = new RDPAccountant(0.1, 1e-5);
+        DPBudgetAccountant acc = new DPBudgetAccountant(0.1, 1e-5);
         for (int i = 0; i < 20; i++) {
             acc.compose(0.3, 1e-5, 1.0);
         }
@@ -211,9 +211,9 @@ public class DPBuiltinCPInstructionTest {
         // Compose one Laplace and one Gaussian release. The total cost must
         // exceed what either mechanism contributes alone, exercising the
         // _pureEpsilonSum + gaussianEps addition path in totalEpsilonSpent().
-        RDPAccountant mixed   = new RDPAccountant(100.0, 1e-5);
-        RDPAccountant lapOnly = new RDPAccountant(100.0, 1e-5);
-        RDPAccountant gauOnly = new RDPAccountant(100.0, 1e-5);
+        DPBudgetAccountant mixed   = new DPBudgetAccountant(100.0, 1e-5);
+        DPBudgetAccountant lapOnly = new DPBudgetAccountant(100.0, 1e-5);
+        DPBudgetAccountant gauOnly = new DPBudgetAccountant(100.0, 1e-5);
 
         mixed.compose(0.5, 0.0,  1.0); // Laplace
         mixed.compose(0.5, 1e-5, 1.0); // Gaussian
@@ -231,7 +231,7 @@ public class DPBuiltinCPInstructionTest {
 
     @Test
     public void testReleaseCountTracksAllReleases() {
-        RDPAccountant acc = new RDPAccountant(100.0, 1e-5);
+        DPBudgetAccountant acc = new DPBudgetAccountant(100.0, 1e-5);
         assertEquals(0, acc.releaseCount());
         acc.compose(0.1, 0.0,  1.0); // Laplace
         assertEquals(1, acc.releaseCount());
@@ -251,8 +251,8 @@ public class DPBuiltinCPInstructionTest {
         //   D_α = α·Δf²/(2σ²) = α·ε²/(4·ln(1.25/δ)).
         // Sensitivity cancels. Two accountants with the same (ε,δ) but
         // different sensitivity must report identical totalEpsilonSpent().
-        RDPAccountant acc1 = new RDPAccountant(100.0, 1e-5);
-        RDPAccountant acc2 = new RDPAccountant(100.0, 1e-5);
+        DPBudgetAccountant acc1 = new DPBudgetAccountant(100.0, 1e-5);
+        DPBudgetAccountant acc2 = new DPBudgetAccountant(100.0, 1e-5);
         acc1.compose(0.5, 1e-5, 1.0);   // sensitivity = 1
         acc2.compose(0.5, 1e-5, 100.0); // sensitivity = 100, same (ε,δ)
         assertEquals("Gaussian RDP cost must be independent of sensitivity when (ε,δ) are fixed",
@@ -263,8 +263,8 @@ public class DPBuiltinCPInstructionTest {
     public void testGaussianLargerEpsilonCostsMoreBudget() {
         // D_α ∝ ε², so a release declared at a higher ε (less noise, more
         // privacy loss) must cost more budget than one at a lower ε.
-        RDPAccountant lowEps  = new RDPAccountant(100.0, 1e-5);
-        RDPAccountant highEps = new RDPAccountant(100.0, 1e-5);
+        DPBudgetAccountant lowEps  = new DPBudgetAccountant(100.0, 1e-5);
+        DPBudgetAccountant highEps = new DPBudgetAccountant(100.0, 1e-5);
         lowEps.compose(0.1,  1e-5, 1.0);
         highEps.compose(0.5, 1e-5, 1.0);
         assertTrue("Larger epsilon per Gaussian release must cost more budget",

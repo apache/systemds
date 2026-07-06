@@ -189,7 +189,12 @@ public class DeltaKernelUtils {
 	}
 
 	public static Engine createEngine() {
-		return DefaultEngine.create(deltaConf());
+		Engine engine = DefaultEngine.create(deltaConf());
+		//decode data files via parquet-mr's column API rather than the kernel default row-record
+		//reader, disable via config.
+		if(ConfigurationManager.isDeltaReaderColumnApi())
+			return new ColumnApiDeltaEngine(engine);
+		return engine;
 	}
 
 	/**

@@ -155,6 +155,122 @@ public class DPBuiltinCPInstructionTest {
                 acc1.totalEpsilonSpent() < acc2.totalEpsilonSpent());
     }
 
+    // --- Item 1: constructor error paths ------------------------------------
+
+    @Test(expected = DMLRuntimeException.class)
+    public void testConstructorRejectsZeroEpsilonBudget() {
+        new RDPAccountant(0.0, 1e-5);
+    }
+
+    @Test(expected = DMLRuntimeException.class)
+    public void testConstructorRejectsNegativeEpsilonBudget() {
+        new RDPAccountant(-0.5, 1e-5);
+    }
+
+    @Test(expected = DMLRuntimeException.class)
+    public void testConstructorRejectsDeltaZero() {
+        new RDPAccountant(1.0, 0.0);
+    }
+
+    @Test(expected = DMLRuntimeException.class)
+    public void testConstructorRejectsDeltaOne() {
+        new RDPAccountant(1.0, 1.0);
+    }
+
+    // --- Item 2: single-argument convenience constructor -------------------
+
+    @Test
+    public void testConvenienceConstructorDefaultsDeltaTo1e5() {
+        // The one-arg form delegates to (epsilonBudget, 1e-5). A Gaussian
+        // release whose per-release delta matches that default must produce
+        // identical totalEpsilonSpent() from both construction paths.
+        RDPAccountant oneArg = new RDPAccountant(10.0);
+        RDPAccountant twoArg = new RDPAccountant(10.0, 1e-5);
+        oneArg.compose(0.5, 1e-5, 1.0);
+        twoArg.compose(0.5, 1e-5, 1.0);
+        assertEquals("Convenience constructor must default to delta=1e-5",
+                twoArg.totalEpsilonSpent(), oneArg.totalEpsilonSpent(), EPS);
+    }
+
+    // --- Item 3: budget exhaustion via Gaussian releases -------------------
+
+    @Test(expected = DMLRuntimeException.class)
+    public void testGaussianBudgetExhaustionThrows() {
+        // Budget = 0.1. Each Gaussian release costs more than 0.005, so 20
+        // releases must exceed the budget well before the loop ends.
+        RDPAccountant acc = new RDPAccountant(0.1, 1e-5);
+        for (int i = 0; i < 20; i++) {
+            acc.compose(0.3, 1e-5, 1.0);
+        }
+    }
+
+    // --- Item 4: mixed Laplace + Gaussian composition ----------------------
+
+    @Test
+    public void testMixedCompositionExceedsEitherAlone() {
+        // Compose one Laplace and one Gaussian release. The total cost must
+        // exceed what either mechanism contributes alone, exercising the
+        // _pureEpsilonSum + gaussianEps addition path in totalEpsilonSpent().
+        RDPAccountant mixed   = new RDPAccountant(100.0, 1e-5);
+        RDPAccountant lapOnly = new RDPAccountant(100.0, 1e-5);
+        RDPAccountant gauOnly = new RDPAccountant(100.0, 1e-5);
+
+        mixed.compose(0.5, 0.0,  1.0); // Laplace
+        mixed.compose(0.5, 1e-5, 1.0); // Gaussian
+
+        lapOnly.compose(0.5, 0.0,  1.0);
+        gauOnly.compose(0.5, 1e-5, 1.0);
+
+        assertTrue("Mixed cost must exceed Laplace-only cost",
+                mixed.totalEpsilonSpent() > lapOnly.totalEpsilonSpent());
+        assertTrue("Mixed cost must exceed Gaussian-only cost",
+                mixed.totalEpsilonSpent() > gauOnly.totalEpsilonSpent());
+    }
+
+    // --- Item 6: release count across multiple mixed releases --------------
+
+    @Test
+    public void testReleaseCountTracksAllReleases() {
+        RDPAccountant acc = new RDPAccountant(100.0, 1e-5);
+        assertEquals(0, acc.releaseCount());
+        acc.compose(0.1, 0.0,  1.0); // Laplace
+        assertEquals(1, acc.releaseCount());
+        acc.compose(0.1, 1e-5, 1.0); // Gaussian
+        assertEquals(2, acc.releaseCount());
+        acc.compose(0.1, 0.0,  1.0); // Laplace
+        acc.compose(0.1, 0.0,  1.0); // Laplace
+        acc.compose(0.1, 1e-5, 1.0); // Gaussian
+        assertEquals(5, acc.releaseCount());
+    }
+
+    // --- Item 8: edge-case inputs for rdpGaussian / gaussianSigma ----------
+
+    @Test
+    public void testGaussianSensitivityCancelsInRDP() {
+        // For the Gaussian mechanism: σ = Δf·sqrt(2·ln(1.25/δ))/ε, so
+        //   D_α = α·Δf²/(2σ²) = α·ε²/(4·ln(1.25/δ)).
+        // Sensitivity cancels. Two accountants with the same (ε,δ) but
+        // different sensitivity must report identical totalEpsilonSpent().
+        RDPAccountant acc1 = new RDPAccountant(100.0, 1e-5);
+        RDPAccountant acc2 = new RDPAccountant(100.0, 1e-5);
+        acc1.compose(0.5, 1e-5, 1.0);   // sensitivity = 1
+        acc2.compose(0.5, 1e-5, 100.0); // sensitivity = 100, same (ε,δ)
+        assertEquals("Gaussian RDP cost must be independent of sensitivity when (ε,δ) are fixed",
+                acc1.totalEpsilonSpent(), acc2.totalEpsilonSpent(), EPS);
+    }
+
+    @Test
+    public void testGaussianLargerEpsilonCostsMoreBudget() {
+        // D_α ∝ ε², so a release declared at a higher ε (less noise, more
+        // privacy loss) must cost more budget than one at a lower ε.
+        RDPAccountant lowEps  = new RDPAccountant(100.0, 1e-5);
+        RDPAccountant highEps = new RDPAccountant(100.0, 1e-5);
+        lowEps.compose(0.1,  1e-5, 1.0);
+        highEps.compose(0.5, 1e-5, 1.0);
+        assertTrue("Larger epsilon per Gaussian release must cost more budget",
+                highEps.totalEpsilonSpent() > lowEps.totalEpsilonSpent());
+    }
+
     // =======================================================================
     // 2. Noise distribution tests (statistical sanity checks)
     // =======================================================================

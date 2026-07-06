@@ -141,19 +141,17 @@ public class DPBuiltinCPInstructionTest {
     }
 
     @Test
-    public void testSmallerSensitivityCheaper() {
-        // For the Gaussian mechanism, noise scales proportionally with sensitivity
-        // (sigma = sensitivity * C), so sensitivity² cancels in the RDP formula
-        // alpha * sensitivity² / (2 * sigma²). Budget consumed is epsilon-determined.
-        // For Laplace, higher sensitivity means a larger noise scale b = sensitivity/epsilon,
-        // which yields LOWER RDP divergence (more noise → better privacy).
-        // Test the Laplace case: higher sensitivity at same epsilon costs less budget.
+    public void testHigherEpsilonCostMoreForLaplace() {
+        // For Laplace, the accountant uses basic (pure ε-DP) composition: cost = epsilon.
+        // Sensitivity determines noise scale but NOT the budget consumed — that is set
+        // entirely by the caller's epsilon parameter.
+        // A release at epsilon=1.0 costs more budget than one at epsilon=0.5.
         RDPAccountant acc1 = new RDPAccountant(100.0, 1e-5);
         RDPAccountant acc2 = new RDPAccountant(100.0, 1e-5);
-        acc1.compose(0.5, 0.0, 1.0); // high sensitivity, Laplace
-        acc2.compose(0.5, 0.0, 0.1); // low sensitivity, Laplace
+        acc1.compose(0.5, 0.0, 1.0); // epsilon=0.5, Laplace
+        acc2.compose(1.0, 0.0, 1.0); // epsilon=1.0, same sensitivity
 
-        assertTrue("Higher sensitivity costs less budget (Laplace: more noise for same epsilon)",
+        assertTrue("Higher epsilon costs more budget (Laplace basic composition)",
                 acc1.totalEpsilonSpent() < acc2.totalEpsilonSpent());
     }
 

@@ -47,7 +47,7 @@ public class FrameColNamesPropagationTest extends AutomatedTestBase {
     private final static String TEST_NAME_RBIND = "ColNameRbindPropagation";
     private final static String TEST_NAME_SLICE = "ColNameSlicePropagation";
     private final static String TEST_DIR = "functions/frame/";
-    private static final String TEST_CLASS_DIR = TEST_DIR + FrameColumnNamesTest.class.getSimpleName() + "/";
+    private static final String TEST_CLASS_DIR = TEST_DIR + FrameColNamesPropagationTest.class.getSimpleName() + "/";
 
     @Parameterized.Parameter
     public int _matrixDim;

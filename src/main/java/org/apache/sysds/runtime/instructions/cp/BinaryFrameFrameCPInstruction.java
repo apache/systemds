@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.lib.FrameLibApplySchema;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -67,6 +68,18 @@ public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction {
 
 			FrameBlock in = ec.getFrameInput(input1.getName());
 			FrameBlock names = ec.getFrameInput(input2.getName());
+
+			if (names == null)
+				throw new DMLRuntimeException("Column names cannot be null.");
+
+			if (names.getNumRows() != 1)
+				throw new DMLRuntimeException(
+						"Column names must be provided as a 1 x n frame.");
+
+			if (names.getNumColumns() != in.getNumColumns())
+				throw new DMLRuntimeException(
+						"Expected " + in.getNumColumns() +
+								" column names but got " + names.getNumColumns());
 
 			String[] colNames = new String[(int) names.getNumColumns()];
 			for(int i = 0; i < colNames.length; i++){

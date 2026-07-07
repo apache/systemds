@@ -1121,7 +1121,7 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			output.setDataType(DataType.FRAME);
 			output.setDimensions(id.getDim1(), id.getDim2());
 			output.setBlocksize (id.getBlocksize());
-			output.setValueType(ValueType.STRING);
+			output.setDataType(DataType.FRAME);
 			break;
 		case CAST_AS_FRAME:
 			// operation as.frame

@@ -62,8 +62,8 @@ public class FrameColumnNamesTest extends AutomatedTestBase {
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));
-		addTestConfiguration(TEST_NAME_GET, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_SET, new String[] {"B"}));
-		addTestConfiguration(TEST_NAME_SET, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_GET, new String[] {"B"}));
+		addTestConfiguration(TEST_NAME_GET, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_GET, new String[] {"B"}));
+		addTestConfiguration(TEST_NAME_SET, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_SET, new String[] {"B"}));
 
 	}
 
@@ -159,7 +159,6 @@ public class FrameColumnNamesTest extends AutomatedTestBase {
 				names.set(0, i, columnNames[i]);
 			FrameWriter nameWriter = FrameWriterFactory.createFrameWriter(FileFormat.CSV,
 					new FileFormatPropertiesCSV(false, ",", false));
-			System.out.println("N path = " + input("N"));
 			nameWriter.writeFrameToHDFS(names, input("N"), 1, columnNames.length);
 
 			runTest(true, false, null, -1);

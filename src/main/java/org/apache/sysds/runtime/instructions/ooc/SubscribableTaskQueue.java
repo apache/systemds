@@ -203,9 +203,8 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 		if(dc != null && dc.dimsKnown() && dc.getBlocksize() > 0) {
 			long expected = OOCUtils.getNumBlocks(dc);
 			if(expected >= 0 && _blockCount.get() != expected) {
-				throw new DMLRuntimeException(
-					"OOCStream block count mismatch: expected " + expected + " but saw " + _blockCount.get() + " (" +
-						dc.getRows() + "x" + dc.getCols() + ")");
+				throw new DMLRuntimeException("OOCStream block count mismatch: expected " + expected + " but saw "
+					+ _blockCount.get() + " (" + dc.getRows() + "x" + dc.getCols() + ")");
 			}
 		}
 	}

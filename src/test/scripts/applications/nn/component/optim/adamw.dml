@@ -1,0 +1,85 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/optim/adamw.dml") as adamw
+source("src/test/scripts/applications/nn/util.dml") as test_util
+source("src/test/scripts/applications/nn/component/optim/optim_check.dml") as ch
+
+test_adamw = function() {
+  lr      = 0.01
+  beta1   = 0.9
+  beta2   = 0.999
+  epsilon = 1e-8
+  lambda  = 0.01
+
+  # both moment vectors start at zero with the same shape as the parameters
+  X = matrix("1 2 3  4 5 6", rows=2, cols=3)
+  [m0, v0] = adamw::init(X)
+  test_util::check_all_close(m0, matrix(0, rows=2, cols=3), 1e-12)
+  test_util::check_all_close(v0, matrix(0, rows=2, cols=3), 1e-12)
+
+  # first step (m=v=0, t=0 -> internal t becomes 1):
+  #   m_hat = dX  (beta correction with t=1 simplifies to 1)
+  #   v_hat = dX^2
+  #   X1 = X - lr * ( m_hat / (sqrt(v_hat) + eps) + lambda*X )
+  dX = matrix("0.5 -0.5 0.5  -1 1 -1", rows=2, cols=3)
+  [X1, m1, v1] = adamw::update(X, dX, lr, beta1, beta2, epsilon, lambda, 0, m0, v0)
+  exp_X1 = X - lr * ( dX / (sqrt(dX^2) + epsilon) + lambda*X )
+  test_util::check_all_close(X1, exp_X1, 1e-12)
+  ch::check_finite(X1, "adamw/finite")
+
+  # second step (t=1 -> internal t becomes 2, bias correction uses beta^2):
+  #   m2 = beta1*m1 + (1-beta1)*dX
+  #   v2 = beta2*v1 + (1-beta2)*dX^2
+  #   m_hat2 = m2 / (1-beta1^2),  v_hat2 = v2 / (1-beta2^2)
+  #   X2 = X1 - lr * ( m_hat2/(sqrt(v_hat2)+eps) + lambda*X1 )
+  [X2, m2, v2] = adamw::update(X1, dX, lr, beta1, beta2, epsilon, lambda, 1, m1, v1)
+  exp_m2    = beta1*m1 + (1-beta1)*dX
+  exp_v2    = beta2*v1 + (1-beta2)*dX^2
+  m_hat2    = exp_m2 / (1-beta1^2)
+  v_hat2    = exp_v2 / (1-beta2^2)
+  exp_X2    = X1 - lr * ( m_hat2 / (sqrt(v_hat2) + epsilon) + lambda*X1 )
+  test_util::check_all_close(X2, exp_X2, 1e-12)
+
+  # with a zero gradient only the decoupled weight-decay term fires:
+  # X_wd = X * (1 - lr*lambda)
+  [Xwd, mwd, vwd] = adamw::update(X, matrix(0, rows=2, cols=3), lr, beta1, beta2, epsilon, lambda, 0, m0, v0)
+  test_util::check_all_close(Xwd, X * (1 - lr*lambda), 1e-12)
+
+  # with lambda=0 and a zero gradient the parameters must be unchanged
+  [Xnd, mnd, vnd] = adamw::update(X, matrix(0, rows=2, cols=3), lr, beta1, beta2, epsilon, 0.0, 0, m0, v0)
+  test_util::check_all_close(Xnd, X, 1e-12)
+
+  # minimizing 0.5*||W||^2 over 400 steps should reduce the loss to <1% of init
+  W = matrix("3 -4 5  -6 7 -8", rows=2, cols=3)
+  [m, v] = adamw::init(W)
+  init_loss = 0.5 * sum(W^2)
+  t = 0
+  for (i in 1:400) {
+    [W, m, v] = adamw::update(W, W, 0.05, beta1, beta2, epsilon, 0.001, t, m, v)
+    t = t + 1
+  }
+  if (0.5 * sum(W^2) >= 0.01 * init_loss) {
+    test_util::fail("adamw/converged: loss was not reduced enough")
+  }
+}
+
+test_adamw()

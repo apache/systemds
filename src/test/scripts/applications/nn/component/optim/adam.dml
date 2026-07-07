@@ -1,0 +1,89 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/optim/adam.dml") as adam
+source("src/test/scripts/applications/nn/util.dml") as test_util
+source("src/test/scripts/applications/nn/component/optim/optim_check.dml") as ch
+
+test_adam = function() {
+  lr     = 0.01
+  beta1  = 0.9
+  beta2  = 0.999
+  epsilon = 1e-8
+
+  # both moment vectors start at zero with the same shape as the parameters
+  X = matrix("1 2 3  4 5 6", rows=2, cols=3)
+  [m0, v0] = adam::init(X)
+  test_util::check_all_close(m0, matrix(0, rows=2, cols=3), 1e-12)
+  test_util::check_all_close(v0, matrix(0, rows=2, cols=3), 1e-12)
+
+  # first step (m=v=0, t=0 -> internal t becomes 1):
+  #   m1 = (1-beta1)*dX
+  #   v1 = (1-beta2)*dX^2
+  #   lr_eff = lr * sqrt(1-beta2) / (1-beta1)
+  #   X1 = X - lr_eff * m1 / (sqrt(v1) + eps)
+  dX = matrix("0.5 -0.5 0.5  -1 1 -1", rows=2, cols=3)
+  [X1, m1, v1] = adam::update(X, dX, lr, beta1, beta2, epsilon, 0, m0, v0)
+  exp_m1  = (1-beta1)*dX
+  exp_v1  = (1-beta2)*dX^2
+  lr_eff1 = lr * sqrt(1-beta2) / (1-beta1)
+  exp_X1  = X - lr_eff1 * exp_m1 / (sqrt(exp_v1) + epsilon)
+  test_util::check_all_close(m1, exp_m1, 1e-12)
+  test_util::check_all_close(v1, exp_v1, 1e-12)
+  test_util::check_all_close(X1, exp_X1, 1e-12)
+  ch::check_finite(X1, "adam/finite")
+
+  # second step (t=1 -> internal t becomes 2, bias correction uses beta^2):
+  #   m2 = beta1*m1 + (1-beta1)*dX
+  #   v2 = beta2*v1 + (1-beta2)*dX^2
+  #   lr_eff2 = lr * sqrt(1-beta2^2) / (1-beta1^2)
+  #   X2 = X1 - lr_eff2 * m2 / (sqrt(v2) + eps)
+  [X2, m2, v2] = adam::update(X1, dX, lr, beta1, beta2, epsilon, 1, m1, v1)
+  exp_m2  = beta1*m1 + (1-beta1)*dX
+  exp_v2  = beta2*v1 + (1-beta2)*dX^2
+  lr_eff2 = lr * sqrt(1-beta2^2) / (1-beta1^2)
+  exp_X2  = X1 - lr_eff2 * exp_m2 / (sqrt(exp_v2) + epsilon)
+  test_util::check_all_close(m2, exp_m2, 1e-12)
+  test_util::check_all_close(v2, exp_v2, 1e-12)
+  test_util::check_all_close(X2, exp_X2, 1e-12)
+
+  # the bias-corrected first step is approximately lr in magnitude regardless
+  # of the gradient scale, because Adam normalises by the gradient's own size
+  step = max(abs(X1 - X))
+  if (abs(step - lr) >= 1e-3) {
+    test_util::fail("adam/step_magnitude: first step " + step + " differs from lr " + lr + " by more than 1e-3")
+  }
+
+  # minimizing 0.5*||W||^2 over 400 steps should reduce the loss to <1% of init
+  W = matrix("3 -4 5  -6 7 -8", rows=2, cols=3)
+  [m, v] = adam::init(W)
+  init_loss = 0.5 * sum(W^2)
+  t = 0
+  for (i in 1:400) {
+    [W, m, v] = adam::update(W, W, 0.05, beta1, beta2, epsilon, t, m, v)
+    t = t + 1
+  }
+  if (0.5 * sum(W^2) >= 0.01 * init_loss) {
+    test_util::fail("adam/converged: loss was not reduced enough")
+  }
+}
+
+test_adam()

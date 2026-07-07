@@ -35,7 +35,10 @@ import org.junit.runners.Parameterized.Parameters;
 @net.jcip.annotations.NotThreadSafe
 public class NNOptimizerMNISTTest extends TestFolder {
   /*
-   * TODO: add instruction how to add optimizer + architecture
+   * To add new optimizer to this test, add an
+   * adapter to "src/test/scripts/applications/nn/component/optim/adapters/" 
+   * and add it to the parameter Collection. If needed, adjust the 
+   * current function interface or make variables adjustable via parameter.
    */
 
 	// region: parameters
@@ -70,6 +73,8 @@ public class NNOptimizerMNISTTest extends TestFolder {
 			this.inject_optimizer_adapter_module_and_run(this.optimizer, this.lr);
 	}
 
+  // injects the adapter from "src/test/scripts/applications/nn/component/optim/adapters/"
+  // and executes the script while looking out for errors.
 	private void inject_optimizer_adapter_module_and_run(String optimizer, double lr) {
 		Script script = dmlFromFile(getBaseFilePath() + "component/optim/mnist_optimizer_check.dml");
 		String moduleImportStatement = String.format("source(\"src/test/scripts/applications/nn/component/optim/adapters/%s.dml\") as optimizer", optimizer);

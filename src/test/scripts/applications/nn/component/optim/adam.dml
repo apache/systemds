@@ -51,39 +51,149 @@ test_adam = function() {
   test_util::check_all_close(X1, exp_X1, 1e-12)
   ch::check_finite(X1, "adam/finite")
 
-  # second step (t=1 -> internal t becomes 2, bias correction uses beta^2):
-  #   m2 = beta1*m1 + (1-beta1)*dX
-  #   v2 = beta2*v1 + (1-beta2)*dX^2
-  #   lr_eff2 = lr * sqrt(1-beta2^2) / (1-beta1^2)
-  #   X2 = X1 - lr_eff2 * m2 / (sqrt(v2) + eps)
+  # second step (t=1 -> internal t becomes 2, bias correction uses beta^2).
+  # expected values are chained from the previous *expected* values, not from
+  # the returned m1/v1: a persistent bug in the moment update that agrees with
+  # itself across steps must still fail the analytic check here.
   [X2, m2, v2] = adam::update(X1, dX, lr, beta1, beta2, epsilon, 1, m1, v1)
-  exp_m2  = beta1*m1 + (1-beta1)*dX
-  exp_v2  = beta2*v1 + (1-beta2)*dX^2
+  exp_m2  = beta1*exp_m1 + (1-beta1)*dX
+  exp_v2  = beta2*exp_v1 + (1-beta2)*dX^2
   lr_eff2 = lr * sqrt(1-beta2^2) / (1-beta1^2)
   exp_X2  = X1 - lr_eff2 * exp_m2 / (sqrt(exp_v2) + epsilon)
   test_util::check_all_close(m2, exp_m2, 1e-12)
   test_util::check_all_close(v2, exp_v2, 1e-12)
   test_util::check_all_close(X2, exp_X2, 1e-12)
 
-  # the bias-corrected first step is approximately lr in magnitude regardless
-  # of the gradient scale, because Adam normalises by the gradient's own size
-  step = max(abs(X1 - X))
-  if (abs(step - lr) >= 1e-3) {
-    test_util::fail("adam/step_magnitude: first step " + step + " differs from lr " + lr + " by more than 1e-3")
+  # non-trivial timestep: exercise the bias-correction exponents at t=17 from
+  # arbitrary non-zero moment state. Small t values (1, 2) hide bugs like
+  # replacing beta^t with beta*t, which agrees at t=1 and is close at t=2.
+  m_seed = matrix("0.1 -0.2 0.3  -0.4 0.5 -0.6", rows=2, cols=3)
+  v_seed = matrix("0.01 0.02 0.03  0.04 0.05 0.06", rows=2, cols=3)
+  t_in   = 16                                        # internal t becomes 17
+  [Xt, mt, vt] = adam::update(X, dX, lr, beta1, beta2, epsilon, t_in, m_seed, v_seed)
+  exp_mt  = beta1*m_seed + (1-beta1)*dX
+  exp_vt  = beta2*v_seed + (1-beta2)*dX^2
+  lr_efft = lr * sqrt(1-beta2^17) / (1-beta1^17)
+  exp_Xt  = X - lr_efft * exp_mt / (sqrt(exp_vt) + epsilon)
+  test_util::check_all_close(mt, exp_mt, 1e-12)
+  test_util::check_all_close(vt, exp_vt, 1e-12)
+  test_util::check_all_close(Xt, exp_Xt, 1e-12)
+
+  # numerical stability: with dX=0 and m=v=0 the update divides through
+  # sqrt(0)+eps. The step must be exactly zero and the result finite.
+  [Xz, mz, vz] = adam::update(X, matrix(0, rows=2, cols=3), lr, beta1, beta2, epsilon, 0, m0, v0)
+  test_util::check_all_close(Xz, X, 1e-12)
+  test_util::check_all_close(mz, matrix(0, rows=2, cols=3), 1e-12)
+  test_util::check_all_close(vz, matrix(0, rows=2, cols=3), 1e-12)
+  ch::check_finite(Xz, "adam/stability_zero_grad")
+
+  # non-square shape: a 1xN parameter vector must round-trip through init and
+  # update without any broadcasting or shape confusion. lr_eff at t=1 is
+  # recomputed inline rather than reused from lr_eff1 above, so a shape bug
+  # cannot silently piggy-back on a value from the differently-shaped 2x3 case.
+  Xr  = matrix("1 -2 3 -4 5", rows=1, cols=5)
+  dXr = matrix("0.5 -0.5 0.25 -0.25 0.1", rows=1, cols=5)
+  [mr0, vr0] = adam::init(Xr)
+  test_util::check_all_close(mr0, matrix(0, rows=1, cols=5), 1e-12)
+  [Xr1, mr1, vr1] = adam::update(Xr, dXr, lr, beta1, beta2, epsilon, 0, mr0, vr0)
+  exp_mr1   = (1-beta1)*dXr
+  exp_vr1   = (1-beta2)*dXr^2
+  lr_eff_r1 = lr * sqrt(1-beta2) / (1-beta1)
+  exp_Xr1   = Xr - lr_eff_r1 * exp_mr1 / (sqrt(exp_vr1) + epsilon)
+  test_util::check_all_close(Xr1, exp_Xr1, 1e-12)
+
+  # sign / direction sanity: at X=0 with m=v=0 the update sign must be opposite
+  # to dX, independent of the analytic formula. Catches a wrong-sign bug that
+  # the exp_* comparisons above would miss if analytic + impl were flipped
+  # in lockstep.
+  Xs = matrix(0, rows=2, cols=3)
+  [ms0, vs0] = adam::init(Xs)
+  [Xs1, ms1_out, vs1_out] = adam::update(Xs, dX, lr, beta1, beta2, epsilon, 0, ms0, vs0)
+  # every element of Xs1 must have opposite sign to dX (or be zero if dX is zero)
+  if (sum((sign(Xs1) == -sign(dX)) | (dX == 0)) < length(dX)) {
+    test_util::fail("adam/sign: step is not opposite to the gradient")
   }
 
-  # minimizing 0.5*||W||^2 over 400 steps should reduce the loss to <1% of init
+  # state independence from X: m and v depend only on dX and prior (m, v),
+  # not on X. Two updates with the same gradient/state but different parameters
+  # must produce identical moment state.
+  Xa = matrix("1 2 3  4 5 6",          rows=2, cols=3)
+  Xb = matrix("10 -20 30  40 -50 60",  rows=2, cols=3)
+  [Xa_out, ma1, va1] = adam::update(Xa, dX, lr, beta1, beta2, epsilon, 0, m0, v0)
+  [Xb_out, mb1, vb1] = adam::update(Xb, dX, lr, beta1, beta2, epsilon, 0, m0, v0)
+  test_util::check_all_close(ma1, mb1, 1e-12)
+  test_util::check_all_close(va1, vb1, 1e-12)
+
+  # bias-correction equivalence at t=2: the compact form used by the impl
+  #   lr_eff = lr * sqrt(1-beta2^t)/(1-beta1^t); X -= lr_eff * m / (sqrt(v)+eps)
+  # must agree with the textbook form
+  #   m_hat = m/(1-beta1^t); v_hat = v/(1-beta2^t); X -= lr * m_hat/(sqrt(v_hat)+eps)
+  # up to how epsilon is scaled inside the sqrt. Tolerance is loosened to 1e-4
+  # to absorb that epsilon placement (still >> eps=1e-8, so any exponentiation
+  # bug shows up).
+  [X2t, m2t, v2t] = adam::update(X1, dX, lr, beta1, beta2, epsilon, 1, m1, v1)
+  m_hat2 = exp_m2 / (1-beta1^2)
+  v_hat2 = exp_v2 / (1-beta2^2)
+  exp_X2_textbook = X1 - lr * m_hat2 / (sqrt(v_hat2) + epsilon)
+  test_util::check_all_close(X2t, exp_X2_textbook, 1e-4)
+
+  # lr=0 no-op: with a zero learning rate the parameters must not move at all.
+  # Moment state still updates because Adam decouples state accumulation from
+  # the parameter update; only X is pinned here.
+  [X0, m0lr, v0lr] = adam::update(X, dX, 0.0, beta1, beta2, epsilon, 0, m0, v0)
+  test_util::check_all_close(X0, X, 1e-12)
+
+  # large-magnitude gradient: Adam's adaptive scaling should tame a huge dX to
+  # roughly a step of size lr, and the result must stay finite (no overflow).
+  dXbig = matrix(1e10, rows=2, cols=3)
+  [Xbig, mbig, vbig] = adam::update(X, dXbig, lr, beta1, beta2, epsilon, 0, m0, v0)
+  ch::check_finite(Xbig, "adam/finite_large_grad")
+  # at t=1 the per-element step magnitude collapses to lr for dX >> eps
+  if (max(abs(Xbig - X)) > lr + 1e-6) {
+    test_util::fail("adam/large_grad_step: step exceeded lr under a huge gradient")
+  }
+
+  # minimizing 0.5*||W||^2 over 400 steps should reduce the loss to <1% of init.
+  # Adam can oscillate, so strict monotone descent would be wrong here; instead
+  # we assert progress at a checkpoint (loss@200 < loss@400_init) to catch a
+  # run that stalls after some initial progress.
   W = matrix("3 -4 5  -6 7 -8", rows=2, cols=3)
   [m, v] = adam::init(W)
   init_loss = 0.5 * sum(W^2)
+  loss_mid = 0.0
   t = 0
   for (i in 1:400) {
     [W, m, v] = adam::update(W, W, 0.05, beta1, beta2, epsilon, t, m, v)
     t = t + 1
+    if (i == 200) {
+      loss_mid = 0.5 * sum(W^2)
+    }
   }
-  if (0.5 * sum(W^2) >= 0.01 * init_loss) {
+  final_loss = 0.5 * sum(W^2)
+  if (final_loss >= 0.01 * init_loss) {
     test_util::fail("adam/converged: loss was not reduced enough")
   }
+  # no-stall: the second half must also make progress, not just the first half
+  if (final_loss >= loss_mid) {
+    test_util::fail("adam/no_stall: loss did not decrease between step 200 and 400")
+  }
+
+  # non-quadratic loss: f(w) = sum(w^4), grad = 4*w^3. Unlike the quadratic bowl
+  # the gradient magnitude changes non-linearly with w, so a broken adaptive
+  # rescaling that only happens to work on ||W||^2 will fail here.
+  Wq = matrix("1.5 -1.2 0.8  -0.9 1.1 -1.4", rows=2, cols=3)
+  [mq, vq] = adam::init(Wq)
+  init_lossq = sum(Wq^4)
+  tq = 0
+  for (i in 1:600) {
+    gq = 4 * Wq^3
+    [Wq, mq, vq] = adam::update(Wq, gq, 0.05, beta1, beta2, epsilon, tq, mq, vq)
+    tq = tq + 1
+  }
+  if (sum(Wq^4) >= 0.01 * init_lossq) {
+    test_util::fail("adam/converged_quartic: loss was not reduced enough")
+  }
+  ch::check_finite(Wq, "adam/converged_quartic")
 }
 
 test_adam()

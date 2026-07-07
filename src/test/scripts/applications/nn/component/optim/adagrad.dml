@@ -39,41 +39,134 @@ test_adagrad = function() {
   test_util::check_all_close(X1, X - lr*dX / (sqrt(dX^2) + epsilon), 1e-12)
   ch::check_finite(X1, "adagrad/finite")
 
-  # a zero gradient leaves both the parameters and the cache untouched
+  # numerical stability: with dX=0 and cache=0 the update divides through
+  # sqrt(0)+eps. The parameters must be unchanged, the cache untouched, and
+  # the result finite.
   [Xz, cz] = adagrad::update(X, matrix(0, rows=2, cols=3), lr, epsilon, c0)
   test_util::check_all_close(Xz, X, 1e-12)
   test_util::check_all_close(cz, c0, 1e-12)
+  ch::check_finite(Xz, "adagrad/stability_zero_grad")
 
-  # the cache accumulates squared gradients, so it never shrinks; a second
-  # step with the same gradient must have cache2 = cache1 + dX^2
+  # the cache accumulates squared gradients across steps. The exact-equality
+  # check below implicitly proves non-decreasing and step-shrinking; no need
+  # for separate min(c2-c1)>=0 or step-2<step-1 asserts.
   [X2, c2] = adagrad::update(X1, dX, lr, epsilon, c1)
-  if (min(c2 - c1) < 0) {
-    test_util::fail("adagrad/cache_nondecreasing: cache shrank between steps")
-  }
   test_util::check_all_close(c2, c1 + dX^2, 1e-12)
   test_util::check_all_close(X2, X1 - lr*dX / (sqrt(c2) + epsilon), 1e-12)
 
-  # the growing cache shrinks the effective learning rate, so with a constant
-  # gradient the second update should move the parameters less than the first
-  if (max(abs(X2 - X1)) >= max(abs(X1 - X))) {
-    test_util::fail("adagrad/step_shrinks: second step did not shrink vs. first")
+  # non-negativity: cache is a running sum of squares, so every element must be
+  # >= 0. This is cheap and catches sign / subtraction-instead-of-addition bugs.
+  if (min(c2) < 0) {
+    test_util::fail("adagrad/non_negative: cache went negative")
   }
+
+  # mixed-sign accumulation: c += dX^2 must not depend on the sign of dX.
+  # Running the same |dX| with alternating signs must produce the same cache
+  # as running it with constant signs. If someone wrote c += dX (or c += |dX|
+  # miscomputed), this asymmetry surfaces here — the constant-sign path would
+  # match the quadratic accumulator, the mixed-sign one would not.
+  Xms = matrix("1 2 3  4 5 6", rows=2, cols=3)
+  cms = adagrad::init(Xms)
+  gpos = matrix("0.5 -0.5 0.5  -1 1 -1", rows=2, cols=3)
+  gneg = -gpos
+  [Xms, cms] = adagrad::update(Xms, gpos, lr, epsilon, cms)
+  [Xms, cms] = adagrad::update(Xms, gneg, lr, epsilon, cms)
+  # cache after two steps must equal gpos^2 + gneg^2 == 2 * gpos^2
+  test_util::check_all_close(cms, 2 * gpos^2, 1e-12)
+
+  # sign / direction sanity: at cache=0 with X=0, the step is opposite to dX.
+  # Catches a sign flip in the update that the exact-equality checks would
+  # miss if analytic + impl were flipped in lockstep.
+  Xs = matrix(0, rows=2, cols=3)
+  cs0 = adagrad::init(Xs)
+  [Xs1, cs1_out] = adagrad::update(Xs, dX, lr, epsilon, cs0)
+  if (sum((sign(Xs1) == -sign(dX)) | (dX == 0)) < length(dX)) {
+    test_util::fail("adagrad/sign: step is not opposite to the gradient")
+  }
+
+  # lr=0 no-op: with a zero learning rate the parameters must not move, though
+  # the cache should still accumulate (adagrad's cache update is independent
+  # of lr and needed to keep state consistent for later steps).
+  [Xlr0, clr0] = adagrad::update(X, dX, 0.0, epsilon, c0)
+  test_util::check_all_close(Xlr0, X, 1e-12)
+  test_util::check_all_close(clr0, dX^2, 1e-12)
+
+  # large-magnitude gradient: adagrad's sqrt(cache) normalization tames a huge
+  # dX to roughly a step of size lr (at cache=0 the update is
+  # lr*dX/(|dX|+eps) which for |dX| >> eps is ~lr*sign(dX)). The result must
+  # stay finite.
+  dXbig = matrix(1e10, rows=2, cols=3)
+  [Xbig, cbig] = adagrad::update(X, dXbig, lr, epsilon, c0)
+  ch::check_finite(Xbig, "adagrad/finite_large_grad")
+  if (max(abs(Xbig - X)) > lr + 1e-6) {
+    test_util::fail("adagrad/large_grad_step: step exceeded lr under a huge gradient")
+  }
+
+  # non-square shape: a 1xN parameter vector must round-trip through init
+  # and update without any broadcasting or shape confusion.
+  Xr  = matrix("1 -2 3 -4 5", rows=1, cols=5)
+  dXr = matrix("0.5 -0.5 0.25 -0.25 0.1", rows=1, cols=5)
+  cr0 = adagrad::init(Xr)
+  test_util::check_all_close(cr0, matrix(0, rows=1, cols=5), 1e-12)
+  [Xr1, cr1] = adagrad::update(Xr, dXr, lr, epsilon, cr0)
+  test_util::check_all_close(cr1, dXr^2, 1e-12)
+  test_util::check_all_close(Xr1, Xr - lr*dXr / (sqrt(dXr^2) + epsilon), 1e-12)
 
   # minimizing 0.5*||W||^2 (its gradient is just W) should drive the loss down
   # to well below its starting value; adagrad needs a larger lr than sgd here
-  # because the cache damps the effective step size
+  # because the cache damps the effective step size. Also verify the cache
+  # magnitude: with constant-sign gradients the cache after N steps should
+  # be a real multiple of the first squared-gradient contribution — not just
+  # the single-step value.
   W = matrix("3 -4 5  -6 7 -8", rows=2, cols=3)
   cache = adagrad::init(W)
   init_loss = 0.5 * sum(W^2)
+  # snapshot the step-1 cache so the growth check below is anchored to a
+  # value from this run rather than a hard-coded magic number.
+  [W_snap, cache_snap] = adagrad::update(W, W, 0.5, epsilon, cache)
+  W = W_snap
+  cache = cache_snap
+  cache_step1 = cache
   losses = matrix(0, rows=300, cols=1)
-  for (i in 1:300) {
+  losses[1,] = 0.5 * sum(W^2)
+  for (i in 2:300) {
     [W, cache] = adagrad::update(W, W, 0.5, epsilon, cache)
     losses[i,] = 0.5 * sum(W^2)
   }
+  # descent: on a convex quadratic with constant-sign gradients and this lr,
+  # adagrad is monotone-decreasing. Elsewhere this would be too strict — for
+  # this specific setup it is the right invariant.
   ch::check_decreasing(losses, "adagrad/descent")
   if (0.5 * sum(W^2) >= 0.01 * init_loss) {
     test_util::fail("adagrad/converged: loss was not reduced enough")
   }
+  # cache-growth check: anchor to the observed step-1 cache rather than a
+  # hard-coded number. Every element must have grown by at least 2x over 300
+  # steps; a leak / reset would collapse toward 1x and fail. The factor is
+  # conservative (not ~300x) because W shrinks toward zero, so later
+  # squared-gradient contributions are small.
+  if (min(cache / cache_step1) < 2.0) {
+    test_util::fail("adagrad/cache_grows: cache did not accumulate as expected")
+  }
+  # and cache must remain non-negative after all those updates
+  if (min(cache) < 0) {
+    test_util::fail("adagrad/cache_non_negative: cache went negative during training")
+  }
+
+  # non-quadratic loss: f(w) = sum(w^4), grad = 4*w^3. Unlike the quadratic
+  # bowl the gradient magnitude changes non-linearly with w, so a broken
+  # adaptive rescaling that only happens to work on ||W||^2 fails here.
+  Wq = matrix("1.5 -1.2 0.8  -0.9 1.1 -1.4", rows=2, cols=3)
+  cacheq = adagrad::init(Wq)
+  init_lossq = sum(Wq^4)
+  for (i in 1:1500) {
+    gq = 4 * Wq^3
+    [Wq, cacheq] = adagrad::update(Wq, gq, 0.5, epsilon, cacheq)
+  }
+  if (sum(Wq^4) >= 0.05 * init_lossq) {
+    test_util::fail("adagrad/converged_quartic: loss was not reduced enough")
+  }
+  ch::check_finite(Wq, "adagrad/converged_quartic")
 }
 
 test_adagrad()

@@ -32,7 +32,7 @@ input = 784
 hidden = 100
 output = 10
 
-lr = 0.001
+lr = ifdef($lr, 0.001)
 
 epochs = 5
 batch_size = 100

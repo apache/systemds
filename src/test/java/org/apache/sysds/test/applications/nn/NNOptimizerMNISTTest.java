@@ -41,14 +41,25 @@ public class NNOptimizerMNISTTest extends TestFolder {
 	// region: parameters
 
 	private final String optimizer;
+	private final double lr;
 
-	public NNOptimizerMNISTTest(String optimizer) {
+	public NNOptimizerMNISTTest(String optimizer, double lr) {
 		this.optimizer = optimizer;
+		this.lr = lr;
 	}
 
-	@Parameters
-	public static Collection<String> data() {
-		return Arrays.asList("adagrad", "adam", "adamw", "lars", "rmsprop", "sgd", "sgd_momentum", "sgd_nesterov");
+	@Parameters(name = "{0}")
+	public static Collection<Object[]> data() {
+		return Arrays.asList(new Object[][] {
+			{"adagrad", 0.001},
+			{"adam", 0.001},
+			{"adamw", 0.001},
+			{"lars", 0.1},
+			{"rmsprop", 0.001},
+			{"sgd", 0.001},
+			{"sgd_momentum", 0.001},
+			{"sgd_nesterov", 0.001}
+		});
   }
 
 	// endregion
@@ -56,14 +67,15 @@ public class NNOptimizerMNISTTest extends TestFolder {
   @Test
 	public void mnist_optimizer_test() {
 		if (this.optimizer != null)
-			this.inject_optimizer_adapter_module_and_run(this.optimizer);
+			this.inject_optimizer_adapter_module_and_run(this.optimizer, this.lr);
 	}
 
-	private void inject_optimizer_adapter_module_and_run(String optimizer) {
+	private void inject_optimizer_adapter_module_and_run(String optimizer, double lr) {
 		Script script = dmlFromFile(getBaseFilePath() + "component/optim/mnist_optimizer_check.dml");
 		String moduleImportStatement = String.format("source(\"src/test/scripts/applications/nn/component/optim/adapters/%s.dml\") as optimizer", optimizer);
 		String newScriptString = script.getScriptString().replaceFirst("(?m)^.*# INSERT ADAPTER-MODULE #.*$", moduleImportStatement);
 		script.setScriptString(newScriptString);
+		script.in("$lr", lr);
 		String stdOut = executeAndCaptureStdOut(script).getRight();
 		assertTrue(stdOut, !stdOut.contains(BaseTest.ERROR_STRING));
 	}

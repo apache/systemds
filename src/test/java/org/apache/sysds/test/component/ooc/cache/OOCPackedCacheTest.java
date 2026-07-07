@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.ooc.cache.BlockEntry;
+import org.apache.sysds.runtime.ooc.cache.BlockKey;
 import org.apache.sysds.runtime.ooc.cache.OOCCache;
 import org.apache.sysds.runtime.ooc.cache.OOCCacheImpl;
 import org.apache.sysds.runtime.ooc.cache.io.OOCMatrixIOHandler;
@@ -74,6 +75,128 @@ public class OOCPackedCacheTest {
 				reader.getUsedMemory());
 			await(cache.unpin(second, reader), WAIT_TIMEOUT_SEC);
 			awaitUsedMemory(reader, 0, WAIT_TIMEOUT_SEC);
+		}
+		finally {
+			cache.shutdown();
+			producer.destroy();
+			reader.destroy();
+		}
+	}
+
+	@Test
+	public void testPutPackPinnedPacksSmallTilesAndBypassesLargeTile() throws Exception {
+		GlobalMemoryBroker broker = new GlobalMemoryBroker(1L << 32);
+		SyncMemoryAllowance producer = new SyncMemoryAllowance(broker);
+		producer.setTargetMemory(1L << 30);
+		SyncMemoryAllowance reader = new SyncMemoryAllowance(broker);
+		reader.setTargetMemory(1L << 30);
+		OOCPackedCache cache = new OOCPackedCache(new OOCCacheImpl(new OOCMatrixIOHandler(), 1L << 30, 1L << 30),
+			2 * BYTES, 10 * BYTES, -1, 0);
+		try {
+			long largeBytes = 2 * BYTES;
+			long[] tileIds = new long[] {0, 1, 2};
+			Object[] values = new Object[] {value(3.0), value(9.0), value(5.0)};
+			long[] sizes = new long[] {BYTES, largeBytes, BYTES};
+			producer.reserveBlocking(2 * BYTES + largeBytes);
+			BlockEntry[] entries = cache.putPackPinned(STREAM_ID, tileIds, values, sizes, 0, tileIds.length,
+				producer);
+			unpinAndFlush(cache, producer, entries);
+			awaitUsedMemory(producer, 0, WAIT_TIMEOUT_SEC);
+
+			OOCPackedCache.PackGroup group = cache.getPackGroup(STREAM_ID, 0);
+			Assert.assertNotNull(group);
+			Assert.assertEquals(2, group.size());
+			Assert.assertEquals(0, group.index(0));
+			Assert.assertEquals(2, group.index(1));
+			Assert.assertNull("Large tiles in putPackPinned should bypass packing.",
+				cache.getPackGroup(STREAM_ID, 1));
+
+			BlockEntry packed = cache.pin(STREAM_ID, 2, reader).get(WAIT_TIMEOUT_SEC, TimeUnit.SECONDS);
+			BlockEntry large = cache.pin(STREAM_ID, 1, reader).get(WAIT_TIMEOUT_SEC, TimeUnit.SECONDS);
+			Assert.assertEquals(5.0, scalar(packed), 0.0);
+			Assert.assertEquals(9.0, scalar(large), 0.0);
+			Assert.assertEquals(2 * BYTES + largeBytes, reader.getUsedMemory());
+
+			await(cache.unpin(packed, reader), WAIT_TIMEOUT_SEC);
+			await(cache.unpin(large, reader), WAIT_TIMEOUT_SEC);
+			awaitUsedMemory(reader, 0, WAIT_TIMEOUT_SEC);
+		}
+		finally {
+			cache.shutdown();
+			producer.destroy();
+			reader.destroy();
+		}
+	}
+
+	@Test
+	public void testPinAdmittedReusesPackedPhysicalPin() throws Exception {
+		GlobalMemoryBroker broker = new GlobalMemoryBroker(1L << 32);
+		SyncMemoryAllowance producer = new SyncMemoryAllowance(broker);
+		producer.setTargetMemory(1L << 30);
+		SyncMemoryAllowance reader = new SyncMemoryAllowance(broker);
+		reader.setTargetMemory(1L << 30);
+		OOCPackedCache cache = new OOCPackedCache(new OOCCacheImpl(new OOCMatrixIOHandler(), 1L << 30, 1L << 30),
+			2 * BYTES, 10 * BYTES, -1, 1000);
+		try {
+			BlockEntry[] entries = publishSmallTiles(cache, producer, STREAM_ID, 2);
+			unpinAndFlush(cache, producer, entries);
+			awaitUsedMemory(producer, 0, WAIT_TIMEOUT_SEC);
+
+			BlockEntry first = cache.pinAdmitted(STREAM_ID, 0, reader).get(WAIT_TIMEOUT_SEC, TimeUnit.SECONDS);
+			Assert.assertNotNull(first);
+			Assert.assertEquals(1.0, scalar(first), 0.0);
+			Assert.assertEquals(2 * BYTES, reader.getUsedMemory());
+
+			OOCCache.UnpinHandle delayed = cache.unpin(first, reader);
+			Assert.assertFalse(delayed.isCommitted());
+			Assert.assertEquals("Delayed packed release keeps the physical pack charged.", 2 * BYTES,
+				reader.getUsedMemory());
+
+			BlockEntry second = cache.pinAdmitted(STREAM_ID, 1, reader).get(WAIT_TIMEOUT_SEC, TimeUnit.SECONDS);
+			Assert.assertNotNull(second);
+			Assert.assertEquals(2.0, scalar(second), 0.0);
+			Assert.assertFalse("Re-pinning with the same allowance should cancel the pending physical release.",
+				delayed.getCompletionFuture().get(WAIT_TIMEOUT_SEC, TimeUnit.SECONDS));
+			Assert.assertEquals(2 * BYTES, reader.getUsedMemory());
+
+			await(cache.unpin(second, reader), WAIT_TIMEOUT_SEC);
+			awaitUsedMemory(reader, 0, WAIT_TIMEOUT_SEC);
+		}
+		finally {
+			cache.shutdown();
+			producer.destroy();
+			reader.destroy();
+		}
+	}
+
+	@Test
+	public void testReferenceAndDereferencePackedLocations() throws Exception {
+		GlobalMemoryBroker broker = new GlobalMemoryBroker(1L << 32);
+		SyncMemoryAllowance producer = new SyncMemoryAllowance(broker);
+		producer.setTargetMemory(1L << 30);
+		SyncMemoryAllowance reader = new SyncMemoryAllowance(broker);
+		reader.setTargetMemory(1L << 30);
+		OOCPackedCache cache = new OOCPackedCache(new OOCCacheImpl(new OOCMatrixIOHandler(), 1L << 30, 1L << 30),
+			2 * BYTES, 10 * BYTES, -1, 0);
+		try {
+			producer.reserveBlocking(BYTES);
+			BlockEntry pending = cache.putPinned(STREAM_ID, 0, value(13.0), BYTES, producer);
+			Assert.assertEquals(2, cache.reference(pending));
+			Assert.assertEquals(1, cache.dereference(pending));
+
+			unpinAndFlush(cache, producer, new BlockEntry[] {pending});
+			awaitUsedMemory(producer, 0, WAIT_TIMEOUT_SEC);
+
+			BlockEntry pinned = cache.pin(STREAM_ID, 0, reader).get(WAIT_TIMEOUT_SEC, TimeUnit.SECONDS);
+			Assert.assertNotNull(pinned);
+			Assert.assertEquals(13.0, scalar(pinned), 0.0);
+			Assert.assertEquals(2, cache.reference(pinned));
+			Assert.assertEquals(1, cache.dereference(pinned));
+			Assert.assertEquals(0, cache.dereference(new BlockKey(STREAM_ID, 0)));
+
+			await(cache.unpin(pinned, reader), WAIT_TIMEOUT_SEC);
+			awaitUsedMemory(reader, 0, WAIT_TIMEOUT_SEC);
+			Assert.assertNull(cache.pin(STREAM_ID, 0, reader).get(WAIT_TIMEOUT_SEC, TimeUnit.SECONDS));
 		}
 		finally {
 			cache.shutdown();
@@ -141,14 +264,52 @@ public class OOCPackedCacheTest {
 
 			OOCPackedCache.PackLease lease = cache.pinPack(group, reader).get(WAIT_TIMEOUT_SEC, TimeUnit.SECONDS);
 			Assert.assertNotNull(lease);
-			try {
+			try(lease) {
 				Assert.assertEquals(7.0, scalar((IndexedMatrixValue) lease.value(0)), 0.0);
 				Assert.assertEquals(11.0, scalar((IndexedMatrixValue) lease.value(1)), 0.0);
 				Assert.assertEquals(2 * BYTES, reader.getUsedMemory());
 			}
-			finally {
-				lease.close();
-			}
+			awaitUsedMemory(reader, 0, WAIT_TIMEOUT_SEC);
+		}
+		finally {
+			cache.shutdown();
+			producer.destroy();
+			reader.destroy();
+		}
+	}
+
+	@Test
+	public void testLogicalEvictionPolicyScoresPackedBlocks() throws Exception {
+		RecordingOOCIOHandler io = new RecordingOOCIOHandler();
+		GlobalMemoryBroker broker = new GlobalMemoryBroker(1L << 32);
+		SyncMemoryAllowance producer = new SyncMemoryAllowance(broker);
+		producer.setTargetMemory(1L << 30);
+		SyncMemoryAllowance reader = new SyncMemoryAllowance(broker);
+		reader.setTargetMemory(1L << 30);
+		OOCPackedCache cache = new OOCPackedCache(new OOCCacheImpl(io, 4 * BYTES, 2 * BYTES), 2 * BYTES,
+			2 * BYTES, -1, 0);
+		try {
+			cache.addEvictionPolicy(STREAM_ID, tileId -> tileId < 2 ? 100 : 0);
+			BlockEntry[] entries = publishSmallTiles(cache, producer, STREAM_ID, 4);
+			unpinAndFlush(cache, producer, entries);
+			awaitUsedMemory(producer, 0, WAIT_TIMEOUT_SEC);
+			await(() -> io.evictionCount() == 1 && cache.getOwnedCacheSize() == 2 * BYTES, WAIT_TIMEOUT_SEC);
+
+			int readsBefore = io.readCount();
+			BlockEntry retained = cache.pin(STREAM_ID, 2, reader).get(WAIT_TIMEOUT_SEC, TimeUnit.SECONDS);
+			Assert.assertNotNull(retained);
+			Assert.assertEquals(3.0, scalar(retained), 0.0);
+			Assert.assertEquals("The lower-scored packed group should remain resident.", readsBefore, io.readCount());
+			await(cache.unpin(retained, reader), WAIT_TIMEOUT_SEC);
+			awaitUsedMemory(reader, 0, WAIT_TIMEOUT_SEC);
+
+			readsBefore = io.readCount();
+			BlockEntry evicted = cache.pin(STREAM_ID, 0, reader).get(WAIT_TIMEOUT_SEC, TimeUnit.SECONDS);
+			Assert.assertNotNull(evicted);
+			Assert.assertEquals(1.0, scalar(evicted), 0.0);
+			Assert.assertTrue("The higher-scored packed group should be evicted first.",
+				io.readCount() > readsBefore);
+			await(cache.unpin(evicted, reader), WAIT_TIMEOUT_SEC);
 			awaitUsedMemory(reader, 0, WAIT_TIMEOUT_SEC);
 		}
 		finally {

@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.privacy.dp;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.instructions.cp.DPBuiltinCPInstruction;
 
 /**
  * Session-scoped differential privacy budget accountant.
@@ -216,6 +217,7 @@ public class DPBudgetAccountant {
      * zero when no Gaussian releases have been recorded).
      */
     public double totalEpsilonSpent() {
+        // Take min_α(ε_α) as the current total privacy cost
         double gaussianEps = Double.MAX_VALUE;
         for (int i = 0; i < ORDERS.length; i++) {
             double alpha = ORDERS[i];
@@ -260,7 +262,7 @@ public class DPBudgetAccountant {
     /**
      * Gaussian noise scale σ calibrated to (ε, δ)-DP:
      * <pre>
-     *   σ = Δf · sqrt(2 · ln(1.25 / δ)) / ε
+     *   σ = Δf · sqrt(2 · log(1.25 / δ)) / ε
      * </pre>
      * Must match the formula used in {@link DPBuiltinCPInstruction} so that
      * the RDP cost recorded here is consistent with the noise actually injected.

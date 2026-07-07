@@ -21,6 +21,8 @@
 
 source("src/test/scripts/applications/nn/component/optim/adapters/sgd.dml") as optimizer # INSERT ADAPTER-MODULE #
 
+source("src/test/scripts/applications/nn/component/optim/optim_check.dml") as optim_check
+
 source("scripts/nn/layers/affine.dml") as affine
 source("scripts/nn/layers/relu.dml") as relu
 source("scripts/nn/layers/softmax_cross_entropy_loss.dml") as softmax_cross_entropy_loss
@@ -61,6 +63,9 @@ state_b2 = optimizer::init_state(b2)
 
 num_iterations = ceil(n_train / batch_size)
 
+epoch_accuracies = matrix(0, rows=epochs, cols=1)
+epoch_losses = matrix(0, rows=epochs, cols=1)
+
 for (epoch in 1:epochs) {
   # test this for steady in/decrease
   epoch_loss = 0
@@ -89,21 +94,17 @@ for (epoch in 1:epochs) {
     [b2, state_b2] = optimizer::update_state(b2, d_b2, lr, state_b2, 0.9, 0.9, 1e-5, 0.9, 0.999, 0.01, 0.001)
   }
 
-test_hidden_pre_activation = affine::forward(test_pixels, W1, b1)
-test_hidden_output = relu::forward(test_hidden_pre_activation)
-test_prediction_pre_activation = affine::forward(test_hidden_output, W2, b2)
-test_prediction = softmax::forward(test_prediction_pre_activation)
-test_loss = softmax_cross_entropy_loss::forward(test_prediction_pre_activation, test_labels)
-test_acc = mean(rowIndexMax(test_prediction) == rowIndexMax(test_labels))
+  test_hidden_pre_activation = affine::forward(test_pixels, W1, b1)
+  test_hidden_output = relu::forward(test_hidden_pre_activation)
+  test_prediction_pre_activation = affine::forward(test_hidden_output, W2, b2)
+  test_prediction = softmax::forward(test_prediction_pre_activation)
+  test_loss = softmax_cross_entropy_loss::forward(test_prediction_pre_activation, test_labels)
+  test_acc = mean(rowIndexMax(test_prediction) == rowIndexMax(test_labels))
 
-print("test_loss=" + test_loss + " test_acc=" + test_acc)
+  epoch_accuracies[epoch] = test_acc
+  epoch_losses[epoch] = test_loss
+  print("test_loss=" + test_loss + " test_acc=" + test_acc)
 }
 
-test_hidden_pre_activation = affine::forward(test_pixels, W1, b1)
-test_hidden_output = relu::forward(test_hidden_pre_activation)
-test_prediction_pre_activation = affine::forward(test_hidden_output, W2, b2)
-test_prediction = softmax::forward(test_prediction_pre_activation)
-test_loss = softmax_cross_entropy_loss::forward(test_prediction_pre_activation, test_labels)
-test_acc = mean(rowIndexMax(test_prediction) == rowIndexMax(test_labels))
-
-print("test_loss=" + test_loss + " test_acc=" + test_acc)
+print(epoch_accuracies)
+print(epoch_losses)

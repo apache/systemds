@@ -81,16 +81,19 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
         }
         assertTrue("Result should have 1 row", maxRow == 1);
         assertTrue("Result should have " + COLS + " columns", maxCol == COLS);
-        // Must differ from the exact mean by a non-trivial amount.
+        // Must differ from the exact (clean) mean by a non-trivial amount.
         // (A single-seed exact-equality check is fragile; use range check.)
-        double maxNoise = maxAbsValue(result);
-        assertTrue("Result should not be exactly zero", maxNoise > 0);
+        double maxDiff = maxAbsDiffFromClean(data, result);
+        assertTrue("Result should differ from the clean mean", maxDiff > 0);
     }
 
     private double maxAbsDiff(String testName, String dml, String epsilonStr) {
         double[][] data = TestUtils.generateTestMatrix(ROWS, COLS, 0, 1, 1.0, 42);
         HashMap<CellIndex, Double> result = runAndGetResult(testName, dml, epsilonStr, data);
+        return maxAbsDiffFromClean(data, result);
+    }
 
+    private static double maxAbsDiffFromClean(double[][] data, HashMap<CellIndex, Double> result) {
         double maxDiff = 0;
         for (int c = 0; c < COLS; c++) {
             double sum = 0;
@@ -122,13 +125,6 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
         programArgs = new String[]{ "-args", input("X"), epsilonStr, output("result") };
         runTest(true, false, null, -1);
         return readDMLMatrixFromOutputDir("result");
-    }
-
-    private static double maxAbsValue(HashMap<CellIndex, Double> m) {
-        double max = 0;
-        for (double v : m.values())
-            max = Math.max(max, Math.abs(v));
-        return max;
     }
 }
 

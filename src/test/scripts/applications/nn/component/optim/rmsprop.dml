@@ -21,11 +21,22 @@
 
 source("scripts/nn/optim/rmsprop.dml") as rmsprop
 source("src/test/scripts/applications/nn/util.dml") as testutil
+source("src/test/scripts/applications/nn/component/optim/optim_check.dml") as optim_check
 
 test_rmsprop = function() {
   #test cache init all 0
   W = rand(rows=4, cols=4, min=-1, max=1)
   cache = rmsprop::init(W)
   testutil::check_all_equal(cache, matrix(0, rows=4, cols=4)) 
+
+  # if cache = 0, decay_rate=1 and dX=matrix(0) -> 
+  # Updated cache will be matrix(0).
+  # There should be no division by 0 because of the epsilon safeguard.
+  # All values should be finite (not NaN / infinite)
+  dW = matrix(0, rows=4, cols=4)
+  [W, cache] = rmsprop::update(W, dW, 0.001, 1, 1e-4, cache)
+  optim_check::check_finite(W, "rmsprop updated parameters")
+  # updated cache should be 0
+  testutil::check_all_equal(cache, matrix(0, rows=4, cols=4))
 }
 test_rmsprop()

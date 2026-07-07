@@ -71,8 +71,7 @@ public class NNOptimizerMNISTTest extends TestFolder {
 
   @Test
 	public void mnist_optimizer_test() {
-		if (this.optimizer != null)
-			this.inject_optimizer_adapter_module_and_run(this.optimizer, this.lr);
+		this.inject_optimizer_adapter_module_and_run(this.optimizer, this.lr);
 	}
 
   // injects the adapter from "src/test/scripts/applications/nn/component/optim/adapters/"

@@ -64,11 +64,11 @@ public class PlaybackStream implements OOCStream<IndexedMatrixValue> {
 
 	@Override
 	public synchronized IndexedMatrixValue dequeue() {
-		if (_subscriberSet.get())
+		if(_subscriberSet.get())
 			throw new IllegalStateException("Cannot dequeue from a playback stream if a subscriber has been set");
 
 		try {
-			if (_lastDequeue != null)
+			if(_lastDequeue != null)
 				_lastDequeue.close();
 			_lastDequeue = _streamCache.get(_streamIdx.getAndIncrement()).get();
 			return _lastDequeue.get();
@@ -79,16 +79,16 @@ public class PlaybackStream implements OOCStream<IndexedMatrixValue> {
 
 	@Override
 	public synchronized QueueCallback<IndexedMatrixValue> dequeueCB() {
-		if (_subscriberSet.get())
+		if(_subscriberSet.get())
 			throw new IllegalStateException("Cannot dequeue from a playback stream if a subscriber has been set");
 
 		try {
-			if (_lastDequeue != null)
+			if(_lastDequeue != null)
 				_lastDequeue.close();
 			_lastDequeue = _streamCache.get(_streamIdx.getAndIncrement()).get();
 			return _lastDequeue;
 		}
-		catch (InterruptedException | ExecutionException e) {
+		catch(InterruptedException | ExecutionException e) {
 			throw new DMLRuntimeException(e);
 		}
 	}
@@ -135,9 +135,9 @@ public class PlaybackStream implements OOCStream<IndexedMatrixValue> {
 		if(msg.isCancelled())
 			return;
 		CopyOnWriteArrayList<Consumer<OOCStreamMessage>> relays = _downstreamRelays;
-		if (relays != null) {
-			for (Consumer<OOCStreamMessage> relay : relays) {
-				if (msg.isCancelled())
+		if(relays != null) {
+			for(Consumer<OOCStreamMessage> relay : relays) {
+				if(msg.isCancelled())
 					break;
 				relay.accept(msg);
 			}
@@ -146,7 +146,7 @@ public class PlaybackStream implements OOCStream<IndexedMatrixValue> {
 
 	@Override
 	public void setSubscriber(Consumer<QueueCallback<IndexedMatrixValue>> subscriber) {
-		if (!_subscriberSet.compareAndSet(false, true))
+		if(!_subscriberSet.compareAndSet(false, true))
 			throw new IllegalArgumentException("Subscriber cannot be set multiple times");
 
 		_streamCache.setSubscriber(subscriber, false);
@@ -184,10 +184,10 @@ public class PlaybackStream implements OOCStream<IndexedMatrixValue> {
 
 	@Override
 	public void addDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		if (relay == null)
+		if(relay == null)
 			throw new IllegalArgumentException("Cannot set downstream relay to null");
 		CopyOnWriteArrayList<Consumer<OOCStreamMessage>> relays = _downstreamRelays;
-		if (relays == null) {
+		if(relays == null) {
 			synchronized(this) {
 				if (_downstreamRelays == null)
 					_downstreamRelays = new CopyOnWriteArrayList<>();

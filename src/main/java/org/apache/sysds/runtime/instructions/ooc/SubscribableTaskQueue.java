@@ -49,7 +49,7 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 	private String _watchdogId;
 
 	public SubscribableTaskQueue() {
-		if (OOCWatchdog.WATCH) {
+		if(OOCWatchdog.WATCH) {
 			_watchdogId = "STQ-" + hashCode();
 			// Capture a short context to help identify origin
 			OOCWatchdog.registerOpen(_watchdogId, "SubscribableTaskQueue@" + hashCode(), getCtxMsg(), this);
@@ -81,7 +81,7 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 			throw new DMLRuntimeException("Cannot enqueue NO_MORE_TASKS item");
 		int cnt = _availableCtr.incrementAndGet();
 
-		if (cnt <= 1) { // Then the queue was already closed and we disallow further enqueues
+		if(cnt <= 1) { // Then the queue was already closed and we disallow further enqueues
 			_availableCtr.decrementAndGet(); // Undo increment
 			throw new DMLRuntimeException("Cannot enqueue into closed SubscribableTaskQueue");
 		}
@@ -91,15 +91,15 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 		Consumer<QueueCallback<T>> s = _subscriber;
 		final Consumer<QueueCallback<T>> fS = s;
 
-		if (fS != null) {
+		if(fS != null) {
 			fS.accept(cb);
 			onDeliveryFinished();
 			return;
 		}
 
-		synchronized (this) {
+		synchronized(this) {
 			// Re-check that subscriber is really null to avoid race conditions
-			if (_subscriber == null) {
+			if(_subscriber == null) {
 				try {
 					super.enqueueTask(cb);
 				}
@@ -119,10 +119,10 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 
 	protected boolean tryDeliverCallback(QueueCallback<T> cb, int blockCount) {
 		Consumer<QueueCallback<T>> s = _subscriber;
-		if (s == null)
+		if(s == null)
 			return false;
 		int cnt = _availableCtr.incrementAndGet();
-		if (cnt <= 1) { // Then the queue was already closed and we disallow further enqueues
+		if(cnt <= 1) { // Then the queue was already closed and we disallow further enqueues
 			_availableCtr.decrementAndGet(); // Undo increment
 			throw new DMLRuntimeException("Cannot enqueue into closed SubscribableTaskQueue");
 		}
@@ -140,14 +140,14 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 	@Override
 	public T dequeue() {
 		try {
-			if (OOCWatchdog.WATCH)
+			if(OOCWatchdog.WATCH)
 				OOCWatchdog.addEvent(_watchdogId, "dequeue -- " + getCtxMsg());
 			if(_lastDequeued != null) {
 				_lastDequeued.close();
 				_lastDequeued = null;
 			}
 			OOCStream.QueueCallback<T> deq = super.dequeueTask();
-			if (deq != NO_MORE_TASKS) {
+			if(deq != NO_MORE_TASKS) {
 				onDeliveryFinished();
 				_lastDequeued = deq;
 				return deq.get();
@@ -162,14 +162,14 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 	@Override
 	public OOCStream.QueueCallback<T> dequeueCB() {
 		try {
-			if (OOCWatchdog.WATCH)
+			if(OOCWatchdog.WATCH)
 				OOCWatchdog.addEvent(_watchdogId, "dequeue -- " + getCtxMsg());
 			if(_lastDequeued != null) {
 				_lastDequeued.close();
 				_lastDequeued = null;
 			}
 			OOCStream.QueueCallback<T> deq = super.dequeueTask();
-			if (deq != NO_MORE_TASKS) {
+			if(deq != NO_MORE_TASKS) {
 				onDeliveryFinished();
 				_lastDequeued = deq;
 			}
@@ -187,23 +187,25 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 
 	@Override
 	public synchronized void closeInput() {
-		if (_closed.compareAndSet(false, true)) {
+		if(_closed.compareAndSet(false, true)) {
 			super.closeInput();
 			onDeliveryFinished();
 			_upstreamMsgRelays = null;
 			_downstreamMsgRelays = null;
-		} else {
+		}
+		else {
 			throw new IllegalStateException("Multiple close input calls");
 		}
 	}
 
 	private void validateBlockCountOnClose() {
 		DataCharacteristics dc = getDataCharacteristics();
-		if (dc != null && dc.dimsKnown() && dc.getBlocksize() > 0) {
+		if(dc != null && dc.dimsKnown() && dc.getBlocksize() > 0) {
 			long expected = OOCUtils.getNumBlocks(dc);
-			if (expected >= 0 && _blockCount.get() != expected) {
-				throw new DMLRuntimeException("OOCStream block count mismatch: expected "
-					+ expected + " but saw " + _blockCount.get() + " (" + dc.getRows() + "x" + dc.getCols() + ")");
+			if(expected >= 0 && _blockCount.get() != expected) {
+				throw new DMLRuntimeException(
+					"OOCStream block count mismatch: expected " + expected + " but saw " + _blockCount.get() + " (" +
+						dc.getRows() + "x" + dc.getCols() + ")");
 			}
 		}
 	}
@@ -231,7 +233,7 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 				_availableCtr.incrementAndGet(); // route terminal emission via onDeliveryFinished
 		}
 
-		for (QueueCallback<T> t : data) {
+		for(QueueCallback<T> t : data) {
 			subscriber.accept(t);
 			onDeliveryFinished();
 		}
@@ -243,13 +245,13 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 	private void onDeliveryFinished() {
 		int ctr = _availableCtr.decrementAndGet();
 
-		if (ctr == 0) {
+		if(ctr == 0) {
 			validateBlockCountOnClose();
 			Consumer<QueueCallback<T>> s = _subscriber;
-			if (s != null)
+			if(s != null)
 				s.accept(OOCStream.eos(_failure));
 
-			if (OOCWatchdog.WATCH)
+			if(OOCWatchdog.WATCH)
 				OOCWatchdog.registerClose(_watchdogId);
 		}
 	}
@@ -280,17 +282,17 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 		if(msg.isCancelled())
 			return;
 		msg.addIXTransform(_ixTransform);
-		if (msg.isCancelled())
+		if(msg.isCancelled())
 			return;
-		if (msg instanceof OOCGetStreamTypeMessage) {
-			if (_cdata != null)
+		if(msg instanceof OOCGetStreamTypeMessage) {
+			if(_cdata != null)
 				((OOCGetStreamTypeMessage) msg).setInMemoryType();
 			return;
 		}
 		CopyOnWriteArrayList<Consumer<OOCStreamMessage>> relays = _upstreamMsgRelays;
 		if(relays != null) {
-			for (Consumer<OOCStreamMessage> relay : relays) {
-				if (msg.isCancelled())
+			for(Consumer<OOCStreamMessage> relay : relays) {
+				if(msg.isCancelled())
 					break;
 				relay.accept(msg);
 			}
@@ -304,8 +306,8 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 		msg.addIXTransform(_ixTransform);
 		CopyOnWriteArrayList<Consumer<OOCStreamMessage>> relays = _downstreamMsgRelays;
 		if(relays != null) {
-			for (Consumer<OOCStreamMessage> relay : relays) {
-				if (msg.isCancelled())
+			for(Consumer<OOCStreamMessage> relay : relays) {
+				if(msg.isCancelled())
 					break;
 				relay.accept(msg);
 			}

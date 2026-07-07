@@ -1,5 +1,5 @@
 // ==========================================================================
-// 3. DML integration test skeleton
+// DML integration test
 // ==========================================================================
 //
 // Full integration tests extend AutomatedTestBase and drive the DML runner.
@@ -60,12 +60,13 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
 
     @Test
     public void testHighEpsilonIsCloserToTruth() {
+    	double[][] data = TestUtils.generateTestMatrix(ROWS, COLS, 0, 1, 1.0, 42);
         // Higher ε → less noise → result closer to the true mean.
         // NOTE: the DPBudgetAccountant caps total spend at the default budget
         // (ε = 1.0) regardless of the per-release ε requested, so ε values
         // here must stay well under that cap or the release is rejected.
-        double noisyLow  = maxAbsDiff("DPGaussian", DML_GAUSSIAN, "0.1");
-        double noisyHigh = maxAbsDiff("DPGaussian", DML_GAUSSIAN, "0.5");
+        double noisyLow  = runAndGetMaxAbsColMeansDiffFromClean(data, "DPGaussian", DML_GAUSSIAN, "0.1");
+        double noisyHigh = runAndGetMaxAbsColMeansDiffFromClean(data, "DPGaussian", DML_GAUSSIAN, "0.5");
         assertTrue("ε=0.5 should give less noise than ε=0.1", noisyHigh < noisyLow);
     }
 
@@ -83,17 +84,16 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
         assertTrue("Result should have " + COLS + " columns", maxCol == COLS);
         // Must differ from the exact (clean) mean by a non-trivial amount.
         // (A single-seed exact-equality check is fragile; use range check.)
-        double maxDiff = maxAbsDiffFromClean(data, result);
+        double maxDiff = maxAbsColMeansDiffFromClean(data, result);
         assertTrue("Result should differ from the clean mean", maxDiff > 0);
     }
 
-    private double maxAbsDiff(String testName, String dml, String epsilonStr) {
-        double[][] data = TestUtils.generateTestMatrix(ROWS, COLS, 0, 1, 1.0, 42);
+    private double runAndGetMaxAbsColMeansDiffFromClean(double[][] data, String testName, String dml, String epsilonStr) {
         HashMap<CellIndex, Double> result = runAndGetResult(testName, dml, epsilonStr, data);
-        return maxAbsDiffFromClean(data, result);
+        return maxAbsColMeansDiffFromClean(data, result);
     }
 
-    private static double maxAbsDiffFromClean(double[][] data, HashMap<CellIndex, Double> result) {
+    private static double maxAbsColMeansDiffFromClean(double[][] data, HashMap<CellIndex, Double> result) {
         double maxDiff = 0;
         for (int c = 0; c < COLS; c++) {
             double sum = 0;

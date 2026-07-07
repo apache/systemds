@@ -20,8 +20,6 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Before;
 import org.junit.Test;
 
-q
-
 import java.util.Random;
 
 import static org.junit.Assert.*;

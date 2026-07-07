@@ -28,6 +28,7 @@ import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -68,6 +69,11 @@ public class TSMMOOCInstruction extends ComputationOOCInstruction {
 		MatrixObject min = ec.getMatrixObject(input1);
 		int numRowBlocks = Math.toIntExact(min.getDataCharacteristics().getNumRowBlocks());
 		int numColBlocks = Math.toIntExact(min.getDataCharacteristics().getNumColBlocks());
+		if((_type.isLeft() && numColBlocks == 1) || (_type.isRight() && numRowBlocks == 1)) {
+			processSingleOutputTileInstruction(ec, min);
+			return;
+		}
+
 		int blocksPerJoinGroup = _type.isLeft() ? numColBlocks : numRowBlocks;
 		int partialsPerOutput = _type.isLeft() ? numRowBlocks : numColBlocks;
 
@@ -100,6 +106,27 @@ public class TSMMOOCInstruction extends ComputationOOCInstruction {
 			if(createdCache)
 				inputCache.scheduleDeletion();
 		});
+	}
+
+	private void processSingleOutputTileInstruction(ExecutionContext ec, MatrixObject min) {
+		OOCStream<IndexedMatrixValue> qIn = min.getStreamHandle();
+		BinaryOperator plus = InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString());
+		MatrixBlock resultBlock = null;
+
+		OOCStream<MatrixBlock> tmpStream = createWritableStream();
+		mapOOC(qIn, tmpStream,
+			tmp -> ((MatrixBlock) tmp.getValue())
+				.transposeSelfMatrixMultOperations(new MatrixBlock(), _type));
+
+		MatrixBlock tmp;
+		while((tmp = tmpStream.dequeue()) != LocalTaskQueue.NO_MORE_TASKS) {
+			if(resultBlock == null)
+				resultBlock = tmp;
+			else
+				resultBlock.binaryOperationsInPlace(plus, tmp);
+		}
+
+		ec.setMatrixOutput(output.getName(), resultBlock);
 	}
 
 	private long getJoinIndex(IndexedMatrixValue value) {

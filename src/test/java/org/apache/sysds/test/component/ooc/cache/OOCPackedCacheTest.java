@@ -98,8 +98,7 @@ public class OOCPackedCacheTest {
 			Object[] values = new Object[] {value(3.0), value(9.0), value(5.0)};
 			long[] sizes = new long[] {BYTES, largeBytes, BYTES};
 			producer.reserveBlocking(2 * BYTES + largeBytes);
-			BlockEntry[] entries = cache.putPackPinned(STREAM_ID, tileIds, values, sizes, 0, tileIds.length,
-				producer);
+			BlockEntry[] entries = cache.putPackPinned(STREAM_ID, tileIds, values, sizes, 0, tileIds.length, producer);
 			unpinAndFlush(cache, producer, entries);
 			awaitUsedMemory(producer, 0, WAIT_TIMEOUT_SEC);
 
@@ -108,8 +107,7 @@ public class OOCPackedCacheTest {
 			Assert.assertEquals(2, group.size());
 			Assert.assertEquals(0, group.index(0));
 			Assert.assertEquals(2, group.index(1));
-			Assert.assertNull("Large tiles in putPackPinned should bypass packing.",
-				cache.getPackGroup(STREAM_ID, 1));
+			Assert.assertNull("Large tiles in putPackPinned should bypass packing.", cache.getPackGroup(STREAM_ID, 1));
 
 			BlockEntry packed = cache.pin(STREAM_ID, 2, reader).get(WAIT_TIMEOUT_SEC, TimeUnit.SECONDS);
 			BlockEntry large = cache.pin(STREAM_ID, 1, reader).get(WAIT_TIMEOUT_SEC, TimeUnit.SECONDS);
@@ -286,8 +284,8 @@ public class OOCPackedCacheTest {
 		producer.setTargetMemory(1L << 30);
 		SyncMemoryAllowance reader = new SyncMemoryAllowance(broker);
 		reader.setTargetMemory(1L << 30);
-		OOCPackedCache cache = new OOCPackedCache(new OOCCacheImpl(io, 4 * BYTES, 2 * BYTES), 2 * BYTES,
-			2 * BYTES, -1, 0);
+		OOCPackedCache cache = new OOCPackedCache(new OOCCacheImpl(io, 4 * BYTES, 2 * BYTES), 2 * BYTES, 2 * BYTES, -1,
+			0);
 		try {
 			cache.addEvictionPolicy(STREAM_ID, tileId -> tileId < 2 ? 100 : 0);
 			BlockEntry[] entries = publishSmallTiles(cache, producer, STREAM_ID, 4);
@@ -307,8 +305,7 @@ public class OOCPackedCacheTest {
 			BlockEntry evicted = cache.pin(STREAM_ID, 0, reader).get(WAIT_TIMEOUT_SEC, TimeUnit.SECONDS);
 			Assert.assertNotNull(evicted);
 			Assert.assertEquals(1.0, scalar(evicted), 0.0);
-			Assert.assertTrue("The higher-scored packed group should be evicted first.",
-				io.readCount() > readsBefore);
+			Assert.assertTrue("The higher-scored packed group should be evicted first.", io.readCount() > readsBefore);
 			await(cache.unpin(evicted, reader), WAIT_TIMEOUT_SEC);
 			awaitUsedMemory(reader, 0, WAIT_TIMEOUT_SEC);
 		}

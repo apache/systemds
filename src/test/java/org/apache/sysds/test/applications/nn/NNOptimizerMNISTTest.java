@@ -31,6 +31,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+// This test runs multiple epochs on a 1 hidden layer neural net
+// while verifying an increasing accuracy and decreasing loss per epoch.
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class NNOptimizerMNISTTest extends TestFolder {

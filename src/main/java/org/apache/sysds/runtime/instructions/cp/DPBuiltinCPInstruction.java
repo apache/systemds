@@ -40,6 +40,16 @@ import java.util.concurrent.ThreadLocalRandom;
  *   result = dp_gaussian(aggregate, sensitivity=1.0, epsilon=0.5, delta=1e-5)
  * </pre>
  *
+ * <p><b>Sensitivity norm:</b> {@code sensitivity} is not interchangeable
+ * between the two builtins. {@code dp_laplace} calibrates its noise scale
+ * to the <b>L1</b> sensitivity of {@code aggregate} to a single-record
+ * change; {@code dp_gaussian} calibrates its σ to the <b>L2</b> sensitivity.
+ * For a scalar aggregate (e.g. a single sum or mean) the two norms coincide,
+ * but for a vector-valued aggregate (e.g. column means of a multi-column
+ * matrix) they generally differ (L2 ≤ L1 ≤ √d·L2 for d entries) — the caller
+ * is responsible for supplying the norm matching the builtin invoked (see
+ * {@link #sensitivityOf}).
+ *
  * <p>The instruction receives a materialised matrix (the aggregate result),
  * injects calibrated noise element-wise, records the release with the
  * session-scoped {@link DPBudgetAccountant}, and returns the noisy matrix.
@@ -202,19 +212,26 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
     // -----------------------------------------------------------------------
 
     /**
-     * Returns the sensitivity of {@code aggregate} to a single-record change.
+     * Returns the sensitivity of {@code aggregate} to a single-record change,
+     * in the norm required by the mechanism actually invoked: <b>L1</b> for
+     * {@code dp_laplace}, <b>L2</b> for {@code dp_gaussian} (see the class
+     * Javadoc). The two only coincide when {@code aggregate} is scalar.
      *
      * <p><b>Phase 1 (now):</b> returns the caller-supplied literal from the
-     * DML script. Sensitivity analysis is the caller's responsibility.
+     * DML script as-is, with no norm conversion or validation — the DML
+     * author must compute the sensitivity in the correct norm for the
+     * builtin they call. Sensitivity analysis is the caller's responsibility.
      *
      * <p><b>Phase 2 (HOP-level rewrite pass):</b> replace this body with a
      * call that inspects the HOP node that produced {@code aggregate}, reads
-     * the {@code sensitivityBound} field computed during compilation, and
-     * returns it. No other line in this class changes.
+     * the {@code sensitivityBound} field computed during compilation (in the
+     * norm matching {@code instOpcode}), and returns it. No other line in
+     * this class changes.
      *
      * @param aggregate the already-computed aggregate block (ignored in
      *                  Phase 1; used in Phase 2 to look up lineage)
-     * @return caller-supplied sensitivity constant
+     * @return caller-supplied sensitivity constant, expected to already be
+     *         in the L1 norm (Laplace) or L2 norm (Gaussian)
      */
     private double sensitivityOf(MatrixBlock aggregate) {
         // Phase 1: unwrap the literal or variable value from the param map.

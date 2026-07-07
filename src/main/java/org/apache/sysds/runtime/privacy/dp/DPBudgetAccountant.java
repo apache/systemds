@@ -39,7 +39,8 @@ import org.apache.sysds.runtime.instructions.cp.DPBuiltinCPInstruction;
  *       basic composition — each release contributes exactly its ε to a running
  *       sum. This is the tightest possible bound for pure DP and avoids the
  *       looser estimate that results from routing Laplace through the RDP
- *       conversion path (which would introduce an unnecessary δ).</li>
+ *       conversion path (which would introduce an unnecessary δ). Noise scale
+ *       is calibrated to <b>L1 sensitivity</b> (see {@link #compose}).</li>
  *   <li><b>Gaussian (delta &gt; 0):</b> (ε, δ)-DP via Rényi DP composition.
  *       Rényi divergences at a discrete set of orders α compose additively;
  *       the accumulated sum is converted to (ε, δ) at query time using the
@@ -178,7 +179,16 @@ public class DPBudgetAccountant {
      *
      * @param epsilon     per-release ε parameter (must be &gt; 0)
      * @param delta       per-release δ parameter (0 for Laplace, &gt;0 for Gaussian)
-     * @param sensitivity L2 sensitivity Δf of the released quantity (must be &gt; 0)
+     * @param sensitivity sensitivity Δf of the released quantity (must be &gt; 0).
+     *                    <b>The norm depends on the mechanism selected by
+     *                    {@code delta}:</b> callers must supply the
+     *                    <b>L1</b> sensitivity ‖f(D) − f(D′)‖₁ when
+     *                    {@code delta == 0} (Laplace), and the <b>L2</b>
+     *                    sensitivity ‖f(D) − f(D′)‖₂ when {@code delta > 0}
+     *                    (Gaussian). The two coincide for scalar-valued
+     *                    releases but diverge for vector-valued ones, so
+     *                    passing the wrong norm silently under- or
+     *                    over-calibrates the noise.
      * @throws DMLRuntimeException if the cumulative ε after this release
      *                             would exceed the budget
      */

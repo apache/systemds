@@ -60,17 +60,17 @@ import io.delta.kernel.utils.DataFileStatus;
 import io.delta.kernel.utils.FileStatus;
 
 /**
- * Delta Kernel {@link Engine} whose {@link ParquetHandler} decodes flat data files through
- * parquet-mr's low-level column API ({@link ColumnReadStoreImpl}/{@link ColumnReader}) instead of the default
- * engine's row-record path ({@code org.apache.parquet.hadoop.ParquetReader}).
- * Everything else delegates to the wrapped default engine, and deletion vectors / column mapping are still applied by the kernel.
+ * Delta Kernel {@link Engine} whose {@link ParquetHandler} decodes flat data files through parquet-mr's low-level
+ * column API ({@link ColumnReadStoreImpl}/{@link ColumnReader}) instead of the default engine's row-record path
+ * ({@code org.apache.parquet.hadoop.ParquetReader}). Everything else delegates to the wrapped default engine, and
+ * deletion vectors / column mapping are still applied by the kernel.
  *
- * Beyond plain decoding the fast path honors the {@link ParquetHandler#readParquetFiles} contract cases the
- * kernel relies on: the {@code _metadata.row_index} metadata column (requested for every read of a table whose
- * protocol carries the {@code deletionVectors} feature) is synthesized from the row-group row offsets, columns are
- * resolved by parquet field id first and name second (column mapping mode {@code id}), and columns absent from a
- * data file are returned as all-null vectors. Reads with predicates, nested/unsupported types,
- * or metadata columns other than {@code row_index} fall back to the wrapped default engine.
+ * Beyond plain decoding the fast path honors the {@link ParquetHandler#readParquetFiles} contract cases the kernel
+ * relies on: the {@code _metadata.row_index} metadata column (requested for every read of a table whose protocol
+ * carries the {@code deletionVectors} feature) is synthesized from the row-group row offsets, columns are resolved by
+ * parquet field id first and name second (column mapping mode {@code id}), and columns absent from a data file are
+ * returned as all-null vectors. Reads with predicates, nested/unsupported types, or metadata columns other than
+ * {@code row_index} fall back to the wrapped default engine.
  */
 public class ColumnApiDeltaEngine implements Engine {
 
@@ -147,8 +147,8 @@ public class ColumnApiDeltaEngine implements Engine {
 	}
 
 	/**
-	 * Streams the requested files as one {@link ColumnarBatch} per parquet row group, decoding each column
-	 * directly off {@link ColumnReader} into a pre-sized primitive array.
+	 * Streams the requested files as one {@link ColumnarBatch} per parquet row group, decoding each column directly off
+	 * {@link ColumnReader} into a pre-sized primitive array.
 	 */
 	private static class ColumnApiBatchIterator implements CloseableIterator<ColumnarBatch> {
 		/** Physical-schema metadata key carrying the parquet field id (column mapping mode {@code id}). */
@@ -220,7 +220,8 @@ public class ColumnApiDeltaEngine implements Engine {
 			final int n = _parquetSchema.getFieldCount();
 			final PrimitiveConverter[] leaves = new PrimitiveConverter[n];
 			for(int i = 0; i < n; i++)
-				leaves[i] = new PrimitiveConverter() {};
+				leaves[i] = new PrimitiveConverter() {
+				};
 			_rootConverter = new GroupConverter() {
 				@Override
 				public Converter getConverter(int fieldIndex) {
@@ -264,8 +265,8 @@ public class ColumnApiDeltaEngine implements Engine {
 
 		/**
 		 * Resolve each schema column to the parquet column name of the current file: by parquet field id when the
-		 * physical schema carries one (column mapping mode {@code id}), by name otherwise, null when the file does
-		 * not contain the column at all.
+		 * physical schema carries one (column mapping mode {@code id}), by name otherwise, null when the file does not
+		 * contain the column at all.
 		 */
 		private static String[] resolveParquetColumns(StructType schema, MessageType parquetSchema) {
 			Map<Integer, String> idToName = new HashMap<>();

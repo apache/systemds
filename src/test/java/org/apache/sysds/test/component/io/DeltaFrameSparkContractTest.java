@@ -50,20 +50,19 @@ import org.junit.Test;
 /**
  * Regression tests pinning the Delta Kernel {@code ParquetHandler} contract cases that a custom parquet decode path
  * (the column-API fast path, {@code sysds.io.delta.reader.columnapi}, on by default) must honor beyond plain flat
- * reads. Each case is a table layout the SystemDS writer never produces itself, so it must be created by the
- * reference engine (Spark/Delta).
+ * reads. Each case is a table layout the SystemDS writer never produces itself, so it must be created by the reference
+ * engine (Spark/Delta).
  *
- * dvFeatureEnabledNoDeleteRead covers a table whose protocol carries the {@code deletionVectors} reader feature but
- * has no deleted rows - a distinct case from {@link DeltaFrameSparkInteropTest#sparkDeletionVectorsSystemdsRead},
- * which covers row filtering once rows are actually deleted. Here the kernel still appends the
- * {@code _metadata.row_index} metadata column to every read once the feature is enabled, which does not exist in the
- * data files and must not be requested from them.
+ * dvFeatureEnabledNoDeleteRead covers a table whose protocol carries the {@code deletionVectors} reader feature but has
+ * no deleted rows - a distinct case from {@link DeltaFrameSparkInteropTest#sparkDeletionVectorsSystemdsRead}, which
+ * covers row filtering once rows are actually deleted. Here the kernel still appends the {@code _metadata.row_index}
+ * metadata column to every read once the feature is enabled, which does not exist in the data files and must not be
+ * requested from them.
  *
  * schemaEvolutionAddedColumnRead covers a column added after the first commit, so older data files lack it and the
- * handler must surface it as nulls rather than fail. partitionedTableRead covers partition values, which are not
- * stored in the data files and must be spliced back in. idColumnMappingRead covers a table using
- * {@code delta.columnMapping.mode = id}, where columns must be resolvable by parquet field id rather than logical
- * name.
+ * handler must surface it as nulls rather than fail. partitionedTableRead covers partition values, which are not stored
+ * in the data files and must be spliced back in. idColumnMappingRead covers a table using
+ * {@code delta.columnMapping.mode = id}, where columns must be resolvable by parquet field id rather than logical name.
  */
 @net.jcip.annotations.NotThreadSafe
 public class DeltaFrameSparkContractTest {

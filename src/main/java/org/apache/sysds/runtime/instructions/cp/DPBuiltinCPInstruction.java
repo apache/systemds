@@ -34,7 +34,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * CP instruction for differential-privacy release of an already-computed
  * aggregate.
  *
- * <p>DML syntax (post-aggregate form, Option A):
+ * <p>DML syntax (post-aggregate form):
  * <pre>
  *   result = dp_laplace(aggregate, sensitivity=1.0, epsilon=0.5)
  *   result = dp_gaussian(aggregate, sensitivity=1.0, epsilon=0.5, delta=1e-5)
@@ -54,19 +54,6 @@ import java.util.concurrent.ThreadLocalRandom;
  * single method is replaced with a static analysis that reads the
  * sensitivity bound computed by the compiler; every other line in this class
  * stays unchanged.
- *
- * <p><b>Registration required in:</b>
- * <ul>
- *   <li>{@code org.apache.sysds.common.Builtins} – add
- *       {@code DP_LAPLACE("dp_laplace", false)} and
- *       {@code DP_GAUSSIAN("dp_gaussian", false)}</li>
- *   <li>{@code org.apache.sysds.runtime.instructions.CPInstructionParser} –
- *       add opcode-to-type mappings and a parse branch that returns a
- *       {@code DPBuiltinCPInstruction}</li>
- *   <li>{@code org.apache.sysds.runtime.controlprogram.context.ExecutionContext}
- *       – add {@code getDPBudgetAccountant()} returning a session-scoped
- *       {@link DPBudgetAccountant} (lazy-initialised field)</li>
- * </ul>
  */
 public class DPBuiltinCPInstruction extends ComputationCPInstruction {
 
@@ -261,10 +248,14 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
         noise.allocateDenseBlock();
 
         if (instOpcode.equals(OPCODE_LAPLACE)) {
+            // Laplace mechanism
+            // For a given epsilon, noise is drawn from the Laplace distribution at
+            // scale b = sensitivity / epsilon
             fillLaplaceNoise(noise, sensitivity / epsilon);
         } else {
             // Gaussian mechanism: calibrate sigma for (epsilon, delta)-DP.
-            // Standard formula: sigma >= sensitivity * sqrt(2 * ln(1.25/delta)) / epsilon
+            // For a given epsilon, noise is drawn from the normal distribution at
+            // sigma^2 = 2 * sensitivity^2 * log(1.25/delta) / epsilon^2
             double sigma = sensitivity
                     * Math.sqrt(2.0 * Math.log(1.25 / delta))
                     / epsilon;

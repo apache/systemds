@@ -38,3 +38,12 @@ check_decreasing = function(matrix[double] losses, string name) {
     print("ERROR: [" + name + "] loss is not strictly decreasing")
   }
 }
+
+check_increasing = function(matrix[double] losses, string name) {
+  n = nrow(losses)
+  deltas = losses[2:n,] - losses[1:n-1,]
+  # NaN deltas are not > 0 either, so a blown-up run fails here too
+  if (sum(deltas > 0) < n - 1) {
+    print("ERROR: [" + name + "] loss is not strictly increasing")
+  }
+}

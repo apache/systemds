@@ -67,10 +67,6 @@ epoch_accuracies = matrix(0, rows=epochs, cols=1)
 epoch_losses = matrix(0, rows=epochs, cols=1)
 
 for (epoch in 1:epochs) {
-  # test this for steady in/decrease
-  epoch_loss = 0
-  epoch_acc = 0
-
   for (i in seq(1, n_train, batch_size)) {
     end_index = min(i+batch_size, n_train)
     batch_labels = train_labels[i:end_index, ]
@@ -103,8 +99,7 @@ for (epoch in 1:epochs) {
 
   epoch_accuracies[epoch] = test_acc
   epoch_losses[epoch] = test_loss
-  print("test_loss=" + test_loss + " test_acc=" + test_acc)
 }
 
-print(epoch_accuracies)
-print(epoch_losses)
+optim_check::check_increasing(epoch_accuracies, "epoch_accuracies")
+optim_check::check_decreasing(epoch_losses, "epoch_losses")

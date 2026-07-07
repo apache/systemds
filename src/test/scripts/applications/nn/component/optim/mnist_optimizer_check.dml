@@ -21,25 +21,19 @@
 
 source("src/test/scripts/applications/nn/component/optim/adapters/sgd.dml") as optimizer # INSERT ADAPTER-MODULE #
 
-lr = 0.01
-mu = 0.9
-decay_rate = 0.99
-epsilon = 1e-8
-beta1 = 0.9
-beta2 = 0.999
-lambda = 0.01
-trust_coeff = 0.001
-
-X = rand(rows=4, cols=3, min=-1, max=1, seed=7)
-dX = rand(rows=4, cols=3, min=-0.1, max=0.1, seed=13)
-
-state = optimizer::init_state(X)
-[X_upd, state] = optimizer::update_state(X, dX, lr, state, mu, decay_rate,
-    epsilon, beta1, beta2, lambda, trust_coeff)
+source("scripts/nn/layers/affine.dml") as affine
+source("scripts/nn/layers/relu.dml") as relu
+source("scripts/nn/layers/softmax_cross_entropy_loss.dml") as softmax_cross_entropy_loss
+source("scripts/nn/layers/softmax.dml") as softmax
 
 input = 784
 hidden = 100
 output = 10
+
+lr = 0.001
+
+epochs = 5
+batch_size = 100
 
 mnist_dataset = read("src/test/resources/datasets/MNIST/mnist_test.csv", format="csv", header=TRUE)
 mnist_dataset_len = nrow(mnist_dataset)
@@ -51,14 +45,65 @@ mnist_pixels = mnist_dataset[, 2:ncol(mnist_dataset)] / 255.0
 # 90% train-, 10% testdata
 n_train = floor(mnist_dataset_len * 0.9)
 n_test = mnist_dataset_len-n_train
-print(n_test)
 
 train_labels = mnist_labels[1:n_train, ]
 train_pixels = mnist_pixels[1:n_train, ]
 test_labels = mnist_labels[(n_train+1):mnist_dataset_len, ]
 test_pixels = mnist_pixels[(n_train+1):mnist_dataset_len, ]
-print(nrow(test_pixels))
-print(nrow(train_pixels))
 
-print(test_labels[1,])
-print(sum(test_pixels[1,] > 0))
+[W1, b1] = affine::init(input, hidden, 0) # set seed to -1 to use random seed
+[W2, b2] = affine::init(hidden, output, 1)
+
+state_W1 = optimizer::init_state(W1)
+state_b1 = optimizer::init_state(b1)
+state_W2 = optimizer::init_state(W2)
+state_b2 = optimizer::init_state(b2)
+
+num_iterations = ceil(n_train / batch_size)
+
+for (epoch in 1:epochs) {
+  # test this for steady in/decrease
+  epoch_loss = 0
+  epoch_acc = 0
+
+  for (i in seq(1, n_train, batch_size)) {
+    end_index = min(i+batch_size, n_train)
+    batch_labels = train_labels[i:end_index, ]
+    batch_pixels = train_pixels[i:end_index, ]
+
+    hidden_output_pre_activation = affine::forward(batch_pixels, W1, b1)
+    hidden_output = relu::forward(hidden_output_pre_activation)
+
+    prediction_pre_activation = affine::forward(hidden_output, W2, b2)
+    prediction = softmax::forward(prediction_pre_activation)
+
+    d_layer_2_pre_activation = softmax_cross_entropy_loss::backward(prediction_pre_activation, batch_labels)
+    [d_layer_1, d_W2, d_b2] = affine::backward(d_layer_2_pre_activation, hidden_output, W2, b2)
+
+    d_layer_1_pre_activation = relu::backward(d_layer_1, hidden_output_pre_activation)
+    [d_input, d_W1, d_b1] = affine::backward(d_layer_1_pre_activation, batch_pixels, W1, b1)
+    
+    [W1, state_W1] = optimizer::update_state(W1, d_W1, lr, state_W1, 0.9, 0.9, 1e-5, 0.9, 0.999, 0.01, 0.001)
+    [b1, state_b1] = optimizer::update_state(b1, d_b1, lr, state_b1, 0.9, 0.9, 1e-5, 0.9, 0.999, 0.01, 0.001)
+    [W2, state_W2] = optimizer::update_state(W2, d_W2, lr, state_W2, 0.9, 0.9, 1e-5, 0.9, 0.999, 0.01, 0.001)
+    [b2, state_b2] = optimizer::update_state(b2, d_b2, lr, state_b2, 0.9, 0.9, 1e-5, 0.9, 0.999, 0.01, 0.001)
+  }
+
+test_hidden_pre_activation = affine::forward(test_pixels, W1, b1)
+test_hidden_output = relu::forward(test_hidden_pre_activation)
+test_prediction_pre_activation = affine::forward(test_hidden_output, W2, b2)
+test_prediction = softmax::forward(test_prediction_pre_activation)
+test_loss = softmax_cross_entropy_loss::forward(test_prediction_pre_activation, test_labels)
+test_acc = mean(rowIndexMax(test_prediction) == rowIndexMax(test_labels))
+
+print("test_loss=" + test_loss + " test_acc=" + test_acc)
+}
+
+test_hidden_pre_activation = affine::forward(test_pixels, W1, b1)
+test_hidden_output = relu::forward(test_hidden_pre_activation)
+test_prediction_pre_activation = affine::forward(test_hidden_output, W2, b2)
+test_prediction = softmax::forward(test_prediction_pre_activation)
+test_loss = softmax_cross_entropy_loss::forward(test_prediction_pre_activation, test_labels)
+test_acc = mean(rowIndexMax(test_prediction) == rowIndexMax(test_labels))
+
+print("test_loss=" + test_loss + " test_acc=" + test_acc)

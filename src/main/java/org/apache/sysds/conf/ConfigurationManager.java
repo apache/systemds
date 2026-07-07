@@ -263,11 +263,6 @@ public class ConfigurationManager{
 		return getDMLConfig().getIntValue(DMLConfig.DELTA_READER_BATCH_SIZE);
 	}
 
-	/** @return whether the native Delta reader decodes data files via parquet-mr's column API */
-	public static boolean isDeltaReaderColumnApi() {
-		return getDMLConfig().getBooleanValue(DMLConfig.DELTA_READER_COLUMN_API);
-	}
-
 	/** @return matrix rows materialized per columnar batch for the native Delta writer */
 	public static int getDeltaWriterBatchSize() {
 		return getDMLConfig().getIntValue(DMLConfig.DELTA_WRITER_BATCH_SIZE);

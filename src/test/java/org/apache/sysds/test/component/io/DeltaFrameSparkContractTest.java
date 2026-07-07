@@ -48,10 +48,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Regression tests pinning the Delta Kernel {@code ParquetHandler} contract cases that a custom parquet decode path
- * (the column-API fast path, {@code sysds.io.delta.reader.columnapi}, on by default) must honor beyond plain flat
- * reads. Each case is a table layout the SystemDS writer never produces itself, so it must be created by the reference
- * engine (Spark/Delta).
+ * Regression tests pinning the Delta table layouts that the direct column-API decode path (and its kernel-engine
+ * fallback for deletion vectors and partitioned tables) must honor beyond plain flat reads. Each case is a table layout
+ * the SystemDS writer never produces itself, so it must be created by the reference engine (Spark/Delta).
  *
  * dvFeatureEnabledNoDeleteRead covers a table whose protocol carries the {@code deletionVectors} reader feature but has
  * no deleted rows - a distinct case from {@link DeltaFrameSparkInteropTest#sparkDeletionVectorsSystemdsRead}, which

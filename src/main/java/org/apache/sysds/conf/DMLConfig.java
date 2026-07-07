@@ -72,7 +72,6 @@ public class DMLConfig
 	public static final String CP_PARALLEL_IO       = "sysds.cp.parallel.io";
 	public static final String IO_COMPRESSION_CODEC = "sysds.io.compression.encoding";
 	public static final String DELTA_READER_BATCH_SIZE = "sysds.io.delta.reader.batchsize"; // int: rows per parquet read batch
-	public static final String DELTA_READER_COLUMN_API = "sysds.io.delta.reader.columnapi"; // boolean: decode data files via parquet-mr's column API instead of the kernel default row-record reader
 	public static final String DELTA_WRITER_BATCH_SIZE = "sysds.io.delta.writer.batchsize"; // int: matrix rows materialized per columnar batch handed to the engine
 	public static final String DELTA_WRITER_TARGET_FILE_SIZE = "sysds.io.delta.writer.targetfilesize"; // long: upper bound on target data-file size in bytes; adaptive sizing may pick smaller -> more files -> more parallel-read throughput
 	public static final String DELTA_WRITER_ADAPTIVE_FILE_SIZE = "sysds.io.delta.writer.adaptivefilesize"; // boolean: size data files toward one per parallel reader (capped by targetfilesize)
@@ -164,7 +163,6 @@ public class DMLConfig
 		_defaultVals.put(CP_PARALLEL_IO,         "true" );
 		_defaultVals.put(IO_COMPRESSION_CODEC,   "none");
 		_defaultVals.put(DELTA_READER_BATCH_SIZE, "4096"); // rows per parquet read batch (Delta Kernel default 1024)
-		_defaultVals.put(DELTA_READER_COLUMN_API, "true"); // decode data files via parquet-mr's column API
 		_defaultVals.put(DELTA_WRITER_BATCH_SIZE, "4096"); // matrix rows materialized per columnar batch handed to the engine
 		_defaultVals.put(DELTA_WRITER_TARGET_FILE_SIZE, String.valueOf(64L * 1024 * 1024)); // 64MB cap on target data-file size; adaptive sizing may pick smaller -> more files -> more parallel-read throughput
 		_defaultVals.put(DELTA_WRITER_ADAPTIVE_FILE_SIZE, "true"); // size data files toward one per parallel reader

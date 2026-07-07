@@ -89,7 +89,8 @@ public class FrameReaderDeltaParallel extends FrameReaderDelta {
 
 	/**
 	 * Fast path: each thread decodes one data file straight into the final typed column arrays at a metadata-derived
-	 * row offset. Single allocation per column, fully parallel.
+	 * row offset, through parquet-mr's column API with no kernel engine in the path (and hence no per-file engine
+	 * creation). Single allocation per column, fully parallel.
 	 */
 	private FrameBlock readDirect(String fname, DeltaKernelUtils.ScanHandle handle, ReadPlan plan, int nrow)
 		throws IOException {
@@ -112,28 +113,19 @@ public class FrameReaderDeltaParallel extends FrameReaderDelta {
 		for(int i = 0; i < nfiles; i++) {
 			final Row scanFileRow = handle.scanFiles.get(i);
 			final int base = rowOffset[i];
-			// exclusive upper row bound for this file's slice; a file decoding more
-			// rows than its numRecords statistic would otherwise overflow into the
-			// next file's region (concurrent overlapping writes) or off the array
+			// exclusive upper row bound for this file's slice; enforced inside the
+			// decode before each row group is written, so a file with more rows than
+			// its numRecords statistic cannot overflow into the next file's region
 			final int limit = base + (int) handle.numRecords[i];
 			tasks.add(() -> {
-				int[] cur = new int[] {base};
-				Engine eng = DeltaKernelUtils.createEngine();
-				DeltaKernelUtils.readScanFile(eng, handle.scanState, handle.physicalReadSchema, scanFileRow,
-					(cols, size, selected) -> {
-						int n = DeltaKernelUtils.countSelected(size, selected);
-						if(cur[0] + n > limit)
-							throw new DMLRuntimeException("Delta file produced more rows than its "
-								+ "numRecords statistic; refusing parallel direct read of " + fname);
-						for(int c = 0; c < ncol; c++)
-							extractColumnInto(cols[c], size, selected, readCodes[c], dest[c], cur[0]);
-						cur[0] += n;
-					});
+				String path = DeltaKernelUtils.dataFilePath(scanFileRow);
+				int n = DeltaKernelUtils.decodeDataFileInto(path, handle.physicalReadSchema, readCodes, dest, base,
+					limit, fname);
 				// fail loud on underflow too: fewer decoded rows than the statistic
 				// would leave this slice's tail at the array default (0/null).
-				if(cur[0] != limit)
-					throw new DMLRuntimeException("Delta file produced " + (cur[0] - base) + " rows, expected "
-						+ (limit - base) + " from its numRecords statistic; refusing parallel direct read of " + fname);
+				if(base + n != limit)
+					throw new DMLRuntimeException("Delta file produced " + n + " rows, expected " + (limit - base)
+						+ " from its numRecords statistic; refusing parallel direct read of " + fname);
 				return null;
 			});
 		}

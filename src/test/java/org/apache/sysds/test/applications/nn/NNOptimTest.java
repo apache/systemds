@@ -58,6 +58,11 @@ public class NNOptimTest extends TestFolder {
 		run("adamw.dml");
 	}
 
+	@Test
+	public void lars() {
+		run("lars.dml");
+	}
+
 	@Override
 	protected void run(String name) {
 		super.run("component/optim/" + name);

@@ -67,12 +67,15 @@ public class RewriteMatrixMultChainOptSparseTest extends AutomatedTestBase {
 	@Parameterized.Parameter(3)
 	public double eps;
 
+	@Parameterized.Parameter(4)
+	public boolean tsmm;
+
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
-			// {rows, cols, sparsities, eps},
-			{1000, 300, new double[]{0.10d, 0.10d}, Math.pow(10, -10)},
-			// {2, 300, new double[]{0.005, 1}, Math.pow(10, -10)},
+			// {rows, cols, sparsities, eps, tsmm},
+			{1000, 300, new double[]{0.10d, 0.10d}, Math.pow(10, -10), false},
+			{5, 3, new double[]{0.1, 1}, Math.pow(10, -10), true},
 		});
 	}
 
@@ -137,10 +140,20 @@ public class RewriteMatrixMultChainOptSparseTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			if(rewrites) {
-				Assert.assertTrue(log_out.stream().anyMatch(
-					l -> l.getMessage().toString().contains("mmchainoptsparse")));
-				Assert.assertTrue(heavyHittersContainsSubString(Opcodes.MMCHAIN.toString()) ||
-					heavyHittersContainsSubString("sp_mapmmchain"));
+				String delimiter = ";";
+				String log_out_string = String.join(delimiter, log_out.stream().map(l -> l.getMessage().toString()).toArray(String[]::new));
+				Assert.assertTrue(log_out_string.contains("mmchainoptsparse"));
+				if(tsmm) {
+					Assert.assertTrue(log_out_string.contains("Optimal Sparse MM Chain:" + delimiter +
+						"--(" + delimiter + "----(" + delimiter + "------Hop parsertemp"));
+					Assert.assertTrue(heavyHittersContainsSubString(Opcodes.TSMM.toString()) ||
+						heavyHittersContainsSubString("sp_tsmm"));
+				} else {
+					Assert.assertTrue(log_out_string.contains("Optimal Sparse MM Chain:" + delimiter +
+						"--(" + delimiter + "----Hop parsertemp"));
+					Assert.assertTrue(heavyHittersContainsSubString(Opcodes.MMCHAIN.toString()) ||
+						heavyHittersContainsSubString("sp_mapmmchain"));
+				}
 			}
 			else {
 				Assert.assertFalse(log_out.stream().anyMatch(

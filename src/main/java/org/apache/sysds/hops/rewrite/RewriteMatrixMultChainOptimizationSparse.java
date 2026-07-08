@@ -59,7 +59,7 @@ public class RewriteMatrixMultChainOptimizationSparse extends RewriteMatrixMultC
 			int[][] split = mmChainDPSparse(dimsArray, sketchArray, mmChain.size());
 			
 			 // Step 5: Relink the hops using the optimal ordering (split[][]) found from DP.
-			LOG.trace("Optimal MM Chain: ");
+			LOG.trace("Optimal Sparse MM Chain:");
 			mmChainRelinkHops(mmOperators.get(0), 0, size - 1, mmChain, mmOperators, new MutableInt(1), split, 1);
 		}
 	}

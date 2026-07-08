@@ -23,20 +23,47 @@ source("scripts/nn/optim/rmsprop.dml") as rmsprop
 source("src/test/scripts/applications/nn/util.dml") as testutil
 source("src/test/scripts/applications/nn/component/optim/optim_check.dml") as optim_check
 
-test_rmsprop = function() {
+test_rmsprop_init = function() {
   #test cache init all 0
   W = rand(rows=4, cols=4, min=-1, max=1)
   cache = rmsprop::init(W)
   testutil::check_all_equal(cache, matrix(0, rows=4, cols=4)) 
 
+}
+
+test_rmsprop_epsilon_safeguard = function() {
   # if cache = 0, decay_rate=1 and dX=matrix(0) -> 
   # Updated cache will be matrix(0).
   # There should be no division by 0 because of the epsilon safeguard.
   # All values should be finite (not NaN / infinite)
+  W = rand(rows=4, cols=4, min=-1, max=1)
+  cache = rmsprop::init(W)
   dW = matrix(0, rows=4, cols=4)
   [W, cache] = rmsprop::update(W, dW, 0.001, 1, 1e-4, cache)
   optim_check::check_finite(W, "rmsprop updated parameters")
   # updated cache should be 0
   testutil::check_all_equal(cache, matrix(0, rows=4, cols=4))
 }
-test_rmsprop()
+
+test_rmsprop_single_update = function() {
+  W = rand(rows=4, cols=4, min=-1, max=1)
+  dW = rand(rows=4, cols=4, min=-1, max=1)
+
+  cache = rmsprop::init(W)
+
+  lr = 0.001
+  decay_rate = 0.9
+  epsilon = 1e-4
+
+  expected_cache = decay_rate*cache + (1-decay_rate)*dW^2
+  expected_W = W - (lr * dW / (sqrt(expected_cache)+epsilon))
+
+  [actual_W, actual_cache] = rmsprop::update(W, dW, lr, decay_rate, epsilon, cache)
+
+  testutil::check_all_equal(actual_cache, expected_cache)
+  testutil::check_all_equal(actual_W, expected_W)
+}
+
+test_rmsprop_init()
+test_rmsprop_epsilon_safeguard()
+test_rmsprop_single_update()

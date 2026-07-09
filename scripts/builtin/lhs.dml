@@ -45,8 +45,8 @@
 # genetic_population_size   Size of the population ("genetic" method)
 # genetic_mutation_rate     Mutation rate, between 0 and 1 ("genetic" method)
 # return_type               How should the matrix be returned:
-#                            - "coordinates": return the matrix of vectors with point integer point coordinates in the d-dimensional space
-#                            - "distribution": return the matrix as vectors sampled from the d-dimensional uniform distribution in range 0-1
+#                            - "buckets": return the matrix with bucket ids
+#                            - "numerical": return the matrix as vectors sampled from the d-dimensional uniform distribution in range 0-1
 # -------------------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -157,7 +157,7 @@ return (Matrix[Double] M) {
 
       # check if the candidate is better then the current best
       # according to the goal and update the row vector and replacement mask accordingly
-      newG = evaluateGoalNewRow(M, row_candidate, goal)
+      newG = evaluateGoalNewRow(M, row_candidate, goal, N)
       if (newG < G) {
         row = row_candidate
         G = newG
@@ -189,7 +189,6 @@ return (Matrix[Double] M) {
 
   # initialize G according to the goal
   G = evaluateGoalFullMatrix(M, goal)
-
   pred = TRUE
   iter = 0
   while (pred) {
@@ -197,39 +196,37 @@ return (Matrix[Double] M) {
     if (iter >= reps) {
       pred = FALSE
     }
-
+    oldG = G
     # iterate over all columns and swap all pairs of rows in each column
     for (j in 1:d) {
+
       # initialize new goal vector, for easier calculation we flatten the 2D matrix to a 1D vector
       # where the index of the improvement vector corresponds to the row pair (k,l) with k < l
       # so the 1D vector index = l + (k-1)*N
-      new_goal_vector = matrix(0, rows = 1, cols = N * (N - 1))
+      new_goal_vector = matrix(1/0, rows = 1, cols = N * (N - 1))
       for (k in 1:(N - 1)) {
         for (l in (k + 1):(N)) {
           # add new goal to the goal vector according to the goal
           newM = swap(M, j, k, l)
-          new_goal_vector[1, l + (k - 1) * N] = G - evaluateGoalFullMatrix(newM, goal)
+          new_goal_vector[1, l + (k - 1) * N] = evaluateGoalFullMatrix(newM, goal)
         }
       }
 
       # if there was an improvement, swap the rows with the best improvement
       if (min(new_goal_vector) < G) {
         # calculate k and l from the index of the goal vector
-        idx = as.scalar(rowIndexMax(new_goal_vector))
+        idx = as.scalar(rowIndexMin(new_goal_vector))
         row1 = ((idx - 1) %/% N) + 1
         row2 = ((idx - 1) %% N) + 1
         M = swap(M, j, row1, row2)
+        G = min(new_goal_vector)
       }
     }
 
-    newG = evaluateGoalFullMatrix(M, goal)
     # stop if no significant improvement was made, otherwise update G
     # we can use abs() here, because we only update M if there was an improvement
-    if (abs(G - newG) < eps) {
+    if (abs(oldG - G) < eps) {
       pred = FALSE
-    }
-    else {
-      G = newG
     }
   }
 }
@@ -396,16 +393,15 @@ return (Double G) {
   }
 }
 
-evaluateGoalNewRow = function (Matrix[Double] M, Matrix[Double] row, String goal)
+evaluateGoalNewRow = function (Matrix[Double] M, Matrix[Double] row, String goal, Integer N)
   return(Double G){
     if(goal == "maximin"){
       G = -min(rowSums((M - (matrix(1, rows = nrow(M), cols = 1) %*% row))^2))
     }
     else if(goal == "opt"){
-      N = nrow(M)
-      d = ncol(M)
-      opt2 = (N/(N^(1/d)))^2
-      G = abs(opt2 - min(rowSums((M - (matrix(1, rows = nrow(M), cols = 1) %*% row))^2)))
+      d = ncol(row)
+      opt = (N/(N^(1/d)))
+      G = abs(opt - sqrt(min(rowSums((M - (matrix(1, rows = nrow(M), cols = 1) %*% row))^2))))
     }
     else if(goal == "sum_inv"){
       G = sumInvDistance(rbind(M,row))

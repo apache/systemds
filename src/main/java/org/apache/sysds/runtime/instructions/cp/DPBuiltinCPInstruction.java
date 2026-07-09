@@ -21,49 +21,49 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
+import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.privacy.dp.DPBudgetAccountant;
 
 import java.util.LinkedHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * CP instruction for differential-privacy release of an already-computed
- * aggregate.
+ * CP instruction for differential-privacy release of a linear query over the
+ * original matrix.
  *
- * <p>DML syntax (post-aggregate form):
+ * <p>DML syntax (raw-matrix form):
  * <pre>
- *   result = dp_laplace(aggregate, sensitivity=1.0, epsilon=0.5)
- *   result = dp_gaussian(aggregate, sensitivity=1.0, epsilon=0.5, delta=1e-5)
+ *   result = dp_laplace(X, query="colMeans", sensitivity=1.0, epsilon=0.5)
+ *   result = dp_gaussian(X, query="colMeans", sensitivity=1.0, epsilon=0.5, delta=1e-5)
  * </pre>
+ *
+ * <p>The instruction receives the original {@code n x d} matrix {@code X},
+ * builds a transformation matrix {@code T} ({@code k x n}) from the named
+ * {@code query} (see {@link #buildTransform}), and returns a noisy release of
+ * {@code T %*% X}. The noise is <b>not</b> added as a separate elementwise
+ * pass over a materialised aggregate: it is injected by augmenting {@code T}
+ * with an identity block and {@code X} with the noise matrix, so that the
+ * noisy release is the result of a single {@link LibMatrixMult#matrixMult}
+ * call (see {@link #processInstruction} for the derivation).
  *
  * <p><b>Sensitivity norm:</b> {@code sensitivity} is not interchangeable
  * between the two builtins. {@code dp_laplace} calibrates its noise scale
- * to the <b>L1</b> sensitivity of {@code aggregate} to a single-record
+ * to the <b>L1</b> sensitivity of {@code T %*% X} to a single-record
  * change; {@code dp_gaussian} calibrates its σ to the <b>L2</b> sensitivity.
- * For a scalar aggregate (e.g. a single sum or mean) the two norms coincide,
- * but for a vector-valued aggregate (e.g. column means of a multi-column
- * matrix) they generally differ (L2 ≤ L1 ≤ √d·L2 for d entries) — the caller
- * is responsible for supplying the norm matching the builtin invoked (see
- * {@link #sensitivityOf}).
- *
- * <p>The instruction receives a materialised matrix (the aggregate result),
- * injects calibrated noise element-wise, records the release with the
- * session-scoped {@link DPBudgetAccountant}, and returns the noisy matrix.
- *
- * <p>Noise is generated in Java and added via a {@code MatrixBlock} binary
- * operation so that the output allocation path is identical to every other
- * CP instruction (no special memory-management required).
+ * For a scalar release (e.g. {@code query="colMeans"} on single-column
+ * {@code X}) the two norms coincide, but for a vector- or matrix-valued
+ * release they generally differ — the caller is responsible for supplying
+ * the norm matching the builtin invoked (see {@link #sensitivityOf}).
  *
  * <p>The {@link #sensitivityOf} method is deliberately separated from the
- * noise-scale computation. In Phase 1 it returns the caller-supplied
- * constant. In the future HOP-level rewrite pass (Phase 2) the body of this
- * single method is replaced with a static analysis that reads the
- * sensitivity bound computed by the compiler; every other line in this class
- * stays unchanged.
+ * noise-scale computation. It currently returns the caller-supplied
+ * constant. A future rewrite pass could replace the body of this single
+ * method with a static analysis that derives sensitivity from {@code T}'s
+ * column norms and a declared per-record bound on {@code X}; every other
+ * line in this class would stay unchanged.
  */
 public class DPBuiltinCPInstruction extends ComputationCPInstruction {
 
@@ -81,7 +81,7 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
 
     /**
      * Named parameters extracted from the serialised instruction string.
-     * Keys: "target", "sensitivity", "epsilon", "delta" (Gaussian only).
+     * Keys: "target", "query", "sensitivity", "epsilon", "delta" (Gaussian only).
      *
      * Using the same LinkedHashMap<String,String> convention as
      * ParameterizedBuiltinCPInstruction so that CPInstructionParser can
@@ -113,9 +113,9 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
      *
      * <p>Expected format (OPERAND_DELIM = '\u00b0'):
      * <pre>
-     *   dp_gaussian°target=mVar1·MATRIX·FP64°sensitivity=1.0·SCALAR·FP64·true
-     *              °epsilon=0.5·SCALAR·FP64·true°delta=1e-5·SCALAR·FP64·true
-     *              °_mVar2·MATRIX·FP64
+     *   dp_gaussian°target=mVar1·MATRIX·FP64°query=colMeans·SCALAR·STRING·true
+     *              °sensitivity=1.0·SCALAR·FP64·true°epsilon=0.5·SCALAR·FP64·true
+     *              °delta=1e-5·SCALAR·FP64·true°_mVar2·MATRIX·FP64
      * </pre>
      *
      * The first token is always the opcode; the last token is always the
@@ -124,7 +124,7 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
      */
     public static DPBuiltinCPInstruction parseInstruction(String str) {
         String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-        InstructionUtils.checkNumFields(parts, 4, 5); // laplace=4, gaussian=5
+        InstructionUtils.checkNumFields(parts, 5, 6); // laplace=5, gaussian=6
         String opcode = parts[0];
 
         // Output operand is always the last token.
@@ -143,6 +143,8 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
                 org.apache.sysds.common.Types.DataType.MATRIX);
 
         // Validate required keys.
+        if (!params.containsKey("query"))
+            throw new DMLRuntimeException(opcode + ": missing 'query'");
         if (!params.containsKey("sensitivity"))
             throw new DMLRuntimeException(opcode + ": missing 'sensitivity'");
         if (!params.containsKey("epsilon"))
@@ -161,81 +163,162 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
      * Executes the DP release.
      *
      * <ol>
-     *   <li>Read the aggregate {@link MatrixBlock} from the variable table.</li>
-     *   <li>Determine sensitivity via {@link #sensitivityOf} (Phase-1 stub).</li>
-     *   <li>Generate a noise {@link MatrixBlock} of the same shape.</li>
-     *   <li>Add noise element-wise using the existing binary-operator path.</li>
+     *   <li>Read the original {@link MatrixBlock} {@code X} from the variable
+     *       table.</li>
+     *   <li>Build the transformation matrix {@code T} ({@code k x n}) from
+     *       {@code query} (see {@link #buildTransform}).</li>
+     *   <li>Determine sensitivity via {@link #sensitivityOf}.</li>
+     *   <li>Generate a noise {@link MatrixBlock} shaped {@code k x d}.</li>
+     *   <li>Fuse {@code T %*% X + noise} into a single
+     *       {@link LibMatrixMult#matrixMult} call (see below).</li>
      *   <li>Record the release with the session-scoped
      *       {@link DPBudgetAccountant}; throw if budget is exhausted.</li>
      *   <li>Write the noisy block back to the variable table and release
      *       the input pin.</li>
      * </ol>
+     *
+     * <p><b>Fusion derivation:</b> for {@code T} ({@code k x n}), {@code X}
+     * ({@code n x d}) and noise {@code N} ({@code k x d}), let
+     * {@code T' = [T | I_k]} ({@code k x (n+k)}) and
+     * {@code X' = [X ; N]} ({@code (n+k) x d}). Then
+     * {@code T' %*% X' = T %*% X + I_k %*% N = T %*% X + N}, computed as one
+     * matrix multiply instead of a multiply followed by a separate
+     * elementwise add.
      */
     @Override
     public void processInstruction(ExecutionContext ec) {
 
-        // ── 1. Read aggregate input ─────────────────────────────────────────
+        // ── 1. Read original input matrix X ─────────────────────────────────
         // getMatrixInput pins the block in memory and increments the
         // reference count; we must call releaseMatrixInput afterwards.
-        MatrixBlock inBlock = ec.getMatrixInput(_params.get("target"));
+        MatrixBlock X = ec.getMatrixInput(_params.get("target"));
 
         // ── 2. Parse DP parameters ──────────────────────────────────────────
         double epsilon = parsePositiveDouble("epsilon");
         double delta   = instOpcode.equals(OPCODE_GAUSSIAN)
                          ? parsePositiveDouble("delta") : 0.0;
+        String query = _params.get("query");
 
-        // ── 3. Determine sensitivity (Phase-1: caller-supplied constant) ────
-        double sensitivity = sensitivityOf(inBlock);
+        // ── 3. Build the transformation matrix T (k x n) ────────────────────
+        MatrixBlock T = buildTransform(query, X.getNumRows());
 
-        // ── 4. Generate and add noise ────────────────────────────────────────
-        MatrixBlock noiseBlock = generateNoise(inBlock, sensitivity, epsilon, delta);
+        // ── 4. Determine sensitivity (caller-supplied constant) ─────────────
+        double sensitivity = sensitivityOf(T);
 
-        // Element-wise addition via the standard binary-operator path.
-        // binaryOperations allocates the output block internally.
-        BinaryOperator plusOp = new BinaryOperator(Plus.getPlusFnObject());
-        MatrixBlock outBlock = new MatrixBlock();
-        inBlock.binaryOperations(plusOp, noiseBlock, outBlock);
+        // ── 5. Generate noise shaped like the release T %*% X (k x d) ───────
+        MatrixBlock noiseBlock = generateNoise(T.getNumRows(), X.getNumColumns(),
+                sensitivity, epsilon, delta);
 
-        // ── 5. Record release and enforce budget ────────────────────────────
+        // ── 6. Fuse T %*% X + noise into a single matrix multiply ───────────
+        MatrixBlock Ik = identity(T.getNumRows());
+        MatrixBlock Tp = T.append(Ik, null, true);          // [T | I_k]
+        MatrixBlock Xp = X.append(noiseBlock, null, false); // [X ; noise]
+        MatrixBlock outBlock = LibMatrixMult.matrixMult(Tp, Xp);
+
+        // ── 7. Record release and enforce budget ────────────────────────────
         // getDPBudgetAccountant() returns a lazy-initialised DPBudgetAccountant that is
         // owned by this ExecutionContext (added in a companion EC patch).
         DPBudgetAccountant accountant = ec.getDPBudgetAccountant();
         accountant.compose(epsilon, delta, sensitivity); // throws on exhaustion
 
-        // ── 6. Write output and release input pin ───────────────────────────
+        // ── 8. Write output and release input pin ───────────────────────────
         ec.releaseMatrixInput(_params.get("target"));
         ec.setMatrixOutput(output.getName(), outBlock);
     }
 
     // -----------------------------------------------------------------------
-    // Sensitivity seam (Phase-1 stub; Phase-2 replaces this body only)
+    // Transformation matrix construction
     // -----------------------------------------------------------------------
 
     /**
-     * Returns the sensitivity of {@code aggregate} to a single-record change,
-     * in the norm required by the mechanism actually invoked: <b>L1</b> for
-     * {@code dp_laplace}, <b>L2</b> for {@code dp_gaussian} (see the class
-     * Javadoc). The two only coincide when {@code aggregate} is scalar.
+     * Builds the {@code k x n} transformation matrix {@code T} for the given
+     * named query, to be left-multiplied against the {@code n x d} input
+     * {@code X} as {@code T %*% X}.
      *
-     * <p><b>Phase 1 (now):</b> returns the caller-supplied literal from the
-     * DML script as-is, with no norm conversion or validation — the DML
-     * author must compute the sensitivity in the correct norm for the
-     * builtin they call. Sensitivity analysis is the caller's responsibility.
+     * <ul>
+     *   <li>{@code "colMeans"}: {@code T} is {@code 1 x n}, filled with
+     *       {@code 1/n} — {@code T %*% X} is the column-mean row vector.</li>
+     *   <li>{@code "colSums"}: {@code T} is {@code 1 x n}, filled with
+     *       {@code 1.0} — {@code T %*% X} is the column-sum row vector.</li>
+     *   <li>{@code "identity"}: {@code T} is the {@code n x n} identity
+     *       (built sparsely via {@link #identity}) — {@code T %*% X} is
+     *       {@code X} itself, i.e. a noisy release of the raw matrix.</li>
+     * </ul>
      *
-     * <p><b>Phase 2 (HOP-level rewrite pass):</b> replace this body with a
-     * call that inspects the HOP node that produced {@code aggregate}, reads
-     * the {@code sensitivityBound} field computed during compilation (in the
-     * norm matching {@code instOpcode}), and returns it. No other line in
-     * this class changes.
+     * <p>Row-wise aggregates ({@code rowMeans}/{@code rowSums}) reduce across
+     * the feature axis of {@code X}, i.e. they are naturally
+     * {@code X %*% T'} (right-multiply), not {@code T %*% X}, so they are
+     * intentionally not supported here.
+     */
+    private static MatrixBlock buildTransform(String query, int n) {
+        switch (query) {
+            case "colMeans": {
+                MatrixBlock T = new MatrixBlock(1, n, false);
+                T.allocateDenseBlock();
+                double v = 1.0 / n;
+                for (int c = 0; c < n; c++)
+                    T.set(0, c, v);
+                T.recomputeNonZeros();
+                return T;
+            }
+            case "colSums": {
+                MatrixBlock T = new MatrixBlock(1, n, false);
+                T.allocateDenseBlock();
+                for (int c = 0; c < n; c++)
+                    T.set(0, c, 1.0);
+                T.recomputeNonZeros();
+                return T;
+            }
+            case "identity":
+                return identity(n);
+            default:
+                throw new DMLRuntimeException(
+                        "dp_laplace/dp_gaussian: unknown query type '" + query
+                        + "' (expected colMeans, colSums, or identity)");
+        }
+    }
+
+    /**
+     * Builds a {@code k x k} identity matrix, sparsely, by reusing the
+     * existing {@link LibMatrixReorg#diag} reorg operator (the same runtime
+     * path DML's {@code diag()} builtin uses to expand a vector into a
+     * diagonal matrix). Keeps memory {@code O(k)} rather than {@code O(k^2)},
+     * which matters for the {@code query="identity"} case where {@code k}
+     * equals the number of rows of {@code X}.
+     */
+    private static MatrixBlock identity(int k) {
+        MatrixBlock ones = new MatrixBlock(k, 1, false);
+        ones.allocateDenseBlock();
+        for (int i = 0; i < k; i++)
+            ones.set(i, 0, 1.0);
+        ones.recomputeNonZeros();
+        return LibMatrixReorg.diag(ones, new MatrixBlock(k, k, true));
+    }
+
+    // -----------------------------------------------------------------------
+    // Sensitivity seam
+    // -----------------------------------------------------------------------
+
+    /**
+     * Returns the sensitivity of the release {@code T %*% X} to a
+     * single-record change, in the norm required by the mechanism actually
+     * invoked: <b>L1</b> for {@code dp_laplace}, <b>L2</b> for
+     * {@code dp_gaussian} (see the class Javadoc). The two only coincide
+     * when the release is scalar.
      *
-     * @param aggregate the already-computed aggregate block (ignored in
-     *                  Phase 1; used in Phase 2 to look up lineage)
+     * <p>Returns the caller-supplied literal from the DML script as-is, with
+     * no norm conversion or validation — the DML author must compute the
+     * sensitivity in the correct norm for the builtin they call. A future
+     * rewrite pass could replace this body with an analysis that derives
+     * sensitivity from {@code T}'s column norms and a declared per-record
+     * bound on {@code X}; no other line in this class would need to change.
+     *
+     * @param T the transformation matrix (unused for now; kept as the seam
+     *          for a future sensitivity-derivation pass)
      * @return caller-supplied sensitivity constant, expected to already be
      *         in the L1 norm (Laplace) or L2 norm (Gaussian)
      */
-    private double sensitivityOf(MatrixBlock aggregate) {
-        // Phase 1: unwrap the literal or variable value from the param map.
-        // In Phase 2, replace the body below with HOP-annotation lookup.
+    private double sensitivityOf(MatrixBlock T) {
         return parsePositiveDouble("sensitivity");
     }
 
@@ -244,23 +327,22 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
     // -----------------------------------------------------------------------
 
     /**
-     * Generates a noise {@link MatrixBlock} of the same shape as
-     * {@code aggregate}, filled with samples from the mechanism-appropriate
-     * distribution calibrated to ({@code sensitivity}, {@code epsilon},
-     * {@code delta}).
+     * Generates a {@code rows x cols} noise {@link MatrixBlock} — matching
+     * the shape of the release {@code T %*% X} — filled with samples from the
+     * mechanism-appropriate distribution calibrated to ({@code sensitivity},
+     * {@code epsilon}, {@code delta}).
      *
      * <p>Both mechanisms produce a dense block. Sparsity exploitation is
-     * left for future work; for the aggregate outputs targeted here (e.g.
-     * column means, row sums) the aggregate is already dense.
+     * left for future work; for the releases targeted here (e.g. column
+     * means, column sums) the noise is dense regardless.
      */
     private MatrixBlock generateNoise(
-            MatrixBlock aggregate,
+            int rows,
+            int cols,
             double sensitivity,
             double epsilon,
             double delta) {
 
-        int rows = aggregate.getNumRows();
-        int cols = aggregate.getNumColumns();
         MatrixBlock noise = new MatrixBlock(rows, cols, false); // dense
         noise.allocateDenseBlock();
 

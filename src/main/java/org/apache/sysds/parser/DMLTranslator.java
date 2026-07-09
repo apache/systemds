@@ -2315,6 +2315,10 @@ public class DMLTranslator
 		if (source.getFourthExpr() != null) {
 			expr4 = processExpression(source.getFourthExpr(), null, hops);
 		}
+		Hop expr5 = null;
+		if (source.getFifthExpr() != null) {
+			expr5 = processExpression(source.getFifthExpr(), null, hops);
+		}
 
 		Hop currBuiltinOp = null;
 		target = (target == null) ? createTarget(source) : target;
@@ -2597,8 +2601,9 @@ public class DMLTranslator
 		case DP_LAPLACE: {
 			LinkedHashMap<String, Hop> dpLaplaceParams = new LinkedHashMap<>();
 			dpLaplaceParams.put("target", expr);
-			dpLaplaceParams.put("sensitivity", expr2);
-			dpLaplaceParams.put("epsilon", expr3);
+			dpLaplaceParams.put("query", expr2);
+			dpLaplaceParams.put("sensitivity", expr3);
+			dpLaplaceParams.put("epsilon", expr4);
 			currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), DataType.MATRIX,
 				ValueType.FP64, ParamBuiltinOp.DP_LAPLACE, dpLaplaceParams);
 			break;
@@ -2606,9 +2611,10 @@ public class DMLTranslator
 		case DP_GAUSSIAN: {
 			LinkedHashMap<String, Hop> dpGaussianParams = new LinkedHashMap<>();
 			dpGaussianParams.put("target", expr);
-			dpGaussianParams.put("sensitivity", expr2);
-			dpGaussianParams.put("epsilon", expr3);
-			dpGaussianParams.put("delta", expr4);
+			dpGaussianParams.put("query", expr2);
+			dpGaussianParams.put("sensitivity", expr3);
+			dpGaussianParams.put("epsilon", expr4);
+			dpGaussianParams.put("delta", expr5);
 			currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), DataType.MATRIX,
 				ValueType.FP64, ParamBuiltinOp.DP_GAUSSIAN, dpGaussianParams);
 			break;

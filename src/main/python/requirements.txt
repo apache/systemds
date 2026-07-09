@@ -1,9 +1,0 @@
-numpy
-scipy
-py4j
-wheel
-requests
-setuptools
-
-scikit-learn
-matplotlib

@@ -691,8 +691,14 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 			}
 		}
 		else if( _op == ParamBuiltinOp.DP_LAPLACE || _op == ParamBuiltinOp.DP_GAUSSIAN ) {
-			if( dc.dimsKnown() )
-				ret = new MatrixCharacteristics(dc.getRows(), dc.getCols(), -1, dc.getLength());
+			if( dc.dimsKnown() ) {
+				Hop query = getParameterHop("query");
+				String queryVal = (query instanceof LiteralOp) ? ((LiteralOp)query).getStringValue() : null;
+				if( "colMeans".equals(queryVal) || "colSums".equals(queryVal) )
+					ret = new MatrixCharacteristics(1, dc.getCols(), -1, dc.getCols());
+				else if( "identity".equals(queryVal) )
+					ret = new MatrixCharacteristics(dc.getRows(), dc.getCols(), -1, dc.getLength());
+			}
 		}
 
 		return ret;

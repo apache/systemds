@@ -170,6 +170,7 @@
     <suppress checks="MethodNameCheck" files=".*src[\\/]test[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]test[\\/]applications[\\/]nn[\\/]NNGradientTest\.java$"/>
     <suppress checks="MethodNameCheck" files=".*src[\\/]test[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]test[\\/]applications[\\/]nn[\\/]NNMaxPool2dComponentTest\.java$"/>
     <suppress checks="MethodNameCheck" files=".*src[\\/]test[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]test[\\/]applications[\\/]nn[\\/]NNOptimTest\.java$"/>
+    <suppress checks="MethodNameCheck" files=".*src[\\/]test[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]test[\\/]applications[\\/]nn[\\/]NNOptimizerMNISTTest\.java$"/>
     <suppress checks="MethodNameCheck" files=".*src[\\/]test[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]test[\\/]component[\\/]compress[\\/]AbstractCompressedUnaryTests\.java$"/>
     <suppress checks="MethodNameCheck" files=".*src[\\/]test[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]test[\\/]component[\\/]compress[\\/]CompressedLoggingTests\.java$"/>
     <suppress checks="MethodNameCheck" files=".*src[\\/]test[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]test[\\/]component[\\/]compress[\\/]CompressedMatrixTest\.java$"/>

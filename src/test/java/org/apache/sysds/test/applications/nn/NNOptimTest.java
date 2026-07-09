@@ -63,6 +63,11 @@ public class NNOptimTest extends TestFolder {
 		run("lars.dml");
 	}
 
+	@Test
+	public void scaled_gd() {
+		run("scaled_gd.dml");
+	}
+
 	@Override
 	protected void run(String name) {
 		super.run("component/optim/" + name);

@@ -2006,28 +2006,34 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			else 
 				raiseValidateError("Local instruction not allowed in dml script");
 		case DP_LAPLACE: {
-			checkNumParameters(3);
-			checkMatrixParam(getFirstExpr());
-			checkScalarParam(getSecondExpr());
-			checkScalarParam(getThirdExpr());
-			output.setDataType(DataType.MATRIX);
-			output.setValueType(ValueType.FP64);
-			output.setDimensions(
-				getFirstExpr().getOutput().getDim1(),
-				getFirstExpr().getOutput().getDim2());
-			break;
-		}
-		case DP_GAUSSIAN: {
 			checkNumParameters(4);
 			checkMatrixParam(getFirstExpr());
 			checkScalarParam(getSecondExpr());
+			checkValueTypeParam(getSecondExpr(), ValueType.STRING);
 			checkScalarParam(getThirdExpr());
 			checkScalarParam(getFourthExpr());
+			String dpLaplaceQuery = getDPQueryLiteral(getSecondExpr());
+			long[] dpLaplaceDims = getDPOutputDims(dpLaplaceQuery,
+				getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
 			output.setDataType(DataType.MATRIX);
 			output.setValueType(ValueType.FP64);
-			output.setDimensions(
-				getFirstExpr().getOutput().getDim1(),
-				getFirstExpr().getOutput().getDim2());
+			output.setDimensions(dpLaplaceDims[0], dpLaplaceDims[1]);
+			break;
+		}
+		case DP_GAUSSIAN: {
+			checkNumParameters(5);
+			checkMatrixParam(getFirstExpr());
+			checkScalarParam(getSecondExpr());
+			checkValueTypeParam(getSecondExpr(), ValueType.STRING);
+			checkScalarParam(getThirdExpr());
+			checkScalarParam(getFourthExpr());
+			checkScalarParam(getFifthExpr());
+			String dpGaussianQuery = getDPQueryLiteral(getSecondExpr());
+			long[] dpGaussianDims = getDPOutputDims(dpGaussianQuery,
+				getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
+			output.setDataType(DataType.MATRIX);
+			output.setValueType(ValueType.FP64);
+			output.setDimensions(dpGaussianDims[0], dpGaussianDims[1]);
 			break;
 		}
 		case COMPRESS:
@@ -2133,6 +2139,34 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 				else
 					raiseValidateError("Unsupported function "+op, false, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
+		}
+	}
+
+	/**
+	 * dp_laplace/dp_gaussian require the "query" parameter to be a compile-time
+	 * string literal so that the output shape (and thus the transformation
+	 * matrix T built at runtime) is known during validation.
+	 */
+	private String getDPQueryLiteral(Expression queryExpr) {
+		if (!(queryExpr instanceof StringIdentifier))
+			raiseValidateError(getOpCode() + ": 'query' must be a string literal", false,
+				LanguageErrorCodes.INVALID_PARAMETERS);
+		return ((StringIdentifier) queryExpr).getValue();
+	}
+
+	/** Output dimensions of T %*% X for the given named query, X being n x d. */
+	private long[] getDPOutputDims(String query, long n, long d) {
+		switch (query) {
+			case "colMeans":
+			case "colSums":
+				return new long[] {1, d};
+			case "identity":
+				return new long[] {n, d};
+			default:
+				raiseValidateError(getOpCode() + ": unknown query type '" + query
+					+ "' (expected colMeans, colSums, or identity)", false,
+					LanguageErrorCodes.INVALID_PARAMETERS);
+				return null; // unreachable
 		}
 	}
 

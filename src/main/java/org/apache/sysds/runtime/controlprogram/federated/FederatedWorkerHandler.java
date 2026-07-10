@@ -50,6 +50,9 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressedMatrix;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionFactory;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionConfig;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventStageModel;
@@ -488,7 +491,21 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		// wrap transferred cache block into cacheable data
 		Data data;
 		long size = 0;
-		if(v instanceof CacheBlock) {
+		if(v instanceof CompressedMatrix) {
+			try {
+				CompressedMatrix cm = (CompressedMatrix) v;
+				org.apache.sysds.runtime.controlprogram.federated.compression.MatrixCompressor compressor =
+					CompressionFactory.createForDecompression(cm.getType());
+				org.apache.sysds.runtime.matrix.data.MatrixBlock decompressed = compressor.decompress(cm);
+				var block = ExecutionContext.createCacheableData(decompressed);
+				size = block.getDataSize();
+				data = block;
+			}
+			catch(Exception e) {
+				throw new FederatedWorkerHandlerException("Failed to decompress matrix: " + e.getMessage());
+			}
+		}
+		else if(v instanceof CacheBlock) {
 			var block = ExecutionContext.createCacheableData((CacheBlock<?>) v);
 			size = block.getDataSize();
 			data = block;

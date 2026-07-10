@@ -63,6 +63,22 @@ public class CompressionFactory {
 		}
 	}
 
+	/**
+	 * Create a compressor suitable for decompression only, by type.
+	 * Parameters like sparsity/bits do not affect decompression correctness.
+	 */
+	public static MatrixCompressor createForDecompression(CompressionType type) {
+		switch(type) {
+			case TOPK:
+				return new TopKCompressor(0.01, true);
+			case PROBABILISTIC_QUANTIZATION:
+				return new ProbabilisticQuantizationCompressor(4);
+			case NONE:
+			default:
+				return new PassthroughCompressor();
+		}
+	}
+
 	// -----------------------------------------------------------------------
 	// Passthrough compressor (no-op) for when compression is disabled
 	// -----------------------------------------------------------------------

@@ -51,7 +51,6 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionConfig;
 import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionFactory;
-import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionType;
 import org.apache.sysds.runtime.controlprogram.federated.compression.CompressedMatrix;
 import org.apache.sysds.runtime.controlprogram.federated.compression.MatrixCompressor;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -147,18 +146,18 @@ public class FederationMap {
 			cb.getNumRows(), cb.getNumColumns(), id, FType.BROADCAST));
 
 		// === COMPRESSION INTEGRATION ===
-		// Attempt TopK compression if the block is a MatrixBlock
+		// Compress matrix before network transfer; worker decompresses on receipt
 		if(DMLScript.FEDERATED_COMPRESSION && cb instanceof MatrixBlock) {
 			try {
 				CompressionConfig config = CompressionConfig.builder()
 					.enable(true)
-					.withType(CompressionType.TOPK)
-					.withSparsity(0.01)
+					.withType(DMLScript.FEDERATED_COMPRESSION_TYPE)
+					.withSparsity(DMLScript.FEDERATED_COMPRESSION_SPARSITY)
+					.withBits(DMLScript.FEDERATED_COMPRESSION_BITS)
 					.build();
 				MatrixCompressor compressor = CompressionFactory.create(config);
 				CompressedMatrix compressed = compressor.compress((MatrixBlock) cb);
-				MatrixBlock decompressed = compressor.decompress(compressed);
-				return new FederatedRequest(RequestType.PUT_VAR, lineageItem, id, decompressed);
+				return new FederatedRequest(RequestType.PUT_VAR, lineageItem, id, compressed);
 			}
 			catch(Exception ex) {
 				// Fall back to uncompressed on any error

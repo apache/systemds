@@ -52,7 +52,6 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.Reques
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
 import org.apache.sysds.runtime.controlprogram.federated.compression.CompressedMatrix;
 import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionFactory;
-import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionConfig;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventStageModel;

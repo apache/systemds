@@ -33,6 +33,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheDataOutput;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressedMatrix;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.lineage.Lineage;
@@ -150,7 +151,7 @@ public class FederatedRequest implements Serializable {
 
 	private void calcChecksum() throws IOException {
 		for (Object ob : _data) {
-			if (!(ob instanceof CacheBlock) && !(ob instanceof ScalarObject))
+			if (!(ob instanceof CacheBlock) && !(ob instanceof ScalarObject) && !(ob instanceof CompressedMatrix))
 				continue;
 
 			Checksum checksum = new Adler32();
@@ -174,6 +175,21 @@ public class FederatedRequest implements Serializable {
 					throw new IOException("Failed to serialize cache block.", ex);
 				}
 			}
+
+			if(ob instanceof CompressedMatrix) {
+				try {
+					java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+					java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(baos);
+					oos.writeObject(ob);
+					oos.flush();
+					byte[] bytes = baos.toByteArray();
+					checksum.update(bytes, 0, bytes.length);
+					_checksums.add(checksum.getValue());
+				}
+				catch(Exception ex) {
+					throw new IOException("Failed to serialize CompressedMatrix.", ex);
+				}
+			}
 		}
 	}
 
@@ -187,6 +203,8 @@ public class FederatedRequest implements Serializable {
 			for(Object obj : _data) {
 				if(obj instanceof CacheBlock)
 					minBufferSize += ((CacheBlock<?>)obj).getExactSerializedSize();
+				else if(obj instanceof CompressedMatrix)
+					minBufferSize += 1024 * 1024; // conservative 1MB estimate for compressed matrix
 			}
 		}
 		if(_lineageTrace != null)

@@ -96,6 +96,7 @@ public enum Builtins {
 	CONV2D_BACKWARD_DATA("conv2d_backward_data", false),
 	COOCCURRENCEMATRIX("cooccurrenceMatrix", true),
 	COR("cor", true),
+	CORESETDT("coresetDT", true, ReturnType.MULTI_RETURN),
 	CORRECTTYPOS("correctTypos", true),
 	CORRECTTYPOSAPPLY("correctTyposApply", true),
 	COS("cos", false),

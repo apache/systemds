@@ -22,9 +22,8 @@ package org.apache.sysds.runtime.controlprogram.federated.compression;
 import java.io.Serializable;
 
 /**
- * Generic container for compressed matrix data.
- * Stores the compressed representation along with metadata
- * needed for decompression and size estimation.
+ * Generic container for compressed matrix data. Stores the compressed representation along with metadata needed for
+ * decompression and size estimation.
  */
 public class CompressedMatrix implements Serializable {
 
@@ -33,18 +32,17 @@ public class CompressedMatrix implements Serializable {
 	private final CompressionType type;
 	private final int numRows;
 	private final int numCols;
-	private final Object compressedData;   // Technique-specific data
+	private final Object compressedData; // Technique-specific data
 	private final double compressionRatio;
-	private final byte[] metadata;         // Optional: scaling factors, etc.
+	private final byte[] metadata; // Optional: scaling factors, etc.
 
-	public CompressedMatrix(CompressionType type, int numRows, int numCols,
-					        Object compressedData, double compressionRatio) {
+	public CompressedMatrix(CompressionType type, int numRows, int numCols, Object compressedData,
+		double compressionRatio) {
 		this(type, numRows, numCols, compressedData, compressionRatio, null);
 	}
 
-	public CompressedMatrix(CompressionType type, int numRows, int numCols,
-					        Object compressedData, double compressionRatio,
-					        byte[] metadata) {
+	public CompressedMatrix(CompressionType type, int numRows, int numCols, Object compressedData,
+		double compressionRatio, byte[] metadata) {
 		this.type = type;
 		this.numRows = numRows;
 		this.numCols = numCols;

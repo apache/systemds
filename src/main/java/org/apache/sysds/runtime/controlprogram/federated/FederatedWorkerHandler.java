@@ -493,8 +493,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		if(v instanceof CompressedMatrix) {
 			try {
 				CompressedMatrix cm = (CompressedMatrix) v;
-				org.apache.sysds.runtime.controlprogram.federated.compression.MatrixCompressor compressor =
-					CompressionFactory.createForDecompression(cm.getType());
+				org.apache.sysds.runtime.controlprogram.federated.compression.MatrixCompressor compressor = CompressionFactory
+					.createForDecompression(cm.getType());
 				org.apache.sysds.runtime.matrix.data.MatrixBlock decompressed = compressor.decompress(cm);
 				var block = ExecutionContext.createCacheableData(decompressed);
 				size = block.getDataSize();

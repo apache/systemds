@@ -33,8 +33,7 @@ public class ProbabilisticQuantizationCompressorTest {
 	@Test
 	public void testQuantizationBasicProperties() throws Exception {
 		MatrixBlock input = createRandomMatrix(10, 20);
-		ProbabilisticQuantizationCompressor compressor =
-			new ProbabilisticQuantizationCompressor(4);
+		ProbabilisticQuantizationCompressor compressor = new ProbabilisticQuantizationCompressor(4);
 		CompressedMatrix compressed = compressor.compress(input);
 		MatrixBlock result = compressor.decompress(compressed);
 
@@ -48,8 +47,10 @@ public class ProbabilisticQuantizationCompressorTest {
 		for(int i = 0; i < 10; i++) {
 			for(int j = 0; j < 20; j++) {
 				double v = input.get(i, j);
-				if(v < origMin) origMin = v;
-				if(v > origMax) origMax = v;
+				if(v < origMin)
+					origMin = v;
+				if(v > origMax)
+					origMax = v;
 			}
 		}
 		for(int i = 0; i < 10; i++)
@@ -64,10 +65,8 @@ public class ProbabilisticQuantizationCompressorTest {
 	public void testFewerBitsGivesHigherRatio() throws Exception {
 		MatrixBlock input = createRandomMatrix(20, 20);
 
-		double ratio2bit = new ProbabilisticQuantizationCompressor(2)
-			.compress(input).getCompressionRatio();
-		double ratio8bit = new ProbabilisticQuantizationCompressor(8)
-			.compress(input).getCompressionRatio();
+		double ratio2bit = new ProbabilisticQuantizationCompressor(2).compress(input).getCompressionRatio();
+		double ratio8bit = new ProbabilisticQuantizationCompressor(8).compress(input).getCompressionRatio();
 
 		assertTrue(ratio2bit > ratio8bit);
 	}
@@ -82,8 +81,7 @@ public class ProbabilisticQuantizationCompressorTest {
 		double sum = 0.0;
 		int runs = 1000;
 		for(int r = 0; r < runs; r++) {
-			ProbabilisticQuantizationCompressor compressor =
-				new ProbabilisticQuantizationCompressor(4);
+			ProbabilisticQuantizationCompressor compressor = new ProbabilisticQuantizationCompressor(4);
 			MatrixBlock result = compressor.decompress(compressor.compress(input));
 			sum += result.get(0, 0);
 		}
@@ -99,8 +97,7 @@ public class ProbabilisticQuantizationCompressorTest {
 				input.set(i, j, 7.0);
 		input.examSparsity();
 
-		ProbabilisticQuantizationCompressor compressor =
-			new ProbabilisticQuantizationCompressor(4);
+		ProbabilisticQuantizationCompressor compressor = new ProbabilisticQuantizationCompressor(4);
 		MatrixBlock result = compressor.decompress(compressor.compress(input));
 
 		assertNotNull(result);
@@ -116,17 +113,13 @@ public class ProbabilisticQuantizationCompressorTest {
 	@Test
 	public void testCompressionRatio2Bit() throws Exception {
 		MatrixBlock input = createRandomMatrix(10, 10);
-		assertEquals(16.0,
-			new ProbabilisticQuantizationCompressor(2).compress(input).getCompressionRatio(),
-			1e-10);
+		assertEquals(16.0, new ProbabilisticQuantizationCompressor(2).compress(input).getCompressionRatio(), 1e-10);
 	}
 
 	@Test
 	public void testCompressionRatio8Bit() throws Exception {
 		MatrixBlock input = createRandomMatrix(10, 10);
-		assertEquals(4.0,
-			new ProbabilisticQuantizationCompressor(8).compress(input).getCompressionRatio(),
-			1e-10);
+		assertEquals(4.0, new ProbabilisticQuantizationCompressor(8).compress(input).getCompressionRatio(), 1e-10);
 	}
 
 	private MatrixBlock createRandomMatrix(int rows, int cols) {

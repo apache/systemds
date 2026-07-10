@@ -149,12 +149,10 @@ public class FederationMap {
 		// Compress matrix before network transfer; worker decompresses on receipt
 		if(DMLScript.FEDERATED_COMPRESSION && cb instanceof MatrixBlock) {
 			try {
-				CompressionConfig config = CompressionConfig.builder()
-					.enable(true)
+				CompressionConfig config = CompressionConfig.builder().enable(true)
 					.withType(DMLScript.FEDERATED_COMPRESSION_TYPE)
 					.withSparsity(DMLScript.FEDERATED_COMPRESSION_SPARSITY)
-					.withBits(DMLScript.FEDERATED_COMPRESSION_BITS)
-					.build();
+					.withBits(DMLScript.FEDERATED_COMPRESSION_BITS).build();
 				MatrixCompressor compressor = CompressionFactory.create(config);
 				CompressedMatrix compressed = compressor.compress((MatrixBlock) cb);
 				return new FederatedRequest(RequestType.PUT_VAR, lineageItem, id, compressed);

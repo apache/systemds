@@ -69,9 +69,7 @@ public class FederatedMatrixCompressionTest extends AutomatedTestBase {
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
 			// {compressionType, rows, cols}
-			{CompressionType.TOPK, 5, 5},
-			{CompressionType.PROBABILISTIC_QUANTIZATION, 5, 5},
-		});
+			{CompressionType.TOPK, 5, 5}, {CompressionType.PROBABILISTIC_QUANTIZATION, 5, 5},});
 	}
 
 	@Test
@@ -83,16 +81,13 @@ public class FederatedMatrixCompressionTest extends AutomatedTestBase {
 		Types.ExecMode oldPlatform = setExecMode(Types.ExecType.CP);
 		getAndLoadTestConfiguration(TEST_NAME);
 
-		LOG.debug("Current test configuration: compressionType = " + compressionType
-			+ ", rows = " + rows + ", cols = " + cols);
+		LOG.debug("Current test configuration: compressionType = " + compressionType + ", rows = " + rows + ", cols = "
+			+ cols);
 
 		fullDMLScriptName = "";
 		int port1 = getRandomAvailablePort();
 		Thread t1 = startLocalFedWorkerThread(port1);
 		String host = "localhost";
-
-		DMLScript.FEDERATED_COMPRESSION = true;
-		DMLScript.FEDERATED_COMPRESSION_TYPE = compressionType;
 
 		try {
 			double[][] X1 = createRandomMatrix(rows, cols);
@@ -105,21 +100,19 @@ public class FederatedMatrixCompressionTest extends AutomatedTestBase {
 				begins, ends, new int[] {port1}, new String[] {input("X1")}, input("X.json"));
 			writeInputFederatedWithMTD("X.json", fed);
 
-			// Run reference DML with normal matrix multiply
+			// Run reference DML with local matrix multiply
 			fullDMLScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME + "Reference.dml";
-			programArgs = new String[] {"-nvargs",
-				"in_X1=" + input("X1"),
-				"rows=" + rows,
-				"cols=" + cols,
+			programArgs = new String[] {"-nvargs", "in_X1=" + input("X1"), "rows=" + rows, "cols=" + cols,
 				"out=" + expected(OUTPUT_NAME)};
 			runTest(null);
 
+			// Enable compression only for the federated run
+			DMLScript.FEDERATED_COMPRESSION = true;
+			DMLScript.FEDERATED_COMPRESSION_TYPE = compressionType;
+
 			// Run federated DML with compression enabled
 			fullDMLScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME + ".dml";
-			programArgs = new String[] {"-nvargs",
-				"in_X1=" + input("X.json"),
-				"rows=" + rows,
-				"cols=" + cols,
+			programArgs = new String[] {"-nvargs", "in_X1=" + input("X.json"), "rows=" + rows, "cols=" + cols,
 				"out=" + output(OUTPUT_NAME)};
 			runTest(null);
 
@@ -129,8 +122,8 @@ public class FederatedMatrixCompressionTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(fedResults, refResults, 1.0, "Fed", "Ref");
 		}
 		catch(Exception e) {
-			LOG.warn("Failed to run test with compressionType = " + compressionType
-				+ ", rows = " + rows + ", cols = " + cols);
+			LOG.warn("Failed to run test with compressionType = " + compressionType + ", rows = " + rows + ", cols = "
+				+ cols);
 			e.printStackTrace();
 			Assert.assertTrue(false);
 		}

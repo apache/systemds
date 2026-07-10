@@ -141,23 +141,23 @@ public class RewriteMatrixMultChainOptSparseTest extends AutomatedTestBase {
 
 			if(rewrites) {
 				String delimiter = ";";
-				String log_out_string = String.join(delimiter, log_out.stream().map(l -> l.getMessage().toString()).toArray(String[]::new));
+				String log_out_string = String.join(delimiter,
+					log_out.stream().map(l -> l.getMessage().toString()).toArray(String[]::new));
 				Assert.assertTrue(log_out_string.contains("mmchainoptsparse"));
 				if(tsmm) {
-					Assert.assertTrue(log_out_string.contains("Optimal Sparse MM Chain:" + delimiter +
-						"--(" + delimiter + "----(" + delimiter + "------Hop parsertemp"));
+					Assert.assertTrue(log_out_string.contains("Optimal Sparse MM Chain:" + delimiter + "--(" + delimiter
+						+ "----(" + delimiter + "------Hop parsertemp"));
 					Assert.assertTrue(heavyHittersContainsSubString(Opcodes.TSMM.toString()) ||
 						heavyHittersContainsSubString("sp_tsmm"));
 				} else {
-					Assert.assertTrue(log_out_string.contains("Optimal Sparse MM Chain:" + delimiter +
-						"--(" + delimiter + "----Hop parsertemp"));
+					Assert.assertTrue(log_out_string
+						.contains("Optimal Sparse MM Chain:" + delimiter + "--(" + delimiter + "----Hop parsertemp"));
 					Assert.assertTrue(heavyHittersContainsSubString(Opcodes.MMCHAIN.toString()) ||
 						heavyHittersContainsSubString("sp_mapmmchain"));
 				}
-			}
-			else {
-				Assert.assertFalse(log_out.stream().anyMatch(
-					l -> l.getMessage().toString().contains("mmchainoptsparse")));
+			} else {
+				Assert.assertFalse(
+					log_out.stream().anyMatch(l -> l.getMessage().toString().contains("mmchainoptsparse")));
 				Assert.assertFalse(heavyHittersContainsSubString(Opcodes.MMCHAIN.toString()) ||
 					heavyHittersContainsSubString("sp_mapmmchain"));
 			}

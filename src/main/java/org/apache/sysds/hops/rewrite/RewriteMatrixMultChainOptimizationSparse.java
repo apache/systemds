@@ -97,8 +97,8 @@ public class RewriteMatrixMultChainOptimizationSparse extends RewriteMatrixMultC
 					MMNode tmp = new MMNode(dpMatrixS[i][k], dpMatrixS[k+1][j], OpCode.MM);
 					estim.estim(tmp);
 
-					//recursive cost computation
-					double cost = dpMatrix[i][k] + dpMatrix[k+1][j] +
+					// recursive cost computation
+					double cost = dpMatrix[i][k] + dpMatrix[k + 1][j] +
 						OptimizerUtils.getSparsity(tmp.getLeft().getDataCharacteristics()) *
 							OptimizerUtils.getSparsity(tmp.getRight().getDataCharacteristics()) *
 							tmp.getLeft().getRows() * tmp.getLeft().getCols() * tmp.getRight().getCols();
@@ -112,17 +112,19 @@ public class RewriteMatrixMultChainOptimizationSparse extends RewriteMatrixMultC
 				}
 
 				if(LOG.isTraceEnabled())
-					LOG.trace("mmchainoptsparse [i="+(i+1)+",j="+(j+1)+"]: costs = "+dpMatrix[i][j]+", split = "+(split[i][j]+1));
+					LOG.trace("mmchainoptsparse [i=" + (i + 1) + ",j=" + (j + 1) + "]: costs = " + dpMatrix[i][j]
+						+ ", split = " + (split[i][j] + 1));
 			}
 		}
 
 		return split;
 	}
 
-	private static boolean getInputMatrixCharacteristics(Hop hop, List<Hop> chain, MMNode[] sketchArray, ProgramRewriteStatus state) {
+	private static boolean getInputMatrixCharacteristics(Hop hop, List<Hop> chain, MMNode[] sketchArray,
+		ProgramRewriteStatus state) {
 		boolean inputMetaAvail = true;
 
-		for(int counter = 0; counter < chain.size(); counter++ ) {
+		for(int counter = 0; counter < chain.size(); counter++) {
 			Hop currentHop = chain.get(counter);
 			inputMetaAvail &= currentHop.isMatrix();
 			inputMetaAvail &= !currentHop.isFederated();

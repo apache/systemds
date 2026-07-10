@@ -39,12 +39,12 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class NNOptimizerMNISTTest extends TestFolder {
-  /*
-   * To add new optimizer to this test, add an
-   * adapter to "src/test/scripts/applications/nn/component/optim/adapters/" 
-   * and add it to the parameter Collection. If needed, adjust the 
-   * current function interface or make variables adjustable via parameter.
-   */
+	/*
+	 * To add new optimizer to this test, add an
+	 * adapter to "src/test/scripts/applications/nn/component/optim/adapters/"
+	 * and add it to the parameter Collection. If needed, adjust the
+	 * current function interface or make variables adjustable via parameter.
+	 */
 
 	// region: parameters
 
@@ -68,7 +68,7 @@ public class NNOptimizerMNISTTest extends TestFolder {
 			{"sgd_momentum", args()},
 			{"sgd_nesterov", args()}
 		});
-  }
+	}
 
 	private static List<Pair<String, Object>> args(Object... args) {
 		if(args.length % 2 != 0)
@@ -85,13 +85,13 @@ public class NNOptimizerMNISTTest extends TestFolder {
 
 	// endregion
 
-  @Test
+	@Test
 	public void mnist_optimizer_test() {
 		this.inject_optimizer_adapter_module_and_run(this.optimizer, this.scriptArgs);
 	}
 
-  // injects the adapter from "src/test/scripts/applications/nn/component/optim/adapters/"
-  // and executes the script while looking out for errors.
+	// injects the adapter from "src/test/scripts/applications/nn/component/optim/adapters/"
+	// and executes the script while looking out for errors.
 	private void inject_optimizer_adapter_module_and_run(String optimizer, List<Pair<String, Object>> scriptArgs) {
 		Script script = dmlFromFile(getBaseFilePath() + "component/optim/mnist_optimizer_check.dml");
 		String moduleImportStatement = String.format("source(\"src/test/scripts/applications/nn/component/optim/adapters/%s.dml\") as optimizer", optimizer);

@@ -52,7 +52,7 @@
 # OUTPUT:
 # ------------------------------------------------------------------------------------------------------
 # M          A N x d matrix M
-#            Contains the coordinates of sampled points
+# G          Value of the given objective
 # ------------------------------------------------------------------------------------------------------
 
 lhs = function(
@@ -67,7 +67,7 @@ lhs = function(
   Double genetic_mutation_rate = 0.25,
   String return_type = "buckets"
 )
-return (Matrix[Double] M) {
+return (Matrix[Double] M, Double G) {
   if (goal != "maximin" & goal != "opt" & goal != "sum_inv" & goal != "avg_dist") {
     stop("Goal should be one of: maximin, opt, sum_inv, avg_dist")
   }
@@ -91,7 +91,8 @@ return (Matrix[Double] M) {
   else {
     stop("Method should be one of: random, build, cp_sweep, genetic")
   }
-
+  
+  G = evaluateGoalFullMatrix(M,goal)
   if (return_type == "numerical") {
     r = rand(rows = N, cols = d, min = 0, max = 1 / N)
     M = M / N - r
@@ -118,9 +119,6 @@ return (Matrix[Double] M) {
 
 buildLHS = function(Integer N, Integer d, Integer reps, String goal)
 return (Matrix[Double] M) {
-  # optimal distance
-  opt2 = (N / (N^(1 / d)))^2
-
   # available buckets per column
   free_buckets = seq(1, N) %*% matrix(1, rows = 1, cols = d)
 
@@ -178,8 +176,6 @@ return (Matrix[Double] M) {
 # TODO: vectorize the inner loops, currently this method is very slow
 cpSweepLHS = function(Integer N, Integer d, Integer reps, String goal, Double eps)
 return (Matrix[Double] M) {
-  # optimal distance
-  opt2 = (N / (N^(1 / d)))^2
 
   # generate initial random latin hypercube
   M = matrix(0, rows = N, cols = d)
@@ -244,7 +240,7 @@ return (Matrix[Double] M) {
     population[population_start:population_end, ] = design
 
     # 2. Calculate the S-optimality score for each design
-    scores[p, 1] = sOptimality(design)
+    scores[p, 1] = avgDistance(design)
   }
 
   for (generation in 1:genetic_generations) {
@@ -310,7 +306,7 @@ return (Matrix[Double] M) {
     # Score the new population
     for (p in 1:genetic_population_size) {
       design = getDesignByIndex(population, p, N)
-      scores[p, 1] = sOptimality(design)
+      scores[p, 1] = avgDistance(design)
     }
   }
 
@@ -332,7 +328,7 @@ return (Matrix[Double] M) {
   M[row2, col] = temp
 }
 
-sOptimality = function(Matrix[Double] M)
+avgDistance = function(Matrix[Double] M)
 return (Double score) {
   D = dist(M)
   score = sum(D) / (nrow(M) * (nrow(M) - 1))
@@ -389,7 +385,7 @@ return (Double G) {
     G = sumInvDistance(M)
   }
   else if (goal == "avg_dist") {
-    G = -sOptimality(M)
+    G = -avgDistance(M)
   }
 }
 
@@ -407,6 +403,6 @@ evaluateGoalNewRow = function (Matrix[Double] M, Matrix[Double] row, String goal
       G = sumInvDistance(rbind(M,row))
     }
     else if(goal == "avg_dist"){
-      G = -sOptimality(rbind(M,row))
+      G = -avgDistance(rbind(M,row))
     }
 }

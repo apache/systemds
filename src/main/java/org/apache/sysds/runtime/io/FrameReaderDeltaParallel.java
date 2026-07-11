@@ -113,19 +113,9 @@ public class FrameReaderDeltaParallel extends FrameReaderDelta {
 		for(int i = 0; i < nfiles; i++) {
 			final Row scanFileRow = handle.scanFiles.get(i);
 			final int base = rowOffset[i];
-			// exclusive upper row bound for this file's slice; enforced inside the
-			// decode before each row group is written, so a file with more rows than
-			// its numRecords statistic cannot overflow into the next file's region
 			final int limit = base + (int) handle.numRecords[i];
 			tasks.add(() -> {
-				String path = DeltaKernelUtils.dataFilePath(scanFileRow);
-				int n = DeltaKernelUtils.decodeDataFileInto(path, handle.physicalReadSchema, readCodes, dest, base,
-					limit, fname);
-				// fail loud on underflow too: fewer decoded rows than the statistic
-				// would leave this slice's tail at the array default (0/null).
-				if(base + n != limit)
-					throw new DMLRuntimeException("Delta file produced " + n + " rows, expected " + (limit - base)
-						+ " from its numRecords statistic; refusing parallel direct read of " + fname);
+				decodeFileSlice(handle, scanFileRow, readCodes, dest, base, limit, fname);
 				return null;
 			});
 		}

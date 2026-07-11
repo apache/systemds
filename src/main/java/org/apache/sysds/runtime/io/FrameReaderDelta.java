@@ -165,18 +165,8 @@ public class FrameReaderDelta extends FrameReader {
 
 		int base = 0;
 		for(int i = 0; i < handle.scanFiles.size(); i++) {
-			// exclusive upper row bound for this file's slice (enforced inside the
-			// decode before each row group is written)
 			final int limit = base + (int) handle.numRecords[i];
-			String path = DeltaKernelUtils.dataFilePath(handle.scanFiles.get(i));
-			int n = DeltaKernelUtils.decodeDataFileInto(path, handle.physicalReadSchema, readCodes, dest, base, limit,
-				fname);
-			// fail loud on underflow: a file decoding fewer rows than its numRecords
-			// statistic would leave the tail of the slice at the array default (0/null)
-			// while nrow still reports the (inflated) statistic.
-			if(base + n != limit)
-				throw new DMLRuntimeException("Delta file produced " + n + " rows, expected " + (limit - base)
-					+ " from its numRecords statistic; refusing direct read of " + fname);
+			decodeFileSlice(handle, handle.scanFiles.get(i), readCodes, dest, base, limit, fname);
 			base = limit;
 		}
 
@@ -252,6 +242,38 @@ public class FrameReaderDelta extends FrameReader {
 			off += n;
 		}
 		return ArrayFactory.create(vt, full);
+	}
+
+	/**
+	 * Decode one data file into its pre-sized slice {@code [base, limit)} of the destination arrays: through the direct
+	 * parquet column decode by default, or through the kernel engine (which performs the physical-type conversions the
+	 * typed decode declines, e.g. for files left behind by type widening) as a per-file fallback. Fails loud when the
+	 * file produces more or fewer rows than its {@code numRecords} statistic promised, so a lying statistic can neither
+	 * overflow into the next file's slice nor leave a silent gap of array defaults. Thread-safe for distinct files, so
+	 * the parallel reader shares it.
+	 */
+	static void decodeFileSlice(DeltaKernelUtils.ScanHandle handle, Row scanFileRow, int[] readCodes, Object[] dest,
+		int base, int limit, String fname) throws IOException {
+		int n;
+		try {
+			n = DeltaKernelUtils.decodeDataFileInto(DeltaKernelUtils.dataFilePath(scanFileRow),
+				handle.physicalReadSchema, readCodes, dest, base, limit, fname);
+		}
+		catch(DeltaKernelUtils.UnsupportedDirectDecodeException e) {
+			final int[] off = {base};
+			DeltaKernelUtils.readScanFile(DeltaKernelUtils.createEngine(), handle.scanState, handle.physicalReadSchema,
+				scanFileRow, (cols, size, selected) -> {
+					int m = DeltaKernelUtils.countSelected(size, selected);
+					DeltaKernelUtils.checkSliceLimit(off[0], m, limit, fname);
+					for(int c = 0; c < readCodes.length; c++)
+						extractColumnInto(cols[c], size, selected, readCodes[c], dest[c], off[0]);
+					off[0] += m;
+				});
+			n = off[0] - base;
+		}
+		if(base + n != limit)
+			throw new DMLRuntimeException("Delta file produced " + n + " rows, expected " + (limit - base)
+				+ " from its numRecords statistic; refusing direct read of " + fname);
 	}
 
 	static int readCode(DataType dt, String name) {

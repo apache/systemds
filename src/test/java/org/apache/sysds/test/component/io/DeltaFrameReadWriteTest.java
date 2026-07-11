@@ -28,11 +28,18 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Random;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.parquet.hadoop.ParquetFileReader;
+import org.apache.parquet.hadoop.util.HadoopInputFile;
+import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.CompilerConfig;
@@ -50,19 +57,28 @@ import org.apache.sysds.runtime.io.FrameWriterDelta;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
+import io.delta.kernel.DataWriteContext;
+import io.delta.kernel.Operation;
+import io.delta.kernel.Table;
+import io.delta.kernel.Transaction;
 import io.delta.kernel.data.ColumnVector;
 import io.delta.kernel.data.ColumnarBatch;
 import io.delta.kernel.data.FilteredColumnarBatch;
+import io.delta.kernel.data.Row;
 import io.delta.kernel.engine.Engine;
+import io.delta.kernel.internal.util.Utils;
 import io.delta.kernel.types.ByteType;
 import io.delta.kernel.types.DataType;
 import io.delta.kernel.types.DateType;
 import io.delta.kernel.types.DoubleType;
+import io.delta.kernel.types.IntegerType;
 import io.delta.kernel.types.LongType;
 import io.delta.kernel.types.ShortType;
 import io.delta.kernel.types.StringType;
 import io.delta.kernel.types.StructType;
+import io.delta.kernel.utils.CloseableIterable;
 import io.delta.kernel.utils.CloseableIterator;
+import io.delta.kernel.utils.DataFileStatus;
 
 /**
  * Direct (no DML) round-trip tests for the native Delta Kernel based frame reader/writer. Each test writes a FrameBlock
@@ -452,6 +468,87 @@ public class DeltaFrameReadWriteTest {
 	}
 
 	@Test
+	public void readTypeWidenedIntFilesAsLongColumn() throws Exception {
+		// what Delta type widening leaves behind: the schema declares bigint while an
+		// older data file still physically stores INT32. The direct decode must detect
+		// the narrower physical type and fall back to the kernel engine for that file
+		// only (the INT64 file stays on the direct path), in both readers.
+		long[] oldInts = {1, -2, 0, Integer.MAX_VALUE, Integer.MIN_VALUE};
+		long[] newLongs = {10L, -20L, 5_000_000_000L, Long.MAX_VALUE, Long.MIN_VALUE};
+		Path dir = Files.createTempDirectory("sysds_delta_frame_tw_");
+		String tablePath = new File(dir.toFile(), "table").getAbsolutePath();
+		try {
+			writeWidenedLongTable(tablePath, oldInts, newLongs);
+			// pin the fixture: stats present (so the pre-sized direct path is what runs,
+			// not the buffered fallback) and exactly one file physically narrower than
+			// the schema (so the per-file kernel fallback really triggers)
+			DeltaKernelUtils.ScanHandle handle = DeltaKernelUtils.openScan(DeltaKernelUtils.createEngine(),
+				DeltaKernelUtils.qualify(tablePath));
+			assertTrue("fixture must carry exact row counts", handle.hasExactRowCounts());
+			assertEquals("fixture must span two data files", 2, handle.scanFiles.size());
+			assertEquals("fixture must contain exactly one INT32-physical data file", 1, countInt32Files(tablePath));
+			FrameReader[] readers = {new FrameReaderDelta(), new FrameReaderDeltaParallel()};
+			for(FrameReader reader : readers) {
+				FrameBlock out = reader.readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1);
+				assertEquals("rows", oldInts.length + newLongs.length, out.getNumRows());
+				assertEquals("cols", 1, out.getNumColumns());
+				assertEquals("widened column surfaces as INT64", ValueType.INT64, out.getSchema()[0]);
+				for(int r = 0; r < oldInts.length; r++)
+					assertEquals("int-file cell " + r, oldInts[r], ((Number) out.get(r, 0)).longValue());
+				for(int r = 0; r < newLongs.length; r++)
+					assertEquals("long-file cell " + r, newLongs[r],
+						((Number) out.get(oldInts.length + r, 0)).longValue());
+			}
+		}
+		finally {
+			FileUtils.deleteQuietly(dir.toFile());
+		}
+	}
+
+	@Test
+	public void readSchemaEvolvedFilesMissingAndReorderedColumns() throws Exception {
+		// schema evolution leftovers: one data file written before column 'w' existed
+		// (its cells must keep the column default, 0 for numerics), and one whose
+		// parquet column order is reversed relative to the table schema (values must
+		// land by name, not by position), identically on all three read paths.
+		StructType tableSchema = new StructType().add("v", LongType.LONG, true).add("w", LongType.LONG, true);
+		StructType vOnly = new StructType().add("v", LongType.LONG, true);
+		StructType reversed = new StructType().add("w", LongType.LONG, true).add("v", LongType.LONG, true);
+		long[] v1 = {1L, 2L, 3L};
+		long[] v2 = {10L, 20L};
+		long[] w2 = {100L, 200L};
+
+		Path dir = Files.createTempDirectory("sysds_delta_frame_se_");
+		String tablePath = new File(dir.toFile(), "table").getAbsolutePath();
+		try {
+			commitFiles(tablePath, tableSchema, batchOf(vOnly, new LongBackedVector(LongType.LONG, v1)),
+				batchOf(reversed, new LongBackedVector(LongType.LONG, w2), new LongBackedVector(LongType.LONG, v2)));
+			FrameReader[] readers = {new FrameReaderDelta(), new FrameReaderDeltaParallel(), new FrameReaderDelta() {
+				@Override
+				protected boolean useDirectPath(DeltaKernelUtils.ScanHandle h) {
+					return false;
+				}
+			}};
+			for(FrameReader reader : readers) {
+				FrameBlock out = reader.readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1);
+				assertEquals("rows", v1.length + v2.length, out.getNumRows());
+				assertEquals("cols", 2, out.getNumColumns());
+				for(int r = 0; r < v1.length; r++) {
+					assertEquals("old-file v " + r, v1[r], ((Number) out.get(r, 0)).longValue());
+					assertEquals("old-file w (missing -> default) " + r, 0L, ((Number) out.get(r, 1)).longValue());
+				}
+				for(int r = 0; r < v2.length; r++) {
+					assertEquals("reordered-file v " + r, v2[r], ((Number) out.get(v1.length + r, 0)).longValue());
+					assertEquals("reordered-file w " + r, w2[r], ((Number) out.get(v1.length + r, 1)).longValue());
+				}
+			}
+		}
+		finally {
+			FileUtils.deleteQuietly(dir.toFile());
+		}
+	}
+
+	@Test
 	public void writerRejectsDimensionMismatch() throws Exception {
 		ValueType[] schema = {ValueType.STRING, ValueType.INT64};
 		String[] names = {"s", "k"};
@@ -613,6 +710,87 @@ public class DeltaFrameReadWriteTest {
 		DeltaKernelUtils.commit(engine, DeltaKernelUtils.qualify(tablePath), schema, singleton(fcb));
 	}
 
+	/**
+	 * Creates what Delta type widening leaves behind: a table whose schema declares {@code bigint} while its first data
+	 * file physically stores INT32 (written before the widen) and its second INT64.
+	 */
+	private static void writeWidenedLongTable(String tablePath, long[] oldInts, long[] newLongs) throws Exception {
+		StructType tableSchema = new StructType().add("v", LongType.LONG, true);
+		StructType intSchema = new StructType().add("v", IntegerType.INTEGER, true);
+		commitFiles(tablePath, tableSchema, batchOf(intSchema, new LongBackedVector(IntegerType.INTEGER, oldInts)),
+			batchOf(tableSchema, new LongBackedVector(LongType.LONG, newLongs)));
+	}
+
+	/**
+	 * Creates a table with the given schema and commits one physically-written data file per batch. The files are
+	 * written through the kernel's parquet handler directly (bypassing the logical-data transform, which would reject
+	 * batch schemas deviating from the table schema) and committed with their statistics, so reads take the pre-sized
+	 * direct path.
+	 */
+	private static void commitFiles(String tablePath, StructType tableSchema, ColumnarBatch... batches)
+		throws Exception {
+		Engine engine = DeltaKernelUtils.createEngine();
+		Table table = Table.forPath(engine, DeltaKernelUtils.qualify(tablePath));
+		Transaction txn = table.createTransactionBuilder(engine, "SystemDS-test", Operation.CREATE_TABLE)
+			.withSchema(engine, tableSchema).build(engine);
+		Row txnState = txn.getTransactionState(engine);
+		DataWriteContext ctx = Transaction.getWriteContext(engine, txnState, Collections.emptyMap());
+
+		List<DataFileStatus> files = new ArrayList<>();
+		for(ColumnarBatch batch : batches)
+			drain(engine.getParquetHandler().writeParquetFiles(ctx.getTargetDirectory(),
+				singleton(new FilteredColumnarBatch(batch, Optional.empty())), ctx.getStatisticsColumns()), files);
+
+		CloseableIterator<Row> actions = Transaction.generateAppendActions(engine, txnState,
+			Utils.toCloseableIterator(files.iterator()), ctx);
+		txn.commit(engine, CloseableIterable.inMemoryIterable(actions));
+	}
+
+	/** Count the parquet data files whose single column is physically stored as INT32. */
+	private static int countInt32Files(String tablePath) throws Exception {
+		Configuration conf = new Configuration();
+		int n = 0;
+		try(java.util.stream.Stream<Path> s = Files.walk(new File(tablePath).toPath())) {
+			for(Path p : (Iterable<Path>) s.filter(f -> f.toString().endsWith(".parquet"))::iterator) {
+				try(ParquetFileReader r = ParquetFileReader
+					.open(HadoopInputFile.fromPath(new org.apache.hadoop.fs.Path(p.toString()), conf))) {
+					PrimitiveTypeName t = r.getFooter().getFileMetaData().getSchema().getType(0).asPrimitiveType()
+						.getPrimitiveTypeName();
+					if(t == PrimitiveTypeName.INT32)
+						n++;
+				}
+			}
+		}
+		return n;
+	}
+
+	private static void drain(CloseableIterator<DataFileStatus> it, List<DataFileStatus> into) throws IOException {
+		try(CloseableIterator<DataFileStatus> i = it) {
+			while(i.hasNext())
+				into.add(i.next());
+		}
+	}
+
+	/** Batch view over per-column vectors (positionally matching the given schema). */
+	private static ColumnarBatch batchOf(StructType schema, ColumnVector... cols) {
+		return new ColumnarBatch() {
+			@Override
+			public StructType getSchema() {
+				return schema;
+			}
+
+			@Override
+			public int getSize() {
+				return cols[0].getSize();
+			}
+
+			@Override
+			public ColumnVector getColumnVector(int ordinal) {
+				return cols[ordinal];
+			}
+		};
+	}
+
 	private static CloseableIterator<FilteredColumnarBatch> singleton(FilteredColumnarBatch fcb) {
 		return new CloseableIterator<FilteredColumnarBatch>() {
 			private boolean _done = false;
@@ -694,6 +872,46 @@ public class DeltaFrameReadWriteTest {
 
 		@Override
 		public short getShort(int rowId) {
+			return _vals[rowId];
+		}
+
+		@Override
+		public void close() {
+		}
+	}
+
+	/** Column view exposing a long[] as a Delta integer or long column ({@code getInt} narrows). */
+	private static class LongBackedVector implements ColumnVector {
+		private final DataType _dt;
+		private final long[] _vals;
+
+		LongBackedVector(DataType dt, long[] vals) {
+			_dt = dt;
+			_vals = vals;
+		}
+
+		@Override
+		public DataType getDataType() {
+			return _dt;
+		}
+
+		@Override
+		public int getSize() {
+			return _vals.length;
+		}
+
+		@Override
+		public boolean isNullAt(int rowId) {
+			return false;
+		}
+
+		@Override
+		public int getInt(int rowId) {
+			return (int) _vals[rowId];
+		}
+
+		@Override
+		public long getLong(int rowId) {
 			return _vals[rowId];
 		}
 

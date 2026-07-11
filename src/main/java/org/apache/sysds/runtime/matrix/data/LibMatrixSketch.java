@@ -53,8 +53,8 @@ public class LibMatrixSketch {
 	}
 
 	/**
-	 * Computes unique values, rows, or columns. Parallel execution is used only for
-	 * sufficiently large inputs with k > 1; otherwise the existing sequential path is used.
+	 * Computes unique values, rows, or columns. For sufficiently large inputs and
+	 * k > 1, this uses parallel local deduplication or its batched variant.
 	 *
 	 * @param blkIn input matrix block
 	 * @param dir unique direction
@@ -67,13 +67,20 @@ public class LibMatrixSketch {
 		if( !satisfiesMultiThreadingConstraints(blkIn, dir, k) )
 			return getUniqueValuesSequential(blkIn, dir);
 
+		boolean localDedupMemorySafe = isLocalDedupMemoryBudgetSafe(blkIn, dir);
 		switch(dir) {
 			case RowCol:
-				return getUniqueValuesRowColParallel(blkIn, k);
+				return localDedupMemorySafe ?
+					getUniqueValuesRowColParallel(blkIn, k) :
+					getUniqueValuesRowColBatchedParallel(blkIn, dir, k);
 			case Row:
-				return getUniqueRowsParallel(blkIn, k);
+				return localDedupMemorySafe ?
+					getUniqueRowsParallel(blkIn, k) :
+					getUniqueRowsBatchedParallel(blkIn, dir, k);
 			case Col:
-				return getUniqueColumnsParallel(blkIn, k);
+				return localDedupMemorySafe ?
+					getUniqueColumnsParallel(blkIn, k) :
+					getUniqueColumnsBatchedParallel(blkIn, dir, k);
 			default:
 				throw new IllegalArgumentException("Unrecognized direction: " + dir);
 		}
@@ -196,7 +203,7 @@ public class LibMatrixSketch {
 			for( int[] range : getBalancedRanges(blkIn.getNumRows(), numThreads) )
 				tasks.add(new UniqueValueTask(blkIn, range[0], range[1]));
 
-			// Merge after local deduplication to avoid a shared synchronized set in the workers.
+			// Merge local sets after the workers complete.
 			HashSet<Double> hashSet = new HashSet<>();
 			List<Future<HashSet<Double>>> rtasks = pool.invokeAll(tasks);
 			for( int i = 0; i < rtasks.size(); i++ ) {
@@ -232,7 +239,7 @@ public class LibMatrixSketch {
 			for( int[] range : getBalancedRanges(blkIn.getNumRows(), numThreads) )
 				tasks.add(new UniqueRowTask(blkIn, range[0], range[1]));
 
-			// Global merge is intentionally single-threaded and ordered for correctness.
+			// Keep the merge ordered to preserve first occurrences.
 			LinkedHashMap<RowKey, double[]> retainedRows = new LinkedHashMap<>();
 			List<Future<LinkedHashMap<RowKey, double[]>>> rtasks = pool.invokeAll(tasks);
 			for( int i = 0; i < rtasks.size(); i++ ) {
@@ -269,7 +276,7 @@ public class LibMatrixSketch {
 			for( int[] range : getBalancedRanges(blkIn.getNumColumns(), numThreads) )
 				tasks.add(new UniqueColumnTask(blkIn, range[0], range[1]));
 
-			// Global merge is intentionally single-threaded and ordered for correctness.
+			// Keep the merge ordered to preserve first occurrences.
 			LinkedHashMap<ColKey, double[]> retainedColumns = new LinkedHashMap<>();
 			List<Future<LinkedHashMap<ColKey, double[]>>> rtasks = pool.invokeAll(tasks);
 			for( int i = 0; i < rtasks.size(); i++ ) {
@@ -278,6 +285,140 @@ public class LibMatrixSketch {
 					retainedColumns.putIfAbsent(entry.getKey(), entry.getValue());
 				localColumns.clear();
 				rtasks.set(i, null);
+			}
+
+			return createColumnOutput(retainedColumns.values(), blkIn.getNumRows());
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+		finally {
+			pool.shutdown();
+		}
+	}
+
+	/**
+	 * Batched parallel unique for single-column vectors.
+	 *
+	 * @param blkIn input single-column matrix block
+	 * @param dir unique direction
+	 * @param k requested degree of parallelism
+	 * @return one-column matrix block containing the unique values
+	 */
+	private static MatrixBlock getUniqueValuesRowColBatchedParallel(MatrixBlock blkIn, Types.Direction dir, int k) {
+		if( blkIn.getNumColumns() != 1 )
+			throw new NotImplementedException("Unique only support single-column vectors yet");
+
+		BatchConfig config = getBatchConfig(blkIn, dir, k);
+		if( config == null )
+			return getUniqueValuesSequential(blkIn, dir);
+
+		ExecutorService pool = CommonThreadPool.get(config._numThreads);
+		try {
+			HashSet<Double> hashSet = new HashSet<>();
+			for( int pos = 0; pos < config._len; ) {
+				ArrayList<UniqueValueTask> tasks = new ArrayList<>();
+				for( int i = 0; i < config._numThreads && pos < config._len; i++ ) {
+					int end = Math.min(pos + config._taskLen, config._len);
+					tasks.add(new UniqueValueTask(blkIn, pos, end));
+					pos = end;
+				}
+
+				List<Future<HashSet<Double>>> rtasks = pool.invokeAll(tasks);
+				for( int i = 0; i < rtasks.size(); i++ ) {
+					HashSet<Double> localSet = rtasks.get(i).get();
+					hashSet.addAll(localSet);
+					localSet.clear();
+					rtasks.set(i, null);
+				}
+			}
+
+			return createRowColOutput(hashSet);
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+		finally {
+			pool.shutdown();
+		}
+	}
+
+	/**
+	 * Batched parallel unique rows. Partitions are merged in row order.
+	 *
+	 * @param blkIn input matrix block
+	 * @param dir unique direction
+	 * @param k requested degree of parallelism
+	 * @return matrix block containing exact unique rows
+	 */
+	private static MatrixBlock getUniqueRowsBatchedParallel(MatrixBlock blkIn, Types.Direction dir, int k) {
+		BatchConfig config = getBatchConfig(blkIn, dir, k);
+		if( config == null )
+			return getUniqueValuesSequential(blkIn, dir);
+
+		ExecutorService pool = CommonThreadPool.get(config._numThreads);
+		try {
+			LinkedHashMap<RowKey, double[]> retainedRows = new LinkedHashMap<>();
+			for( int pos = 0; pos < config._len; ) {
+				ArrayList<UniqueRowTask> tasks = new ArrayList<>();
+				for( int i = 0; i < config._numThreads && pos < config._len; i++ ) {
+					int end = Math.min(pos + config._taskLen, config._len);
+					tasks.add(new UniqueRowTask(blkIn, pos, end));
+					pos = end;
+				}
+
+				List<Future<LinkedHashMap<RowKey, double[]>>> rtasks = pool.invokeAll(tasks);
+				for( int i = 0; i < rtasks.size(); i++ ) {
+					LinkedHashMap<RowKey, double[]> localRows = rtasks.get(i).get();
+					for( java.util.Map.Entry<RowKey, double[]> entry : localRows.entrySet() )
+						retainedRows.putIfAbsent(entry.getKey(), entry.getValue());
+					localRows.clear();
+					rtasks.set(i, null);
+				}
+			}
+
+			return createRowOutput(retainedRows.values(), blkIn.getNumColumns());
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+		finally {
+			pool.shutdown();
+		}
+	}
+
+	/**
+	 * Batched parallel unique columns. Column ranges are merged from left to right.
+	 *
+	 * @param blkIn input matrix block
+	 * @param dir unique direction
+	 * @param k requested degree of parallelism
+	 * @return matrix block containing exact unique columns
+	 */
+	private static MatrixBlock getUniqueColumnsBatchedParallel(MatrixBlock blkIn, Types.Direction dir, int k) {
+		BatchConfig config = getBatchConfig(blkIn, dir, k);
+		if( config == null )
+			return getUniqueValuesSequential(blkIn, dir);
+
+		ExecutorService pool = CommonThreadPool.get(config._numThreads);
+		try {
+			LinkedHashMap<ColKey, double[]> retainedColumns = new LinkedHashMap<>();
+			for( int pos = 0; pos < config._len; ) {
+				ArrayList<UniqueColumnTask> tasks = new ArrayList<>();
+				for( int i = 0; i < config._numThreads && pos < config._len; i++ ) {
+					int end = Math.min(pos + config._taskLen, config._len);
+					tasks.add(new UniqueColumnTask(blkIn, pos, end));
+					pos = end;
+				}
+
+				List<Future<LinkedHashMap<ColKey, double[]>>> rtasks = pool.invokeAll(tasks);
+				for( int i = 0; i < rtasks.size(); i++ ) {
+					LinkedHashMap<ColKey, double[]> localColumns = rtasks.get(i).get();
+					for( java.util.Map.Entry<ColKey, double[]> entry : localColumns.entrySet() )
+						retainedColumns.putIfAbsent(entry.getKey(), entry.getValue());
+					localColumns.clear();
+					rtasks.set(i, null);
+				}
 			}
 
 			return createColumnOutput(retainedColumns.values(), blkIn.getNumRows());
@@ -304,11 +445,11 @@ public class LibMatrixSketch {
 
 		switch(dir) {
 			case RowCol:
-				return blkIn.getNumRows() > 1 && isLocalDedupMemoryBudgetSafe(blkIn);
+				return blkIn.getNumRows() > 1;
 			case Row:
-				return blkIn.getNumRows() > 1 && isLocalDedupMemoryBudgetSafe(blkIn);
+				return blkIn.getNumRows() > 1;
 			case Col:
-				return blkIn.getNumColumns() > 1 && isLocalDedupMemoryBudgetSafe(blkIn);
+				return blkIn.getNumColumns() > 1;
 			default:
 				throw new IllegalArgumentException("Unrecognized direction: " + dir);
 		}
@@ -342,25 +483,70 @@ public class LibMatrixSketch {
 	}
 
 	/**
-	 * Conservative memory guard for parallel paths with thread-local sets or maps.
-	 * The estimate includes a small overhead factor for key and map objects, so the
-	 * parallel path is avoided before local deduplication becomes too memory-heavy.
+	 * Builds the execution plan for the batched parallel path.
 	 *
 	 * @param blkIn input matrix block
-	 * @return true if local deduplication is small enough for the parallel path
+	 * @param dir unique direction
+	 * @param k requested degree of parallelism
+	 * @return batch configuration, or null if batching would not use parallelism
 	 */
-	private static boolean isLocalDedupMemoryBudgetSafe(MatrixBlock blkIn) {
-		long numCells = ((long) blkIn.getNumRows()) * blkIn.getNumColumns();
-		if( numCells > Long.MAX_VALUE / Double.BYTES / PAR_UNIQUE_LOCAL_BYTES_OVERHEAD )
-			return false;
+	private static BatchConfig getBatchConfig(MatrixBlock blkIn, Types.Direction dir, int k) {
+		int len = getPartitionLength(blkIn, dir);
+		long maxBatchIndexes = getMaxLocalDedupIndexes(blkIn, dir);
+		if( maxBatchIndexes < 2 )
+			return null;
 
-		long copiedValueBytes = numCells * Double.BYTES * PAR_UNIQUE_LOCAL_BYTES_OVERHEAD;
-		long maxLocalBytes = Runtime.getRuntime().maxMemory() / PAR_UNIQUE_MAX_LOCAL_BYTES_FRACTION;
-		return copiedValueBytes <= maxLocalBytes;
+		int numThreads = getNumThreads(k, (int) Math.min(len, maxBatchIndexes));
+		if( numThreads <= 1 )
+			return null;
+
+		int taskLen = Math.max(1, (int) Math.min(Integer.MAX_VALUE, maxBatchIndexes / numThreads));
+		return new BatchConfig(numThreads, taskLen, len);
 	}
 
 	/**
-	 * Copies one row into an immutable key/value array for safe HashMap storage.
+	 * Returns the number of rows or columns that define the partition direction.
+	 *
+	 * @param blkIn input matrix block
+	 * @param dir unique direction
+	 * @return number of partition indexes
+	 */
+	private static int getPartitionLength(MatrixBlock blkIn, Types.Direction dir) {
+		return dir == Types.Direction.Col ? blkIn.getNumColumns() : blkIn.getNumRows();
+	}
+
+	/**
+	 * Estimates how many partition indexes can be processed in one batch.
+	 *
+	 * @param blkIn input matrix block
+	 * @param dir unique direction
+	 * @return maximum number of rows or columns per batch
+	 */
+	private static long getMaxLocalDedupIndexes(MatrixBlock blkIn, Types.Direction dir) {
+		long cellsPerIndex = dir == Types.Direction.Col ? blkIn.getNumRows() : blkIn.getNumColumns();
+		if( cellsPerIndex <= 0 ||
+			cellsPerIndex > Long.MAX_VALUE / Double.BYTES / PAR_UNIQUE_LOCAL_BYTES_OVERHEAD )
+			return 0;
+
+		long bytesPerIndex = cellsPerIndex * Double.BYTES * PAR_UNIQUE_LOCAL_BYTES_OVERHEAD;
+		long maxLocalBytes = Runtime.getRuntime().maxMemory() / PAR_UNIQUE_MAX_LOCAL_BYTES_FRACTION;
+		return maxLocalBytes / bytesPerIndex;
+	}
+
+	/**
+	 * Conservative memory guard for full local deduplication. The estimate includes
+	 * a small overhead factor for key and map objects.
+	 *
+	 * @param blkIn input matrix block
+	 * @param dir unique direction
+	 * @return true if local deduplication is small enough for the parallel path
+	 */
+	private static boolean isLocalDedupMemoryBudgetSafe(MatrixBlock blkIn, Types.Direction dir) {
+		return getMaxLocalDedupIndexes(blkIn, dir) >= getPartitionLength(blkIn, dir);
+	}
+
+	/**
+	 * Copies one row for key/value storage.
 	 *
 	 * @param blkIn input matrix block
 	 * @param row row index to copy
@@ -375,7 +561,7 @@ public class LibMatrixSketch {
 	}
 
 	/**
-	 * Copies one column into an immutable key/value array for safe HashMap storage.
+	 * Copies one column for key/value storage.
 	 *
 	 * @param blkIn input matrix block
 	 * @param col column index to copy
@@ -490,6 +676,21 @@ public class LibMatrixSketch {
 	}
 
 	/**
+	 * Configuration for batched execution.
+	 */
+	private static class BatchConfig {
+		private final int _numThreads;
+		private final int _taskLen;
+		private final int _len;
+
+		private BatchConfig(int numThreads, int taskLen, int len) {
+			_numThreads = numThreads;
+			_taskLen = taskLen;
+			_len = len;
+		}
+	}
+
+	/**
 	 * Worker that deduplicates a row partition of a single-column vector locally.
 	 */
 	private static class UniqueValueTask implements Callable<HashSet<Double>> {
@@ -563,8 +764,7 @@ public class LibMatrixSketch {
 	}
 
 	/**
-	 * Content-based key for copied rows. The referenced array is never mutated after
-	 * construction, so it is safe to reuse the copy as both key contents and output data.
+	 * Content-based key for copied rows.
 	 */
 	private static class RowKey {
 		private final double[] _values;
@@ -587,8 +787,7 @@ public class LibMatrixSketch {
 	}
 
 	/**
-	 * Content-based key for copied columns. The referenced array is never mutated after
-	 * construction, so it is safe to reuse the copy as both key contents and output data.
+	 * Content-based key for copied columns.
 	 */
 	private static class ColKey {
 		private final double[] _values;

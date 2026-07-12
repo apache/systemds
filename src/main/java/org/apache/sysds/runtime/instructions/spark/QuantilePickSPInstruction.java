@@ -216,8 +216,14 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 			for( int i=0; i<quantiles.length; i++ ){
 				ret[i+1] = quantiles[i] * mc.getRows();
 				ret[i+quantiles.length+1] = Math.ceil(ret[i+1])-ret[i+1];
-				ret[i+2*quantiles.length+1] = lookupKey(w, 
-					(long)Math.ceil(ret[i+1]), mc.getBlocksize());
+				long key = (long)Math.ceil(ret[i+1]);
+				ret[i+2*quantiles.length+1] = lookupKey(w, key, mc.getBlocksize());
+
+				//average w/ next value for even-length arrays (mirrors CP QuantilePickCPInstruction)
+				if(mc.getRows() % 2 == 0 && key < mc.getRows()) {
+					ret[i+2*quantiles.length+1] += lookupKey(w, key + 1, mc.getBlocksize());
+					ret[i+2*quantiles.length+1] /= 2;
+				}
 			}
 		}
 		

@@ -165,10 +165,10 @@ public class QuantileTest extends AutomatedTestBase
 	}
 
 // TODO reimplement distributed value pick logic
-//	@Test
-//	public void testQuantileBugSP() {
-//		runQuantileTest(TEST_NAME4, 0.5, false, ExecType.SPARK);
-//	}
+	@Test
+	public void testQuantileBugSP() {
+		runQuantileTest(TEST_NAME4, 0.5, false, ExecType.SPARK);
+	}
 	
 	private void runQuantileTest( String TEST_NAME, double p, boolean sparse, ExecType et)
 	{

@@ -111,7 +111,17 @@ public class SplittingOOCStream<T> implements OOCStream<T> {
 	}
 
 	@Override
+	public void enqueue(QueueCallback<T> callback) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
 	public T dequeue() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public QueueCallback<T> dequeueCB() {
 		throw new UnsupportedOperationException();
 	}
 

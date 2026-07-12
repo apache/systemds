@@ -17,40 +17,16 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.ooc.memory;
+package org.apache.sysds.runtime.ooc.cache.io;
 
-import org.apache.sysds.runtime.ooc.cache.OOCFuture;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
-public interface MemoryAllowance {
-	boolean tryReserve(long bytes);
+public interface SpillableObject {
+	boolean tryWrite(DataOutput out)  throws IOException;
+	void read(DataInput in)  throws IOException;
 
-	void reserveBlocking(long bytes);
-
-	OOCFuture<Void> reserveAsync(long bytes);
-
-	void release(long bytes);
-
-	long getUsedMemory();
-
-	long getGrantedMemory();
-
-	long getTargetMemory();
-
-	void setTargetMemory(long targetMemory);
-
-	void shutdown();
-
-	boolean isShutdown();
-
-	default void destroy() {
-		shutdown();
-	}
-
-	default long getFreeMemory() {
-		return Math.max(0, getGrantedMemory() - getUsedMemory());
-	}
-
-	default boolean isUnderPressure() {
-		return getGrantedMemory() > getTargetMemory();
+	default void discard() {
 	}
 }

@@ -36,9 +36,10 @@ import io.delta.kernel.types.DataType;
 
 /**
  * Single-threaded native Delta Lake reader for frames, built on the Spark-free Delta Kernel library. It opens the
- * latest snapshot of a Delta table, reads its parquet data files through the kernel's default engine (honoring deletion
- * vectors), and materializes the columns into a {@link FrameBlock} whose schema and column names are derived from the
- * Delta table schema.
+ * latest snapshot of a Delta table through the kernel (log replay, schema, data-file listing) and decodes the parquet
+ * data files directly into pre-allocated columns via parquet-mr's column API; tables with deletion vectors, partition
+ * columns or missing row statistics are read through the kernel's default engine instead (which applies deletion
+ * vectors and splices partition values). Schema and column names are derived from the Delta table schema.
  *
  * <p>
  * Data is extracted column-at-a-time into primitive arrays (no per-cell boxing or {@code FrameBlock.set} dispatch) and
@@ -92,7 +93,7 @@ public class FrameReaderDelta extends FrameReader {
 			if(total == 0)
 				return new FrameBlock(plan.vt, plan.cnames, 0);
 			if(total <= Integer.MAX_VALUE)
-				return readDirect(fname, engine, handle, plan, (int) total);
+				return readDirect(fname, handle, plan, (int) total);
 		}
 
 		// fallback: row counts unknown or deletion vectors present -> decode into
@@ -135,24 +136,27 @@ public class FrameReaderDelta extends FrameReader {
 	}
 
 	/**
-	 * Whether the metadata-driven direct read fast path can be used for this table (exact per-file row counts and no
-	 * deletion vectors, so the output can be pre-sized and each file decoded straight into its row offset). Visible for
-	 * testing: the buffered fallback is otherwise only reachable for tables lacking row statistics or carrying deletion
-	 * vectors, which the SystemDS Delta writer never produces.
+	 * Whether the metadata-driven direct read fast path can be used for this table: exact per-file row counts (no
+	 * deletion vectors), so the output can be pre-sized, and a physical read schema that maps 1:1 onto the output
+	 * columns (no partition columns or kernel metadata columns to splice back in), so each data file can be decoded
+	 * straight into its row offset without the kernel engine. The buffered kernel-path fallback covers everything else
+	 * (deletion vectors, missing statistics, partitioned tables).
 	 *
 	 * @param handle the opened scan handle
 	 * @return true if the direct path is applicable
 	 */
 	protected boolean useDirectPath(DeltaKernelUtils.ScanHandle handle) {
-		return handle.hasExactRowCounts();
+		return handle.hasExactRowCounts() &&
+			DeltaKernelUtils.supportsDirectDecode(handle.schema, handle.physicalReadSchema);
 	}
 
 	/**
-	 * Fast path: decode each data file straight into pre-sized typed column arrays at a metadata-derived row offset.
-	 * One allocation per column, single pass, no intermediate per-batch buffers or serial concatenation.
+	 * Fast path: decode each data file straight into pre-sized typed column arrays at a metadata-derived row offset,
+	 * through parquet-mr's column API with no kernel engine or intermediate batch vectors in the path. One allocation
+	 * per column, single pass, no per-batch buffers or serial concatenation.
 	 */
-	private FrameBlock readDirect(String fname, Engine engine, DeltaKernelUtils.ScanHandle handle, ReadPlan plan,
-		int nrow) throws IOException {
+	private FrameBlock readDirect(String fname, DeltaKernelUtils.ScanHandle handle, ReadPlan plan, int nrow)
+		throws IOException {
 		final int ncol = plan.ncol;
 		final int[] readCodes = plan.readCodes;
 		final Object[] dest = new Object[ncol];
@@ -161,27 +165,8 @@ public class FrameReaderDelta extends FrameReader {
 
 		int base = 0;
 		for(int i = 0; i < handle.scanFiles.size(); i++) {
-			// exclusive upper row bound for this file's slice; a file decoding more
-			// rows than its numRecords statistic would otherwise overflow into the
-			// next file's region or off the array
 			final int limit = base + (int) handle.numRecords[i];
-			final int[] cur = new int[] {base};
-			DeltaKernelUtils.readScanFile(engine, handle.scanState, handle.physicalReadSchema, handle.scanFiles.get(i),
-				(cols, size, selected) -> {
-					int n = DeltaKernelUtils.countSelected(size, selected);
-					if(cur[0] + n > limit)
-						throw new DMLRuntimeException("Delta file produced more rows than its "
-							+ "numRecords statistic; refusing direct read of " + fname);
-					for(int c = 0; c < ncol; c++)
-						extractColumnInto(cols[c], size, selected, readCodes[c], dest[c], cur[0]);
-					cur[0] += n;
-				});
-			// also fail loud on underflow: a file decoding fewer rows than its
-			// numRecords statistic would leave the tail of the slice at the array
-			// default (0/null) while nrow still reports the (inflated) statistic.
-			if(cur[0] != limit)
-				throw new DMLRuntimeException("Delta file produced " + (cur[0] - base) + " rows, expected "
-					+ (limit - base) + " from its numRecords statistic; refusing direct read of " + fname);
+			decodeFileSlice(handle, handle.scanFiles.get(i), readCodes, dest, base, limit, fname);
 			base = limit;
 		}
 
@@ -257,6 +242,38 @@ public class FrameReaderDelta extends FrameReader {
 			off += n;
 		}
 		return ArrayFactory.create(vt, full);
+	}
+
+	/**
+	 * Decode one data file into its pre-sized slice {@code [base, limit)} of the destination arrays: through the direct
+	 * parquet column decode by default, or through the kernel engine (which performs the physical-type conversions the
+	 * typed decode declines, e.g. for files left behind by type widening) as a per-file fallback. Fails loud when the
+	 * file produces more or fewer rows than its {@code numRecords} statistic promised, so a lying statistic can neither
+	 * overflow into the next file's slice nor leave a silent gap of array defaults. Thread-safe for distinct files, so
+	 * the parallel reader shares it.
+	 */
+	static void decodeFileSlice(DeltaKernelUtils.ScanHandle handle, Row scanFileRow, int[] readCodes, Object[] dest,
+		int base, int limit, String fname) throws IOException {
+		int n;
+		try {
+			n = DeltaKernelUtils.decodeDataFileInto(DeltaKernelUtils.dataFilePath(scanFileRow),
+				handle.physicalReadSchema, readCodes, dest, base, limit, fname);
+		}
+		catch(DeltaKernelUtils.UnsupportedDirectDecodeException e) {
+			final int[] off = {base};
+			DeltaKernelUtils.readScanFile(DeltaKernelUtils.createEngine(), handle.scanState, handle.physicalReadSchema,
+				scanFileRow, (cols, size, selected) -> {
+					int m = DeltaKernelUtils.countSelected(size, selected);
+					DeltaKernelUtils.checkSliceLimit(off[0], m, limit, fname);
+					for(int c = 0; c < readCodes.length; c++)
+						extractColumnInto(cols[c], size, selected, readCodes[c], dest[c], off[0]);
+					off[0] += m;
+				});
+			n = off[0] - base;
+		}
+		if(base + n != limit)
+			throw new DMLRuntimeException("Delta file produced " + n + " rows, expected " + (limit - base)
+				+ " from its numRecords statistic; refusing direct read of " + fname);
 	}
 
 	static int readCode(DataType dt, String name) {

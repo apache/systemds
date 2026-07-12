@@ -19,10 +19,6 @@
 
 package org.apache.sysds.runtime.ooc.cache;
 
-import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
-
-import java.util.List;
-
 public final class BlockEntry {
 	private final BlockKey _key;
 	private final long _size;
@@ -31,6 +27,19 @@ public final class BlockEntry {
 	private Object _data;
 	private int _retainHintCount;
 	private int _referenceCount; // The number of references from different managing instances (e.g. CachingStream)
+	// Optional implementation-local cache metadata; null for cache implementations that do not need it.
+	private volatile Object _cacheMeta;
+
+	public BlockEntry(BlockKey key) {
+		this._key = key;
+		this._size = -1;
+		this._pinCount = 0;
+		this._state = BlockState.COLD;
+		this._data = null;
+		this._retainHintCount = 0;
+		this._referenceCount = 0;
+		this._cacheMeta = null;
+	}
 
 	public BlockEntry(BlockKey key, long size, Object data) {
 		this._key = key;
@@ -40,6 +49,18 @@ public final class BlockEntry {
 		this._data = data;
 		this._retainHintCount = 0;
 		this._referenceCount = 1;
+		this._cacheMeta = null;
+	}
+
+	public BlockEntry(BlockKey key, long size, Object data, BlockState state) {
+		this._key = key;
+		this._size = size;
+		this._pinCount = 0;
+		this._state = state;
+		this._data = data;
+		this._retainHintCount = 0;
+		this._referenceCount = 1;
+		this._cacheMeta = null;
 	}
 
 	public BlockKey getKey() {
@@ -53,18 +74,6 @@ public final class BlockEntry {
 	public Object getData() {
 		if (_pinCount > 0)
 			return _data;
-		throw new IllegalStateException("Cannot get the data of an unpinned entry");
-	}
-
-	public int getGroupSize() {
-		if(_pinCount > 0)
-			return ((List<?>)_data).size();
-		throw new IllegalStateException("Cannot get the data of an unpinned entry");
-	}
-
-	public boolean isGrouped() {
-		if(_pinCount > 0)
-			return _data instanceof List;
 		throw new IllegalStateException("Cannot get the data of an unpinned entry");
 	}
 
@@ -86,12 +95,28 @@ public final class BlockEntry {
 		return _pinCount > 0;
 	}
 
+	public synchronized int getPinCount() {
+		return _pinCount;
+	}
+
 	public synchronized int addReference() {
 		return ++_referenceCount;
 	}
 
 	public synchronized int forget() {
 		return --_referenceCount;
+	}
+
+	public synchronized int getReferenceCount() {
+		return _referenceCount;
+	}
+
+	public Object getCacheMeta() {
+		return _cacheMeta;
+	}
+
+	public void setCacheMeta(Object meta) {
+		_cacheMeta = meta;
 	}
 
 	public synchronized void setState(BlockState state) {
@@ -104,12 +129,6 @@ public final class BlockEntry {
 
 	public synchronized void addRetainHint() {
 		_retainHintCount++;
-	}
-
-	public synchronized void removeRetainHint(int cnt) {
-		_retainHintCount -= cnt;
-		if(_retainHintCount < 0)
-			_retainHintCount = 0;
 	}
 
 	public synchronized void removeRetainHint() {
@@ -129,8 +148,6 @@ public final class BlockEntry {
 	public synchronized long clear() {
 		if (_pinCount != 0 || _data == null)
 			return 0;
-		if (_data instanceof IndexedMatrixValue)
-			((IndexedMatrixValue)_data).setValue(null); // Explicitly clear
 		_data = null;
 		_retainHintCount = 0;
 		return _size;

@@ -22,7 +22,9 @@ package org.apache.sysds.runtime.io;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -30,6 +32,19 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.parquet.column.ColumnDescriptor;
+import org.apache.parquet.column.ColumnReader;
+import org.apache.parquet.column.impl.ColumnReadStoreImpl;
+import org.apache.parquet.column.page.PageReadStore;
+import org.apache.parquet.hadoop.ParquetFileReader;
+import org.apache.parquet.hadoop.metadata.FileMetaData;
+import org.apache.parquet.hadoop.util.HadoopInputFile;
+import org.apache.parquet.io.api.Converter;
+import org.apache.parquet.io.api.GroupConverter;
+import org.apache.parquet.io.api.PrimitiveConverter;
+import org.apache.parquet.schema.MessageType;
+import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
+import org.apache.parquet.schema.Type.Repetition;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -105,6 +120,14 @@ public class DeltaKernelUtils {
 	public static final int T_BOOLEAN = 6;
 	public static final int T_STRING  = 7;
 
+	/**
+	 * Parquet physical type each {@code T_*} column is stored as, indexed by type code (delta int/short/byte columns
+	 * are all stored as annotated parquet INT32).
+	 */
+	private static final PrimitiveTypeName[] T_PHYSICAL = {PrimitiveTypeName.DOUBLE, PrimitiveTypeName.FLOAT,
+		PrimitiveTypeName.INT64, PrimitiveTypeName.INT32, PrimitiveTypeName.INT32, PrimitiveTypeName.INT32,
+		PrimitiveTypeName.BOOLEAN, PrimitiveTypeName.BINARY};
+
 	//derived configuration cached to avoid copying the (large) base conf on every
 	//engine creation (createEngine is called once per data file in parallel reads);
 	//rebuilt whenever the base conf or the relevant SystemDS settings change.
@@ -160,6 +183,250 @@ public class DeltaKernelUtils {
 			if(selected[r])
 				n++;
 		return n;
+	}
+
+	// ------------------------------------------
+	// direct parquet decode of Delta data files
+	// ------------------------------------------
+
+	/** Physical-schema metadata key carrying the parquet field id (column mapping mode {@code id}). */
+	private static final String PARQUET_FIELD_ID_KEY = "parquet.field.id";
+
+	/**
+	 * Whether data files can be decoded directly into pre-allocated output columns: the physical read schema must be a
+	 * positional 1:1 image of the logical schema, i.e. no partition columns (not stored in the data files, spliced back
+	 * in by the kernel) and no kernel metadata columns such as {@code row_index} (only requested for deletion-vector
+	 * reads). Deletion vectors themselves are excluded separately via the exact-row-count check.
+	 *
+	 * @param logicalSchema  the table's logical schema
+	 * @param physicalSchema the physical read schema from the scan state
+	 * @return true if data files can be decoded directly
+	 */
+	public static boolean supportsDirectDecode(StructType logicalSchema, StructType physicalSchema) {
+		if(physicalSchema.length() != logicalSchema.length())
+			return false;
+		for(int c = 0; c < physicalSchema.length(); c++)
+			if(physicalSchema.at(c).isMetadataColumn())
+				return false;
+		return true;
+	}
+
+	/** @param scanFileRow a scan-file row @return the fully-qualified path of its data file */
+	public static String dataFilePath(Row scanFileRow) {
+		return InternalScanFileUtils.getAddFileStatus(scanFileRow).getPath();
+	}
+
+	/**
+	 * Thrown when a data file's parquet layout cannot be decoded directly into the typed output columns, e.g. a
+	 * physical type narrower than the Delta column type (left behind by type widening). Raised before anything is
+	 * written to the output arrays, so callers can re-read the file through the kernel engine (which performs those
+	 * conversions) instead.
+	 */
+	public static final class UnsupportedDirectDecodeException extends DMLRuntimeException {
+		private static final long serialVersionUID = 1L;
+
+		public UnsupportedDirectDecodeException(String msg) {
+			super(msg);
+		}
+	}
+
+	/**
+	 * Decode one Delta data file into pre-allocated typed column arrays at the given absolute row offset, through
+	 * parquet-mr's column API ({@link ColumnReadStoreImpl}/{@link ColumnReader}) with no kernel engine or intermediate
+	 * batch vectors in the path. Columns are resolved by parquet field id first (column mapping mode {@code id}) and
+	 * physical name second; columns absent from the file (schema evolution) keep the array defaults (0 for numerics,
+	 * null for strings), matching the kernel-path null semantics.
+	 *
+	 * @param filePath       fully-qualified path of the parquet data file
+	 * @param physicalSchema physical read schema (positionally 1:1 with the output columns)
+	 * @param readCodes      per-column type codes (see the {@code T_*} constants)
+	 * @param dest           pre-allocated per-column backing arrays
+	 * @param destOff        absolute row offset of this file's first row
+	 * @param limit          exclusive upper row bound of this file's slice
+	 * @param tablePath      table path for error messages
+	 * @return the number of rows decoded
+	 * @throws IOException                      on read failure
+	 * @throws UnsupportedDirectDecodeException if a column's parquet layout does not match the Delta column type
+	 *                                          (thrown before any output is written, so the caller can fall back to the
+	 *                                          kernel for this file)
+	 */
+	public static int decodeDataFileInto(String filePath, StructType physicalSchema, int[] readCodes, Object[] dest,
+		int destOff, int limit, String tablePath) throws IOException {
+		final Configuration conf = ConfigurationManager.getCachedJobConf();
+		final int ncol = physicalSchema.length();
+		int off = destOff;
+		try(ParquetFileReader reader = ParquetFileReader.open(HadoopInputFile.fromPath(new Path(filePath), conf))) {
+			FileMetaData meta = reader.getFooter().getFileMetaData();
+			MessageType parquetSchema = meta.getSchema();
+			String createdBy = meta.getCreatedBy();
+			String[] colNames = resolveParquetColumns(physicalSchema, parquetSchema);
+			// validate every column before decoding anything: a file whose physical types
+			// do not match the Delta schema (type widening) must be left to the kernel
+			final ColumnDescriptor[] descs = new ColumnDescriptor[ncol];
+			for(int c = 0; c < ncol; c++)
+				if(colNames[c] != null) // absent columns keep the array defaults (nulls)
+					descs[c] = validateDecodable(parquetSchema, colNames[c], readCodes[c], filePath);
+			GroupConverter root = dummyConverter(parquetSchema.getFieldCount());
+			PageReadStore pages;
+			while((pages = reader.readNextRowGroup()) != null) {
+				int nrow = (int) pages.getRowCount();
+				checkSliceLimit(off, nrow, limit, tablePath);
+				ColumnReadStoreImpl store = new ColumnReadStoreImpl(pages, root, parquetSchema, createdBy);
+				for(int c = 0; c < ncol; c++) {
+					if(descs[c] == null)
+						continue;
+					decodeColumnInto(store.getColumnReader(descs[c]), descs[c].getMaxDefinitionLevel(), nrow,
+						readCodes[c], dest[c], off);
+				}
+				off += nrow;
+			}
+		}
+		return off - destOff;
+	}
+
+	/**
+	 * Guard before writing {@code n} rows at {@code off}: writing past {@code limit} would overflow into the next
+	 * file's slice (or off the array) in the pre-allocated output. Shared by the direct decode and the per-file kernel
+	 * fallback so the check and its message live in one place.
+	 */
+	static void checkSliceLimit(int off, int n, int limit, String tablePath) {
+		if(off + n > limit)
+			throw new DMLRuntimeException(
+				"Delta file produced more rows than its numRecords statistic; refusing direct read of " + tablePath);
+	}
+
+	/**
+	 * Resolve the descriptor of one parquet column and verify it is decodable as the given read code: a non-repeated
+	 * primitive whose physical type is the one the Delta column type is stored as. A mismatch (e.g. an INT32 data file
+	 * under a schema widened to {@code bigint}, or a nested/repeated field where a primitive is expected) is readable
+	 * through the kernel engine but not by the typed direct decode.
+	 */
+	private static ColumnDescriptor validateDecodable(MessageType parquetSchema, String colName, int readCode,
+		String filePath) {
+		org.apache.parquet.schema.Type t = parquetSchema.getType(colName);
+		if(!t.isPrimitive() || t.isRepetition(Repetition.REPEATED))
+			throw new UnsupportedDirectDecodeException(
+				"Parquet column '" + colName + "' in " + filePath + " is not a non-repeated primitive");
+		PrimitiveTypeName actual = t.asPrimitiveType().getPrimitiveTypeName();
+		PrimitiveTypeName expected = T_PHYSICAL[readCode];
+		if(actual != expected)
+			throw new UnsupportedDirectDecodeException("Parquet column '" + colName + "' in " + filePath + " stores "
+				+ actual + " but the Delta schema requires " + expected + " (e.g. a type-widened table)");
+		return parquetSchema.getColumnDescription(new String[] {colName});
+	}
+
+	/**
+	 * Resolve each physical-schema column to the parquet column name of the given file: by parquet field id when the
+	 * schema carries one, by name otherwise, or null when the file does not contain the column at all.
+	 */
+	private static String[] resolveParquetColumns(StructType schema, MessageType parquetSchema) {
+		Map<Integer, String> idToName = new HashMap<>();
+		Map<String, String> names = new HashMap<>();
+		for(int i = 0; i < parquetSchema.getFieldCount(); i++) {
+			org.apache.parquet.schema.Type t = parquetSchema.getType(i);
+			names.put(t.getName(), t.getName());
+			if(t.getId() != null)
+				idToName.put(t.getId().intValue(), t.getName());
+		}
+		String[] resolved = new String[schema.length()];
+		for(int c = 0; c < schema.length(); c++) {
+			Object fid = schema.at(c).getMetadata().get(PARQUET_FIELD_ID_KEY);
+			String byId = (fid instanceof Number) ? idToName.get(((Number) fid).intValue()) : null;
+			resolved[c] = (byId != null) ? byId : names.get(schema.at(c).getName());
+		}
+		return resolved;
+	}
+
+	/** No-op converter tree; the column API requires one, but values are pulled via the typed getters. */
+	private static GroupConverter dummyConverter(int nFields) {
+		final PrimitiveConverter[] leaves = new PrimitiveConverter[nFields];
+		for(int i = 0; i < nFields; i++)
+			leaves[i] = new PrimitiveConverter() {
+			};
+		return new GroupConverter() {
+			@Override
+			public Converter getConverter(int fieldIndex) {
+				return leaves[fieldIndex];
+			}
+
+			@Override
+			public void start() {
+			}
+
+			@Override
+			public void end() {
+			}
+		};
+	}
+
+	/**
+	 * Decode one parquet column of the current row group into a pre-allocated typed array at the given offset. Null
+	 * cells (definition level below max) keep the array default (0 for numerics, null for strings).
+	 */
+	private static void decodeColumnInto(ColumnReader creader, int maxDef, int nrow, int readCode, Object dest,
+		int off) {
+		final int end = off + nrow;
+		switch(readCode) {
+			case T_DOUBLE: {
+				double[] a = (double[]) dest;
+				for(int r = off; r < end; r++) {
+					if(creader.getCurrentDefinitionLevel() == maxDef)
+						a[r] = creader.getDouble();
+					creader.consume();
+				}
+				break;
+			}
+			case T_FLOAT: {
+				float[] a = (float[]) dest;
+				for(int r = off; r < end; r++) {
+					if(creader.getCurrentDefinitionLevel() == maxDef)
+						a[r] = creader.getFloat();
+					creader.consume();
+				}
+				break;
+			}
+			case T_LONG: {
+				long[] a = (long[]) dest;
+				for(int r = off; r < end; r++) {
+					if(creader.getCurrentDefinitionLevel() == maxDef)
+						a[r] = creader.getLong();
+					creader.consume();
+				}
+				break;
+			}
+			case T_INT:
+			case T_SHORT:
+			case T_BYTE: {
+				// delta short/byte columns are stored as annotated parquet INT32
+				int[] a = (int[]) dest;
+				for(int r = off; r < end; r++) {
+					if(creader.getCurrentDefinitionLevel() == maxDef)
+						a[r] = creader.getInteger();
+					creader.consume();
+				}
+				break;
+			}
+			case T_BOOLEAN: {
+				boolean[] a = (boolean[]) dest;
+				for(int r = off; r < end; r++) {
+					if(creader.getCurrentDefinitionLevel() == maxDef)
+						a[r] = creader.getBoolean();
+					creader.consume();
+				}
+				break;
+			}
+			case T_STRING: {
+				String[] a = (String[]) dest;
+				for(int r = off; r < end; r++) {
+					if(creader.getCurrentDefinitionLevel() == maxDef)
+						a[r] = creader.getBinary().toStringUsingUTF8();
+					creader.consume();
+				}
+				break;
+			}
+			default:
+				throw new DMLRuntimeException("Unsupported read code for direct decode: " + readCode);
+		}
 	}
 
 	/** Floor on the adaptive writer target file size. Below this the per-file metadata/open

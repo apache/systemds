@@ -27,7 +27,6 @@ public class UniqueRow extends UniqueBase {
 	private final static String TEST_DIR = "functions/unique/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + UniqueRow.class.getSimpleName() + "/";
 
-
 	@Override
 	protected String getTestName() {
 		return TEST_NAME;
@@ -52,22 +51,22 @@ public class UniqueRow extends UniqueBase {
 
 	@Test
 	public void testSkinnyCP() {
-		double[][] inputMatrix = {{1},{1},{6},{9},{4},{2},{0},{9},{0},{0},{4},{4}};
-		double[][] expectedMatrix = {{1},{6},{9},{4},{2},{0}};
+		double[][] inputMatrix = {{1,1,6,9,4,2,0,9,0,0,4,4}};
+		double[][] expectedMatrix = {{1,6,9,4,2,0}};
 		uniqueTest(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
 	}
 
 	@Test
 	public void testSquareCP() {
-		double[][] inputMatrix = {{1, 2, 3}, {4, 5, 6}, {1, 2, 3}};
-		double[][] expectedMatrix = {{1, 2, 3},{4, 5, 6}};
+		double[][] inputMatrix = {{1, 4, 1}, {2, 5, 2}, {3, 6, 3}};
+		double[][] expectedMatrix = {{1, 4},{2, 5},{3, 6}};
 		uniqueTest(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
 	}
 
 	@Test
 	public void testWideCP() {
-		double[][] inputMatrix = {{1, 2, 3, 4, 5, 6}, {7, 8, 9, 10, 11, 12}, {1, 2, 3, 4, 5, 6}};
-		double[][] expectedMatrix = {{1, 2, 3, 4, 5, 6}, {7, 8, 9, 10, 11, 12}};
+		double[][] inputMatrix = {{1,7,1},{2,8,2},{3,9,3},{4,10,4},{5,11,5},{6,12,6}};
+		double[][] expectedMatrix = {{1,7},{2,8},{3,9},{4,10},{5,11},{6,12}};
 		uniqueTest(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
 	}
 

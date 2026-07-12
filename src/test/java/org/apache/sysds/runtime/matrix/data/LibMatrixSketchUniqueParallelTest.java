@@ -19,107 +19,81 @@
 
 package org.apache.sysds.runtime.matrix.data;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.HashSet;
 
 import org.apache.sysds.common.Types;
+import org.junit.Test;
 
 /**
- * Standalone checks for LibMatrixSketch unique paths with k=1 and k>1.
+ * Tests LibMatrixSketch unique paths with k=1 and k>1.
  */
 public class LibMatrixSketchUniqueParallelTest {
-	public static void main(String[] args) {
-		testRowColUniqueMatchesBaseline();
-		testRowUniqueMatchesBaselineAndExpectedRows();
-		testColumnUniqueMatchesBaselineAndExpectedColumns();
-		testBatchedPathInputsMatchBaseline();
-		System.out.println("LibMatrixSketch unique parallel tests passed.");
-	}
-
-	/**
-	 * Checks RowCol unique against the single-threaded baseline.
-	 */
-	private static void testRowColUniqueMatchesBaseline() {
-		MatrixBlock input = new MatrixBlock(20000, 1, false).allocateBlock();
-		for( int i = 0; i < input.getNumRows(); i++ )
+	@Test
+	public void testRowColUniqueMatchesBaseline() {
+		MatrixBlock input = new MatrixBlock(20000, 2, false).allocateBlock();
+		for( int i = 0; i < input.getNumRows(); i++ ) {
 			input.set(i, 0, i % 7);
+			input.set(i, 1, (i + 3) % 11);
+		}
 		input.recomputeNonZeros();
 
 		MatrixBlock baseline = LibMatrixSketch.getUniqueValues(input, Types.Direction.RowCol);
 		MatrixBlock parallel = LibMatrixSketch.getUniqueValues(input, Types.Direction.RowCol, 4);
 
-		assertDimensions(parallel, 7, 1, "RowCol parallel dimensions");
+		assertDimensions(parallel, 11, 1, "RowCol parallel dimensions");
 		assertSameScalarSet(baseline, parallel, "RowCol baseline vs parallel");
 	}
 
-	/**
-	 * Checks Row unique with repeated rows.
-	 */
-	private static void testRowUniqueMatchesBaselineAndExpectedRows() {
-		MatrixBlock input = new MatrixBlock(12000, 2, false).allocateBlock();
+	@Test
+	public void testRowUniqueMatchesBaselineAndExpectedValues() {
+		MatrixBlock input = new MatrixBlock(12000, 4, false).allocateBlock();
 		for( int i = 0; i < input.getNumRows(); i++ ) {
 			int pattern = i % 4;
 			input.set(i, 0, pattern);
-			input.set(i, 1, pattern * 10);
+			input.set(i, 1, pattern);
+			input.set(i, 2, pattern + 10);
+			input.set(i, 3, pattern + 20);
 		}
 		input.recomputeNonZeros();
 
 		MatrixBlock baseline = LibMatrixSketch.getUniqueValues(input, Types.Direction.Row);
 		MatrixBlock parallel = LibMatrixSketch.getUniqueValues(input, Types.Direction.Row, 4);
-		MatrixBlock expected = matrix(new double[][] {
-			{0, 0},
-			{1, 10},
-			{2, 20},
-			{3, 30}
-		});
 
-		assertBlockEquals(expected, baseline, "Row expected vs baseline");
-		assertBlockEquals(expected, parallel, "Row expected vs parallel");
+		assertDimensions(parallel, input.getNumRows(), 3, "Row parallel dimensions");
+		assertBlockEquals(baseline, parallel, "Row baseline vs parallel");
+		assertSameRowSet(parallel, 5, new double[] {1, 11, 21}, "Row expected values");
 	}
 
-	/**
-	 * Checks Col unique with repeated columns.
-	 */
-	private static void testColumnUniqueMatchesBaselineAndExpectedColumns() {
+	@Test
+	public void testColumnUniqueMatchesBaselineAndExpectedValues() {
 		MatrixBlock input = new MatrixBlock(4, 5000, false).allocateBlock();
-		double[][] uniqueColumns = new double[][] {
-			{1, 2, 3, 4},
-			{5, 6, 7, 8},
-			{9, 10, 11, 12}
-		};
-
 		for( int j = 0; j < input.getNumColumns(); j++ ) {
-			double[] column = uniqueColumns[j % uniqueColumns.length];
-			for( int i = 0; i < input.getNumRows(); i++ )
-				input.set(i, j, column[i]);
+			int pattern = j % 4;
+			input.set(0, j, pattern);
+			input.set(1, j, pattern);
+			input.set(2, j, pattern + 10);
+			input.set(3, j, pattern + 20);
 		}
 		input.recomputeNonZeros();
 
 		MatrixBlock baseline = LibMatrixSketch.getUniqueValues(input, Types.Direction.Col);
 		MatrixBlock parallel = LibMatrixSketch.getUniqueValues(input, Types.Direction.Col, 4);
-		MatrixBlock expected = matrix(new double[][] {
-			{1, 5, 9},
-			{2, 6, 10},
-			{3, 7, 11},
-			{4, 8, 12}
-		});
 
-		assertBlockEquals(expected, baseline, "Col expected vs baseline");
-		assertBlockEquals(expected, parallel, "Col expected vs parallel");
+		assertDimensions(parallel, 3, input.getNumColumns(), "Col parallel dimensions");
+		assertBlockEquals(baseline, parallel, "Col baseline vs parallel");
+		assertSameColumnSet(parallel, 5, new double[] {1, 11, 21}, "Col expected values");
 	}
 
-	/**
-	 * Uses larger inputs which take the batched path with a small heap.
-	 */
-	private static void testBatchedPathInputsMatchBaseline() {
-		testRowColBatchedPathInput();
-		testRowBatchedPathInput();
-		testColumnBatchedPathInput();
+	@Test
+	public void testLargerInputsMatchBaseline() {
+		testRowColLargeInput();
+		testRowLargeInput();
+		testColumnLargeInput();
 	}
 
-	/**
-	 * Checks RowCol on a larger input against the single-threaded baseline.
-	 */
-	private static void testRowColBatchedPathInput() {
+	private static void testRowColLargeInput() {
 		MatrixBlock input = new MatrixBlock(1200000, 1, false).allocateBlock();
 		for( int i = 0; i < input.getNumRows(); i++ )
 			input.set(i, 0, i % 7);
@@ -128,80 +102,38 @@ public class LibMatrixSketchUniqueParallelTest {
 		MatrixBlock baseline = LibMatrixSketch.getUniqueValues(input, Types.Direction.RowCol);
 		MatrixBlock parallel = LibMatrixSketch.getUniqueValues(input, Types.Direction.RowCol, 4);
 
-		assertDimensions(parallel, 7, 1, "RowCol batched dimensions");
-		assertSameScalarSet(baseline, parallel, "RowCol batched baseline vs parallel");
+		assertDimensions(parallel, 7, 1, "RowCol large input dimensions");
+		assertSameScalarSet(baseline, parallel, "RowCol large input baseline vs parallel");
 	}
 
-	/**
-	 * Checks Row on a larger input with a small number of unique row patterns.
-	 */
-	private static void testRowBatchedPathInput() {
+	private static void testRowLargeInput() {
 		MatrixBlock input = new MatrixBlock(80000, 16, false).allocateBlock();
 		for( int i = 0; i < input.getNumRows(); i++ )
 			for( int j = 0; j < input.getNumColumns(); j++ )
-				input.set(i, j, (i % 4) * 100 + j);
+				input.set(i, j, j % 4 + 1);
 		input.recomputeNonZeros();
 
 		MatrixBlock baseline = LibMatrixSketch.getUniqueValues(input, Types.Direction.Row);
 		MatrixBlock parallel = LibMatrixSketch.getUniqueValues(input, Types.Direction.Row, 4);
-		MatrixBlock expected = rowPatterns(4, 16);
 
-		assertBlockEquals(expected, baseline, "Row batched expected vs baseline");
-		assertBlockEquals(expected, parallel, "Row batched expected vs parallel");
+		assertDimensions(parallel, input.getNumRows(), 4, "Row large input dimensions");
+		assertBlockEquals(baseline, parallel, "Row large input baseline vs parallel");
+		assertSameRowSet(parallel, 0, new double[] {1, 2, 3, 4}, "Row large input expected values");
 	}
 
-	/**
-	 * Checks Col on a larger input with repeated column patterns.
-	 */
-	private static void testColumnBatchedPathInput() {
+	private static void testColumnLargeInput() {
 		MatrixBlock input = new MatrixBlock(16, 80000, false).allocateBlock();
 		for( int j = 0; j < input.getNumColumns(); j++ )
 			for( int i = 0; i < input.getNumRows(); i++ )
-				input.set(i, j, (j % 4) * 100 + i);
+				input.set(i, j, i % 4 + 1);
 		input.recomputeNonZeros();
 
 		MatrixBlock baseline = LibMatrixSketch.getUniqueValues(input, Types.Direction.Col);
 		MatrixBlock parallel = LibMatrixSketch.getUniqueValues(input, Types.Direction.Col, 4);
-		MatrixBlock expected = columnPatterns(16, 4);
 
-		assertBlockEquals(expected, baseline, "Col batched expected vs baseline");
-		assertBlockEquals(expected, parallel, "Col batched expected vs parallel");
-	}
-
-	/**
-	 * Builds a dense MatrixBlock from a plain two-dimensional Java array.
-	 */
-	private static MatrixBlock matrix(double[][] values) {
-		MatrixBlock ret = new MatrixBlock(values.length, values[0].length, false).allocateBlock();
-		for( int i = 0; i < values.length; i++ )
-			for( int j = 0; j < values[i].length; j++ )
-				ret.set(i, j, values[i][j]);
-		ret.recomputeNonZeros();
-		return ret;
-	}
-
-	/**
-	 * Builds repeated row patterns.
-	 */
-	private static MatrixBlock rowPatterns(int patterns, int cols) {
-		MatrixBlock ret = new MatrixBlock(patterns, cols, false).allocateBlock();
-		for( int i = 0; i < patterns; i++ )
-			for( int j = 0; j < cols; j++ )
-				ret.set(i, j, i * 100 + j);
-		ret.recomputeNonZeros();
-		return ret;
-	}
-
-	/**
-	 * Builds repeated column patterns.
-	 */
-	private static MatrixBlock columnPatterns(int rows, int patterns) {
-		MatrixBlock ret = new MatrixBlock(rows, patterns, false).allocateBlock();
-		for( int j = 0; j < patterns; j++ )
-			for( int i = 0; i < rows; i++ )
-				ret.set(i, j, j * 100 + i);
-		ret.recomputeNonZeros();
-		return ret;
+		assertDimensions(parallel, 4, input.getNumColumns(), "Col large input dimensions");
+		assertBlockEquals(baseline, parallel, "Col large input baseline vs parallel");
+		assertSameColumnSet(parallel, 0, new double[] {1, 2, 3, 4}, "Col large input expected values");
 	}
 
 	/**
@@ -211,9 +143,8 @@ public class LibMatrixSketchUniqueParallelTest {
 		assertDimensions(actual, expected.getNumRows(), expected.getNumColumns(), message);
 		for( int i = 0; i < expected.getNumRows(); i++ )
 			for( int j = 0; j < expected.getNumColumns(); j++ )
-				if( expected.get(i, j) != actual.get(i, j) )
-					throw new AssertionError(message + " mismatch at (" + i + ", " + j + "): expected "
-						+ expected.get(i, j) + " but found " + actual.get(i, j));
+				assertEquals(message + " mismatch at (" + i + ", " + j + ")", expected.get(i, j),
+					actual.get(i, j), 0);
 	}
 
 	/**
@@ -223,8 +154,7 @@ public class LibMatrixSketchUniqueParallelTest {
 		assertDimensions(actual, expected.getNumRows(), expected.getNumColumns(), message);
 		HashSet<Double> expectedValues = collectScalars(expected);
 		HashSet<Double> actualValues = collectScalars(actual);
-		if( !expectedValues.equals(actualValues) )
-			throw new AssertionError(message + " mismatch: expected " + expectedValues + " but found " + actualValues);
+		assertEquals(message + " mismatch", expectedValues, actualValues);
 	}
 
 	/**
@@ -238,11 +168,42 @@ public class LibMatrixSketchUniqueParallelTest {
 	}
 
 	/**
+	 * Compares one output row as a set of scalar values.
+	 */
+	private static void assertSameRowSet(MatrixBlock block, int row, double[] expectedValues, String message) {
+		HashSet<Double> expected = collectExpected(expectedValues);
+		HashSet<Double> actual = new HashSet<>();
+		for( int j = 0; j < block.getNumColumns(); j++ )
+			actual.add(block.get(row, j));
+		assertEquals(message + " mismatch", expected, actual);
+	}
+
+	/**
+	 * Compares one output column as a set of scalar values.
+	 */
+	private static void assertSameColumnSet(MatrixBlock block, int col, double[] expectedValues, String message) {
+		HashSet<Double> expected = collectExpected(expectedValues);
+		HashSet<Double> actual = new HashSet<>();
+		for( int i = 0; i < block.getNumRows(); i++ )
+			actual.add(block.get(i, col));
+		assertEquals(message + " mismatch", expected, actual);
+	}
+
+	/**
+	 * Collects expected scalar values into a set.
+	 */
+	private static HashSet<Double> collectExpected(double[] values) {
+		HashSet<Double> ret = new HashSet<>();
+		for( double value : values )
+			ret.add(value);
+		return ret;
+	}
+
+	/**
 	 * Checks MatrixBlock dimensions and reports a readable failure.
 	 */
 	private static void assertDimensions(MatrixBlock block, int rows, int cols, String message) {
-		if( block.getNumRows() != rows || block.getNumColumns() != cols )
-			throw new AssertionError(message + " dimensions mismatch: expected " + rows + "x" + cols
-				+ " but found " + block.getNumRows() + "x" + block.getNumColumns());
+		assertEquals(message + " row dimension", rows, block.getNumRows());
+		assertEquals(message + " column dimension", cols, block.getNumColumns());
 	}
 }

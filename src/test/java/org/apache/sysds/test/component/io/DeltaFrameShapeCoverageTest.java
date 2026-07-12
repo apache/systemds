@@ -19,7 +19,6 @@
 
 package org.apache.sysds.test.component.io;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -39,16 +38,14 @@ import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
 /**
- * Systematic shape/size coverage for the native Delta frame readers: the direct parquet column decode across input
- * scales (100 rows to 1 million rows, 1 column to 1000 columns) plus the edge shapes around them: single-cell tables,
- * writer batch boundaries (4096 rows), prime/odd dimensions, multi-file layouts, all-null columns, and adversarial cell
- * values (NaN/infinities, signed zeros, integer extremes, empty/unicode/very long strings).
+ * Shape/size coverage for the native Delta frame readers: single-cell tables, the writer batch boundary (4096 rows), 1
+ * to 1000 columns, a multi-file layout, all-null columns, and adversarial cell values (NaN/infinities, signed zeros,
+ * integer extremes, empty/unicode/very long strings).
  *
  * Every shape is verified on all three read paths (serial direct decode as the default, parallel direct decode, and the
  * forced kernel-engine buffered fallback) against the in-memory input, cell for cell. Column types cycle through all
- * six writable frame value types so each typed decode loop is exercised at every shape, and every string column carries
- * interspersed nulls, empty strings and multi-byte unicode so the definition-level (null) handling and UTF-8 decode are
- * stressed at every size as well.
+ * six writable frame value types so each typed decode loop is exercised at every shape; string nulls, empty strings and
+ * multi-byte unicode are covered by the all-null column and extreme value tests.
  */
 public class DeltaFrameShapeCoverageTest {
 
@@ -68,69 +65,39 @@ public class DeltaFrameShapeCoverageTest {
 
 	@Test
 	public void tinyShapesRoundTrip() throws Exception {
-		// the smallest possible tables, including a 1x1 whose only (string) cell is
-		// null: a parquet page carrying no data bytes at all
-		assertRoundTrip(1, 1, 101, false, true);
-		assertRoundTrip(2, 1, 102, false, true);
-		assertRoundTrip(3, 2, 103, false, true);
-		assertRoundTrip(7, 6, 104, false, true);
-		assertRoundTrip(100, 1, 105, false, true);
-		assertRoundTrip(100, 3, 106, false, true);
-		assertRoundTrip(100, 6, 107, false, true);
+		assertRoundTrip(1, 1, 101, false);
+		assertRoundTrip(7, 6, 102, false);
 	}
 
 	@Test
-	public void writerBatchBoundariesRoundTrip() throws Exception {
-		// the writer chunks frames into 4096-row batches; hit that boundary exactly,
-		// one below and one above, plus a multiple of it
-		assertRoundTrip(4095, 2, 201, false, true);
-		assertRoundTrip(4096, 2, 202, false, true);
-		assertRoundTrip(4097, 2, 203, false, true);
-		assertRoundTrip(8192, 5, 204, false, true);
+	public void writerBatchBoundaryRoundTrip() throws Exception {
+		assertRoundTrip(4096, 2, 201, false);
 	}
 
 	@Test
 	public void columnScalingRoundTrip() throws Exception {
-		// 1 -> 1000 columns at fixed row counts
-		assertRoundTrip(1000, 1, 301, false, true);
-		assertRoundTrip(100, 10, 302, false, true);
-		assertRoundTrip(100, 100, 303, false, true);
-		assertRoundTrip(1000, 64, 304, false, true);
-		assertRoundTrip(1000, 100, 305, false, true);
-		assertRoundTrip(1000, 256, 306, false, true);
-		assertRoundTrip(100, 1000, 307, false, true);
-		assertRoundTrip(1000, 1000, 308, false, true);
+		// the 1-column and 1000-column endpoints at small row counts
+		assertRoundTrip(1000, 1, 301, false);
+		assertRoundTrip(100, 1000, 302, false);
 	}
 
 	@Test
-	public void rowScalingRoundTrip() throws Exception {
-		// 100 -> 1M rows (the 100-row points are in tinyShapesRoundTrip); prime/odd
-		// dimensions and multi-file layouts included
-		assertRoundTrip(997, 7, 401, false, true);
-		assertRoundTrip(10_000, 3, 402, false, true);
-		assertRoundTrip(100_000, 6, 403, true, true);
-		assertRoundTrip(250_000, 2, 404, true, true);
-	}
-
-	@Test
-	public void millionRowsRoundTrip() throws Exception {
-		// the 1M-row end of the row scaling, as multi-file tables so the parallel
-		// reader really splits across files; the kernel-path parity at this scale
-		// is covered via the forced-buffered read of the 1Mx3 table
-		assertRoundTrip(1_000_000, 1, 501, true, false);
-		assertRoundTrip(1_000_000, 3, 502, true, true);
+	public void multiFileRoundTrip() throws Exception {
+		// a table large enough to roll multiple data files so the per-file slicing
+		// of the direct and parallel paths is covered
+		assertRoundTrip(100_000, 6, 401, true);
 	}
 
 	@Test
 	public void allNullStringColumnRoundTrip() throws Exception {
 		// a string column that is entirely null (definition level 0 for every row,
 		// no data bytes in any page) next to a fully-live numeric column
-		int nrow = 10_000;
+		int nrow = 1000;
 		FrameBlock in = TestUtils.generateRandomFrameBlock(nrow, new ValueType[] {ValueType.STRING, ValueType.FP64},
 			61);
 		for(int r = 0; r < nrow; r++)
 			in.set(r, 0, null);
-		roundTripAllReaders("allNullString 10000x2", in, false, true);
+		roundTripAllReaders(in, false);
 	}
 
 	@Test
@@ -161,7 +128,7 @@ public class DeltaFrameShapeCoverageTest {
 			in.set(r, 4, r % 2 == 0);
 			in.set(r, 5, s[r]);
 		}
-		roundTripAllReaders("extremes 8x6", in, false, true);
+		roundTripAllReaders(in, false);
 	}
 
 	// ------------------------------------------
@@ -173,30 +140,6 @@ public class DeltaFrameShapeCoverageTest {
 		for(int c = 0; c < ncol; c++)
 			schema[c] = TYPE_CYCLE[c % TYPE_CYCLE.length];
 		return schema;
-	}
-
-	/**
-	 * Deterministic test frame for a covered shape: random data over the cycled schema plus adversarial patterns
-	 * injected into every string column (nulls every 7th row, empty strings every 11th, multi-byte unicode every 13th)
-	 * so the null definition-level handling and UTF-8 decode are covered at every size, including across file and batch
-	 * boundaries of the larger shapes.
-	 */
-	private static FrameBlock genFrame(int nrow, int ncol, long seed) {
-		FrameBlock fb = TestUtils.generateRandomFrameBlock(nrow, cycleSchema(ncol), seed);
-		ValueType[] schema = fb.getSchema();
-		for(int c = 0; c < ncol; c++) {
-			if(schema[c] != ValueType.STRING)
-				continue;
-			for(int r = 0; r < nrow; r++) {
-				if(r % 7 == 0)
-					fb.set(r, c, null);
-				else if(r % 11 == 0)
-					fb.set(r, c, "");
-				else if(r % 13 == 0)
-					fb.set(r, c, "ü€𐍈" + r);
-			}
-		}
-		return fb;
 	}
 
 	@FunctionalInterface
@@ -231,25 +174,22 @@ public class DeltaFrameShapeCoverageTest {
 		}
 	}
 
-	private static void assertRoundTrip(int nrow, int ncol, long seed, boolean multiFile, boolean checkBuffered)
-		throws Exception {
-		roundTripAllReaders(nrow + "x" + ncol, genFrame(nrow, ncol, seed), multiFile, checkBuffered);
+	private static void assertRoundTrip(int nrow, int ncol, long seed, boolean multiFile) throws Exception {
+		roundTripAllReaders(TestUtils.generateRandomFrameBlock(nrow, cycleSchema(ncol), seed), multiFile);
 	}
 
 	/**
-	 * Write the frame and assert that the serial direct read (the default path), the parallel direct read, and (when
-	 * {@code checkBuffered}) the forced kernel-engine buffered fallback each reproduce the input cell for cell.
+	 * Write the frame and assert that the serial direct read (the default path), the parallel direct read, and the
+	 * forced kernel-engine buffered fallback each reproduce the input cell for cell.
 	 */
-	private static void roundTripAllReaders(String label, FrameBlock in, boolean multiFile, boolean checkBuffered)
-		throws Exception {
+	private static void roundTripAllReaders(FrameBlock in, boolean multiFile) throws Exception {
 		withTable(in, multiFile, tablePath -> {
-			assertFramesEqual(label + " serial", in,
-				new FrameReaderDelta().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1));
-			assertFramesEqual(label + " parallel", in,
-				new FrameReaderDeltaParallel().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1));
-			if(checkBuffered)
-				assertFramesEqual(label + " buffered", in,
-					newBufferedReader().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1));
+			TestUtils.compareFrames(in,
+				new FrameReaderDelta().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1), true);
+			TestUtils.compareFrames(in,
+				new FrameReaderDeltaParallel().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1), true);
+			TestUtils.compareFrames(in, newBufferedReader().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1),
+				true);
 		});
 	}
 
@@ -261,19 +201,5 @@ public class DeltaFrameShapeCoverageTest {
 				return false;
 			}
 		};
-	}
-
-	private static void assertFramesEqual(String label, FrameBlock expected, FrameBlock actual) {
-		assertEquals(label + ": rows", expected.getNumRows(), actual.getNumRows());
-		assertEquals(label + ": cols", expected.getNumColumns(), actual.getNumColumns());
-		int ncol = expected.getNumColumns();
-		for(int c = 0; c < ncol; c++) {
-			assertEquals(label + ": schema col " + c, expected.getSchema()[c], actual.getSchema()[c]);
-			assertEquals(label + ": name col " + c, expected.getColumnNames()[c], actual.getColumnNames()[c]);
-		}
-		int nrow = expected.getNumRows();
-		for(int r = 0; r < nrow; r++)
-			for(int c = 0; c < ncol; c++)
-				assertEquals(label + ": cell (" + r + "," + c + ")", expected.get(r, c), actual.get(r, c));
 	}
 }

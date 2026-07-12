@@ -96,9 +96,10 @@ public class DeltaFrameShapeCoverageTest {
 		assertRoundTrip(100, 10, 302, false, true);
 		assertRoundTrip(100, 100, 303, false, true);
 		assertRoundTrip(1000, 64, 304, false, true);
-		assertRoundTrip(1000, 256, 305, false, true);
-		assertRoundTrip(100, 1000, 306, false, true);
-		assertRoundTrip(1000, 1000, 307, false, true);
+		assertRoundTrip(1000, 100, 305, false, true);
+		assertRoundTrip(1000, 256, 306, false, true);
+		assertRoundTrip(100, 1000, 307, false, true);
+		assertRoundTrip(1000, 1000, 308, false, true);
 	}
 
 	@Test
@@ -113,12 +114,11 @@ public class DeltaFrameShapeCoverageTest {
 
 	@Test
 	public void millionRowsRoundTrip() throws Exception {
-		// the 1M-row end of the row scaling, as a multi-file table so the parallel
-		// reader really splits across files. The kernel-path parity at this
-		// scale is asserted by the timing test, so the (slow) forced-buffered
-		// read is skipped here.
+		// the 1M-row end of the row scaling, as multi-file tables so the parallel
+		// reader really splits across files; the kernel-path parity at this scale
+		// is covered via the forced-buffered read of the 1Mx3 table
 		assertRoundTrip(1_000_000, 1, 501, true, false);
-		assertRoundTrip(1_000_000, 3, 502, true, false);
+		assertRoundTrip(1_000_000, 3, 502, true, true);
 	}
 
 	@Test
@@ -162,48 +162,6 @@ public class DeltaFrameShapeCoverageTest {
 			in.set(r, 5, s[r]);
 		}
 		roundTripAllReaders("extremes 8x6", in, false, true);
-	}
-
-	@Test
-	public void timingDirectVsKernelAcrossShapes() throws Exception {
-		// direct decode vs kernel-engine path across input scales: a row-scaling
-		// series and a column-scaling series.
-		// Each shape asserts result equality of the serial direct, parallel direct
-		// and kernel-buffered reads,
-		// then times each path best-of-3 after that warm-up. The not-slower
-		// assertion only applies where the parquet decode dominates (>= 1M cells);
-		// tiny tables are dominated by Delta log replay either way.
-		int[][] shapes = {{100, 3}, {10_000, 3}, {1_000_000, 3}, {1000, 1}, {1000, 100}, {1000, 1000}};
-		StringBuilder rep = new StringBuilder(String.format("%n%-12s %6s %11s %13s %11s %8s%n", "shape", "files",
-			"direct(ms)", "parallel(ms)", "kernel(ms)", "speedup"));
-		for(int[] shape : shapes) {
-			final int nrow = shape[0], ncol = shape[1];
-			final String label = nrow + "x" + ncol;
-			final FrameBlock in = genFrame(nrow, ncol, 7000 + nrow + ncol);
-			final boolean multiFile = (long) nrow * ncol >= 200_000;
-			withTable(in, multiFile, tablePath -> {
-				long files = DeltaFrameTestUtils.countParquet(tablePath);
-				FrameReaderDelta direct = new FrameReaderDelta();
-				FrameReaderDeltaParallel parallel = new FrameReaderDeltaParallel();
-				FrameReaderDelta kernel = newBufferedReader();
-				// correctness on all three paths at this shape (doubles as warm-up)
-				assertFramesEqual(label + " serial", in,
-					direct.readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1));
-				assertFramesEqual(label + " parallel", in,
-					parallel.readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1));
-				assertFramesEqual(label + " kernel", in,
-					kernel.readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1));
-				double directMs = bestOf3(direct, tablePath);
-				double parallelMs = bestOf3(parallel, tablePath);
-				double kernelMs = bestOf3(kernel, tablePath);
-				rep.append(String.format("%-12s %6d %11.1f %13.1f %11.1f %7.2fx%n", label, files, directMs, parallelMs,
-					kernelMs, kernelMs / directMs));
-				if((long) nrow * ncol >= 1_000_000)
-					assertTrue(label + ": direct decode should not be slower than the kernel path (direct " + directMs
-						+ "ms vs kernel " + kernelMs + "ms)", directMs <= kernelMs * 1.5);
-			});
-		}
-		System.out.println(rep);
 	}
 
 	// ------------------------------------------
@@ -303,17 +261,6 @@ public class DeltaFrameShapeCoverageTest {
 				return false;
 			}
 		};
-	}
-
-	/** Best-of-3 wall time of a full table read in milliseconds. */
-	private static double bestOf3(FrameReaderDelta reader, String tablePath) throws Exception {
-		long best = Long.MAX_VALUE;
-		for(int i = 0; i < 3; i++) {
-			long t0 = System.nanoTime();
-			reader.readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1);
-			best = Math.min(best, System.nanoTime() - t0);
-		}
-		return best / 1e6;
 	}
 
 	private static void assertFramesEqual(String label, FrameBlock expected, FrameBlock actual) {

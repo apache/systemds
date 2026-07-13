@@ -2310,14 +2310,6 @@ public class DMLTranslator
 		if (source.getThirdExpr() != null) {
 			expr3 = processExpression(source.getThirdExpr(), null, hops);
 		}
-		Hop expr4 = null;
-		if (source.getFourthExpr() != null) {
-			expr4 = processExpression(source.getFourthExpr(), null, hops);
-		}
-		Hop expr5 = null;
-		if (source.getFifthExpr() != null) {
-			expr5 = processExpression(source.getFifthExpr(), null, hops);
-		}
 
 		Hop currBuiltinOp = null;
 		target = (target == null) ? createTarget(source) : target;
@@ -2598,24 +2590,31 @@ public class DMLTranslator
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.FP64, OpOp1.DECOMPRESS, expr);
 			break;
 		case DP_LAPLACE: {
+			String[] dpLaplaceParamNames = {"target", "query", "sensitivity", "epsilon"};
 			LinkedHashMap<String, Hop> dpLaplaceParams = new LinkedHashMap<>();
-			dpLaplaceParams.put("target", expr);
-			dpLaplaceParams.put("query", expr2);
-			dpLaplaceParams.put("sensitivity", expr3);
-			dpLaplaceParams.put("epsilon", expr4);
-			currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), DataType.MATRIX,
-				ValueType.FP64, ParamBuiltinOp.DP_LAPLACE, dpLaplaceParams);
+			dpLaplaceParams.put(dpLaplaceParamNames[0], expr);
+			dpLaplaceParams.put(dpLaplaceParamNames[1], expr2);
+			dpLaplaceParams.put(dpLaplaceParamNames[2], expr3);
+			for (int i = 3; i < dpLaplaceParamNames.length; i++) {
+				dpLaplaceParams.put(dpLaplaceParamNames[i],
+					source.getExpr(i) != null ? processExpression(source.getExpr(i), null, hops) : null);
+			}
+			currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), DataType.MATRIX, ValueType.FP64,
+				ParamBuiltinOp.DP_LAPLACE, dpLaplaceParams);
 			break;
 		}
 		case DP_GAUSSIAN: {
+			String[] dpGaussianParamNames = {"target", "query", "sensitivity", "epsilon", "delta"};
 			LinkedHashMap<String, Hop> dpGaussianParams = new LinkedHashMap<>();
-			dpGaussianParams.put("target", expr);
-			dpGaussianParams.put("query", expr2);
-			dpGaussianParams.put("sensitivity", expr3);
-			dpGaussianParams.put("epsilon", expr4);
-			dpGaussianParams.put("delta", expr5);
-			currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), DataType.MATRIX,
-				ValueType.FP64, ParamBuiltinOp.DP_GAUSSIAN, dpGaussianParams);
+			dpGaussianParams.put(dpGaussianParamNames[0], expr);
+			dpGaussianParams.put(dpGaussianParamNames[1], expr2);
+			dpGaussianParams.put(dpGaussianParamNames[2], expr3);
+			for (int i = 3; i < dpGaussianParamNames.length; i++) {
+				dpGaussianParams.put(dpGaussianParamNames[i],
+					source.getExpr(i) != null ? processExpression(source.getExpr(i), null, hops) : null);
+			}
+			currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), DataType.MATRIX, ValueType.FP64,
+				ParamBuiltinOp.DP_GAUSSIAN, dpGaussianParams);
 			break;
 		}
 		case QUANTIZE_COMPRESS:

@@ -1753,6 +1753,176 @@ public class LibMatrixMult
 		}
 	}
 
+	public static void matrixMultSparseDenseMM(SparseBlock a, DenseBlock b, DenseBlock c,
+		boolean transA, boolean transB, int n, int cd, long xsp, int rl, int ru) {
+		if(!transA && !transB)
+			matrixMultSparseDenseMM(a, b, c, n, cd, xsp, rl, ru);
+		else if(transA && !transB)
+			multSparseDenseTransA(a, b, c, n, cd, xsp, rl, ru);
+		else if(!transA && transB)
+			multSparseDenseTransB(a, b, c, n, cd, xsp, rl, ru);
+		else
+			multSparseDenseTransATransB(a, b, c, n, cd, xsp, rl, ru);
+	}
+
+	private static void multSparseDenseTransA(SparseBlock a, DenseBlock b, DenseBlock c, int n, int cd, long xsp, int rl, int ru) {
+		final int blocksizeK = (int) (8L*xsp);
+		final int blocksizeJ = 1024;
+
+		for(int bk = 0; bk < cd; bk += blocksizeK) {
+			final int bkmin = Math.min(cd, bk + blocksizeK);
+
+			for(int bj = 0; bj < n; bj += blocksizeJ) {
+				final int bjlen = Math.min(n, bj + blocksizeJ) - bj;
+				final boolean contiguous = b.isContiguous(bk, bkmin - 1);
+				final double[] bvals = contiguous ? b.values(bk) : null;
+
+				for(int k = bk; k < bkmin; k++) {
+					if(a.isEmpty(k))
+						continue;
+
+					final int apos = a.pos(k);
+					final int alen = a.size(k);
+					final int[] aix = a.indexes(k);
+					final double[] avals = a.values(k);
+
+					int p1 = (rl == 0) ? 0 : a.posFIndexGTE(k, rl);
+					p1 = (p1 >= 0) ? apos + p1 : apos + alen;
+
+					int p2 = a.posFIndexGTE(k, ru);
+					p2 = (p2 >= 0) ? apos + p2 : apos + alen;
+
+					if(p1 >= p2)
+						continue;
+
+					if(contiguous) {
+						final int bpos = b.pos(k, bj);
+
+						for(int p = p1; p < p2; p++) {
+							final double aval = avals[p];
+							if(aval != 0) {
+								final int row = aix[p];
+								final double[] cvals = c.values(row);
+								final int cix = c.pos(row, bj);
+								vectMultiplyAdd(aval, bvals, cvals, bpos, cix, bjlen);
+							}
+						}
+					}
+					else {
+						final double[] kbvals = b.values(k);
+						final int bix = b.pos(k, bj);
+
+						for(int p = p1; p < p2; p++) {
+							final double aval = avals[p];
+							if(aval != 0) {
+								final int row = aix[p];
+								final double[] cvals = c.values(row);
+								final int cix = c.pos(row, bj);
+								vectMultiplyAdd(aval, kbvals, cvals, bix, cix, bjlen);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private static void multSparseDenseTransB(SparseBlock a, DenseBlock b, DenseBlock c, int n, int cd, long xsp, int rl, int ru) {
+		final int blocksizeK = 24;
+		final int blocksizeJ = Math.min(1024, (int)(8L*xsp));
+		final double[] bufB = new double[blocksizeK * blocksizeJ];
+		final int lenI = ru - rl;
+		final int[] p1s = new int[lenI];
+		final int[] p2s = new int[lenI];
+
+		for( int bk = 0; bk < cd; bk += blocksizeK ) {
+			final int bkmin = Math.min(cd, bk + blocksizeK);
+			final int bklen = bkmin - bk;
+
+			for( int i = rl; i < ru; i++ ) {
+				int idx = i - rl;
+				if( a.isEmpty(i) ) {
+					p1s[idx] = 0;
+					p2s[idx] = 0;
+					continue;
+				}
+				int p1 = a.posFIndexGTE(i, bk);
+				if( p1 < 0 ) {
+					p1s[idx] = 0;
+					p2s[idx] = 0;
+					continue;
+				}
+				int p2 = a.posFIndexGTE(i, bkmin);
+				p1s[idx] = a.pos(i) + p1;
+				p2s[idx] = (p2 >= 0) ? a.pos(i) + p2 : a.pos(i) + a.size(i);
+			}
+
+			for( int bj = 0; bj < n; bj += blocksizeJ ) {
+				final int bjmin = Math.min(n, bj + blocksizeJ);
+				final int bjlen = bjmin - bj;
+
+				for( int j = bj; j < bjmin; j++ ) {
+					final double[] bvals = b.values(j);
+					final int bpos = b.pos(j);
+					final int joff = j - bj;
+
+					for( int k = 0; k < bklen; k++ )
+						bufB[k * bjlen + joff] = bvals[bpos + bk + k];
+				}
+
+
+				for( int i = rl; i < ru; i++ ) {
+					int idx = i - rl;
+					int p1 = p1s[idx];
+					int p2 = p2s[idx];
+
+					if( p1 >= p2 )
+						continue;
+
+					final int[] aix = a.indexes(i);
+					final double[] avals = a.values(i);
+					final double[] cvals = c.values(i);
+					final int cix = c.pos(i, bj);
+
+					for( int p = p1; p < p2; p++ ) {
+						final int k = aix[p];
+						final double aval = avals[p];
+						final int koff = (k - bk) * bjlen;
+						vectMultiplyAdd(aval, bufB, cvals, koff, cix, bjlen);
+					}
+				}
+			}
+		}
+	}
+
+	private static void multSparseDenseTransATransB(SparseBlock a, DenseBlock b, DenseBlock c, int n, int cd, long xsp, int rl, int ru) {
+		final int blocksizeK = 24;
+		final int blocksizeJ = Math.min(1024, (int)(8L*xsp));
+
+		final DenseBlock tB = new DenseBlockFP64(new int[] {cd, n});
+		final double[] tBvals = tB.values(0);
+
+		for( int bj = 0; bj < n; bj += blocksizeJ ) {
+			final int bjmin = Math.min(n, bj + blocksizeJ);
+
+			for( int bk = 0; bk < cd; bk += blocksizeK ) {
+				final int bkmin = Math.min(cd, bk + blocksizeK);
+				final int bklen = bkmin - bk;
+
+				for( int j = bj; j < bjmin; j++ ) {
+					final double[] bvals = b.values(j);
+					final int bpos = b.pos(j);
+					final int joff = j - bj;
+
+					for( int k = 0; k < bklen; k++ )
+						tBvals[(bk + k) * n + bj + joff] = bvals[bpos + bk + k];
+				}
+			}
+		}
+
+		multSparseDenseTransA(a, tB, c, n, cd, xsp, rl, ru);
+	}
+
 	private static void matrixMultSparseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2, int rl, int ru) {
 		SparseBlock a = m1.sparseBlock;
 		DenseBlock b = m2.getDenseBlock();

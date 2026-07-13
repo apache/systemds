@@ -75,6 +75,21 @@ else
   SYSTEMDS_STANDALONE_OPTS="-Xmx4g -Xms4g -Xmn400m "
 fi
 
+if [ -n "$SYSTEMDS_JAVA_OPTS" ]; then
+	print_out "Overriding SYSTEMDS_JAVA_OPTS with env var: $SYSTEMDS_JAVA_OPTS"
+else
+  # Java 17 module opens required by Spark/SystemDS reflective access paths.
+  SYSTEMDS_JAVA_OPTS="\
+      --add-modules=jdk.incubator.vector \
+      --add-opens=java.base/java.nio=ALL-UNNAMED \
+      --add-opens=java.base/java.io=ALL-UNNAMED \
+      --add-opens=java.base/java.util=ALL-UNNAMED \
+      --add-opens=java.base/java.lang=ALL-UNNAMED \
+      --add-opens=java.base/java.lang.ref=ALL-UNNAMED \
+      --add-opens=java.base/java.util.concurrent=ALL-UNNAMED \
+      --add-opens=java.base/sun.nio.ch=ALL-UNNAMED "
+fi
+
 if [ -n "$SYSTEMDS_REMOTE_DEBUGGING" ]; then
 	print_out "Overriding SYSTEMDS_REMOTE_DEBUGGING with env var: $SYSTEMDS_REMOTE_DEBUGGING"
 else
@@ -107,8 +122,8 @@ else
       --master yarn \
       --deploy-mode client \
       --driver-memory 100g \
-      --conf spark.driver.extraJavaOptions=\"-Xms100g -Xmn10g -Dlog4j.configuration=file:$LOG4JPROP\" \
-      --conf spark.executor.extraJavaOptions=\"-Dlog4j.configuration=file:$LOG4JPROP\" \
+      --conf spark.driver.extraJavaOptions=\"-Xms100g -Xmn10g -Dlog4j.configuration=file:$LOG4JPROP $SYSTEMDS_JAVA_OPTS\" \
+      --conf spark.executor.extraJavaOptions=\"-Dlog4j.configuration=file:$LOG4JPROP $SYSTEMDS_JAVA_OPTS\" \
       --conf spark.executor.heartbeatInterval=100s \
       --files $LOG4JPROP \
       --conf spark.network.timeout=512s \
@@ -413,7 +428,7 @@ if [ $WORKER == 1 ]; then
   print_out "#  starting Federated worker on port $PORT"
   CMD=" \
   java $SYSTEMDS_STANDALONE_OPTS \
-  --add-modules=jdk.incubator.vector \
+  $SYSTEMDS_JAVA_OPTS \
   $LOG4JPROPFULL \
   -jar $SYSTEMDS_JAR_FILE \
   -w $PORT \
@@ -423,7 +438,7 @@ elif [ "$FEDMONITORING" == 1 ]; then
   print_out "#  starting Federated backend monitoring on port $PORT"
   CMD=" \
   java $SYSTEMDS_STANDALONE_OPTS \
-  --add-modules=jdk.incubator.vector \
+  $SYSTEMDS_JAVA_OPTS \
   $LOG4JPROPFULL \
   -jar $SYSTEMDS_JAR_FILE \
   -fedMonitoring $PORT \
@@ -434,8 +449,8 @@ elif [ $SYSDS_DISTRIBUTED == 0 ]; then
 
   CMD=" \
   java $SYSTEMDS_STANDALONE_OPTS \
+  $SYSTEMDS_JAVA_OPTS \
   $LOG4JPROPFULL \
-  --add-modules=jdk.incubator.vector \
   -jar $SYSTEMDS_JAR_FILE \
   -f $SCRIPT_FILE \
   -exec $SYSDS_EXEC_MODE \
@@ -445,7 +460,6 @@ else
   print_out "#  Running script $SCRIPT_FILE distributed with opts: $*"
   CMD=" \
   spark-submit $SYSTEMDS_DISTRIBUTED_OPTS \
-  --add-modules=jdk.incubator.vector \
   $SYSTEMDS_JAR_FILE \
   -f $SCRIPT_FILE \
   -exec $SYSDS_EXEC_MODE \

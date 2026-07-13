@@ -39,7 +39,8 @@ REQUIRED_PACKAGES = [
     'numpy >= 1.8.2',
     'py4j >= 0.10.9',
     'requests >= 2.24.0',
-    'pandas >= 1.2.2' 
+    'pandas >= 1.2.2',
+    'scipy >= 1.5.0'
 ]
 
 LONG_DESCRIPTION= '''This package provides a Pythonic interface for working with Apache SystemDS.

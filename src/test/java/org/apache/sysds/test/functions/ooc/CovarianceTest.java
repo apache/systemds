@@ -21,7 +21,9 @@ package org.apache.sysds.test.functions.ooc;
 
 import java.io.IOException;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.io.MatrixWriter;
 import org.apache.sysds.runtime.io.MatrixWriterFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -31,6 +33,7 @@ import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 public class CovarianceTest extends AutomatedTestBase {
@@ -101,6 +104,9 @@ public class CovarianceTest extends AutomatedTestBase {
 					"-args", input(INPUT_A), input(INPUT_B), output(OUTPUT_OOC)
 			};
 			runTest(true, false, null, -1);
+
+			Assert.assertTrue("OOC wasn't used for covariance",
+				heavyHittersContainsString(Instruction.OOC_INST_PREFIX + Opcodes.COV));
 
 			MatrixBlock cpResult = DataConverter.readMatrixFromHDFS(
 					output(OUTPUT_CP), Types.FileFormat.BINARY, 1, 1, blocksize, 1);

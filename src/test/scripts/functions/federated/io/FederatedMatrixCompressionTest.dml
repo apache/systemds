@@ -19,9 +19,7 @@
 #
 #-------------------------------------------------------------
 
-X = federated(addresses=list($in_X1),
-  ranges=list(list(0,0), list($rows, $cols)))
-
+X = read($in_X1)
 B = matrix(1, rows=$rows, cols=1)
 Z = X %*% B
 write(Z, $out)

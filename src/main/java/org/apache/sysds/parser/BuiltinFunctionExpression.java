@@ -2036,6 +2036,28 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			output.setDimensions(dpGaussianDims[0], dpGaussianDims[1]);
 			break;
 		}
+		case DP_SET_BUDGET: {
+			checkNumParameters(2);
+			checkScalarParam(getFirstExpr());
+			checkScalarParam(getSecondExpr());
+			// resolved entirely at compile time (see DMLTranslator), so both
+			// arguments must be known before the HOP DAG is built.
+			if (!isConstant(getFirstExpr()) || !isConstant(getSecondExpr()))
+				raiseValidateError(getOpCode() + ": 'epsilon' and 'delta' must be compile-time numeric literals",
+					false, LanguageErrorCodes.INVALID_PARAMETERS);
+			double dpSetBudgetEpsilon = getDoubleValue(getFirstExpr());
+			double dpSetBudgetDelta = getDoubleValue(getSecondExpr());
+			if (!(dpSetBudgetEpsilon > 0))
+				raiseValidateError(getOpCode() + ": epsilon must be > 0, got " + dpSetBudgetEpsilon,
+					false, LanguageErrorCodes.INVALID_PARAMETERS);
+			if (!(dpSetBudgetDelta > 0 && dpSetBudgetDelta < 1))
+				raiseValidateError(getOpCode() + ": delta must be in (0,1), got " + dpSetBudgetDelta,
+					false, LanguageErrorCodes.INVALID_PARAMETERS);
+			output.setDataType(DataType.SCALAR);
+			output.setValueType(ValueType.FP64);
+			output.setDimensions(0, 0);
+			break;
+		}
 		case COMPRESS:
 		case DECOMPRESS:
 			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND){

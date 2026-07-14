@@ -19,7 +19,11 @@
 
 package org.apache.sysds.test.component.cp;
 
+import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.privacy.dp.DPBudgetAccountant;
 import org.junit.Test;
 
@@ -174,6 +178,60 @@ public class DPBuiltinCPInstructionTest {
     @Test(expected = DMLRuntimeException.class)
     public void testConstructorRejectsDeltaOne() {
         new DPBudgetAccountant(1.0, 1.0);
+    }
+
+    // =======================================================================
+    // 1b. DMLProgram / ExecutionContext.getDPBudgetAccountant() (dp_set_budget)
+    // =======================================================================
+    //
+    // dp_set_budget(epsilon, delta) is resolved entirely at compile time onto
+    // DMLProgram (DMLTranslator's DP_SET_BUDGET case) rather than through a
+    // runtime instruction; ExecutionContext.getDPBudgetAccountant() consults
+    // Program.getDMLProg() on first (lazy) access. These tests exercise that
+    // plumbing directly, without going through the DML compiler.
+
+    @Test
+    public void testDMLProgramHasDPBudgetTracksSetState() {
+        DMLProgram dmlProg = new DMLProgram();
+        assertFalse("No dp_set_budget call yet", dmlProg.hasDPBudget());
+        dmlProg.setDPBudget(2.0, 1e-6);
+        assertTrue("dp_set_budget was called", dmlProg.hasDPBudget());
+        assertEquals(2.0, dmlProg.getDPBudgetEpsilon(), EPS);
+        assertEquals(1e-6, dmlProg.getDPBudgetDelta(), EPS);
+    }
+
+    @Test
+    public void testGetDPBudgetAccountantUsesCompileTimeResolvedBudget() {
+        DMLProgram dmlProg = new DMLProgram();
+        dmlProg.setDPBudget(5.0, 1e-6);
+        ExecutionContext ec = ExecutionContextFactory.createContext(new Program(dmlProg));
+
+        DPBudgetAccountant acc = ec.getDPBudgetAccountant();
+        acc.compose(2.0, 0.0, 1.0); // would exceed the hardcoded default budget of 1.0
+        assertTrue("Compile-time-resolved budget should be used instead of the hardcoded default",
+                acc.remainingBudget() > 0);
+    }
+
+    @Test(expected = DMLRuntimeException.class)
+    public void testGetDPBudgetAccountantFallsBackToDefaultWithoutDPSetBudget() {
+        // No dp_set_budget call: the hardcoded default budget of epsilon=1.0 applies,
+        // so a release at epsilon=1.5 must be rejected.
+        DMLProgram dmlProg = new DMLProgram();
+        ExecutionContext ec = ExecutionContextFactory.createContext(new Program(dmlProg));
+        ec.getDPBudgetAccountant().compose(1.5, 0.0, 1.0);
+    }
+
+    @Test
+    public void testGetDPBudgetAccountantIsLazyAndCachedPerContext() {
+        // The accountant must be created once and reused across calls on the
+        // same ExecutionContext, not rebuilt (which would reset releaseCount()).
+        DMLProgram dmlProg = new DMLProgram();
+        dmlProg.setDPBudget(10.0, 1e-6);
+        ExecutionContext ec = ExecutionContextFactory.createContext(new Program(dmlProg));
+
+        ec.getDPBudgetAccountant().compose(1.0, 0.0, 1.0);
+        assertEquals("Same accountant instance must be reused across calls",
+                1, ec.getDPBudgetAccountant().releaseCount());
     }
 
     // --- Single-argument convenience constructor -------------------

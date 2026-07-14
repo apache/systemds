@@ -1,0 +1,130 @@
+# ── fedavg_dp.dml ────────────────────────────────────────────────────────────
+# Arguments (passed via -nvargs):
+#   data_dir   : path to benchmark/data/
+#   epsilon    : DP privacy budget ε  (use 9999 for non-private baseline)
+#   delta      : DP delta             (1e-5 can be used)
+#   clip_norm  : per-example gradient L2-norm clip bound (default 4.0) —
+#                sensitivity = clip_norm / n follows from this, since
+#                clipping each record's gradient contribution to clip_norm
+#                is what makes that bound actually hold.
+#   n_rounds   : number of FedAvg rounds (default 50)
+#   lr         : learning rate          (default 0.1)
+#   w1_rows    : rows in worker 1 shard
+#   w2_rows    : rows in worker 2 shard
+#   w3_rows    : rows in worker 3 shard
+#   w4_rows    : rows in worker 4 shard
+#   n_features : number of features
+#   out        : path to write final weights
+#   private    : 1 = apply DP noise (default), 0 = non-private baseline
+
+data_dir   = $data_dir;
+epsilon    = $epsilon;
+delta      = $delta;
+clip_norm  = ifdef($clip_norm,  4.0);
+n_rounds   = ifdef($n_rounds,   50);
+lr         = ifdef($lr,         0.1);
+private    = ifdef($private,    1);
+out_path   = $out;
+
+# Per-round epsilon: dp_gaussian is called once per round, and
+# DPBudgetAccountant composes the cost of every release against the single
+# total budget set by dp_set_budget(). Spending the full epsilon on every
+# round would exhaust the budget almost immediately, so split it evenly
+# across rounds instead.
+round_epsilon = epsilon / n_rounds;
+
+w1r = $w1_rows;
+w2r = $w2_rows;
+w3r = $w3_rows;
+w4r = $w4_rows;
+d   = $n_features;
+n   = w1r + w2r + w3r + w4r;
+
+# Sensitivity of the released (mean) gradient to a single record changing:
+# with each record's contribution clipped to L2-norm <= clip_norm below,
+# the sum can move by at most clip_norm, so the average moves by clip_norm/n.
+sensitivity = clip_norm / n;
+
+# ── Build federated matrix from 4 local workers ───────────────────────────
+# Row ranges are 0-based [begin, end) for each partition.
+r1s=0;        r1e=w1r;
+r2s=w1r;      r2e=w1r+w2r;
+r3s=w1r+w2r;  r3e=w1r+w2r+w3r;
+r4s=w1r+w2r+w3r; r4e=n;
+
+X = federated(
+    addresses=list(
+        "localhost:8301/" + data_dir + "/worker1/X_train.csv",
+        "localhost:8302/" + data_dir + "/worker2/X_train.csv",
+        "localhost:8303/" + data_dir + "/worker3/X_train.csv",
+        "localhost:8304/" + data_dir + "/worker4/X_train.csv"),
+    ranges=list(
+        list(r1s, 0), list(r1e, d),
+        list(r2s, 0), list(r2e, d),
+        list(r3s, 0), list(r3e, d),
+        list(r4s, 0), list(r4e, d)));
+
+y = federated(
+    addresses=list(
+        "localhost:8301/" + data_dir + "/worker1/y_train.csv",
+        "localhost:8302/" + data_dir + "/worker2/y_train.csv",
+        "localhost:8303/" + data_dir + "/worker3/y_train.csv",
+        "localhost:8304/" + data_dir + "/worker4/y_train.csv"),
+    ranges=list(
+        list(r1s, 0), list(r1e, 1),
+        list(r2s, 0), list(r2e, 1),
+        list(r3s, 0), list(r3e, 1),
+        list(r4s, 0), list(r4e, 1)));
+
+# ── Initialise weights ────────────────────────────────────────────────────
+w = matrix(0, rows=d, cols=1);
+
+if (private == 1) {
+        eps = dp_set_budget($epsilon, $delta);
+}
+
+# ── Training rounds ───────────────────────────────────────────────────────
+for (round in 1:n_rounds) {
+
+    # Forward pass — executes on federated workers.
+    scores = X %*% w;                           # (n × 1), federated
+    probs  = 1.0 / (1.0 + exp(-scores));        # (n × 1), federated
+
+    residuals = probs - y;                       # (n × 1), federated
+
+    # DP noise injection — only when private=1.
+    if (private == 1) {
+        # Per-example L2-norm clipping: each record's raw gradient
+        # contribution is X[i,:] * residual_i, with norm
+        # ||X[i,:]||_2 * |residual_i|. Scaling it down to clip_norm
+        # whenever it exceeds that bound is what makes
+        # sensitivity = clip_norm / n (set above) an actual, provable
+        # bound instead of an arbitrary constant.
+        row_norms         = sqrt(rowSums(X^2));               # (n × 1) ||X[i,:]||_2
+        contrib_norms     = abs(residuals) * row_norms;        # (n × 1) ||X[i,:]*residual_i||_2
+        clip_scale        = clip_norm / pmax(contrib_norms, clip_norm); # (n × 1), in (0,1]
+        clipped_residuals = residuals * clip_scale;            # (n × 1)
+
+        # Gradient aggregation — t(X) %*% clipped_residuals is a (d × 1)
+        # local sum that the coordinator collects in one federated
+        # aggregate instruction.
+        grad = t(X) %*% clipped_residuals / n;                # (d × 1), LOCAL after agg, clipped
+
+        noisy_grad = dp_gaussian(grad,
+                                 "identity",
+                                 sensitivity=sensitivity,
+                                 epsilon=round_epsilon,
+                                 delta=delta);
+        w = w - lr * noisy_grad;
+    } else {
+        # Gradient aggregation — t(X) %*% residuals is an (d × 1) local sum
+        # that the coordinator collects in one federated aggregate instruction.
+        grad = t(X) %*% residuals / n;                        # (d × 1), LOCAL after agg
+        w = w - lr * grad;
+    }
+}
+
+# ── Write model weights ───────────────────────────────────────────────────
+write(w, out_path, format="csv");
+print("FedAvg done. epsilon=" + epsilon + "  rounds=" + n_rounds);
+

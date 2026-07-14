@@ -121,8 +121,8 @@ public class TransposeSelfMMTest extends AutomatedTestBase {
 			programArgs = new String[] {"-stats", "-args", input(INPUT_NAME), output(OUTPUT_NAME_CP)};
 			runTest(true, false, null, -1);
 
-			programArgs = new String[] {"-explain", "-stats", "-ooc",
-				"-args", input(INPUT_NAME), output(OUTPUT_NAME_OOC)};
+			programArgs = new String[] {"-explain", "-stats", "-ooc", "-args", input(INPUT_NAME),
+				output(OUTPUT_NAME_OOC)};
 			runTest(true, false, null, -1);
 
 			Assert.assertTrue("OOC wasn't used for TSMM",
@@ -132,10 +132,10 @@ public class TransposeSelfMMTest extends AutomatedTestBase {
 			int outputDim = assertOutputMetadata(type, meta, rows, cols, blockSize);
 			assertDeepMultiTileOutput(meta);
 
-			MatrixBlock actual = DataConverter.readMatrixFromHDFS(output(OUTPUT_NAME_OOC),
-				Types.FileFormat.BINARY, outputDim, outputDim, blockSize);
-			MatrixBlock expected = DataConverter.readMatrixFromHDFS(output(OUTPUT_NAME_CP),
-				Types.FileFormat.BINARY, outputDim, outputDim, blockSize);
+			MatrixBlock actual = DataConverter.readMatrixFromHDFS(output(OUTPUT_NAME_OOC), Types.FileFormat.BINARY,
+				outputDim, outputDim, blockSize);
+			MatrixBlock expected = DataConverter.readMatrixFromHDFS(output(OUTPUT_NAME_CP), Types.FileFormat.BINARY,
+				outputDim, outputDim, blockSize);
 			TestUtils.compareMatrices(actual, expected, eps);
 			assertSymmetricOffDiagonal(actual, outputDim, blockSize);
 		}

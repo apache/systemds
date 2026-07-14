@@ -59,7 +59,7 @@ public class CovarianceTest extends AutomatedTestBase {
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME,
-				new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { OUTPUT_CP, OUTPUT_OOC }));
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {OUTPUT_CP, OUTPUT_OOC}));
 	}
 
 	@Test
@@ -93,26 +93,22 @@ public class CovarianceTest extends AutomatedTestBase {
 			writeBinaryMatrix(INPUT_B, BBlock, rows, cols, blocksize);
 
 			// Reference run: normal single-node CP execution.
-			programArgs = new String[] {
-					"-args", input(INPUT_A), input(INPUT_B), output(OUTPUT_CP)
-			};
+			programArgs = new String[] {"-args", input(INPUT_A), input(INPUT_B), output(OUTPUT_CP)};
 			runTest(true, false, null, -1);
 
 			// OOC run: compare the out-of-core covariance path against CP.
-			programArgs = new String[] {
-					"-explain", "-stats", "-ooc",
-					"-args", input(INPUT_A), input(INPUT_B), output(OUTPUT_OOC)
-			};
+			programArgs = new String[] {"-explain", "-stats", "-ooc", "-args", input(INPUT_A), input(INPUT_B),
+				output(OUTPUT_OOC)};
 			runTest(true, false, null, -1);
 
 			Assert.assertTrue("OOC wasn't used for covariance",
 				heavyHittersContainsString(Instruction.OOC_INST_PREFIX + Opcodes.COV));
 
-			MatrixBlock cpResult = DataConverter.readMatrixFromHDFS(
-					output(OUTPUT_CP), Types.FileFormat.BINARY, 1, 1, blocksize, 1);
+			MatrixBlock cpResult = DataConverter.readMatrixFromHDFS(output(OUTPUT_CP), Types.FileFormat.BINARY, 1, 1,
+				blocksize, 1);
 
-			MatrixBlock oocResult = DataConverter.readMatrixFromHDFS(
-					output(OUTPUT_OOC), Types.FileFormat.BINARY, 1, 1, blocksize, 1);
+			MatrixBlock oocResult = DataConverter.readMatrixFromHDFS(output(OUTPUT_OOC), Types.FileFormat.BINARY, 1, 1,
+				blocksize, 1);
 
 			TestUtils.compareMatrices(cpResult, oocResult, eps);
 		}
@@ -128,9 +124,7 @@ public class CovarianceTest extends AutomatedTestBase {
 		MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(Types.FileFormat.BINARY);
 		writer.writeMatrixToHDFS(mb, input(name), rows, cols, blocksize, mb.getNonZeros());
 
-		HDFSTool.writeMetaDataFile(input(name + ".mtd"),
-				Types.ValueType.FP64,
-				new MatrixCharacteristics(rows, cols, blocksize, mb.getNonZeros()),
-				Types.FileFormat.BINARY);
+		HDFSTool.writeMetaDataFile(input(name + ".mtd"), Types.ValueType.FP64,
+			new MatrixCharacteristics(rows, cols, blocksize, mb.getNonZeros()), Types.FileFormat.BINARY);
 	}
 }

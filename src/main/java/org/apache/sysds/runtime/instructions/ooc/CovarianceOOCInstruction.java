@@ -39,7 +39,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 public class CovarianceOOCInstruction extends ComputationOOCInstruction {
 
 	private CovarianceOOCInstruction(COVOperator cov, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-										String opcode, String str) {
+		String opcode, String str) {
 		super(OOCType.COV, cov, in1, in2, in3, out, opcode, str);
 	}
 
@@ -86,8 +86,8 @@ public class CovarianceOOCInstruction extends ComputationOOCInstruction {
 		if(input3 == null) {
 			// unweighted covariance join the two tile streams by block index
 			joinOOC(q1, q2, covObjs,
-					(a, b) -> ((MatrixBlock) a.getValue()).covOperations(cov_op, (MatrixBlock) b.getValue()),
-					IndexedMatrixValue::getIndexes);
+				(a, b) -> ((MatrixBlock) a.getValue()).covOperations(cov_op, (MatrixBlock) b.getValue()),
+				IndexedMatrixValue::getIndexes);
 		}
 		else {
 			// weighted covariance additionally join the weights tile stream
@@ -102,9 +102,9 @@ public class CovarianceOOCInstruction extends ComputationOOCInstruction {
 			OOCStream<IndexedMatrixValue> q3 = mo3.getStreamHandle();
 
 			joinOOC(List.of(q1, q2, q3), covObjs,
-					tiles -> ((MatrixBlock) tiles.get(0).getValue()).covOperations(cov_op,
-							(MatrixBlock) tiles.get(1).getValue(), (MatrixBlock) tiles.get(2).getValue()),
-					IndexedMatrixValue::getIndexes);
+				tiles -> ((MatrixBlock) tiles.get(0).getValue()).covOperations(cov_op,
+					(MatrixBlock) tiles.get(1).getValue(), (MatrixBlock) tiles.get(2).getValue()),
+				IndexedMatrixValue::getIndexes);
 		}
 
 		try {

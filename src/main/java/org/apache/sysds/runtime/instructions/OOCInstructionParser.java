@@ -105,7 +105,7 @@ public class OOCInstructionParser extends InstructionParser {
 			case CentralMoment:
 				return  CentralMomentOOCInstruction.parseInstruction(str);
 			case Covariance:
-				return  CovarianceOOCInstruction.parseInstruction(str);
+				return CovarianceOOCInstruction.parseInstruction(str);
 			case Ctable:
 				return CtableOOCInstruction.parseInstruction(str);
 			case ParameterizedBuiltin:

@@ -79,8 +79,8 @@ public class TSMMOOCInstruction extends ComputationOOCInstruction {
 
 		OOCStreamable<IndexedMatrixValue> inputStreamable = min.getStreamable();
 		final boolean createdCache = !inputStreamable.hasStreamCache();
-		final CachingStream inputCache = createdCache ? new CachingStream(min.getStreamHandle())
-			: inputStreamable.getStreamCache();
+		final CachingStream inputCache = createdCache ? new CachingStream(min.getStreamHandle()) : inputStreamable
+			.getStreamCache();
 
 		OOCStream<List<IndexedMatrixValue>> groupedPartials = createWritableStream();
 		OOCStream<IndexedMatrixValue> partials = createWritableStream();
@@ -88,9 +88,9 @@ public class TSMMOOCInstruction extends ComputationOOCInstruction {
 		addOutStream(out);
 		ec.getMatrixObject(output).setStreamHandle(out);
 
-		CompletableFuture<Void> joinFuture = joinManyOOC(inputCache.getReadStream(), inputCache.getReadStream(), groupedPartials,
-			this::createPartialOutputTiles, this::getJoinIndex, this::getJoinIndex,
-			blocksPerJoinGroup, blocksPerJoinGroup);
+		CompletableFuture<Void> joinFuture = joinManyOOC(inputCache.getReadStream(), inputCache.getReadStream(),
+			groupedPartials, this::createPartialOutputTiles, this::getJoinIndex, this::getJoinIndex, blocksPerJoinGroup,
+			blocksPerJoinGroup);
 		CompletableFuture<Void> expandFuture = expandOOC(groupedPartials, partials, values -> values);
 
 		BinaryOperator plus = InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString());
@@ -152,8 +152,7 @@ public class TSMMOOCInstruction extends ComputationOOCInstruction {
 
 		MatrixBlock partial = multiplyOffDiagonal(leftBlock, rightBlock);
 		MatrixBlock mirror = LibMatrixReorg.transpose(partial);
-		return List.of(
-			new IndexedMatrixValue(new MatrixIndexes(leftIndex, rightIndex), partial),
+		return List.of(new IndexedMatrixValue(new MatrixIndexes(leftIndex, rightIndex), partial),
 			new IndexedMatrixValue(new MatrixIndexes(rightIndex, leftIndex), mirror));
 	}
 

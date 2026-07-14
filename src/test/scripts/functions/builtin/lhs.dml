@@ -24,5 +24,9 @@ d = $2
 reps = $3
 method = $4
 goal = $5
-M = lhs(N = N,d = d,reps = reps, method = method, goal = goal)
-write(M, $6)
+generations = $6
+population_size = $7
+[M, G] = lhs(N = N,d = d,reps = reps, method = method, goal = goal,
+  genetic_generations = generations, genetic_population_size = population_size)
+write(M, $8)
+write(G, $9)

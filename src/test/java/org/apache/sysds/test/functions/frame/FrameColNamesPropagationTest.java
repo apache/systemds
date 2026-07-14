@@ -46,6 +46,7 @@ public class FrameColNamesPropagationTest extends AutomatedTestBase {
     private final static String TEST_NAME_CBIND = "ColNameCbindPropagation";
     private final static String TEST_NAME_RBIND = "ColNameRbindPropagation";
     private final static String TEST_NAME_SLICE = "ColNameSlicePropagation";
+    private final static String TEST_NAME_LEFT_INDEXING = "ColNameLeftIndexingPropagation";
     private final static String TEST_DIR = "functions/frame/";
     private static final String TEST_CLASS_DIR = TEST_DIR + FrameColNamesPropagationTest.class.getSimpleName() + "/";
 
@@ -58,6 +59,7 @@ public class FrameColNamesPropagationTest extends AutomatedTestBase {
                 {10},
                 {100},
                 {1000},
+                {2500},
         });
     }
 
@@ -66,7 +68,7 @@ public class FrameColNamesPropagationTest extends AutomatedTestBase {
         addTestConfiguration(TEST_NAME_CBIND, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_CBIND, new String[] {"B"}));
         addTestConfiguration(TEST_NAME_RBIND, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_RBIND, new String[] {"B"}));
         addTestConfiguration(TEST_NAME_SLICE, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_SLICE, new String[] {"B"}));
-
+        addTestConfiguration(TEST_NAME_LEFT_INDEXING, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_LEFT_INDEXING, new String[] {"B"}));
     }
 
     @Test
@@ -82,6 +84,31 @@ public class FrameColNamesPropagationTest extends AutomatedTestBase {
     @Test
     public void testPropagationSliceCP() {
         runPropagationSliceTest(_matrixDim, ExecType.CP);
+    }
+
+    @Test
+    public void testPropagationLeftIndexingCP() {
+        runPropagationLeftIndexingTest(_matrixDim, ExecType.CP);
+    }
+
+    @Test
+    public void testPropagationCbindSpark() {
+        runPropagationCbindTest(_matrixDim, ExecType.SPARK);
+    }
+
+    @Test
+    public void testPropagationRbindSpark() {
+        runPropagationRbindTest(_matrixDim, ExecType.SPARK);
+    }
+
+    @Test
+    public void testPropagationSliceSpark() {
+        runPropagationSliceTest(_matrixDim, ExecType.SPARK);
+    }
+
+    @Test
+    public void testPropagationLeftIndexingSpark() {
+        runPropagationLeftIndexingTest(_matrixDim, ExecType.SPARK);
     }
 
 
@@ -287,6 +314,63 @@ public class FrameColNamesPropagationTest extends AutomatedTestBase {
             DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
         }
     }
+
+    private void runPropagationLeftIndexingTest(int matrixDim, ExecType et) {
+        Types.ExecMode platformOld = setExecMode(et);
+        boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+        setOutputBuffering(true);
+        try {
+
+            // generate an array of column names depending on the dimension of the frame block
+            String[] colNames = genColnames(matrixDim, "A");
+
+            getAndLoadTestConfiguration(TEST_NAME_LEFT_INDEXING);
+            String HOME = SCRIPT_DIR + TEST_DIR;
+            fullDMLScriptName = HOME + TEST_NAME_LEFT_INDEXING + ".dml";
+
+
+            programArgs = new String[] {"-args",
+                    input("X"), String.valueOf(matrixDim),
+                    String.valueOf(matrixDim),
+                    output("B")};
+
+            FrameWriter writer = FrameWriterFactory.createFrameWriter(FileFormat.CSV,
+                    new FileFormatPropertiesCSV(true, ",", false));
+
+
+            Types.ValueType[] schema = Collections.nCopies(
+                    matrixDim, Types.ValueType.FP64).toArray(new Types.ValueType[0]);
+            FrameBlock X1 = new FrameBlock(schema);
+            X1.setColumnNames(colNames);
+            double[][] data_X = getRandomMatrix(matrixDim, matrixDim, Double.MIN_VALUE, Double.MAX_VALUE, 0.7, 14123);
+            TestUtils.initFrameData(X1, data_X, schema, matrixDim);
+            writer.writeFrameToHDFS(X1, input("X"), matrixDim, matrixDim);
+
+            runTest(true, false, null, -1);
+
+            FrameBlock out = readDMLFrameFromHDFS("B", FileFormat.BINARY);
+
+            String[] expected = Arrays.copyOfRange(colNames, 1, colNames.length-1);
+
+            // expected are the sliced column names
+            for(int i = 0; i < expected.length; i++) {
+                Assert.assertEquals(
+                        "Wrong colName at pos:" + i,
+                        expected[i],
+                        out.get(0, i).toString()
+                );
+            }
+
+        }
+        catch(Exception ex) {
+            throw new RuntimeException(ex);
+        }
+        finally {
+            rtplatform = platformOld;
+            DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+        }
+    }
+
 
 }
 

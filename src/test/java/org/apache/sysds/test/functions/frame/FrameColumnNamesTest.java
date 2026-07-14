@@ -83,16 +83,29 @@ public class FrameColumnNamesTest extends AutomatedTestBase {
 	}
 
 	@Test
+	public void testGetNamesSpark() {
+		runGetNamesTest(_columnNames,  ExecType.SPARK);
+	}
+
+	@Test
 	public void testSetNamesCP() {
 		runSetNamesTest(_columnNames,  ExecType.CP);
+	}
+
+	@Test
+	public void testSetNamesSpark() {
+		runSetNamesTest(_columnNames,  ExecType.SPARK);
 	}
 
 	private void runGetNamesTest(String[] columnNames, ExecType et) {
 		Types.ExecMode platformOld = setExecMode(et);
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+
+		if(et == ExecType.SPARK)
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		setOutputBuffering(true);
 		try {
-			getAndLoadTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME_GET);
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME_GET + ".dml";
 			programArgs = new String[] {"-args", input("A"), String.valueOf(_rows),
@@ -110,12 +123,24 @@ public class FrameColumnNamesTest extends AutomatedTestBase {
 			writer.writeFrameToHDFS(frame1, input("A"), _rows, schema.length);
 
 			runTest(true, false, null, -1);
-			FrameBlock frame2 = readDMLFrameFromHDFS("B", FileFormat.BINARY);
+
+			FrameBlock resultFrame =
+					readDMLFrameFromHDFS("B", FileFormat.BINARY);
+
+			Assert.assertEquals(
+					"Unexpected number of result rows.",
+					1,
+					resultFrame.getNumRows());
+
+			Assert.assertEquals(
+					"Unexpected number of result columns.",
+					columnNames.length,
+					resultFrame.getNumColumns());
 
 			// verify output schema
 			for(int i = 0; i < schema.length; i++) {
 				Assert
-						.assertEquals("Wrong result: " + columnNames[i] + ".", columnNames[i], frame2.get(0, i).toString());
+						.assertEquals("Wrong result: " + columnNames[i] + ".", columnNames[i], resultFrame.get(0, i).toString());
 			}
 		}
 		catch(Exception ex) {
@@ -130,6 +155,9 @@ public class FrameColumnNamesTest extends AutomatedTestBase {
 	private void runSetNamesTest(String[] columnNames, ExecType et) {
 		Types.ExecMode platformOld = setExecMode(et);
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+
+		if(et == ExecType.SPARK)
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		setOutputBuffering(true);
 		try {
 			getAndLoadTestConfiguration(TEST_NAME_SET);

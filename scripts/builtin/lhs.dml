@@ -264,15 +264,10 @@ return (Matrix[Double] M) {
     new_population[1:N, ] = best_design
     next_free_slot = 2
 
-    # 4.1: First: use each other survivor as base and replace one of its columns with a random column from the best design.
+    # 4.1: use each other survivor as base and transplant a column from the best design
     for (survivor_index in 2:survivors_cutoff) {
-      new_design = getDesignByIndex(survivors, survivor_index, N)
-      source_col = as.scalar(sample(d, 1))
-      target_col = as.scalar(sample(d, 1))
-      new_design[, target_col] = best_design[, source_col]
-
-      # 5. Attempt to mutate the child design by switching two elements in a random column.
-      new_design = attemptGeneticMutation(new_design, genetic_mutation_rate)
+      survivor_design = getDesignByIndex(survivors, survivor_index, N)
+      new_design = makeGeneticChild(survivor_design, best_design, genetic_mutation_rate)
 
       # Store the generated child design in the new population
       new_population_start = designStart(next_free_slot, N)
@@ -281,17 +276,11 @@ return (Matrix[Double] M) {
       next_free_slot = next_free_slot + 1
     }
 
-    # 4.2: For the empty positions, use the best design as base and replace one column with one from a survivor.
+    # 4.2: for the empty positions, use the best design as base and transplant a column from a survivor
     for (survivor_index in 2:survivors_cutoff) {
       if (next_free_slot <= genetic_population_size) {
-        source_design = getDesignByIndex(survivors, survivor_index, N)
-        new_design = best_design
-        source_col = as.scalar(sample(d, 1))
-        target_col = as.scalar(sample(d, 1))
-        new_design[, target_col] = source_design[, source_col]
-
-        # 5. Attempt to mutate the child design by switching two elements in a random column.
-        new_design = attemptGeneticMutation(new_design, genetic_mutation_rate)
+        survivor_design = getDesignByIndex(survivors, survivor_index, N)
+        new_design = makeGeneticChild(best_design, survivor_design, genetic_mutation_rate)
 
         # Store the generated child design in the new population
         new_population_start = designStart(next_free_slot, N)
@@ -349,6 +338,18 @@ return (Matrix[Double] design) {
   start = designStart(index, N)
   end = designEnd(index, N)
   design = population[start:end, ]
+}
+
+# Creates a child design by transplanting a random column from a donor design
+# into the base design and attempting a mutation.
+makeGeneticChild = function(Matrix[Double] base, Matrix[Double] donor, Double mutation_rate)
+return (Matrix[Double] child) {
+  source_col = as.scalar(sample(ncol(base), 1))
+  target_col = as.scalar(sample(ncol(base), 1))
+  child = base
+  child[, target_col] = donor[, source_col]
+  # Attempt to mutate the child design by switching two elements in a random column.
+  child = attemptGeneticMutation(child, mutation_rate)
 }
 
 attemptGeneticMutation = function(Matrix[Double] design, Double mutation_rate)

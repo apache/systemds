@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.io.parquet;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
@@ -38,9 +39,8 @@ public class FrameReaderWriterParquetTest {
 	private static final String FILENAME = "target/testTemp/functions/io/parquet/FrameReaderWriterParquetTest/frame.parquet";
 
 	// Parquet-supported value types
-	private static final ValueType[] SCHEMA = {
-		ValueType.FP64, ValueType.FP32, ValueType.INT32, ValueType.INT64, ValueType.BOOLEAN, ValueType.STRING
-	};
+	private static final ValueType[] SCHEMA = {ValueType.FP64, ValueType.FP32, ValueType.INT32, ValueType.INT64,
+		ValueType.BOOLEAN, ValueType.STRING};
 
 	@Test
 	public void testSingleRowSingleCol() throws IOException {
@@ -69,17 +69,16 @@ public class FrameReaderWriterParquetTest {
 
 	@Test
 	public void testValueTypeEdgeCases() throws IOException {
-		// type min/max, empty string, special chars (comma/quote/newline/unicode)
-		ValueType[] schema = { ValueType.FP32, ValueType.FP64, ValueType.INT32, ValueType.INT64,
-			ValueType.BOOLEAN, ValueType.STRING };
-		String[] names = { "f32", "f64", "i32", "i64", "b", "s" };
+		// type min/max, empty string, special chars (comma/quote/newline/unicode), column name with space
+		ValueType[] schema = {ValueType.FP32, ValueType.FP64, ValueType.INT32, ValueType.INT64, ValueType.BOOLEAN,
+			ValueType.STRING};
+		String[] names = {"f 32", "f64", "i32", "i64", "b", "s"};
 		String[][] data = {
-			{ String.valueOf(Float.MAX_VALUE), String.valueOf(Double.MAX_VALUE),
-				String.valueOf(Integer.MAX_VALUE), String.valueOf(Long.MAX_VALUE), "true",  "" },
-			{ String.valueOf(-Float.MAX_VALUE), String.valueOf(-Double.MAX_VALUE),
-				String.valueOf(Integer.MIN_VALUE), String.valueOf(Long.MIN_VALUE), "false", "a,b\"c\nd" },
-			{ "0.0", "0.0", "0", "0", "true", "unicode_é中" }
-		};
+			{String.valueOf(Float.MAX_VALUE), String.valueOf(Double.MAX_VALUE), String.valueOf(Integer.MAX_VALUE),
+				String.valueOf(Long.MAX_VALUE), "true", ""},
+			{String.valueOf(-Float.MAX_VALUE), String.valueOf(-Double.MAX_VALUE), String.valueOf(Integer.MIN_VALUE),
+				String.valueOf(Long.MIN_VALUE), "false", "a,b\"c\nd"},
+			{"0.0", "0.0", "0", "0", "true", "unicode_é中"}};
 		FrameBlock in = new FrameBlock(schema, names, data);
 
 		new FrameWriterParquet().writeFrameToHDFS(in, FILENAME, 3, 6);
@@ -91,14 +90,10 @@ public class FrameReaderWriterParquetTest {
 	@Test
 	public void testNullsInStringColumn() throws IOException {
 		// Numeric columns from String[][] convert null to 0. Only test string nulls here.
-		// Numeric null round-trips are tested in ReadParquetTest.
-		ValueType[] schema = { ValueType.STRING, ValueType.STRING };
-		String[] names = { "a", "b" };
-		String[][] data = {
-			{ "x",  "y"  },
-			{ null, null },
-			{ "p",  null }
-		};
+		// Numeric nulls are covered by the Spark-written userdata1/all files in ReadParquetTest.
+		ValueType[] schema = {ValueType.STRING, ValueType.STRING};
+		String[] names = {"a", "b"};
+		String[][] data = {{"x", "y"}, {null, null}, {"p", null}};
 		FrameBlock in = new FrameBlock(schema, names, data);
 
 		new FrameWriterParquet().writeFrameToHDFS(in, FILENAME, 3, 2);
@@ -112,6 +107,29 @@ public class FrameReaderWriterParquetTest {
 		TestUtils.compareFrames(in, out, false);
 	}
 
+	@Test
+	public void testMismatchedSchemaRead() throws IOException {
+		// requested frame types differ from the parquet physical types -> per-cell conversion path
+		ValueType[] writeSchema = {ValueType.INT32, ValueType.FP32, ValueType.BOOLEAN, ValueType.FP64,
+			ValueType.STRING};
+		String[] names = {"i32", "f32", "b", "f64", "s"};
+		String[][] data = {{"1", "1.5", "true", "2.5", "7"}, {"2", "2.5", "false", "3.5", null}};
+		FrameBlock in = new FrameBlock(writeSchema, names, data);
+
+		new FrameWriterParquet().writeFrameToHDFS(in, FILENAME, 2, 5);
+
+		ValueType[] readSchema = {ValueType.INT64, ValueType.FP64, ValueType.STRING, ValueType.STRING, ValueType.FP64};
+		FrameBlock out = new FrameReaderParquet().readFrameFromHDFS(FILENAME, readSchema, names, 2, 5);
+
+		assertEquals(1L, out.get(0, 0));
+		assertEquals(1.5, ((Number) out.get(0, 1)).doubleValue(), 0.0);
+		assertEquals("true", out.get(0, 2));
+		assertEquals("2.5", out.get(0, 3));
+		assertEquals(7.0, ((Number) out.get(0, 4)).doubleValue(), 0.0);
+		// numeric nulls keep the array default
+		assertEquals(0.0, ((Number) out.get(1, 4)).doubleValue(), 0.0);
+	}
+
 	private void runWriteReadRoundTrip(int rows, int cols, long seed) throws IOException {
 		try {
 			ValueType[] schema = new ValueType[cols];
@@ -121,8 +139,8 @@ public class FrameReaderWriterParquetTest {
 			FrameBlock writeBlock = TestUtils.generateRandomFrameBlock(rows, schema, seed);
 
 			new FrameWriterParquet().writeFrameToHDFS(writeBlock, FILENAME, rows, cols);
-			FrameBlock readBlock = new FrameReaderParquet()
-				.readFrameFromHDFS(FILENAME, schema, writeBlock.getColumnNames(), rows, cols);
+			FrameBlock readBlock = new FrameReaderParquet().readFrameFromHDFS(FILENAME, schema,
+				writeBlock.getColumnNames(), rows, cols);
 
 			TestUtils.compareFrames(writeBlock, readBlock, false);
 		}

@@ -48,7 +48,9 @@ import org.apache.sysds.common.Types.ValueType;
  */
 public class FrameWriterParquet extends FrameWriter {
 
-	public enum DictEncoding { ALL_ON, ALL_OFF, STRING_ONLY }
+	public enum DictEncoding {
+		ALL_ON, ALL_OFF, STRING_ONLY
+	}
 
 	private final CompressionCodecName codec;
 	private final DictEncoding dictEncoding;
@@ -95,9 +97,9 @@ public class FrameWriterParquet extends FrameWriter {
 	}
 
 	/**
-	 * Writes the FrameBlock data to a Parquet file using a ParquetWriter.
-	 * The method generates a Parquet schema based on the metadata of the FrameBlock, initializes a ParquetWriter with specified configurations, 
-	 * iterates over each row and column, writing directly to the RecordConsumer, using type-specific conversions.
+	 * Writes the FrameBlock data to a Parquet file using a ParquetWriter. The method generates a Parquet schema based
+	 * on the metadata of the FrameBlock, initializes a ParquetWriter with specified configurations, iterates over each
+	 * row and column, writing directly to the RecordConsumer, using type-specific conversions.
 	 *
 	 * @param path The HDFS path where the Parquet file will be written.
 	 * @param conf The Hadoop configuration.
@@ -114,21 +116,23 @@ public class FrameWriterParquet extends FrameWriter {
 		String[] columnNames = src.getColumnNames();
 		ValueType[] columnTypes = src.getSchema();
 
-		FrameParquetWriterBuilder writerBuilder = new FrameParquetWriterBuilder(path, schema, src)
-				.withConf(conf)
-				.withCompressionCodec(CompressionCodecName.fromConf(conf.get(ParquetOutputFormat.COMPRESSION, codec.name())))
-				.withRowGroupSize(conf.getLong(ParquetOutputFormat.BLOCK_SIZE, rowGroupSize))
-				.withPageSize(conf.getInt(ParquetOutputFormat.PAGE_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE))
-				.withDictionaryPageSize(conf.getInt(ParquetOutputFormat.DICTIONARY_PAGE_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE))
-				.withDictionaryEncoding(conf.getBoolean(ParquetOutputFormat.ENABLE_DICTIONARY, dictEncoding == DictEncoding.ALL_ON));
+		FrameParquetWriterBuilder writerBuilder = new FrameParquetWriterBuilder(path, schema, src).withConf(conf)
+			.withCompressionCodec(
+				CompressionCodecName.fromConf(conf.get(ParquetOutputFormat.COMPRESSION, codec.name())))
+			.withRowGroupSize(conf.getLong(ParquetOutputFormat.BLOCK_SIZE, rowGroupSize))
+			.withPageSize(conf.getInt(ParquetOutputFormat.PAGE_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE))
+			.withDictionaryPageSize(
+				conf.getInt(ParquetOutputFormat.DICTIONARY_PAGE_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE))
+			.withDictionaryEncoding(
+				conf.getBoolean(ParquetOutputFormat.ENABLE_DICTIONARY, dictEncoding == DictEncoding.ALL_ON));
 
-		if (dictEncoding == DictEncoding.STRING_ONLY)
-			for (int j = 0; j < src.getNumColumns(); j++)
-				if (columnTypes[j] == ValueType.STRING)
+		if(dictEncoding == DictEncoding.STRING_ONLY)
+			for(int j = 0; j < src.getNumColumns(); j++)
+				if(columnTypes[j] == ValueType.STRING)
 					writerBuilder = writerBuilder.withDictionaryEncoding(columnNames[j], true);
 
-		try (ParquetWriter<Integer> writer = writerBuilder.build()) {
-			for (int i = 0; i < src.getNumRows(); i++)
+		try(ParquetWriter<Integer> writer = writerBuilder.build()) {
+			for(int i = 0; i < src.getNumRows(); i++)
 				writer.write(i);
 		}
 		
@@ -150,8 +154,7 @@ public class FrameWriterParquet extends FrameWriter {
 		for (int i = 0; i < src.getNumColumns(); i++) {
 			switch (columnTypes[i]) {
 				case STRING:
-					builder.optional(PrimitiveTypeName.BINARY)
-						.as(LogicalTypeAnnotation.stringType())
+					builder.optional(PrimitiveTypeName.BINARY).as(LogicalTypeAnnotation.stringType())
 						.named(columnNames[i]);
 					break;
 				case INT32:
@@ -177,8 +180,7 @@ public class FrameWriterParquet extends FrameWriter {
 	}
 
 	/**
-	 * WriteSupport implementation that writes rows from a FrameBlock directly to the
-	 * Parquet RecordConsumer.
+	 * WriteSupport implementation that writes rows from a FrameBlock directly to the Parquet RecordConsumer.
 	 */
 	private static class FrameWriteSupport extends WriteSupport<Integer> {
 		private final MessageType schema;
@@ -211,11 +213,11 @@ public class FrameWriterParquet extends FrameWriter {
 		@Override
 		public void write(Integer rowIndex) {
 			recordConsumer.startMessage();
-			for (int j = 0; j < numCols; j++) {
+			for(int j = 0; j < numCols; j++) {
 				Object value = src.get(rowIndex, j);
-				if (value != null) {
+				if(value != null) {
 					recordConsumer.startField(colNames[j], j);
-					switch (colTypes[j]) {
+					switch(colTypes[j]) {
 						case STRING:
 							recordConsumer.addBinary(Binary.fromString(value.toString()));
 							break;

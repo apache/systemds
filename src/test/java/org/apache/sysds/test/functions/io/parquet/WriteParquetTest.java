@@ -21,27 +21,42 @@ package org.apache.sysds.test.functions.io.parquet;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.Map;
 
-import org.apache.sysds.test.TestUtils;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.io.FrameReaderParquet;
 import org.apache.sysds.runtime.io.FrameReaderParquetParallel;
 import org.apache.sysds.runtime.io.FrameWriterParquet;
 import org.apache.sysds.runtime.io.FrameWriterParquetParallel;
+import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.functions.io.parquet.ParquetTestUtils.ParquetMetadataInfo;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+/**
+ * Verifies the parquet frame writers against Spark's parquet reader.
+ *
+ * Column 0 carries the row index so Spark reads of multi-file outputs can be compared order-independently (sorted by
+ * id), since engines do not guarantee row order across files.
+ */
 public class WriteParquetTest {
 
-	private static final String TEMP_FILE     = System.getProperty("java.io.tmpdir") + "/systemds_write_parquet_test.parquet";
-	private static final String TEMP_PAR_PATH = System.getProperty("java.io.tmpdir") + "/systemds_write_parquet_test_par";
+	private static final String TEMP_FILE = System.getProperty("java.io.tmpdir")
+		+ "/systemds_write_parquet_test.parquet";
+	private static final String TEMP_PAR_PATH = System.getProperty("java.io.tmpdir")
+		+ "/systemds_write_parquet_test_par";
 
-	// See ParquetTestUtils.generatePublicTestFiles(): these are generated with Spark's DataFrameWriter 
+	private static final ValueType[] SCHEMA = {ValueType.INT64, ValueType.STRING, ValueType.FP64, ValueType.BOOLEAN,
+		ValueType.INT32, ValueType.FP32};
+	private static final long SEED = 4669201;
+
+	// See ParquetTestUtils.generatePublicTestFiles(): these are generated with Spark's DataFrameWriter
 	private static File testFileDir;
 	private static String[] PUBLIC_FILES;
 
@@ -49,14 +64,14 @@ public class WriteParquetTest {
 	public static void generateTestFiles() throws Exception {
 		testFileDir = Files.createTempDirectory("systemds_parquet_public_test_files").toFile();
 		Map<String, String> files = ParquetTestUtils.generatePublicTestFiles(testFileDir);
-		PUBLIC_FILES = new String[] { files.get("userdata1"), files.get("alltypes_plain"), files.get("all") };
+		PUBLIC_FILES = new String[] {files.get("userdata1"), files.get("alltypes_plain"), files.get("all")};
 	}
 
 	@AfterClass
 	public static void cleanupTestFiles() {
 		File[] children = testFileDir.listFiles();
-		if (children != null)
-			for (File f : children)
+		if(children != null)
+			for(File f : children)
 				f.delete();
 		testFileDir.delete();
 	}
@@ -68,14 +83,61 @@ public class WriteParquetTest {
 	}
 
 	private static void deleteRecursive(File f) {
-		if (f.isDirectory())
-			for (File c : f.listFiles()) deleteRecursive(c);
+		if(f.isDirectory())
+			for(File c : f.listFiles())
+				deleteRecursive(c);
 		f.delete();
 	}
 
 	@Test
+	public void testSparkReadsMultiPartFiles() throws Exception {
+		FrameBlock original = indexedRandomFrame(60);
+		writeTwoParts(original);
+
+		FrameBlock result = sparkReadSorted(TEMP_PAR_PATH, original.getColumnNames());
+		TestUtils.compareFrames(original, result, false);
+	}
+
+	@Test
+	public void testMultiPartFileRoundtrip() throws Exception {
+		FrameBlock original = indexedRandomFrame(60);
+		writeTwoParts(original);
+
+		FrameBlock result = new FrameReaderParquetParallel().readFrameFromHDFS(TEMP_PAR_PATH, SCHEMA,
+			original.getColumnNames(), 60, SCHEMA.length);
+
+		TestUtils.compareFrames(original, result, false);
+	}
+
+	@Test
+	public void testSequentialReaderMultiPartFileRoundtrip() throws Exception {
+		// the serial reader must also expand a directory into its part files, not just the parallel one
+		FrameBlock original = indexedRandomFrame(60);
+		writeTwoParts(original);
+
+		FrameBlock result = new FrameReaderParquet().readFrameFromHDFS(TEMP_PAR_PATH, SCHEMA, original.getColumnNames(),
+			60, SCHEMA.length);
+
+		TestUtils.compareFrames(original, result, false);
+	}
+
+	@Test
+	public void testForcedParallelWriterRoundTrip() throws Exception {
+		FrameBlock original = indexedRandomFrame(20);
+
+		FrameWriterParquetParallel writer = new FrameWriterParquetParallel();
+		writer.setForcedParallel(true);
+		writer.writeFrameToHDFS(original, TEMP_PAR_PATH, 20, SCHEMA.length);
+
+		FrameBlock result = new FrameReaderParquetParallel().readFrameFromHDFS(TEMP_PAR_PATH, SCHEMA,
+			original.getColumnNames(), 20, SCHEMA.length);
+
+		TestUtils.compareFrames(original, result, false);
+	}
+
+	@Test
 	public void testRoundtripPublicFiles() throws Exception {
-		for (String filename : PUBLIC_FILES) {
+		for(String filename : PUBLIC_FILES) {
 			ParquetMetadataInfo info = ParquetTestUtils.inferMetadata(filename);
 
 			FrameReaderParquet reader = new FrameReaderParquet();
@@ -87,94 +149,32 @@ public class WriteParquetTest {
 			FrameBlock result = reader.readFrameFromHDFS(TEMP_FILE, info.schema, info.names, info.rlen, info.clen);
 
 			TestUtils.compareFrames(original, result, false);
+
+			FrameBlock sparkResult = ParquetTestUtils.sparkReadAsFrame(TEMP_FILE, info.schema, info.names);
+			TestUtils.compareFrames(original, sparkResult, false);
 		}
 	}
 
-	@Test
-	public void testMultiPartFileRoundtrip() throws Exception {
-		// Create two parquet part files and verify that the parallel reader
-		// reads both files correctly and combines them into the expected result.
-		ValueType[] schema = {
-			ValueType.STRING,
-			ValueType.INT32,
-			ValueType.INT64,
-			ValueType.FP32,
-			ValueType.FP64,
-			ValueType.BOOLEAN
-		};
-		String[] names = { "name", "age", "id", "score", "ratio", "active" };
-		String[][] data = {
-			{ "Alice", "30", "1000", "1.5", "0.75", "true"  },
-			{ "Bob",   "25", "2000", "2.5", "0.50", "false" },
-			{ "Carol", "40", "3000", "3.5", "0.25", "true"  },
-			{ "Dave",  "35", "4000", "4.5", "0.10", "false" },
-			{ "Eve",   "28", "5000", "5.5", "0.90", "true"  },
-			{ "Frank", "45", "6000", "6.5", "0.60", "false" }
-		};
-		FrameBlock original = new FrameBlock(schema, names, data);
+	/** Random frame over all parquet-supported value types, with the row index in column 0. */
+	private static FrameBlock indexedRandomFrame(int rows) {
+		FrameBlock fb = TestUtils.generateRandomFrameBlock(rows, SCHEMA, SEED);
+		for(int r = 0; r < rows; r++)
+			fb.set(r, 0, (long) r);
+		return fb;
+	}
 
+	private static void writeTwoParts(FrameBlock fb) throws Exception {
+		int rows = fb.getNumRows();
 		new File(TEMP_PAR_PATH).mkdir();
 		FrameWriterParquet writer = new FrameWriterParquet();
-		writer.writeFrameToHDFS(original.slice(0, 2), TEMP_PAR_PATH + "/part-0.parquet", 3, schema.length);
-		writer.writeFrameToHDFS(original.slice(3, 5), TEMP_PAR_PATH + "/part-1.parquet", 3, schema.length);
-
-		FrameBlock result = new FrameReaderParquetParallel()
-			.readFrameFromHDFS(TEMP_PAR_PATH, schema, names, 6, schema.length);
-
-		TestUtils.compareFrames(original, result, false);
+		writer.writeFrameToHDFS(fb.slice(0, rows / 2 - 1), TEMP_PAR_PATH + "/part-0.parquet", rows / 2, SCHEMA.length);
+		writer.writeFrameToHDFS(fb.slice(rows / 2, rows - 1), TEMP_PAR_PATH + "/part-1.parquet", rows - rows / 2,
+			SCHEMA.length);
 	}
 
-	@Test
-	public void testParallelRoundtrip() throws Exception {
-		ValueType[] schema = {
-			ValueType.STRING,
-			ValueType.INT32,
-			ValueType.INT64,
-			ValueType.FP32,
-			ValueType.FP64,
-			ValueType.BOOLEAN
-		};
-		String[] names = { "name", "age", "id", "score", "ratio", "active" };
-		String[][] data = {
-			{ "Alice", "30", "1000", "1.5", "0.75", "true"  },
-			{ "Bob",   "25", "2000", "2.5", "0.50", "false" },
-			{ "Carol", "40", "3000", "3.5", "0.25", "true"  }
-		};
-		FrameBlock original = new FrameBlock(schema, names, data);
-
-		new FrameWriterParquetParallel().writeFrameToHDFS(original, TEMP_PAR_PATH, original.getNumRows(), original.getNumColumns());
-		FrameBlock result = new FrameReaderParquetParallel().readFrameFromHDFS(TEMP_PAR_PATH, schema, names, original.getNumRows(), original.getNumColumns());
-
-		TestUtils.compareFrames(original, result, false);
-	}
-
-	@Test
-	public void testRoundtrip() throws Exception {
-		ValueType[] schema = {
-			ValueType.STRING,
-			ValueType.INT32,
-			ValueType.INT64,
-			ValueType.FP32,
-			ValueType.FP64,
-			ValueType.BOOLEAN
-		};
-		String[] names = { "name test", "age", "id", "score", "ratio", "active" };
-		String[][] data = {
-			{ "Alice", "30",  "1000", "1.5", "0.75",  "true"  },
-			{ "Bob",   "25",  "2000", "2.5", "0.50",  "false" },
-			{ "Carol", "40",  "3000", "3.5", "0.25",  "true"  }
-		};
-
-		FrameBlock original = new FrameBlock(schema, names, data);
-
-		// Write
-		FrameWriterParquet writer = new FrameWriterParquet();
-		writer.writeFrameToHDFS(original, TEMP_FILE, original.getNumRows(), original.getNumColumns());
-
-		// Read back
-		FrameReaderParquet reader = new FrameReaderParquet();
-		FrameBlock result = reader.readFrameFromHDFS(TEMP_FILE, schema, names, original.getNumRows(), original.getNumColumns());
-
-		TestUtils.compareFrames(original, result, false);
+	private static FrameBlock sparkReadSorted(String path, String[] names) {
+		Dataset<Row> df = ParquetTestUtils.sparkSession().read().parquet(path)
+			.select(names[0], Arrays.copyOfRange(names, 1, names.length)).sort(names[0]);
+		return ParquetTestUtils.toFrameBlock(df.collectAsList(), SCHEMA, names);
 	}
 }

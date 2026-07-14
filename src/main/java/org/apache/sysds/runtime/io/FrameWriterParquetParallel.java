@@ -41,11 +41,10 @@ import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 public class FrameWriterParquetParallel extends FrameWriterParquet {
 
 	/**
-	 * Writes the FrameBlock data to HDFS in parallel. 
-	 * The method estimates the number of output partitions by comparing the estimated output size of the FrameBlock with the
-	 * HDFS block size. It then determines the number of threads to use based on the parallelism configuration and the
-	 * number of partitions. In case of parallelism, it divides the FrameBlock into chunks and a thread pool is created to
-	 * execute a write task for each partition concurrently.
+	 * Writes the FrameBlock data to HDFS in parallel. The method estimates the number of output partitions by comparing
+	 * the estimated output size of the FrameBlock with the HDFS block size. It then determines the number of threads to
+	 * use based on the parallelism configuration and the number of partitions. In case of parallelism, it divides the
+	 * FrameBlock into chunks and a thread pool is created to execute a write task for each partition concurrently.
 	 *
 	 * @param path The HDFS path where the Parquet files will be written.
 	 * @param conf The Hadoop configuration.
@@ -56,13 +55,14 @@ public class FrameWriterParquetParallel extends FrameWriterParquet {
 		throws IOException, DMLRuntimeException 
 	{
 		// Estimate output partitions from output size in bytes
-		int numPartFiles = Math.max((int) (OptimizerUtils.estimateSizeExactFrame(src.getNumRows(), src.getNumColumns())
-			/ InfrastructureAnalyzer.getHDFSBlockSize()), 1);
+		int numPartFiles = Math
+			.max((int) (OptimizerUtils.estimateSizeExactFrame(src.getNumRows(), src.getNumColumns()) /
+				InfrastructureAnalyzer.getHDFSBlockSize()), 1);
 
 		// Determine parallelism
 		int numThreads = Math.min(OptimizerUtils.getParallelBinaryWriteParallelism(), numPartFiles);
 
-		if (!_forcedParallel && numThreads <= 1) {
+		if(!_forcedParallel && numThreads <= 1) {
 			super.writeParquetFrameToHDFS(path, conf, src);
 			return;
 		}

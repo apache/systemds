@@ -26,7 +26,8 @@ method = $4
 goal = $5
 generations = $6
 population_size = $7
+seed = $8
 [M, G] = lhs(N = N,d = d,reps = reps, method = method, goal = goal,
-  genetic_generations = generations, genetic_population_size = population_size)
-write(M, $8)
-write(G, $9)
+  genetic_generations = generations, genetic_population_size = population_size, seed = seed)
+write(M, $9)
+write(G, $10)

@@ -47,6 +47,7 @@
 # return_type               How should the matrix be returned:
 #                            - "buckets": return the matrix with bucket ids
 #                            - "numerical": return the matrix as vectors sampled from the d-dimensional uniform distribution in range 0-1
+# seed   The seed for making results reproducible. Defaults to -1, which creates random seeds.
 # -------------------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -65,7 +66,8 @@ lhs = function(
   Integer genetic_generations = 5,
   Integer genetic_population_size = 10,
   Double genetic_mutation_rate = 0.25,
-  String return_type = "buckets"
+  String return_type = "buckets",
+  Integer seed = -1
 )
 return (Matrix[Double] M, Double G) {
   if (goal != "maximin" & goal != "opt" & goal != "sum_inv" & goal != "avg_dist") {
@@ -76,17 +78,17 @@ return (Matrix[Double] M, Double G) {
   }
 
   if (method == "random") {
-    M = randomLHS(N, d, reps, goal)
+    M = randomLHS(N, d, reps, goal, seed)
   }
   else if (method == "build") {
-    M = buildLHS(N, d, reps, goal)
+    M = buildLHS(N, d, reps, goal, seed)
   }
   else if (method == "cp_sweep") {
-    M = cpSweepLHS(N, d, reps, goal, eps)
+    M = cpSweepLHS(N, d, reps, goal, eps, seed)
   }
   # Reference: https://bertcarnell.github.io/lhs/reference/geneticLHS.html
   else if (method == "genetic") {
-    M = geneticLHS(N, d, reps, goal, genetic_generations, genetic_population_size, genetic_mutation_rate)
+    M = geneticLHS(N, d, reps, goal, genetic_generations, genetic_population_size, genetic_mutation_rate, seed)
   }
   else {
     stop("Method should be one of: random, build, cp_sweep, genetic")
@@ -94,19 +96,19 @@ return (Matrix[Double] M, Double G) {
   
   G = evaluateGoalFullMatrix(M,goal)
   if (return_type == "numerical") {
-    r = rand(rows = N, cols = d, min = 0, max = 1 / N)
+    r = rand(rows = N, cols = d, min = 0, max = 1 / N, seed = seed)
     M = M / N - r
   }
 }
 
-randomLHS = function(Integer N, Integer d, Integer reps, String goal)
+randomLHS = function(Integer N, Integer d, Integer reps, String goal, Integer seed)
 return (Matrix[Double] M) {
   G = 1 / 0
   M = matrix(0, rows = N, cols = d)
   for (i in 1:reps) {
     newM = matrix(0, rows = N, cols = d)
     for (j in 1:d) {
-      newM[, j] = sample(N, N)
+      newM[, j] = sample(N, N, deriveSeed(seed, (i - 1) * d + j))
     }
 
     newG = evaluateGoalFullMatrix(newM, goal)
@@ -117,13 +119,13 @@ return (Matrix[Double] M) {
   }
 }
 
-buildLHS = function(Integer N, Integer d, Integer reps, String goal)
+buildLHS = function(Integer N, Integer d, Integer reps, String goal, Integer seed)
 return (Matrix[Double] M) {
   # available buckets per column
   free_buckets = seq(1, N) %*% matrix(1, rows = 1, cols = d)
 
   # generate first point at random
-  first_sample = sample(N, d, TRUE)
+  first_sample = sample(N, d, TRUE, deriveSeed(seed, 1))
   M = t(first_sample)
 
   # replace used ints for each column, with last sample
@@ -147,7 +149,7 @@ return (Matrix[Double] M) {
 
     for (j in 1:reps) {
       # random mask for bucket generation
-      rand = table(sample(num_free_buckets, d, TRUE), seq(1, N), N, d)
+      rand = table(sample(num_free_buckets, d, TRUE, deriveSeed(seed, i * reps + j)), seq(1, N), N, d)
 
       # get bucket and flatten to row vector
       vals_matrix = rand * free_buckets
@@ -174,13 +176,13 @@ return (Matrix[Double] M) {
 }
 
 # TODO: vectorize the inner loops, currently this method is very slow
-cpSweepLHS = function(Integer N, Integer d, Integer reps, String goal, Double eps)
+cpSweepLHS = function(Integer N, Integer d, Integer reps, String goal, Double eps, Integer seed)
 return (Matrix[Double] M) {
 
   # generate initial random latin hypercube
   M = matrix(0, rows = N, cols = d)
   for (i in 1:d) {
-    M[, i] = sample(N, N)
+    M[, i] = sample(N, N, deriveSeed(seed, i))
   }
 
   # initialize G according to the goal
@@ -227,14 +229,16 @@ return (Matrix[Double] M) {
   }
 }
 
-geneticLHS = function(Integer N, Integer d, Integer reps, String goal, Integer genetic_generations, Integer genetic_population_size, Double genetic_mutation_rate)
+geneticLHS = function(Integer N, Integer d, Integer reps, String goal, Integer genetic_generations, Integer genetic_population_size, Double genetic_mutation_rate, Integer seed)
 return (Matrix[Double] M) {
   population = matrix(0, rows = genetic_population_size * N, cols = d)
   scores = matrix(0, rows = genetic_population_size, cols = 1)
 
+  population_seed_offsets = genetic_population_size * reps * d
+
   # 1. Generate initial random Latin Hypercube designs and store them all in the population matrix
   for (p in 1:genetic_population_size) {
-    design = lhs(N = N, d = d, method = "random", reps = reps, goal = goal)
+    design = lhs(N = N, d = d, method = "random", reps = reps, goal = goal, seed = deriveSeed(seed, (p - 1) * reps * d))
     population_start = designStart(p, N)
     population_end = designEnd(p, N)
     population[population_start:population_end, ] = design
@@ -266,8 +270,9 @@ return (Matrix[Double] M) {
 
     # 4.1: use each other survivor as base and transplant a column from the best design
     for (survivor_index in 2:survivors_cutoff) {
+      child_base = population_seed_offsets + ((generation - 1) * genetic_population_size + next_free_slot) * 5
       survivor_design = getDesignByIndex(survivors, survivor_index, N)
-      new_design = makeGeneticChild(survivor_design, best_design, genetic_mutation_rate)
+      new_design = makeGeneticChild(survivor_design, best_design, genetic_mutation_rate, deriveSeed(seed, child_base))
 
       # Store the generated child design in the new population
       new_population_start = designStart(next_free_slot, N)
@@ -279,8 +284,9 @@ return (Matrix[Double] M) {
     # 4.2: for the empty positions, use the best design as base and transplant a column from a survivor
     for (survivor_index in 2:survivors_cutoff) {
       if (next_free_slot <= genetic_population_size) {
+        child_base = population_seed_offsets + ((generation - 1) * genetic_population_size + next_free_slot) * 5
         survivor_design = getDesignByIndex(survivors, survivor_index, N)
-        new_design = makeGeneticChild(best_design, survivor_design, genetic_mutation_rate)
+        new_design = makeGeneticChild(best_design, survivor_design, genetic_mutation_rate, deriveSeed(seed, child_base))
 
         # Store the generated child design in the new population
         new_population_start = designStart(next_free_slot, N)
@@ -323,6 +329,12 @@ return (Double score) {
   score = sum(D) / (nrow(M) * (nrow(M) - 1))
 }
 
+# Returns seed base + offset, but keeps the -1 (random) seed unchanged.
+deriveSeed = function(Integer seed, Integer offset)
+return (Integer s) {
+  s = ifelse(seed == -1, -1, seed + offset)
+}
+
 designStart = function(Integer index, Integer N)
 return (Integer start) {
   start = (index - 1) * N + 1
@@ -342,21 +354,21 @@ return (Matrix[Double] design) {
 
 # Creates a child design by transplanting a random column from a donor design
 # into the base design and attempting a mutation.
-makeGeneticChild = function(Matrix[Double] base, Matrix[Double] donor, Double mutation_rate)
+makeGeneticChild = function(Matrix[Double] base, Matrix[Double] donor, Double mutation_rate, Integer child_seed)
 return (Matrix[Double] child) {
-  source_col = as.scalar(sample(ncol(base), 1))
-  target_col = as.scalar(sample(ncol(base), 1))
+  source_col = as.scalar(sample(ncol(base), 1, deriveSeed(child_seed, 1)))
+  target_col = as.scalar(sample(ncol(base), 1, deriveSeed(child_seed, 2)))
   child = base
   child[, target_col] = donor[, source_col]
   # Attempt to mutate the child design by switching two elements in a random column.
-  child = attemptGeneticMutation(child, mutation_rate)
+  child = attemptGeneticMutation(child, mutation_rate, deriveSeed(child_seed, 3))
 }
 
-attemptGeneticMutation = function(Matrix[Double] design, Double mutation_rate)
+attemptGeneticMutation = function(Matrix[Double] design, Double mutation_rate, Integer seed)
 return (Matrix[Double] design) {
-  if (as.scalar(rand(rows = 1, cols = 1, min = 0, max = 1)) < mutation_rate) {
-    column_to_mutate = as.scalar(sample(ncol(design), 1))
-    rows_to_mutate = sample(nrow(design), 2)
+  if (as.scalar(rand(rows = 1, cols = 1, min = 0, max = 1, seed = seed)) < mutation_rate) {
+    column_to_mutate = as.scalar(sample(ncol(design), 1, deriveSeed(seed, 1)))
+    rows_to_mutate = sample(nrow(design), 2, deriveSeed(seed, 2))
     row1 = as.scalar(rows_to_mutate[1, 1])
     row2 = as.scalar(rows_to_mutate[2, 1])
     design = swap(design, column_to_mutate, row1, row2)

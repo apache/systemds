@@ -29,6 +29,7 @@ import java.util.HashMap;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 
 public class BuiltinLHSTest extends AutomatedTestBase
@@ -63,7 +64,7 @@ public class BuiltinLHSTest extends AutomatedTestBase
 
   @Test
   public void testRandomTwoDim() {
-		runLhsTest(5, 2, 5, "random", "opt", 0, 0);
+		runLhsTest(5, 2, 5, "random", "opt", 0, 0, -1);
 	}
 
 	@Test
@@ -73,7 +74,7 @@ public class BuiltinLHSTest extends AutomatedTestBase
 		for (String method : methods) {
 			for (String goal : goals) {
 				try {
-					runLhsTest(10, 4, 5, method, goal, 3, 5);
+					runLhsTest(10, 4, 5, method, goal, 3, 5, -1);
 				}
 				catch (Throwable t) {
 					throw new AssertionError("failed for method=" + method + ", goal=" + goal + ": " + t.getMessage(), t);
@@ -82,7 +83,33 @@ public class BuiltinLHSTest extends AutomatedTestBase
 		}
 	}
 
-	private void runLhsTest(int N,int d, int repetitions, String method, String goal, int generations, int populationSize) {
+	@Test
+	public void testReproducibility() {
+		String[] methods = {"random", "build", "cp_sweep", "genetic"};
+		for (String method : methods) {
+			LhsResult r1 = runLhsTest(10, 4, 5, method, "maximin", 3, 5, 321);
+			LhsResult r2 = runLhsTest(10, 4, 5, method, "maximin", 3, 5, 321);
+			TestUtils.compareMatrices(r1.m(), r2.m(), 0, "first-run-" + method, "second-run-" + method);
+		}
+	}
+
+	@Test
+	public void testGeneticOptimizesGoal() {
+		// "genetic" can't be worse than "random" with the same seed
+		// this primarily tests whether the scoring logic is correct
+		String[] goals = {"maximin", "opt", "sum_inv", "avg_dist"};
+		for (String goal : goals) {
+			double gGenetic = runLhsTest(10, 4, 1, "genetic", goal, 10, 20, 1234).g();
+			double gRandom = runLhsTest(10, 4, 1, "random", goal, 10, 20, 1234).g();
+			assertTrue("genetic G=" + gGenetic + " should not be worse than random G=" + gRandom + " for goal " + goal,
+				gGenetic <= gRandom);
+		}
+	}
+
+	private record LhsResult(HashMap<CellIndex, Double> m, double g) {}
+
+	private LhsResult runLhsTest(int N,int d, int repetitions, String method, String goal,
+		int generations, int populationSize, int seed) {
 		ExecMode platformOld = setExecMode(ExecMode.HYBRID);
 
 		try {
@@ -90,16 +117,16 @@ public class BuiltinLHSTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", Integer.toString(N), Integer.toString(d), Integer.toString(repetitions), method, goal,
-				Integer.toString(generations), Integer.toString(populationSize), output("C"), output("G")};
+				Integer.toString(generations), Integer.toString(populationSize), Integer.toString(seed), output("C"), output("G")};
 
 			runTest(true, false, null, -1);
 
 			HashMap<CellIndex, Double> m = readDMLMatrixFromOutputDir("C");
 			checkLatinHypercubeValidity(m,N,d);
 
-			HashMap<CellIndex, Double> g = readDMLScalarFromOutputDir("G");
-			Double G = g.get(new CellIndex(1, 1));
-			assertTrue("G should be a finite number but was: " + G, G != null && !G.isNaN() && !G.isInfinite());
+			double G = readDMLScalarFromOutputDir("G").get(new CellIndex(1, 1));
+			assertTrue("G should be a finite number but was: " + G, !Double.isNaN(G) && !Double.isInfinite(G));
+			return new LhsResult(m, G);
 		}
 		finally {
 			rtplatform = platformOld;

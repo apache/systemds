@@ -2047,10 +2047,10 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 					false, LanguageErrorCodes.INVALID_PARAMETERS);
 			double dpSetBudgetEpsilon = getDoubleValue(getFirstExpr());
 			double dpSetBudgetDelta = getDoubleValue(getSecondExpr());
-			if (!(dpSetBudgetEpsilon > 0))
+			if (dpSetBudgetEpsilon <= 0)
 				raiseValidateError(getOpCode() + ": epsilon must be > 0, got " + dpSetBudgetEpsilon,
 					false, LanguageErrorCodes.INVALID_PARAMETERS);
-			if (!(dpSetBudgetDelta > 0 && dpSetBudgetDelta < 1))
+			if ((dpSetBudgetDelta <= 0) || (dpSetBudgetDelta >= 1))
 				raiseValidateError(getOpCode() + ": delta must be in (0,1), got " + dpSetBudgetDelta,
 					false, LanguageErrorCodes.INVALID_PARAMETERS);
 			output.setDataType(DataType.SCALAR);

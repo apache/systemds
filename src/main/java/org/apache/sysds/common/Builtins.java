@@ -118,6 +118,7 @@ public enum Builtins {
 	DEDUP("dedup", true),
 	DP_LAPLACE("dp_laplace", false),
 	DP_GAUSSIAN("dp_gaussian", false),
+	DP_SET_BUDGET("dp_set_budget", false),
 	DEEPWALK("deepWalk", true),
 	DET("det", false),
 	DETECTSCHEMA("detectSchema", false),

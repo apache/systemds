@@ -34,11 +34,11 @@
 #          - for "random" method, the best sample is chosen from reps random samples
 #          - for "build" method, reps candidates are generated for each point and the best candidate is chosen
 #          - for "cp_sweep" method, reps sweeps are performed for each column
-#          - for "genetic" method, reps candidates are generate in the initial design
+#          - for "genetic" method, reps candidates are generated in the initial design
 # goal   The goal to be minimized during the sampling procedure, possible values are:
 #           - "maximin" - maximize the minimum distance between points (in practice the negative minimum distance is minimized)
 #           - "opt" - minimize the difference between the minimum distance and the optimal distance N/(N^(1/d))
-#           - "sum_inv" - minimize the sum of the inverse distances between points
+#           - "sum_inv" - minimize the sum of the inverse squared distances between points
 #           - "avg_dist" - maximize avg euclidean distance between points (in practice the negative is minimized)
 # eps    The threshold for stopping the cp_sweep method
 # genetic_generations       Number of generations ("genetic" method)
@@ -93,12 +93,13 @@ return (Matrix[Double] M, Double G) {
   else {
     stop("Method should be one of: random, build, cp_sweep, genetic")
   }
-  
+
   G = evaluateGoalFullMatrix(M,goal)
   if (return_type == "numerical") {
     r = rand(rows = N, cols = d, min = 0, max = 1 / N, seed = seed)
     M = M / N - r
   }
+
 }
 
 randomLHS = function(Integer N, Integer d, Integer reps, String goal, Integer seed)
@@ -130,17 +131,17 @@ return (Matrix[Double] M) {
 
   # replace used ints for each column, with last sample
   # in subsequent runs we only look at the first N-1,N-2,... rows
-  replacement_mask = table(first_sample, seq(1, N), N, d)
+  replacement_mask = table(first_sample, seq(1, d), N, d)
   free_buckets = (1 - replacement_mask) * free_buckets + (matrix(1, rows = N, cols = 1) %*% (free_buckets[N, ])) * replacement_mask
 
   # for the next N - 2 points:
-  # generate reps candidates and choose the candidate,
-  # for which the minimal distance to the already chosen points is maximal
+  # generate reps candidates
+  # choose the candidate with the lowest G
   # and update the free_buckets matrix
   for (i in 2:(N - 1)) {
     # number of buckets left to choose from
     num_free_buckets = N - i + 1
-    # initialize current best distance to 0 for maximin and to infinity for opt and sum_inv
+    # initialize G to infinity
     G = 1 / 0
 
     # initialize row vector and replacement mask for free buckets
@@ -149,9 +150,8 @@ return (Matrix[Double] M) {
 
     for (j in 1:reps) {
       # random mask for bucket generation
-      rand = table(sample(num_free_buckets, d, TRUE, deriveSeed(seed, i * reps + j)), seq(1, N), N, d)
-
-      # get bucket and flatten to row vector
+      rand = table(sample(num_free_buckets, d, TRUE, deriveSeed(seed, i * reps + j)), seq(1, d), N, d)
+      # get buckets and flatten to row vector
       vals_matrix = rand * free_buckets
       row_candidate = matrix(1, rows = 1, cols = N) %*% vals_matrix
 
@@ -175,7 +175,6 @@ return (Matrix[Double] M) {
   M = rbind(M, free_buckets[1, ])
 }
 
-# TODO: vectorize the inner loops, currently this method is very slow
 cpSweepLHS = function(Integer N, Integer d, Integer reps, String goal, Double eps, Integer seed)
 return (Matrix[Double] M) {
 
@@ -185,7 +184,6 @@ return (Matrix[Double] M) {
     M[, i] = sample(N, N, deriveSeed(seed, i))
   }
 
-  # initialize G according to the goal
   G = evaluateGoalFullMatrix(M, goal)
   pred = TRUE
   iter = 0
@@ -199,7 +197,7 @@ return (Matrix[Double] M) {
     for (j in 1:d) {
 
       # initialize new goal vector, for easier calculation we flatten the 2D matrix to a 1D vector
-      # where the index of the improvement vector corresponds to the row pair (k,l) with k < l
+      # where the index of the new goal vector corresponds to the row pair (k,l) with k < l
       # so the 1D vector index = l + (k-1)*N
       new_goal_vector = matrix(1/0, rows = 1, cols = N * (N - 1))
       for (k in 1:(N - 1)) {
@@ -222,7 +220,6 @@ return (Matrix[Double] M) {
     }
 
     # stop if no significant improvement was made, otherwise update G
-    # we can use abs() here, because we only update M if there was an improvement
     if (abs(oldG - G) < eps) {
       pred = FALSE
     }
@@ -377,8 +374,10 @@ return (Matrix[Double] design) {
 
 sumInvDistance = function(Matrix[Double] M)
 return (Double sum_inv) {
-  inv_dist = 1 / lower.tri(target = dist(M), diag = FALSE, values = TRUE)
-  # replace infinite values with 0 and sum the inverse distances
+  row_sq = rowSums(M ^ 2)
+  ones = matrix(1, rows=nrow(M), cols=1)
+  squared_dist = (row_sq %*% t(ones)) + (ones %*% t(row_sq)) - (2 * M %*% t(M))
+  inv_dist = 1 / lower.tri(target = squared_dist, diag = FALSE, values = TRUE)
   inv_dist = replace(target = inv_dist, pattern = 1 / 0, replacement = 0)
   sum_inv = sum(inv_dist)
 }
@@ -405,11 +404,13 @@ return (Double G) {
 evaluateGoalNewRow = function (Matrix[Double] M, Matrix[Double] row, String goal, Integer N)
   return(Double G){
     if(goal == "maximin"){
+      # sqrt not needed
       G = -min(rowSums((M - (matrix(1, rows = nrow(M), cols = 1) %*% row))^2))
     }
     else if(goal == "opt"){
       d = ncol(row)
       opt = (N/(N^(1/d)))
+      # sqrt is necessary here
       G = abs(opt - sqrt(min(rowSums((M - (matrix(1, rows = nrow(M), cols = 1) %*% row))^2))))
     }
     else if(goal == "sum_inv"){

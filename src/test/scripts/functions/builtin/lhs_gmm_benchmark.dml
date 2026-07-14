@@ -7,18 +7,6 @@ fname = ifdef($fname, "lhsExperimentOutput.csv")
 Ntrain = list(10,13,15,20,25,30,40,50,75,100)
 Ntest = 1000000
 
-getParameterErrors = function(Matrix[Double] trueMu, Matrix[Double] trueSigma, Matrix[Double] mu, Matrix[Double] precCholesky)
-return (Double muDistanceError, Double covMatrixError){
-    # calculate euclidean distance of estimated and true mu
-    error = trueMu - mu
-    muDistanceError = sqrt(sum(error*error))
-
-    #calculate Frobenius norm of the difference between estimated and true sigma
-    estimatedSigma = inv(precCholesky %*% t(precCholesky))
-    sigmaDiff = trueSigma - estimatedSigma
-    covMatrixError = sqrt(sum(sigmaDiff*sigmaDiff))
-}
-
 getKLDivergence = function(Matrix[Double] trueMu, Matrix[Double] trueSigma, Matrix[Double] mu, Matrix[Double] precCholesky, Double d)
 return (Double Dkl){
     # calculate kullback leibler divergence between true and estimate distribution
@@ -58,7 +46,7 @@ Z = rand(rows = Ntest, cols = 5, pdf = "normal", seed = seed)
 testData = (Z %*% t(L)) + (matrix(1, rows = Ntest, cols = 1) %*% trueMu)
 
 
-results = matrix(0,rows = length(Ntrain), cols = 11)
+results = matrix(0,rows = length(Ntrain), cols = 7)
 for(i in 1:length(Ntrain)){
     N = as.scalar(Ntrain[i])
     # random sampling
@@ -67,12 +55,11 @@ for(i in 1:length(Ntrain)){
     trainDataRandom = (Z %*% t(L)) + (matrix(1, rows = N, cols = 1) %*% trueMu)
     #fit the gmm with one component
     [labels, predict_prob, df, bic, mu, precCholesky, weight] = gmm(X = trainDataRandom, n_components = 1, model = "VVV")
-    [muDistanceErrorRandom, covMatrixErrorRandom] = getParameterErrors(trueMu, trueSigma, mu, precCholesky)
     DklRandom = getKLDivergence(trueMu, trueSigma, mu, precCholesky, d)
     trainLlRandom = getMeanLogLikelihood(trainDataRandom, mu, precCholesky)
     testLlRandom = getMeanLogLikelihood(testData, mu, precCholesky)
     # lhs sampling
-    [LHS,G] = lhs(N = N, d = d, reps = reps, method = method, goal = goal, return_type = "numerical")
+    [LHS,G] = lhs(N = N, d = d, reps = reps, method = method, goal = goal, return_type = "numerical", seed = seed)
 
     # transform the uniform data into N(0,1) oisdhdofisdfion
     for(j in 1:d){
@@ -85,14 +72,13 @@ for(i in 1:length(Ntrain)){
     # transform data into the true multivariate normal distribution
     trainDataLHS = (LHS %*% t(L)) + (matrix(1, rows = N, cols = 1) %*% trueMu)
     [labels, predict_prob, df, bic, mu, precCholesky, weight] = gmm(X = trainDataLHS, n_components = 1, model = "VVV")
-    [muDistanceErrorLHS, covMatrixErrorLHS] = getParameterErrors(trueMu, trueSigma, mu, precCholesky)
     DklLHS = getKLDivergence(trueMu, trueSigma, mu, precCholesky, d)
-    trainLlLHS = getMeanLogLikelihood(trainDataLHS, mu, precCholesky) 
+    trainLlLHS = getMeanLogLikelihood(trainDataLHS, mu, precCholesky)
     testLlLHS = getMeanLogLikelihood(testData, mu, precCholesky)
-    results[i,] = cbind(as.matrix(N), as.matrix(muDistanceErrorRandom), as.matrix(covMatrixErrorRandom), as.matrix(DklRandom),
-                        as.matrix(trainLlRandom), as.matrix(testLlRandom),
-                        as.matrix(muDistanceErrorLHS), as.matrix(covMatrixErrorLHS), as.matrix(DklLHS),
-                        as.matrix(trainLlLHS), as.matrix(testLlLHS))
+    results[i,] = cbind(as.matrix(N),
+                        as.matrix(DklRandom), as.matrix(trainLlRandom), as.matrix(testLlRandom),
+                        as.matrix(DklLHS), as.matrix(trainLlLHS), as.matrix(testLlLHS)
+                        )
 }
 
 write(results, fname, format="csv", sep=";");

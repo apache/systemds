@@ -234,13 +234,13 @@ return (Matrix[Double] M) {
 
   # 1. Generate initial random Latin Hypercube designs and store them all in the population matrix
   for (p in 1:genetic_population_size) {
-    design = lhs(N = N, d = d, method = "random", reps = reps)
+    design = lhs(N = N, d = d, method = "random", reps = reps, goal = goal)
     population_start = designStart(p, N)
     population_end = designEnd(p, N)
     population[population_start:population_end, ] = design
 
-    # 2. Calculate the S-optimality score for each design
-    scores[p, 1] = avgDistance(design)
+    # 2. Calculate the score for each design according to the goal
+    scores[p, 1] = evaluateGoalFullMatrix(design, goal)
   }
 
   for (generation in 1:genetic_generations) {
@@ -248,14 +248,14 @@ return (Matrix[Double] M) {
     survivors_cutoff = floor(genetic_population_size / 2) + 1
     survivors = matrix(0, rows = survivors_cutoff * N, cols = d)
     for (survivor in 1:survivors_cutoff) {
-      current_best_index = as.scalar(rowIndexMax(t(scores)))
+      current_best_index = as.scalar(rowIndexMin(t(scores)))
       current_best_design = getDesignByIndex(population, current_best_index, N)
 
-      # Put the current best design in the survivors matrix, then set its score to -inf so that it is not selected again
+      # Put the current best design in the survivors matrix, then set its score to +inf (worst) so that it is not selected again
       survivors_start = designStart(survivor, N)
       survivors_end = designEnd(survivor, N)
       survivors[survivors_start:survivors_end, ] = current_best_design
-      scores[current_best_index, 1] = -1 / 0
+      scores[current_best_index, 1] = 1 / 0
     }
 
     # 4. Create new designs from the survivors
@@ -303,15 +303,15 @@ return (Matrix[Double] M) {
 
     population = new_population
 
-    # Score the new population
+    # Score the new population according to the goal
     for (p in 1:genetic_population_size) {
       design = getDesignByIndex(population, p, N)
-      scores[p, 1] = avgDistance(design)
+      scores[p, 1] = evaluateGoalFullMatrix(design, goal)
     }
   }
 
   # Return the best design from the final population
-  best_index = as.scalar(rowIndexMax(t(scores)))
+  best_index = as.scalar(rowIndexMin(t(scores)))
   M = getDesignByIndex(population, best_index, N)
 }
 

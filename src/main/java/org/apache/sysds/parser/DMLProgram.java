@@ -36,7 +36,21 @@ public class DMLProgram
 	private ArrayList<StatementBlock> _blocks;
 	private Map<String, FunctionDictionary<FunctionStatementBlock>> _namespaces;
 	private boolean _containsRemoteParfor;
-	
+
+	/**
+	 * Session-wide differential privacy budget resolved at compile time from a
+	 * {@code dp_set_budget(epsilon, delta)} call (its arguments must be numeric
+	 * literals — see {@code BuiltinFunctionExpression}). Null until such a call
+	 * is encountered during HOP construction; consulted by
+	 * {@code ExecutionContext#getDPBudgetAccountant()} in place of its hardcoded
+	 * default. This is deliberately a plain field (not a Hop/Lop/Instruction):
+	 * since {@code Program} holds a reference back to this {@code DMLProgram}
+	 * (see {@code Program#getDMLProg()}), the value survives from compile time
+	 * through to runtime without needing a runtime instruction at all.
+	 */
+	private Double _dpBudgetEpsilon;
+	private Double _dpBudgetDelta;
+
 	public DMLProgram(){
 		_blocks = new ArrayList<>();
 		_namespaces = new HashMap<>();
@@ -66,6 +80,23 @@ public class DMLProgram
 	
 	public boolean containsRemoteParfor() {
 		return _containsRemoteParfor;
+	}
+
+	public void setDPBudget(double epsilon, double delta) {
+		_dpBudgetEpsilon = epsilon;
+		_dpBudgetDelta = delta;
+	}
+
+	public boolean hasDPBudget() {
+		return _dpBudgetEpsilon != null;
+	}
+
+	public double getDPBudgetEpsilon() {
+		return _dpBudgetEpsilon;
+	}
+
+	public double getDPBudgetDelta() {
+		return _dpBudgetDelta;
 	}
 	
 	public static boolean isInternalNamespace(String namespace) {

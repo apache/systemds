@@ -28,6 +28,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
+import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.Program;
@@ -147,9 +148,20 @@ public class ExecutionContext {
 		_lineage = lineage;
 	}
 
+	/**
+	 * Returns the session-scoped {@link DPBudgetAccountant}, lazily initialised on
+	 * first use. If the DML script called {@code dp_set_budget(epsilon, delta)}
+	 * with compile-time literal arguments, that value (resolved onto the
+	 * {@code DMLProgram} during HOP construction — see {@code DMLTranslator}'s
+	 * {@code DP_SET_BUDGET} case) is used instead of the hardcoded default.
+	 */
 	public DPBudgetAccountant getDPBudgetAccountant() {
-		if (_dpBudgetAccountant == null)
-			_dpBudgetAccountant = new DPBudgetAccountant(1.0, 1e-5);
+		if (_dpBudgetAccountant == null) {
+			DMLProgram dmlProg = (_prog != null) ? _prog.getDMLProg() : null;
+			_dpBudgetAccountant = (dmlProg != null && dmlProg.hasDPBudget())
+				? new DPBudgetAccountant(dmlProg.getDPBudgetEpsilon(), dmlProg.getDPBudgetDelta())
+				: new DPBudgetAccountant(1.0, 1e-5);
+		}
 		return _dpBudgetAccountant;
 	}
 

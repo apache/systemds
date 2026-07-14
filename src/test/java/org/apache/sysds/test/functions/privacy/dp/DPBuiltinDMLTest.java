@@ -22,6 +22,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.HashMap;
 
+import org.apache.sysds.parser.LanguageException;
+import org.apache.sysds.parser.ParseException;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -47,10 +50,38 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
     private static final String DML_LAPLACE  = String.format(DML_LAPLACE_TEMPLATE, "colMeans");
     private static final String DML_GAUSSIAN = String.format(DML_GAUSSIAN_TEMPLATE, "colMeans");
 
+    // dp_set_budget(epsilon, delta) is resolved entirely at compile time (its arguments
+    // must be literals), called via a dummy assignment, then a single dp_laplace release
+    // at $2 records a cost of exactly $2 (Laplace basic composition).
+    private static final String DML_SET_BUDGET_TEMPLATE =
+        "eps = dp_set_budget(%s, 1e-6);\n"
+      + "X = read($1);\n"
+      + "result = dp_laplace(X, query=\"colMeans\", sensitivity=1.0, epsilon=$2);\n"
+      + "write(result, $3, format=\"text\");\n";
+
+    // Two dp_set_budget calls in the same script; DMLTranslator must reject this at
+    // compile time (DMLProgram.hasDPBudget()).
+    private static final String DML_SET_BUDGET_TWICE =
+        "eps = dp_set_budget(3.0, 1e-6);\n"
+      + "eps2 = dp_set_budget(5.0, 1e-6);\n"
+      + "X = read($1);\n"
+      + "result = dp_laplace(X, query=\"colMeans\", sensitivity=1.0, epsilon=$2);\n"
+      + "write(result, $3, format=\"text\");\n";
+
+    // A budget argument computed at runtime (not a literal); must be rejected at
+    // compile time by BuiltinFunctionExpression's isConstant() check.
+    private static final String DML_SET_BUDGET_NON_LITERAL =
+        "X = read($1);\n"
+      + "computed = sum(X) / nrow(X);\n"
+      + "eps = dp_set_budget(computed, 1e-6);\n"
+      + "result = dp_laplace(X, query=\"colMeans\", sensitivity=1.0, epsilon=$2);\n"
+      + "write(result, $3, format=\"text\");\n";
+
     @Override
     public void setUp() {
         addTestConfiguration("DPLaplace",  new TestConfiguration(TEST_CLASS, "DPLaplace"));
         addTestConfiguration("DPGaussian", new TestConfiguration(TEST_CLASS, "DPGaussian"));
+        addTestConfiguration("DPSetBudget", new TestConfiguration(TEST_CLASS, "DPSetBudget"));
     }
 
     @Test
@@ -102,6 +133,41 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
         double noisyLow  = runAndGetMaxAbsColMeansDiffFromClean(data, "DPGaussian", DML_GAUSSIAN, "0.1");
         double noisyHigh = runAndGetMaxAbsColMeansDiffFromClean(data, "DPGaussian", DML_GAUSSIAN, "0.5");
         assertTrue("ε=0.5 should give less noise than ε=0.1", noisyHigh < noisyLow);
+    }
+
+    @Test
+    public void testSetBudgetLiteralAllowsExceedingDefaultBudget() {
+        // Default budget is epsilon=1.0; a single release at epsilon=1.5 would be
+        // rejected unless dp_set_budget(3.0, ...) widens it first.
+        double[][] data = TestUtils.generateTestMatrix(ROWS, COLS, 0, 1, 1.0, 42);
+        HashMap<CellIndex, Double> result = runAndGetResult("DPSetBudget",
+            String.format(DML_SET_BUDGET_TEMPLATE, "3.0"), "1.5", data);
+        assertShape(result, 1, COLS);
+    }
+
+    @Test
+    public void testSetBudgetNarrowBudgetStillEnforced() {
+        // An explicit narrow budget must still be enforced: epsilon=0.8 exceeds
+        // the explicit budget of 0.5.
+        double[][] data = TestUtils.generateTestMatrix(ROWS, COLS, 0, 1, 1.0, 42);
+        runExpectingException("DPSetBudget", String.format(DML_SET_BUDGET_TEMPLATE, "0.5"), "0.8", data,
+            DMLRuntimeException.class);
+    }
+
+    @Test
+    public void testSetBudgetCalledTwiceFailsAtCompileTime() {
+        // Thrown from DMLTranslator.processBuiltinFunctionExpression (HOP construction),
+        // which wraps all case-block exceptions in ParseException (see processExpression's
+        // catch-all) — unlike the non-literal check below, which runs during validation
+        // and so surfaces as a bare LanguageException.
+        double[][] data = TestUtils.generateTestMatrix(ROWS, COLS, 0, 1, 1.0, 42);
+        runExpectingException("DPSetBudget", DML_SET_BUDGET_TWICE, "0.5", data, ParseException.class);
+    }
+
+    @Test
+    public void testSetBudgetRejectsNonLiteralArgs() {
+        double[][] data = TestUtils.generateTestMatrix(ROWS, COLS, 0, 1, 1.0, 42);
+        runExpectingException("DPSetBudget", DML_SET_BUDGET_NON_LITERAL, "0.5", data, LanguageException.class);
     }
 
     private void runColMeansDPTest(String testName, String dml, String epsilonStr) {
@@ -163,6 +229,19 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
     private HashMap<CellIndex, Double> runAndGetResult(String testName, String dml, String epsilonStr,
         double[][] data)
     {
+        prepareScript(testName, dml, epsilonStr, data);
+        runTest(true, false, null, -1);
+        return readDMLMatrixFromOutputDir("result");
+    }
+
+    private void runExpectingException(String testName, String dml, String epsilonStr, double[][] data,
+        Class<?> expectedException)
+    {
+        prepareScript(testName, dml, epsilonStr, data);
+        runTest(true, true, expectedException, -1);
+    }
+
+    private void prepareScript(String testName, String dml, String epsilonStr, double[][] data) {
         getAndLoadTestConfiguration(testName);
         writeInputMatrixWithMTD("X", data, false);
 
@@ -177,7 +256,5 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
         }
 
         programArgs = new String[]{ "-args", input("X"), epsilonStr, output("result") };
-        runTest(true, false, null, -1);
-        return readDMLMatrixFromOutputDir("result");
     }
 }

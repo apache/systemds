@@ -44,13 +44,14 @@ public class BuiltinLHSTest extends AutomatedTestBase
 
                 double val = m.get(new CellIndex(row, col));
                 int intVal = (int) val;
-                assertTrue(intVal >= 1 && intVal <= N);
-                
-				assertFalse(seen[intVal]);
+                assertTrue("value "  + val + " at row " + row + " col " + col + " is outside the bucket range (1 to " + N + ")",
+                    intVal >= 1 && intVal <= N);
+
+				        assertFalse("duplicate bucket " + intVal + " in column " + col, seen[intVal]);
                 seen[intVal] = true;
             }
             for (int i = 1; i <= N; i++) {
-                assertTrue(seen[i]);
+                assertTrue("bucket " + i + " never used in column " + col, seen[i]);
             }
 		}
 	}
@@ -60,55 +61,45 @@ public class BuiltinLHSTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"}));
 	}
 
-	
-	@Test
-	public void testRandomTwoDim() {
-		runLhsTest(5,2,5,"random","opt");
+  @Test
+  public void testRandomTwoDim() {
+		runLhsTest(5, 2, 5, "random", "opt", 0, 0);
 	}
 
 	@Test
-	public void testRandomMultiDim() {
-		runLhsTest(10,4,5,"random","opt");
+	public void testAllMethodGoalCombinations() {
+		String[] methods = {"random", "build", "cp_sweep", "genetic"};
+		String[] goals = {"maximin", "opt", "sum_inv", "avg_dist"};
+		for (String method : methods) {
+			for (String goal : goals) {
+				try {
+					runLhsTest(10, 4, 5, method, goal, 3, 5);
+				}
+				catch (Throwable t) {
+					throw new AssertionError("failed for method=" + method + ", goal=" + goal + ": " + t.getMessage(), t);
+				}
+			}
+		}
 	}
 
-	@Test
-	public void testImproved() {
-		runLhsTest(10,4,5,"build","opt");
-	}
-	@Test
-	public void testSumInv() {
-		runLhsTest(10,4,5,"build","sum_inv");
-	}
-	@Test
-	public void testMaximin() {
-		runLhsTest(10,4,5,"build","maximin");
-	}
-
-	@Test
-	public void testCPsweep() {
-		runLhsTest(10,4,5,"cp_sweep","sum_inv");
-	}
-	@Test
-	public void testGenetic() {
-		runLhsTest(10,4,5,"genetic","sum_inv");
-	}
-	private void runLhsTest(int N,int d, int repetitions, String method, String goal)
-	{
+	private void runLhsTest(int N,int d, int repetitions, String method, String goal, int generations, int populationSize) {
 		ExecMode platformOld = setExecMode(ExecMode.HYBRID);
 
-		try 	
-		{
+		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", Integer.toString(N), Integer.toString(d), Integer.toString(repetitions), method, goal, output("C")};
+			programArgs = new String[]{"-args", Integer.toString(N), Integer.toString(d), Integer.toString(repetitions), method, goal,
+				Integer.toString(generations), Integer.toString(populationSize), output("C"), output("G")};
 
-			//execute test
 			runTest(true, false, null, -1);
 
-			
 			HashMap<CellIndex, Double> m = readDMLMatrixFromOutputDir("C");
 			checkLatinHypercubeValidity(m,N,d);
+
+			HashMap<CellIndex, Double> g = readDMLScalarFromOutputDir("G");
+			Double G = g.get(new CellIndex(1, 1));
+			assertTrue("G should be a finite number but was: " + G, G != null && !G.isNaN() && !G.isInfinite());
 		}
 		finally {
 			rtplatform = platformOld;

@@ -1,0 +1,22 @@
+# eval.dml — compute binary classification accuracy on held-out test set.
+# Arguments: data_dir, model_path, out_acc
+data_dir   = $data_dir;
+model_path = $model_path;
+out_acc    = $out_acc;
+
+X_test = read(data_dir + "/X_test.csv",
+              data_type="matrix", value_type="double", format="csv");
+y_test = read(data_dir + "/y_test.csv",
+              data_type="matrix", value_type="double", format="csv");
+w      = read(model_path,
+              data_type="matrix", value_type="double", format="csv");
+
+scores    = X_test %*% w;
+preds     = (scores > 0.0);          # threshold at 0 (log-odds)
+correct   = sum(preds == y_test);
+n_test    = nrow(y_test);
+accuracy  = correct / n_test;
+
+print("Accuracy: " + accuracy);
+write(accuracy, out_acc, format="csv");
+

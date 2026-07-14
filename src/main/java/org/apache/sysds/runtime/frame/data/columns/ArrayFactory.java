@@ -123,6 +123,87 @@ public interface ArrayFactory {
 		return new RaggedArray<>(col, m);
 	}
 
+	/**
+	 * Wrap a fully populated raw typed column array into an {@link Array} of the given value type. The runtime type of
+	 * {@code col} must match the primitive backing type of {@code vt} (e.g. {@code double[]} for {@link ValueType#FP64},
+	 * {@code String[]} for {@link ValueType#STRING}).
+	 *
+	 * <p>For {@link ValueType#BOOLEAN} this mirrors {@link #allocateBoolean(int)}: a {@code boolean[]} longer than
+	 * {@link #bitSetSwitchPoint} is bit-packed into a compact {@link BitSetArray} (so a bulk decoder that fills a
+	 * plain {@code boolean[]} still ends up with the same representation as every other frame allocation path),
+	 * while shorter columns stay a plain {@link BooleanArray}.</p>
+	 *
+	 * @param vt  the value type of the column
+	 * @param col the backing array to wrap
+	 * @return an {@link Array} view over {@code col} (boolean columns may be bit-packed rather than wrapped in place)
+	 */
+	public static Array<?> create(ValueType vt, Object col) {
+		switch(vt) {
+			case FP64:
+				return create((double[]) col);
+			case FP32:
+				return create((float[]) col);
+			case INT64:
+				return create((long[]) col);
+			case UINT4:
+			case UINT8:
+			case INT32:
+				return create((int[]) col);
+			case BOOLEAN: {
+				boolean[] b = (boolean[]) col;
+				return b.length > bitSetSwitchPoint ? new BitSetArray(b) : create(b);
+			}
+			case CHARACTER:
+				return create((char[]) col);
+			case HASH64:
+				return createHash64((long[]) col);
+			case HASH32:
+				return createHash32((int[]) col);
+			case UNKNOWN:
+			case STRING:
+			default:
+				return create((String[]) col);
+		}
+	}
+
+	/**
+	 * Allocate the raw backing array for a column of the given value type: the inverse of
+	 * {@link #create(ValueType, Object)}. Returns {@code double[]} for {@link ValueType#FP64},
+	 * {@code int[]} for INT32/UINT/HASH32, {@code long[]} for INT64/HASH64, {@code String[]} for STRING, etc. The
+	 * runtime array type matches what {@link #create(ValueType, Object)} expects, so a bulk decoder can fill this
+	 * primitive array directly and then wrap it via {@code create(vt, backing)}.
+	 *
+	 * @param vt   the value type of the column
+	 * @param nRow the number of rows to allocate
+	 * @return a freshly allocated raw backing array of the matching primitive/object type
+	 */
+	public static Object allocateBacking(ValueType vt, int nRow) {
+		switch(vt) {
+			case FP64:
+				return new double[nRow];
+			case FP32:
+				return new float[nRow];
+			case INT64:
+			case HASH64:
+				return new long[nRow];
+			case UINT4:
+			case UINT8:
+				LOG.warn("Not supported allocation of UInt 4 or 8 array: defaulting to Int32");
+				// fall through: UINT4/UINT8 are backed by int[] (wrapped as Int32)
+			case INT32:
+			case HASH32:
+				return new int[nRow];
+			case BOOLEAN:
+				return new boolean[nRow];
+			case CHARACTER:
+				return new char[nRow];
+			case UNKNOWN:
+			case STRING:
+			default:
+				return new String[nRow];
+		}
+	}
+
 	public static long getInMemorySize(ValueType type, int _numRows, boolean containsNull) {
 		if(containsNull) {
 			switch(type) {
@@ -221,27 +302,8 @@ public interface ArrayFactory {
 		switch(v) {
 			case BOOLEAN:
 				return allocateBoolean(nRow);
-			case UINT4:
-			case UINT8:
-				LOG.warn("Not supported allocation of UInt 4 or 8 array: defaulting to Int32");
-			case INT32:
-				return new IntegerArray(new int[nRow]);
-			case INT64:
-				return new LongArray(new long[nRow]);
-			case FP32:
-				return new FloatArray(new float[nRow]);
-			case FP64:
-				return new DoubleArray(new double[nRow]);
-			case CHARACTER:
-				return new CharArray(new char[nRow]);
-			case HASH64:
-				return new HashLongArray(new long[nRow]);
-			case HASH32:
-				return new HashIntegerArray(new int[nRow]);
-			case UNKNOWN:
-			case STRING:
 			default:
-				return new StringArray(new String[nRow]);
+				return create(v, allocateBacking(v, nRow));
 		}
 	}
 

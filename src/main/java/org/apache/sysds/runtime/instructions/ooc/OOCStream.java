@@ -30,7 +30,11 @@ public interface OOCStream<T> extends OOCStreamable<T> {
 
 	void enqueue(T t);
 
+	void enqueue(QueueCallback<T> callback);
+
 	T dequeue();
+
+	QueueCallback<T> dequeueCB();
 
 	void closeInput();
 

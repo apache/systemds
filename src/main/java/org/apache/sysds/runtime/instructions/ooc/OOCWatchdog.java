@@ -21,7 +21,7 @@ package org.apache.sysds.runtime.instructions.ooc;
 
 import org.apache.sysds.runtime.ooc.cache.BlockEntry;
 import org.apache.sysds.runtime.ooc.cache.OOCCacheManager;
-import org.apache.sysds.runtime.ooc.cache.OOCCacheScheduler;
+import org.apache.sysds.runtime.ooc.cache.legacy.OOCCacheScheduler;
 
 import java.util.ArrayList;
 import java.util.Collection;

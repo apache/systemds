@@ -24,8 +24,9 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.ooc.cache.BlockEntry;
 import org.apache.sysds.runtime.ooc.cache.BlockKey;
 import org.apache.sysds.runtime.ooc.cache.BlockState;
-import org.apache.sysds.runtime.ooc.cache.OOCIOHandler;
-import org.apache.sysds.runtime.ooc.cache.OOCLRUCacheScheduler;
+import org.apache.sysds.runtime.ooc.cache.OOCFuture;
+import org.apache.sysds.runtime.ooc.cache.io.OOCIOHandler;
+import org.apache.sysds.runtime.ooc.cache.legacy.OOCLRUCacheScheduler;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -302,7 +303,7 @@ public class OOCLRUCacheSchedulerTest {
 	}
 
 	private static class FakeIOHandler implements OOCIOHandler {
-		private final Map<BlockKey, CompletableFuture<BlockEntry>> _readFutures = new HashMap<>();
+		private final Map<BlockKey, OOCFuture<BlockEntry>> _readFutures = new HashMap<>();
 		private final Map<BlockKey, BlockEntry> _readEntries = new HashMap<>();
 		private final Map<BlockKey, AtomicInteger> _readCounts = new HashMap<>();
 
@@ -319,8 +320,8 @@ public class OOCLRUCacheSchedulerTest {
 		}
 
 		@Override
-		public CompletableFuture<BlockEntry> scheduleRead(BlockEntry block) {
-			CompletableFuture<BlockEntry> future = new CompletableFuture<>();
+		public OOCFuture<BlockEntry> scheduleRead(BlockEntry block) {
+			OOCFuture<BlockEntry> future = new OOCFuture<>();
 			_readFutures.put(block.getKey(), future);
 			_readEntries.put(block.getKey(), block);
 			_readCounts.computeIfAbsent(block.getKey(), k -> new AtomicInteger(0)).incrementAndGet();
@@ -355,7 +356,7 @@ public class OOCLRUCacheSchedulerTest {
 		}
 
 		public void completeRead(BlockKey key) {
-			CompletableFuture<BlockEntry> future = _readFutures.get(key);
+			OOCFuture<BlockEntry> future = _readFutures.get(key);
 			if (future == null)
 				throw new IllegalStateException("No scheduled read for " + key);
 			BlockEntry entry = _readEntries.get(key);
@@ -364,5 +365,5 @@ public class OOCLRUCacheSchedulerTest {
 			BlockEntryTestAccess.setDataUnsafe(entry, new Object());
 			future.complete(entry);
 		}
-		}
 	}
+}

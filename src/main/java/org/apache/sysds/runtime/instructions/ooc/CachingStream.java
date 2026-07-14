@@ -28,7 +28,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.ooc.cache.BlockKey;
 import org.apache.sysds.runtime.ooc.cache.GroupedBlockKey;
-import org.apache.sysds.runtime.ooc.cache.OOCIOHandler;
+import org.apache.sysds.runtime.ooc.cache.io.OOCIOHandler;
 import org.apache.sysds.runtime.ooc.cache.OOCCacheManager;
 import org.apache.sysds.runtime.ooc.stream.SourceOOCStream;
 import org.apache.sysds.runtime.ooc.stream.message.OOCGetStreamTypeMessage;

@@ -19,15 +19,27 @@
 
 package org.apache.sysds.runtime.ooc.memory;
 
+import org.apache.sysds.runtime.ooc.cache.OOCFuture;
+
 public interface MemoryAllowance {
 	boolean tryReserve(long bytes);
+
 	void reserveBlocking(long bytes);
+
+	OOCFuture<Void> reserveAsync(long bytes);
+
 	void release(long bytes);
+
 	long getUsedMemory();
+
 	long getGrantedMemory();
+
 	long getTargetMemory();
+
 	void setTargetMemory(long targetMemory);
+
 	void shutdown();
+
 	boolean isShutdown();
 
 	default void destroy() {

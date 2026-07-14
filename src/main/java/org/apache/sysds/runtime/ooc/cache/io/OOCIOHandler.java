@@ -17,12 +17,15 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.ooc.cache;
+package org.apache.sysds.runtime.ooc.cache.io;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.ooc.cache.BlockEntry;
+import org.apache.sysds.runtime.ooc.cache.BlockKey;
+import org.apache.sysds.runtime.ooc.cache.OOCFuture;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.List;
@@ -32,7 +35,7 @@ public interface OOCIOHandler {
 
 	CompletableFuture<Void> scheduleEviction(BlockEntry block);
 
-	CompletableFuture<BlockEntry> scheduleRead(BlockEntry block);
+	OOCFuture<BlockEntry> scheduleRead(BlockEntry block);
 
 	/**
 	 * Increase priority for a pending scheduled read if it has not started yet.

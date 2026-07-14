@@ -153,14 +153,14 @@ public class ExecutionContext {
 	 * first use. If the DML script called {@code dp_set_budget(epsilon, delta)}
 	 * with compile-time literal arguments, that value (resolved onto the
 	 * {@code DMLProgram} during HOP construction — see {@code DMLTranslator}'s
-	 * {@code DP_SET_BUDGET} case) is used instead of the hardcoded default.
+	 * {@code DP_SET_BUDGET} case) is used instead of the hardcoded defaults.
 	 */
 	public DPBudgetAccountant getDPBudgetAccountant() {
 		if (_dpBudgetAccountant == null) {
 			DMLProgram dmlProg = (_prog != null) ? _prog.getDMLProg() : null;
 			_dpBudgetAccountant = (dmlProg != null && dmlProg.hasDPBudget())
 				? new DPBudgetAccountant(dmlProg.getDPBudgetEpsilon(), dmlProg.getDPBudgetDelta())
-				: new DPBudgetAccountant(1.0, 1e-5);
+				: new DPBudgetAccountant();
 		}
 		return _dpBudgetAccountant;
 	}

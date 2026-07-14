@@ -91,6 +91,10 @@ public class DPBudgetAccountant {
     // Rényi orders used for Gaussian composition
     // -----------------------------------------------------------------------
 
+    private static final double DEFAULT_EPSILON_BUDGET = 1.0;
+
+    private static final double DEFAULT_DELTA = 1e-5;
+
     /**
      * Discrete set of Rényi orders α. All must be &gt; 1.
      * Finer grids give tighter bounds; this set covers the range relevant
@@ -158,6 +162,14 @@ public class DPBudgetAccountant {
      */
     public DPBudgetAccountant(double epsilonBudget) {
         this(epsilonBudget, 1e-5);
+    }
+
+    /**
+     * Default constructor using defaults.
+     * Suitable when the calling script does not specify ε, δ explicitly.
+     */
+    public DPBudgetAccountant() {
+        this(DEFAULT_EPSILON_BUDGET, DEFAULT_DELTA);
     }
 
     // -----------------------------------------------------------------------

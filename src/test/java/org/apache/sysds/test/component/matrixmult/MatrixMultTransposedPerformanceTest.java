@@ -147,22 +147,20 @@ public class MatrixMultTransposedPerformanceTest {
 			);
 		}
 		else if (sparseA && !sparseB) {
-			int cd = tB ? mb.getNumColumns() : mb.getNumRows();
-			long xsp = (long) m * cd / Math.max(1L, ma.getNonZeros());
+			long xsp = (long) m * k / Math.max(1L, ma.getNonZeros());
 			LibMatrixMult.matrixMultSparseDenseMM(
 				ma.getSparseBlock(),
 				mb.getDenseBlock(),
 				mc.getDenseBlock(),
-				tA, tB, n, cd, xsp, 0, m
+				tA, tB, n, k, xsp, 0, m
 			);
 		}
 		else if (!sparseA && sparseB) {
-			long xsp = (long) ma.getNumRows() * ma.getNumColumns() / Math.max(1L, ma.getNonZeros());
 			LibMatrixMult.matrixMultDenseSparseMM(
 				ma.getDenseBlock(),
 				mb.getSparseBlock(),
 				mc.getDenseBlock(),
-				tA, tB, n, k, xsp, 0, m
+				tA, tB, n, k,0, m
 			);
 		}
 		mc.recomputeNonZeros();
@@ -200,12 +198,11 @@ public class MatrixMultTransposedPerformanceTest {
 			);
 		}
 		else if (!sparseA && sparseB) {
-			long xsp = (long) A_in.getNumRows() * A_in.getNumColumns() / Math.max(1L, A_in.getNonZeros());
 			LibMatrixMult.matrixMultDenseSparseMM(
 				A_in.getDenseBlock(),
 				B_in.getSparseBlock(),
 				mc.getDenseBlock(),
-				false, false, n, k, xsp, 0, m
+				false, false, n, k, 0, m
 			);
 		}
 	}

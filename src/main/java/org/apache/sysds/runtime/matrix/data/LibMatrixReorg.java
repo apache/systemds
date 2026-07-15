@@ -4960,8 +4960,8 @@ public class LibMatrixReorg {
 
 	/**
 	 * Restores SystemDS matrix/tensor metadata after an in-place tensor permutation.
-	 * @param in           matrix/tensor block whose metadata is restored
-	 * @param finalShape   final tensor shape after permutation
+	 * @param in         matrix/tensor block whose metadata is restored
+	 * @param finalShape final tensor shape after permutation
 	 */
 	private static void restoreMetadata(MatrixBlock in, int[] finalShape) {
 		in.setNumRows(finalShape[0]);
@@ -4972,7 +4972,7 @@ public class LibMatrixReorg {
 		if (in.getDenseBlock() != null)
 			in.getDenseBlock().setDims(finalShape);
 	}
-		
+
 	private static long[] getStridesForPermutation(int[] dims) {
 		long[] strides = new long[dims.length];
 		long stride = 1;
@@ -4983,23 +4983,33 @@ public class LibMatrixReorg {
 		return strides;
 	}
 
-	public static MatrixBlock permute(MatrixBlock in, int[] inDims, int[] perm) {
-		return permute(in, inDims, perm, 1);
+	public static MatrixBlock permute(MatrixBlock inData, int[] inDims, int[] perm) {
+		return permute(inData, inDims, perm, 1);
 	}
 
-	public static MatrixBlock permute(MatrixBlock in, int[] inDims, int[] perm, int k) {
+	public static MatrixBlock permute(MatrixBlock inData, int[] inDims, int[] perm, int k) {
+		//TODO Enable Pointers on first dim 
 		int rank = inDims.length;
 		
-		boolean isIdentity = true;
-		for( int i = 0; i < rank; i++ ) {
-			if( perm[i] != i ) {
-				isIdentity = false;
-				break;
-			}
+		if( perm.length != rank ) {
+			throw new DMLRuntimeException("Permutation array must have the same length as inDims.");
 		}
 
-		if( isIdentity ) {
-			return new MatrixBlock(in);
+		boolean[] seen = new boolean[rank];
+		for( int p : perm ) {
+			if( p < 0 || p >= rank || seen[p] ) {
+				throw new IllegalArgumentException("Invalid permutation. Indices might be out of bounds or duplicate dimensions were given.");
+			}
+			seen[p] = true;
+		}
+
+		long expectedLength = 1;
+		for( int d : inDims ) {
+			expectedLength *= d;
+		}
+		long actualLength = (long) inData.getNumRows() * inData.getNumColumns();
+		if( expectedLength != actualLength ) {
+			throw new DMLRuntimeException("Dimensions (inDims) do not match the actual number of elements in the matrix.");
 		}
 
 		int[] outDims = new int[rank];
@@ -5012,299 +5022,252 @@ public class LibMatrixReorg {
 			length *= d;
 		}
 
-		MatrixBlock out = new MatrixBlock(1, (int)length, false);
-		out.allocateDenseBlock();
+		boolean isSparse = inData.isInSparseFormat();
+		MatrixBlock outData = new MatrixBlock(1, (int) length, isSparse);
+		
+		if( isSparse ) {
+			int nnz = (int) inData.getNonZeros();
+			SparseBlockCSR csr = new SparseBlockCSR(1, nnz, nnz);
 
-		DenseBlock inDB = in.getDenseBlock();
-		DenseBlock outDB = out.getDenseBlock();
+			int[] rptr = csr.rowPointers();
+			rptr[0] = 0;
+			rptr[1] = nnz;
+			
+			outData.setSparseBlock(csr);
+		} else {
+			outData.allocateDenseBlock();
+		}
 
 		long[] inStrides = getStridesForPermutation(inDims);
 		long[] outStrides = getStridesForPermutation(outDims);
-		
-		long[] permutedStrides = new long[rank];
+
+		int[] inversePermute = new int[rank];
 		for( int i = 0; i < rank; i++ ) {
-			permutedStrides[i] = outStrides[perm[i]];
+			inversePermute[perm[i]] = i;
 		}
 
-		boolean useParallel = (k > 1 || k == -1) && length >= PAR_NUMCELL_THRESHOLD;
-		int numThreads = k == -1 ? Runtime.getRuntime().availableProcessors() : k;
+		long[] permutedOutStrides = new long[rank];
+		for( int i = 0; i < rank; i++ ) {
+			permutedOutStrides[i] = outStrides[inversePermute[i]];
+		}
 
-		if( inDB.numBlocks() == 1 && outDB.numBlocks() == 1 ) {
-			double[] inData = inDB.valuesAt(0);
-			double[] outData = outDB.valuesAt(0);
-			
-			if( useParallel && rank > 0 ) {
-				permuteSingleBlockParallel(inData, outData, inDims, inStrides, 
-					permutedStrides, numThreads, length);
+		int rlen = inData.getNumRows();
+		int numThreads = k == -1 ? InfrastructureAnalyzer.getLocalParallelism() : k;
+		boolean useParallel = (numThreads > 1) && (length >= PAR_NUMCELL_THRESHOLD);
+
+		int[] cnt = null;
+		int[] outIndexes = null;
+		double[] outValues = null;
+
+		if( isSparse ) {
+			SparseBlockCSR csr = (SparseBlockCSR) outData.getSparseBlock();
+			outIndexes = csr.indexes();
+			outValues = csr.values();
+		}
+
+		if( !useParallel ) {
+			if( isSparse ) {
+				cnt = new int[]{0};
+				permuteSparseKernel(inData, inStrides, permutedOutStrides, 0, rlen, cnt, outIndexes, outValues, 0);
 			} else {
-				permuteSingleBlock(inData, outData, inDims, inStrides, 
-					permutedStrides, 0, 0, 0);
+				permuteDenseKernel(inData, outData, inStrides, permutedOutStrides, 0, rlen);
 			}
 		} else {
-			if( useParallel && rank > 0 ) {
-				permuteMultiBlockParallel(inDB, outDB, inDims, inStrides, 
-					permutedStrides, numThreads, length);
-			} else {
-				permuteMultiBlock(inDB, outDB, inDims, inStrides, 
-					permutedStrides, 0, 0L, 0L);
-			}
+			permuteMultiThreaded(inData, outData, inStrides, permutedOutStrides, rlen, numThreads, outIndexes, outValues);
 		}
-		return out;
+
+		outData.recomputeNonZeros(); 
+		if( isSparse ) {
+			outData.sortSparseRows();
+		}
+		return outData;		
 	}
 
-	private static void permuteSingleBlock(
-		double[] inData, double[] outData,
-		int[] inDims, long[] inStrides, long[] permutedStrides,
-		int dim, int inOffset, int outOffset) 
-	{
-		if( dim == inDims.length - 1 ) {
-			int len = inDims[dim];
-			int outStride = (int) permutedStrides[dim];
+	private static void permuteMultiThreaded(MatrixBlock inData, MatrixBlock outData,
+			long[] inStrides, long[] permutedOutStrides, int rlen, int k,
+			int[] outIndexes, double[] outValues) {
 
-			if( outStride == 1 ) {
-				System.arraycopy(inData, inOffset, outData, outOffset, len);
-			} else {
-				transposeRow(inData, outData, inOffset, outOffset, outStride, len);
-			}
-			return;
-		}
-
-		int dimSize = inDims[dim];
-		long inStep = inStrides[dim];
-		long outStep = permutedStrides[dim];
-
-		final int BLOCK_SIZE = 128;
-		for( int bi = 0; bi < dimSize; bi += BLOCK_SIZE ) {
-			int bimin = Math.min(bi + BLOCK_SIZE, dimSize);
-			for( int i = bi; i < bimin; i++ ) {
-				permuteSingleBlock(
-						inData, outData, inDims, inStrides, permutedStrides,
-						dim + 1,
-						inOffset + (int)(i * inStep),
-						outOffset + (int)(i * outStep)
-				);
-			}
-		}
-	}
-
-	private static void permuteSingleBlockParallel(
-			double[] inData, double[] outData,
-			int[] inDims, long[] inStrides, long[] permutedStrides,
-			int k, long totalElements) {
-		
-		final long elementsPerThread = Math.max(1024, (totalElements + k - 1) / k);
-		final int actualThreads = (int) Math.min(k, (totalElements + elementsPerThread - 1) / elementsPerThread);
-		
-		final ExecutorService pool = CommonThreadPool.get(actualThreads);
+		ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			final ArrayList<PermuteSingleBlockTask> tasks = new ArrayList<>();
+			ArrayList<PermuteTask> tasks = new ArrayList<>();
+			int blklen = (int) Math.ceil((double) rlen / k);
 			
-			for( int t = 0; t < actualThreads; t++ ) {
-				final long start = t * elementsPerThread;
-				final long end = Math.min(start + elementsPerThread, totalElements);
-				
-				if( start >= totalElements ) {
-					break;
+			int[] cnt = null;
+			SparseBlock inSB = null;
+			int currentOffset = 0;
+
+			if( inData.isInSparseFormat() ) {
+				cnt = new int[k];
+				inSB = inData.getSparseBlock();
+			}
+
+			for( int i = 0; i < k && i * blklen < rlen; i++ ) {
+				int rl = i * blklen;
+				int ru = Math.min((i + 1) * blklen, rlen);
+
+				if( cnt != null && inSB != null ) {
+					cnt[i] = currentOffset;
+					for( int r = rl; r < ru; r++ ) {
+						if( !inSB.isEmpty(r) ) {
+							currentOffset += inSB.size(r);
+						}
+					}
 				}
-				
-				tasks.add(new PermuteSingleBlockTask(inData, outData, inDims, 
-					inStrides, permutedStrides, start, end));
-			}
-
-			for( Future<Object> task : pool.invokeAll(tasks) ) {
-				task.get();
-			}
-		} catch (Exception ex) {
-			throw new DMLRuntimeException(ex);
-		} finally {
-			pool.shutdown();
-		}
-	}
-
-	private static void permuteMultiBlock(
-		DenseBlock inDB, DenseBlock outDB,
-		int[] inDims, long[] inStrides, long[] permutedStrides,
-		int dim, long inOffset, long outOffset) {
-
-		if( dim == inDims.length - 1 ) {
-			int len = inDims[dim];
-			long outStride = permutedStrides[dim];
-			
-			int inBlockSize = inDB.blockSize();
-			int outBlockSize = outDB.blockSize();
-
-			for( int i = 0; i < len; i++ ) {
-				long currentInAbs = inOffset + i * inStrides[dim];
-				long currentOutAbs = outOffset + i * outStride;
-				
-				int inBlockIdx = (int) (currentInAbs / inBlockSize);
-				int inRelIdx = (int) (currentInAbs % inBlockSize);
-				
-				int outBlockIdx = (int) (currentOutAbs / outBlockSize);
-				int outRelIdx = (int) (currentOutAbs % outBlockSize);
-				
-				double[] inArr = inDB.valuesAt(inBlockIdx);
-				double[] outArr = outDB.valuesAt(outBlockIdx);
-				
-				if( inArr != null && outArr != null && 
-					inRelIdx < inArr.length && outRelIdx < outArr.length ) {
-					outArr[outRelIdx] = inArr[inRelIdx];
-				}
-			}
-			return;
-		}
-
-		int dimSize = inDims[dim];
-		long inStep = inStrides[dim];
-		long outStep = permutedStrides[dim];
-
-		final int BLOCK_SIZE = 128;
-		for( int bi = 0; bi < dimSize; bi += BLOCK_SIZE ) {
-			int bimin = Math.min(bi + BLOCK_SIZE, dimSize);
-			for( int i = bi; i < bimin; i++ ) {
-				permuteMultiBlock(
-					inDB, outDB, inDims, inStrides, permutedStrides,
-					dim + 1,
-					inOffset + i * inStep,
-					outOffset + i * outStep
-				);
-			}
-		}
-	}
-
-	private static void permuteMultiBlockParallel(
-			DenseBlock inDB, DenseBlock outDB,
-			int[] inDims, long[] inStrides, long[] permutedStrides,
-			int k, long totalElements) {
-		
-		final long elementsPerThread = Math.max(1024, (totalElements + k - 1) / k);
-		final int actualThreads = (int) Math.min(k, (totalElements + elementsPerThread - 1) / elementsPerThread);
-
-		final ExecutorService pool = CommonThreadPool.get(actualThreads);
-		try {
-			final ArrayList<PermuteMultiBlockTask> tasks = new ArrayList<>();
-			
-			for( int t = 0; t < actualThreads; t++ ) {
-				final long start = t * elementsPerThread;
-				final long end = Math.min(start + elementsPerThread, totalElements);
-				
-				if( start >= totalElements ) {
-					break;
-				}
-				
-				tasks.add(new PermuteMultiBlockTask(inDB, outDB, inDims, 
-					inStrides, permutedStrides, start, end));
+				tasks.add(new PermuteTask(inData, outData, inStrides, permutedOutStrides, rl, ru, 
+										  cnt, outIndexes, outValues, i));
 			}
 
 			for( Future<Object> task : pool.invokeAll(tasks) ) {
 				task.get();
 			}
 
-		} catch (Exception ex) {
+		} 
+		catch( Exception ex ) {
 			throw new DMLRuntimeException(ex);
-		} finally {
+		} 
+		finally {
 			pool.shutdown();
 		}
 	}
 
-	private static class PermuteSingleBlockTask implements Callable<Object> {
-		//TODO call single-threaded kernel for block
-		
-		private final double[] inData;
-		private final double[] outData;
-		private final int[] inDims;
-		private final long[] inStrides;
-		private final long[] permutedStrides;
-		private final long start;
-		private final long end;
-		
-		protected PermuteSingleBlockTask(double[] inData, double[] outData,
-				int[] inDims, long[] inStrides, long[] permutedStrides,
-				long start, long end) {
-			this.inData = inData;
-			this.outData = outData;
-			this.inDims = inDims;
-			this.inStrides = inStrides;
-			this.permutedStrides = permutedStrides;
-			this.start = start;
-			this.end = end;
+	private static class PermuteTask implements Callable<Object> {
+		private final MatrixBlock _inData;
+		private final MatrixBlock _outData;
+		private final long[] _inStrides;
+		private final long[] _permutedOutStrides; 
+		private final int _rl;
+		private final int _ru; 
+		private final int[] _cnt;
+		private final int[] _outIndexes;
+		private final double[] _outValues;
+		private final int _taskID;
+
+		protected PermuteTask(MatrixBlock inData, MatrixBlock outData, long[] inStrides, 
+				long[] permutedOutStrides, int rl, int ru,
+				int[] cnt, int[] outIndexes, double[] outValues, int taskID) {
+			_inData = inData;
+			_outData = outData;
+			_inStrides = inStrides;
+			_permutedOutStrides = permutedOutStrides;
+			_rl = rl;
+			_ru = ru;
+			_cnt = cnt;
+			_outIndexes = outIndexes;
+			_outValues = outValues;
+			_taskID = taskID;
 		}
-		
+
 		@Override
 		public Object call() {
-			for( long idx = start; idx < end; idx++ ) {
-				long inIdx = 0;
-				long outIdx = 0;
-				long remaining = idx;
-				
-				for( int d = 0; d < inDims.length; d++ ) {
-					long coord = remaining / inStrides[d];
-					remaining = remaining % inStrides[d];
-					inIdx += coord * inStrides[d];
-					outIdx += coord * permutedStrides[d];
-				}
-				
-				outData[(int)outIdx] = inData[(int)inIdx];
+			if( _inData.isInSparseFormat() ) {
+				permuteSparseKernel(_inData, _inStrides, _permutedOutStrides, _rl, _ru, 
+									_cnt, _outIndexes, _outValues, _taskID);
+			} else {
+				permuteDenseKernel(_inData, _outData, _inStrides, _permutedOutStrides, _rl, _ru);
 			}
 			return null;
 		}
 	}
 
-	private static class PermuteMultiBlockTask implements Callable<Object> {
-		//TODO call single-threaded kernel for block
-		
-		private final DenseBlock inDB;
-		private final DenseBlock outDB;
-		private final int[] inDims;
-		private final long[] inStrides;
-		private final long[] permutedStrides;
-		private final long start;
-		private final long end;
-		
-		protected PermuteMultiBlockTask(DenseBlock inDB, DenseBlock outDB,
-				int[] inDims, long[] inStrides, long[] permutedStrides,
-				long start, long end) {
-			this.inDB = inDB;
-			this.outDB = outDB;
-			this.inDims = inDims;
-			this.inStrides = inStrides;
-			this.permutedStrides = permutedStrides;
-			this.start = start;
-			this.end = end;
-		}
-		
-		@Override
-		public Object call() {
-			int inBlockSize = inDB.blockSize();
-			int outBlockSize = outDB.blockSize();
-			
-			for( long idx = start; idx < end; idx++ ) {
-				long inIdx = 0;
-				long outIdx = 0;
-				long remaining = idx;
-				
-				for( int d = 0; d < inDims.length; d++ ) {
-					long coord = remaining / inStrides[d];
-					remaining = remaining % inStrides[d];
-					inIdx += coord * inStrides[d];
-					outIdx += coord * permutedStrides[d];
-				}
-				
-				int inBlockIdx = (int) (inIdx / inBlockSize);
-				int inRelIdx = (int) (inIdx % inBlockSize);
-				
-				int outBlockIdx = (int) (outIdx / outBlockSize);
-				int outRelIdx = (int) (outIdx % outBlockSize);
-				
-				double[] inArr = inDB.valuesAt(inBlockIdx);
-				double[] outArr = outDB.valuesAt(outBlockIdx);
-				
-				if( inArr != null && outArr != null && 
-					inRelIdx < inArr.length && outRelIdx < outArr.length ) {
-					outArr[outRelIdx] = inArr[inRelIdx];
+	private static void permuteDenseKernel(MatrixBlock inData, MatrixBlock outData,
+			long[] inStrides, long[] permutedOutStrides, int rl, int ru) {
+
+		final int rank = inStrides.length;
+		final int clen = inData.getNumColumns();
+
+		DenseBlock inDB = inData.getDenseBlock();
+		DenseBlock outDB = outData.getDenseBlock();
+
+		// blocking according to typical L2 cache sizes
+		final int blocksizeI = 128;
+		final int blocksizeJ = 128;
+
+		for( int bi = rl; bi < ru; bi += blocksizeI ) {
+			int bimin = Math.min(bi + blocksizeI, ru);
+			for( int bj = 0; bj < clen; bj += blocksizeJ ) {
+				int bjmin = Math.min(bj + blocksizeJ, clen);
+
+				// core block permute operation
+				for( int i = bi; i < bimin; i++ ) {
+					double[] avals = inDB.values(i);
+					int apos = inDB.pos(i);
+
+					for( int j = bj; j < bjmin; j++ ) {
+						double val = avals[apos + j];
+						if( val == 0 )
+							continue;
+
+						long linearInIdx = (long) i * clen + j;
+						long remaining = linearInIdx;
+						long targetOutIdx = 0;
+
+						for( int d = 0; d < rank; d++ ) {
+							long coord = remaining / inStrides[d];
+							remaining %= inStrides[d];
+							targetOutIdx += coord * permutedOutStrides[d];
+						}
+
+						outDB.set(0, (int) targetOutIdx, val);
+					}
 				}
 			}
-			return null;
+		}
+	}
+
+	private static void permuteSparseKernel(MatrixBlock inData,
+			long[] inStrides, long[] permutedOutStrides, int rl, int ru,
+			int[] cnt, int[] outIndexes, double[] outValues, int taskID) {
+
+		SparseBlock inSB = inData.getSparseBlock();
+		if( inSB == null ) return;
+
+		final int rank = inStrides.length;
+		final int clen = inData.getNumColumns();
+
+		// blocking according to typical L2 cache sizes with awareness of sparsity
+		final long nnz = inData.getNonZeros();
+		final long xsp = (nnz == 0) ? 1L : ((long) inData.getNumRows() * clen) / nnz;
+		final int blocksizeI = Math.min(Math.max(128, (int) (8 * xsp)), 512);
+
+		// temporary array for block boundaries (for preventing binary search)
+		final int[] ix = new int[Math.min(blocksizeI, ru - rl)];
+
+		// blocked execution
+		for( int bi = rl; bi < ru; bi += blocksizeI ) {
+			Arrays.fill(ix, 0);
+			// find column starting positions
+			int bimin = Math.min(bi + blocksizeI, ru);
+
+			for( int bj = 0; bj < clen; bj += blocksizeI ) {
+				final int bjmin = Math.min(bj + blocksizeI, clen);
+				// core block permute operation
+				for( int i = bi; i < bimin; i++ ) {
+					if( inSB.isEmpty(i) ) continue;
+
+					final int apos = inSB.pos(i);
+					final int alen = inSB.size(i);
+					final int[] aix = inSB.indexes(i);
+					final double[] avals = inSB.values(i);
+					int j = ix[i - bi] + apos; // last block boundary
+					for( ; j < apos + alen && aix[j] < bjmin; j++ ) {
+						long linearInIdx = (long) i * clen + aix[j];
+						long remaining = linearInIdx;
+						long targetOutIdx = 0;
+
+						for( int d = 0; d < rank; d++ ) {
+							long coord = remaining / inStrides[d];
+							remaining %= inStrides[d];
+							targetOutIdx += coord * permutedOutStrides[d];
+						}
+
+						int pointer = cnt[taskID];
+						cnt[taskID]++;
+						outIndexes[pointer] = (int) targetOutIdx;
+						outValues[pointer] = avals[j];
+					}
+					ix[i - bi] = j - apos; // keep block boundary
+				}
+			}
 		}
 	}
 }

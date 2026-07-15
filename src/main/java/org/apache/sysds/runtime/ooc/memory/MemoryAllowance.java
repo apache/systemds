@@ -53,4 +53,8 @@ public interface MemoryAllowance {
 	default boolean isUnderPressure() {
 		return getGrantedMemory() > getTargetMemory();
 	}
+
+	default long reclaimUnused() {
+		return 0;
+	}
 }

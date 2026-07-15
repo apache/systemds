@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.ooc.cache.OOCCacheManager;
+import org.apache.sysds.runtime.ooc.cache.OOCFuture;
 import org.apache.sysds.runtime.ooc.memory.CachedAllowance;
 import org.apache.sysds.runtime.ooc.memory.GlobalMemoryBroker;
 import org.apache.sysds.runtime.ooc.memory.InMemoryQueueCallback;
@@ -45,6 +46,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -60,6 +62,54 @@ public class OOCMemoryAllowanceTest {
 	@Test
 	public void testWorstCase() {
 		test(false, 0, 1);
+	}
+
+	@Test
+	public void testBlockedReservationReclaims() throws Exception {
+		GlobalMemoryBroker broker = new GlobalMemoryBroker(100);
+		SyncMemoryAllowance holder = new SyncMemoryAllowance(broker);
+		SyncMemoryAllowance waiter = new SyncMemoryAllowance(broker);
+		try {
+			holder.reserveBlocking(100);
+			OOCFuture<Void> reservation = waiter.reserveAsync(50);
+			Assert.assertFalse(reservation.isDone());
+
+			holder.release(50);
+			reservation.get(10, TimeUnit.SECONDS);
+			Assert.assertEquals(50, holder.getGrantedMemory());
+			Assert.assertEquals(50, waiter.getUsedMemory());
+		}
+		finally {
+			holder.release(holder.getUsedMemory());
+			waiter.release(waiter.getUsedMemory());
+			holder.destroy();
+			waiter.destroy();
+		}
+	}
+
+	@Test
+	public void testReservationWaiters() throws Exception {
+		CoordinatedBroker broker = new CoordinatedBroker(new GlobalMemoryBroker(100));
+		SyncMemoryAllowance allowance = new SyncMemoryAllowance(broker);
+		try {
+			allowance.reserveBlocking(100);
+			OOCFuture<Void> first = allowance.reserveAsync(60);
+			Assert.assertFalse(first.isDone());
+
+			allowance.release(20);
+			OOCFuture<Void> second = allowance.reserveAsync(20);
+			Assert.assertFalse(second.isDone());
+
+			allowance.release(60);
+			first.get(10, TimeUnit.SECONDS);
+			second.get(10, TimeUnit.SECONDS);
+			Assert.assertEquals(100, allowance.getUsedMemory());
+		}
+		finally {
+			allowance.release(allowance.getUsedMemory());
+			allowance.destroy();
+			broker.destroy();
+		}
 	}
 
 	public void test(boolean optimal, int nWarmup, int nMeasure) {
@@ -361,6 +411,10 @@ public class OOCMemoryAllowanceTest {
 				updates = rebalanceTargetsLocked();
 			}
 			applyTargetUpdates(updates);
+		}
+
+		@Override
+		public void reservationBlocked(MemoryAllowance allowance, long bytes) {
 		}
 
 		@Override

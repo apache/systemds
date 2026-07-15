@@ -114,13 +114,12 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 			case VALUEPICK: {
 				if( input2.isScalar() ) {
 					ScalarObject quantile = ec.getScalarInput(input2);
-					double[] wt = getWeightedQuantileSummary(in, mc,
-						new double[]{quantile.getDoubleValue()}, true);
+					double[] wt = getWeightedQuantileSummary(in, mc, new double[] {quantile.getDoubleValue()}, true);
 					ec.setScalarOutput(output.getName(), new DoubleObject(wt[3]));
 				}
 				else {
-					double[] wt = getWeightedQuantileSummary(in, mc, DataConverter
-						.convertToDoubleVector(ec.getMatrixInput(input2.getName())), true);
+					double[] wt = getWeightedQuantileSummary(in, mc,
+						DataConverter.convertToDoubleVector(ec.getMatrixInput(input2.getName())), true);
 					ec.releaseMatrixInput(input2.getName());
 					int qlen = wt.length/3;
 					MatrixBlock out = new MatrixBlock(qlen,1,false);
@@ -132,19 +131,19 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 			}
 
 			case MEDIAN: {
-				double[] wt = getWeightedQuantileSummary(in, mc, new double[]{0.5}, true);
+				double[] wt = getWeightedQuantileSummary(in, mc, new double[] {0.5}, true);
 				ec.setScalarOutput(output.getName(), new DoubleObject(wt[3]));
 				break;
 			}
 
 			case IQM: {
-				//IQM uses wt[3]/wt[4] as raw boundary values for computeIQMCorrection, so no averaging
-				double[] wt = getWeightedQuantileSummary(in, mc, new double[]{0.25,0.75}, false);
-				long key25 = (long)Math.ceil(wt[1]);
-				long key75 = (long)Math.ceil(wt[2]);
-				JavaPairRDD<MatrixIndexes,MatrixBlock> out = in
-					.filter(new FilterFunction(key25+1,key75,mc.getBlocksize()))
-					.mapToPair(new ExtractAndSumFunction(key25+1, key75, mc.getBlocksize()));
+				// IQM uses wt[3]/wt[4] as raw boundary values for computeIQMCorrection, so no averaging
+				double[] wt = getWeightedQuantileSummary(in, mc, new double[] {0.25, 0.75}, false);
+				long key25 = (long) Math.ceil(wt[1]);
+				long key75 = (long) Math.ceil(wt[2]);
+				JavaPairRDD<MatrixIndexes, MatrixBlock> out = in
+					.filter(new FilterFunction(key25 + 1, key75, mc.getBlocksize()))
+					.mapToPair(new ExtractAndSumFunction(key25 + 1, key75, mc.getBlocksize()));
 				double sum = RDDAggregateUtils.sumStable(out).get(0, 0);
 				double val = MatrixBlock.computeIQMCorrection(
 					sum, wt[0], wt[3], wt[5], wt[4], wt[6]);
@@ -166,10 +165,10 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 	 * @param quantiles one or more quantiles between 0 and 1.
 	 * @return a summary of weighted quantiles
 	 */
-	private static double[] getWeightedQuantileSummary(JavaPairRDD<MatrixIndexes,MatrixBlock> w, DataCharacteristics mc, double[] quantiles, boolean average)
-	{
-		double[] ret = new double[3*quantiles.length + 1];
-		if( mc.getCols()==2 ) //weighted
+	private static double[] getWeightedQuantileSummary(JavaPairRDD<MatrixIndexes, MatrixBlock> w,
+		DataCharacteristics mc, double[] quantiles, boolean average) {
+		double[] ret = new double[3 * quantiles.length + 1];
+		if(mc.getCols() == 2) // weighted
 		{
 			//sort blocks (values sorted but blocks and partitions are not)
 			w = w.sortByKey();
@@ -214,16 +213,16 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 		}
 		else {
 			ret[0] = mc.getRows();
-			for( int i=0; i<quantiles.length; i++ ){
-				ret[i+1] = quantiles[i] * mc.getRows();
-				ret[i+quantiles.length+1] = Math.ceil(ret[i+1])-ret[i+1];
-				long key = (long)Math.ceil(ret[i+1]);
-				ret[i+2*quantiles.length+1] = lookupKey(w, key, mc.getBlocksize());
+			for(int i = 0; i < quantiles.length; i++) {
+				ret[i + 1] = quantiles[i] * mc.getRows();
+				ret[i + quantiles.length + 1] = Math.ceil(ret[i + 1]) - ret[i + 1];
+				long key = (long) Math.ceil(ret[i + 1]);
+				ret[i + 2 * quantiles.length + 1] = lookupKey(w, key, mc.getBlocksize());
 
-				//average w/ next value for even-length arrays (mirrors CP QuantilePickCPInstruction)
+				// average w/ next value for even-length arrays (mirrors CP QuantilePickCPInstruction)
 				if(average && mc.getRows() % 2 == 0 && key < mc.getRows()) {
-					ret[i+2*quantiles.length+1] += lookupKey(w, key + 1, mc.getBlocksize());
-					ret[i+2*quantiles.length+1] /= 2;
+					ret[i + 2 * quantiles.length + 1] += lookupKey(w, key + 1, mc.getBlocksize());
+					ret[i + 2 * quantiles.length + 1] /= 2;
 				}
 			}
 		}

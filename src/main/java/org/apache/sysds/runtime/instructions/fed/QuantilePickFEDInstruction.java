@@ -755,10 +755,10 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			MatrixBlock picked;
 			if (_quantiles.getLength() == 1) {
 				return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS,
-					new Object[] {mb.pickValue(_quantiles.get(0, 0))});
+					new Object[] {mb.pickValue(_quantiles.get(0, 0), mb.getLength() % 2 == 0)});
 			}
 			else {
-				picked = mb.pickValues(_quantiles, new MatrixBlock());
+				picked = mb.pickValues(_quantiles, new MatrixBlock(), mb.getLength() % 2 == 0);
 				return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS,
 					new Object[] {picked});
 			}

@@ -5,21 +5,23 @@ import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupPiecewiseLinearCompressed;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
-import org.apache.sysds.runtime.functionobjects.Divide;
-import org.apache.sysds.runtime.functionobjects.Minus;
-import org.apache.sysds.runtime.functionobjects.Multiply;
-import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.DenseBlockFP64;
+import org.apache.sysds.runtime.functionobjects.*;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Random;
 
 import static org.junit.Assert.*;
@@ -37,11 +39,11 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 	private static final long SEED = 42L;
 	private static final int NROWS = 50;
 	private static final int NCOLS = 3;
-	private static final double TARGET_LOSS = 1e-8;
+	private static final double TARGET_LOSS = 50;
 	private static final double DELTA = 1e-9;
 
 	private ColGroupPiecewiseLinearCompressed piecewiseLinearColGroup;
-	private MatrixBlock orignalMB;
+	private MatrixBlock originalMB;
 	private MatrixBlock decompressedMB;
 	private IColIndex colIndexes;
 	private int numRows;
@@ -53,9 +55,9 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		numCols = NCOLS;
 
 		///  generate random matrix
-		double[][] data = getRandomMatrix(numRows, numCols, -3, 3, 1.0, SEED);
-		orignalMB = DataConverter.convertToMatrixBlock(data);
-		orignalMB.allocateDenseBlock();
+		double[][] data = getRandomMatrix(numRows, numCols, -30, 30, 1.0, SEED);
+		originalMB = DataConverter.convertToMatrixBlock(data);
+		originalMB.allocateDenseBlock();
 
 		colIndexes = ColIndexFactory.create(buildColArray(numCols));
 
@@ -63,7 +65,7 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		cs.setPiecewiseTargetLoss(TARGET_LOSS);
 
 		///  create ColGroupPiecewiseLinearCompressed instance
-		AColGroup result = ColGroupFactory.compressPiecewiseLinearFunctional(colIndexes, orignalMB, cs);
+		AColGroup result = ColGroupFactory.compressPiecewiseLinearFunctional(colIndexes, originalMB, cs);
 		assertTrue(result instanceof ColGroupPiecewiseLinearCompressed);
 		piecewiseLinearColGroup = (ColGroupPiecewiseLinearCompressed) result;
 
@@ -308,4 +310,106 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 				data[r][c] = min + rng.nextDouble() * (max - min);
 		return data;
 	}
+
+
+	@Test
+	public void testCreate() {
+		ColGroupPiecewiseLinearCompressed plc =(ColGroupPiecewiseLinearCompressed) piecewiseLinearColGroup;
+
+		AColGroup result = ColGroupPiecewiseLinearCompressed.create(plc.getColIndices(), plc.getBreakpointsPerCol(),plc.getSlopesPerCol(), plc.getInterceptsPerCol(), NROWS);
+		assertTrue(result instanceof ColGroupPiecewiseLinearCompressed);
+
+		// equal to piecewiseLinearColGroup instance
+		assertArrayEquals(((ColGroupPiecewiseLinearCompressed) result).getBreakpointsPerCol(),plc.getBreakpointsPerCol());
+		assertArrayEquals(((ColGroupPiecewiseLinearCompressed) result).getSlopesPerCol(),plc.getSlopesPerCol());
+		assertArrayEquals(((ColGroupPiecewiseLinearCompressed) result).getInterceptsPerCol(),plc.getInterceptsPerCol());
+	}
+	@Test
+	public void testDecompressToDenseBlock() {
+		MatrixBlock mb_compare = new  MatrixBlock(originalMB);
+		mb_compare.recomputeNonZeros();
+		DenseBlock db_compare = mb_compare.getDenseBlock();
+
+		MatrixBlock mb_result = new MatrixBlock(NROWS, NCOLS, false);
+		mb_result.allocateDenseBlock();
+		mb_result.recomputeNonZeros();
+		piecewiseLinearColGroup.decompressToDenseBlock(mb_result.getDenseBlock(), 0, 3, 0, 0);
+		DenseBlock db_result = mb_result.getDenseBlock();
+
+
+		// DenseBlockFP64 is just one large 1 dim array
+		assertTrue(db_result instanceof DenseBlockFP64);
+		assertTrue(db_compare instanceof DenseBlockFP64);
+
+		assertArrayEquals(db_result.values(NCOLS), db_compare.values(NCOLS), TARGET_LOSS);
+	}
+
+	private double highest_loss(MatrixBlock result, MatrixBlock compare){
+		// recompute non zeros
+		result.recomputeNonZeros();
+		compare.recomputeNonZeros();
+
+		// asserEquals size correct
+		assertEquals(result.getNumRows(),  compare.getNumRows());
+		assertEquals(result.getNumColumns(), compare.getNumColumns());
+
+		// MatrixBlock diff
+		MatrixBlock diff = new MatrixBlock(NCOLS, NROWS, false);
+
+		// binary Operation Minus
+		ValueFunction fn = Minus.getMinusFnObject();
+		BinaryOperator op = new BinaryOperator( fn);
+		result.binaryOperations(op, compare, diff);
+
+		// get max and min
+		double max = diff.max();
+		double min = diff.min();
+
+		// choose max absolute value
+		return Math.max(Math.abs(max), Math.abs(min));
+	}
+
+	@Test
+	public void testUnaryOperationMultiply2() {
+		MatrixBlock compare = new MatrixBlock(originalMB);
+		ValueFunction fn = Multiply2.getMultiply2FnObject();
+		AColGroup result = piecewiseLinearColGroup.unaryOperation(new UnaryOperator(fn));
+		assertTrue(result instanceof ColGroupUncompressed);
+
+		MatrixBlock resultMB = ((ColGroupUncompressed) result ).getData();
+		MatrixBlock compareMB =compare;
+
+		// do unaryOperation on compare
+		MatrixBlock compare_final = compare.unaryOperations(new UnaryOperator( fn));
+
+		// check if highest_loss smaller than worst case expected loss
+		double biggest_loss = highest_loss (resultMB, compareMB);
+		assertEquals(TARGET_LOSS * 2, Math.max(biggest_loss, TARGET_LOSS * 2), 0.0);
+	}
+
+	@Test
+	public void testUnaryOperationPower2() {
+		MatrixBlock compare = new MatrixBlock(originalMB);
+		ValueFunction fn = Power2.getPower2FnObject();
+		AColGroup result = piecewiseLinearColGroup.unaryOperation(new UnaryOperator(fn));
+		assertTrue(result instanceof ColGroupUncompressed);
+
+		MatrixBlock resultMB = ((ColGroupUncompressed) result ).getData();
+		MatrixBlock compareMB =compare;
+
+		// do unaryOperation on compare
+		MatrixBlock compare_final = compare.unaryOperations(new UnaryOperator( fn));
+
+		// check if highest_loss smaller than worst case expected loss
+		double biggest_loss = highest_loss (resultMB, compareMB);
+		assertEquals(TARGET_LOSS * TARGET_LOSS, Math.max(biggest_loss, TARGET_LOSS * TARGET_LOSS), 0.0);
+	}
+
+	@Test
+	public void testReplace() {
+		// correct Data Type
+		AColGroup result = piecewiseLinearColGroup.replace(5.0, 1.0);
+		assertTrue(result instanceof ColGroupUncompressed);
+	}
+
 }

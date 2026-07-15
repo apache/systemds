@@ -2,8 +2,6 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
@@ -462,24 +460,28 @@ public class ColGroupPiecewiseLinearCompressed extends AColGroupCompressed {
 		return false;
 	}
 
-	private AColGroup decompress(){
+	private AColGroup decompress()  {
 		IColIndex columns = ColIndexFactory.create(numRows);
-
 		MatrixBlock mb = new MatrixBlock(numRows, getNumCols(), false);
+
+		mb.allocateDenseBlock();
 		decompressToDenseBlock(mb.getDenseBlock(), 0, numRows, 0, 0);
+		mb.recomputeNonZeros();
+
 		return ColGroupUncompressed.create(mb, columns);
 	}
 
 	@Override
-	public AColGroup unaryOperation(UnaryOperator op) {
-		AColGroup uncompressed = decompress();
-		return uncompressed.unaryOperation(op);
+	public AColGroup unaryOperation(UnaryOperator op){
+		AColGroup cg_unc =  decompress();
+		return cg_unc.unaryOperation(op);
 	}
 
 	@Override
-	public AColGroup replace(double pattern, double replace) {
-		AColGroup uncompressed = decompress();
-		return uncompressed.replace(pattern, replace);
+	public AColGroup replace(double pattern, double replace){
+		AColGroup cg_unc =  decompress();
+		return cg_unc.replace(pattern, replace);
+
 	}
 
 

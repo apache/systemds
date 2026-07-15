@@ -76,6 +76,29 @@ return (Matrix[Double] M, Double G) {
   if (return_type != "buckets" & return_type != "numerical") {
     stop("Return type should be one of: buckets, numerical")
   }
+  if (N < 2) {
+    stop("N should be a positive integer larger than 1")
+  }
+
+  if (d < 1) {
+    stop("d should be a positive integer")
+  }
+
+  if (reps < 1) {
+    stop("reps should be a positive integer")
+  }
+
+  if (method == "genetic" & genetic_generations < 1) {
+    stop("genetic_generations should be >= 1")
+  }
+
+  if (method == "genetic" & genetic_population_size < 2) {
+    stop("genetic_population_size should be >= 2")
+  }
+
+  if (method == "genetic" & (genetic_mutation_rate < 0 | genetic_mutation_rate > 1)) {
+    stop("genetic_mutation_rate should be between 0 and 1")
+  }
 
   if (method == "random") {
     M = randomLHS(N, d, reps, goal, seed)
@@ -138,37 +161,38 @@ return (Matrix[Double] M) {
   # generate reps candidates
   # choose the candidate with the lowest G
   # and update the free_buckets matrix
-  for (i in 2:(N - 1)) {
-    # number of buckets left to choose from
-    num_free_buckets = N - i + 1
-    # initialize G to infinity
-    G = 1 / 0
+  if (N>2){
+    for (i in 2:(N - 1)) {
+      # number of buckets left to choose from
+      num_free_buckets = N - i + 1
+      # initialize G to infinity
+      G = 1 / 0
 
-    # initialize row vector and replacement mask for free buckets
-    row = matrix(0, rows = 1, cols = d)
-    replacement_mask = matrix(0, rows = num_free_buckets, cols = d)
+      # initialize row vector and replacement mask for free buckets
+      row = matrix(0, rows = 1, cols = d)
+      replacement_mask = matrix(0, rows = num_free_buckets, cols = d)
 
-    for (j in 1:reps) {
-      # random mask for bucket generation
-      rand = table(sample(num_free_buckets, d, TRUE, deriveSeed(seed, i * reps + j)), seq(1, d), N, d)
-      # get buckets and flatten to row vector
-      vals_matrix = rand * free_buckets
-      row_candidate = matrix(1, rows = 1, cols = N) %*% vals_matrix
+      for (j in 1:reps) {
+        # random mask for bucket generation
+        rand = table(sample(num_free_buckets, d, TRUE, deriveSeed(seed, i * reps + j)), seq(1, d), N, d)
+        # get buckets and flatten to row vector
+        vals_matrix = rand * free_buckets
+        row_candidate = matrix(1, rows = 1, cols = N) %*% vals_matrix
 
-      # check if the candidate is better then the current best
-      # according to the goal and update the row vector and replacement mask accordingly
-      newG = evaluateGoalNewRow(M, row_candidate, goal, N)
-      if (newG < G) {
-        row = row_candidate
-        G = newG
-        replacement_mask = rand
+        # check if the candidate is better then the current best
+        # according to the goal and update the row vector and replacement mask accordingly
+        newG = evaluateGoalNewRow(M, row_candidate, goal, N)
+        if (newG < G) {
+          row = row_candidate
+          G = newG
+          replacement_mask = rand
+        }
       }
-    }
-
     # add the best candidate to the matrix of chosen points
     M = rbind(M, row)
     # replace chosen buckets with last, not yet picked buckets
     free_buckets = (1 - replacement_mask) * free_buckets + (matrix(1, rows = N, cols = 1) %*% (free_buckets[num_free_buckets, ])) * replacement_mask
+    }
   }
 
   # for the last point there is only one bucket left

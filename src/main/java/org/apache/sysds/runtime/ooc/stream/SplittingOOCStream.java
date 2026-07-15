@@ -24,10 +24,7 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.instructions.ooc.CachingStream;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.ooc.stream.message.OOCStreamMessage;
-import org.apache.sysds.runtime.util.IndexRange;
 
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -179,52 +176,6 @@ public class SplittingOOCStream<T> implements OOCStream<T> {
 
 	@Override
 	public void setData(CacheableData<?> data) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void messageUpstream(OOCStreamMessage msg) {
-		_sourceStream.messageUpstream(msg);
-	}
-
-	@Override
-	public void messageDownstream(OOCStreamMessage msg) {
-		for(SubOOCStream<T> sub : _subStreams)
-			sub.messageDownstream(msg);
-	}
-
-	@Override
-	public void setUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void setDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void addUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void addDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void clearUpstreamMessageRelays() {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void clearDownstreamMessageRelays() {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void setIXTransform(BiFunction<Boolean, IndexRange, IndexRange> transform) {
 		throw new UnsupportedOperationException();
 	}
 }

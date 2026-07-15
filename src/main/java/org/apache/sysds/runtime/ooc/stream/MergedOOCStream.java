@@ -25,14 +25,11 @@ import org.apache.sysds.runtime.instructions.ooc.CachingStream;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.ooc.SubscribableTaskQueue;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.ooc.stream.message.OOCStreamMessage;
-import org.apache.sysds.runtime.util.IndexRange;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 public class MergedOOCStream<T> implements OOCStream<T> {
@@ -51,11 +48,6 @@ public class MergedOOCStream<T> implements OOCStream<T> {
 		_openSources = new AtomicInteger(sources.size());
 		_failed = new AtomicBoolean(false);
 		_sharedCache = findSharedCache(sources);
-
-		_taskQueue.setUpstreamMessageRelay(msg -> {
-			for(OOCStream<T> source : _sources)
-				source.messageUpstream(msg);
-		});
 
 		for(OOCStream<T> source : _sources) {
 			source.setSubscriber(cb -> {
@@ -228,50 +220,5 @@ public class MergedOOCStream<T> implements OOCStream<T> {
 	@Override
 	public void setData(CacheableData<?> data) {
 		_taskQueue.setData(data);
-	}
-
-	@Override
-	public void messageUpstream(OOCStreamMessage msg) {
-		_taskQueue.messageUpstream(msg);
-	}
-
-	@Override
-	public void messageDownstream(OOCStreamMessage msg) {
-		_taskQueue.messageDownstream(msg);
-	}
-
-	@Override
-	public void setUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		_taskQueue.setUpstreamMessageRelay(relay);
-	}
-
-	@Override
-	public void setDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		_taskQueue.setDownstreamMessageRelay(relay);
-	}
-
-	@Override
-	public void addUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void addDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		_taskQueue.addDownstreamMessageRelay(relay);
-	}
-
-	@Override
-	public void clearUpstreamMessageRelays() {
-		_taskQueue.clearUpstreamMessageRelays();
-	}
-
-	@Override
-	public void clearDownstreamMessageRelays() {
-		_taskQueue.clearDownstreamMessageRelays();
-	}
-
-	@Override
-	public void setIXTransform(BiFunction<Boolean, IndexRange, IndexRange> transform) {
-		_taskQueue.setIXTransform(transform);
 	}
 }

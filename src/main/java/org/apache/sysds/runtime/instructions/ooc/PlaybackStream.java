@@ -23,14 +23,10 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.ooc.stream.message.OOCStreamMessage;
-import org.apache.sysds.runtime.util.IndexRange;
 
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 public class PlaybackStream implements OOCStream<IndexedMatrixValue> {
@@ -38,7 +34,6 @@ public class PlaybackStream implements OOCStream<IndexedMatrixValue> {
 	private final AtomicInteger _streamIdx;
 	private final AtomicBoolean _subscriberSet;
 	private QueueCallback<IndexedMatrixValue> _lastDequeue;
-	private volatile CopyOnWriteArrayList<Consumer<OOCStreamMessage>> _downstreamRelays;
 
 	public PlaybackStream(CachingStream streamCache) {
 		this._streamCache = streamCache;
@@ -124,27 +119,6 @@ public class PlaybackStream implements OOCStream<IndexedMatrixValue> {
 	}
 
 	@Override
-	public void messageUpstream(OOCStreamMessage msg) {
-		if(msg.isCancelled())
-			return;
-		_streamCache.messageUpstream(msg);
-	}
-
-	@Override
-	public void messageDownstream(OOCStreamMessage msg) {
-		if(msg.isCancelled())
-			return;
-		CopyOnWriteArrayList<Consumer<OOCStreamMessage>> relays = _downstreamRelays;
-		if(relays != null) {
-			for(Consumer<OOCStreamMessage> relay : relays) {
-				if(msg.isCancelled())
-					break;
-				relay.accept(msg);
-			}
-		}
-	}
-
-	@Override
 	public void setSubscriber(Consumer<QueueCallback<IndexedMatrixValue>> subscriber) {
 		if(!_subscriberSet.compareAndSet(false, true))
 			throw new IllegalArgumentException("Subscriber cannot be set multiple times");
@@ -165,52 +139,5 @@ public class PlaybackStream implements OOCStream<IndexedMatrixValue> {
 	@Override
 	public CachingStream getStreamCache() {
 		return _streamCache;
-	}
-
-	@Override
-	public void setUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void setDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		addDownstreamMessageRelay(relay);
-	}
-
-	@Override
-	public void addUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void addDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		if(relay == null)
-			throw new IllegalArgumentException("Cannot set downstream relay to null");
-		CopyOnWriteArrayList<Consumer<OOCStreamMessage>> relays = _downstreamRelays;
-		if(relays == null) {
-			synchronized(this) {
-				if (_downstreamRelays == null)
-					_downstreamRelays = new CopyOnWriteArrayList<>();
-				relays = _downstreamRelays;
-			}
-		}
-		relays.add(0, relay);
-		_streamCache.addDownstreamMessageRelay(relay);
-	}
-
-	@Override
-	public void clearUpstreamMessageRelays() {
-		// No upstream relays supported
-	}
-
-	@Override
-	public void clearDownstreamMessageRelays() {
-		_downstreamRelays = null;
-		_streamCache.clearDownstreamMessageRelays();
-	}
-
-	@Override
-	public void setIXTransform(BiFunction<Boolean, IndexRange, IndexRange> transform) {
-		throw new UnsupportedOperationException();
 	}
 }

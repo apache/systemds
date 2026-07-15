@@ -26,7 +26,6 @@ import org.apache.sysds.runtime.instructions.ooc.SubscribableTaskQueue;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.ooc.cache.OOCCacheManager;
 import org.apache.sysds.runtime.ooc.cache.io.OOCIOHandler;
-import org.apache.sysds.runtime.ooc.stream.message.OOCStreamMessage;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -88,13 +87,6 @@ public class SourceOOCStream extends SubscribableTaskQueue<IndexedMatrixValue> {
 			if (parkNanos < MAX_BACKPRESSURE_PARK_NANOS)
 				parkNanos = Math.min(parkNanos * 2, MAX_BACKPRESSURE_PARK_NANOS);
 		}
-	}
-
-	@Override
-	public void messageUpstream(OOCStreamMessage msg) {
-		if(msg.isCancelled())
-			return;
-		super.messageUpstream(msg);
 	}
 
 	public static class SourceGroupCallback implements OOCStream.GroupQueueCallback<IndexedMatrixValue> {

@@ -86,10 +86,6 @@ public class UnaryOOCInstruction extends ComputationOOCInstruction {
 		}
 
 		ec.getMatrixObject(output).setStreamHandle(qOut);
-		if(!cumulative) {
-			qIn.setDownstreamMessageRelay(qOut::messageDownstream);
-			qOut.setUpstreamMessageRelay(qIn::messageUpstream);
-		}
 	}
 
 	private OOCStream<IndexedMatrixValue> processCumulativeUnaryInstruction(ExecutionContext ec, UnaryOperator uop,

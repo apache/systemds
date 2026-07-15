@@ -35,7 +35,6 @@ import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.util.IndexRange;
 
 import java.util.HashMap;
 
@@ -90,21 +89,6 @@ public class AggregateUnaryOOCInstruction extends ComputationOOCInstruction {
 			OOCStream<IndexedMatrixValue> qLocal = createWritableStream();
 
 			ec.getMatrixObject(output).setStreamHandle(qOut);
-
-			qIn.setDownstreamMessageRelay(qOut::messageDownstream);
-			qOut.setUpstreamMessageRelay(qIn::messageUpstream);
-			qOut.setIXTransform((downstream, range) -> {
-				if (downstream) {
-					if (aggun.isRowAggregate())
-						return new IndexRange(range.rowStart, range.rowEnd, 1, 1);
-					else
-						return new IndexRange(1, 1, range.colStart, range.colEnd);
-				}
-				if (aggun.isRowAggregate())
-					return new IndexRange(range.rowStart, range.rowEnd, 1, min.getNumColumns() - 1);
-				else
-					return new IndexRange(1, min.getNumRows() - 1, range.colStart, range.colEnd);
-			});
 
 			// per-block aggregation (parallel map)
 			mapOOC(qIn, qLocal, tmp -> {

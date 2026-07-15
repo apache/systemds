@@ -23,16 +23,11 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.ooc.stream.message.OOCGetStreamTypeMessage;
-import org.apache.sysds.runtime.ooc.stream.message.OOCStreamMessage;
 import org.apache.sysds.runtime.ooc.util.OOCUtils;
-import org.apache.sysds.runtime.util.IndexRange;
 
 import java.util.LinkedList;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCallback<T>> implements OOCStream<T> {
@@ -43,9 +38,6 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 	private QueueCallback<T> _lastDequeued = null;
 	private CacheableData<?> _cdata;
 	private volatile Consumer<QueueCallback<T>> _subscriber = null;
-	private volatile CopyOnWriteArrayList<Consumer<OOCStreamMessage>> _upstreamMsgRelays = null;
-	private volatile CopyOnWriteArrayList<Consumer<OOCStreamMessage>> _downstreamMsgRelays = null;
-	private volatile BiFunction<Boolean, IndexRange, IndexRange> _ixTransform = null;
 	private String _watchdogId;
 
 	public SubscribableTaskQueue() {
@@ -190,8 +182,6 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 		if(_closed.compareAndSet(false, true)) {
 			super.closeInput();
 			onDeliveryFinished();
-			_upstreamMsgRelays = null;
-			_downstreamMsgRelays = null;
 		}
 		else {
 			throw new IllegalStateException("Multiple close input calls");
@@ -277,43 +267,6 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 	}
 
 	@Override
-	public void messageUpstream(OOCStreamMessage msg) {
-		if(msg.isCancelled())
-			return;
-		msg.addIXTransform(_ixTransform);
-		if(msg.isCancelled())
-			return;
-		if(msg instanceof OOCGetStreamTypeMessage) {
-			if(_cdata != null)
-				((OOCGetStreamTypeMessage) msg).setInMemoryType();
-			return;
-		}
-		CopyOnWriteArrayList<Consumer<OOCStreamMessage>> relays = _upstreamMsgRelays;
-		if(relays != null) {
-			for(Consumer<OOCStreamMessage> relay : relays) {
-				if(msg.isCancelled())
-					break;
-				relay.accept(msg);
-			}
-		}
-	}
-
-	@Override
-	public void messageDownstream(OOCStreamMessage msg) {
-		if(!msg.isCancelled())
-			return;
-		msg.addIXTransform(_ixTransform);
-		CopyOnWriteArrayList<Consumer<OOCStreamMessage>> relays = _downstreamMsgRelays;
-		if(relays != null) {
-			for(Consumer<OOCStreamMessage> relay : relays) {
-				if(msg.isCancelled())
-					break;
-				relay.accept(msg);
-			}
-		}
-	}
-
-	@Override
 	public boolean hasStreamCache() {
 		return false;
 	}
@@ -338,61 +291,6 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 		if(_cdata == null && _closed.get())
 			System.out.println("[WARN] Data type was defined after closing, which may bypass validation checks");
 		_cdata = data;
-	}
-
-	@Override
-	public void setUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		addUpstreamMessageRelay(relay);
-	}
-
-	@Override
-	public void setDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		addDownstreamMessageRelay(relay);
-	}
-
-	@Override
-	public void addUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		if(relay == null)
-			throw new IllegalArgumentException("Cannot set upstream relay to null");
-		CopyOnWriteArrayList<Consumer<OOCStreamMessage>> relays = _upstreamMsgRelays;
-		if(relays == null) {
-			synchronized(this) {
-				if(_upstreamMsgRelays == null)
-					_upstreamMsgRelays = new CopyOnWriteArrayList<>();
-				relays = _upstreamMsgRelays;
-			}
-		}
-		relays.add(0, relay);
-	}
-
-	@Override
-	public void addDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		if(relay == null)
-			throw new IllegalArgumentException("Cannot set downstream relay to null");
-		CopyOnWriteArrayList<Consumer<OOCStreamMessage>> relays = _downstreamMsgRelays;
-		if(relays == null) {
-			synchronized(this) {
-				if(_downstreamMsgRelays == null)
-					_downstreamMsgRelays = new CopyOnWriteArrayList<>();
-				relays = _downstreamMsgRelays;
-			}
-		}
-		relays.add(0, relay);
-	}
-
-	@Override
-	public void clearUpstreamMessageRelays() {
-		_upstreamMsgRelays = null;
-	}
-
-	@Override
-	public void clearDownstreamMessageRelays() {
-		_downstreamMsgRelays = null;
-	}
-
-	@Override
-	public void setIXTransform(BiFunction<Boolean, IndexRange, IndexRange> transform) {
-		_ixTransform = transform;
 	}
 
 	@Override

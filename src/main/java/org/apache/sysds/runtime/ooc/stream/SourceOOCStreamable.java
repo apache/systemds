@@ -25,11 +25,6 @@ import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.ooc.OOCStreamable;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.ooc.stream.message.OOCStreamMessage;
-import org.apache.sysds.runtime.util.IndexRange;
-
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
 
 public class SourceOOCStreamable implements OOCStreamable<IndexedMatrixValue> {
 	private final CacheableData<?> _data;
@@ -76,50 +71,5 @@ public class SourceOOCStreamable implements OOCStreamable<IndexedMatrixValue> {
 	@Override
 	public void setData(CacheableData<?> data) {
 		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void messageUpstream(OOCStreamMessage msg) {
-
-	}
-
-	@Override
-	public void messageDownstream(OOCStreamMessage msg) {
-
-	}
-
-	@Override
-	public void setUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-
-	}
-
-	@Override
-	public void setDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-
-	}
-
-	@Override
-	public void addUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-
-	}
-
-	@Override
-	public void addDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-
-	}
-
-	@Override
-	public void clearUpstreamMessageRelays() {
-
-	}
-
-	@Override
-	public void clearDownstreamMessageRelays() {
-
-	}
-
-	@Override
-	public void setIXTransform(BiFunction<Boolean, IndexRange, IndexRange> transform) {
-
 	}
 }

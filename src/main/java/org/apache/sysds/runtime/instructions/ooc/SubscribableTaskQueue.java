@@ -23,6 +23,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.ooc.primitives.OOCPrimitive;
 import org.apache.sysds.runtime.ooc.util.OOCUtils;
 
 import java.util.LinkedList;
@@ -37,6 +38,7 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 	private final AtomicInteger _blockCount = new AtomicInteger(0);
 	private QueueCallback<T> _lastDequeued = null;
 	private CacheableData<?> _cdata;
+	private volatile OOCPrimitive _primitive;
 	private volatile Consumer<QueueCallback<T>> _subscriber = null;
 	private String _watchdogId;
 
@@ -274,6 +276,18 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 	@Override
 	public CachingStream getStreamCache() {
 		return null;
+	}
+
+	@Override
+	public OOCPrimitive getPrimitive() {
+		return _primitive;
+	}
+
+	@Override
+	public void assignPrimitive(OOCPrimitive primitive) {
+		if(_primitive != null)
+			throw new IllegalStateException("Primitive already assigned");
+		_primitive = primitive;
 	}
 
 	@Override

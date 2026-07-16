@@ -23,15 +23,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Immutable configuration for compression in federated operations.
- * Uses the Builder pattern for flexible, readable configuration.
+ * Immutable configuration for compression in federated operations. Uses the Builder pattern for flexible, readable
+ * configuration.
  *
- * Usage example:
- *   CompressionConfig config = CompressionConfig.builder()
- *       .enable(true)
- *       .withType(CompressionType.TOPK)
- *       .withSparsity(0.01)
- *       .build();
+ * Usage example: CompressionConfig config = CompressionConfig.builder() .enable(true) .withType(CompressionType.TOPK)
+ * .withSparsity(0.01) .build();
  */
 public class CompressionConfig {
 
@@ -45,9 +41,17 @@ public class CompressionConfig {
 		this.parameters = new HashMap<>(builder.parameters);
 	}
 
-	public boolean isEnabled() { return enabled; }
-	public CompressionType getType() { return type; }
-	public Map<String, Object> getParameters() { return new HashMap<>(parameters); }
+	public boolean isEnabled() {
+		return enabled;
+	}
+
+	public CompressionType getType() {
+		return type;
+	}
+
+	public Map<String, Object> getParameters() {
+		return new HashMap<>(parameters);
+	}
 
 	/** Convenience getter for sparsity parameter (TopK) */
 	public double getSparsity() {
@@ -61,8 +65,7 @@ public class CompressionConfig {
 
 	@Override
 	public String toString() {
-		return String.format("CompressionConfig[enabled=%s, type=%s, params=%s]",
-			enabled, type.getId(), parameters);
+		return String.format("CompressionConfig[enabled=%s, type=%s, params=%s]", enabled, type.getId(), parameters);
 	}
 
 	// -----------------------------------------------------------------------

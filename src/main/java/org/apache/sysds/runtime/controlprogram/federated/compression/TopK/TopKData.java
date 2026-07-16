@@ -22,24 +22,22 @@ package org.apache.sysds.runtime.controlprogram.federated.compression.TopK;
 import java.io.Serializable;
 
 /**
- * Immutable container for TopK-compressed matrix data.
- * Stores only the K largest-magnitude elements with their positions,
- * designed for efficient serialization across federated workers.
+ * Immutable container for TopK-compressed matrix data. Stores only the K largest-magnitude elements with their
+ * positions, designed for efficient serialization across federated workers.
  */
 public class TopKData implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	public final int[] indices;    // Linear indices of kept elements (row*numCols + col)
-	public final double[] values;  // Corresponding original values
-	public final int numCols;      // Needed for index → (row, col) conversion
+	public final int[] indices; // Linear indices of kept elements (row*numCols + col)
+	public final double[] values; // Corresponding original values
+	public final int numCols; // Needed for index → (row, col) conversion
 
 	public TopKData(int[] indices, double[] values, int numCols) {
-		if (indices.length != values.length) {
-			throw new IllegalArgumentException(
-				"Indices and values arrays must have the same length");
+		if(indices.length != values.length) {
+			throw new IllegalArgumentException("Indices and values arrays must have the same length");
 		}
-		this.indices = indices.clone();  // Defensive copy
+		this.indices = indices.clone(); // Defensive copy
 		this.values = values.clone();
 		this.numCols = numCols;
 	}
@@ -51,7 +49,7 @@ public class TopKData implements Serializable {
 
 	/** Estimate serialized size in bytes (4 bytes per int + 8 bytes per double) */
 	public long estimateSizeBytes() {
-		return (long) indices.length * 12 + 64;  // +64 for object headers
+		return (long) indices.length * 12 + 64; // +64 for object headers
 	}
 
 	@Override

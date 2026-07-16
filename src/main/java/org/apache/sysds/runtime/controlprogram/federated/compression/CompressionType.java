@@ -20,8 +20,8 @@
 package org.apache.sysds.runtime.controlprogram.federated.compression;
 
 /**
- * Enumeration of supported compression techniques for federated learning.
- * Used for configuration, serialization, and technique selection.
+ * Enumeration of supported compression techniques for federated learning. Used for configuration, serialization, and
+ * technique selection.
  */
 public enum CompressionType {
 
@@ -42,13 +42,18 @@ public enum CompressionType {
 		this.description = description;
 	}
 
-	public String getId() { return id; }
-	public String getDescription() { return description; }
+	public String getId() {
+		return id;
+	}
+
+	public String getDescription() {
+		return description;
+	}
 
 	/** Parse from string identifier (case-insensitive) */
 	public static CompressionType fromString(String text) {
-		for (CompressionType type : CompressionType.values()) {
-			if (type.id.equalsIgnoreCase(text)) {
+		for(CompressionType type : CompressionType.values()) {
+			if(type.id.equalsIgnoreCase(text)) {
 				return type;
 			}
 		}

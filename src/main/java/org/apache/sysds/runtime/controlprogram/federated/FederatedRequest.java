@@ -150,8 +150,8 @@ public class FederatedRequest implements Serializable {
 	}
 
 	private void calcChecksum() throws IOException {
-		for (Object ob : _data) {
-			if (!(ob instanceof CacheBlock) && !(ob instanceof ScalarObject) && !(ob instanceof CompressedMatrix))
+		for(Object ob : _data) {
+			if(!(ob instanceof CacheBlock) && !(ob instanceof ScalarObject) && !(ob instanceof CompressedMatrix))
 				continue;
 
 			Checksum checksum = new Adler32();

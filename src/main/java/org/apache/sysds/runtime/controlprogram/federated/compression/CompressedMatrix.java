@@ -51,12 +51,29 @@ public class CompressedMatrix implements Serializable {
 		this.metadata = metadata;
 	}
 
-	public CompressionType getType() { return type; }
-	public int getNumRows() { return numRows; }
-	public int getNumCols() { return numCols; }
-	public Object getCompressedData() { return compressedData; }
-	public double getCompressionRatio() { return compressionRatio; }
-	public byte[] getMetadata() { return metadata; }
+	public CompressionType getType() {
+		return type;
+	}
+
+	public int getNumRows() {
+		return numRows;
+	}
+
+	public int getNumCols() {
+		return numCols;
+	}
+
+	public Object getCompressedData() {
+		return compressedData;
+	}
+
+	public double getCompressionRatio() {
+		return compressionRatio;
+	}
+
+	public byte[] getMetadata() {
+		return metadata;
+	}
 
 	/** Estimate original size in bytes (8 bytes per double) */
 	public long estimateOriginalSizeBytes() {
@@ -65,7 +82,7 @@ public class CompressedMatrix implements Serializable {
 
 	/** Estimate compressed size in bytes */
 	public long getCompressedSizeBytes() {
-		if (compressedData instanceof byte[]) {
+		if(compressedData instanceof byte[]) {
 			return ((byte[]) compressedData).length;
 		}
 		return 0;
@@ -73,7 +90,7 @@ public class CompressedMatrix implements Serializable {
 
 	@Override
 	public String toString() {
-		return String.format("CompressedMatrix[%s, %dx%d, ratio=%.2fx]",
-			type.getId(), numRows, numCols, compressionRatio);
+		return String.format("CompressedMatrix[%s, %dx%d, ratio=%.2fx]", type.getId(), numRows, numCols,
+			compressionRatio);
 	}
 }

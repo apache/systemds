@@ -26,16 +26,11 @@ import org.apache.sysds.runtime.controlprogram.federated.compression.exceptions.
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
- * Factory for creating compressor instances from configuration.
- * Centralizes compressor instantiation and parameter validation.
+ * Factory for creating compressor instances from configuration. Centralizes compressor instantiation and parameter
+ * validation.
  *
- * Usage:
- *   CompressionConfig config = CompressionConfig.builder()
- *       .enable(true)
- *       .withType(CompressionType.TOPK)
- *       .withSparsity(0.01)
- *       .build();
- *   MatrixCompressor compressor = CompressionFactory.create(config);
+ * Usage: CompressionConfig config = CompressionConfig.builder() .enable(true) .withType(CompressionType.TOPK)
+ * .withSparsity(0.01) .build(); MatrixCompressor compressor = CompressionFactory.create(config);
  */
 public class CompressionFactory {
 
@@ -45,6 +40,7 @@ public class CompressionFactory {
 
 	/**
 	 * Create a compressor from a CompressionConfig.
+	 *
 	 * @param config The compression configuration
 	 * @return A ready-to-use MatrixCompressor
 	 * @throws IllegalArgumentException if the config is invalid
@@ -64,8 +60,8 @@ public class CompressionFactory {
 	}
 
 	/**
-	 * Create a compressor suitable for decompression only, by type.
-	 * Parameters like sparsity/bits do not affect decompression correctness.
+	 * Create a compressor suitable for decompression only, by type. Parameters like sparsity/bits do not affect
+	 * decompression correctness.
 	 */
 	public static MatrixCompressor createForDecompression(CompressionType type) {
 		switch(type) {
@@ -84,26 +80,17 @@ public class CompressionFactory {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * No-op compressor: returns the matrix as-is.
-	 * Used when compression is disabled or type is NONE.
+	 * No-op compressor: returns the matrix as-is. Used when compression is disabled or type is NONE.
 	 */
 	private static class PassthroughCompressor implements MatrixCompressor {
 
 		@Override
-		public CompressedMatrix compress(MatrixBlock input)
-				throws CompressionException {
-			return new CompressedMatrix(
-				CompressionType.NONE,
-				input.getNumRows(),
-				input.getNumColumns(),
-				input,
-				1.0
-			);
+		public CompressedMatrix compress(MatrixBlock input) throws CompressionException {
+			return new CompressedMatrix(CompressionType.NONE, input.getNumRows(), input.getNumColumns(), input, 1.0);
 		}
 
 		@Override
-		public MatrixBlock decompress(CompressedMatrix compressed)
-				throws DecompressionException {
+		public MatrixBlock decompress(CompressedMatrix compressed) throws DecompressionException {
 			return (MatrixBlock) compressed.getCompressedData();
 		}
 	}

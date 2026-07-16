@@ -23,15 +23,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.sysds.runtime.ooc.memory.GlobalMemoryBroker;
+import org.apache.sysds.runtime.ooc.memory.MemoryAllowance;
+import org.apache.sysds.runtime.ooc.memory.SyncMemoryAllowance;
 import org.apache.sysds.runtime.ooc.planning.OOCAccessPattern;
+import org.apache.sysds.runtime.ooc.planning.OOCPlanner;
+import org.apache.sysds.runtime.ooc.stream.StreamContext;
 
 public abstract class OOCPrimitive {
+	private final StreamContext _context;
 	private final List<OOCPrimitive> _children;
 	private final List<OOCPrimitive> _parents;
+	private final AtomicBoolean _started;
 	private final AtomicBoolean _executionStarted;
 	protected OOCAccessPattern _pattern;
+	protected MemoryAllowance _allowance;
 
-	protected OOCPrimitive(List<OOCPrimitive> children) {
+	protected OOCPrimitive(StreamContext context, List<OOCPrimitive> children) {
+		_context = context;
 		_parents = new ArrayList<>();
 		List<OOCPrimitive> uniqueChildren = new ArrayList<>(children.size());
 		for(OOCPrimitive child : children) {
@@ -41,8 +50,13 @@ public abstract class OOCPrimitive {
 			child.addParent(this);
 		}
 		_children = List.copyOf(uniqueChildren);
+		_started = new AtomicBoolean();
 		_executionStarted = new AtomicBoolean();
 		_pattern = OOCAccessPattern.UNSET;
+	}
+
+	public final StreamContext getContext() {
+		return _context;
 	}
 
 	public final List<OOCPrimitive> getChildren() {
@@ -72,9 +86,30 @@ public abstract class OOCPrimitive {
 		return _executionStarted.get();
 	}
 
+	public final void start() {
+		if(_started.compareAndSet(false, true))
+			OOCPlanner.compile(this);
+	}
+
 	public final void tryStartExecution() {
-		if(_executionStarted.compareAndSet(false, true))
+		if(_executionStarted.compareAndSet(false, true)) {
+			_allowance = new SyncMemoryAllowance(GlobalMemoryBroker.get());
 			startExecution();
+		}
+	}
+
+	public final void onComplete() {
+		_allowance.shutdown();
+	}
+
+	public final void inferPatterns() {
+		if(!hasStartedExecution())
+			inferPatternsInternal();
+	}
+
+	public final void requestPattern(OOCAccessPattern accessPattern) {
+		if(!hasStartedExecution() && _pattern != accessPattern)
+			requestPatternInternal(accessPattern);
 	}
 
 	private static boolean containsIdentity(List<OOCPrimitive> primitives, OOCPrimitive primitive) {
@@ -86,7 +121,7 @@ public abstract class OOCPrimitive {
 
 	protected abstract void startExecution();
 
-	public abstract void inferPatterns();
+	protected abstract void inferPatternsInternal();
 
-	public abstract void requestPattern(OOCAccessPattern accessPattern);
+	protected abstract void requestPatternInternal(OOCAccessPattern accessPattern);
 }

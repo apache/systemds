@@ -33,8 +33,18 @@ import java.util.function.Function;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
+import org.apache.sysds.runtime.instructions.ooc.OOCStreamable;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.ooc.cache.OOCFuture;
+import org.apache.sysds.runtime.ooc.memory.MemoryAllowance;
+import org.apache.sysds.runtime.ooc.memory.ReservationBudget;
+import org.apache.sysds.runtime.ooc.primitives.MappingOOCPrimitive;
+import org.apache.sysds.runtime.ooc.primitives.PlannableDataGenOOCPrimitive;
+import org.apache.sysds.runtime.ooc.primitives.TransposeOOCPrimitive;
 import org.apache.sysds.runtime.ooc.stats.OOCEventLog;
+import org.apache.sysds.runtime.ooc.stream.AllocatedOOCStream;
 import org.apache.sysds.runtime.ooc.stream.StreamContext;
 import org.apache.sysds.runtime.ooc.stream.TaskContext;
 import org.apache.sysds.runtime.util.CommonThreadPool;
@@ -45,6 +55,31 @@ public final class OOCInstructionUtils {
 	public static final ExecutorService COMPUTE_EXECUTOR = CommonThreadPool.get();
 	private static final AtomicInteger COMPUTE_IN_FLIGHT = new AtomicInteger();
 	private static final int COMPUTE_BACKPRESSURE_THRESHOLD = 100;
+
+	public static void dataGen(OOCStream<IndexedMatrixValue> output, Function<MatrixIndexes, MatrixBlock> operation,
+		StreamContext context) {
+		output.assignPrimitive(new PlannableDataGenOOCPrimitive(output, operation, context));
+	}
+
+	public static void equiMapBlock(OOCStreamable<IndexedMatrixValue> input, OOCStream<IndexedMatrixValue> output,
+		Function<MatrixBlock, MatrixBlock> operation, StreamContext context) {
+		equiMap(input, output, value -> operation.apply((MatrixBlock) value.getValue()), context);
+	}
+
+	public static void equiMap(OOCStreamable<IndexedMatrixValue> input, OOCStream<IndexedMatrixValue> output,
+		Function<IndexedMatrixValue, MatrixBlock> operation, StreamContext context) {
+		output.assignPrimitive(new MappingOOCPrimitive(input, output, operation, context));
+	}
+
+	public static void transposedMap(OOCStream<IndexedMatrixValue> input, OOCStream<IndexedMatrixValue> output,
+		Function<MatrixBlock, MatrixBlock> operation, StreamContext context) {
+		output.assignPrimitive(new TransposeOOCPrimitive(input, output, operation, context));
+	}
+
+	public static void transpose(OOCStream<IndexedMatrixValue> input, OOCStream<IndexedMatrixValue> output,
+		StreamContext context) {
+		transposedMap(input, output, MatrixBlock::transpose, context);
+	}
 
 	public static int getComputeInFlight() {
 		return COMPUTE_IN_FLIGHT.get();
@@ -57,6 +92,31 @@ public final class OOCInstructionUtils {
 	public static <T> CompletableFuture<Void> submitOOCTasks(OOCStream<T> queue,
 		Consumer<OOCStream.QueueCallback<T>> consumer, StreamContext context) {
 		return submitOOCTasks(List.of(queue), (i, callback) -> consumer.accept(callback), null, null, context);
+	}
+
+	public static CompletableFuture<Void> submitAdmittedOOCTasks(OOCStream<IndexedMatrixValue> in,
+		OOCStream<IndexedMatrixValue> out, Function<IndexedMatrixValue, IndexedMatrixValue> operation,
+		MemoryAllowance allowance, StreamContext context) {
+		context.addOutStream(out);
+		long outputBytes = OOCUtils.estimateOutputTileBytes(out.getDataCharacteristics());
+		AllocatedOOCStream<IndexedMatrixValue> admitted = new AllocatedOOCStream<>(in, allowance,
+			ignored -> outputBytes);
+		return submitOOCTasks(admitted, callback -> {
+			ReservationBudget budget = AllocatedOOCStream.detachBudget(callback);
+			try {
+				if(budget == null)
+					throw new DMLRuntimeException("Missing admitted output budget");
+				OOCUtils.enqueueExact(out, operation.apply(callback.get()), budget);
+				budget = null;
+			}
+			finally {
+				if(budget != null)
+					budget.close();
+			}
+		}, context).thenRun(out::closeInput).exceptionally(error -> {
+			out.propagateFailure(DMLRuntimeException.of(error));
+			return null;
+		});
 	}
 
 	public static <T> CompletableFuture<Void> submitOOCTasks(OOCStream<T> queue,

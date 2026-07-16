@@ -31,11 +31,11 @@ public final class StoreLease<T extends SpillableObject> implements AutoCloseabl
 	private final AtomicInteger _shared;
 	private boolean _open;
 
-	StoreLease(BlockEntry entry, Runnable releaser) {
+	public StoreLease(BlockEntry entry, Runnable releaser) {
 		this(null, entry, releaser, new AtomicInteger(1));
 	}
 
-	StoreLease(T value, Runnable releaser) {
+	public StoreLease(T value, Runnable releaser) {
 		this(value, null, releaser, new AtomicInteger(1));
 	}
 

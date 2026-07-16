@@ -111,6 +111,36 @@ public class OOCFuture<T> {
 		}
 	}
 
+	public <R> OOCFuture<R> thenCompose(Function<? super T, ? extends OOCFuture<? extends R>> mapper) {
+		OOCFuture<R> result = new OOCFuture<>();
+		whenComplete((value, error) -> {
+			if(error != null) {
+				result.completeExceptionally(error);
+				return;
+			}
+
+			final OOCFuture<? extends R> next;
+			try {
+				next = mapper.apply(value);
+				if(next == null)
+					throw new NullPointerException("thenCompose mapper returned null");
+			}
+			catch(Throwable t) {
+				result.completeExceptionally(t);
+				return;
+			}
+
+			next.whenComplete((nextValue, nextError) -> {
+				if(nextError != null)
+					result.completeExceptionally(nextError);
+				else
+					result.complete(nextValue);
+			});
+		});
+
+		return result;
+	}
+
 	private <R> void subscribe(Function<? super T, ? extends R> mapper, Consumer<? super R> action,
 		BiConsumer<? super R, ? super Throwable> completion) {
 		T value;
@@ -167,7 +197,6 @@ public class OOCFuture<T> {
 				action.accept(result);
 		}
 		catch(Throwable ignored) {
-			// Subscribers are independent; one failed callback must not prevent the remaining notifications.
 		}
 	}
 
@@ -181,8 +210,8 @@ public class OOCFuture<T> {
 		private <R> Subscriber(Function<? super T, ? extends R> mapper, Consumer<? super R> action,
 			BiConsumer<? super R, ? super Throwable> completion, Subscriber<T> next) {
 			this.mapper = mapper;
-			this.action = (Consumer<Object>)action;
-			this.completion = (BiConsumer<Object, Throwable>)(BiConsumer<?, ?>)completion;
+			this.action = (Consumer<Object>) action;
+			this.completion = (BiConsumer<Object, Throwable>) completion;
 			this.next = next;
 		}
 

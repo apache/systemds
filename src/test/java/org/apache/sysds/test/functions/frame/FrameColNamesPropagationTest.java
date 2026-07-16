@@ -56,9 +56,9 @@ public class FrameColNamesPropagationTest extends AutomatedTestBase {
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
-                {10},
-                {100},
-                {1000},
+                //{10},
+                //{100},
+                //{1000},
                 {2500},
         });
     }

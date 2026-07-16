@@ -47,15 +47,7 @@ import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.ooc.TeeOOCInstruction;
-import org.apache.sysds.runtime.io.FileFormatProperties;
-import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
-import org.apache.sysds.runtime.io.FileFormatPropertiesHDF5;
-import org.apache.sysds.runtime.io.FileFormatPropertiesLIBSVM;
-import org.apache.sysds.runtime.io.ListReader;
-import org.apache.sysds.runtime.io.ListWriter;
-import org.apache.sysds.runtime.io.WriterHDF5;
-import org.apache.sysds.runtime.io.WriterMatrixMarket;
-import org.apache.sysds.runtime.io.WriterTextCSV;
+import org.apache.sysds.runtime.io.*;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
@@ -725,10 +717,29 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			case FRAME: {
 				String fname = createUniqueFilename();
 				FrameObject fobj = new FrameObject(fname);
-				setCacheableDataFields(fobj, getInput1().getName());
-				if( _schema != null )
-					fobj.setSchema(_schema); //after metadata
-				ec.setVariable(getInput1().getName(), fobj);
+
+				String inputName = getInput1().getName();
+				setCacheableDataFields(fobj, inputName);
+
+				if(_schema != null)
+					fobj.setSchema(_schema);
+
+				if(_formatProperties instanceof FileFormatPropertiesCSV) {
+					FileFormatPropertiesCSV props =
+							(FileFormatPropertiesCSV) _formatProperties;
+
+					if(props.hasHeader()) {
+						FrameReaderTextCSV reader =
+								new FrameReaderTextCSV(props);
+
+						String[] names =
+								reader.readColumnNamesFromHDFS(fname);
+
+						fobj.setColumnNames(names);
+					}
+				}
+
+				ec.setVariable(inputName, fobj);
 				break;
 			}
 			case LIST: {

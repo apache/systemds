@@ -24,6 +24,7 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -59,14 +60,30 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction {
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageRDD(output.getName(), input2.getName());
-		
-		if(_cbind)
-			//update schema of output with merged input schemas
+
+		if(_cbind) {
+			//update schema and column names of output with merged input schemas
 			sec.getFrameObject(output.getName()).setSchema(
-				sec.getFrameObject(input1.getName()).mergeSchemas(
-				sec.getFrameObject(input2.getName())));
-		else
+					sec.getFrameObject(input1.getName()).mergeSchemas(
+							sec.getFrameObject(input2.getName())));
+
+			// Get column names of left and right FrameBlock
+			String[] leftColNames = sec.getFrameObject(input1.getName()).getColumnNames();
+			String[] rightColNames = sec.getFrameObject(input2.getName()).getColumnNames();
+
+			// Set column names of output to concatenated column names of left and right FrameBlock
+			String[] outColNames = new String[leftColNames.length + rightColNames.length];
+
+			System.arraycopy(leftColNames, 0, outColNames, 0, leftColNames.length);
+
+			System.arraycopy(rightColNames, 0, outColNames, leftColNames.length, rightColNames.length);
+
+			sec.getFrameObject(output.getName()).setColumnNames(outColNames);
+
+		} else {
 			sec.getFrameObject(output.getName()).setSchema(sec.getFrameObject(input1.getName()).getSchema());
+			//sec.getFrameObject(output.getName()).setColumnNames(sec.getFrameObject(input1.getName()).getColumnNames());
+		}
 	}
 
 	public static JavaPairRDD<Long, FrameBlock> appendFrameRSP(JavaPairRDD<Long, FrameBlock> in1, JavaPairRDD<Long, FrameBlock> in2, long leftRows, boolean cbind) {

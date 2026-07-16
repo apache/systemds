@@ -60,7 +60,9 @@ public class FrameObject extends CacheableData<FrameBlock>
 	private static final long serialVersionUID = 1755082174281927785L;
 
 	private ValueType[] _schema = null;
-	
+
+	private String[] _colnames = null;
+
 	protected FrameObject() {
 		super(DataType.FRAME, ValueType.STRING);
 	}
@@ -152,6 +154,46 @@ public class FrameObject extends CacheableData<FrameBlock>
 	
 	public void setSchema(ValueType[] schema) {
 		_schema = schema;
+	}
+
+	public String[] getColumnNames() {
+		return _colnames;
+	}
+
+	/**
+	 * Obtain column names
+	 *
+	 * @param cl column lower bound, inclusive
+	 * @param cu column upper bound, inclusive
+	 * @return column names
+	 */
+	public String[] getColumnNames(int cl, int cu) {
+		return (_colnames != null && _colnames.length > cu)
+				? Arrays.copyOfRange(_colnames, cl, cu + 1)
+				: FrameBlock.createColNames(cu - cl + 1);
+	}
+
+	/**
+	 * Creates a new collection containing the column names of the current
+	 * frame object concatenated with the column names of the passed frame object.
+	 *
+	 * @param fo frame object
+	 * @return merged column names
+	 */
+	public String[] mergeColumnNames(FrameObject fo) {
+		String[] left = (_colnames != null)
+				? _colnames
+				: FrameBlock.createColNames((int) getNumColumns());
+
+		String[] right = (fo._colnames != null)
+				? fo._colnames
+				: FrameBlock.createColNames((int) fo.getNumColumns());
+
+		return ArrayUtils.addAll(left, right);
+	}
+
+	public void setColumnNames(String[] colnames) {
+		_colnames = colnames;
 	}
 		
 	@Override

@@ -38,6 +38,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.ooc.stream.StreamContext;
+import org.apache.sysds.runtime.ooc.util.OOCInstructionUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class DataGenOOCInstruction extends UnaryOOCInstruction {
@@ -259,8 +260,7 @@ public class DataGenOOCInstruction extends UnaryOOCInstruction {
 			final int maxK = (int) UtilFunctions.getSeqLength(lfrom, lto, lincr);
 			final double finalLincr = lincr;
 
-
-			submitOOCTask(() -> {
+			OOCInstructionUtils.submitOOCTask(() -> {
 				int k = 0;
 				double curFrom = lfrom;
 				double curTo;
@@ -286,7 +286,7 @@ public class DataGenOOCInstruction extends UnaryOOCInstruction {
 				}
 
 				qOut.closeInput();
-			}, new StreamContext().addOutStream(qOut));
+			}, new StreamContext(_callerId, getExtendedOpcode()).addOutStream(qOut));
 		}
 		else
 			throw new NotImplementedException();

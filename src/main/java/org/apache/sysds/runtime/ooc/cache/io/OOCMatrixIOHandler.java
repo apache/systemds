@@ -70,9 +70,6 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 	private static final int READER_SIZE = 16;
 	private static final long OVERFLOW = 8192 * 1024;
 	private static final long MAX_PARTITION_SIZE = 8192 * 8192;
-	private static final long GROUP_TARGET_BYTES = 8L * 1024 * 1024;
-	private static final long GROUP_MAX_BYTES = 16L * 1024 * 1024;
-	private static final int GROUP_MAX_COUNT = 64;
 	private static final long IDLE_FLUSH_MS = 1;
 
 	private final String _spillDir;
@@ -371,12 +368,6 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 		AtomicLong bytesRead, long byteLimit, Object budgetLock, ConcurrentLinkedDeque<SourceBlockDescriptor> descriptors)
 		throws IOException {
 		MatrixIndexes key = new MatrixIndexes();
-		List<IndexedMatrixValue> groupValues = new ArrayList<>();
-		List<SourceBlockDescriptor> groupDescs = new ArrayList<>();
-		long groupBytes = 0;
-		long groupSerialized = 0;
-		long groupStart = -1;
-		long groupEnd = -1;
 
 		try(SequenceFile.Reader reader = new SequenceFile.Reader(job, SequenceFile.Reader.file(path))) {
 			long pos = filePositions.get(fileIdx);
@@ -409,50 +400,11 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 				SourceBlockDescriptor descriptor = new SourceBlockDescriptor(path.toString(), request.format, outIdx,
 					recordStart, (int)(recordEnd - recordStart), blockSize);
 
-				boolean small = blockSize <= GROUP_TARGET_BYTES;
-				boolean contiguous = groupValues.isEmpty() || recordStart == groupEnd;
-				boolean canAdd = small
-					&& contiguous
-					&& groupValues.size() < GROUP_MAX_COUNT
-					&& (groupBytes + (recordEnd - recordStart)) <= GROUP_MAX_BYTES;
-
-				if (!canAdd && !groupValues.isEmpty()) {
-					flushSourceGroup(request, groupValues, groupDescs, groupStart, groupEnd, groupSerialized,
-						descriptors);
-					groupValues.clear();
-					groupDescs.clear();
-					groupBytes = 0;
-					groupSerialized = 0;
-					groupStart = -1;
-					groupEnd = -1;
-				}
-
-				if (small) {
-					if (groupValues.isEmpty())
-						groupStart = recordStart;
-					groupEnd = recordEnd;
-					groupValues.add(imv);
-					groupDescs.add(descriptor);
-					groupBytes += (recordEnd - recordStart);
-					groupSerialized += blockSize;
-					if (groupSerialized >= GROUP_TARGET_BYTES || groupBytes >= GROUP_MAX_BYTES || groupValues.size() >= GROUP_MAX_COUNT) {
-						flushSourceGroup(request, groupValues, groupDescs, groupStart, groupEnd, groupSerialized,
-							descriptors);
-						groupValues.clear();
-						groupDescs.clear();
-						groupBytes = 0;
-						groupSerialized = 0;
-						groupStart = -1;
-						groupEnd = -1;
-					}
-				}
-				else {
-					if (request.target instanceof SourceOOCStream src)
-						src.enqueue(imv, descriptor);
-					else
-						request.target.enqueue(imv);
-					descriptors.add(descriptor);
-				}
+				if(request.target instanceof SourceOOCStream src)
+					src.enqueue(imv, descriptor);
+				else
+					request.target.enqueue(imv);
+				descriptors.add(descriptor);
 				filePositions.set(fileIdx, reader.getPosition());
 
 				if (DMLScript.OOC_LOG_EVENTS) {
@@ -465,32 +417,9 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 					break; // Note that we knowingly go over limit, which could result in READER_SIZE*8MB overshoot
 			}
 
-			if (!groupValues.isEmpty()) {
-				flushSourceGroup(request, groupValues, groupDescs, groupStart, groupEnd, groupSerialized,
-					descriptors);
-			}
-
 			if (!stop.get())
 				completed.set(fileIdx, 1);
 		}
-	}
-
-	private void flushSourceGroup(SourceReadRequest request, List<IndexedMatrixValue> values,
-		List<SourceBlockDescriptor> descs, long start, long end, long totalSerialized,
-		ConcurrentLinkedDeque<SourceBlockDescriptor> descriptors) {
-		if (values.isEmpty())
-			return;
-		SourceBlockDescriptor first = descs.get(0);
-		OOCIOHandler.GroupSourceBlockDescriptor group =
-			new OOCIOHandler.GroupSourceBlockDescriptor(first.path, first.format, first.indexes, start,
-				(int)(end - start), totalSerialized, new ArrayList<>(descs));
-		if (request.target instanceof SourceOOCStream src)
-			src.enqueueGroup(new ArrayList<>(values), group);
-		else {
-			for (IndexedMatrixValue v : values)
-				request.target.enqueue(v);
-		}
-		descriptors.addAll(group.blocks);
 	}
 
 	private void closeTarget(org.apache.sysds.runtime.instructions.ooc.OOCStream<IndexedMatrixValue> target, boolean close) {
@@ -503,7 +432,6 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 			}
 		}
 	}
-
 
 	private void loadFromDisk(BlockEntry block) {
 		String key = block.getKey().toFileKey();

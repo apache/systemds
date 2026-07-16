@@ -71,12 +71,12 @@ public final class OOCInstructionUtils {
 		output.assignPrimitive(new MappingOOCPrimitive(input, output, operation, context));
 	}
 
-	public static void transposedMap(OOCStream<IndexedMatrixValue> input, OOCStream<IndexedMatrixValue> output,
+	public static void transposedMap(OOCStreamable<IndexedMatrixValue> input, OOCStream<IndexedMatrixValue> output,
 		Function<MatrixBlock, MatrixBlock> operation, StreamContext context) {
 		output.assignPrimitive(new TransposeOOCPrimitive(input, output, operation, context));
 	}
 
-	public static void transpose(OOCStream<IndexedMatrixValue> input, OOCStream<IndexedMatrixValue> output,
+	public static void transpose(OOCStreamable<IndexedMatrixValue> input, OOCStream<IndexedMatrixValue> output,
 		StreamContext context) {
 		transposedMap(input, output, MatrixBlock::transpose, context);
 	}
@@ -191,8 +191,12 @@ public final class OOCInstructionUtils {
 						future.complete(null);
 					return;
 				}
+				if(callback.isFailure() && !(callback instanceof OOCStream.GroupQueueCallback<?>))
+					callback.get();
 
 				Consumer<OOCStream.QueueCallback<T>> process = item -> {
+					if(item.isFailure())
+						item.get();
 					if(predicate != null && !predicate.apply(streamIndex, item)) {
 						if(onNotProcessed != null)
 							onNotProcessed.accept(streamIndex, item);

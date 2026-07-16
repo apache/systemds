@@ -31,19 +31,18 @@ import org.apache.sysds.runtime.ooc.stream.StreamContext;
 import org.apache.sysds.runtime.ooc.util.OOCInstructionUtils;
 
 public class MappingOOCPrimitive extends OOCPrimitive {
-	private final OOCStreamable<IndexedMatrixValue> _input;
+	private final OOCStream<IndexedMatrixValue> _input;
 	private final OOCStreamable<IndexedMatrixValue> _output;
 	private final Function<IndexedMatrixValue, MatrixBlock> _operation;
 
 	public MappingOOCPrimitive(OOCStreamable<IndexedMatrixValue> input, OOCStreamable<IndexedMatrixValue> output,
 		Function<IndexedMatrixValue, MatrixBlock> operation, StreamContext context) {
-		this(input.getPrimitive(), input, output, operation, context);
+		this(input.getReadStream(), output, operation, context);
 	}
 
-	private MappingOOCPrimitive(OOCPrimitive inputPrimitive, OOCStreamable<IndexedMatrixValue> input,
-		OOCStreamable<IndexedMatrixValue> output, Function<IndexedMatrixValue, MatrixBlock> operation,
-		StreamContext context) {
-		super(context, inputPrimitive == null ? List.of() : List.of(inputPrimitive));
+	private MappingOOCPrimitive(OOCStream<IndexedMatrixValue> input, OOCStreamable<IndexedMatrixValue> output,
+		Function<IndexedMatrixValue, MatrixBlock> operation, StreamContext context) {
+		super(context, input.getPrimitive() == null ? List.of() : List.of(input.getPrimitive()));
 		_input = input;
 		_output = output;
 		_operation = operation;
@@ -66,10 +65,9 @@ public class MappingOOCPrimitive extends OOCPrimitive {
 
 	@Override
 	protected void startExecution() {
-		OOCStream<IndexedMatrixValue> input = _input.getReadStream();
 		OOCStream<IndexedMatrixValue> output = _output.getWriteStream();
 		OOCInstructionUtils
-			.submitAdmittedOOCTasks(input, output,
+			.submitAdmittedOOCTasks(_input, output,
 				value -> new IndexedMatrixValue(value.getIndexes(), _operation.apply(value)), _allowance, getContext())
 			.thenRun(this::onComplete);
 	}

@@ -30,8 +30,10 @@ import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.ooc.SubscribableTaskQueue;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
+import org.apache.sysds.runtime.ooc.cache.OOCCacheManager;
 import org.apache.sysds.runtime.ooc.planning.OOCAccessPattern;
 import org.apache.sysds.runtime.ooc.primitives.OOCPrimitive;
 import org.apache.sysds.runtime.ooc.stream.FilteredOOCStream;
@@ -41,6 +43,21 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class OOCPrimitiveTest {
+	@Test
+	public void testRetainForgottenCacheCallback() {
+		OOCCacheManager.reset();
+		try(OOCStream.QueueCallback<IndexedMatrixValue> callback = OOCCacheManager.putAndPin(1, 1,
+			new IndexedMatrixValue(new MatrixIndexes(1, 1), new MatrixBlock(1, 1, 7)))) {
+			OOCCacheManager.forget(1, 1);
+			try(OOCStream.QueueCallback<IndexedMatrixValue> retained = callback.keepOpen()) {
+				Assert.assertEquals(7, retained.get().getValue().get(0, 0), 0);
+			}
+		}
+		finally {
+			OOCCacheManager.reset();
+		}
+	}
+
 	@Test
 	public void testGraphPatternsAndExecution() {
 		TestPrimitive source = new TestPrimitive(List.of());

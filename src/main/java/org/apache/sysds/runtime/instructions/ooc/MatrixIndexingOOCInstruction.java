@@ -88,6 +88,7 @@ public class MatrixIndexingOOCInstruction extends IndexingOOCInstruction {
 				Double scalarOut = null;
 				IndexedMatrixValue tmp;
 
+				qIn.start();
 				while((tmp = qIn.dequeue()) != LocalTaskQueue.NO_MORE_TASKS) {
 					if(tmp.getIndexes().getRowIndex() == firstBlockRow + 1 &&
 						tmp.getIndexes().getColumnIndex() == firstBlockCol + 1) {
@@ -301,6 +302,7 @@ public class MatrixIndexingOOCInstruction extends IndexingOOCInstruction {
 				qOut.propagateFailure(DMLRuntimeException.of(err));
 				return null;
 			});
+			qIn.start();
 
 			if(hasIntermediateStream)
 				cachedStream.scheduleDeletion(); // We can immediately delete blocks after consumption
@@ -356,6 +358,7 @@ public class MatrixIndexingOOCInstruction extends IndexingOOCInstruction {
 					qOutRaw.closeInput();
 					return null;
 				});
+				qLhs.start();
 				return;
 			}
 
@@ -452,6 +455,8 @@ public class MatrixIndexingOOCInstruction extends IndexingOOCInstruction {
 				qOutRaw.closeInput();
 				return null;
 			});
+			qLhs.start();
+			qRhs.start();
 		}
 		else
 			throw new DMLRuntimeException(

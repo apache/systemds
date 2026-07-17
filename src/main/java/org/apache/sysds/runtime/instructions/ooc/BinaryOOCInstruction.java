@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.ooc.util.OOCInstructionUtils;
 
 public class BinaryOOCInstruction extends ComputationOOCInstruction {
 	
@@ -63,8 +64,6 @@ public class BinaryOOCInstruction extends ComputationOOCInstruction {
 		MatrixObject m1 = ec.getMatrixObject(input1);
 		MatrixObject m2 = ec.getMatrixObject(input2);
 
-		OOCStream<IndexedMatrixValue> qIn1 = m1.getStreamHandle();
-		OOCStream<IndexedMatrixValue> qIn2 = m2.getStreamHandle();
 		OOCStream<IndexedMatrixValue> qOut = new SubscribableTaskQueue<>();
 		ec.getMatrixObject(output).setStreamHandle(qOut);
 
@@ -74,6 +73,8 @@ public class BinaryOOCInstruction extends ComputationOOCInstruction {
 		// If dimensions are unknown, we cannot safely detect broadcasting.
 		// Fall back to strict key-based join and let downstream operators validate as needed.
 		if(!known1 || !known2) {
+			OOCStream<IndexedMatrixValue> qIn1 = m1.getStreamHandle();
+			OOCStream<IndexedMatrixValue> qIn2 = m2.getStreamHandle();
 			if(LOG.isWarnEnabled()) {
 				LOG.warn("Falling back to key-wise OOC binary join for opcode '" + getOpcode()
 					+ "' due to unknown matrix dimensions: " + input1.getName() + "=" + m1.getNumRows() + "x"
@@ -93,6 +94,8 @@ public class BinaryOOCInstruction extends ComputationOOCInstruction {
 		boolean isRowBroadcast = m1.getNumRows() > 1 && m2.getNumRows() == 1;
 
 		if (isColBroadcast && !isRowBroadcast) {
+			OOCStream<IndexedMatrixValue> qIn1 = m1.getStreamHandle();
+			OOCStream<IndexedMatrixValue> qIn2 = m2.getStreamHandle();
 			final long maxProcessesPerBroadcast = (m1.getNumColumns() + m1.getBlocksize() - 1) / m1.getBlocksize();
 
 			broadcastJoinOOC(qIn1, qIn2, qOut, (tmp1, b) -> {
@@ -107,6 +110,8 @@ public class BinaryOOCInstruction extends ComputationOOCInstruction {
 			}, tmp -> tmp.getIndexes().getRowIndex());
 		}
 		else if (isRowBroadcast && !isColBroadcast) {
+			OOCStream<IndexedMatrixValue> qIn1 = m1.getStreamHandle();
+			OOCStream<IndexedMatrixValue> qIn2 = m2.getStreamHandle();
 			final long maxProcessesPerBroadcast = (m1.getNumRows() + m1.getBlocksize() - 1) / m1.getBlocksize();
 
 			broadcastJoinOOC(qIn1, qIn2, qOut, (tmp1, b) -> {
@@ -126,12 +131,8 @@ public class BinaryOOCInstruction extends ComputationOOCInstruction {
 					+ m1.getNumRows() + "x" + m1.getNumColumns() + " <=> "
 					+ m2.getNumRows() + "x" + m2.getNumColumns());
 
-			joinOOC(qIn1, qIn2, qOut, (tmp1, tmp2) -> {
-				IndexedMatrixValue tmpOut = new IndexedMatrixValue();
-				tmpOut.set(tmp1.getIndexes(),
-					tmp1.getValue().binaryOperations((BinaryOperator)_optr, tmp2.getValue(), tmpOut.getValue()));
-				return tmpOut;
-			}, IndexedMatrixValue::getIndexes);
+			OOCInstructionUtils.equiJoin(m1.getStreamable(), m2.getStreamable(), qOut,
+				(left, right) -> left.binaryOperations((BinaryOperator) _optr, right, new MatrixBlock()), getContext());
 		}
 	}
 

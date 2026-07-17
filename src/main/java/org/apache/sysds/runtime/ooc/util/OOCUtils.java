@@ -170,4 +170,9 @@ public class OOCUtils {
 				callback.close();
 		}
 	}
+
+	public static ReservationBudget reserveBudget(MemoryAllowance allowance, long bytes) {
+		allowance.reserveBlocking(bytes);
+		return new ReservationBudget(allowance, bytes);
+	}
 }

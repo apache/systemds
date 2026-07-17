@@ -26,6 +26,7 @@ import java.util.Map;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.instructions.ooc.CachingStream;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.ooc.SubscribableTaskQueue;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
@@ -117,6 +118,42 @@ public class OOCPrimitiveTest {
 		}
 		Assert.assertEquals(Map.of("1,1", 12.0, "2,1", 13.0, "3,1", 14.0, "1,2", 22.0, "2,2", 23.0, "3,2", 24.0),
 			values);
+	}
+
+	@Test
+	public void testJoinOutOfOrder() {
+		SubscribableTaskQueue<IndexedMatrixValue> left = new SubscribableTaskQueue<>();
+		SubscribableTaskQueue<IndexedMatrixValue> right = new SubscribableTaskQueue<>();
+		SubscribableTaskQueue<IndexedMatrixValue> joined = new SubscribableTaskQueue<>();
+		SubscribableTaskQueue<IndexedMatrixValue> addends = new SubscribableTaskQueue<>();
+		SubscribableTaskQueue<IndexedMatrixValue> output = new SubscribableTaskQueue<>();
+		for(SubscribableTaskQueue<IndexedMatrixValue> stream : List.of(left, right, joined, addends, output))
+			stream.setData(new MatrixObject(ValueType.FP64, "/dev/null",
+				new MetaDataFormat(new MatrixCharacteristics(1, 2, 1), FileFormat.BINARY)));
+		CachingStream cachedLeft = new CachingStream(left);
+		left.enqueue(new IndexedMatrixValue(new MatrixIndexes(1, 1), new MatrixBlock(1, 1, 10)));
+		left.enqueue(new IndexedMatrixValue(new MatrixIndexes(1, 2), new MatrixBlock(1, 1, 20)));
+		right.enqueue(new IndexedMatrixValue(new MatrixIndexes(1, 2), new MatrixBlock(1, 1, 2)));
+		right.enqueue(new IndexedMatrixValue(new MatrixIndexes(1, 1), new MatrixBlock(1, 1, 1)));
+		addends.enqueue(new IndexedMatrixValue(new MatrixIndexes(1, 1), new MatrixBlock(1, 1, 100)));
+		addends.enqueue(new IndexedMatrixValue(new MatrixIndexes(1, 2), new MatrixBlock(1, 1, 200)));
+		left.closeInput();
+		right.closeInput();
+		addends.closeInput();
+		OOCInstructionUtils.equiJoin(cachedLeft, right, joined,
+			(l, r) -> new MatrixBlock(1, 1, l.get(0, 0) + r.get(0, 0)), new StreamContext());
+		OOCInstructionUtils.equiJoin(joined, addends, output,
+			(l, r) -> new MatrixBlock(1, 1, l.get(0, 0) + r.get(0, 0)), new StreamContext());
+
+		output.start();
+		Map<Long, Double> values = new HashMap<>();
+		OOCStream.QueueCallback<IndexedMatrixValue> callback;
+		while((callback = output.dequeueCB()) != null)
+			try(OOCStream.QueueCallback<IndexedMatrixValue> current = callback) {
+				values.put(current.get().getIndexes().getColumnIndex(), current.get().getValue().get(0, 0));
+			}
+		Assert.assertEquals(Map.of(1L, 111.0, 2L, 222.0), values);
+		cachedLeft.scheduleDeletion();
 	}
 
 	private static final class TestPrimitive extends OOCPrimitive {

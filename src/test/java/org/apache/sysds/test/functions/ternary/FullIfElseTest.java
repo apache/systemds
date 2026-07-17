@@ -808,7 +808,7 @@ public class FullIfElseTest extends AutomatedTestBase
 			writeInputMatrixWithMTD("A", A, true);
 			double[][] B = getMatrixOfType(mtype2, sparse, 2);
 			writeInputMatrixWithMTD("B", B, true);
-			double[][] C = getMatrixOfType(mtype2, sparse, 3);
+			double[][] C = getMatrixOfType(mtype3, sparse, 3);
 			writeInputMatrixWithMTD("C", C, true);
 			
 			//run test cases
@@ -838,10 +838,10 @@ public class FullIfElseTest extends AutomatedTestBase
 				ret = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
 				break;
 			case COL:
-				ret = getRandomMatrix(1, cols, 0, 1, sparsity, seed);
+				ret = getRandomMatrix(rows, 1, 0, 1, sparsity, seed);
 				break;
 			case ROW:
-				ret = getRandomMatrix(rows, 1, 0, 1, sparsity, seed);
+				ret = getRandomMatrix(1, cols, 0, 1, sparsity, seed);
 				break;
 			default:
 		}

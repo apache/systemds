@@ -26,11 +26,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.instructions.ooc.SubscribableTaskQueue;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.ooc.cache.OOCFuture;
 import org.apache.sysds.runtime.ooc.store.MaterializedCallback;
 import org.apache.sysds.runtime.ooc.store.StoreLease;
@@ -78,7 +83,9 @@ public class OOCInstructionUtilsTest {
 
 	@Test
 	public void testSubmitTaskPropagatesFailure() throws Exception {
-		SubscribableTaskQueue<Integer> output = new SubscribableTaskQueue<>();
+		SubscribableTaskQueue<IndexedMatrixValue> output = new SubscribableTaskQueue<>();
+		output.setData(new MatrixObject(ValueType.FP64, "/dev/null",
+			new MetaDataFormat(new MatrixCharacteristics(1, 1, 1), FileFormat.BINARY)));
 		AtomicReference<DMLRuntimeException> propagated = new AtomicReference<>();
 		output.setSubscriber(callback -> {
 			try(callback) {
@@ -92,6 +99,12 @@ public class OOCInstructionUtilsTest {
 				}
 			}
 		});
+		try {
+			output.closeInput();
+			Assert.fail("Expected block-count failure");
+		}
+		catch(DMLRuntimeException expected) {
+		}
 
 		OOCFuture<Void> completion = OOCInstructionUtils.submitOOCTask(() -> {
 			throw new DMLRuntimeException("injected failure");
@@ -103,7 +116,6 @@ public class OOCInstructionUtilsTest {
 		catch(ExecutionException expected) {
 			Assert.assertTrue(expected.getCause() instanceof DMLRuntimeException);
 		}
-		output.closeInput();
 		Assert.assertNotNull(propagated.get());
 		Assert.assertEquals("injected failure", propagated.get().getMessage());
 	}

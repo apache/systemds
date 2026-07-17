@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.ooc.memory;
 
+import org.apache.sysds.utils.Statistics;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -137,11 +139,14 @@ public class GlobalMemoryBroker implements MemoryBroker {
 	}
 
 	private void runReclaim() {
+		Statistics.incrementOOCMemoryReclaimRun();
+		long nanos = System.nanoTime();
 		try {
 			long reclaimed = 0;
 			for(MemoryAllowance allowance : _allowances)
 				if(!allowance.isShutdown())
 					reclaimed += allowance.reclaimUnused();
+			Statistics.accumulateOOCMemoryReclaimBytes(reclaimed);
 			if(reclaimed == 0)
 				return;
 
@@ -155,6 +160,7 @@ public class GlobalMemoryBroker implements MemoryBroker {
 			notifyReservationWaiters();
 		}
 		finally {
+			Statistics.accumulateOOCMemoryReclaimTime(System.nanoTime() - nanos);
 			if(shouldRetryReclaim())
 				RECLAIM_EXECUTOR.schedule(this::runReclaim, RECLAIM_RETRY_DELAY_MS, TimeUnit.MILLISECONDS);
 			else {

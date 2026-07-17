@@ -35,6 +35,7 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 
 	private final AtomicInteger _availableCtr = new AtomicInteger(1);
 	private final AtomicBoolean _closed = new AtomicBoolean(false);
+	private final AtomicBoolean _terminalDelivered = new AtomicBoolean(false);
 	private final AtomicInteger _blockCount = new AtomicInteger(0);
 	private QueueCallback<T> _lastDequeued = null;
 	private CacheableData<?> _cdata;
@@ -146,6 +147,7 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 				_lastDequeued = deq;
 				return deq.get();
 			}
+			_terminalDelivered.set(true);
 			return null;
 		}
 		catch(InterruptedException e) {
@@ -167,6 +169,8 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 				onDeliveryFinished();
 				_lastDequeued = deq;
 			}
+			else
+				_terminalDelivered.set(true);
 			return deq == NO_MORE_TASKS ? null : deq;
 		}
 		catch(InterruptedException e) {
@@ -239,8 +243,10 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 		if(ctr == 0) {
 			validateBlockCountOnClose();
 			Consumer<QueueCallback<T>> s = _subscriber;
-			if(s != null)
+			if(s != null) {
 				s.accept(OOCStream.eos(_failure));
+				_terminalDelivered.set(true);
+			}
 
 			if(OOCWatchdog.WATCH)
 				OOCWatchdog.registerClose(_watchdogId);
@@ -250,12 +256,14 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCall
 	@Override
 	public synchronized void propagateFailure(DMLRuntimeException re) {
 		// Ignore late failures
-		if(_closed.get() && _availableCtr.get() == 0)
+		if(_terminalDelivered.get())
 			return;
 		super.propagateFailure(re);
 		Consumer<QueueCallback<T>> s = _subscriber;
-		if(s != null)
+		if(s != null) {
 			s.accept(new SimpleQueueCallback<>(null, re));
+			_terminalDelivered.set(true);
+		}
 	}
 
 	@Override

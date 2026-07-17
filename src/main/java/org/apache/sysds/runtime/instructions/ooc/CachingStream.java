@@ -31,10 +31,7 @@ import org.apache.sysds.runtime.ooc.cache.GroupedBlockKey;
 import org.apache.sysds.runtime.ooc.cache.io.OOCIOHandler;
 import org.apache.sysds.runtime.ooc.cache.OOCCacheManager;
 import org.apache.sysds.runtime.ooc.stream.SourceOOCStream;
-import org.apache.sysds.runtime.ooc.stream.message.OOCGetStreamTypeMessage;
-import org.apache.sysds.runtime.ooc.stream.message.OOCStreamMessage;
 import org.apache.sysds.runtime.ooc.util.OOCUtils;
-import org.apache.sysds.runtime.util.IndexRange;
 import shaded.parquet.it.unimi.dsi.fastutil.ints.IntArrayList;
 
 import java.util.ArrayList;
@@ -43,9 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
@@ -74,7 +69,6 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 	private int _numBlocks = 0;
 
 	private Consumer<OOCStream.QueueCallback<IndexedMatrixValue>>[] _subscribers;
-	private CopyOnWriteArrayList<Consumer<OOCStreamMessage>> _downstreamRelays;
 
 	// state flags
 	private boolean _cacheInProgress = true; // caching in progress, in the first pass.
@@ -92,7 +86,6 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 
 	public CachingStream(OOCStream<IndexedMatrixValue> source, long streamId) {
 		_source = source;
-		_source.setDownstreamMessageRelay(this::messageDownstream);
 		_streamId = streamId;
 		if(OOCWatchdog.WATCH) {
 			_watchdogId = "CS-" + hashCode();
@@ -100,7 +93,6 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 			OOCWatchdog.registerOpen(_watchdogId, toString(), getCtxMsg(), this);
 		}
 		activateIndexing();
-		_downstreamRelays = null;
 		source.setSubscriber(tmp -> {
 			try(tmp) {
 				int blk;
@@ -621,76 +613,6 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 	@Override
 	public void setData(CacheableData<?> data) {
 		_source.setData(data);
-	}
-
-	@Override
-	public void messageUpstream(OOCStreamMessage msg) {
-		if (msg.isCancelled())
-			return;
-		if(msg instanceof OOCGetStreamTypeMessage) {
-			((OOCGetStreamTypeMessage) msg).setCachedType();
-			activateIndexing();
-			return;
-		}
-
-		_source.messageUpstream(msg);
-	}
-
-	@Override
-	public void messageDownstream(OOCStreamMessage msg) {
-		CopyOnWriteArrayList<Consumer<OOCStreamMessage>> relays = _downstreamRelays;
-		if (relays != null) {
-			for (Consumer<OOCStreamMessage> relay : relays) {
-				if (msg.isCancelled())
-					break;
-				relay.accept(msg);
-			}
-		}
-	}
-
-	@Override
-	public void setUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void setDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		addDownstreamMessageRelay(relay);
-	}
-
-	@Override
-	public void addUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void addDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		if (relay == null)
-			throw new IllegalArgumentException("Cannot set downstream relay to null");
-		CopyOnWriteArrayList<Consumer<OOCStreamMessage>> relays = _downstreamRelays;
-		if (relays == null) {
-			synchronized(this) {
-				if (_downstreamRelays == null)
-					_downstreamRelays = new CopyOnWriteArrayList<>();
-				relays = _downstreamRelays;
-			}
-		}
-		relays.add(0, relay);
-	}
-
-	@Override
-	public void clearUpstreamMessageRelays() {
-		// No upstream relays supported
-	}
-
-	@Override
-	public void clearDownstreamMessageRelays() {
-		_downstreamRelays = null;
-	}
-
-	@Override
-	public void setIXTransform(BiFunction<Boolean, IndexRange, IndexRange> transform) {
-		throw new UnsupportedOperationException();
 	}
 
 	@SuppressWarnings("unchecked")

@@ -123,30 +123,6 @@ public class MatrixIndexingOOCInstruction extends IndexingOOCInstruction {
 			addOutStream(qOut);
 			mOut.setStreamHandle(qOut);
 
-			qIn.setDownstreamMessageRelay(qOut::messageDownstream);
-			qOut.setUpstreamMessageRelay(qIn::messageUpstream);
-			qOut.setIXTransform((downstream, range) -> {
-				if(downstream) {
-					long rs = range.rowStart - ix.rowStart + 1;
-					long re = range.rowEnd - ix.rowStart + 1;
-					long cs = range.colStart - ix.colStart + 1;
-					long ce = range.colEnd - ix.colStart + 1;
-					// TODO What happens if range is out of bounds?
-					rs = Math.max(1, rs);
-					cs = Math.max(1, cs);
-					re = Math.min(ix.rowSpan(), re);
-					ce = Math.min(ix.colSpan(), ce);
-					return new IndexRange(rs, re, cs, ce);
-				}
-				else {
-					long rs = range.rowStart + ix.rowStart;
-					long re = range.rowEnd + ix.rowStart;
-					long cs = range.colStart + ix.colStart;
-					long ce = range.colEnd + ix.colStart;
-					return new IndexRange(rs, re, cs, ce);
-				}
-			});
-
 			if(firstBlockRow == lastBlockRow && firstBlockCol == lastBlockCol) {
 				MatrixIndexes srcBlock = new MatrixIndexes(firstBlockRow + 1, firstBlockCol + 1);
 				OOCStream<IndexedMatrixValue> filteredStream = new FilteredOOCStream<>(qIn,

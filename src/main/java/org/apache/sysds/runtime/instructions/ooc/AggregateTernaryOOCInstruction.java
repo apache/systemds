@@ -39,7 +39,6 @@ import org.apache.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysds.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.util.IndexRange;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -154,19 +153,6 @@ public class AggregateTernaryOOCInstruction extends ComputationOOCInstruction {
 		streams.add(qIn2);
 		if(qIn3 != null)
 			streams.add(qIn3);
-
-		for (OOCStream<IndexedMatrixValue> stream : streams)
-			stream.setDownstreamMessageRelay(qOut::messageDownstream);
-
-		qOut.setUpstreamMessageRelay(msg ->
-			streams.forEach(stream -> stream.messageUpstream(streams.size() > 1 ? msg.split() : msg)));
-
-		qOut.setIXTransform((downstream, range) -> {
-			if (downstream)
-				return new IndexRange(1, 1, range.colStart, range.colEnd);
-			else
-				return new IndexRange(1, dc.getRows(),  range.colStart, range.colEnd);
-		});
 
 		CompletableFuture<Void> fut = joinOOC(streams, qMid, blocks -> {
 			MatrixBlock b1 = (MatrixBlock) blocks.get(0).getValue();

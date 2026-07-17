@@ -44,6 +44,10 @@ public class FullIfElseTest extends AutomatedTestBase
 	private final static double sparsity1 = 0.6;
 	private final static double sparsity2 = 0.1;
 	
+	private enum MatType {
+		MATRIX, COL, ROW, SCALAR
+	}
+
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
@@ -52,167 +56,167 @@ public class FullIfElseTest extends AutomatedTestBase
 
 	@Test
 	public void testScalarScalarScalarDenseCP() {
-		runIfElseTest(false, false, false, false, ExecType.CP);
+		runIfElseTest(MatType.SCALAR, MatType.SCALAR, MatType.SCALAR, false, ExecType.CP);
 	}
 	
 	@Test
 	public void testMatrixScalarScalarDenseCP() {
-		runIfElseTest(true, false, false, false, ExecType.CP);
+		runIfElseTest(MatType.MATRIX, MatType.SCALAR, MatType.SCALAR, false, ExecType.CP);
 	}
 	
 	@Test
 	public void testScalarMatrixScalarDenseCP() {
-		runIfElseTest(false, true, false, false, ExecType.CP);
+		runIfElseTest(MatType.SCALAR, MatType.MATRIX, MatType.SCALAR, false, ExecType.CP);
 	}
 	
 	@Test
 	public void testMatrixMatrixScalarDenseCP() {
-		runIfElseTest(true, true, false, false, ExecType.CP);
+		runIfElseTest(MatType.MATRIX, MatType.MATRIX, MatType.SCALAR, false, ExecType.CP);
 	}
 	
 	@Test
 	public void testScalarScalarMatrixDenseCP() {
-		runIfElseTest(false, false, true, false, ExecType.CP);
+		runIfElseTest(MatType.SCALAR, MatType.SCALAR, MatType.MATRIX, false, ExecType.CP);
 	}
 	
 	@Test
 	public void testMatrixScalarMatrixDenseCP() {
-		runIfElseTest(true, false, true, false, ExecType.CP);
+		runIfElseTest(MatType.MATRIX, MatType.SCALAR, MatType.MATRIX, false, ExecType.CP);
 	}
 	
 	@Test
 	public void testScalarMatrixMatrixDenseCP() {
-		runIfElseTest(false, true, true, false, ExecType.CP);
+		runIfElseTest(MatType.SCALAR, MatType.MATRIX, MatType.MATRIX, false, ExecType.CP);
 	}
 	
 	@Test
 	public void testMatrixMatrixMatrixDenseCP() {
-		runIfElseTest(true, true, true, false, ExecType.CP);
+		runIfElseTest(MatType.MATRIX, MatType.MATRIX, MatType.MATRIX, false, ExecType.CP);
 	}
 
 	@Test
 	public void testScalarScalarScalarSparseCP() {
-		runIfElseTest(false, false, false, true, ExecType.CP);
+		runIfElseTest(MatType.SCALAR, MatType.SCALAR, MatType.SCALAR, true, ExecType.CP);
 	}
 	
 	@Test
 	public void testMatrixScalarScalarSparseCP() {
-		runIfElseTest(true, false, false, true, ExecType.CP);
+		runIfElseTest(MatType.MATRIX, MatType.SCALAR, MatType.SCALAR, true, ExecType.CP);
 	}
 	
 	@Test
 	public void testScalarMatrixScalarSparseCP() {
-		runIfElseTest(false, true, false, true, ExecType.CP);
+		runIfElseTest(MatType.SCALAR, MatType.MATRIX, MatType.SCALAR, true, ExecType.CP);
 	}
 	
 	@Test
 	public void testMatrixMatrixScalarSparseCP() {
-		runIfElseTest(true, true, false, true, ExecType.CP);
+		runIfElseTest(MatType.MATRIX, MatType.MATRIX, MatType.SCALAR, true, ExecType.CP);
 	}
 	
 	@Test
 	public void testScalarScalarMatrixSparseCP() {
-		runIfElseTest(false, false, true, true, ExecType.CP);
+		runIfElseTest(MatType.SCALAR, MatType.SCALAR, MatType.MATRIX, true, ExecType.CP);
 	}
 	
 	@Test
 	public void testMatrixScalarMatrixSparseCP() {
-		runIfElseTest(true, false, true, true, ExecType.CP);
+		runIfElseTest(MatType.MATRIX, MatType.SCALAR, MatType.MATRIX, true, ExecType.CP);
 	}
 	
 	@Test
 	public void testScalarMatrixMatrixSparseCP() {
-		runIfElseTest(false, true, true, true, ExecType.CP);
+		runIfElseTest(MatType.SCALAR, MatType.MATRIX, MatType.MATRIX, true, ExecType.CP);
 	}
 	
 	@Test
 	public void testMatrixMatrixMatrixSparseCP() {
-		runIfElseTest(true, true, true, true, ExecType.CP);
+		runIfElseTest(MatType.MATRIX, MatType.MATRIX, MatType.MATRIX, true, ExecType.CP);
 	}
 
 	//SPARK
 	
 	@Test
 	public void testScalarScalarScalarDenseSP() {
-		runIfElseTest(false, false, false, false, ExecType.SPARK);
+		runIfElseTest(MatType.SCALAR, MatType.SCALAR, MatType.SCALAR, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testMatrixScalarScalarDenseSP() {
-		runIfElseTest(true, false, false, false, ExecType.SPARK);
+		runIfElseTest(MatType.MATRIX, MatType.SCALAR, MatType.SCALAR, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testScalarMatrixScalarDenseSP() {
-		runIfElseTest(false, true, false, false, ExecType.SPARK);
+		runIfElseTest(MatType.SCALAR, MatType.MATRIX, MatType.SCALAR, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testMatrixMatrixScalarDenseSP() {
-		runIfElseTest(true, true, false, false, ExecType.SPARK);
+		runIfElseTest(MatType.MATRIX, MatType.MATRIX, MatType.SCALAR, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testScalarScalarMatrixDenseSP() {
-		runIfElseTest(false, false, true, false, ExecType.SPARK);
+		runIfElseTest(MatType.SCALAR, MatType.SCALAR, MatType.MATRIX, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testMatrixScalarMatrixDenseSP() {
-		runIfElseTest(true, false, true, false, ExecType.SPARK);
+		runIfElseTest(MatType.MATRIX, MatType.SCALAR, MatType.MATRIX, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testScalarMatrixMatrixDenseSP() {
-		runIfElseTest(false, true, true, false, ExecType.SPARK);
+		runIfElseTest(MatType.SCALAR, MatType.MATRIX, MatType.MATRIX, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testMatrixMatrixMatrixDenseSP() {
-		runIfElseTest(true, true, true, false, ExecType.SPARK);
+		runIfElseTest(MatType.MATRIX, MatType.MATRIX, MatType.MATRIX, false, ExecType.SPARK);
 	}
 
 	@Test
 	public void testScalarScalarScalarSparseSP() {
-		runIfElseTest(false, false, false, true, ExecType.SPARK);
+		runIfElseTest(MatType.SCALAR, MatType.SCALAR, MatType.SCALAR, true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testMatrixScalarScalarSparseSP() {
-		runIfElseTest(true, false, false, true, ExecType.SPARK);
+		runIfElseTest(MatType.MATRIX, MatType.SCALAR, MatType.SCALAR, true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testScalarMatrixScalarSparseSP() {
-		runIfElseTest(false, true, false, true, ExecType.SPARK);
+		runIfElseTest(MatType.SCALAR, MatType.MATRIX, MatType.SCALAR, true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testMatrixMatrixScalarSparseSP() {
-		runIfElseTest(true, true, false, true, ExecType.SPARK);
+		runIfElseTest(MatType.MATRIX, MatType.MATRIX, MatType.SCALAR, true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testScalarScalarMatrixSparseSP() {
-		runIfElseTest(false, false, true, true, ExecType.SPARK);
+		runIfElseTest(MatType.SCALAR, MatType.SCALAR, MatType.MATRIX, true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testMatrixScalarMatrixSparseSP() {
-		runIfElseTest(true, false, true, true, ExecType.SPARK);
+		runIfElseTest(MatType.MATRIX, MatType.SCALAR, MatType.MATRIX, true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testScalarMatrixMatrixSparseSP() {
-		runIfElseTest(false, true, true, true, ExecType.SPARK);
+		runIfElseTest(MatType.SCALAR, MatType.MATRIX, MatType.MATRIX, true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testMatrixMatrixMatrixSparseSP() {
-		runIfElseTest(true, true, true, true, ExecType.SPARK);
+		runIfElseTest(MatType.MATRIX, MatType.MATRIX, MatType.MATRIX, true, ExecType.SPARK);
 	}
 
-	private void runIfElseTest(boolean matrix1, boolean matrix2, boolean matrix3, boolean sparse, ExecType et){
+	private void runIfElseTest(MatType mtype1, MatType mtype2, MatType mtype3, boolean sparse, ExecType et){
 		setOutputBuffering(true);
 		//rtplatform for MR
 		ExecMode platformOld = rtplatform;
@@ -239,12 +243,11 @@ public class FullIfElseTest extends AutomatedTestBase
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			//generate actual datasets (matrices and scalars)
-			double sparsity = sparse ? sparsity2 : sparsity1;
-			double[][] A = matrix1 ? getRandomMatrix(rows, cols, 0, 1, sparsity, 1) : getScalar(1);
+			double[][] A = getMatrixOfType(mtype1, sparse, 1);
 			writeInputMatrixWithMTD("A", A, true);
-			double[][] B = matrix2 ? getRandomMatrix(rows, cols, 0, 1, sparsity, 2) : getScalar(2);
+			double[][] B = getMatrixOfType(mtype2, sparse, 2);
 			writeInputMatrixWithMTD("B", B, true);
-			double[][] C = matrix3 ? getRandomMatrix(rows, cols, 0, 1, sparsity, 3) : getScalar(3);
+			double[][] C = getMatrixOfType(mtype2, sparse, 3);
 			writeInputMatrixWithMTD("C", C, true);
 			
 			//run test cases
@@ -263,7 +266,24 @@ public class FullIfElseTest extends AutomatedTestBase
 		}
 	}
 	
-	private static double[][] getScalar(int input) {
-		return new double[][]{{7d*input}};
+	private double[][] getMatrixOfType(MatType mtype, boolean sparse, long seed) {
+		double[][] ret = null;
+		double sparsity = sparse ? sparsity2 : sparsity1;
+		switch(mtype) {
+			case SCALAR:
+				ret = getRandomMatrix(1, 1, 0, 1, sparsity, seed);
+				break;
+			case MATRIX:
+				ret = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
+				break;
+			case COL:
+				ret = getRandomMatrix(1, cols, 0, 1, sparsity, seed);
+				break;
+			case ROW:
+				ret = getRandomMatrix(rows, 1, 0, 1, sparsity, seed);
+				break;
+			default:
+		}
+		return ret;
 	}
 }

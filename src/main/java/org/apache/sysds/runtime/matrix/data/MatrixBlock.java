@@ -3080,7 +3080,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		final int n = Math.max(Math.max(c1, c2), c3);
 		final long nnz = nonZeros;
 		
-		ternaryOperationCheck(s1, s2, s3, m, r1, r2, r3, n, c1, c2, c3);
+		ternaryOperationCheck(op, s1, s2, s3, m, r1, r2, r3, n, c1, c2, c3);
 		
 		//prepare result
 		if( op.fn instanceof IfElse && (s1 || nnz==0 || nnz==(long)m*n) ) {
@@ -3141,11 +3141,24 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return ret;
 	}
 
-	public static void ternaryOperationCheck(boolean s1, boolean s2, boolean s3, int m, int r1, int r2, int r3, int n, int c1, int c2, int c3){
+	public static void ternaryOperationCheck(TernaryOperator op, boolean s1, boolean s2, boolean s3, int m, int r1, int r2, int r3, int n, int c1, int c2, int c3){
 		//error handling 
-		if( (!s1 && (r1 != m || c1 != n))
-		|| (!s2 && (r2 != m || c2 != n))
-		|| (!s3 && (r3 != m || c3 != n)) ) {
+		boolean error = false;
+		if (op.fn instanceof IfElse) {
+			error = ((r1 != 1 && r1 != m)
+				|| (r2 != 1 && r2 != m)
+				|| (r3 != 1 && r3 != m)
+				|| (c1 != 1 && c1 != n)
+				|| (c2 != 1 && c2 != n)
+				|| (c3 != 1 && c3 != n));
+		}
+		else {
+			error = ((!s1 && (r1 != m || c1 != n))
+				|| (!s2 && (r2 != m || c2 != n))
+				|| (!s3 && (r3 != m || c3 != n)));
+		}
+
+		if (error) {
 			throw new DMLRuntimeException("Block sizes are not matched for ternary cell operations: "
 			+ r1 + "x" + c1 + " vs " + r2 + "x" + c2 + " vs " + r3 + "x" + c3);
 		}

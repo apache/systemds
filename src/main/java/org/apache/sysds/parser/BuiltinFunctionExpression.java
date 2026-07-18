@@ -2186,9 +2186,12 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 		final long n = Math.max(Math.max(c1, c2), c3);
 
 		boolean unknownDim = (r1 == -1 || r2 == -1 || r3 == -1 || c1 == -1 || c2 == -1 || c3 == -1);
-		if (!unknownDim && ((r1 != 1 && r1 != m) || (r2 != 1 && r2 != m)
-			|| (r3 != 1 && r3 != m) || (c1 != 1 && c1 != n)
-			|| (c2 != 1 && c2 != n) || (c3 != 1 && c3 != n))) {
+		if (!unknownDim && ((dt1 == DataType.MATRIX && r1 != 1 && r1 != m)
+			|| (dt2 == DataType.MATRIX && r2 != 1 && r2 != m)
+			|| (dt3 == DataType.MATRIX && r3 != 1 && r3 != m)
+			|| (dt1 == DataType.MATRIX && c1 != 1 && c1 != n)
+			|| (dt2 == DataType.MATRIX && c2 != 1 && c2 != n)
+			|| (dt3 == DataType.MATRIX && c3 != 1 && c3 != n))) {
 			raiseValidateError("Mismatch in matrix dimensions of parameters for function "
 					+ this.getOpCode(), conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}

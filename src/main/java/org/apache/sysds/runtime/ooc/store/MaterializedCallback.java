@@ -21,21 +21,21 @@ package org.apache.sysds.runtime.ooc.store;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
-import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.ooc.cache.BlockEntry;
+import org.apache.sysds.runtime.ooc.cache.io.SpillableObject;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-public final class MaterializedCallback implements OOCStream.QueueCallback<IndexedMatrixValue> {
-	private final StoreLease<IndexedMatrixValue> _lease;
+public final class MaterializedCallback<T extends SpillableObject> implements OOCStream.QueueCallback<T> {
+	private final StoreLease<T> _lease;
 	private final AtomicReference<DMLRuntimeException> _failure;
 	private boolean _closed;
 
-	public MaterializedCallback(StoreLease<IndexedMatrixValue> lease) {
+	public MaterializedCallback(StoreLease<T> lease) {
 		this(lease, new AtomicReference<>());
 	}
 
-	private MaterializedCallback(StoreLease<IndexedMatrixValue> lease, AtomicReference<DMLRuntimeException> failure) {
+	private MaterializedCallback(StoreLease<T> lease, AtomicReference<DMLRuntimeException> failure) {
 		_lease = lease;
 		_failure = failure;
 	}
@@ -45,7 +45,7 @@ public final class MaterializedCallback implements OOCStream.QueueCallback<Index
 	}
 
 	@Override
-	public IndexedMatrixValue get() {
+	public T get() {
 		DMLRuntimeException failure = _failure.get();
 		if(failure != null)
 			throw failure;
@@ -53,10 +53,10 @@ public final class MaterializedCallback implements OOCStream.QueueCallback<Index
 	}
 
 	@Override
-	public synchronized OOCStream.QueueCallback<IndexedMatrixValue> keepOpen() {
+	public synchronized OOCStream.QueueCallback<T> keepOpen() {
 		if(_closed)
 			throw new IllegalStateException("Cannot keep open a closed callback");
-		return new MaterializedCallback(_lease.retain(), _failure);
+		return new MaterializedCallback<>(_lease.retain(), _failure);
 	}
 
 	@Override

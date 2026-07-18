@@ -20,6 +20,7 @@
 package org.apache.sysds.test.component.ooc;
 
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,8 +38,11 @@ import org.apache.sysds.runtime.ooc.memory.InMemoryQueueCallback;
 import org.apache.sysds.runtime.ooc.memory.SyncMemoryAllowance;
 import org.apache.sysds.runtime.ooc.store.IndexedMaterializedStoreReader;
 import org.apache.sysds.runtime.ooc.store.MaterializedStore;
+import org.apache.sysds.runtime.ooc.store.CountingLiveness;
 import org.apache.sysds.runtime.ooc.store.OOCStreamMaterializer;
 import org.apache.sysds.runtime.ooc.store.OrderedMaterializedStoreReader;
+import org.apache.sysds.runtime.ooc.store.SequentialAccessPattern;
+import org.apache.sysds.runtime.ooc.store.StoreBackedStream;
 import org.apache.sysds.runtime.ooc.store.StoreLease;
 import org.apache.sysds.test.component.ooc.cache.OOCCacheTestUtils;
 import org.junit.After;
@@ -96,32 +100,16 @@ public class MaterializedStoreTest {
 		Assert.assertEquals(0, _materializerAllowance.getUsedMemory());
 		Assert.assertEquals(3, _store.size());
 
-		MaterializedStore.AccessPattern pattern = sequentialPattern(3);
-		boolean[] indexedConsumed = new boolean[3];
-		MaterializedStore.Liveness liveness = new MaterializedStore.Liveness() {
-			@Override
-			public boolean needs(int index) {
-				return !indexedConsumed[index];
-			}
-
-			@Override
-			public void consumed(int index) {
-				indexedConsumed[index] = true;
-			}
-		};
-
-		OrderedMaterializedStoreReader<IndexedMatrixValue> ordered = _store.openReader(pattern, _readerAllowance, 2);
-		IndexedMaterializedStoreReader<IndexedMatrixValue> indexed = _store.openIndexedReader(liveness);
+		StoreBackedStream<IndexedMatrixValue> ordered = new StoreBackedStream<>(
+			_store.openReader(new SequentialAccessPattern(3), _readerAllowance, 2, false));
+		IndexedMaterializedStoreReader<IndexedMatrixValue> indexed = _store
+			.openIndexedReader(new CountingLiveness(3, 1));
 		_store.sealReaders();
 
 		int index = 0;
-		while(ordered.hasNext()) {
-			try(StoreLease<IndexedMatrixValue> lease = ordered.next()) {
-				Assert.assertEquals(index + 1L, lease.value().getIndexes().getRowIndex());
-				index++;
-			}
-		}
-		ordered.close();
+		IndexedMatrixValue value;
+		while((value = ordered.dequeue()) != null)
+			Assert.assertEquals(++index, value.getIndexes().getRowIndex());
 		Assert.assertEquals(3, index);
 		Assert.assertTrue(_cache.getOwnedCacheSize() > 0);
 
@@ -151,7 +139,7 @@ public class MaterializedStoreTest {
 		_readerAllowance.destroy();
 		_readerAllowance = new SyncMemoryAllowance(_broker, TILE_BYTES);
 		_readerAllowance.setTargetMemory(TILE_BYTES);
-		OrderedMaterializedStoreReader<IndexedMatrixValue> reader = _store.openReader(sequentialPattern(2),
+		OrderedMaterializedStoreReader<IndexedMatrixValue> reader = _store.openReader(new SequentialAccessPattern(2),
 			_readerAllowance, 2, false);
 		_store.sealReaders();
 
@@ -185,7 +173,7 @@ public class MaterializedStoreTest {
 		_readerAllowance.setTargetMemory(largeBytes);
 		long heldBytes = largeBytes - TILE_BYTES;
 		_readerAllowance.reserveBlocking(heldBytes);
-		OrderedMaterializedStoreReader<IndexedMatrixValue> reader = _store.openReader(sequentialPattern(2),
+		OrderedMaterializedStoreReader<IndexedMatrixValue> reader = _store.openReader(new SequentialAccessPattern(2),
 			_readerAllowance, 2);
 		_store.sealReaders();
 
@@ -211,19 +199,8 @@ public class MaterializedStoreTest {
 		materializer.accept(OOCStream.eos(null));
 		materializer.completion().get(WAIT_SECONDS, TimeUnit.SECONDS);
 
-		boolean[] needed = {true};
 		IndexedMaterializedStoreReader<IndexedMatrixValue> reader = _store
-			.openIndexedReader(new MaterializedStore.Liveness() {
-				@Override
-				public boolean needs(int index) {
-					return needed[index];
-				}
-
-				@Override
-				public void consumed(int index) {
-					needed[index] = false;
-				}
-			});
+			.openIndexedReader(new CountingLiveness(1, 1));
 		_store.sealReaders();
 
 		try(StoreLease<IndexedMatrixValue> published = _store.requestPublished(0, _readerAllowance).get(WAIT_SECONDS,
@@ -293,6 +270,46 @@ public class MaterializedStoreTest {
 	}
 
 	@Test
+	public void testStoreBackedStreamSubscriber() throws Exception {
+		OOCStreamMaterializer materializer = new OOCStreamMaterializer(_store,
+			indexes -> (int) indexes.getRowIndex() - 1, _materializerAllowance);
+		for(int i = 0; i < 2; i++)
+			materializer.accept(new OOCStream.SimpleQueueCallback<>(tile(i, i + 1.0), null));
+		materializer.accept(OOCStream.eos(null));
+		materializer.completion().get(WAIT_SECONDS, TimeUnit.SECONDS);
+
+		StoreBackedStream<IndexedMatrixValue> stream = new StoreBackedStream<>(
+			_store.openReader(new SequentialAccessPattern(2), _readerAllowance, 1));
+		_store.sealReaders();
+		AtomicInteger count = new AtomicInteger();
+		CountDownLatch complete = new CountDownLatch(1);
+		stream.setSubscriber(callback -> {
+			if(callback.isEos())
+				complete.countDown();
+			else
+				Assert.assertEquals(count.incrementAndGet(), callback.get().getIndexes().getRowIndex());
+		});
+
+		Assert.assertTrue(complete.await(WAIT_SECONDS, TimeUnit.SECONDS));
+		Assert.assertEquals(2, count.get());
+		Assert.assertEquals(0, _readerAllowance.getUsedMemory());
+	}
+
+	@Test
+	public void testCountingLiveness() {
+		CountingLiveness liveness = new CountingLiveness(1, 2);
+		Assert.assertTrue(liveness.reserve(0));
+		Assert.assertTrue(liveness.reserve(0));
+		Assert.assertFalse(liveness.reserve(0));
+		liveness.unreserve(0);
+		Assert.assertTrue(liveness.reserve(0));
+		liveness.consumed(0);
+		Assert.assertTrue(liveness.needs(0));
+		liveness.consumed(0);
+		Assert.assertFalse(liveness.needs(0));
+	}
+
+	@Test
 	public void testFailurePropagation() throws Exception {
 		DMLRuntimeException sourceFailure = new DMLRuntimeException("injected failure");
 		AtomicInteger failures = new AtomicInteger();
@@ -332,28 +349,4 @@ public class MaterializedStoreTest {
 		return new IndexedMatrixValue(new MatrixIndexes(index + 1L, 1), new MatrixBlock(4, 4, value));
 	}
 
-	private static MaterializedStore.AccessPattern sequentialPattern(int to) {
-		return new MaterializedStore.AccessPattern() {
-			private int _next;
-
-			@Override
-			public boolean hasNext() {
-				return _next < to;
-			}
-
-			@Override
-			public int next() {
-				return _next++;
-			}
-
-			@Override
-			public boolean needs(int index) {
-				return true;
-			}
-
-			@Override
-			public void consumed(int index) {
-			}
-		};
-	}
 }

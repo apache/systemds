@@ -92,11 +92,18 @@ public class LibMatrixTercell
 		//basic ternary operations (all combinations sparse/dense)
 		int n = ret.clen;
 		long lnnz = 0;
+		final int r1 = m1.getNumRows();
+		final int r2 = m2.getNumRows();
+		final int r3 = m3.getNumRows();
+		final int c1 = m1.getNumColumns();
+		final int c2 = m2.getNumColumns();
+		final int c3 = m3.getNumColumns();
+
 		for( int i=rl; i<ru; i++ )
 			for( int j=0; j<n; j++ ) {
-				double in1 = s1 ? d1 : m1.get(i, j);
-				double in2 = s2 ? d2 : m2.get(i, j);
-				double in3 = s3 ? d3 : m3.get(i, j);
+				double in1 = s1 ? d1 : m1.get(Math.min(i, r1-1), Math.min(j, c1-1));
+				double in2 = s2 ? d2 : m2.get(Math.min(i, r2-1), Math.min(j, c2-1));
+				double in3 = s3 ? d3 : m3.get(Math.min(i, r3-1), Math.min(j, c3-1));
 				double val = op.fn.execute(in1, in2, in3);
 				lnnz += (val != 0) ? 1 : 0;
 				ret.appendValuePlain(i, j, val);

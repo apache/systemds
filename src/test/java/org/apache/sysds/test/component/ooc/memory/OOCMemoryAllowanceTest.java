@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.ooc.memory;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.ooc.OOCInstruction;
@@ -36,7 +37,9 @@ import org.apache.sysds.runtime.ooc.memory.GlobalMemoryBroker;
 import org.apache.sysds.runtime.ooc.memory.InMemoryQueueCallback;
 import org.apache.sysds.runtime.ooc.memory.MemoryAllowance;
 import org.apache.sysds.runtime.ooc.memory.MemoryBroker;
+import org.apache.sysds.runtime.ooc.memory.ReservationBudget;
 import org.apache.sysds.runtime.ooc.memory.SyncMemoryAllowance;
+import org.apache.sysds.runtime.ooc.stream.AllocatedOOCStream;
 import org.junit.Assert;
 import org.junit.Test;
 import scala.Tuple3;
@@ -109,6 +112,66 @@ public class OOCMemoryAllowanceTest {
 			allowance.release(allowance.getUsedMemory());
 			allowance.destroy();
 			broker.destroy();
+		}
+	}
+
+	@Test
+	public void testAllocatedStreamReservations() {
+		GlobalMemoryBroker broker = new GlobalMemoryBroker(100);
+		SyncMemoryAllowance allowance = new SyncMemoryAllowance(broker);
+		SubscribableTaskQueue<Integer> source = new SubscribableTaskQueue<>();
+		AllocatedOOCStream<Integer> allocated = new AllocatedOOCStream<>(source, allowance, value -> 60);
+		try {
+			allowance.reserveBlocking(100);
+			source.enqueue(1);
+			Assert.assertEquals(100, allowance.getUsedMemory());
+
+			allowance.release(100);
+			OOCStream.QueueCallback<Integer> first = allocated.dequeueCB();
+			ReservationBudget budget = AllocatedOOCStream.detachBudget(first);
+			Assert.assertNotNull(budget);
+			first.close();
+			Assert.assertEquals(60, allowance.getUsedMemory());
+			budget.reserveBlocking(20);
+			budget.release(20);
+			Assert.assertEquals(40, allowance.getUsedMemory());
+			budget.close();
+			Assert.assertEquals(0, allowance.getUsedMemory());
+
+			source.enqueue(2);
+			OOCStream.QueueCallback<Integer> second = allocated.dequeueCB();
+			OOCStream.QueueCallback<Integer> retained = second.keepOpen();
+			second.close();
+			Assert.assertEquals(60, allowance.getUsedMemory());
+			retained.close();
+			Assert.assertEquals(0, allowance.getUsedMemory());
+			source.closeInput();
+			Assert.assertNull(allocated.dequeueCB());
+		}
+		finally {
+			if(allowance.getUsedMemory() > 0)
+				allowance.release(allowance.getUsedMemory());
+			allowance.destroy();
+		}
+	}
+
+	@Test
+	public void testAllocatedStreamFailure() {
+		GlobalMemoryBroker broker = new GlobalMemoryBroker(100);
+		SyncMemoryAllowance allowance = new SyncMemoryAllowance(broker);
+		SubscribableTaskQueue<Integer> source = new SubscribableTaskQueue<>();
+		new AllocatedOOCStream<>(source, allowance, value -> 60);
+		try {
+			allowance.reserveBlocking(100);
+			source.enqueue(1);
+			source.propagateFailure(new DMLRuntimeException("injected failure"));
+			allowance.release(100);
+			Assert.assertEquals(0, allowance.getUsedMemory());
+		}
+		finally {
+			if(allowance.getUsedMemory() > 0)
+				allowance.release(allowance.getUsedMemory());
+			allowance.destroy();
 		}
 	}
 

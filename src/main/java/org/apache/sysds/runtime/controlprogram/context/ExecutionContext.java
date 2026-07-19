@@ -703,6 +703,7 @@ public class ExecutionContext {
 		ret.acquireModify(fb);
 		ret.setMetaData(new MetaDataFormat(new MatrixCharacteristics(
 			fb.getNumRows(), fb.getNumColumns()), FileFormat.BINARY));
+		ret.setColumnNames(fb.getColumnNames());
 		ret.release();
 		return ret;
 	}

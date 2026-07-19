@@ -150,7 +150,12 @@ public class BuiltinNarySPInstruction extends SPInstruction implements LineageTr
 					}
 					updateAppendDataCharacteristics(dcIn, dcout, cbind);
 					if(cbind)
+					{
 						fo.setSchema(fo.mergeSchemas(sec.getFrameObject(inputs[i].getName())));
+						String[] outputNames = ArrayUtils.addAll(fo.getColumnNames(),
+								sec.getFrameObject(inputs[i].getName()).getColumnNames());
+						fo.setColumnNames(outputNames);
+					}
 				}
 
 				//set output RDD and add lineage

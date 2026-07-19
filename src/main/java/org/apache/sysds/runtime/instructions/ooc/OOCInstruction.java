@@ -41,8 +41,7 @@ import org.apache.sysds.runtime.ooc.stream.MergedOOCStream;
 import org.apache.sysds.runtime.ooc.stream.SplittingOOCStream;
 import org.apache.sysds.runtime.ooc.stream.StreamContext;
 import org.apache.sysds.runtime.ooc.stream.TaskContext;
-import org.apache.sysds.runtime.util.CommonThreadPool;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.runtime.ooc.util.OOCInstructionUtils;
 import scala.Tuple2;
 import scala.Tuple4;
 import scala.Tuple5;
@@ -60,22 +59,17 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinTask;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.LongAdder;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 public abstract class OOCInstruction extends Instruction {
-	public static final boolean ALLOW_PIPELINING = true;
-	public static final ExecutorService COMPUTE_EXECUTOR = CommonThreadPool.get();
-	private static final AtomicInteger COMPUTE_IN_FLIGHT = new AtomicInteger(0);
-	private static final int COMPUTE_BACKPRESSURE_THRESHOLD = 100;
+	public static final boolean ALLOW_PIPELINING = OOCInstructionUtils.ALLOW_PIPELINING;
+	public static final ExecutorService COMPUTE_EXECUTOR = OOCInstructionUtils.COMPUTE_EXECUTOR;
 	protected static final Log LOG = LogFactory.getLog(OOCInstruction.class.getName());
-	private static final AtomicInteger nextStreamId = new AtomicInteger(0);
 	private long nanoTime;
 
 	public enum OOCType {
@@ -86,7 +80,6 @@ public abstract class OOCInstruction extends Instruction {
 	protected final OOCInstruction.OOCType _ooctype;
 	protected final boolean _requiresLabelUpdate;
 	protected StreamContext _streamContext;
-	private LongAdder _localStatisticsAdder;
 	public final int _callerId;
 
 	protected OOCInstruction(OOCInstruction.OOCType type, String opcode, String istr) {
@@ -101,17 +94,15 @@ public abstract class OOCInstruction extends Instruction {
 
 		_requiresLabelUpdate = super.requiresLabelUpdate();
 
-		if (DMLScript.STATISTICS)
-			_localStatisticsAdder = new LongAdder();
 		_callerId = DMLScript.OOC_LOG_EVENTS ? OOCEventLog.registerCaller(getExtendedOpcode() + "_" + hashCode()) : 0;
 	}
 
 	public static int getComputeInFlight() {
-		return COMPUTE_IN_FLIGHT.get();
+		return OOCInstructionUtils.getComputeInFlight();
 	}
 
 	public static int getComputeBackpressureThreshold() {
-		return COMPUTE_BACKPRESSURE_THRESHOLD;
+		return OOCInstructionUtils.getComputeBackpressureThreshold();
 	}
 
 	@Override
@@ -164,13 +155,13 @@ public abstract class OOCInstruction extends Instruction {
 
 	protected void addInStream(OOCStream<?>... queue) {
 		if(_streamContext == null)
-			_streamContext = new StreamContext();
+			_streamContext = new StreamContext(_callerId, getExtendedOpcode());
 		_streamContext.addInStream(queue);
 	}
 
 	protected void addOutStream(OOCStream<?>... queue) {
 		if(_streamContext == null)
-			_streamContext = new StreamContext();
+			_streamContext = new StreamContext(_callerId, getExtendedOpcode());
 		_streamContext.addOutStream(queue);
 	}
 
@@ -982,297 +973,30 @@ public abstract class OOCInstruction extends Instruction {
 		});
 	}
 
-	protected <R, C> CompletableFuture<Void> scanOOC(OOCStream<IndexedMatrixValue> qIn, OOCStream<R> qOut,
-		Function<IndexedMatrixValue, Long> seqFn, BiFunction<IndexedMatrixValue, C, R> scanner,
-		Function<R, C> carryFn, long sequenceSize) {
-		return scanOOC(qIn, qOut, seqFn, (IndexedMatrixValue item, C carry) -> {
-			R out = scanner.apply(item, carry);
-			if(out == null)
-				throw new DMLRuntimeException("Ordered scan output must not be null.");
-			return new ScanStep<>(out, carryFn.apply(out));
-		}, sequenceSize);
-	}
-
-	protected <T> CompletableFuture<Void> submitOOCTasks(final List<OOCStream<T>> queues, BiConsumer<Integer, OOCStream.QueueCallback<T>> consumer) {
+	protected <T> CompletableFuture<Void> submitOOCTasks(final List<OOCStream<T>> queues,
+		BiConsumer<Integer, OOCStream.QueueCallback<T>> consumer) {
 		return submitOOCTasks(queues, consumer, null, null);
 	}
 
-	protected <T> CompletableFuture<Void> submitOOCTasks(final List<OOCStream<T>> queues, BiConsumer<Integer, OOCStream.QueueCallback<T>> consumer, BiFunction<Integer, OOCStream.QueueCallback<T>, Boolean> predicate, BiConsumer<Integer, OOCStream.QueueCallback<T>> onNotProcessed) {
-		addInStream(queues.toArray(OOCStream[]::new));
-		if(!outStreamsDefined())
-			throw new IllegalArgumentException("Explicit specification of all output streams is required before submitting tasks. If no output streams are present use addOutStream().");
-
-		final List<AtomicInteger> activeTaskCtrs = new ArrayList<>(queues.size());
-		final List<CompletableFuture<Void>> futures = new ArrayList<>(queues.size());
-
-		for(int i = 0; i < queues.size(); i++) {
-			activeTaskCtrs.add(new AtomicInteger(1));
-			futures.add(new CompletableFuture<>());
-		}
-
-		final CompletableFuture<Void> globalFuture = CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
-		final StreamContext streamContext = _streamContext.copy(); // Snapshot of the current stream context
-		if(streamContext == null || !streamContext.inStreamsDefined() || !streamContext.outStreamsDefined())
-			throw new IllegalArgumentException("Explicit specification of all output streams is required before submitting tasks. If no output streams are present use addOutStream().");
-
-		int i = 0;
-		@SuppressWarnings("unused")
-		final int streamId = nextStreamId.getAndIncrement();
-
-		for (OOCStream<T> queue : queues) {
-			final int k = i;
-			final AtomicInteger localTaskCtr =  activeTaskCtrs.get(k);
-			final CompletableFuture<Void> localFuture = futures.get(k);
-			final AtomicBoolean closeRaceWatchdog = new AtomicBoolean(false);
-
-			queue.setSubscriber(oocTask(callback -> {
-				long startTime = DMLScript.STATISTICS ? System.nanoTime() : 0;
-				try(callback) {
-					if(callback.isEos()) {
-						if(!closeRaceWatchdog.compareAndSet(false, true))
-							throw new DMLRuntimeException(
-								"Race condition observed: NO_MORE_TASKS callback has been triggered more than once");
-
-						if(localTaskCtr.decrementAndGet() == 0) {
-							// Then we can run the finalization procedure already
-							localFuture.complete(null);
-						}
-						return;
-					}
-
-					Consumer<OOCStream.QueueCallback<T>> process = cb -> {
-						if(predicate != null && !predicate.apply(k, cb)) { // Can get closed due to cancellation
-							if(onNotProcessed != null)
-								onNotProcessed.accept(k, cb);
-							return;
-						}
-
-						if(localFuture.isDone()) {
-							if(onNotProcessed != null)
-								onNotProcessed.accept(k, cb);
-							return;
-						}
-						else {
-							localTaskCtr.incrementAndGet();
-						}
-
-						// The item needs to be pinned in memory to be accessible in the executor thread
-						final OOCStream.QueueCallback<T> pinned = cb.keepOpen();
-
-						COMPUTE_IN_FLIGHT.incrementAndGet();
-						try {
-							Runnable oocTask = oocTask(() -> {
-								long taskStartTime = DMLScript.STATISTICS || DMLScript.OOC_LOG_EVENTS ? System.nanoTime() : 0;
-								try(pinned) {
-									consumer.accept(k, pinned);
-
-									if(localTaskCtr.decrementAndGet() == 0) {
-										TaskContext.defer(() -> localFuture.complete(null));
-									}
-								}
-								finally {
-									COMPUTE_IN_FLIGHT.decrementAndGet();
-									if (DMLScript.STATISTICS) {
-										_localStatisticsAdder.add(System.nanoTime() - taskStartTime);
-										if (globalFuture.isDone()) {
-											Statistics.maintainOOCHeavyHitter(getExtendedOpcode(), _localStatisticsAdder.sum());
-											_localStatisticsAdder.reset();
-										}
-									}
-									if (DMLScript.OOC_LOG_EVENTS)
-										OOCEventLog.onComputeEvent(_callerId, taskStartTime, System.nanoTime());
-								}
-							}, localFuture, streamContext);
-							COMPUTE_EXECUTOR.submit(oocTask);
-						}
-						catch (Exception e) {
-							COMPUTE_IN_FLIGHT.decrementAndGet();
-							throw e;
-						}
-					};
-
-					if(callback instanceof OOCStream.GroupQueueCallback<?>) {
-						OOCStream.GroupQueueCallback<T> group = (OOCStream.GroupQueueCallback<T>) callback;
-
-						if(localFuture.isDone()) {
-							for(int idx = 0; idx < group.size(); idx++) {
-								OOCStream.QueueCallback<T> sub = group.getCallback(idx);
-								try(sub) {
-									if(onNotProcessed != null)
-										onNotProcessed.accept(k, sub);
-								}
-							}
-							return;
-						}
-
-						localTaskCtr.incrementAndGet();
-						final OOCStream.GroupQueueCallback<T> pinnedGroup =
-							(OOCStream.GroupQueueCallback<T>) group.keepOpen();
-
-						COMPUTE_IN_FLIGHT.incrementAndGet();
-						try {
-							Runnable oocTask = oocTask(() -> {
-								long taskStartTime = DMLScript.STATISTICS || DMLScript.OOC_LOG_EVENTS ? System.nanoTime() : 0;
-								try(pinnedGroup) {
-									for(int idx = 0; idx < pinnedGroup.size(); idx++) {
-										OOCStream.QueueCallback<T> sub = pinnedGroup.getCallback(idx);
-										try(sub) {
-											process.accept(sub);
-										}
-									}
-
-									if(localTaskCtr.decrementAndGet() == 0) {
-										TaskContext.defer(() -> localFuture.complete(null));
-									}
-								}
-								finally {
-									COMPUTE_IN_FLIGHT.decrementAndGet();
-									if (DMLScript.STATISTICS) {
-										_localStatisticsAdder.add(System.nanoTime() - taskStartTime);
-										if (globalFuture.isDone()) {
-											Statistics.maintainOOCHeavyHitter(getExtendedOpcode(), _localStatisticsAdder.sum());
-											_localStatisticsAdder.reset();
-										}
-									}
-									if (DMLScript.OOC_LOG_EVENTS)
-										OOCEventLog.onComputeEvent(_callerId, taskStartTime, System.nanoTime());
-								}
-							}, localFuture, streamContext);
-							COMPUTE_EXECUTOR.submit(oocTask);
-						}
-						catch (Exception e) {
-							COMPUTE_IN_FLIGHT.decrementAndGet();
-							throw e;
-						}
-					}
-					else {
-						process.accept(callback);
-					}
-
-					if(closeRaceWatchdog.get()) // Sanity check
-						throw new DMLRuntimeException("Race condition observed");
-				}
-				catch(Throwable t) {
-					streamContext.failAll(DMLRuntimeException.of(t));
-					throw t;
-				}
-				finally {
-					if (DMLScript.STATISTICS) {
-						_localStatisticsAdder.add(System.nanoTime() - startTime);
-						if (globalFuture.isDone()) {
-							Statistics.maintainOOCHeavyHitter(getExtendedOpcode(), _localStatisticsAdder.sum());
-							_localStatisticsAdder.reset();
-						}
-					}
-				}
-			}, null,  streamContext));
-
-			i++;
-		}
-
-		return globalFuture.handle((res, e) -> {
-			if (globalFuture.isCancelled() || globalFuture.isCompletedExceptionally()) {
-				futures.forEach(f -> {
-					if(!f.isDone()) {
-						if(globalFuture.isCancelled() || globalFuture.isCompletedExceptionally())
-							f.cancel(true);
-						else
-							f.complete(null);
-					}
-				});
-			}
-
-			streamContext.clear();
-			return null;
-		});
+	protected <T> CompletableFuture<Void> submitOOCTasks(final List<OOCStream<T>> queues,
+		BiConsumer<Integer, OOCStream.QueueCallback<T>> consumer,
+		BiFunction<Integer, OOCStream.QueueCallback<T>, Boolean> predicate,
+		BiConsumer<Integer, OOCStream.QueueCallback<T>> onNotProcessed) {
+		if(_streamContext == null)
+			_streamContext = new StreamContext(_callerId, getExtendedOpcode());
+		return OOCInstructionUtils.submitOOCTasks(queues, consumer, predicate, onNotProcessed, _streamContext);
 	}
 
-	protected <T> CompletableFuture<Void> submitOOCTasks(OOCStream<T> queue, Consumer<OOCStream.QueueCallback<T>> consumer) {
+	protected <T> CompletableFuture<Void> submitOOCTasks(OOCStream<T> queue,
+		Consumer<OOCStream.QueueCallback<T>> consumer) {
 		return submitOOCTasks(List.of(queue), (i, tmp) -> consumer.accept(tmp), null, null);
 	}
 
-	protected <T> CompletableFuture<Void> submitOOCTasks(OOCStream<T> queue, Consumer<OOCStream.QueueCallback<T>> consumer, Function<OOCStream.QueueCallback<T>, Boolean> predicate, BiConsumer<Integer, OOCStream.QueueCallback<T>> onNotProcessed) {
-		return submitOOCTasks(List.of(queue), (i, tmp) -> consumer.accept(tmp), (i, tmp) -> predicate.apply(tmp), onNotProcessed);
-	}
-
-	protected CompletableFuture<Void> submitOOCTask(Runnable r, StreamContext ctx) {
-		ExecutorService pool = CommonThreadPool.getDynamicPool();
-		final CompletableFuture<Void> future = new CompletableFuture<>();
-		try {
-			COMPUTE_IN_FLIGHT.incrementAndGet();
-			pool.submit(oocTask(() -> {
-				long startTime = DMLScript.STATISTICS || DMLScript.OOC_LOG_EVENTS ? System.nanoTime() : 0;
-				try {
-					r.run();
-					future.complete(null);
-					ctx.clear();
-					if (DMLScript.STATISTICS)
-						Statistics.maintainOOCHeavyHitter(getExtendedOpcode(), System.nanoTime() - startTime);
-					if (DMLScript.OOC_LOG_EVENTS)
-						OOCEventLog.onComputeEvent(_callerId, startTime,  System.nanoTime());
-				}
-				finally {
-					COMPUTE_IN_FLIGHT.decrementAndGet();
-				}
-				}, future, ctx));
-		}
-		catch (Exception ex) {
-			COMPUTE_IN_FLIGHT.decrementAndGet();
-			throw new DMLRuntimeException(ex);
-		}
-
-		return future;
-	}
-
-	private Runnable oocTask(Runnable r, CompletableFuture<Void> future,  StreamContext ctx) {
-		return () -> {
-			boolean setContext = TaskContext.getContext() == null;
-			if(setContext)
-				TaskContext.setContext(new TaskContext());
-			long startTime = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			try {
-				r.run();
-				if(setContext) {
-					while(TaskContext.runDeferred()) {
-					}
-				}
-			}
-			catch (Exception ex) {
-				DMLRuntimeException re = DMLRuntimeException.of(ex);
-
-				ctx.failAll(re);
-
-				if (future != null)
-					future.completeExceptionally(re);
-
-				// Rethrow to ensure proper future handling
-				throw re;
-			} finally {
-				if(setContext)
-					TaskContext.clearContext();
-				if (DMLScript.STATISTICS)
-					_localStatisticsAdder.add(System.nanoTime() - startTime);
-			}
-		};
-	}
-
-	private <T> Consumer<OOCStream.QueueCallback<T>> oocTask(Consumer<OOCStream.QueueCallback<T>> c, CompletableFuture<Void> future,  StreamContext ctx) {
-		return callback -> {
-			try {
-				c.accept(callback);
-			}
-			catch (Exception ex) {
-				DMLRuntimeException re = DMLRuntimeException.of(ex);
-
-				ctx.failAll(re);
-
-				if (future != null)
-					future.completeExceptionally(re);
-
-				// Rethrow to ensure proper future handling
-				throw re;
-			}
-		};
+	protected <T> CompletableFuture<Void> submitOOCTasks(OOCStream<T> queue,
+		Consumer<OOCStream.QueueCallback<T>> consumer, Function<OOCStream.QueueCallback<T>, Boolean> predicate,
+		BiConsumer<Integer, OOCStream.QueueCallback<T>> onNotProcessed) {
+		return submitOOCTasks(List.of(queue), (i, tmp) -> consumer.accept(tmp), (i, tmp) -> predicate.apply(tmp),
+			onNotProcessed);
 	}
 
 	/**

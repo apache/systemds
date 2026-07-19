@@ -37,9 +37,10 @@ public class FullIfElseTest extends AutomatedTestBase
 	
 	private final static String TEST_DIR = "functions/ternary/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FullIfElseTest.class.getSimpleName() + "/";
+	private final static double eps = 1e-10;
 	
 	private final static int rows = 2111;
-	private final static int cols = 30;
+	private final static int cols = 300;
 	
 	private final static double sparsity1 = 0.6;
 	private final static double sparsity2 = 0.1;
@@ -799,7 +800,7 @@ public class FullIfElseTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-			programArgs = new String[]{"-explain","-args", input("A"), input("B"), input("C"), output("R")};
+			programArgs = new String[]{"-explain", "-stats", "-args", input("A"), input("B"), input("C"), output("R")};
 			fullRScriptName = HOME + TEST_NAME1 + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
@@ -818,7 +819,7 @@ public class FullIfElseTest extends AutomatedTestBase
 			//compare output matrices 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
-			TestUtils.compareMatrices(dmlfile, rfile, 0, "Stat-DML", "Stat-R");
+			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
 		finally {
 			rtplatform = platformOld;

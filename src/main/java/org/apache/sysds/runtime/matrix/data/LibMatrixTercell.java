@@ -27,6 +27,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.functionobjects.IfElse;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -89,6 +90,63 @@ public class LibMatrixTercell
 	private static long unsafeTernary(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret,
 		TernaryOperator op, boolean s1, boolean s2, boolean s3, double d1, double d2, double d3, int rl, int ru)
 	{
+		if(op.fn instanceof IfElse) {
+			return unsafeTernaryIfElse(m1, m2, m3, ret, op, s1, s2,
+			s3, d1, d2, d3, rl, ru);
+		}
+		else {
+			return unsafeTernaryDefault(m1, m2, m3, ret, op, s1, s2,
+				s3, d1, d2, d3, rl, ru);
+		}
+	}
+
+	private static long unsafeTernaryIfElse(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret,
+		TernaryOperator op, boolean s1, boolean s2, boolean s3, double d1, double d2, double d3, int rl, int ru)
+	{
+		// IfElse specific optimizations are applied here
+		int n = ret.clen;
+		long lnnz = 0;
+		final int r1 = m1.getNumRows();
+		final int c1 = m1.getNumColumns();
+		if (c1 == 1) {
+			for( int i=rl; i<ru; i++ ) {
+				double in1 = s1 ? d1 : m1.get(Math.min(i, r1-1), 0);
+				MatrixBlock tmp = (in1 != 0) ? m2 : m3;
+				final int tmpCol = tmp.getNumColumns();
+				final int tmpRow = tmp.getNumRows();
+				final int tmpi = Math.min(i, tmpRow-1);
+				for( int j=0; j<n; j++ ) {
+					double val = tmp.get(tmpi, Math.min(j, tmpCol-1));
+					lnnz += (val != 0) ? 1 : 0;
+					ret.appendValuePlain(i, j, val);
+				}
+			}
+			return lnnz;
+		}
+		else if (r1 == 1) {
+			for( int j=0; j<n; j++ ) {
+				double in1 = s1 ? d1 : m1.get(0, Math.min(j, c1-1));
+				MatrixBlock tmp = (in1 != 0) ? m2 : m3;
+				final int tmpCol = tmp.getNumColumns();
+				final int tmpRow = tmp.getNumRows();
+				final int tmpj = Math.min(j, tmpCol-1);
+				for( int i=rl; i<ru; i++ ) {
+					double val = tmp.get(Math.min(i, tmpRow-1), tmpj);
+					lnnz += (val != 0) ? 1 : 0;
+					ret.appendValuePlain(i, j, val);
+				}
+			}
+			return lnnz;
+		}
+		else {
+			return unsafeTernaryDefault(m1, m2, m3, ret, op, s1, s2,
+				s3, d1, d2, d3, rl, ru);
+		}
+	}
+
+	private static long unsafeTernaryDefault(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret,
+		TernaryOperator op, boolean s1, boolean s2, boolean s3, double d1, double d2, double d3, int rl, int ru)
+	{
 		//basic ternary operations (all combinations sparse/dense)
 		int n = ret.clen;
 		long lnnz = 0;
@@ -99,15 +157,19 @@ public class LibMatrixTercell
 		final int c2 = m2.getNumColumns();
 		final int c3 = m3.getNumColumns();
 
-		for( int i=rl; i<ru; i++ )
+		for( int i=rl; i<ru; i++ ) {
+			final int i1 = Math.min(i, r1-1);
+			final int i2 = Math.min(i, r2-1);
+			final int i3 = Math.min(i, r3-1);
 			for( int j=0; j<n; j++ ) {
-				double in1 = s1 ? d1 : m1.get(Math.min(i, r1-1), Math.min(j, c1-1));
-				double in2 = s2 ? d2 : m2.get(Math.min(i, r2-1), Math.min(j, c2-1));
-				double in3 = s3 ? d3 : m3.get(Math.min(i, r3-1), Math.min(j, c3-1));
+				double in1 = s1 ? d1 : m1.get(i1, Math.min(j, c1-1));
+				double in2 = s2 ? d2 : m2.get(i2, Math.min(j, c2-1));
+				double in3 = s3 ? d3 : m3.get(i3, Math.min(j, c3-1));
 				double val = op.fn.execute(in1, in2, in3);
 				lnnz += (val != 0) ? 1 : 0;
 				ret.appendValuePlain(i, j, val);
 			}
+		}
 		
 		//set global output nnz once
 		return lnnz;

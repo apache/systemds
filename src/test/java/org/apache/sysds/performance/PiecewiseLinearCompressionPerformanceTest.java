@@ -7,9 +7,14 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupPiecewiseLinearCompressed;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.utils.stats.Timing;
+import org.apache.sysds.runtime.compress.colgroup.functional.PiecewiseLinearUtils;
 import java.util.Random;
+import java.util.List;
 
 /**
  * Performance benchmark for piecewise linear compression.
@@ -53,6 +58,26 @@ public class PiecewiseLinearCompressionPerformanceTest {
 		}
 		return mb;
 	}
+
+	/**
+	 * generate of a perfectly linear matrix to have a realistic test set up
+	 * @param nr number of rows
+	 * @param nc number of columns
+	 * @return matrix with random generated data
+	 */
+	private static MatrixBlock generateLinearMatrix(int nr, int nc) {
+		MatrixBlock mb = new MatrixBlock(nr, nc, true);
+		mb.allocateDenseBlock();
+		for(int c = 0; c < nc; c++) {
+			double slope = 0.5 * (c + 1);
+			double intercept = 10.0 - c;
+			for(int r = 0; r < nr; r++) {
+				mb.set(r, c, slope * r + intercept);
+			}
+		}
+		return mb;
+	}
+
 	///  returns a average number of segments per column
 	private static double avgSegments(AColGroup cg) {
 		int[][] breakpoints = ((ColGroupPiecewiseLinearCompressed) cg).getBreakpointsPerCol();
@@ -94,13 +119,13 @@ public class PiecewiseLinearCompressionPerformanceTest {
 		cs.setPiecewiseTargetLoss(loss);
 		IColIndex colIndexes = ColIndexFactory.create(numCol);
 
-		ColGroupFactory.compressPiecewiseLinearFunctionalSuccessive(colIndexes, mb, cs);
+		ColGroupFactory.compressPiecewiseLinearFunctional(colIndexes, mb, cs);
 
 		Timing t = new Timing();
 		AColGroup cg = null;
 		t.start();
 		for(int i = 0; i < REPS; i++)
-			cg = ColGroupFactory.compressPiecewiseLinearFunctionalSuccessive(colIndexes, mb, cs);
+			cg = ColGroupFactory.compressPiecewiseLinearFunctional(colIndexes, mb, cs);
 		double time = t.stop() / REPS;
 
 		long size = cg.getExactSizeOnDisk();
@@ -113,38 +138,94 @@ public class PiecewiseLinearCompressionPerformanceTest {
 	}
 
 	/**
-	 * benchmarks dynamic programming compression for a given matrix and target loss
-	 * no repetition, because DP is too slow due complexity
-	 * reports segments, compressed data size, runtime and reconstruction
+	 * Comparing the runtime speeds between the old Piece-wise linear compression
+	 * and new successive Piece-wise linear compression algorithms
 	 * @param mb original matrix to compress
 	 * @param loss target loss param
 	 */
-	private static void benchmarkDP(MatrixBlock mb, double loss) {
-		long origSize = mb.getInMemorySize();
-		int numColumns = mb.getNumColumns();
+	private static void compareDPvsSuccessive(MatrixBlock mb , double loss) {
+		System.out.println("\n--- Strategy Head-to-Head: DP vs Successive ---");
 		CompressionSettings cs = new CompressionSettingsBuilder().create();
 		cs.setPiecewiseTargetLoss(loss);
-		IColIndex colIndexes = ColIndexFactory.create(numColumns);
 
-		Timing t = new Timing();
-		t.start();
+		double[] colData = PiecewiseLinearUtils.getColumn(mb, 0);
+
+		// Benchmark DP
+		Timing tDP = new Timing();
+		tDP.start();
+		List<Integer> dpBreaks = PiecewiseLinearUtils.computeBreakpoints(cs, colData);
+		double timeDP = tDP.stop();
+
+		// Benchmark Successive
+		Timing tSucc = new Timing();
+		tSucc.start();
+		List<Integer> succBreaks = PiecewiseLinearUtils.computeBreakpointSuccessive(colData, cs);
+		double timeSucc = tSucc.stop();
+
+		System.out.printf(" DP: %5.1f ms (%2d segs) | Successive: %5.1f ms (%2d segs)%n",
+				timeDP, dpBreaks.size() - 1, timeSucc, succBreaks.size() - 1);
+
+	}
+
+	/**
+	 * Verifying whether new successive algorithm follow an O(N) time complexity
+	 * irrespective to the distribution of a matrix
+	 * @param mb original matrix to compress
+	 * @param loss target loss param
+	 * @param nr number of rows
+	 * @param nc number of columns
+	 */
+	private static void testDistributions(MatrixBlock mb, int nr, int nc, double loss) {
+		System.out.println("\n--- Testing Data Distributions ---\n");
+		MatrixBlock linear = generateLinearMatrix(nr, nc);
+
+		System.out.println("\n1. Perfect Linear Dataset:\n");
+		benchmarkSuccessive(linear, loss);
+
+		System.out.println("\n2. Volatile Level-Shift Dataset:\n");
+		benchmarkSuccessive(mb, loss);
+	}
+
+	/**
+	 * Verifies performance delta over different data distributions
+	 * @param mb original matrix to compress
+	 * @param loss target loss param
+	 * @param nr number of rows
+	 * @param nc number of columns
+	 */
+	private static void benchmarkOperations(MatrixBlock mb, int nr, int nc, double loss) {
+		System.out.println("\n--- Benchmarking SystemDS CLA Matrix Operations  ---\n");
+		CompressionSettings cs = new CompressionSettingsBuilder().create();
+		cs.setPiecewiseTargetLoss(loss);
+		IColIndex colIndexes = ColIndexFactory.create(nc);
+
 		AColGroup cg = ColGroupFactory.compressPiecewiseLinearFunctional(colIndexes, mb, cs);
-		double time = t.stop();
+		int scalarReps = 100;
+		int analyticalReps = 50;
+		// 1. Benchmark Compressed Scalar Operations
+		double scalarFactor = 2.5;
+		ScalarOperator sop = new RightScalarOperator(Multiply.getMultiplyFnObject(), scalarFactor);
+		Timing tScalar = new Timing();
+		tScalar.start();
+		for(int i = 0; i < scalarReps; i++) {
+			cg.scalarOperation(sop);
+		}
+		System.out.printf("\n  Scalar Multiplication (100 reps):  %6.2f ms%n", tScalar.stop());
 
-		long size = cg.getExactSizeOnDisk();
-		String saving = size < origSize
-			? String.format("saved %3.0f%%", 100.0 - 100.0 * size / origSize)
-			: String.format("LARGER +%.0f%%", 100.0 * size / origSize - 100);
-
-		System.out.printf("  DP          loss=%.0e  %5.1f segs  %6.2f MB (%s)  %6.1f ms  MSE=%.2e%n",
-			loss, avgSegments(cg), size / 1e6, saving, time, reconstructionMSE(mb, cg));
+		// 2. Benchmark Compressed Analytical Operations (Closed-form loops)
+		Timing tSums = new Timing();
+		tSums.start();
+		for(int i = 0; i < analyticalReps; i++) {
+			cg.computeColSums(new double[nc], nr);
+		}
+		System.out.printf("\n  Analytical Column Sums (50 reps): %6.2f ms%n", tSums.stop());
 	}
 
 	public static void main(String[] args) {
 		System.out.println("=== Piecewise Linear Compression Benchmark ===\n");
 
 		// Successive scalability across large matrices
-		System.out.println("=== Successive: scalability ===");
+		System.out.println("=== Successive: scalability ===\n");
 		int[][] configs = {{1000, 10}, {1000, 100}, {1000, 500},
 			{5000, 10}, {5000, 100}, {5000, 500},
 			{10000, 10}, {10000, 100}, {10000, 500}};
@@ -152,17 +233,13 @@ public class PiecewiseLinearCompressionPerformanceTest {
 		for(int[] cfg : configs) {
 			int nr = cfg[0], nc = cfg[1];
 			MatrixBlock mb = generateTestMatrix(nr, nc);
-			System.out.printf("%nnrows=%d  ncols=%d  original=%.2f MB%n",
-				nr, nc, mb.getInMemorySize() / 1e6);
-			for(double loss : LOSSES)
-				benchmarkSuccessive(mb, loss);
+			System.out.printf("%nnrows=%d  ncols=%d  original=%.2f MB%n\n",
+					nr, nc, mb.getInMemorySize() / 1e6);
+			for (double loss : LOSSES) {
+				testDistributions(mb, nr, nc, loss);
+				compareDPvsSuccessive(mb, loss);
+				benchmarkOperations(mb, nr, nc, loss);
+			}
 		}
-
-		// DP quality reference on small matrix
-		System.out.println("\n=== DP: quality reference (nrows=1000, ncols=10) ===");
-		MatrixBlock mbSmall = generateTestMatrix(1000, 10);
-		System.out.printf("original=%.2f MB%n", mbSmall.getInMemorySize() / 1e6);
-		for(double loss : LOSSES)
-			benchmarkDP(mbSmall, loss);
 	}
 }

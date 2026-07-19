@@ -308,11 +308,8 @@ public class ColGroupFactory {
 				return compressLinearFunctional(colIndexes, in, cs);
 			}
 		}
-		else if(ct == CompressionType.PiecewiseLinear) {
+		else if(ct == CompressionType.PiecewiseLinearCompressed) {
 			return compressPiecewiseLinearFunctional(colIndexes, in, cs);
-		}
-		else if(ct == CompressionType.PiecewiseLinearSuccessive) {
-			return compressPiecewiseLinearFunctionalSuccessive(colIndexes, in, cs);
 		}
 		else if(ct == CompressionType.DDCFOR) {
 			AColGroup g = directCompressDDC(colIndexes, cg);
@@ -1110,7 +1107,7 @@ public class ColGroupFactory {
 		for(int col = 0; col < numCols; col++) {
 			final int colIdx = colIndexes.get(col);
 			double[] column = PiecewiseLinearUtils.getColumn(in, colIdx);
-			PiecewiseLinearUtils.SegmentedRegression fit = PiecewiseLinearUtils.compressSegmentedLeastSquares(column,
+			PiecewiseLinearUtils.SegmentedRegression fit = PiecewiseLinearUtils.compressSuccessivePiecewiseLinear(column,
 				cs);
 			breakpointsPerCol[col] = fit.getBreakpoints();
 			interceptsPerCol[col] = fit.getIntercepts();
@@ -1124,25 +1121,7 @@ public class ColGroupFactory {
 
 	public static AColGroup compressPiecewiseLinearFunctionalSuccessive(IColIndex colIndexes, MatrixBlock in,
 		CompressionSettings cs) {
-		final int numRows = in.getNumRows();
-		final int numCols = colIndexes.size();
-		int[][] breakpointsPerCol = new int[numCols][];
-		double[][] slopesPerCol = new double[numCols][];
-		double[][] interceptsPerCol = new double[numCols][];
-
-		for(int col = 0; col < numCols; col++) {
-			final int colIdx = colIndexes.get(col);
-			double[] column = PiecewiseLinearUtils.getColumn(in, colIdx);
-			PiecewiseLinearUtils.SegmentedRegression fit = PiecewiseLinearUtils.compressSuccessivePiecewiseLinear(
-				column, cs);
-			breakpointsPerCol[col] = fit.getBreakpoints();
-			interceptsPerCol[col] = fit.getIntercepts();
-			slopesPerCol[col] = fit.getSlopes();
-
-		}
-		return ColGroupPiecewiseLinearCompressed.create(colIndexes, breakpointsPerCol, slopesPerCol, interceptsPerCol,
-			numRows);
-
+		return compressPiecewiseLinearFunctional(colIndexes, in, cs);
 	}
 
 	private AColGroup compressSDCFromSparseTransposedBlock(IColIndex cols, int nrUniqueEstimate, double tupleSparsity) {

@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.ooc;
 
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.ooc.primitives.OOCPrimitive;
 
 public interface OOCStreamable<T> {
 	OOCStream<T> getReadStream();
@@ -38,4 +39,12 @@ public interface OOCStreamable<T> {
 	CacheableData<?> getData();
 
 	void setData(CacheableData<?> data);
+
+	default OOCPrimitive getPrimitive() {
+		return null;
+	}
+
+	default void assignPrimitive(OOCPrimitive primitive) {
+		throw new UnsupportedOperationException("Stream does not support primitive assignment");
+	}
 }

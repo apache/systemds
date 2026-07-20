@@ -24,6 +24,7 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.instructions.ooc.CachingStream;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.ooc.primitives.OOCPrimitive;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -86,6 +87,11 @@ public class FilteredOOCStream<T> implements OOCStream<T> {
 	@Override
 	public CachingStream getStreamCache() {
 		return _sourceStream.getStreamCache();
+	}
+
+	@Override
+	public OOCPrimitive getPrimitive() {
+		return _sourceStream.getPrimitive();
 	}
 
 	@Override

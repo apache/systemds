@@ -27,6 +27,7 @@ import org.apache.sysds.runtime.instructions.ooc.SubscribableTaskQueue;
 import org.apache.sysds.runtime.ooc.cache.OOCFuture;
 import org.apache.sysds.runtime.ooc.memory.MemoryAllowance;
 import org.apache.sysds.runtime.ooc.memory.ReservationBudget;
+import org.apache.sysds.runtime.ooc.primitives.OOCPrimitive;
 
 public final class AllocatedOOCStream<T> extends SubscribableTaskQueue<T> {
 	private final OOCStream<T> _source;
@@ -47,6 +48,11 @@ public final class AllocatedOOCStream<T> extends SubscribableTaskQueue<T> {
 
 	public static ReservationBudget detachBudget(OOCStream.QueueCallback<?> callback) {
 		return callback instanceof BudgetedQueueCallback<?> budgeted ? budgeted.detachBudget() : null;
+	}
+
+	@Override
+	public OOCPrimitive getPrimitive() {
+		return _source.getPrimitive();
 	}
 
 	private void admit(OOCStream.QueueCallback<T> callback) {

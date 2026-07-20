@@ -25,6 +25,7 @@ import org.apache.sysds.runtime.instructions.ooc.CachingStream;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.ooc.SubscribableTaskQueue;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.ooc.primitives.OOCPrimitive;
 
 import java.util.function.Consumer;
 
@@ -84,6 +85,11 @@ public class SubOOCStream<T> implements OOCStream<T> {
 	@Override
 	public CachingStream getStreamCache() {
 		return _sourceStream.getStreamCache();
+	}
+
+	@Override
+	public OOCPrimitive getPrimitive() {
+		return _sourceStream.getPrimitive();
 	}
 
 	@Override

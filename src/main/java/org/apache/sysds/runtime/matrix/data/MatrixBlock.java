@@ -4784,8 +4784,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			output.reset(qs.rlen, qs.clen, false);
 		
 		for ( int i=0; i < qs.rlen; i++ ) {
-			// FIXME: [SYSTEMDS-3953] consider the average parameter here
-			output.set(i, 0, this.pickValue(qs.get(i,0)) );
+			output.set(i, 0, this.pickValue(qs.get(i,0), average));
 		}
 		
 		return output;

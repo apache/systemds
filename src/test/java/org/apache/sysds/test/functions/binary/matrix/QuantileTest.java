@@ -36,6 +36,7 @@ public class QuantileTest extends AutomatedTestBase
 	private final static String TEST_NAME3 = "IQM";
 	private final static String TEST_NAME4 = "QuantileBug";
 	private final static String TEST_NAME5 = "MedianBug";
+	private final static String TEST_NAME6 = "QuartileArray";
 	
 	private final static String TEST_DIR = "functions/binary/matrix/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + QuantileTest.class.getSimpleName() + "/";
@@ -60,6 +61,8 @@ public class QuantileTest extends AutomatedTestBase
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
 		addTestConfiguration(TEST_NAME5,
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "R" }) );
+		addTestConfiguration(TEST_NAME6,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] { "R" }) );
 	}
 	
 	@Test
@@ -180,6 +183,16 @@ public class QuantileTest extends AutomatedTestBase
 	@Test
 	public void testMedianBugSP() {
 		runQuantileTest(TEST_NAME5, -1, false, ExecType.SPARK);
+	}
+
+	@Test
+	public void testQuartileArrayCP() {
+		runQuantileTest(TEST_NAME6, 0, false, ExecType.CP);
+	}
+
+	@Test
+	public void testQuartileArraySP() {
+		runQuantileTest(TEST_NAME6, 0, false, ExecType.SPARK);
 	}
 
 	private void runQuantileTest( String TEST_NAME, double p, boolean sparse, ExecType et)

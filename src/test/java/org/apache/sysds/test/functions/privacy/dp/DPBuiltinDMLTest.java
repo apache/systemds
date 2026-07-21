@@ -1,15 +1,22 @@
-// ==========================================================================
-// DML integration test
-// ==========================================================================
-//
-// Full integration tests extend AutomatedTestBase and drive the DML runner.
-// Each test:
-//   (a) Writes a DML script to a temp file.
-//   (b) Provides input matrices via TestUtils.
-//   (c) Calls runTest() and reads the output MatrixBlock.
-//   (d) Verifies that the noisy result differs from the clean result by a
-//       statistically plausible amount (not zero, not astronomically large).
-//
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 
 package org.apache.sysds.test.functions.privacy.dp;
 
@@ -30,6 +37,19 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
+/*
+ * ==========================================================================
+ * DML integration test
+ * ==========================================================================
+ *
+ * Full integration tests extend AutomatedTestBase and drive the DML runner.
+ * Each test:
+ *   (a) Writes a DML script to a temp file.
+ *   (b) Provides input matrices via TestUtils.
+ *   (c) Calls runTest() and reads the output MatrixBlock.
+ *   (d) Verifies that the noisy result differs from the clean result by a
+ *       statistically plausible amount (not zero, not astronomically large).
+ */
 public class DPBuiltinDMLTest extends AutomatedTestBase {
 
 	private static final String TEST_DIR = "functions/privacy/dp/";

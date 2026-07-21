@@ -43,6 +43,7 @@ import org.apache.sysds.runtime.ooc.primitives.MaterializeOOCPrimitive;
 import org.apache.sysds.runtime.ooc.primitives.OOCPrimitive;
 import org.apache.sysds.runtime.ooc.store.CountingLiveness;
 import org.apache.sysds.runtime.ooc.store.IndexedMaterializedStoreReader;
+import org.apache.sysds.runtime.ooc.store.MaterializedStoreStreamable;
 import org.apache.sysds.runtime.ooc.stream.FilteredOOCStream;
 import org.apache.sysds.runtime.ooc.stream.StreamContext;
 import org.apache.sysds.runtime.ooc.util.OOCInstructionUtils;
@@ -111,6 +112,41 @@ public class OOCPrimitiveTest {
 			Assert.assertEquals(1, sink.getChildren().size());
 			Assert.assertTrue(sink.getChildPrimitiveAt(0) instanceof MaterializeOOCPrimitive);
 			Assert.assertEquals(1, sink._executions);
+		}
+		finally {
+			OOCCacheManager.reset();
+		}
+	}
+
+	@Test
+	public void testReusableMaterializedStream() {
+		OOCCacheManager.reset();
+		try {
+			MatrixObject data = new MatrixObject(ValueType.FP64, "/dev/null",
+				new MetaDataFormat(new MatrixCharacteristics(1, 2, 1), FileFormat.BINARY));
+			SubscribableTaskQueue<IndexedMatrixValue> source = new SubscribableTaskQueue<>();
+			source.setData(data);
+			source.enqueue(new IndexedMatrixValue(new MatrixIndexes(1, 1), new MatrixBlock(1, 1, 3d)));
+			source.enqueue(new IndexedMatrixValue(new MatrixIndexes(1, 2), new MatrixBlock(1, 1, 4d)));
+			source.closeInput();
+
+			MaterializedStoreStreamable handle = new MaterializedStoreStreamable(source, data);
+			handle.reserveLazyHandle();
+			handle.reserveLazyHandle();
+			handle.scheduleMaterializedStoreDeletion();
+			OOCStream<IndexedMatrixValue> first = handle.getReservedReadStream();
+			OOCStream<IndexedMatrixValue> second = handle.getReservedReadStream();
+			first.start();
+
+			for(OOCStream<IndexedMatrixValue> replay : List.of(first, second)) {
+				double sum = 0;
+				OOCStream.QueueCallback<IndexedMatrixValue> callback;
+				while((callback = replay.dequeueCB()) != null)
+					try(OOCStream.QueueCallback<IndexedMatrixValue> current = callback) {
+						sum += current.get().getValue().get(0, 0);
+					}
+				Assert.assertEquals(7, sum, 0);
+			}
 		}
 		finally {
 			OOCCacheManager.reset();

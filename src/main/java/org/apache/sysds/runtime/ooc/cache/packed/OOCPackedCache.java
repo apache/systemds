@@ -43,6 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.LongUnaryOperator;
+import java.util.function.Supplier;
 
 public final class OOCPackedCache implements OOCCache {
 	private static final long PACKED_STREAM_ID = CachingStream._streamSeq.getNextID();
@@ -231,11 +232,8 @@ public final class OOCPackedCache implements OOCCache {
 		if(!(location instanceof SealedPackLocation packed))
 			return _physical.pin(sId, tId, allowance);
 
-		return packed.state().pin(_physical, allowance, false).map(physicalEntry -> {
-			if(physicalEntry == null)
-				return null;
-			return createLogicalPin(new BlockKey(sId, tId), packed);
-		});
+		BlockKey key = new BlockKey(sId, tId);
+		return pinLogical(key, packed, () -> packed.state().pin(_physical, allowance, false));
 	}
 
 	@Override
@@ -248,11 +246,8 @@ public final class OOCPackedCache implements OOCCache {
 		if(!(location instanceof SealedPackLocation packed))
 			return _physical.pinAdmitted(sId, tId, allowance);
 
-		return packed.state().pinAdmitted(_physical, allowance).map(physicalEntry -> {
-			if(physicalEntry == null)
-				return null;
-			return createLogicalPin(new BlockKey(sId, tId), packed);
-		});
+		BlockKey key = new BlockKey(sId, tId);
+		return pinLogical(key, packed, () -> packed.state().pinAdmitted(_physical, allowance));
 	}
 
 	@Override
@@ -265,9 +260,19 @@ public final class OOCPackedCache implements OOCCache {
 		if(!(location instanceof SealedPackLocation packed))
 			return _physical.pinIfLive(sId, tId, allowance);
 
-		if(packed.state().pinIfLive(_physical, allowance) == null)
-			return null;
-		return createLogicalPin(new BlockKey(sId, tId), packed);
+		BlockKey key = new BlockKey(sId, tId);
+		packed.retain();
+		try {
+			if(packed.state().pinIfLive(_physical, allowance) == null) {
+				releaseLocation(key, packed);
+				return null;
+			}
+			return createLogicalPin(key, packed);
+		}
+		catch(RuntimeException | Error error) {
+			releaseLocation(key, packed);
+			throw error;
+		}
 	}
 
 	@Override
@@ -410,6 +415,7 @@ public final class OOCPackedCache implements OOCCache {
 			entry.unpin();
 			entry.setCacheMeta(null);
 			PackedUnpinHandle handle = pin.builder().unpinProducer(entry, pin.slot(), allowance);
+			releasePendingPin(entry.getKey(), pin.builder(), pin.slot());
 			if(pin.builder().sealed && pin.builder().activePins == 0)
 				pin.builder().transferProducerOwnership(_physical);
 			scheduleSeal(pin.builder());
@@ -426,7 +432,9 @@ public final class OOCPackedCache implements OOCCache {
 		}
 		entry.unpin();
 		entry.setCacheMeta(null);
-		return pin.location().state().unpin(this, _packReleaseDelayMs, allowance);
+		UnpinHandle handle = pin.location().state().unpin(this, _packReleaseDelayMs, allowance);
+		releaseLocation(entry.getKey(), pin.location());
+		return handle;
 	}
 
 	void enqueueRelease(PackedPinState state) {
@@ -490,6 +498,34 @@ public final class OOCPackedCache implements OOCCache {
 				pending.builder().tileIds[pending.slot()]);
 			return (SealedPackLocation) location;
 		}
+	}
+
+	private OOCFuture<BlockEntry> pinLogical(BlockKey key, SealedPackLocation location,
+		Supplier<OOCFuture<BlockEntry>> pin) {
+		location.retain();
+		OOCFuture<BlockEntry> physical;
+		try {
+			physical = pin.get();
+		}
+		catch(RuntimeException | Error error) {
+			releaseLocation(key, location);
+			throw error;
+		}
+		physical.whenComplete((entry, error) -> {
+			if(entry == null || error != null)
+				releaseLocation(key, location);
+		});
+		return physical.map(entry -> entry == null ? null : createLogicalPin(key, location));
+	}
+
+	private void releasePendingPin(BlockKey key, PackBuilder builder, int slot) {
+		if(builder.sealed) {
+			PackedCacheLocation location = getLocation(key.getStreamId(), key.getSequenceNumber());
+			if(location instanceof SealedPackLocation packed)
+				releaseLocation(key, packed);
+		}
+		else if(builder.releaseSlot(slot) == 0)
+			clearLocation(key);
 	}
 
 	private static BlockEntry createLogicalPin(BlockKey logicalKey, SealedPackLocation location) {

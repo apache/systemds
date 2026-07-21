@@ -19,12 +19,24 @@
 
 package org.apache.sysds.test.component.ooc;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.ooc.SubscribableTaskQueue;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.ooc.planning.OOCAccessPattern;
 import org.apache.sysds.runtime.ooc.primitives.OOCPrimitive;
 import org.apache.sysds.runtime.ooc.stream.FilteredOOCStream;
+import org.apache.sysds.runtime.ooc.stream.StreamContext;
+import org.apache.sysds.runtime.ooc.util.OOCInstructionUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -50,28 +62,67 @@ public class OOCPrimitiveTest {
 		filtered.start();
 		Assert.assertTrue(sink.hasStartedExecution());
 		Assert.assertEquals(1, sink._executions);
+		Assert.assertEquals(1, source._executions);
+		Assert.assertEquals(OOCAccessPattern.ROW_MAJOR, sink.getAccessPattern());
+		sink.inferPatterns();
+		sink.requestPattern(OOCAccessPattern.COL_MAJOR);
+		Assert.assertEquals(OOCAccessPattern.ROW_MAJOR, sink.getAccessPattern());
+	}
+
+	@Test
+	public void testDataGenMapTransposePipeline() {
+		SubscribableTaskQueue<IndexedMatrixValue> generated = new SubscribableTaskQueue<>();
+		SubscribableTaskQueue<IndexedMatrixValue> mapped = new SubscribableTaskQueue<>();
+		SubscribableTaskQueue<IndexedMatrixValue> transposed = new SubscribableTaskQueue<>();
+		generated.setData(new MatrixObject(ValueType.FP64, "/dev/null",
+			new MetaDataFormat(new MatrixCharacteristics(2, 3, 1), FileFormat.BINARY)));
+		mapped.setData(new MatrixObject(ValueType.FP64, "/dev/null",
+			new MetaDataFormat(new MatrixCharacteristics(2, 3, 1), FileFormat.BINARY)));
+		transposed.setData(new MatrixObject(ValueType.FP64, "/dev/null",
+			new MetaDataFormat(new MatrixCharacteristics(3, 2, 1), FileFormat.BINARY)));
+
+		OOCInstructionUtils.dataGen(generated,
+			indexes -> new MatrixBlock(1, 1, (double) indexes.getRowIndex() * 10 + indexes.getColumnIndex()),
+			new StreamContext());
+		OOCInstructionUtils.equiMapBlock(generated, mapped, input -> new MatrixBlock(1, 1, input.get(0, 0) + 1),
+			new StreamContext());
+		OOCInstructionUtils.transpose(mapped, transposed, new StreamContext());
+
+		transposed.start();
+		Map<String, Double> values = new HashMap<>();
+		OOCStream.QueueCallback<IndexedMatrixValue> callback;
+		while((callback = transposed.dequeueCB()) != null) {
+			try(OOCStream.QueueCallback<IndexedMatrixValue> current = callback) {
+				IndexedMatrixValue value = current.get();
+				values.put(value.getIndexes().getRowIndex() + "," + value.getIndexes().getColumnIndex(),
+					value.getValue().get(0, 0));
+			}
+		}
+		Assert.assertEquals(Map.of("1,1", 12.0, "2,1", 13.0, "3,1", 14.0, "1,2", 22.0, "2,2", 23.0, "3,2", 24.0),
+			values);
 	}
 
 	private static final class TestPrimitive extends OOCPrimitive {
 		private int _executions;
 
 		private TestPrimitive(List<OOCPrimitive> children) {
-			super(children);
+			super(null, children);
 		}
 
 		@Override
 		protected void startExecution() {
 			_executions++;
+			onComplete();
 		}
 
 		@Override
-		public void inferPatterns() {
+		protected void inferPatternsInternal() {
 			_pattern = OOCAccessPattern.ANY;
 			inferParentPatterns();
 		}
 
 		@Override
-		public void requestPattern(OOCAccessPattern accessPattern) {
+		protected void requestPatternInternal(OOCAccessPattern accessPattern) {
 			_pattern = accessPattern;
 		}
 	}

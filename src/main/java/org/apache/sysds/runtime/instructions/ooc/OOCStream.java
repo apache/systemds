@@ -51,8 +51,8 @@ public interface OOCStream<T> extends OOCStreamable<T> {
 
 	default void start() {
 		OOCPrimitive primitive = getPrimitive();
-		if(primitive != null)
-			primitive.tryStartExecution();
+		if(primitive != null && !primitive.hasStartedExecution())
+			primitive.start();
 	}
 
 	interface QueueCallback<T> extends AutoCloseable {

@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.ooc.cache.BlockKey;
 import org.apache.sysds.runtime.ooc.cache.GroupedBlockKey;
 import org.apache.sysds.runtime.ooc.cache.io.OOCIOHandler;
 import org.apache.sysds.runtime.ooc.cache.OOCCacheManager;
+import org.apache.sysds.runtime.ooc.primitives.OOCPrimitive;
 import org.apache.sysds.runtime.ooc.stream.SourceOOCStream;
 import org.apache.sysds.runtime.ooc.util.OOCUtils;
 import shaded.parquet.it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -272,9 +273,10 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 						}
 					}
 				}
-			} catch (DMLRuntimeException e) {
+			}
+			catch(RuntimeException e) {
 				// Propagate failure to subscribers
-				_failure = e;
+				_failure = DMLRuntimeException.of(e);
 				synchronized (this) {
 					notifyAll();
 				}
@@ -596,6 +598,11 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 	}
 
 	@Override
+	public OOCPrimitive getPrimitive() {
+		return _source.getPrimitive();
+	}
+
+	@Override
 	public boolean isProcessed() {
 		return false;
 	}
@@ -617,7 +624,7 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 
 	@SuppressWarnings("unchecked")
 	public void setSubscriber(Consumer<OOCStream.QueueCallback<IndexedMatrixValue>> subscriber, boolean incrConsumers) {
-		if(_deletable)
+		if(_deletable && incrConsumers)
 			throw new DMLRuntimeException("Cannot register a new subscriber on " + this + " because has been flagged for deletion");
 		if(_failure != null)
 			throw _failure;

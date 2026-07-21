@@ -635,7 +635,9 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 					_requiresLocalWrite = false;
 				}
 				else if( hasStreamHandle() ) {
-					_data = readBlobFromStream( getStreamHandle() );
+					OOCStream<IndexedMatrixValue> stream = getStreamHandle();
+					stream.start();
+					_data = readBlobFromStream(stream);
 				}
 				else if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() ) {
 					if( DMLScript.STATISTICS )

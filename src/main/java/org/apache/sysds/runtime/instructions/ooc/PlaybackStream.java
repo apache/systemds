@@ -23,6 +23,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.ooc.primitives.OOCPrimitive;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -139,5 +140,10 @@ public class PlaybackStream implements OOCStream<IndexedMatrixValue> {
 	@Override
 	public CachingStream getStreamCache() {
 		return _streamCache;
+	}
+
+	@Override
+	public OOCPrimitive getPrimitive() {
+		return _streamCache.getPrimitive();
 	}
 }

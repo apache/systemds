@@ -32,18 +32,18 @@ import org.apache.sysds.runtime.ooc.stream.StreamContext;
 import org.apache.sysds.runtime.ooc.util.OOCInstructionUtils;
 
 public class TransposeOOCPrimitive extends OOCPrimitive {
-	private final OOCStreamable<IndexedMatrixValue> _input;
+	private final OOCStream<IndexedMatrixValue> _input;
 	private final OOCStreamable<IndexedMatrixValue> _output;
 	private final Function<MatrixBlock, MatrixBlock> _operation;
 
 	public TransposeOOCPrimitive(OOCStreamable<IndexedMatrixValue> input, OOCStreamable<IndexedMatrixValue> output,
 		Function<MatrixBlock, MatrixBlock> operation, StreamContext context) {
-		this(input.getPrimitive(), input, output, operation, context);
+		this(input.getReadStream(), output, operation, context);
 	}
 
-	private TransposeOOCPrimitive(OOCPrimitive inputPrimitive, OOCStreamable<IndexedMatrixValue> input,
-		OOCStreamable<IndexedMatrixValue> output, Function<MatrixBlock, MatrixBlock> operation, StreamContext context) {
-		super(context, inputPrimitive == null ? List.of() : List.of(inputPrimitive));
+	private TransposeOOCPrimitive(OOCStream<IndexedMatrixValue> input, OOCStreamable<IndexedMatrixValue> output,
+		Function<MatrixBlock, MatrixBlock> operation, StreamContext context) {
+		super(context, input.getPrimitive() == null ? List.of() : List.of(input.getPrimitive()));
 		_input = input;
 		_output = output;
 		_operation = operation;
@@ -65,9 +65,8 @@ public class TransposeOOCPrimitive extends OOCPrimitive {
 
 	@Override
 	protected void startExecution() {
-		OOCStream<IndexedMatrixValue> input = _input.getReadStream();
 		OOCStream<IndexedMatrixValue> output = _output.getWriteStream();
-		OOCInstructionUtils.submitAdmittedOOCTasks(input, output, value -> {
+		OOCInstructionUtils.submitAdmittedOOCTasks(_input, output, value -> {
 			MatrixIndexes indexes = value.getIndexes();
 			return new IndexedMatrixValue(new MatrixIndexes(indexes.getColumnIndex(), indexes.getRowIndex()),
 				_operation.apply((MatrixBlock) value.getValue()));

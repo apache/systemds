@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.ooc.util.OOCInstructionUtils;
 
 public class UnaryOOCInstruction extends ComputationOOCInstruction {
 	private UnaryOperator _uop = null;
@@ -69,20 +70,17 @@ public class UnaryOOCInstruction extends ComputationOOCInstruction {
 		boolean cumSumProd = Builtin.isBuiltinCode(uop.fn, BuiltinCode.CUMSUMPROD);
 		ec.getDataCharacteristics(output.getName()).set(min.getNumRows(), cumSumProd ? 1 : min.getNumColumns(),
 			min.getBlocksize(), -1);
-		OOCStream<IndexedMatrixValue> qIn = min.getStreamHandle();
 		OOCStream<IndexedMatrixValue> qOut;
 		boolean cumulative = isCumulativeUnary(uop);
 
 		if(cumulative) {
-			qOut = processCumulativeUnaryInstruction(ec, uop, qIn);
+			qOut = processCumulativeUnaryInstruction(ec, uop, min.getStreamHandle());
 		}
 		else {
 			qOut = createWritableStream();
-			mapOOC(qIn, qOut, tmp -> {
-				IndexedMatrixValue tmpOut = new IndexedMatrixValue();
-				tmpOut.set(tmp.getIndexes(), tmp.getValue().unaryOperations(uop, new MatrixBlock()));
-				return tmpOut;
-			});
+			OOCStreamable<IndexedMatrixValue> input = min.getStreamable();
+			OOCInstructionUtils.equiMapBlock(input, qOut, block -> block.unaryOperations(uop, new MatrixBlock()),
+				getContext());
 		}
 
 		ec.getMatrixObject(output).setStreamHandle(qOut);
@@ -140,6 +138,7 @@ public class UnaryOOCInstruction extends ComputationOOCInstruction {
 			});
 		}
 
+		qIn.start();
 		return mergeOOCStreams(splitOutputs);
 	}
 

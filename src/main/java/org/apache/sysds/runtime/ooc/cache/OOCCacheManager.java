@@ -286,8 +286,12 @@ public class OOCCacheManager {
 
 		@SuppressWarnings("unchecked")
 		CachedQueueCallback(BlockEntry result, DMLRuntimeException failure) {
+			this(result, (T) result.getData(), failure);
+		}
+
+		private CachedQueueCallback(BlockEntry result, T data, DMLRuntimeException failure) {
 			this._result = result;
-			this._data = (T)result.getData();
+			this._data = data;
 			this._failure = failure;
 			this._pinned = new AtomicBoolean(true);
 		}
@@ -305,8 +309,11 @@ public class OOCCacheManager {
 		public OOCStream.QueueCallback<T> keepOpen() {
 			if(!_pinned.get())
 				throw new IllegalStateException("Cannot keep open an already closed callback");
+			T data = _data;
+			if(data == null)
+				throw new IllegalStateException("Cannot keep open an empty callback");
 			pin(_result);
-			return new CachedQueueCallback<>(_result, _failure);
+			return new CachedQueueCallback<>(_result, data, _failure);
 		}
 
 		@Override

@@ -30,9 +30,9 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysds.runtime.ooc.util.OOCInstructionUtils;
 import org.apache.sysds.runtime.util.DataConverter;
 
 public class ReorgOOCInstruction extends ComputationOOCInstruction {
@@ -105,19 +105,12 @@ public class ReorgOOCInstruction extends ComputationOOCInstruction {
 			ec.releaseMatrixInput(input1.getName());
 			ec.setMatrixOutput(output.getName(), soresBlock);
 		} else if(r_op.fn instanceof SwapIndex) {
-			OOCStream<IndexedMatrixValue> qIn = min.getStreamHandle();
+			OOCStreamable<IndexedMatrixValue> qIn = min.getStreamable();
 			OOCStream<IndexedMatrixValue> qOut = createWritableStream();
 			ec.getMatrixObject(output).setStreamHandle(qOut);
 
-			// Transpose operation
-			mapOOC(qIn, qOut, tmp -> {
-				MatrixBlock inBlock = (MatrixBlock) tmp.getValue();
-				long oldRowIdx = tmp.getIndexes().getRowIndex();
-				long oldColIdx = tmp.getIndexes().getColumnIndex();
-
-				MatrixBlock outBlock = inBlock.reorgOperations((ReorgOperator) _optr, new MatrixBlock(), -1, -1, -1);
-				return new IndexedMatrixValue(new MatrixIndexes(oldColIdx, oldRowIdx), outBlock);
-			});
+			OOCInstructionUtils.transposedMap(qIn, qOut,
+				block -> block.reorgOperations((ReorgOperator) _optr, new MatrixBlock(), -1, -1, -1), getContext());
 		}
 	}
 }

@@ -47,7 +47,7 @@ public class OOCPrimitiveTest {
 	public void testRetainForgottenCacheCallback() {
 		OOCCacheManager.reset();
 		try(OOCStream.QueueCallback<IndexedMatrixValue> callback = OOCCacheManager.putAndPin(1, 1,
-			new IndexedMatrixValue(new MatrixIndexes(1, 1), new MatrixBlock(1, 1, 7)))) {
+			new IndexedMatrixValue(new MatrixIndexes(1, 1), new MatrixBlock(1, 1, 7d)))) {
 			OOCCacheManager.forget(1, 1);
 			try(OOCStream.QueueCallback<IndexedMatrixValue> retained = callback.keepOpen()) {
 				Assert.assertEquals(7, retained.get().getValue().get(0, 0), 0);

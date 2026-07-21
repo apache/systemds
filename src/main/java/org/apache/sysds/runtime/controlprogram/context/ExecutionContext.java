@@ -149,18 +149,16 @@ public class ExecutionContext {
 	}
 
 	/**
-	 * Returns the session-scoped {@link DPBudgetAccountant}, lazily initialised on
-	 * first use. If the DML script called {@code dp_set_budget(epsilon, delta)}
-	 * with compile-time literal arguments, that value (resolved onto the
-	 * {@code DMLProgram} during HOP construction — see {@code DMLTranslator}'s
-	 * {@code DP_SET_BUDGET} case) is used instead of the hardcoded defaults.
+	 * Returns the session-scoped {@link DPBudgetAccountant}, lazily initialised on first use. If the DML script called
+	 * {@code dp_set_budget(epsilon, delta)} with compile-time literal arguments, that value (resolved onto the
+	 * {@code DMLProgram} during HOP construction — see {@code DMLTranslator}'s {@code DP_SET_BUDGET} case) is used
+	 * instead of the hardcoded defaults.
 	 */
 	public DPBudgetAccountant getDPBudgetAccountant() {
-		if (_dpBudgetAccountant == null) {
+		if(_dpBudgetAccountant == null) {
 			DMLProgram dmlProg = (_prog != null) ? _prog.getDMLProg() : null;
-			_dpBudgetAccountant = (dmlProg != null && dmlProg.hasDPBudget())
-				? new DPBudgetAccountant(dmlProg.getDPBudgetEpsilon(), dmlProg.getDPBudgetDelta())
-				: new DPBudgetAccountant();
+			_dpBudgetAccountant = (dmlProg != null && dmlProg.hasDPBudget()) ? new DPBudgetAccountant(
+				dmlProg.getDPBudgetEpsilon(), dmlProg.getDPBudgetDelta()) : new DPBudgetAccountant();
 		}
 		return _dpBudgetAccountant;
 	}

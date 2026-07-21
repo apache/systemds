@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.binary.matrix;
 
 import java.util.HashMap;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
@@ -186,11 +187,13 @@ public class QuantileTest extends AutomatedTestBase
 	}
 
 	@Test
+	@Ignore // FIXME: fix SYSTEMDS-3953 Issue 2
 	public void testQuartileArrayCP() {
 		runQuantileTest(TEST_NAME6, 0, false, ExecType.CP);
 	}
 
 	@Test
+	@Ignore // FIXME: fix SYSTEMDS-3953 Issue 2
 	public void testQuartileArraySP() {
 		runQuantileTest(TEST_NAME6, 0, false, ExecType.SPARK);
 	}

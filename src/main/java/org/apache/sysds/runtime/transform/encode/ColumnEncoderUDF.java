@@ -19,6 +19,9 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.List;
 
 import org.apache.sysds.api.DMLScript;
@@ -46,7 +49,7 @@ public class ColumnEncoderUDF extends ColumnEncoder {
 	//TODO pass execution context through encoder factory for arbitrary functions not just builtin
 	//TODO integration into IPA to ensure existence of unoptimized functions
 	
-	private final String _fName;
+	private String _fName;
 	public int _domainSize = 1;
 
 	protected ColumnEncoderUDF(int ptCols, String name) {
@@ -164,5 +167,21 @@ public class ColumnEncoderUDF extends ColumnEncoder {
 	@Override
 	protected double[] getCodeCol(CacheBlock<?> in, int startInd, int endInd, double[] tmp) {
 		throw new DMLRuntimeException("UDF encoders only support full column access.");
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
+		out.writeUTF(_fName != null ? _fName : "");
+		out.writeInt(_domainSize);
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException {
+		super.readExternal(in);
+		_fName = in.readUTF();
+		if(_fName.isEmpty())
+			_fName = null;
+		_domainSize = in.readInt();
 	}
 }

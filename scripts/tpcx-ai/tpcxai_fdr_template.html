@@ -1,0 +1,337 @@
+<!--
+-- Copyright (C) 2021 Transaction Processing Performance Council (TPC) and/or its contributors.
+-- This file is part of a software package distributed by the TPC
+-- The contents of this file have been developed by the TPC, and/or have been licensed to the TPC under one or more contributor
+-- license agreements.
+-- This file is subject to the terms and conditions outlined in the End-User
+-- License Agreement (EULA) which can be found in this distribution (EULA.txt) and is available at the following URL:
+-- http://www.tpc.org/TPC_Documents_Current_Versions/txt/EULA.txt
+-- Unless required by applicable law or agreed to in writing, this software is distributed on an "AS IS" BASIS, WITHOUT
+-- WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, and the user bears the entire risk as to quality
+-- and performance as well as the entire cost of service or repair in case of defect. See the EULA for more details.
+-->
+
+
+<!--
+-- Copyright 2021 Intel Corporation.
+-- This software and the related documents are Intel copyrighted materials, and your use of them 
+-- is governed by the express license under which they were provided to you ("License"). Unless the 
+-- License provides otherwise, you may not use, modify, copy, publish, distribute, disclose or 
+-- transmit this software or the related documents without Intel's prior written permission.
+-- 
+-- This software and the related documents are provided as is, with no express or implied warranties, 
+-- other than those that are expressly stated in the License.
+-- 
+-->
+
+
+<html lang="en">
+<head>
+    <title>TPCx-AI Benchmark Run Report</title>
+    <style type="text/css">
+        #content {
+            margin: 0 5%;
+        }
+        .tablestyle {
+            font-family: Arial, Helvetica, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .tablestyle td, .tablestyle th {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        .tablestyle td[data-value="nan"] {
+            color: transparent;
+            font-size: 0px;
+        }
+
+        .tablestyle tr:nth-child(even){
+            background-color: #f2f2f2;}
+
+        .tablestyle tr:hover {
+            background-color: #ddd;
+        }
+
+        .tablestyle th {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            text-align: left;
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .tablestyle tfoot {
+            font-weight: bold;
+            background-color: #9a9a9a;
+            color: #f2f2f2;
+        }
+
+        .tablestyle .highlight {
+            /*background-color: #9a9a9a;*/
+            /*color: #f2f2f2;*/
+            font-weight: bold;
+        }
+
+        .tablestyle .total {
+            text-align: right;
+        }
+        .info-box {
+            margin: 20px;
+            padding: 10px;
+            border: 2px solid #007BFF;
+            border-radius: 5px;
+            background-color: #f0f9ff;
+            width: fit-content;
+        }
+        .info-box h3 {
+            color: #007BFF;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        .info-box p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #333;
+    </style>
+    <script type="text/javascript">
+        function pad_number(number, length) {
+            let num_string = number.toString()
+            let diff = length - num_string.length
+            let prefix = ''
+            if (diff > 0) {
+                prefix = '0'.repeat(diff)
+            }
+            return `${prefix}${num_string}`
+        }
+
+        function timestamp_to_localtime(timestamp_html) {
+            const timestamp = timestamp_html.match("(\[0-9]+\.[0-9]+)")[0]
+            const ts = timestamp * 1000
+            if (ts !== 0.0) {
+                const d = new Date(ts)
+                // return datetime in iso format: 2021-04-15T08:01:11.147Z
+                //return new Date(ts).toISOString()
+
+                // get the datetime components
+                // pad the components with 0 if necessary
+                let year = pad_number(d.getFullYear(), 2)
+                let month = pad_number(d.getMonth() + 1, 2)
+                let date = pad_number(d.getDate(), 2)
+                let hours = pad_number(d.getHours(), 2)
+                let minutes = pad_number(d.getMinutes(), 2)
+                let seconds = pad_number(d.getSeconds(), 2)
+                let millis = pad_number(d.getMilliseconds(), 3)
+
+                return `${year}-${month}-${date} ${hours}:${minutes}:${seconds}.${millis}`
+            } else {
+                return "N/A"
+            }
+        }
+
+        window.onload = function () {
+            const timestamps = document.getElementsByClassName("timestamp");
+            for (let i=0; i < timestamps.length; i++) {
+                const ts = timestamps[i].innerHTML;
+                timestamps[i].innerHTML = timestamp_to_localtime(ts);
+            }
+        }
+    </script>
+</head>
+<body>
+<div id="content">
+    <div>
+        <h1>TPCx-AI Benchmark Run Report</h1>
+    </div>
+
+    <div>
+        <h2>Benchmark Meta Data</h2>
+        <ul>
+            <li>benchmark ID: {{benchmark_id}}</li>
+            <li>benchmark start: <span class="timestamp">{{start}}</span></li>
+            <li>benchmark end: <span class="timestamp">{{end}}</span></li>
+            <li>benchmark duration: {{duration}}</li>
+            <li>benchmark name: {{benchmark_name}}</li>
+            <li>cmd args: {{cmd_args}}</li>
+        </ul>
+    </div>
+
+    <div>
+        <h2>TPCx-AI Metric</h2>
+        <h3>Definitions</h3>
+    <ul>
+        <li><strong>SF:</strong> user defined scale factor, which defines the size of the data set in GBs.</li>
+        <li><strong>N:</strong> number of use cases (i.e., 10 in the current version).</li>
+        <li><strong>S:</strong> user defined number of concurrent streams to run in the Serving Throughput Test.</li>
+        <li><strong>T<sub>LD</sub>:</strong> loading factor, which is the overall time it takes to ingest the datasets into the data store used for training and serving.</li>
+        <li><strong>T<sub>PTT</sub>:</strong> Power Training Test factor, defined as the geometric mean of the training times t<sub>t</sub> of all use cases <span style="font-family: monospace;">&#8730;(&#8719;<sub>i=1</sub><sup>N</sup> t<sub>t</sub><sup>i</sup>)</span>.</li>
+        <li><strong>T<sub>PST</sub>:</strong> Power Serving Test factor, defined as the geometric mean of the serving times t<sub>s</sub> of all use cases <span style="font-family: monospace;">&#8730;(&#8719;<sub>i=1</sub><sup>N</sup> t<sub>s</sub><sup>i</sup>)</span>, here the higher result of the two runs is taken.</li>
+        <li><strong>T<sub>TT</sub>:</strong> Serving Throughput Test factor, defined as the total time spent running the throughput test divided by the number of use cases N, and the number of streams in the Serving Throughput Test S.</li>
+    </ul>
+
+    <h3>Performance Metric</h3>
+    <p>The from these values computed performance metric AIUC<sub>pm@SF</sub> is defined as:</p>
+    <div style="font-family: monospace; background-color: #f4f4f4; padding: 10px;">
+        AIUC<sub>pm@SF</sub> = [SF * N * 60 / (<sup>4</sup>&#8730;T<sub>LD</sub> * T<sub>PTT</sub> * T<sub>PST</sub> * T<sub>TT</sub>)]
+    </div>
+    <p>Values measured in current Benchmark run: </p>
+        <table class="tablestyle">
+            <thead>
+            <tr>
+                <th>Metric Name</th>
+                <th>Value in s</th>
+            </tr>
+            </thead>
+            {% for m in metric %}
+            <tbody>
+            <tr>
+                <td>{{m.metric_name}}</td>
+                <td>{{m.metric_value}}</td>
+            </tr>
+            </tbody>
+            {% endfor %}
+        </table>
+    </div>
+
+
+    <div>
+        <h2>Evaluation</h2>
+        <h3>Summary of Evaluation Metrics</h3>
+    <ul>
+        <li><strong>Word Error Rate (WER):</strong> Indicates transcription accuracy, how many words are correctly transcribed; lower is better, 0 is perfect, and 1+ indicates complete inaccuracy.</li>
+        <li><strong>Mean Squared Log Error (MSLE):</strong> Used in regression, measures error scale; MSLE &le; 1.0 suggests predictions and true values are of similar scale.</li>
+        <li><strong>F1 Score:</strong> Combines precision and recall; higher is better with 1 as perfect.</li>
+        <li><strong>Matthews Correlation Coefficient (MCC):</strong> Measures correlation between predictions and true values; ranges from -1 (perfect anti-correlation) to 1 (perfect correlation), with 0 indicating no correlation.</li>
+        <li><strong>Median Absolute Error (MAE):</strong> Measures median of absolute deviations from true values; 0 is best, higher values indicate larger average errors.</li>
+        <li><strong>Accuracy Score:</strong> Measures correct classifications; ranges from 0 (worst) to 1 (perfect), sensitive to class imbalance.</li>
+    </ul>
+        {% for phase in phases%}
+            {% if phase.phase_name_formatted == "VERIFICATION" %}
+                <div>
+                <h3>{{phase.phase_name_formatted}}</h3>
+                <table class="tablestyle">
+                    <thead>
+                    <tr>
+                        <th>Stream</th>
+                        <th>Use Case</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Runtime</th>
+                        <th>Successful</th>
+                        <th>Comment</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+
+                    {% for uc in phase.use_cases %}
+                    <tr>
+                        <td>{{uc.stream}}</td>
+                        <td>{{uc.use_case}}</td>
+                        <td class="timestamp">{{uc.start_time}}</td>
+                        <td class="timestamp">{{uc.end_time}}</td>
+                        <td>{{uc.runtime}}</td>
+                        <td>{{uc.successful}}</td>
+                        {% if phase.phase == 'Phase.SCORING' %}
+                        <td>{{uc.metric_name}}: {{uc.metric_value}}</td>
+                        {% elif phase.phase in ['Phase.VERIFICATION', 'Phase.CLEAN', 'Phase.LOADING'] %}
+                        <td>{{uc.command}}</td>
+                        {% else %}
+                        <td></td>
+                        {% endif %}
+                </tr>
+            {% endfor %}
+            </tbody>
+            <tfoot>
+            <tr>
+                <td class="pretotal"></td>
+                <td colspan="1" class="total">Total</td>
+                <td class="timestamp">{{phase.start_time}}</td>
+                <td class="timestamp">{{phase.end_time}}</td>
+                <td>{{phase.runtime}}</td>
+                <td>{{phase.successful}}</td>
+                <td>complete phase</td>
+            </tr>
+            </tfoot>
+        </table>
+        </div>
+        {% endif %}
+        {% endfor %}
+
+    <div>
+
+        <h2>Use Cases</h2>
+        <p>
+           The following table shows the time in seconds that elapsed for the executed phases for every Use Case.
+        </p>
+<h3>Stages for Each Use Case</h3>
+    <ul>
+        <li><strong>Data Generation:</strong> All data sets including training, serving, and scoring data sets are generated. This stage is not timed.</li>
+        <li><strong>Load Test:</strong> Data is loaded into the system where it will be used. This can involve simple copying or more complex ingestion processes including data transformations, format changes, compression, and encoding.</li>
+        <li><strong>Power Training Test:</strong> Runs the training pipelines of the ten use cases sequentially, including all preprocessing, model training, and postprocessing tasks.</li>
+        <li><strong>Power Serving Test I and II:</strong> Runs the serving pipeline of all use cases sequentially using the same model for both tests. For the P_ST value used in the AIUC_pm@SF, the higher of the two values will be used.</li>
+        <li><strong>Scoring Test:</strong> Predictions of each use case serving pipeline are measured against predefined thresholds. This test is part of the model validation stage and measures the quality of output, though the measured time is not used for the primary metric.</li>
+        <li><strong>Serving Throughput Test:</strong> Concurrent streams of the ten serving pipelines are defined and run. Each stream consists of the sequential execution of a permutation of the serving pipelines of the ten use cases.</li>
+    </ul>
+
+        <table class="tablestyle">
+            <thead>
+            <tr>
+                {% for key in use_cases[0].keys() %}
+                <th>{{key}}</th>
+                {% endfor %}
+            </tr>
+            </thead>
+            <tbody>
+            {% for uc in use_cases %}
+            <tr>
+                {% for value in uc.values() %}
+                <td data-value="{{value}}">{{value}}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div>
+        <h2>Graphs</h2>
+        <h3>Phases</h3>
+        <div class="info-box">
+        <p><strong>X-axis:</strong> Runtime per use case in seconds</p>
+        <p><strong>Y-axis:</strong> use case</p>
+    </div>
+        <figure>
+            <img src="data:image/svg+xml;base64,{{use_cases_stacked}}"  alt="" width="100%"/>
+        </figure>
+
+        <h4>Training</h4>
+        <div class="info-box">
+        <p><strong>X-axis:</strong> use case </p>
+        <p><strong>Y-axis:</strong> Runtime per use case in seconds</p>
+    </div>
+
+        <figure>
+            <img src="data:image/svg+xml;base64,{{training_bar}}"  alt="" width="100%"/>
+        </figure>
+        <h4>Serving</h4>
+        <div class="info-box">
+        <p><strong>X-axis:</strong> use case </p>
+        <p><strong>Y-axis:</strong> Runtime per use case in seconds</p>
+        </div>
+        <figure>
+            <img src="data:image/svg+xml;base64,{{serving_bar_grouped}}"  alt="" width="100%"/>
+        </figure>
+        <h4>Serving Throughput</h4>
+            <div class="info-box">
+        <p><strong>X-axis:</strong> use case </p>
+        <p><strong>Y-axis:</strong> Runtime per use case in seconds</p>
+            </div>
+        <figure>
+            <img src="data:image/svg+xml;base64,{{serving_throughput_error}}"  alt="" width="100%"/>
+        </figure>
+
+
+</body>
+</html>

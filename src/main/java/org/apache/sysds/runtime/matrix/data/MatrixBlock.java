@@ -4782,9 +4782,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			output=new MatrixBlock(qs.rlen, qs.clen, false); // resulting matrix is mostly likely be dense
 		else
 			output.reset(qs.rlen, qs.clen, false);
-		
-		for ( int i=0; i < qs.rlen; i++ ) {
-			output.set(i, 0, this.pickValue(qs.get(i,0), average));
+
+		for(int i = 0; i < qs.rlen; i++) {
+			output.set(i, 0, this.pickValue(qs.get(i, 0), average));
 		}
 		
 		return output;

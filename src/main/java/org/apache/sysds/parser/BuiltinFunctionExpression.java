@@ -2003,8 +2003,9 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 				output.setBlocksize (id.getBlocksize());
 				output.setValueType(id.getValueType());
 			}
-			else 
+			else
 				raiseValidateError("Local instruction not allowed in dml script");
+			break;
 		case DP_LAPLACE: {
 			checkNumParameters(4);
 			checkMatrixParam(getFirstExpr());

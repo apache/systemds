@@ -109,6 +109,11 @@ public class FederatedMatrixCompressionTest extends AutomatedTestBase {
 			// Enable compression only for the federated run
 			DMLScript.FEDERATED_COMPRESSION = true;
 			DMLScript.FEDERATED_COMPRESSION_TYPE = compressionType;
+			// Lossless settings: sparsity 1.0 makes TopK a passthrough (k >= totalElements),
+			// so the test verifies the compress/transfer/decompress path rather than
+			// reconstruction error on a 5-element vector.
+			DMLScript.FEDERATED_COMPRESSION_SPARSITY = 1.0;
+			DMLScript.FEDERATED_COMPRESSION_BITS = 8;
 
 			// Run federated DML with compression enabled
 			fullDMLScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME + ".dml";
@@ -129,6 +134,8 @@ public class FederatedMatrixCompressionTest extends AutomatedTestBase {
 		}
 		finally {
 			DMLScript.FEDERATED_COMPRESSION = false;
+			DMLScript.FEDERATED_COMPRESSION_SPARSITY = 0.01;
+			DMLScript.FEDERATED_COMPRESSION_BITS = 4;
 			resetExecMode(oldPlatform);
 		}
 

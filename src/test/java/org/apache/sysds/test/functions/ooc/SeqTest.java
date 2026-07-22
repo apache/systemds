@@ -53,6 +53,11 @@ public class SeqTest extends AutomatedTestBase {
 		runSeqTest(0, 15.9, 0.01);
 	}
 
+	@Test
+	public void testDescendingSeq() {
+		runSeqTest(10, 0, -0.1);
+	}
+
 	private void runSeqTest(double from, double to, double incr) {
 		Types.ExecMode platformOld = setExecMode(Types.ExecMode.SINGLE_NODE);
 

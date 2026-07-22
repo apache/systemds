@@ -264,7 +264,8 @@ public class DPBuiltinCPInstructionTest {
 		lapOnly.compose(0.5, 0.0, 1.0);
 		gauOnly.compose(0.5, 1e-5, 1.0);
 
-		Assert.assertTrue("Mixed cost must exceed Laplace-only cost", mixed.totalEpsilonSpent() > lapOnly.totalEpsilonSpent());
+		Assert.assertTrue("Mixed cost must exceed Laplace-only cost",
+			mixed.totalEpsilonSpent() > lapOnly.totalEpsilonSpent());
 		Assert.assertTrue("Mixed cost must exceed Gaussian-only cost",
 			mixed.totalEpsilonSpent() > gauOnly.totalEpsilonSpent());
 	}

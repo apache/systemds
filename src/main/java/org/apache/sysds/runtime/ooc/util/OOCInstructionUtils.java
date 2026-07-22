@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.ooc.cache.OOCFuture;
 import org.apache.sysds.runtime.ooc.memory.MemoryAllowance;
 import org.apache.sysds.runtime.ooc.memory.ReservationBudget;
+import org.apache.sysds.runtime.ooc.primitives.JoinOOCPrimitive;
 import org.apache.sysds.runtime.ooc.primitives.MappingOOCPrimitive;
 import org.apache.sysds.runtime.ooc.primitives.PlannableDataGenOOCPrimitive;
 import org.apache.sysds.runtime.ooc.primitives.TransposeOOCPrimitive;
@@ -79,6 +80,12 @@ public final class OOCInstructionUtils {
 	public static void transpose(OOCStreamable<IndexedMatrixValue> input, OOCStream<IndexedMatrixValue> output,
 		StreamContext context) {
 		transposedMap(input, output, MatrixBlock::transpose, context);
+	}
+
+	public static void equiJoin(OOCStreamable<IndexedMatrixValue> left, OOCStreamable<IndexedMatrixValue> right,
+		OOCStream<IndexedMatrixValue> output, BiFunction<MatrixBlock, MatrixBlock, MatrixBlock> operation,
+		StreamContext context) {
+		output.assignPrimitive(new JoinOOCPrimitive(left, right, output, operation, context));
 	}
 
 	public static int getComputeInFlight() {

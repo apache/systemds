@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 package org.apache.sysds.test.functions.privacy.dp;
 
 import static org.junit.Assert.assertEquals;

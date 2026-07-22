@@ -2165,12 +2165,11 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 	}
 
 	/**
-	 * dp_laplace/dp_gaussian require the "query" parameter to be a compile-time
-	 * string literal so that the output shape (and thus the transformation
-	 * matrix T built at runtime) is known during validation.
+	 * dp_laplace/dp_gaussian require the "query" parameter to be a compile-time string literal so that the output shape
+	 * (and thus the transformation matrix T built at runtime) is known during validation.
 	 */
 	private String getDPQueryLiteral(Expression queryExpr) {
-		if (!(queryExpr instanceof StringIdentifier))
+		if(!(queryExpr instanceof StringIdentifier))
 			raiseValidateError(getOpCode() + ": 'query' must be a string literal", false,
 				LanguageErrorCodes.INVALID_PARAMETERS);
 		return ((StringIdentifier) queryExpr).getValue();
@@ -2178,16 +2177,16 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 
 	/** Output dimensions of T %*% X for the given named query, X being n x d. */
 	private long[] getDPOutputDims(String query, long n, long d) {
-		switch (query) {
+		switch(query) {
 			case "colMeans":
 			case "colSums":
 				return new long[] {1, d};
 			case "identity":
 				return new long[] {n, d};
 			default:
-				raiseValidateError(getOpCode() + ": unknown query type '" + query
-					+ "' (expected colMeans, colSums, or identity)", false,
-					LanguageErrorCodes.INVALID_PARAMETERS);
+				raiseValidateError(
+					getOpCode() + ": unknown query type '" + query + "' (expected colMeans, colSums, or identity)",
+					false, LanguageErrorCodes.INVALID_PARAMETERS);
 				return null; // unreachable
 		}
 	}

@@ -19,10 +19,8 @@
 
 package org.apache.sysds.runtime.ooc.primitives;
 
-import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
-import java.util.stream.Stream;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.ooc.CachingStream;
@@ -42,8 +40,8 @@ import org.apache.sysds.runtime.ooc.util.OOCUtils;
 import org.apache.sysds.runtime.ooc.util.StateTableUtils;
 
 public class JoinOOCPrimitive extends OOCPrimitive {
-	private final OOCStream<IndexedMatrixValue> _left;
-	private final OOCStream<IndexedMatrixValue> _right;
+	private final OOCStreamable<IndexedMatrixValue> _left;
+	private final OOCStreamable<IndexedMatrixValue> _right;
 	private final OOCStreamable<IndexedMatrixValue> _output;
 	private final BiFunction<MatrixBlock, MatrixBlock, MatrixBlock> _operation;
 	private StateTable<IndexedMatrixValue> _table;
@@ -51,13 +49,7 @@ public class JoinOOCPrimitive extends OOCPrimitive {
 	public JoinOOCPrimitive(OOCStreamable<IndexedMatrixValue> left, OOCStreamable<IndexedMatrixValue> right,
 		OOCStreamable<IndexedMatrixValue> output, BiFunction<MatrixBlock, MatrixBlock, MatrixBlock> operation,
 		StreamContext context) {
-		this(left.getReadStream(), right.getReadStream(), output, operation, context);
-	}
-
-	private JoinOOCPrimitive(OOCStream<IndexedMatrixValue> left, OOCStream<IndexedMatrixValue> right,
-		OOCStreamable<IndexedMatrixValue> output, BiFunction<MatrixBlock, MatrixBlock, MatrixBlock> operation,
-		StreamContext context) {
-		super(context, Stream.of(left.getPrimitive(), right.getPrimitive()).filter(Objects::nonNull).toList());
+		super(context, left, right);
 		_left = left;
 		_right = right;
 		_output = output;
@@ -84,6 +76,8 @@ public class JoinOOCPrimitive extends OOCPrimitive {
 
 	@Override
 	protected void startExecution() {
+		OOCStream<IndexedMatrixValue> left = getInputReadStream(0);
+		OOCStream<IndexedMatrixValue> right = getInputReadStream(1);
 		_table = new StateTable<>(OOCCacheManager.getGlobalCache(), CachingStream._streamSeq.getNextID());
 		OOCStream<IndexedMatrixValue> output = _output.getWriteStream();
 		OOCStream<JoinWork> matches = new SubscribableTaskQueue<>();
@@ -95,10 +89,12 @@ public class JoinOOCPrimitive extends OOCPrimitive {
 		getContext().addOutStream(output);
 		OOCInstructionUtils.submitOOCTasks(matches, callback -> {
 			try(JoinWork work = callback.get()) {
-				IndexedMatrixValue left = work._left.get();
-				IndexedMatrixValue right = work._right.get();
-				OOCUtils.enqueueExact(output, new IndexedMatrixValue(left.getIndexes(),
-					_operation.apply((MatrixBlock) left.getValue(), (MatrixBlock) right.getValue())), work._budget);
+				IndexedMatrixValue mleft = work._left.get();
+				IndexedMatrixValue mright = work._right.get();
+				OOCUtils.enqueueExact(output,
+					new IndexedMatrixValue(mleft.getIndexes(),
+						_operation.apply((MatrixBlock) mleft.getValue(), (MatrixBlock) mright.getValue())),
+					work._budget);
 			}
 		}, callback -> true, (index, callback) -> callback.get().close(), getContext()).thenRun(() -> {
 			try {
@@ -110,16 +106,18 @@ public class JoinOOCPrimitive extends OOCPrimitive {
 			}
 		});
 
-		OOCInstructionUtils.submitOOCTask(() -> drive(matches, taskBytes), new StreamContext().addOutStream(output));
+		OOCInstructionUtils.submitOOCTask(() -> drive(left, right, matches, taskBytes),
+			new StreamContext().addOutStream(output));
 	}
 
-	private void drive(OOCStream<JoinWork> matches, long taskBytes) {
+	private void drive(OOCStream<IndexedMatrixValue> leftInput, OOCStream<IndexedMatrixValue> rightInput,
+		OOCStream<JoinWork> matches, long taskBytes) {
 		long cols = _right.getDataCharacteristics().getNumColBlocks();
 		int unmatched = 0;
 		try {
 			while(true) {
-				OOCStream.QueueCallback<IndexedMatrixValue> left = _left.dequeueCB();
-				OOCStream.QueueCallback<IndexedMatrixValue> right = _right.dequeueCB();
+				OOCStream.QueueCallback<IndexedMatrixValue> left = leftInput.dequeueCB();
+				OOCStream.QueueCallback<IndexedMatrixValue> right = rightInput.dequeueCB();
 				boolean leftEos = left == null || left.isEos();
 				boolean rightEos = right == null || right.isEos();
 				if(leftEos || rightEos) {

@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.ooc.primitives;
 
-import java.util.List;
 import java.util.function.Function;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -42,7 +41,7 @@ public class PlannableDataGenOOCPrimitive extends OOCPrimitive {
 
 	public PlannableDataGenOOCPrimitive(OOCStreamable<IndexedMatrixValue> output,
 		Function<MatrixIndexes, MatrixBlock> operation, StreamContext context) {
-		super(context, List.of());
+		super(context);
 		_output = output;
 		_operation = operation;
 	}

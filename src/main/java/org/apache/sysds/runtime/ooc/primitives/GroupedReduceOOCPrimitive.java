@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.ooc.primitives;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
@@ -46,7 +45,7 @@ import org.apache.sysds.runtime.ooc.util.OOCInstructionUtils;
 import org.apache.sysds.runtime.ooc.util.OOCUtils;
 
 public final class GroupedReduceOOCPrimitive extends OOCPrimitive {
-	private final OOCStream<IndexedMatrixValue> _input;
+	private final OOCStreamable<IndexedMatrixValue> _input;
 	private final OOCStreamable<IndexedMatrixValue> _output;
 	private final BiFunction<MatrixBlock, MatrixBlock, MatrixBlock> _merge;
 	private final AtomicBoolean _cleaned;
@@ -62,12 +61,7 @@ public final class GroupedReduceOOCPrimitive extends OOCPrimitive {
 
 	public GroupedReduceOOCPrimitive(OOCStreamable<IndexedMatrixValue> input, OOCStreamable<IndexedMatrixValue> output,
 		BiFunction<MatrixBlock, MatrixBlock, MatrixBlock> merge, StreamContext context) {
-		this(input.getReadStream(), output, merge, context);
-	}
-
-	private GroupedReduceOOCPrimitive(OOCStream<IndexedMatrixValue> input, OOCStreamable<IndexedMatrixValue> output,
-		BiFunction<MatrixBlock, MatrixBlock, MatrixBlock> merge, StreamContext context) {
-		super(context, input.getPrimitive() == null ? List.of() : List.of(input.getPrimitive()));
+		super(context, input);
 		_input = input;
 		_output = output;
 		_merge = merge;
@@ -98,11 +92,12 @@ public final class GroupedReduceOOCPrimitive extends OOCPrimitive {
 		DataCharacteristics inputDc = _input.getDataCharacteristics();
 		if(inputDc == null || !inputDc.dimsKnown() || inputDc.getBlocksize() <= 0)
 			throw new DMLRuntimeException("Grouped OOC reduction requires known input dimensions and block size.");
+		OOCStream<IndexedMatrixValue> input = getInputReadStream(0);
 		_numGroups = Math.toIntExact(inputDc.getNumRowBlocks());
 		_groupSize = Math.toIntExact(inputDc.getNumColBlocks());
 		_outputStream = _output.getWriteStream();
 		_ready = new SubscribableTaskQueue<>();
-		getContext().addInStream(_input).addOutStream(_outputStream, _ready);
+		getContext().addInStream(input).addOutStream(_outputStream, _ready);
 		_table = new StateTable<>(OOCCacheManager.getGlobalCache(), CachingStream._streamSeq.getNextID());
 
 		OOCInstructionUtils.submitOOCTasks(_ready, callback -> process(callback.get()), getContext())
@@ -122,7 +117,7 @@ public final class GroupedReduceOOCPrimitive extends OOCPrimitive {
 			OOCUtils.estimateFullTileBytes(_output.getDataCharacteristics()));
 		long pinBytes = OOCCacheManager.getGlobalCache().maxPhysicalPinBytes(logicalBytes);
 		long taskBytes = pinBytes + logicalBytes * 2;
-		AllocatedOOCStream<IndexedMatrixValue> admitted = new AllocatedOOCStream<>(_input, _allowance,
+		AllocatedOOCStream<IndexedMatrixValue> admitted = new AllocatedOOCStream<>(input, _allowance,
 			ignored -> taskBytes);
 		getContext().addInStream(admitted);
 		admitted.setSubscriber(this::accept);

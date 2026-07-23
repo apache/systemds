@@ -20,6 +20,6 @@
 #-------------------------------------------------------------
 
 X = read($in_X1)
-B = matrix(1, rows=$rows, cols=1)
+B = seq(1, $cols)
 Z = X %*% B
 write(Z, $out)

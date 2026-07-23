@@ -30,7 +30,6 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -94,7 +93,6 @@ public class FederatedQuantileTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore // FIXME: fix SYSTEMDS-3953
 	public void federatedQuantilesCP() {
 		federatedQuartile(Types.ExecMode.SINGLE_NODE, TEST_NAME4, -1);
 	}
@@ -125,7 +123,6 @@ public class FederatedQuantileTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore // FIXME: fix SYSTEMDS-3953
 	public void federatedQuantilesSP() {
 		federatedQuartile(Types.ExecMode.SPARK, TEST_NAME4, -1);
 	}

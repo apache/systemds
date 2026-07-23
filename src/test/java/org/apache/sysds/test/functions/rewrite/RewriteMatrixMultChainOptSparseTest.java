@@ -74,9 +74,8 @@ public class RewriteMatrixMultChainOptSparseTest extends AutomatedTestBase {
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
 			// {rows, cols, sparsities, eps, tsmm},
-			{1000, 300, new double[]{0.10d, 0.10d}, Math.pow(10, -10), false},
-			{5, 3, new double[]{0.1, 1}, Math.pow(10, -10), true},
-		});
+			{1000, 300, new double[] {0.10d, 0.10d}, Math.pow(10, -10), false},
+			{5, 3, new double[] {0.1, 1}, Math.pow(10, -10), true},});
 	}
 
 	@Override
@@ -149,13 +148,15 @@ public class RewriteMatrixMultChainOptSparseTest extends AutomatedTestBase {
 						+ "----(" + delimiter + "------Hop parsertemp"));
 					Assert.assertTrue(heavyHittersContainsSubString(Opcodes.TSMM.toString()) ||
 						heavyHittersContainsSubString("sp_tsmm"));
-				} else {
+				}
+				else {
 					Assert.assertTrue(log_out_string
 						.contains("Optimal Sparse MM Chain:" + delimiter + "--(" + delimiter + "----Hop parsertemp"));
 					Assert.assertTrue(heavyHittersContainsSubString(Opcodes.MMCHAIN.toString()) ||
 						heavyHittersContainsSubString("sp_mapmmchain"));
 				}
-			} else {
+			}
+			else {
 				Assert.assertFalse(
 					log_out.stream().anyMatch(l -> l.getMessage().toString().contains("mmchainoptsparse")));
 				Assert.assertFalse(heavyHittersContainsSubString(Opcodes.MMCHAIN.toString()) ||

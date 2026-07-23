@@ -187,13 +187,13 @@ public class QuantileTest extends AutomatedTestBase
 	}
 
 	@Test
-	@Ignore // FIXME: fix SYSTEMDS-3953 Issue 2
+	@Ignore // FIXME: fix SYSTEMDS-3953
 	public void testQuartileArrayCP() {
 		runQuantileTest(TEST_NAME6, 0, false, ExecType.CP);
 	}
 
 	@Test
-	@Ignore // FIXME: fix SYSTEMDS-3953 Issue 2
+	@Ignore // FIXME: fix SYSTEMDS-3953
 	public void testQuartileArraySP() {
 		runQuantileTest(TEST_NAME6, 0, false, ExecType.SPARK);
 	}

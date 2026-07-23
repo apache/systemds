@@ -20,7 +20,6 @@
 package org.apache.sysds.test.functions.federated.network;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
@@ -58,9 +57,6 @@ public class FederatedMaxPayloadTest extends AutomatedTestBase {
 
 			Future<FederatedResponse> response = FederatedData.executeFederatedOperation(address, request);
 			Assert.assertTrue("Network send was not successful.", response.get().isSuccessful());
-		}
-		catch(ExecutionException e) {
-			Assert.fail("Federated transfer failed: " + e.getMessage());
 		}
 		catch(Exception e) {
 			Assert.fail("Federated transfer failed: " + e.getMessage());

@@ -32,34 +32,17 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelOutboundHandlerAdapter;
-import io.netty.channel.ChannelPromise;
 import io.netty.handler.stream.ChunkedInput;
 import io.netty.handler.stream.ChunkedWriteHandler;
 
-public class FederatedChunkEncoder extends ChannelOutboundHandlerAdapter {
-	private final int _chunkSize;
+public final class FederatedChunkEncoder {
 
-	public FederatedChunkEncoder() {
-		this(FederatedChunkProtocol.DEFAULT_CHUNK_SIZE);
+	private FederatedChunkEncoder() {
 	}
 
-	public FederatedChunkEncoder(int chunkSize) {
-		_chunkSize = chunkSize;
-	}
-
-	static ChunkedInput<ByteBuf> chunkedInput(Serializable msg, int chunkSize, ByteBufAllocator alloc,
+	public static ChunkedInput<ByteBuf> chunkedInput(Serializable msg, int chunkSize, ByteBufAllocator alloc,
 		ChunkedWriteHandler writer) {
 		return new SerializedChunks(msg, chunkSize, alloc, writer);
-	}
-
-	@Override
-	public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
-		if(msg instanceof Serializable)
-			ctx.write(new SerializedChunks((Serializable) msg, _chunkSize, ctx.alloc(),
-				ctx.pipeline().get(ChunkedWriteHandler.class)), promise);
-		else
-			ctx.write(msg, promise);
 	}
 
 	private static final class SerializedChunks implements ChunkedInput<ByteBuf> {

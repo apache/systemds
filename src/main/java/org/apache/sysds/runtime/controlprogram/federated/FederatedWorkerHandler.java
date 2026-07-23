@@ -23,6 +23,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.channels.ClosedChannelException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
@@ -734,15 +735,19 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private static class CloseListener implements ChannelFutureListener {
 		@Override
-		public void operationComplete(ChannelFuture channelFuture) throws InterruptedException {
-			if(!channelFuture.isSuccess()) {
-				LOG.error("Federated Worker Write failed");
-				channelFuture.channel().writeAndFlush(new FederatedResponse(ResponseType.ERROR,
-					new FederatedWorkerHandlerException("Error while sending response."))).channel().close().sync();
+		public void operationComplete(ChannelFuture channelFuture) {
+			if(channelFuture.isSuccess()) {
+				channelFuture.channel().close();
+				return;
 			}
-			else {
-				channelFuture.channel().close().sync();
+			Throwable cause = channelFuture.cause();
+			if(cause instanceof ClosedChannelException || !channelFuture.channel().isActive()) {
+				channelFuture.channel().close();
+				return;
 			}
+			LOG.error("Federated Worker Write failed", cause);
+			channelFuture.channel().writeAndFlush(new FederatedResponse(ResponseType.ERROR,
+				new FederatedWorkerHandlerException("Error while sending response."))).addListener(ChannelFutureListener.CLOSE);
 		}
 	}
 }

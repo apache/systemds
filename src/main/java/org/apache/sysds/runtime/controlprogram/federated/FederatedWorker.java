@@ -218,7 +218,7 @@ public class FederatedWorker {
 					cp.addLast("CompressionDecodingStartStatistics", new CompressionDecoderStartStatisticsHandler());
 					compressionStrategy.ifPresent(strategy -> cp.addLast("CompressionDecoder", strategy.left));
 					cp.addLast("CompressionDecoderEndStatistics", new CompressionDecoderEndStatisticsHandler());
-					cp.addLast("FederatedFormatDetector", new FederatedFormatDetector());
+					cp.addLast("FederatedFormatDecoder", new FederatedFormatDecoder());
 					cp.addLast("CompressionEncodingEndStatistics", new CompressionEncoderEndStatisticsHandler());
 					compressionStrategy.ifPresent(strategy -> cp.addLast("CompressionEncoder", strategy.right));
 					cp.addLast("CompressionEncodingStartStatistics", new CompressionEncoderStartStatisticsHandler());

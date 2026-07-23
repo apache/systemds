@@ -26,12 +26,13 @@ final class FederatedChunkProtocol {
 	static final byte TYPE_END = 1;
 	static final byte TYPE_ERROR = 2;
 
-	static final byte MARKER_LEGACY = 0;
+	static final byte MARKER_OBJECT_ENCODER = 0;
 	static final byte MARKER_CHUNKED = 1;
-	static final long STREAM_THRESHOLD = 1536L << 20; // ~1.5 GB: route below this through the legacy object codec
+
+	static final long STREAM_THRESHOLD = 2000L << 20;
 
 	static final int HEADER_LEN = 5;
-	static final int DEFAULT_CHUNK_SIZE = 1 << 20; // 1 MB payload per frame
+	static final int DEFAULT_CHUNK_SIZE = 1 << 22;
 	static final int QUEUE_DEPTH = 16;
 
 	static final int LENGTH_FIELD_OFFSET = 1;
@@ -44,9 +45,10 @@ final class FederatedChunkProtocol {
 	}
 
 	static LengthFieldBasedFrameDecoder newFrameDecoder() {
-		return new LengthFieldBasedFrameDecoder(maxFrameLength(DEFAULT_CHUNK_SIZE),
-			LENGTH_FIELD_OFFSET, LENGTH_FIELD_LENGTH, LENGTH_ADJUSTMENT, INITIAL_BYTES_TO_STRIP);
+		return new LengthFieldBasedFrameDecoder(maxFrameLength(DEFAULT_CHUNK_SIZE), LENGTH_FIELD_OFFSET,
+			LENGTH_FIELD_LENGTH, LENGTH_ADJUSTMENT, INITIAL_BYTES_TO_STRIP);
 	}
 
-	private FederatedChunkProtocol() {}
+	private FederatedChunkProtocol() {
+	}
 }

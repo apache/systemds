@@ -215,11 +215,11 @@ public class FederatedData {
 			Promise<FederatedResponse> promise = f.channel().eventLoop().newPromise();
 			handler.setPromise(promise);
 			f.channel().writeAndFlush(request).addListener((ChannelFutureListener) future -> {
-                if (!future.isSuccess()) {
-                    LOG.error("Federated network write failed: " + future.cause().getMessage());
-                    promise.setFailure(future.cause());
-                }
-            });
+				if(!future.isSuccess()) {
+					LOG.error("Federated network write failed: " + future.cause().getMessage());
+					promise.setFailure(future.cause());
+				}
+			});
 
 			return handler.getProm();
 		}
@@ -262,7 +262,7 @@ public class FederatedData {
 					cp.addLast(new ReadTimeoutHandler(timeout));
 
 				compressionStrategy.ifPresent(strategy -> cp.addLast(strategy.left));
-				cp.addLast(new FederatedFormatDetector());
+				cp.addLast(new FederatedFormatDecoder());
 				compressionStrategy.ifPresent(strategy -> cp.addLast(strategy.right));
 				cp.addLast(new ChunkedWriteHandler());
 				cp.addLast(new ObjectEncoder());

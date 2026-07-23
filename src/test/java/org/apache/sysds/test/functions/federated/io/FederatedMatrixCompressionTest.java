@@ -98,7 +98,8 @@ public class FederatedMatrixCompressionTest extends AutomatedTestBase {
 		String host = "localhost";
 
 		try {
-			double[][] X1 = createRandomMatrix(rows, cols);
+			// createRandomMatrix takes (width, height), i.e. (cols, rows)
+			double[][] X1 = createRandomMatrix(cols, rows);
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, blocksize, (long) rows * cols);
 			writeCSVMatrix("X1", X1, false, mc);
 

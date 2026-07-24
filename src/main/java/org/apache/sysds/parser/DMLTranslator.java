@@ -2589,6 +2589,53 @@ public class DMLTranslator
 		case DECOMPRESS:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.FP64, OpOp1.DECOMPRESS, expr);
 			break;
+		case DP_LAPLACE: {
+			String[] dpLaplaceParamNames = {"target", "query", "sensitivity", "epsilon"};
+			LinkedHashMap<String, Hop> dpLaplaceParams = new LinkedHashMap<>();
+			dpLaplaceParams.put(dpLaplaceParamNames[0], expr);
+			dpLaplaceParams.put(dpLaplaceParamNames[1], expr2);
+			dpLaplaceParams.put(dpLaplaceParamNames[2], expr3);
+			for (int i = 3; i < dpLaplaceParamNames.length; i++) {
+				dpLaplaceParams.put(dpLaplaceParamNames[i],
+					source.getExpr(i) != null ? processExpression(source.getExpr(i), null, hops) : null);
+			}
+			currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), DataType.MATRIX, ValueType.FP64,
+				ParamBuiltinOp.DP_LAPLACE, dpLaplaceParams);
+			break;
+		}
+		case DP_GAUSSIAN: {
+			String[] dpGaussianParamNames = {"target", "query", "sensitivity", "epsilon", "delta"};
+			LinkedHashMap<String, Hop> dpGaussianParams = new LinkedHashMap<>();
+			dpGaussianParams.put(dpGaussianParamNames[0], expr);
+			dpGaussianParams.put(dpGaussianParamNames[1], expr2);
+			dpGaussianParams.put(dpGaussianParamNames[2], expr3);
+			for (int i = 3; i < dpGaussianParamNames.length; i++) {
+				dpGaussianParams.put(dpGaussianParamNames[i],
+					source.getExpr(i) != null ? processExpression(source.getExpr(i), null, hops) : null);
+			}
+			currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), DataType.MATRIX, ValueType.FP64,
+				ParamBuiltinOp.DP_GAUSSIAN, dpGaussianParams);
+			break;
+		}
+		case DP_SET_BUDGET: {
+			// Resolved entirely at compile time: BuiltinFunctionExpression.validateExpression
+			// already enforced that both arguments are numeric literals, so 'expr'/'expr2' are
+			// guaranteed LiteralOps here. There is deliberately no runtime Hop/Lop/Instruction for
+			// this call — the budget is applied directly to the DMLProgram (reachable later from
+			// ExecutionContext via Program.getDMLProg(), see ExecutionContext.getDPBudgetAccountant())
+			// before any instruction executes, so there is nothing for the DAG linearizer to reorder
+			// or drop as dead code.
+			if (_dmlProg.hasDPBudget())
+				throw new LanguageException(source.getOpCode() + ": dp_set_budget may only be called once per "
+					+ "script (already set to epsilon=" + _dmlProg.getDPBudgetEpsilon()
+					+ ", delta=" + _dmlProg.getDPBudgetDelta() + ")");
+			if (!(expr instanceof LiteralOp) || !(expr2 instanceof LiteralOp))
+				throw new LanguageException(source.getOpCode()
+					+ ": epsilon and delta must be compile-time numeric literals");
+			_dmlProg.setDPBudget(((LiteralOp) expr).getDoubleValue(), ((LiteralOp) expr2).getDoubleValue());
+			currBuiltinOp = expr; // echo epsilon back as confirmation
+			break;
+		}
 		case QUANTIZE_COMPRESS:
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.valueOf(source.getOpCode().name()), expr, expr2);
 			break;

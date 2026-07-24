@@ -182,7 +182,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 			}
 			case CONTAINS:
 			case CDF:
-			case INVCDF: 
+			case INVCDF:
 			case REPLACE:
 			case LOWER_TRI:
 			case UPPER_TRI:
@@ -194,10 +194,12 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 			case TOSTRING:
 			case PARAMSERV:
 			case LIST:
-			case AUTODIFF:{
-				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(
-					inputlops, _op, getDataType(), getValueType(), et);
-				if( isMultiThreadedOpType() )
+			case AUTODIFF:
+			case DP_LAPLACE:
+			case DP_GAUSSIAN: {
+				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops, _op, getDataType(), getValueType(),
+					et);
+				if(isMultiThreadedOpType())
 					pbilop.setNumThreads(OptimizerUtils.getConstrainedNumThreads(_maxNumThreads));
 				setOutputDimensions(pbilop);
 				setLineNumbers(pbilop);
@@ -688,7 +690,17 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 				return new MatrixCharacteristics(dc.getRows(), dc.getCols(), -1, dc.getLength());
 			}
 		}
-		
+		else if(_op == ParamBuiltinOp.DP_LAPLACE || _op == ParamBuiltinOp.DP_GAUSSIAN) {
+			if(dc.dimsKnown()) {
+				Hop query = getParameterHop("query");
+				String queryVal = (query instanceof LiteralOp) ? ((LiteralOp) query).getStringValue() : null;
+				if("colMeans".equals(queryVal) || "colSums".equals(queryVal))
+					ret = new MatrixCharacteristics(1, dc.getCols(), -1, dc.getCols());
+				else if("identity".equals(queryVal))
+					ret = new MatrixCharacteristics(dc.getRows(), dc.getCols(), -1, dc.getLength());
+			}
+		}
+
 		return ret;
 	}
 	@Override
@@ -755,10 +767,10 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 		// 2. For paramserv function, always be CP mode so that
 		// the parameter server could have a central instruction
 		// to determine the local or remote workers
-		if (_op == ParamBuiltinOp.TRANSFORMCOLMAP || _op == ParamBuiltinOp.TRANSFORMMETA
-				|| _op == ParamBuiltinOp.TOSTRING || _op == ParamBuiltinOp.LIST
-				|| _op == ParamBuiltinOp.CDF || _op == ParamBuiltinOp.INVCDF
-				|| _op == ParamBuiltinOp.PARAMSERV) {
+		if(_op == ParamBuiltinOp.TRANSFORMCOLMAP || _op == ParamBuiltinOp.TRANSFORMMETA ||
+			_op == ParamBuiltinOp.TOSTRING || _op == ParamBuiltinOp.LIST || _op == ParamBuiltinOp.CDF ||
+			_op == ParamBuiltinOp.INVCDF || _op == ParamBuiltinOp.PARAMSERV || _op == ParamBuiltinOp.DP_LAPLACE ||
+			_op == ParamBuiltinOp.DP_GAUSSIAN) {
 			_etype = ExecType.CP;
 		}
 

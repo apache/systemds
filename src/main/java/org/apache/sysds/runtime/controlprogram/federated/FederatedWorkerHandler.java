@@ -746,8 +746,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				return;
 			}
 			LOG.error("Federated Worker Write failed", cause);
-			channelFuture.channel().writeAndFlush(new FederatedResponse(ResponseType.ERROR,
-				new FederatedWorkerHandlerException("Error while sending response."))).addListener(ChannelFutureListener.CLOSE);
+			channelFuture.channel()
+				.writeAndFlush(new FederatedResponse(ResponseType.ERROR,
+					new FederatedWorkerHandlerException("Error while sending response.")))
+				.addListener(ChannelFutureListener.CLOSE);
 		}
 	}
 }

@@ -69,9 +69,8 @@ public class FederatedChunkCodecTest {
 	}
 
 	private static List<ByteBuf> encode(FederatedResponse response, boolean compress) throws Exception {
-		EmbeddedChannel channel = compress
-			? new EmbeddedChannel(new JdkZlibEncoder(ZlibWrapper.ZLIB), new ChunkedWriteHandler(), chunkEncoder())
-			: new EmbeddedChannel(new ChunkedWriteHandler(), chunkEncoder());
+		EmbeddedChannel channel = compress ? new EmbeddedChannel(new JdkZlibEncoder(ZlibWrapper.ZLIB),
+			new ChunkedWriteHandler(), chunkEncoder()) : new EmbeddedChannel(new ChunkedWriteHandler(), chunkEncoder());
 		channel.config().setWriteBufferHighWaterMark(MAX_FRAME * 64);
 		List<ByteBuf> frames = new ArrayList<>();
 		ChannelFuture done = channel.write(response);
@@ -108,9 +107,8 @@ public class FederatedChunkCodecTest {
 	}
 
 	private static FederatedResponse decode(List<ByteBuf> frames, boolean compress) throws Exception {
-		EmbeddedChannel channel = compress
-			? new EmbeddedChannel(new JdkZlibDecoder(ZlibWrapper.ZLIB), frameDecoder(), new FederatedChunkDecoder())
-			: new EmbeddedChannel(frameDecoder(), new FederatedChunkDecoder());
+		EmbeddedChannel channel = compress ? new EmbeddedChannel(new JdkZlibDecoder(ZlibWrapper.ZLIB), frameDecoder(),
+			new FederatedChunkDecoder()) : new EmbeddedChannel(frameDecoder(), new FederatedChunkDecoder());
 		for(ByteBuf frame : frames)
 			channel.writeInbound(frame);
 		return awaitResponse(channel);

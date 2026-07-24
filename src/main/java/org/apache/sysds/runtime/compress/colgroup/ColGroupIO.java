@@ -109,6 +109,8 @@ public interface ColGroupIO {
 			return ColGroupDeltaDDC.read(in);
 		case DDCLZW:
 			return ColGroupDDCLZW.read(in);
+		case PiecewiseLinearCompressed:
+			return ColGroupPiecewiseLinearCompressed.read(in);
 		case OLE:
 			return ColGroupOLE.read(in, nRows);
 			case RLE:

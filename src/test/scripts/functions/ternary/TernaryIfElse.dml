@@ -23,21 +23,25 @@ A = read($1);
 B = read($2);
 C = read($3);
 
-if( nrow(A)==1 & nrow(B)==1 & nrow(C)==1 )
+isscalar = function(matrix[double] A) return (boolean C) {
+    C = nrow(A)==1 & ncol(A)==1
+}
+
+if( isscalar(A) & isscalar(B) & isscalar(C) )
   R = as.matrix(ifelse(as.scalar(A), as.scalar(B), as.scalar(C)));
-else if( nrow(A)>1 & nrow(B)==1 & nrow(C)==1 )  
+else if( !isscalar(A) & isscalar(B) & isscalar(C))
   R = ifelse(A, as.scalar(B), as.scalar(C));
-else if( nrow(A)==1 & nrow(B)>1 & nrow(C)==1 )
+else if( isscalar(A) & !isscalar(B) & isscalar(C) )
   R = ifelse(as.scalar(A), B, as.scalar(C));
-else if( nrow(A)>1 & nrow(B)>1 & nrow(C)==1 )  
+else if( !isscalar(A) & !isscalar(B) & isscalar(C) )
   R = ifelse(A, B, as.scalar(C));
-else if( nrow(A)==1 & nrow(B)==1 & nrow(C)>1 )
+else if( isscalar(A)==1 & isscalar(B) & !isscalar(C) )
   R = ifelse(as.scalar(A), as.scalar(B), C);
-else if( nrow(A)>1 & nrow(B)==1 & nrow(C)>1 )  
+else if( !isscalar(A) & isscalar(B) & !isscalar(C) )
   R = ifelse(A, as.scalar(B), C);
-else if( nrow(A)==1 & nrow(B)>1 & nrow(C)>1 )
+else if( isscalar(A)==1 & !isscalar(B) & !isscalar(C) )
   R = ifelse(as.scalar(A), B, C);
-else if( nrow(A)>1 & nrow(B)>1 & nrow(C)>1 )  
+else if( !isscalar(A) & !isscalar(B) & !isscalar(C) )
   R = ifelse(A, B, C);
 
 write(R, $4);

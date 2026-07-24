@@ -1,0 +1,87 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+X = read($X)
+X_apply = read($X_apply)
+
+iForestModel = outlierByIsolationForest(
+  X = X,
+  n_trees = $n_trees,
+  subsampling_size = $subsampling_size,
+  seed = $seed
+)
+
+M = as.matrix(iForestModel["model"])
+actual_subsampling_size = as.scalar(iForestModel["subsampling_size"])
+
+apply_start = time()
+anomaly_scores = outlierByIsolationForestApply(
+  iForestModel = iForestModel,
+  X = X_apply
+)
+dml_apply_runtime = (time() - apply_start) / 1e9
+
+# A repeated training run verifies deterministic seed handling. A second seed
+# must produce a different model, proving that the seed is not simply ignored.
+M_same_seed = M
+M_different_seed = M
+if ($check_seed == 1) {
+  sameSeedModel = outlierByIsolationForest(
+    X = X,
+    n_trees = $n_trees,
+    subsampling_size = $subsampling_size,
+    seed = $seed
+  )
+  differentSeedModel = outlierByIsolationForest(
+    X = X,
+    n_trees = $n_trees,
+    subsampling_size = $subsampling_size,
+    seed = $seed + 1
+  )
+  M_same_seed = as.matrix(sameSeedModel["model"])
+  M_different_seed = as.matrix(differentSeedModel["model"])
+}
+
+# This hand-built tree provides an implementation-independent oracle for the
+# apply function, including the exact-threshold branch at x = 0.5.
+reference_M = read($reference_model)
+reference_X = read($reference_X)
+referenceModel = list(
+  model = reference_M,
+  subsampling_size = 4
+)
+reference_anomaly_scores = outlierByIsolationForestApply(
+  iForestModel = referenceModel,
+  X = reference_X
+)
+
+write(anomaly_scores, $scores)
+write(M, $model)
+write(actual_subsampling_size, $subsampling_size_out)
+write(M_same_seed, $same_seed_model)
+write(M_different_seed, $different_seed_model)
+write(reference_anomaly_scores, $reference_scores)
+write(dml_apply_runtime, $dml_apply_runtime)
+
+# The R reference implementation scores this exact serialized forest. Writing
+# only for the extended BASIC/SINGLE_NODE check avoids unnecessary test I/O.
+if ($check_seed == 1)
+  write(M, $model_for_r, format = "mm")

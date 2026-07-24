@@ -19,9 +19,9 @@
 
 package org.apache.sysds.test.functions.io.parquet;
 
-import org.junit.Assert;
 import org.junit.Test;
 
+import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.io.FrameReader;
@@ -55,169 +55,48 @@ public class FrameParquetSchemaTest extends AutomatedTestBase {
 
 	/**
 	 * Test for sequential writer and reader
-	 * 
+	 *
 	 */
 	@Test
-	public void testParquetWriteReadAllSchemaTypes() {
-		String fname = output("Rout");
+	public void testParquetWriteReadAllSchemaTypes() throws IOException {
+		runWriteReadAllSchemaTypes(new FrameWriterParquet(), new FrameReaderParquet(), output("Rout"));
+	}
 
+	/**
+	 * Test for multithreaded writer and reader
+	 *
+	 */
+	@Test
+	public void testParquetWriteReadAllSchemaTypesParallel() throws IOException {
+		runWriteReadAllSchemaTypes(new FrameWriterParquetParallel(), new FrameReaderParquetParallel(),
+			output("Rout_parallel"));
+	}
+
+	private static void runWriteReadAllSchemaTypes(FrameWriter writer, FrameReader reader, String fname)
+		throws IOException {
 		// Define a schema with one column per type
-		ValueType[] schema = new ValueType[] {
-			ValueType.FP64,
-			ValueType.FP32,
-			ValueType.INT32,
-			ValueType.INT64,
-			ValueType.BOOLEAN,
-			ValueType.STRING
-		};
+		ValueType[] schema = new ValueType[] {ValueType.FP64, ValueType.FP32, ValueType.INT32, ValueType.INT64,
+			ValueType.BOOLEAN, ValueType.STRING};
 
 		// Create an empty frame block with the above schema
 		FrameBlock fb = new FrameBlock(schema);
 
 		// Populate frame block
-		Object[][] rows = new Object[][] {
-			{ 1.0,	1.1f, 10,  100L,  true,  "A" },
-			{ 2.0,	2.1f, 20,  200L,  false, "B" },
-			{ 3.0,	3.1f, 30,  300L,  true,  "C" },
-			{ 4.0,	4.1f, 40,  400L,  false, "D" },
-			{ 5.0,	5.1f, 50,  500L,  true,  "E" }
-		};
+		Object[][] rows = new Object[][] {{1.0, 1.1f, 10, 100L, true, "A"}, {2.0, 2.1f, 20, 200L, false, "B"},
+			{3.0, 3.1f, 30, 300L, true, "C"}, {4.0, 4.1f, 40, 400L, false, "D"}, {5.0, 5.1f, 50, 500L, true, "E"}};
 
-		for (Object[] row : rows) {
+		for(Object[] row : rows)
 			fb.appendRow(row);
-		}
-
-		System.out.println(fb);
 
 		int numRows = fb.getNumRows();
 		int numCols = fb.getNumColumns();
 
-		// Write the FrameBlock to a Parquet file using the sequential writer
-		try {
-			FrameWriter writer = new FrameWriterParquet();
-			writer.writeFrameToHDFS(fb, fname, numRows, numCols);
-		} 
-		catch (IOException e) {
-			e.printStackTrace();
-			Assert.fail("Failed to write frame block to Parquet: " + e.getMessage());
-		}
+		writer.writeFrameToHDFS(fb, fname, numRows, numCols);
 
-		// Read the Parquet file back into a new FrameBlock
-		FrameBlock fbRead = null;
-		try {
-			FrameReader reader = new FrameReaderParquet();
-			String[] colNames = fb.getColumnNames();
-			fbRead = reader.readFrameFromHDFS(fname, schema, colNames, numRows, numCols);
-		} 
-		catch (IOException e) {
-			e.printStackTrace();
-			Assert.fail("Failed to read frame block from Parquet: " + e.getMessage());
-		}
+		String[] colNames = fb.getColumnNames();
+		FrameBlock fbRead = reader.readFrameFromHDFS(fname, schema, colNames, numRows, numCols);
 
 		// Compare the original and the read frame blocks
-		compareFrameBlocks(fb, fbRead, 1e-6);
-	}
-
-	/**
-	 * Test for multithreaded writer and reader
-	 * 
-	 */
-	@Test
-	public void testParquetWriteReadAllSchemaTypesParallel() {
-		String fname = output("Rout_parallel");
-
-		ValueType[] schema = new ValueType[] {
-			ValueType.FP64,
-			ValueType.FP32,
-			ValueType.INT32,
-			ValueType.INT64,
-			ValueType.BOOLEAN,
-			ValueType.STRING
-		};
-
-		FrameBlock fb = new FrameBlock(schema);
-
-		Object[][] rows = new Object[][] {
-			{ 1.0,	1.1f, 10,  100L,  true,  "A" },
-			{ 2.0,	2.1f, 20,  200L,  false, "B" },
-			{ 3.0,	3.1f, 30,  300L,  true,  "C" },
-			{ 4.0,	4.1f, 40,  400L,  false, "D" },
-			{ 5.0,	5.1f, 50,  500L,  true,  "E" }
-		};
-
-		for (Object[] row : rows) {
-			fb.appendRow(row);
-		}
-
-		int numRows = fb.getNumRows();
-		int numCols = fb.getNumColumns();
-
-		try {
-			FrameWriter writer = new FrameWriterParquetParallel();
-			writer.writeFrameToHDFS(fb, fname, numRows, numCols);
-		} 
-		catch (IOException e) {
-			e.printStackTrace();
-			Assert.fail("Failed to write frame block to Parquet (parallel): " + e.getMessage());
-		}
-	
-		FrameBlock fbRead = null;
-		try {
-			FrameReader reader = new FrameReaderParquetParallel();
-			String[] colNames = fb.getColumnNames();
-			fbRead = reader.readFrameFromHDFS(fname, schema, colNames, numRows, numCols);
-		} 
-		catch (IOException e) {
-			e.printStackTrace();
-			Assert.fail("Failed to read frame block from Parquet (parallel): " + e.getMessage());
-		}
-
-		compareFrameBlocks(fb, fbRead, 1e-6);
-	}
-
-	private void compareFrameBlocks(FrameBlock expected, FrameBlock actual, double eps) {
-		Assert.assertEquals("Number of rows mismatch", expected.getNumRows(), actual.getNumRows());
-		Assert.assertEquals("Number of columns mismatch", expected.getNumColumns(), actual.getNumColumns());
-
-		int rows = expected.getNumRows();
-		int cols = expected.getNumColumns();
-
-		for (int i = 0; i < rows; i++) {
-			for (int j = 0; j < cols; j++) {
-				Object expVal = expected.get(i, j);
-				Object actVal = actual.get(i, j);
-				ValueType vt = expected.getSchema()[j];
-
-				// Handle nulls first
-				if(expVal == null || actVal == null) {
-					Assert.assertEquals("Mismatch at (" + i + "," + j + ")", expVal, actVal);
-				} else {
-					switch(vt) {
-						case FP64:
-						case FP32:
-							double dExp = ((Number) expVal).doubleValue();
-							double dAct = ((Number) actVal).doubleValue();
-							Assert.assertEquals("Mismatch at (" + i + "," + j + ")", dExp, dAct, eps);
-							break;
-						case INT32:
-						case INT64:
-							long lExp = ((Number) expVal).longValue();
-							long lAct = ((Number) actVal).longValue();
-							Assert.assertEquals("Mismatch at (" + i + "," + j + ")", lExp, lAct);
-							break;
-						case BOOLEAN:
-							boolean bExp = (Boolean) expVal;
-							boolean bAct = (Boolean) actVal;
-							Assert.assertEquals("Mismatch at (" + i + "," + j + ")", bExp, bAct);
-							break;
-						case STRING:
-							Assert.assertEquals("Mismatch at (" + i + "," + j + ")", expVal.toString(), actVal.toString());
-							break;
-						default:
-							Assert.fail("Unsupported type in comparison: " + vt);
-					}
-				}
-			}
-		}
+		TestUtils.compareFrames(fb, fbRead, false);
 	}
 }

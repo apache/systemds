@@ -1,0 +1,84 @@
+d = 5
+method = ifdef($method, "random")
+goal = ifdef($goal, "maximin")
+reps = ifdef($reps, 10)
+seed = ifdef($seed, -1)
+fname = ifdef($fname, "lhsExperimentOutput.csv")
+Ntrain = list(10,13,15,20,25,30,40,50,75,100)
+Ntest = 1000000
+
+getKLDivergence = function(Matrix[Double] trueMu, Matrix[Double] trueSigma, Matrix[Double] mu, Matrix[Double] precCholesky, Double d)
+return (Double Dkl){
+    # calculate kullback leibler divergence between true and estimate distribution
+    # Dkl(P||Q)
+    muDiff = trueMu - mu
+    invEstimatedSigma = precCholesky %*% t(precCholesky)
+    term1 = trace(invEstimatedSigma %*% trueSigma)
+    term2 = as.scalar(muDiff%*%invEstimatedSigma%*%t(muDiff))
+
+    logDetEst = -2*sum(log(diag(precCholesky)))
+    L = cholesky(trueSigma)
+    logDetTrue = 2*sum(log(diag(L)))
+    term3 = logDetEst - logDetTrue
+    Dkl = 0.5 * (term1 + term2 + term3 - d)
+}
+
+getMeanLogLikelihood = function(Matrix[Double] testData, Matrix[Double] mu, Matrix[Double] precCholesky)
+return (Double meanLogLikelihood){
+    # calculate the mean log likelihood of test data originating from the estimated distribution
+    y = testData %*% precCholesky - mu %*% precCholesky
+    log_prob = rowSums(y * y)
+    log_det_chol = sum(log(diag(t(precCholesky))))
+    es_log_prob = -.5 * (ncol(testData) * log(2 * pi) + log_prob) + log_det_chol
+    meanLogLikelihood = mean(es_log_prob)
+}
+
+
+# setup true distribution parameters
+trueMu = rand(rows = 1, cols = d, min = -10 , max = 10, seed = seed)
+A = rand(rows = d, cols = d, min = 0, max = 5, seed = seed)
+# ensures the matrix is symmetric and psd
+trueSigma = A %*% t(A) + diag(matrix(0.01, rows = d, cols = d))
+L = cholesky(trueSigma)
+
+# generate test data
+Z = rand(rows = Ntest, cols = d, pdf = "normal", seed = seed)
+testData = (Z %*% t(L)) + (matrix(1, rows = Ntest, cols = 1) %*% trueMu)
+
+
+results = matrix(0,rows = length(Ntrain), cols = 7)
+for(i in 1:length(Ntrain)){
+    N = as.scalar(Ntrain[i])
+    # random sampling
+    Z = rand(rows = N, cols = d, pdf = "normal", seed = seed)
+    # transform to the test multivariate normal distribution
+    trainDataRandom = (Z %*% t(L)) + (matrix(1, rows = N, cols = 1) %*% trueMu)
+    #fit the gmm with one component
+    [labels, predict_prob, df, bic, mu, precCholesky, weight] = gmm(X = trainDataRandom, n_components = 1, model = "VVV")
+    DklRandom = getKLDivergence(trueMu, trueSigma, mu, precCholesky, d)
+    trainLlRandom = getMeanLogLikelihood(trainDataRandom, mu, precCholesky)
+    testLlRandom = getMeanLogLikelihood(testData, mu, precCholesky)
+    # lhs sampling
+    [LHS,G] = lhs(N = N, d = d, reps = reps, method = method, goal = goal, return_type = "numerical", seed = seed)
+
+    # transform the uniform data into N(0,1)
+    for(j in 1:d){
+        for(k in 1:N){
+            p = as.scalar(LHS[k,j])
+            q = qnorm(target = p, mean = 0, std = 1)
+            LHS[k,j] = q
+        }
+    }
+    # transform data into the true multivariate normal distribution
+    trainDataLHS = (LHS %*% t(L)) + (matrix(1, rows = N, cols = 1) %*% trueMu)
+    [labels, predict_prob, df, bic, mu, precCholesky, weight] = gmm(X = trainDataLHS, n_components = 1, model = "VVV")
+    DklLHS = getKLDivergence(trueMu, trueSigma, mu, precCholesky, d)
+    trainLlLHS = getMeanLogLikelihood(trainDataLHS, mu, precCholesky)
+    testLlLHS = getMeanLogLikelihood(testData, mu, precCholesky)
+    results[i,] = cbind(as.matrix(N),
+                        as.matrix(DklRandom), as.matrix(trainLlRandom), as.matrix(testLlRandom),
+                        as.matrix(DklLHS), as.matrix(trainLlLHS), as.matrix(testLlLHS)
+                        )
+}
+
+write(results, fname, format="csv", sep=";");

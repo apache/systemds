@@ -1,0 +1,158 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+# Power transformation using the Yeo-Johnson method.
+# Reduces feature skewness by estimating and applying an optimal transformation parameter for each column.
+#
+# INPUT:
+# -------------------------------------------------------------------------------------
+#   X    Input feature matrix of shape n-by-m
+# -------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -------------------------------------------------------------------------------------
+#   Y    Power-transformed matrix of shape n-by-m
+#   lambdas  Estimated lambda parameters of shape 1-by-m, one per column
+# -------------------------------------------------------------------------------------
+
+m_powerTransform = function(Matrix[Double] X)
+  return (Matrix[Double] Y, Matrix[Double] lambdas)
+{
+  m = ncol(X)
+  lambdas = matrix(1.0, rows=1, cols=m) # Initialize first, then replace each column with the best lambdas
+
+
+# Estimate lambda for each column separately
+  for (j in 1:m){
+    x = X[,j]
+
+    # For constant columns, variance is 0, so skip optimization and use lambda = 1
+    if (max(x) == min(x)) {
+        lambdas[1,j] = 1.0;
+    }
+    else{
+      lambdas[1,j]= ptEstimateLambda(x);
+    }
+}
+# Pass the parameters to Apply
+  Y = powerTransformApply(X, lambdas);
+}
+
+
+
+
+
+ptEstimateLambda = function(Matrix[Double] x)
+    return (Double lambda)
+{
+    lower = -2.0;
+    upper = 2.0;
+
+    lambda = ptGoldenSectionSearch(x, lower, upper);
+}
+
+# Compute negative log likelihood; lower lambda score is better
+
+ptYJNegLogLikelihood = function(
+    Matrix[Double] x,
+    Double lambda)
+  return (Double negLogLikelihood)
+{
+    # powerTransformApply needs lambda as a matrix
+    lambdaMatrix = matrix(lambda, rows=1, cols=1);
+
+    # Apply one YJ transform with this lambda and use the temporary y for scoring
+    y = powerTransformApply(x, lambdaMatrix);
+
+    # Safety check; give a huge penalty score when variance is below 0
+    n = nrow(x);
+    yMean = mean(y);
+    yVariance = sum((y - yMean)^2) / n;
+
+    if (yVariance <= 0.0) {
+        negLogLikelihood = 1e300
+    }
+
+    # Start scoring after the safety check passes
+    # The objective has two parts
+
+    else {
+        # Variance Term
+        logLikelihood = -n / 2.0 * log(yVariance);
+
+        # Jacobian term
+        jacobian = (lambda - 1.0) * sum(sign(x) * log(abs(x) + 1.0));
+
+        # Combine
+        logLikelihood = logLikelihood + jacobian;
+        # Return the negative value
+        negLogLikelihood = -logLikelihood;
+    }
+}
+
+# Temporarily use golden section search for best lambdas; replace with Brent later
+ptGoldenSectionSearch = function(
+    Matrix[Double] x,
+    Double lower,
+    Double upper)
+  return (Double lambdaOptimal)
+{
+  # Golden ratio, tolerance, and max attempts
+  goldenRatio = 0.6180339887498949;
+  tolerance = 1e-6;
+  maxIterations = 100;
+
+  a = lower;
+  b = upper;
+
+  c = b - goldenRatio * (b - a);
+  d = a + goldenRatio * (b - a);
+
+  fc = ptYJNegLogLikelihood(x, c);
+  fd = ptYJNegLogLikelihood(x, d);
+
+  iteration = 0;
+  while (((b - a) > tolerance) & (iteration < maxIterations)) {
+
+    if (fc < fd) {
+      b = d;
+      d = c;
+      fd = fc;
+      c = b - goldenRatio * (b - a);
+      fc = ptYJNegLogLikelihood(x, c);
+    }
+    else {
+      a = c;
+      c = d;
+      fc = fd;
+      d = a + goldenRatio * (b - a);
+      fd = ptYJNegLogLikelihood(x, d);
+    }
+
+    iteration = iteration + 1;
+  }
+
+  # Keep the best one after shrinking
+  if (fc < fd) {
+    lambdaOptimal = c; # Whoever has the lower score wins
+  } else {
+    lambdaOptimal = d;
+  }
+}

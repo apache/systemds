@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Objects;
 
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.paramserv.NativeHEHelper;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -151,19 +150,16 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 		}
 
 		ExecMode platformOld = setExecMode(mode);
-		// start threads
 		List<Integer> ports = new ArrayList<>();
-		List<Thread> threads = new ArrayList<>();
+		int[] portArr = new int[_numFederatedWorkers];
+		for(int i = 0; i < _numFederatedWorkers; i++) {
+			int port = getRandomAvailablePort();
+			portArr[i] = port;
+			ports.add(port);
+		}
+		Thread[] threads = new Thread[0];
 		try {
-			for(int i = 0; i < _numFederatedWorkers; i++) {
-				int port = getRandomAvailablePort();
-				threads.add(startLocalFedWorkerThread(port,
-						i==(_numFederatedWorkers-1) ? FED_WORKER_WAIT : FED_WORKER_WAIT_S));
-				ports.add(port);
-
-				if ( threads.get(i).isInterrupted() || !threads.get(i).isAlive() )
-					throw new DMLRuntimeException("Federated worker thread dead or interrupted! Port " + port);
-			}
+			threads = startLocalFedWorkerThreads(portArr);
 
 			// generate test data
 			double[][] features = ParamServTestUtils.generateFeatures(_networkType, _dataSetSize, C, Hin, Win);
@@ -186,9 +182,6 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresName, features, _numFederatedWorkers, ports, ranges);
 				rowFederateLocallyAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports, ranges);
 			}
-
-			//wait for all workers to be setup
-			Thread.sleep(FED_WORKER_WAIT);
 
 			// dml name
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -219,10 +212,6 @@ public class EncryptedFederatedParamservTest extends AutomatedTestBase {
 				fail("The following expected heavy hitters are missing: "
 					+ Arrays.toString(missingHeavyHitters("paramserv")));
 			Assert.assertEquals("Test Failed \n" + log, 0, Statistics.getNoOfExecutedSPInst());
-		}
-		catch(InterruptedException e) {
-			e.printStackTrace();
-			fail(e.getMessage());
 		}
 		finally {
 			// shut down threads

@@ -190,13 +190,4 @@ public class FederatedTestUtils {
 			fail("Failed to get response from put Matrix Block");
 		}
 	}
-
-	protected static void wait(int ms) {
-		try {
-			Thread.sleep(ms);
-		}
-		catch(Exception e) {
-			fail("Failed to wait");
-		}
-	}
 }

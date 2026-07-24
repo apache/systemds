@@ -25,6 +25,7 @@ import org.apache.sysds.runtime.io.hdf5.H5RootObject;
 import org.apache.sysds.runtime.io.hdf5.Utils;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.stream.IntStream;
 
@@ -74,7 +75,14 @@ public class H5DataSpaceMessage extends H5Message {
 		}
 
 		// Calculate the total length by multiplying all dimensions
-		totalLength = IntStream.of(rootObject.getDimensions()).mapToLong(Long::valueOf).reduce(1, Math::multiplyExact);
+		totalLength = IntStream.of(rootObject.getLogicalDimensions()).mapToLong(Long::valueOf)
+			.reduce(1, Math::multiplyExact);
+		if(H5RootObject.HDF5_DEBUG) {
+			System.out.println("[HDF5] Dataspace rank=" + rootObject.getRank() + " dims="
+				+ Arrays.toString(rootObject.getLogicalDimensions()) + " => rows=" + rootObject.getRow()
+				+ ", cols(flat)="
+				+ rootObject.getCol());
+		}
 
 	}
 
@@ -97,7 +105,7 @@ public class H5DataSpaceMessage extends H5Message {
 		// Dimensions sizes
 		if(rootObject.getRank() != 0) {
 			for(int i = 0; i < rootObject.getRank(); i++) {
-				bb.write(rootObject.getDimensions()[i], rootObject.getSuperblock().sizeOfLengths);
+				bb.write(rootObject.getLogicalDimensions()[i], rootObject.getSuperblock().sizeOfLengths);
 			}
 		}
 		// Max dimension sizes

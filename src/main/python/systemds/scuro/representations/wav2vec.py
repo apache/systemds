@@ -25,17 +25,19 @@ import torch
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.transformed import TransformedModality
 
+from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.drsearch.operator_registry import register_representation
+from systemds.scuro.utils.memory_utility import get_device
 
-import warnings
+from transformers.utils import logging as transformers_logging
 
-warnings.filterwarnings("ignore", message="Some weights of")
+transformers_logging.set_verbosity_error()
 
 
 @register_representation(ModalityType.AUDIO)
 class Wav2Vec(UnimodalRepresentation):
-    def __init__(self):
+    def __init__(self, params=None):
         super().__init__("Wav2Vec", ModalityType.TIMESERIES, {})
         self.processor = Wav2Vec2Processor.from_pretrained(
             "facebook/wav2vec2-base-960h"
@@ -44,14 +46,14 @@ class Wav2Vec(UnimodalRepresentation):
             "facebook/wav2vec2-base-960h"
         ).float()
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )
 
         result = []
         for i, sample in enumerate(modality.data):
-            sr = list(modality.metadata.values())[i]["frequency"]
+            sr = modality.metadata[i]["frequency"]
             audio_resampled = librosa.resample(
                 np.array(sample), orig_sr=sr, target_sr=16000
             )
@@ -64,7 +66,42 @@ class Wav2Vec(UnimodalRepresentation):
                 outputs = self.model(**input)
                 features = outputs.extract_features
                 # TODO: check how to get intermediate representations
-            result.append(torch.flatten(features.mean(dim=1), 1).detach().cpu().numpy())
+            result.append(torch.flatten(features.mean(dim=1)).detach().cpu().numpy())
 
-        transformed_modality.data = result
+        transformed_modality.data = np.array(result)
         return transformed_modality
+
+    def get_output_stats(self, input_stats) -> RepresentationStats:
+        num_instances = getattr(input_stats, "num_instances", 0)
+        embedding_dim = 512
+        return RepresentationStats(num_instances, (embedding_dim,))
+
+    def estimate_peak_memory_bytes(self, input_stats) -> dict:
+        n = int(getattr(input_stats, "num_instances", 1))
+
+        if hasattr(input_stats, "max_length"):
+            signal_len = int(getattr(input_stats, "max_length", 16000))
+        elif hasattr(input_stats, "output_shape") and input_stats.output_shape:
+            signal_len = int(input_stats.output_shape[0])
+        else:
+            signal_len = 16000
+        signal_len = max(signal_len, 1)
+
+        hidden = 768
+        stride = 320  # conv frontend effective stride
+        frames = max(1, int(np.ceil(signal_len / stride)))
+
+        model_resident = 420 * 1024 * 1024  # ~420 MB
+        activation_bytes = int(frames * hidden * 4 * 24)
+        io_temp = int(signal_len * 4 * 4) + 16 * 1024 * 1024
+
+        output_bytes = n * 512 * 4
+
+        cpu_peak = int(
+            (model_resident + activation_bytes + io_temp + output_bytes) * 1.25
+        )
+
+        gpu_peak = 0
+        cpu_peak = max(cpu_peak, 600 * 1024 * 1024)
+
+        return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": gpu_peak}

@@ -199,6 +199,27 @@ public class SparseBlockMCSR extends SparseBlock
 			}
 		}
 	}
+
+	@Override
+	public void compact() {
+		for(int i = 0; i < numRows(); i++) {
+			if(isAllocated(i)) {
+				if(_rows[i] instanceof SparseRowVector) {
+					_rows[i].compact();
+					if(_rows[i].isEmpty()) _rows[i] = null;
+				}
+				else if(_rows[i] instanceof SparseRowScalar) {
+					SparseRowScalar s = (SparseRowScalar) _rows[i];
+					if(s.getValue() == 0) _rows[i] = null;
+				}
+			}
+		}
+	}
+
+	@Override
+	public SparseBlock.Type getSparseBlockType() {
+		return Type.MCSR;
+	}
 	
 	@Override
 	public int numRows() {
@@ -238,13 +259,20 @@ public class SparseBlockMCSR extends SparseBlock
 			int alen = size(i);
 			int[] aix = indexes(i);
 			double[] avals = values(i);
-			for (int k = apos + 1; k < apos + alen; k++) {
-				if (aix[k-1] >= aix[k] | aix[k-1] < 0 )
-					throw new RuntimeException("Wrong sparse row ordering, at row="+i+", pos="+k
-						+ " with column indexes " + aix[k-1] + ">=" + aix[k]);
-				if (avals[k] == 0)
-					throw new RuntimeException("The values are expected to be non zeros "
-						+ "but zero at row: "+ i + ", col pos: " + k);
+
+			int prevCol = -1;
+			for (int k = apos; k < apos + alen; k++) {
+				if(aix[k] < 0)
+					throw new RuntimeException(
+						"Invalid index, at row=" + i + ", pos=" + k);
+				if(aix[k] <= prevCol)
+					throw new RuntimeException(
+						"Wrong sparse row ordering, at row=" + i + ", pos=" + k + " with column indexes " +
+							prevCol + ">=" + aix[k]);
+				if(avals[k] == 0)
+					throw new RuntimeException(
+						"The values array should not contain zeros " + "but zero at row: " + i + ", column pos: " + k);
+				prevCol = aix[k];
 			}
 		}
 

@@ -1,0 +1,456 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# The hdbscan function is used to perform the hdbscan clustering
+# algorithm using knn-based mutual reachability distance and minimum spanning tree.
+#
+# INPUT:
+# ------------------------------------------------------------
+# X             The input Matrix to do hdbscan on.
+# minPts        Minimum number of points for core distance computation. (Defaults to 5)
+# minClSize     Minimum cluster size (Defaults to minPts)              
+# ------------------------------------------------------------
+#
+# OUTPUT:
+# ------------------------------------------------------------
+# clusterMems   Cluster labels for each point
+# clusterModel  The cluster centroids for prediction
+# ------------------------------------------------------------
+
+# TODO: m,s , f?
+m_hdbscan = function(Matrix[Double] X, Integer minPts = 5, Integer minClSize = -1)
+    return (Matrix[Double] clusterMems, Matrix[Double] clusterModel)
+{
+    if(minPts < 2) {
+        stop("HDBSCAN: minPts should be at least 2")
+    }
+
+    if(minClSize < 0) {
+        minClSize = minPts
+    }
+
+    n = nrow(X)
+    d = ncol(X)
+
+    if(n < minPts) {
+        stop("HDBSCAN: Number of data points should be at least minPts")
+    }
+
+    distances = dist(X)
+
+    coreDistances = matrix(0, rows=n, cols=1)
+    for(i in 1:n) {
+        kthDist = computeKthSmallest(t(distances[i,]), minPts)  # Add t() here!
+        coreDistances[i] = kthDist
+    }
+   
+    mutualReachDist = computeMutualReachability(distances, coreDistances)
+
+    [mstEdges, mstWeights] = buildMST(mutualReachDist, n)
+
+    [hierarchy, clusterSizes] = buildHierarchy(mstEdges, mstWeights, n)
+
+    [clusterMems, stabilities, clusterToNode] = extractStableClusters(hierarchy, mstWeights, n, minClSize)
+
+    [centroids, clusterInfo] = buildClusterModel(X, clusterMems, stabilities, clusterToNode)
+
+    clusterModel = centroids
+}
+
+
+computeKthSmallest = function(Matrix[Double] array, Integer k)
+    return (Double res)
+{
+  sorted = order(target=array, by=1, decreasing=FALSE)
+  res = as.scalar(sorted[k+1, 1])
+}
+
+
+computeMutualReachability = function(Matrix[Double] distances, Matrix[Double] coreDistances)
+    return (Matrix[Double] mutualReach)
+{
+    # mutualReach(i,j) = max(dist(i,j), coreDist(i), coreDist(j))
+    # Diagonal is set to zero.
+
+    n = nrow(distances)
+  
+    coreDistRow = t(coreDistances)
+    coreDistCol = coreDistances
+  
+    maxCoreRow = (distances > coreDistRow) * distances + (distances <= coreDistRow) * coreDistRow
+    mutualReach = (maxCoreRow > coreDistCol) * maxCoreRow + (maxCoreRow <= coreDistCol) * coreDistCol
+  
+    mutualReach = mutualReach * (1 - diag(matrix(1, rows=n, cols=1)))
+}
+
+
+buildMST = function(Matrix[Double] distances, Integer n)
+    return (Matrix[Double] edges, Matrix[Double] weights)
+{
+  edges = matrix(0, rows=n-1, cols=2)
+  weights = matrix(0, rows=n-1, cols=1)
+  
+  inMST = matrix(0, rows=n, cols=1)
+  inMST[1] = 1
+  
+  minDist = distances[1,]
+  minDist = t(minDist)
+  
+  for(i in 1:(n-1)) {
+    candidates = minDist + inMST * 1e15 
+    minIdx = as.scalar(rowIndexMin(t(candidates)))
+    minWeight = as.scalar(minDist[minIdx])
+    
+    # Find which node in MST connects to minIdx
+    connectIdx = as.scalar(rowIndexMin(distances[minIdx,] + t(1-inMST) * 1e15))
+    edges[i,1] = minIdx
+    edges[i,2] = connectIdx
+    weights[i] = minWeight
+    
+    inMST[minIdx] = 1
+    newDists = distances[minIdx,]
+    minDist = (minDist < t(newDists)) * minDist + (minDist >= t(newDists)) * t(newDists)
+  }
+}
+
+
+# Union-find utils
+find = function(Matrix[Double] parent, Integer x)
+    return (Integer root)
+{
+    root = x
+    while(as.scalar(parent[root]) != root) {
+        root = as.integer(as.scalar(parent[root]))
+    }
+}
+
+
+union = function(Matrix[Double] parent, Matrix[Double] rank,
+                Integer x, Integer y, Matrix[Double] size,
+                Matrix[Double] compToNode, Integer newId)
+    return (Matrix[Double] newParent, Matrix[Double] newRank,
+            Matrix[Double] newSize, Matrix[Double] newCompToNode, Integer newRoot)
+{
+    newParent = parent
+    newRank = rank
+    newSize = size
+    newCompToNode = compToNode
+
+    rankX = as.scalar(rank[x,1])
+    rankY = as.scalar(rank[y,1])
+
+    combinedSize = as.scalar(size[x,1]) + as.scalar(size[y,1])
+
+    if(rankX < rankY) {
+        newParent[x] = y
+        newSize[y,1] = combinedSize
+        newCompToNode[y,1] = newId
+        newRoot = y
+    }
+    else if(rankX > rankY) {
+        newParent[y] = x
+        newSize[x,1] = combinedSize
+        newCompToNode[x,1] = newId
+        newRoot = x
+    }
+    else {
+        newParent[y] = x
+        newRank[x,1] = rankX + 1
+        newSize[x,1] = combinedSize
+        newCompToNode[x,1] = newId
+        newRoot = x
+    }
+}
+
+
+buildHierarchy = function(Matrix[Double] edges, Matrix[Double] weights, Integer n)
+    return (Matrix[Double] hierarchy, Matrix[Double] sizes)
+{
+    # create indexed weights to preserve original positions after sorting
+    indexedWeights = cbind(seq(1, nrow(weights)), weights)
+    sorted = order(target=indexedWeights, by=2, decreasing=FALSE)
+
+    # parent[i] = i, meaning each point is its own parent in the beginning
+    parent = seq(1, n)
+    # tree depth when unioning (icnreases only when merged trees are of same height)
+    rank = matrix(0, rows=n, cols=1)
+
+    # initially, each component is a single point, so root i maps to leaf node i.
+    # Later, when two components merge, the new component root will map to a new
+    # internal linkage node id (n+1, n+2, ..., 2n-1)
+    compToNode = seq(1, n)
+
+    # size (number of original points) for each linkage-tree node id,
+    # leaves 1..n have size 1.
+    nodeSize = matrix(0, rows=2*n-1, cols=1)
+    for(j in 1:n) {
+        nodeSize[j,1] = 1
+    }
+
+    # hierarcy[i, :] = [cluster1_id, cluster2_id, merge_distance]
+    hierarchy = matrix(0, rows=n-1, cols=3)
+
+    # sizes[i] = size of the cluster created by merge i
+    sizes = matrix(0, rows=n-1, cols=1)
+
+    row = 1
+    for(i in 1:(n-1)) {
+        idx = as.integer(as.scalar(sorted[i,1]))
+        u = as.integer(as.scalar(edges[idx,1]))
+        v = as.integer(as.scalar(edges[idx,2]))
+        w = as.scalar(weights[idx,1])
+
+        root_u = find(parent, u)
+        root_v = find(parent, v)
+
+        if(root_u != root_v) {
+            left  = as.integer(as.scalar(compToNode[root_u]))
+            right = as.integer(as.scalar(compToNode[root_v]))
+
+            newId = n + row
+
+            hierarchy[row,1] = left
+            hierarchy[row,2] = right
+            hierarchy[row,3] = w
+
+            nodeSize[newId,1] = as.scalar(nodeSize[left,1]) + as.scalar(nodeSize[right,1])
+            sizes[row,1] = as.scalar(nodeSize[newId,1])
+
+            [parent, rank, ufSize, compToNode, newRoot] =
+                union(parent, rank, root_u, root_v, nodeSize, compToNode, newId)
+
+            row = row + 1
+        }
+    }
+}
+
+
+# Leaf descendants util
+getLeafDescendants = function(Matrix[Double] hierarchy, Integer n, Integer nodeId)
+    return (Matrix[Double] leaves)
+{
+    if(nodeId <= n) {
+        leaves = matrix(nodeId, rows=1, cols=1)
+    } else {
+        mergeIdx = nodeId - n
+        left = as.integer(as.scalar(hierarchy[mergeIdx,1]))
+        right = as.integer(as.scalar(hierarchy[mergeIdx,2]))
+        
+        leftLeaves = getLeafDescendants(hierarchy, n, left)
+        rightLeaves = getLeafDescendants(hierarchy, n, right)
+        
+        leaves = rbind(leftLeaves, rightLeaves)
+    }
+}
+
+
+extractStableClusters = function(Matrix[Double] hierarchy, Matrix[Double] weights, 
+                                  Integer n, Integer minClSize)
+    return (Matrix[Double] labels, Matrix[Double] stabilities, Matrix[Double] clusterToNode)
+{
+    numMerges = n - 1 # hierarchical tree over n points has exactly n-1 merge events
+    numNodes = 2*n - 1 # total nodes in the dendogram
+    
+    # convert distances to lambda (density)
+    lambda = matrix(0, rows=numMerges, cols=1)
+    for(i in 1:numMerges) {
+        dist = as.scalar(hierarchy[i,3])
+        if(dist > 0) {
+            lambda[i,1] = 1.0 / dist
+        } else {
+            lambda[i,1] = 1e15
+        }
+    }
+    
+    lambda_birth = matrix(1e15, rows=numNodes, cols=1)
+    lambda_death = matrix(0, rows=numNodes, cols=1)
+    cluster_size = matrix(0, rows=numNodes, cols=1)
+
+    # initialize the leaf nodes to have cluster size 1
+    for(i in 1:n) {
+        cluster_size[i,1] = 1
+    }
+    
+    for(i in 1:numMerges) {
+        left = as.integer(as.scalar(hierarchy[i,1]))
+        right = as.integer(as.scalar(hierarchy[i,2]))
+        newId = n + i
+        merge_lambda = as.scalar(lambda[i,1])
+        
+        # cluster newId starts existing as its own cluster at this density level
+        # and that's why the children get their det set at the same density
+        lambda_birth[newId,1] = merge_lambda
+        lambda_death[left,1] = merge_lambda
+        lambda_death[right,1] = merge_lambda
+        cluster_size[newId,1] = as.scalar(cluster_size[left,1]) + as.scalar(cluster_size[right,1])
+    }
+    
+    # root cluster exists all the way
+    rootId = 2*n - 1
+    lambda_death[rootId,1] = 0
+    
+    # compute own stability for each internal node
+    # NOTE: If the cluster is big enough, we assign stability.
+    # The more long-lived it is (birth - death) and 
+    # the larger it is, the more stable it is.
+    stability = matrix(0, rows=numNodes, cols=1)
+    for(nodeId in (n+1):numNodes) {
+        size = as.scalar(cluster_size[nodeId,1])
+        birth = as.scalar(lambda_birth[nodeId,1])
+        death = as.scalar(lambda_death[nodeId,1])
+        if(size >= minClSize) {
+            stability[nodeId,1] = size * (birth - death)
+        }
+    }
+    
+    # compute subtree stability (best achievable from each subtree)
+    subtree_stability = matrix(0, rows=numNodes, cols=1)
+    
+    # leaf nodes have 0 subtree stability
+    for(i in 1:n) {
+        subtree_stability[i,1] = 0
+    }
+    
+    # process merges in order (bottom-up)
+    for(i in 1:numMerges) {
+        nodeId = n + i
+        left = as.integer(as.scalar(hierarchy[i,1]))
+        right = as.integer(as.scalar(hierarchy[i,2]))
+        
+        children_subtree = as.scalar(subtree_stability[left,1]) + as.scalar(subtree_stability[right,1])
+        own_stab = as.scalar(stability[nodeId,1])
+        
+        # Subtree stability is the best we can achieve from this subtree
+        if(children_subtree > own_stab) {
+            subtree_stability[nodeId,1] = children_subtree
+        } else {
+            subtree_stability[nodeId,1] = own_stab
+        }
+    }
+    
+    # select clusters
+    selected = matrix(0, rows=numNodes, cols=1)
+    selected[rootId,1] = 1
+    
+    i = numMerges
+    while(i >= 1) {
+        nodeId = n + i
+        
+        if(as.scalar(selected[nodeId,1]) == 1) {
+            left = as.integer(as.scalar(hierarchy[i,1]))
+            right = as.integer(as.scalar(hierarchy[i,2]))
+            
+            children_subtree = as.scalar(subtree_stability[left,1]) + as.scalar(subtree_stability[right,1])
+            own_stab = as.scalar(stability[nodeId,1])
+            parent_size = as.scalar(cluster_size[nodeId,1])
+            
+            # select children if they have higher subtree stability
+            if(parent_size < minClSize | children_subtree > own_stab) {
+                selected[nodeId,1] = 0
+                selected[left,1] = 1
+                selected[right,1] = 1
+            }
+        }
+        
+        i = i - 1
+    }
+    
+    # assign labels
+    labels = matrix(-1, rows=n, cols=1)
+    cluster_id = 1
+
+    # while tracking which node each cluster comes from
+    maxClusters = sum(selected)  # upper bound on number of clusters
+    clusterToNode = matrix(0, rows=maxClusters, cols=1)
+   
+    for(nodeId in 1:numNodes) {
+        if(as.scalar(selected[nodeId,1]) == 1) {
+            size = as.scalar(cluster_size[nodeId,1])
+            
+            if(size >= minClSize) {
+                clusterToNode[cluster_id,1] = nodeId  # ADD THIS LINE
+                
+                leaves = getLeafDescendants(hierarchy, n, nodeId)
+                
+                for(j in 1:nrow(leaves)) {
+                    leafId = as.integer(as.scalar(leaves[j,1]))
+                    if(leafId >= 1 & leafId <= n) {
+                        labels[leafId,1] = cluster_id
+                    }
+                }
+                
+                cluster_id = cluster_id + 1
+            }
+        }
+    }
+    
+    # trim clusterToNode to actual number of clusters
+    numActualClusters = cluster_id - 1
+    if(numActualClusters > 0) {
+        clusterToNode = clusterToNode[1:numActualClusters,]
+    } else {
+        clusterToNode = matrix(0, rows=0, cols=1)
+    }
+
+    stabilities = stability
+
+}
+
+
+buildClusterModel = function(Matrix[Double] X, Matrix[Double] labels, 
+                             Matrix[Double] stabilities, Matrix[Double] clusterToNode)
+    return (Matrix[Double] centroids, Matrix[Double] clusterInfo)
+{
+    n = nrow(X)
+    d = ncol(X)
+
+    numClusters = as.integer(max(labels))
+
+    if(numClusters <= 0) {
+        # No clusters found, return empty model
+        centroids = matrix(0, rows=0, cols=d)
+        clusterInfo = matrix(0, rows=0, cols=2)
+    } else {
+        centroids = matrix(0, rows=numClusters, cols=d)
+        clusterInfo = matrix(0, rows=numClusters, cols=2)
+
+        for(c in 1:numClusters) {
+            # find all points in cluster c
+            mask = (labels == c)
+            clusterSize = sum(mask)
+
+            if(clusterSize > 0) {
+                # get centroid as mean of all points in cluster
+                clusterSum = t(mask) %*% X
+                centroids[c,] = clusterSum / clusterSize
+
+                # store cluster metadata: [size, stability]
+                clusterInfo[c,1] = clusterSize
+
+                # get stability for this cluster from the mapping
+                if(nrow(clusterToNode) >= c & as.scalar(clusterToNode[c,1]) > 0) {
+                    nodeId = as.integer(as.scalar(clusterToNode[c,1]))
+                    clusterInfo[c,2] = as.scalar(stabilities[nodeId,1])
+                }
+            }
+        }
+    }
+}

@@ -25,5 +25,5 @@ while(FALSE){} #prevent cse
 
 X2 = rand(rows=$1, cols=$2, pdf=$3, seed=$4) * 7;
 
-R = as.matrix(sum(rowSums(X1)==rowSums(X2)));
+R = as.matrix(sum(abs(X1)==abs(X2)));
 write(R, $5);

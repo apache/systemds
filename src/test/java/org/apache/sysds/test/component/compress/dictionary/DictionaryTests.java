@@ -366,6 +366,41 @@ public class DictionaryTests {
 	}
 
 	@Test
+	public void sort() {
+		if(nCol != 1)
+			return; // sort is only defined for single-column dictionaries.
+
+		final double[] sa = sortedValues(a);
+		final double[] sb = sortedValues(b);
+		if(sa == null && sb == null)
+			return; // neither encoding implements sort -> nothing to compare.
+
+		if(sa != null && sb != null)
+			TestUtils.compareMatricesBitAvgDistance(sa, sb, 10, 10, "Sorted values differ between dictionaries");
+	}
+
+	/**
+	 * Reorders the dictionary values by {@link IDictionary#sort()} and asserts the permutation yields a non-decreasing
+	 * sequence. Returns {@code null} when the encoding does not implement sort.
+	 */
+	private double[] sortedValues(IDictionary d) {
+		final int[] perm;
+		try {
+			perm = d.sort();
+		}
+		catch(NotImplementedException e) {
+			return null; // encoding does not support sort.
+		}
+		assertEquals("sort must return one index per value", nRow, perm.length);
+		final double[] sorted = new double[perm.length];
+		for(int i = 0; i < perm.length; i++)
+			sorted[i] = d.getValue(perm[i], 0, 1);
+		for(int i = 1; i < sorted.length; i++)
+			assertTrue("sort did not produce a non-decreasing sequence", sorted[i - 1] <= sorted[i]);
+		return sorted;
+	}
+
+	@Test
 	public void getValues() {
 		try {
 			double[] av = a.getValues();

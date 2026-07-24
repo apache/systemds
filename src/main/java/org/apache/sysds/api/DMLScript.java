@@ -75,6 +75,7 @@ import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCachePolicy;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
+import org.apache.sysds.runtime.ooc.stats.OOCEventLog;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.LocalFileUtils;
@@ -149,6 +150,12 @@ public class DMLScript
 	public static boolean           SYNCHRONIZE_GPU      = true;
 	// Set OOC backend
 	public static boolean           USE_OOC              = DMLOptions.defaultOptions.ooc;
+	// Record and print OOC statistics
+	public static boolean           OOC_STATISTICS       = DMLOptions.defaultOptions.oocStats;
+	public static int               OOC_STATISTICS_COUNT = DMLOptions.defaultOptions.oocStatsCount;
+	// Record and save fine grained OOC event logs as csv to the specified dir
+	public static boolean           OOC_LOG_EVENTS       = DMLOptions.defaultOptions.oocLogEvents;
+	public static String            OOC_LOG_PATH         = DMLOptions.defaultOptions.oocLogPath;
 	// Enable eager CUDA free on rmvar
 	public static boolean           EAGER_CUDA_FREE      = false;
 
@@ -272,6 +279,10 @@ public class DMLScript
 			USE_ACCELERATOR       = dmlOptions.gpu;
 			FORCE_ACCELERATOR     = dmlOptions.forceGPU;
 			USE_OOC	              = dmlOptions.ooc;
+			OOC_STATISTICS        = dmlOptions.oocStats;
+			OOC_STATISTICS_COUNT  = dmlOptions.oocStatsCount;
+			OOC_LOG_EVENTS        = dmlOptions.oocLogEvents;
+			OOC_LOG_PATH          = dmlOptions.oocLogPath;
 			EXPLAIN               = dmlOptions.explainType;
 			EXEC_MODE             = dmlOptions.execMode;
 			LINEAGE               = dmlOptions.lineage;
@@ -323,11 +334,14 @@ public class DMLScript
 			LineageCacheConfig.setCachePolicy(LINEAGE_POLICY);
 			LineageCacheConfig.setEstimator(LINEAGE_ESTIMATE);
 
+			if(dmlOptions.oocLogEvents)
+				OOCEventLog.setup(1000000);
+
 			String dmlScriptStr = readDMLScript(isFile, fileOrScript);
 			Map<String, String> argVals = dmlOptions.argVals;
 
 			DML_FILE_PATH_ANTLR_PARSER = dmlOptions.filePath;
-			
+
 			//Step 3: invoke dml script
 			printInvocationInfo(fileOrScript, fnameOptConfig, argVals);
 			execute(dmlScriptStr, fnameOptConfig, argVals, args);
@@ -494,6 +508,11 @@ public class DMLScript
 		ExecutionContext ec = null;
 		try {
 			ec = ExecutionContextFactory.createContext(rtprog);
+			//register as an active user of the shared spark context; balanced by
+			//exitSparkExecution() in the finally block so a concurrent execution
+			//cannot stop the context mid-job
+			if(ec instanceof SparkExecutionContext)
+				SparkExecutionContext.enterSparkExecution();
 			ScriptExecutorUtils.executeRuntimeProgram(rtprog, ec, ConfigurationManager.getDMLConfig(), STATISTICS ? STATISTICS_COUNT : 0, null);
 		}
 		finally {
@@ -502,8 +521,12 @@ public class DMLScript
 			FederatedData.clearWorkGroup();
 			//stop spark context (after cleanup of federated workers and other pools,
 			//otherwise federated spark cleanups in local tests throw errors in same JVM)
-			if(ec != null && ec instanceof SparkExecutionContext)
+			if(ec != null && ec instanceof SparkExecutionContext) {
+				//release our registration, then stop the context if no other
+				//execution is still using it
+				SparkExecutionContext.exitSparkExecution();
 				((SparkExecutionContext) ec).close();
+			}
 			LOG.info("END DML run " + getDateTime() );
 		}
 	}

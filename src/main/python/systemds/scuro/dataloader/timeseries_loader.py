@@ -18,6 +18,8 @@
 # under the License.
 #
 # -------------------------------------------------------------
+from dataclasses import dataclass
+import os
 import numpy as np
 from typing import List, Optional, Union
 import h5py
@@ -25,6 +27,17 @@ import h5py
 
 from systemds.scuro.dataloader.base_loader import BaseLoader
 from systemds.scuro.modality.type import ModalityType
+
+
+@dataclass
+class TimeseriesStats:
+    max_length: int
+    num_instances: int
+    num_signals: int
+    output_shape: tuple
+    output_shape_is_known: bool
+    avg_length: float
+    sampling_rate: int
 
 
 class TimeseriesLoader(BaseLoader):
@@ -38,21 +51,45 @@ class TimeseriesLoader(BaseLoader):
         sampling_rate: Optional[int] = None,
         normalize: bool = True,
         file_format: str = "npy",
+        modality_type: Optional[ModalityType] = ModalityType.TIMESERIES,
     ):
-        super().__init__(
-            source_path, indices, data_type, chunk_size, ModalityType.TIMESERIES
-        )
+        super().__init__(source_path, indices, data_type, chunk_size, modality_type)
         self.signal_names = signal_names
         self.sampling_rate = sampling_rate
         self.normalize = normalize
         self.file_format = file_format.lower()
-
+        self.stats = self.get_stats(source_path, sampling_rate)
         if self.file_format not in ["npy", "mat", "hdf5", "txt"]:
             raise ValueError(f"Unsupported file format: {self.file_format}")
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
 
+        data = self._load_data(file)
+
+        if data.ndim > 1 and len(self.signal_names) == 1:
+            data = data.flatten()
+
+        if self.normalize:
+            data = self._normalize_signals(data)
+
+        if file:
+            self.metadata.append(
+                self.modality_type.create_metadata(
+                    self.signal_names, data, self.sampling_rate
+                )
+            )
+            self.data.append(data)
+        else:
+            for i, index in enumerate(self.indices):
+                self.metadata.append(
+                    self.modality_type.create_metadata(
+                        self.signal_names, data[i], self.sampling_rate
+                    )
+                )
+                self.data.append(data[i])
+
+    def _load_data(self, file: str) -> np.ndarray:
         if self.file_format == "npy":
             data = self._load_npy(file)
         elif self.file_format in ["txt", "csv"]:
@@ -62,23 +99,7 @@ class TimeseriesLoader(BaseLoader):
                 data = self._load_csv_with_header(file)
             else:
                 data = self._load_txt(file)
-
-        if data.ndim > 1 and len(self.signal_names) == 1:
-            data = data.flatten()
-
-        if self.normalize:
-            data = self._normalize_signals(data)
-
-        if file:
-            self.metadata[index] = self.modality_type.create_ts_metadata(
-                self.signal_names, data, self.sampling_rate
-            )
-        else:
-            for i, index in enumerate(self.indices):
-                self.metadata[str(index)] = self.modality_type.create_ts_metadata(
-                    self.signal_names, data[i], self.sampling_rate
-                )
-        self.data.append(data)
+        return data
 
     def _normalize_signals(self, data: np.ndarray) -> np.ndarray:
         if data.ndim == 1:
@@ -93,11 +114,11 @@ class TimeseriesLoader(BaseLoader):
             return data
 
     def _load_npy(self, file: str) -> np.ndarray:
-        data = np.load(file).astype(self._data_type)
+        data = np.load(file).astype(self._data_type, copy=False)
         return data
 
     def _load_txt(self, file: str) -> np.ndarray:
-        data = np.loadtxt(file).astype(self._data_type)
+        data = np.loadtxt(file, dtype=self._data_type)
         return data
 
     def _load_txt_with_header(self, file: str) -> np.ndarray:
@@ -127,3 +148,26 @@ class TimeseriesLoader(BaseLoader):
         selected = [name for name in self.signal_names if name in df.columns]
         data = df[selected].to_numpy(dtype=self._data_type)
         return data
+
+    def get_stats(self, source_path: str, sampling_rate: int):
+        self.file_sanity_check(source_path)
+        max_length = 0
+        num_instances = 0
+        num_signals = 0
+        avg_length = 0
+        for file_name in self.indices:
+            file = source_path + file_name + "." + self.file_format
+            data = self._load_data(file)
+            max_length = max(max_length, data.shape[0])
+            avg_length += data.shape[0]
+            num_instances += 1
+            num_signals = max(num_signals, data.shape[1])
+        return TimeseriesStats(
+            max_length,
+            num_instances,
+            num_signals,
+            (max_length,),
+            True,
+            avg_length / num_instances,
+            sampling_rate,
+        )

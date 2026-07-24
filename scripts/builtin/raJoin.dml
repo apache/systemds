@@ -27,7 +27,7 @@
 # A         Matrix of left input data [shape: N x M]
 # colA      Integer indicating the column index of matrix A to execute inner join command
 # B         Matrix of right left data [shape: N x M]
-# colA      Integer indicating the column index of matrix B to execute inner join command
+# colB      Integer indicating the column index of matrix B to execute inner join command
 # method    Join implementation method (nested-loop, sort-merge, hash, hash2)
 # ------------------------------------------------------------------------------
 #

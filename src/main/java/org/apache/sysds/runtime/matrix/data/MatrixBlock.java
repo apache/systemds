@@ -94,7 +94,7 @@ import org.apache.sysds.runtime.functionobjects.RollIndex;
 import org.apache.sysds.runtime.functionobjects.SortIndex;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
@@ -1387,12 +1387,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		LibMatrixDenseToSparse.denseToSparse(this, allowCSR, k);
 	}
 
-	public final void sparseToDense() {
-		sparseToDense(1);
+	public final MatrixBlock sparseToDense() {
+		return sparseToDense(1);
 	}
 
-	public void sparseToDense(int k) {
+	public MatrixBlock sparseToDense(int k) {
 		LibMatrixSparseToDense.sparseToDense(this, k);
+		return this;
 	}
 
 	/**
@@ -2935,7 +2936,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		//in-memory size of dense/sparse representation
 		return !sparse ? estimateSizeDenseInMemory(rlen, clen) :
 			estimateSizeSparseInMemory(rlen, clen, getSparsity(),
-			SparseBlockFactory.getSparseBlockType(sparseBlock));
+			sparseBlock.getSparseBlockType());
 	}
 	
 	@Override
@@ -3307,8 +3308,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 				&& aggOp.increOp.fn instanceof CM
 				&& ((CM) aggOp.increOp.fn).getAggOpType() == AggregateOperationTypes.VARIANCE) {
 			// create buffers to store results
-			CM_COV_Object cbuff_curr = new CM_COV_Object();
-			CM_COV_Object cbuff_part = new CM_COV_Object();
+			CmCovObject cbuff_curr = new CmCovObject();
+			CmCovObject cbuff_part = new CmCovObject();
 
 			// perform incremental aggregation
 			for (int r=0; r<rlen; r++)
@@ -3330,7 +3331,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 					cbuff_part.mean._correction = newWithCor.get(r+4, c);
 
 					// calculate incremental aggregated variance
-					cbuff_curr = (CM_COV_Object) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
+					cbuff_curr = (CmCovObject) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
 
 					// store updated values: { var | mean, count, m2 correction, mean correction }
 					double var = cbuff_curr.getRequiredResult(AggregateOperationTypes.VARIANCE);
@@ -3345,8 +3346,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 				&& aggOp.increOp.fn instanceof CM
 				&& ((CM) aggOp.increOp.fn).getAggOpType() == AggregateOperationTypes.VARIANCE) {
 			// create buffers to store results
-			CM_COV_Object cbuff_curr = new CM_COV_Object();
-			CM_COV_Object cbuff_part = new CM_COV_Object();
+			CmCovObject cbuff_curr = new CmCovObject();
+			CmCovObject cbuff_part = new CmCovObject();
 
 			// perform incremental aggregation
 			for (int r=0; r<rlen; r++)
@@ -3368,7 +3369,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 					cbuff_part.mean._correction = newWithCor.get(r, c+4);
 
 					// calculate incremental aggregated variance
-					cbuff_curr = (CM_COV_Object) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
+					cbuff_curr = (CmCovObject) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
 
 					// store updated values: { var | mean, count, m2 correction, mean correction }
 					double var = cbuff_curr.getRequiredResult(AggregateOperationTypes.VARIANCE);
@@ -3508,8 +3509,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 				&& aggOp.increOp.fn instanceof CM
 				&& ((CM) aggOp.increOp.fn).getAggOpType() == AggregateOperationTypes.VARIANCE) {
 			// create buffers to store results
-			CM_COV_Object cbuff_curr = new CM_COV_Object();
-			CM_COV_Object cbuff_part = new CM_COV_Object();
+			CmCovObject cbuff_curr = new CmCovObject();
+			CmCovObject cbuff_part = new CmCovObject();
 
 			// perform incremental aggregation
 			for (int r=0; r<rlen-4; r++)
@@ -3531,7 +3532,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 					cbuff_part.mean._correction = newWithCor.get(r+4, c);
 
 					// calculate incremental aggregated variance
-					cbuff_curr = (CM_COV_Object) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
+					cbuff_curr = (CmCovObject) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
 
 					// store updated values: { var | mean, count, m2 correction, mean correction }
 					double var = cbuff_curr.getRequiredResult(AggregateOperationTypes.VARIANCE);
@@ -3546,8 +3547,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 				&& aggOp.increOp.fn instanceof CM
 				&& ((CM) aggOp.increOp.fn).getAggOpType() == AggregateOperationTypes.VARIANCE) {
 			// create buffers to store results
-			CM_COV_Object cbuff_curr = new CM_COV_Object();
-			CM_COV_Object cbuff_part = new CM_COV_Object();
+			CmCovObject cbuff_curr = new CmCovObject();
+			CmCovObject cbuff_part = new CmCovObject();
 
 			// perform incremental aggregation
 			for (int r=0; r<rlen; r++)
@@ -3569,7 +3570,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 					cbuff_part.mean._correction = newWithCor.get(r, c+4);
 
 					// calculate incremental aggregated variance
-					cbuff_curr = (CM_COV_Object) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
+					cbuff_curr = (CmCovObject) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
 
 					// store updated values: { var | mean, count, m2 correction, mean correction }
 					double var = cbuff_curr.getRequiredResult(AggregateOperationTypes.VARIANCE);
@@ -4581,7 +4582,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		}
 	}
 
-	public CM_COV_Object cmOperations(CMOperator op) {
+	public CmCovObject cmOperations(CMOperator op) {
 		checkCMOperations(this, op);
 		return LibMatrixAgg.aggregateCmCov(this, null, null, op.fn, op.getNumThreads());
 	}
@@ -4594,7 +4595,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		}
 	}
 		
-	public CM_COV_Object cmOperations(CMOperator op, MatrixBlock weights) {
+	public CmCovObject cmOperations(CMOperator op, MatrixBlock weights) {
 		/* this._data must be a 1 dimensional vector */
 		if ( this.getNumColumns() != 1 || weights.getNumColumns() != 1) {
 			throw new DMLRuntimeException("Central Moment can be computed only on 1-dimensional column matrices.");
@@ -4608,7 +4609,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return LibMatrixAgg.aggregateCmCov(this, weights, null, op.fn, op.getNumThreads());
 	}
 	
-	public CM_COV_Object covOperations(COVOperator op, MatrixBlock that) {
+	public CmCovObject covOperations(COVOperator op, MatrixBlock that) {
 		/* this._data must be a 1 dimensional vector */
 		if ( this.getNumColumns() != 1 || that.getNumColumns() != 1 ) {
 			throw new DMLRuntimeException("Covariance can be computed only on 1-dimensional column matrices."); 
@@ -4622,7 +4623,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return LibMatrixAgg.aggregateCmCov(this, that, null, op.fn, op.getNumThreads());
 	}
 	
-	public CM_COV_Object covOperations(COVOperator op, MatrixBlock that, MatrixBlock weights) {
+	public CmCovObject covOperations(COVOperator op, MatrixBlock that, MatrixBlock weights) {
 		/* this._data must be a 1 dimensional vector */
 		if ( this.getNumColumns() != 1 || that.getNumColumns() != 1 || weights.getNumColumns() != 1) {
 			throw new DMLRuntimeException("Covariance can be computed only on 1-dimensional column matrices."); 
@@ -4650,7 +4651,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return sortOperations(weights, null);
 	}
 
-	public MatrixBlock sortOperations(MatrixValue weights, MatrixBlock result) {
+	public final MatrixBlock sortOperations(MatrixValue weights, MatrixBlock result) {
 		return sortOperations(weights, result, 1);
 	}
 
@@ -4754,7 +4755,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return (sum + q25Part*q25Val - q75Part*q75Val) / (sum_wt*0.5); 
 	}
 	
-	public MatrixBlock pickValues(MatrixValue quantiles, MatrixValue ret) {
+	/**
+	 * Pick the quantiles out of this matrix. If this matrix contains two columns it is weighted quantile picking.
+	 * If a single column it is unweighted.
+	 * 
+	 * Note the values are assumed to be sorted.
+	 * 
+	 * @param quantiles The quantiles to pick
+	 * @param ret The result matrix
+	 * @return The result matrix
+	 */
+	public final MatrixBlock pickValues(MatrixValue quantiles, MatrixValue ret) {
 		return pickValues(quantiles, ret, false);
 	}
 	
@@ -4771,24 +4782,71 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			output=new MatrixBlock(qs.rlen, qs.clen, false); // resulting matrix is mostly likely be dense
 		else
 			output.reset(qs.rlen, qs.clen, false);
-		
-		for ( int i=0; i < qs.rlen; i++ ) {
-			output.set(i, 0, this.pickValue(qs.get(i,0)) );
+
+		for(int i = 0; i < qs.rlen; i++) {
+			// FIXME: include the average parameter here to fix SYSTEMDS-3953
+			output.set(i, 0, this.pickValue(qs.get(i, 0)));
 		}
 		
 		return output;
 	}
 	
+	/**
+	 * Pick the median value from this matrix. If this matrix has two columns it is weighted picking using the
+	 * weight column, otherwise it is unweighted over the single column.
+	 * 
+	 * Note the values are assumed to be sorted.
+	 * 
+	 * @return The median value
+	 */
 	public double median() {
+		if(getNumColumns() == 1)
+			return pickValue(0.5, getNumRows() % 2 == 0);
 		double sum_wt = sumWeightForQuantile();
 		return pickValue(0.5, sum_wt%2==0);
 	}
-	
+
+	/**
+	 * Pick a specific quantile from this matrix. If this matrix has two columns it is weighted picking, otherwise it is unweighted.
+	 * 
+	 * Note the values are assumed to be sorted.
+	 * 
+	 * @param quantile The quantile to pick
+	 * @return The quantile
+	 */
 	public final double pickValue(double quantile){
 		return pickValue(quantile, false);
 	}
 	
-	public double pickValue(double quantile, boolean average) {
+	/**
+	 * Pick a specific quantile from this matrix. If this matrix has two columns it is weighted picking, otherwise it is unweighted.
+	 * 
+	 * Note the values are assumed to be sorted.
+	 * 
+	 * @param quantile The quantile to pick
+	 * @param average If the quantile is averaged.
+	 * @return The quantile
+	 */
+	public final double pickValue(double quantile, boolean average) {
+		if(this.getNumColumns() == 1)
+			return pickUnweightedValue(quantile, average);
+		return pickWeightedValue(quantile, average);
+	}
+
+	private double pickUnweightedValue(double quantile, boolean average) {
+		// Mirror the weighted convention (pickWeightedValue) with an implicit weight of 1 per value, so a single
+		// column yields the same quantile as the equivalent two-column (value, weight) representation: take the
+		// ceil-based rank and only average adjacent order statistics when an even number of values straddles it.
+		final int rows = getNumRows();
+		average = average && (rows % 2 == 0);
+		final int pos = (int) Math.ceil(quantile * rows); // 1-based rank
+		final int i = Math.min(Math.max(pos - 1, 0), rows - 1);
+		if(average && pos > 0 && pos < rows)
+			return (get(i, 0) + get(i + 1, 0)) / 2;
+		return get(i, 0);
+	}
+
+	private double pickWeightedValue(double quantile, boolean average) {
 		double sum_wt = sumWeightForQuantile();
 		
 		// do averaging only if it is asked for; and sum_wt is even

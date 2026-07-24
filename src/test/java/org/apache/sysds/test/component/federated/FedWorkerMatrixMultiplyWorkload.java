@@ -88,19 +88,16 @@ public class FedWorkerMatrixMultiplyWorkload extends FedWorkerBase {
 		for(int i = 0; i < 9; i++) // chain left side compressed multiplications with idr.
 			ide = matrixMult(ide, idr);
 
-		// give the federated site time to compress async (it should already be done, but just to be safe).
-		FederatedTestUtils.wait(1000);
-
-		// Get back the matrix block stored behind mbr that should be compressed now.
-		final MatrixBlock mbr_compressed = getMatrixBlock(idr);
+		// Workload-driven compression runs async on the worker; poll instead of sleeping a fixed
+		// amount so a slow runner doesn't observe the still-uncompressed block.
+		final MatrixBlock mbr_compressed = awaitCompressed(idr);
 
 		if(!(mbr_compressed instanceof CompressedMatrixBlock))
-			fail("Invalid result, the federated site did not compress the matrix block based on workload");
+			fail("Invalid result, the federated site did not compress the matrix block based on workload within "
+				+ COMPRESS_TIMEOUT_MS + "ms");
 
 		TestUtils.compareMatricesBitAvgDistance(mbcLocal, mbr_compressed, 0, 0,
 			"Not equivalent matrix block returned from federated site");
 	}
-
-
 
 }

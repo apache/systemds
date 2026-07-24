@@ -68,7 +68,8 @@ public class CostEstimatorHops extends CostEstimator
 				value = DEFAULT_MEM_REMOTE + h.getSpBroadcastSize();
 			}
 			//check for invalid cp memory estimate
-			else if ( h.getExecType()==ExecType.CP && value >= OptimizerUtils.getLocalMemBudget() ) {
+			else if ( (h.getExecType()==ExecType.CP || h.getExecType()==ExecType.OOC)
+				&& value >= OptimizerUtils.getLocalMemBudget() ) {
 				if( !forcedExec && !HopRewriteUtils.hasListInputs(h) )
 					LOG.warn("Memory estimate larger than budget but CP exec type (op="+h.getOpString()+", name="+h.getName()+", memest="+h.getMemEstimate()+").");
 				value = DEFAULT_MEM_REMOTE;

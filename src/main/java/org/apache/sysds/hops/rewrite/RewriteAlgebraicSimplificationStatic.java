@@ -170,6 +170,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = pushdownDetMultOperation(hop, hi, i);           //e.g., det(X%*%Y) -> det(X)*det(Y)
 			hi = pushdownDetScalarMatrixMultOperation(hop, hi, i);  //e.g., det(lambda*X) -> lambda^nrow(X)*det(X)
 			hi = pushdownSumBinaryMult(hop, hi, i);              //e.g., sum(lambda*X) -> lambda*sum(X)
+			hi = pushdownRowSumBinaryMult(hop, hi, i);           //e.g., rowSums(lambda*X) -> lambda*rowSums(X)
+			hi = pushdownColSumBinaryMult(hop, hi, i);           //e.g., colSums(lambda*X) -> lambda*colSums(X)
 			hi = pullupAbs(hop, hi, i);                          //e.g., abs(X)*abs(Y) --> abs(X*Y)
 			hi = simplifyUnaryPPredOperation(hop, hi, i);        //e.g., abs(ppred()) -> ppred(), others: round, ceil, floor
 			hi = simplifyTransposedAppend(hop, hi, i);           //e.g., t(cbind(t(A),t(B))) -> rbind(A,B);
@@ -1442,6 +1444,58 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			HopRewriteUtils.replaceChildReference(parent, hi, bop, pos);
 
 			LOG.debug("Applied pushdownSumBinaryMult (line "+hi.getBeginLine()+").");
+			return bop;
+		}
+		return hi;
+	}
+
+	private static Hop pushdownRowSumBinaryMult(Hop parent, Hop hi, int pos ) {
+		//pattern:  rowSums(lamda*X) -> lamda*rowSums(X)
+		if( hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getDirection()==Direction.Row
+				&& ((AggUnaryOp)hi).getOp()==AggOp.SUM // only one parent which is the rowSums
+				&& HopRewriteUtils.isBinary(hi.getInput(0), OpOp2.MULT, 1)
+				&& ((hi.getInput(0).getInput(0).getDataType()==DataType.SCALAR && hi.getInput(0).getInput(1).getDataType()==DataType.MATRIX)
+				||(hi.getInput(0).getInput(0).getDataType()==DataType.MATRIX && hi.getInput(0).getInput(1).getDataType()==DataType.SCALAR)))
+		{
+			Hop operand1 = hi.getInput(0).getInput(0);
+			Hop operand2 = hi.getInput(0).getInput(1);
+
+			//check which operand is the Scalar and which is the matrix
+			Hop lamda = (operand1.getDataType()==DataType.SCALAR) ? operand1 : operand2;
+			Hop matrix = (operand1.getDataType()==DataType.MATRIX) ? operand1 : operand2;
+
+			AggUnaryOp aggOp=HopRewriteUtils.createAggUnaryOp(matrix, AggOp.SUM, Direction.Row);
+			Hop bop = HopRewriteUtils.createBinary(lamda, aggOp, OpOp2.MULT);
+
+			HopRewriteUtils.replaceChildReference(parent, hi, bop, pos);
+
+			LOG.debug("Applied pushdownRowSumBinaryMult (line "+hi.getBeginLine()+").");
+			return bop;
+		}
+		return hi;
+	}
+
+	private static Hop pushdownColSumBinaryMult(Hop parent, Hop hi, int pos ) {
+		//pattern:  colSums(lamda*X) -> lamda*colSums(X)
+		if( hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getDirection()==Direction.Col
+				&& ((AggUnaryOp)hi).getOp()==AggOp.SUM // only one parent which is the colSums
+				&& HopRewriteUtils.isBinary(hi.getInput(0), OpOp2.MULT, 1)
+				&& ((hi.getInput(0).getInput(0).getDataType()==DataType.SCALAR && hi.getInput(0).getInput(1).getDataType()==DataType.MATRIX)
+				||(hi.getInput(0).getInput(0).getDataType()==DataType.MATRIX && hi.getInput(0).getInput(1).getDataType()==DataType.SCALAR)))
+		{
+			Hop operand1 = hi.getInput(0).getInput(0);
+			Hop operand2 = hi.getInput(0).getInput(1);
+
+			//check which operand is the Scalar and which is the matrix
+			Hop lamda = (operand1.getDataType()==DataType.SCALAR) ? operand1 : operand2;
+			Hop matrix = (operand1.getDataType()==DataType.MATRIX) ? operand1 : operand2;
+
+			AggUnaryOp aggOp=HopRewriteUtils.createAggUnaryOp(matrix, AggOp.SUM, Direction.Col);
+			Hop bop = HopRewriteUtils.createBinary(lamda, aggOp, OpOp2.MULT);
+
+			HopRewriteUtils.replaceChildReference(parent, hi, bop, pos);
+
+			LOG.debug("Applied pushdownColSumBinaryMult (line "+hi.getBeginLine()+").");
 			return bop;
 		}
 		return hi;

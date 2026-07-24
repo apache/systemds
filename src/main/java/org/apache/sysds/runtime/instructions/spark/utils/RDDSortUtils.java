@@ -260,11 +260,11 @@ public class RDDSortUtils
 
 		//broadcast index vector
 		PartitionedBlock<MatrixBlock> pmb = new PartitionedBlock<>(sortedIxSrc, blen);
-		Broadcast<PartitionedBlock<MatrixBlock>> _pmb = sec.getSparkContext().broadcast(pmb);
+		Broadcast<PartitionedBlock<MatrixBlock>> pmb2 = sec.getSparkContext().broadcast(pmb);
 
 		//sort data with broadcast index vector
 		JavaPairRDD<MatrixIndexes, RowMatrixBlock> ret = data
-				.mapPartitionsToPair(new ShuffleMatrixBlockRowsInMemFunction(rlen, blen, _pmb));
+				.mapPartitionsToPair(new ShuffleMatrixBlockRowsInMemFunction(rlen, blen, pmb2));
 		return RDDAggregateUtils.mergeRowsByKey(ret);
 	}
 

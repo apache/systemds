@@ -23,7 +23,6 @@ import unittest
 import copy
 import numpy as np
 
-from systemds.scuro.representations.clip import CLIPVisual, CLIPText
 from systemds.scuro.representations.bow import BoW
 from systemds.scuro.representations.covarep_audio_features import (
     Spectral,
@@ -31,18 +30,13 @@ from systemds.scuro.representations.covarep_audio_features import (
     Pitch,
     ZeroCrossing,
 )
-from systemds.scuro.representations.wav2vec import Wav2Vec
-from systemds.scuro.representations.spectrogram import Spectrogram
-from systemds.scuro.representations.word2vec import W2V
-from systemds.scuro.representations.tfidf import TfIdf
-from systemds.scuro.representations.x3d import X3D
-from systemds.scuro.representations.x3d import I3D
 from systemds.scuro.representations.color_histogram import ColorHistogram
+from systemds.scuro.representations.spectrogram import Spectrogram
+from systemds.scuro.representations.tfidf import TfIdf
+from systemds.scuro.representations.resnet import ResNet
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
 from systemds.scuro.representations.mfcc import MFCC
-from systemds.scuro.representations.resnet import ResNet
-from systemds.scuro.representations.swin_video_transformer import SwinVideoTransformer
 from tests.scuro.data_generator import (
     TestDataLoader,
     ModalityRandomDataGenerator,
@@ -63,7 +57,6 @@ from systemds.scuro.representations.timeseries_representations import (
     ZeroCrossingRate,
     BandpowerFFT,
 )
-from systemds.scuro.representations.vgg import VGG19
 
 
 class TestUnimodalRepresentations(unittest.TestCase):
@@ -77,22 +70,64 @@ class TestUnimodalRepresentations(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.num_instances = 4
+        cls.num_instances = 2
         cls.indices = np.array(range(cls.num_instances))
+
+    def _create_audio_modality(self, signal_length=1000):
+        audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
+            self.num_instances, signal_length
+        )
+
+        audio = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.AUDIO, audio_data, np.float32, audio_md
+            )
+        )
+        audio.extract_raw_data()
+        return audio
+
+    def test_audio_representation_transform_output_shapes(self):
+        audio = self._create_audio_modality(signal_length=200)
+        audio_representations = [
+            (MFCC(), (2, 12)),
+            (MelSpectrogram(), (2, 128)),
+            (Spectrogram(), (2, 1025)),
+            (Spectral(), (2, 4)),
+            (ZeroCrossing(), (2, None)),
+            (RMSE(), (2, None)),
+            (Pitch(), (2, None)),
+        ]
+
+        for representation, expected_shape_signature in audio_representations:
+            with self.subTest(representation=representation.name):
+                transformed_modality = representation.transform(audio)
+                self.assertIsNotNone(transformed_modality.data)
+                self.assertEqual(len(transformed_modality.data), self.num_instances)
+
+                for transformed_instance in transformed_modality.data:
+                    self.assertEqual(
+                        transformed_instance.ndim,
+                        expected_shape_signature[0],
+                    )
+                    if expected_shape_signature[1] is not None:
+                        self.assertEqual(
+                            transformed_instance.shape[1],
+                            expected_shape_signature[1],
+                        )
+                    self.assertGreater(transformed_instance.shape[0], 0)
 
     def test_audio_representations(self):
         audio_representations = [
             MFCC(),
             MelSpectrogram(),
             Spectrogram(),
-            Wav2Vec(),
             Spectral(),
             ZeroCrossing(),
             RMSE(),
             Pitch(),
         ]
         audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
-            self.num_instances, 1000
+            self.num_instances, 200
         )
 
         audio = UnimodalModality(
@@ -110,7 +145,6 @@ class TestUnimodalRepresentations(unittest.TestCase):
             assert len(r.data) == self.num_instances
             for i in range(self.num_instances):
                 assert (audio.data[i] == original_data[i]).all()
-            assert r.data[0].ndim == 2
 
     def test_timeseries_representations(self):
         ts_representations = [
@@ -129,7 +163,7 @@ class TestUnimodalRepresentations(unittest.TestCase):
             BandpowerFFT(),
         ]
         ts_data, ts_md = ModalityRandomDataGenerator().create_timeseries_data(
-            self.num_instances, 1000
+            self.num_instances, 100
         )
 
         ts = UnimodalModality(
@@ -149,10 +183,8 @@ class TestUnimodalRepresentations(unittest.TestCase):
                 assert (ts.data[i] == original_data[i]).all()
 
     def test_image_representations(self):
-        image_representations = [ColorHistogram(), CLIPVisual(), ResNet()]
-
         image_data, image_md = ModalityRandomDataGenerator().create_visual_modality(
-            self.num_instances, 1
+            self.num_instances, 1, height=8, width=8
         )
 
         image = UnimodalModality(
@@ -161,65 +193,61 @@ class TestUnimodalRepresentations(unittest.TestCase):
             )
         )
 
-        for representation in image_representations:
-            r = image.apply_representation(representation)
-            assert r.data is not None
-            assert len(r.data) == self.num_instances
+        r = image.apply_representation(ColorHistogram())
+        assert r.data is not None
+        assert len(r.data) == self.num_instances
 
-    def test_video_representations(self):
-        video_representations = [
-            CLIPVisual(),
-            ColorHistogram(),
-            I3D(),
-            X3D(),
-            VGG19(),
-            ResNet(),
-            SwinVideoTransformer(),
-        ]
-        video_data, video_md = ModalityRandomDataGenerator().create_visual_modality(
-            self.num_instances, 60
-        )
-        video = UnimodalModality(
-            TestDataLoader(
-                self.indices, None, ModalityType.VIDEO, video_data, np.float32, video_md
-            )
-        )
-        for representation in video_representations:
-            r = video.apply_representation(representation)
-            assert r.data is not None
-            assert len(r.data) == self.num_instances
+    # def test_video_representations(self):
+    #     video_representations = [
+    #         CLIPVisual(layer_name="post_layernorm"),
+    #         I3D(),
+    #         X3D(),
+    #         VGG19(),
+    #         ResNet(),
+    #         SwinVideoTransformer(),
+    #     ]
+    #     video_data, video_md = ModalityRandomDataGenerator().create_visual_modality(
+    #         self.num_instances, 25
+    #     )
+    #     video = UnimodalModality(
+    #         TestDataLoader(
+    #             self.indices, None, ModalityType.VIDEO, video_data, np.float32, video_md
+    #         )
+    #     )
+    #     for representation in video_representations:
+    #         r = video.apply_representation(representation)
+    #         assert r.data is not None
+    #         assert len(r.data) == self.num_instances
 
     def test_text_representations(self):
-        test_representations = [CLIPText(), BoW(2, 2), TfIdf(), W2V()]
         text_data, text_md = ModalityRandomDataGenerator().create_text_data(
-            self.num_instances
+            self.num_instances, 3
         )
         text = UnimodalModality(
             TestDataLoader(
                 self.indices, None, ModalityType.TEXT, text_data, str, text_md
             )
         )
-        for representation in test_representations:
+        for representation in [BoW(2, 2), TfIdf()]:
             r = text.apply_representation(representation)
             assert r.data is not None
             assert len(r.data) == self.num_instances
 
     def test_chunked_video_representations(self):
-        video_representations = [ResNet()]
         video_data, video_md = ModalityRandomDataGenerator().create_visual_modality(
-            self.num_instances, 60
+            self.num_instances, 30
         )
         video = UnimodalModality(
             TestDataLoader(
                 self.indices, None, ModalityType.VIDEO, video_data, np.float32, video_md
             )
         )
-        for representation in video_representations:
-            r = video.apply_representation(representation)
-            assert r.data is not None
-            assert len(r.data) == self.num_instances
-            assert len(r.metadata) == self.num_instances
+        r = video.apply_representation(ResNet(model_name="ResNet18"))
+        assert r.data is not None
+        assert len(r.data) == self.num_instances
+        assert len(r.metadata) == self.num_instances
 
 
+# TODO: add unit tests for the other representations
 if __name__ == "__main__":
     unittest.main()

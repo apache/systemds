@@ -21,10 +21,15 @@ package org.apache.sysds.runtime.compress.lib;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
+import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
+import org.apache.sysds.runtime.compress.CompressionStatistics;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
@@ -43,10 +48,40 @@ public final class CLALibUnary {
 		final boolean overlapping = m.isOverlapping();
 		final int r = m.getNumRows();
 		final int c = m.getNumColumns();
+		
 		// early aborts:
 		if(m.isEmpty())
 			return new MatrixBlock(r, c, 0).unaryOperations(op, result);
-		else if(overlapping) {
+		
+		if(Builtin.isBuiltinCode(op.fn, BuiltinCode.CUMSUM)) {
+			MatrixBlock uncompressed = m.getUncompressed("CUMSUM requires uncompression", op.getNumThreads());
+			MatrixBlock opResult = uncompressed.unaryOperations(op, null);
+			
+			CompressionSettingsBuilder csb = new CompressionSettingsBuilder();
+			csb.clearValidCompression();
+			csb.setPreferDeltaEncoding(true);
+			csb.addValidCompression(CompressionType.DeltaDDC);
+			csb.addValidCompression(CompressionType.UNCOMPRESSED);
+			csb.setTransposeInput("false");
+			Pair<MatrixBlock, CompressionStatistics> compressedPair = CompressedMatrixBlockFactory.compress(opResult, op.getNumThreads(), csb);
+			MatrixBlock compressedResult = compressedPair.getLeft();
+			
+			if(compressedResult == null) {
+				compressedResult = opResult;
+			}
+			
+			CompressedMatrixBlock finalResult;
+			if(compressedResult instanceof CompressedMatrixBlock) {
+				finalResult = (CompressedMatrixBlock) compressedResult;
+			}
+			else {
+				finalResult = CompressedMatrixBlockFactory.genUncompressedCompressedMatrixBlock(compressedResult);
+			}
+			
+			return finalResult;
+		}
+
+		if(overlapping) {
 			// when in overlapping state it is guaranteed that there is no infinites, NA, or NANs.
 			if(Builtin.isBuiltinCode(op.fn, BuiltinCode.ISINF, BuiltinCode.ISNA, BuiltinCode.ISNAN))
 				return new MatrixBlock(r, c, 0);
@@ -64,8 +99,9 @@ public final class CLALibUnary {
 			return new MatrixBlock(r, c, 0); // avoid unnecessary allocation
 		else if(LibMatrixAgg.isSupportedUnaryOperator(op)) {
 			String message = "Unary Op not supported: " + op.fn.getClass().getSimpleName();
-			// e.g., cumsum/cumprod/cummin/cumax/cumsumprod
-			return m.getUncompressed(message, op.getNumThreads()).unaryOperations(op, null);
+			MatrixBlock uncompressed = m.getUncompressed(message, op.getNumThreads());
+			MatrixBlock opResult = uncompressed.unaryOperations(op, null);
+			return opResult;
 		}
 		else {
 

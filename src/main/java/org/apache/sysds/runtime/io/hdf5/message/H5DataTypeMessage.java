@@ -35,6 +35,10 @@ public class H5DataTypeMessage extends H5Message {
 	public H5DataTypeMessage(H5RootObject rootObject, BitSet flags, ByteBuffer bb) {
 		super(rootObject, flags);
 		doubleDataType = new H5DoubleDataType(bb);
+		if(H5RootObject.HDF5_DEBUG) {
+			System.out.println("[HDF5] Datatype parsed (class=" + doubleDataType.getDataClass() + ", size="
+				+ doubleDataType.getSize() + ")");
+		}
 	}
 
 	public H5DataTypeMessage(H5RootObject rootObject, BitSet flags, H5DoubleDataType doubleDataType) {

@@ -90,6 +90,7 @@ import org.apache.sysds.runtime.instructions.cp.StringObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.instructions.gpu.GPUInstruction;
+import org.apache.sysds.runtime.instructions.ooc.OOCInstruction;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -484,7 +485,7 @@ public class ProgramConverter
 		try
 		{
 			if( oInst instanceof CPInstruction || oInst instanceof SPInstruction || oInst instanceof FEDInstruction
-				|| oInst instanceof GPUInstruction ) {
+				|| oInst instanceof GPUInstruction || oInst instanceof OOCInstruction ) {
 				if( oInst instanceof FunctionCallCPInstruction && cpFunctions ) {
 					FunctionCallCPInstruction tmp = (FunctionCallCPInstruction) oInst;
 					if( !plain ) {

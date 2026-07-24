@@ -43,6 +43,9 @@ maven-eclipse.xml
 # vscode
 .vscode
 
+# Metals (Scala LSP)
+.metals/
+
 # checksum files
 *.crc
 
@@ -146,7 +149,7 @@ src/test/scripts/functions/pipelines/intermediates/classification/*
 
 venv
 venv/*
-
+.venv
 # resource optimization
 scripts/resource/output
 *.pem

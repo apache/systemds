@@ -33,8 +33,14 @@ import org.apache.sysds.resource.enumeration.EnumerationUtils.InstanceSearchSpac
 import org.apache.sysds.resource.enumeration.EnumerationUtils.ConfigurationPoint;
 import org.apache.sysds.resource.enumeration.EnumerationUtils.SolutionPoint;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class Enumerator {

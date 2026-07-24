@@ -23,155 +23,100 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-
+import java.util.List;
+import java.util.Map;
 
 public class EinsumContext {
-    public enum ContractDimensions {
-        CONTRACT_LEFT,
-        CONTRACT_RIGHT,
-        CONTRACT_BOTH,
-    }
-    public Integer outRows;
-    public Integer outCols;
-    public Character outChar1;
-    public Character outChar2;
-    public HashMap<Character, Integer> charToDimensionSize;
-    public String equationString;
-    public boolean[] diagonalInputs;
-    public HashSet<Character> summingChars;
-    public HashSet<Character> contractDimsSet;
-    public ContractDimensions[] contractDims;
-    public ArrayList<String> newEquationStringInputsSplit;
-    public HashMap<Character, ArrayList<Integer>> characterAppearanceIndexes; // for each character, this tells in which inputs it appears
+	public Integer outRows;
+	public Integer outCols;
+	public Character outChar1;
+	public Character outChar2;
+	public Map<Character, Integer> charToDimensionSize;
+	public String equationString;
+	public List<String> newEquationStringInputsSplit;
+	public Map<Character, Integer> characterAppearanceCount;
 
-    private EinsumContext(){};
-    public static EinsumContext getEinsumContext(String eqStr, ArrayList<MatrixBlock> inputs){
-        EinsumContext res = new EinsumContext();
+	private EinsumContext(){};
+	public static EinsumContext getEinsumContext(String eqStr, List<MatrixBlock> inputs){
+		EinsumContext res = new EinsumContext();
 
-        res.equationString = eqStr;
-        res.charToDimensionSize = new HashMap<Character, Integer>();
-        HashSet<Character> summingChars = new HashSet<>();
-        ContractDimensions[] contractDims = new ContractDimensions[inputs.size()];
-        boolean[] diagonalInputs = new boolean[inputs.size()]; // all false by default
-        HashSet<Character> contractDimsSet = new HashSet<>();
-        HashMap<Character, ArrayList<Integer>> partsCharactersToIndices = new HashMap<>();
-        ArrayList<String> newEquationStringSplit = new ArrayList<>();
+		res.equationString = eqStr;
+		Map<Character, Integer> charToDimensionSize = new HashMap<>();
+		Map<Character, Integer> characterAppearanceCount = new HashMap<>();
+		List<String> newEquationStringSplit = new ArrayList<>();
+		Character outChar1 = null;
+		Character outChar2 = null;
 
-        Iterator<MatrixBlock> it = inputs.iterator();
-        MatrixBlock curArr = it.next();
-        int arrSizeIterator = 0;
-        int arrayIterator = 0;
-        int i;
-        // first iteration through string: collect information on character-size and what characters are summing characters
-        for (i = 0; true; i++) {
-            char c = eqStr.charAt(i);
-            if(c == '-'){
-                i+=2;
-                break;
-            }
-            if(c == ','){
-                arrayIterator++;
-                curArr = it.next();
-                arrSizeIterator = 0;
-            }
-            else{
-                if (res.charToDimensionSize.containsKey(c)) { // sanity check if dims match, this is already checked at validation
-                    if(arrSizeIterator == 0 && res.charToDimensionSize.get(c) != curArr.getNumRows())
-                        throw new RuntimeException("Einsum: character "+c+" has multiple conflicting sizes");
-                    else if(arrSizeIterator == 1 && res.charToDimensionSize.get(c) != curArr.getNumColumns())
-                        throw new RuntimeException("Einsum: character "+c+" has multiple conflicting sizes");
-                    summingChars.add(c);
-                } else {
-                    if(arrSizeIterator == 0)
-                        res.charToDimensionSize.put(c, curArr.getNumRows());
-                    else if(arrSizeIterator == 1)
-                        res.charToDimensionSize.put(c, curArr.getNumColumns());
-                }
+		Iterator<MatrixBlock> it = inputs.iterator();
+		MatrixBlock curArr = it.next();
+		int i = 0;
 
-                arrSizeIterator++;
-            }
-        }
+		char c = eqStr.charAt(i);
+		for(i = 0; i < eqStr.length(); i++) {
+			StringBuilder sb = new StringBuilder(2);
+			for(;i < eqStr.length(); i++){
+				c = eqStr.charAt(i);
+				if  (c == ' ') continue;
+				if  (c == ',' || c == '-' ) break;
+				if (!Character.isAlphabetic(c)) {
+					throw new RuntimeException("Einsum: only alphabetic characters are supported for dimensions: "+c);
+				}
+				sb.append(c);
+				if (characterAppearanceCount.containsKey(c)) characterAppearanceCount.put(c, characterAppearanceCount.get(c) + 1) ;
+				else characterAppearanceCount.put(c, 1);
+			}
+			String s = sb.toString();
+			newEquationStringSplit.add(s);
 
-        int numOfRemainingChars = eqStr.length() - i;
+			if(s.length() > 0){
+				if (charToDimensionSize.containsKey(s.charAt(0)))
+					if (charToDimensionSize.get(s.charAt(0)) != curArr.getNumRows())
+						throw new RuntimeException("Einsum: character "+c+" has multiple conflicting sizes");
+				charToDimensionSize.put(s.charAt(0), curArr.getNumRows());
+			}
+			if(s.length() > 1){
+				if (charToDimensionSize.containsKey(s.charAt(1)))
+					if (charToDimensionSize.get(s.charAt(1)) != curArr.getNumColumns())
+						throw new RuntimeException("Einsum: character "+c+" has multiple conflicting sizes");
+				charToDimensionSize.put(s.charAt(1), curArr.getNumColumns());
+			}
+			if(s.length() > 2) throw new RuntimeException("Einsum: only up-to 2D inputs strings allowed ");
 
-        if (numOfRemainingChars > 2)
-            throw new RuntimeException("Einsum: dim > 2 not supported");
+			if( c==','){
+				curArr = it.next();
+			}
+			else if (c=='-') break;
 
-        arrSizeIterator = 0;
+			if (i == eqStr.length() - 1) {throw new RuntimeException("Einsum: missing '->' substring "+c);}
+		}
 
-        Character outChar1 = numOfRemainingChars > 0 ? eqStr.charAt(i) : null;
-        Character outChar2 = numOfRemainingChars > 1 ? eqStr.charAt(i+1) : null;
-        res.outRows=(numOfRemainingChars > 0 ? res.charToDimensionSize.get(outChar1) : 1);
-        res.outCols=(numOfRemainingChars > 1 ? res.charToDimensionSize.get(outChar2) : 1);
+		if (i == eqStr.length() - 1 || eqStr.charAt(i+1) != '>') throw new RuntimeException("Einsum: missing '->' substring "+c);
+		i+=2;
 
-        arrayIterator=0;
-        // second iteration through string: collect remaining information
-        for (i = 0; true; i++) {
-            char c = eqStr.charAt(i);
-            if (c == '-') {
-                break;
-            }
-            if (c == ',') {
-                arrayIterator++;
-                arrSizeIterator = 0;
-                continue;
-            }
-            String s = "";
+		StringBuilder sb = new StringBuilder(2);
 
-            if(summingChars.contains(c)) {
-                s+=c;
-                if(!partsCharactersToIndices.containsKey(c))
-                    partsCharactersToIndices.put(c, new ArrayList<>());
-                partsCharactersToIndices.get(c).add(arrayIterator);
-            }
-            else if((outChar1 != null && c == outChar1) || (outChar2 != null && c == outChar2)) {
-                s+=c;
-            }
-            else {
-                contractDimsSet.add(c);
-                contractDims[arrayIterator] = ContractDimensions.CONTRACT_LEFT;
-            }
+		for(;i < eqStr.length(); i++){
+			c = eqStr.charAt(i);
+			if  (c == ' ') continue;
+			if (!Character.isAlphabetic(c)) {
+				throw new RuntimeException("Einsum: only alphabetic characters are supported for dimensions: "+c);
+			}
+			sb.append(c);
+		}
+		String s = sb.toString();
+		if(s.length() > 0) outChar1 = s.charAt(0);
+		if(s.length() > 1) outChar2 = s.charAt(1);
+		if(s.length() > 2) throw new RuntimeException("Einsum: only up-to 2D output allowed ");
 
-            if(i + 1 < eqStr.length()) { // process next character together
-                char c2 = eqStr.charAt(i + 1);
-                i++;
-                if (c2 == '-') { newEquationStringSplit.add(s); break;}
-                if (c2 == ',') { arrayIterator++; newEquationStringSplit.add(s); continue; }
+		res.outRows=(outChar1 == null ? 1 : charToDimensionSize.get(outChar1));
+		res.outCols=(outChar2 == null ? 1 : charToDimensionSize.get(outChar2));
 
-                if (c2 == c){
-                    diagonalInputs[arrayIterator] = true;
-                    if (contractDims[arrayIterator] == ContractDimensions.CONTRACT_LEFT) contractDims[arrayIterator] = ContractDimensions.CONTRACT_BOTH;
-                }
-                else{
-                    if(summingChars.contains(c2)) {
-                        s+=c2;
-                        if(!partsCharactersToIndices.containsKey(c2))
-                            partsCharactersToIndices.put(c2, new ArrayList<>());
-                        partsCharactersToIndices.get(c2).add(arrayIterator);
-                    }
-                    else if((outChar1 != null && c2 == outChar1) || (outChar2 != null && c2 == outChar2)) {
-                        s+=c2;
-                    }
-                    else {
-                        contractDimsSet.add(c2);
-                        contractDims[arrayIterator] = contractDims[arrayIterator] == ContractDimensions.CONTRACT_LEFT ? ContractDimensions.CONTRACT_BOTH : ContractDimensions.CONTRACT_RIGHT;
-                    }
-                }
-            }
-            newEquationStringSplit.add(s);
-            arrSizeIterator++;
-        }
-
-        res.contractDims = contractDims;
-        res.contractDimsSet = contractDimsSet;
-        res.diagonalInputs = diagonalInputs;
-        res.summingChars = summingChars;
-        res.outChar1 = outChar1;
-        res.outChar2 = outChar2;
-        res.newEquationStringInputsSplit = newEquationStringSplit;
-        res.characterAppearanceIndexes = partsCharactersToIndices;
-        return res;
-    }
+		res.outChar1 = outChar1;
+		res.outChar2 = outChar2;
+		res.newEquationStringInputsSplit = newEquationStringSplit;
+		res.characterAppearanceCount = characterAppearanceCount;
+		res.charToDimensionSize = charToDimensionSize;
+		return res;
+	}
 }

@@ -30,7 +30,6 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -56,9 +55,7 @@ public class FederatedQuantileTest extends AutomatedTestBase {
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		return Arrays.asList(new Object[][] {
-			// {1000, 1, false},
-			{128, 1, true}});
+		return Arrays.asList(new Object[][] {{1000, 1, false}, {128, 1, true}});
 	}
 
 	@Override
@@ -71,19 +68,16 @@ public class FederatedQuantileTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
 	public void federatedQuantile1CP() {
 		federatedQuartile(Types.ExecMode.SINGLE_NODE, TEST_NAME1, 0.25);
 	}
 
 	@Test
-	@Ignore
 	public void federatedQuantile2CP() {
 		federatedQuartile(Types.ExecMode.SINGLE_NODE, TEST_NAME1, 0.5);
 	}
 
 	@Test
-	@Ignore
 	public void federatedQuantile3CP() {
 		federatedQuartile(Types.ExecMode.SINGLE_NODE, TEST_NAME1, 0.75);
 	}
@@ -104,19 +98,16 @@ public class FederatedQuantileTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
 	public void federatedQuantile1SP() {
 		federatedQuartile(Types.ExecMode.SPARK, TEST_NAME1, 0.25);
 	}
 
 	@Test
-	@Ignore
 	public void federatedQuantile2SP() {
 		federatedQuartile(Types.ExecMode.SPARK, TEST_NAME1, 0.5);
 	}
 
 	@Test
-	@Ignore
 	public void federatedQuantile3SP() {
 		federatedQuartile(Types.ExecMode.SPARK, TEST_NAME1, 0.75);
 	}
@@ -164,12 +155,13 @@ public class FederatedQuantileTest extends AutomatedTestBase {
 				port2 = getRandomAvailablePort();
 				port3 = getRandomAvailablePort();
 				port4 = getRandomAvailablePort();
-				t1 = startLocalFedWorker(port1, FED_WORKER_WAIT_S);
-				t2 = startLocalFedWorker(port2, FED_WORKER_WAIT_S);
-				t3 = startLocalFedWorker(port3, FED_WORKER_WAIT_S);
-				t4 = startLocalFedWorker(port4);
+				Process[] workers = startLocalFedWorkers(new int[] {port1, port2, port3, port4});
+				t1 = workers[0];
+				t2 = workers[1];
+				t3 = workers[2];
+				t4 = workers[3];
 
-				if(!isAlive(t1, t2, t3, t4))
+				if(!isAlive(workers))
 					throw new RuntimeException("Failed starting federated worker");
 
 				programArgs1 = new String[] {"-explain", "-stats", "100", "-args", String.valueOf(p), expected("S"),

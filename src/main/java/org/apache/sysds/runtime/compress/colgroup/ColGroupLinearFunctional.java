@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
@@ -40,7 +41,7 @@ import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -618,7 +619,7 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 	}
 
 	@Override
-	public CM_COV_Object centralMoment(CMOperator op, int nRows) {
+	public CmCovObject centralMoment(CMOperator op, int nRows) {
 		throw new NotImplementedException();
 	}
 
@@ -740,4 +741,18 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 		throw new NotImplementedException("Unimplemented method 'splitReshape'");
 	}
 
+	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+		throw new NotImplementedException("Unimplemented method 'removeEmptyRows'");
+	}
+
+	@Override
+	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns){
+		throw new NotImplementedException("Unimplemented method 'removeEmptyColumns'");
+	}
+
+	@Override
+	public AColGroup sort() {
+		throw new NotImplementedException("Unimplemented method 'sort'");
+	}
 }

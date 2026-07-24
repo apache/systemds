@@ -44,8 +44,10 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.lib.MatrixBlockFromFrame;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.ooc.TeeOOCInstruction;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FileFormatPropertiesHDF5;
@@ -793,6 +795,10 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			// cleanup matrix/frame/list data if necessary
 			if( srcData.getDataType().isMatrix() || srcData.getDataType().isFrame() ) {
 				Data tgtData = ec.removeVariable(getInput2().getName());
+
+				if (DMLScript.USE_OOC && tgtData instanceof MatrixObject)
+					TeeOOCInstruction.incrRef(((MatrixObject) tgtData).getStreamable(), -1);
+
 				if( tgtData != null && srcData != tgtData )
 					ec.cleanupDataObject(tgtData);
 			}
@@ -918,7 +924,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		switch( getInput1().getDataType() ) {
 			case FRAME: {
 				FrameBlock fin = ec.getFrameInput(getInput1().getName());
-				MatrixBlock out = DataConverter.convertToMatrixBlock(fin);
+				MatrixBlock out = MatrixBlockFromFrame.convertToMatrixBlock(fin, k);
 				ec.releaseFrameInput(getInput1().getName());
 				ec.setMatrixOutput(output.getName(), out);
 				break;
@@ -1026,8 +1032,13 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		if ( dd == null )
 			throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + getInput1().getName() + ", while processing instruction " +this.toString());
 
+		if (DMLScript.USE_OOC && dd instanceof MatrixObject)
+			TeeOOCInstruction.incrRef(((MatrixObject)dd).getStreamable(), 1);
+
 		// remove existing variable bound to target name
 		Data input2_data = ec.removeVariable(getInput2().getName());
+		if (DMLScript.USE_OOC && input2_data instanceof MatrixObject)
+			TeeOOCInstruction.incrRef(((MatrixObject) input2_data).getStreamable(), -1);
 
 		//cleanup matrix data on fs/hdfs (if necessary)
 		if( input2_data != null )
@@ -1117,6 +1128,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	public static void processRmvarInstruction( ExecutionContext ec, String varname ) {
 		// remove variable from symbol table
 		Data dat = ec.removeVariable(varname);
+		if (DMLScript.USE_OOC && dat instanceof MatrixObject)
+			TeeOOCInstruction.incrRef(((MatrixObject) dat).getStreamable(), -1);
 		//cleanup matrix data on fs/hdfs (if necessary)
 		if( dat != null )
 			ec.cleanupDataObject(dat);

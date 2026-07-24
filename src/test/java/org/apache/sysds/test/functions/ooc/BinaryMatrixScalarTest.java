@@ -78,7 +78,7 @@ public class BinaryMatrixScalarTest extends AutomatedTestBase {
 			programArgs = new String[] {"-explain", "-stats", "-ooc", "-args", input(INPUT_NAME_1), output(OUTPUT_NAME)};
 
 			// 1. Generate the data in-memory as MatrixBlock objects
-			double[][] X_data = getRandomMatrix(rows, 1, 1, maxVal, sparse ? sparsity2 : sparsity1, 7);
+			double[][] X_data = getRandomMatrix(rows, cols, 1, maxVal, sparse ? sparsity2 : sparsity1, 7);
 
 			// 2. Convert the double arrays to MatrixBlock objects
 			MatrixBlock X_mb = DataConverter.convertToMatrixBlock(X_data);

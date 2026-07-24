@@ -64,41 +64,67 @@ public class DecoderFactory
 		try {
 			//parse transform specification
 			JSONObject jSpec = new JSONObject(spec);
-			List<Decoder> ldecoders = new ArrayList<>();
 			
-			//create decoders 'bin', 'recode', 'dummy' and 'pass-through'
+			//create decoders 'bin', 'recode', 'hash', 'dummy', and 'pass-through'
 			List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames, minCol, maxCol);
 			List<Integer> rcIDs = Arrays.asList(ArrayUtils.toObject(
 					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.RECODE.toString(), minCol, maxCol)));
+			List<Integer> hcIDs = Arrays.asList(ArrayUtils.toObject(
+					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.HASH.toString(), minCol, maxCol)));
 			List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
 					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.DUMMYCODE.toString(), minCol, maxCol)));
+			// only specially treat the columns with both recode and dictionary
 			rcIDs = unionDistinct(rcIDs, dcIDs);
+			// hashing is a lossy, one-way transform with no inverse recode map, so hash columns
+			// are never recode-decoded; exclude them from the recode set
+			rcIDs = except(rcIDs, hcIDs);
+
+			// dummycoded hash columns: domain size K lives in the meta cell, so the decoders
+			// need to know which dummycoded columns to read it from
+			List<Integer> hcdcIDs = new ArrayList<>(dcIDs);
+			hcdcIDs.retainAll(hcIDs);
+			int[] hashCols = ArrayUtils.toPrimitive(hcdcIDs.toArray(new Integer[0]));
+
 			int len = dcIDs.isEmpty() ? Math.min(meta.getNumColumns(), clen) : meta.getNumColumns();
-			List<Integer> ptIDs = except(except(UtilFunctions.getSeqList(1, len, 1), rcIDs), binIDs);
-			
+
+			// set the remaining columns to passthrough.
+			List<Integer> ptIDs = UtilFunctions.getSeqList(1, len, 1);
+			// except recoded columns
+			ptIDs = except(ptIDs, rcIDs);
+			// binned columns
+			ptIDs = except(ptIDs, binIDs);
+			// dummycoded columns (incl. dummycoded hash) are rebuilt by the dummycode decoder;
+			// hash columns without dummycode stay in passthrough so their bucket code survives
+			ptIDs = except(ptIDs, dcIDs);
+
 			//create default schema if unspecified (with double columns for pass-through)
 			if( schema == null ) {
 				schema = UtilFunctions.nCopies(len, ValueType.STRING);
 				for( Integer col : ptIDs )
 					schema[col-1] = ValueType.FP64;
 			}
+
+			// collect all the decoders in one list.
+			List<Decoder> ldecoders = new ArrayList<>();
 			
 			if( !binIDs.isEmpty() ) {
 				ldecoders.add(new DecoderBin(schema, 
-					ArrayUtils.toPrimitive(binIDs.toArray(new Integer[0]))));
+					ArrayUtils.toPrimitive(binIDs.toArray(new Integer[0])),
+					ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0])), hashCols));
 			}
 			if( !dcIDs.isEmpty() ) {
 				ldecoders.add(new DecoderDummycode(schema, 
-					ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0]))));
+					ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0])), hashCols));
 			}
 			if( !rcIDs.isEmpty() ) {
+				// recode on output (after dummycode rebuilds the categorical columns) when dummycoding is present
 				ldecoders.add(new DecoderRecode(schema, !dcIDs.isEmpty(),
 					ArrayUtils.toPrimitive(rcIDs.toArray(new Integer[0]))));
 			}
 			if( !ptIDs.isEmpty() ) {
 				ldecoders.add(new DecoderPassThrough(schema, 
 					ArrayUtils.toPrimitive(ptIDs.toArray(new Integer[0])),
-					ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0]))));
+					ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0])), hashCols));
 			}
 			
 			//create composite decoder of all created decoders
@@ -121,6 +147,8 @@ public class DecoderFactory
 			return DecoderType.Recode.ordinal();
 		else if( decoder instanceof DecoderPassThrough )
 			return DecoderType.PassThrough.ordinal();
+		else if( decoder instanceof DecoderBin )
+			return DecoderType.Bin.ordinal();
 		throw new DMLRuntimeException("Unsupported decoder type: "
 			+ decoder.getClass().getCanonicalName());
 	}
@@ -130,6 +158,7 @@ public class DecoderFactory
 		
 		// create instance
 		switch(dtype) {
+			case Bin:         return new DecoderBin();
 			case Dummycode:   return new DecoderDummycode(null, null);
 			case PassThrough: return new DecoderPassThrough(null, null, null);
 			case Recode:      return new DecoderRecode(null, false, null);

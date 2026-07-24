@@ -234,7 +234,7 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 	public <T> void processRowQPick(ExecutionContext ec) {
 		MatrixObject in = ec.getMatrixObject(input1);
 		FederationMap fedMap = in.getFedMapping();
-		boolean average = _type == OperationTypes.MEDIAN;
+		boolean average = _type == OperationTypes.MEDIAN || _type == OperationTypes.VALUEPICK;
 
 		double[] quantiles = input2 != null ? (input2.isMatrix() ? ec.getMatrixInput(input2).getDenseBlockValues() :
 			input2.isScalar() ? new double[] {ec.getScalarInput(input2).getDoubleValue()} : null) :
@@ -749,16 +749,17 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			super(new long[] {input});
 			_quantiles = quantiles;
 		}
+
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
 			MatrixBlock mb = ((MatrixObject)data[0]).acquireReadAndRelease();
 			MatrixBlock picked;
 			if (_quantiles.getLength() == 1) {
 				return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS,
-					new Object[] {mb.pickValue(_quantiles.get(0, 0))});
+					new Object[] {mb.pickValue(_quantiles.get(0, 0), mb.getLength() % 2 == 0)});
 			}
 			else {
-				picked = mb.pickValues(_quantiles, new MatrixBlock());
+				picked = mb.pickValues(_quantiles, new MatrixBlock(), mb.getLength() % 2 == 0);
 				return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS,
 					new Object[] {picked});
 			}

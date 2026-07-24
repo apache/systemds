@@ -30,21 +30,36 @@ import java.util.BitSet;
 
 public class H5DataLayoutMessage extends H5Message {
 
+	public static final byte LAYOUT_CLASS_COMPACT = 0;
+	public static final byte LAYOUT_CLASS_CONTIGUOUS = 1;
+	public static final byte LAYOUT_CLASS_CHUNKED = 2;
+	public static final byte LAYOUT_CLASS_VIRTUAL = 3;
+
 	private final long address;
 	private final long size;
+	private final byte layoutClass;
+	private final byte layoutVersion;
 
 	public H5DataLayoutMessage(H5RootObject rootObject, BitSet flags, ByteBuffer bb) {
 		super(rootObject, flags);
 		rootObject.setDataLayoutVersion(bb.get());
+		layoutVersion = rootObject.getDataLayoutVersion();
 		rootObject.setDataLayoutClass(bb.get());
+		layoutClass = rootObject.getDataLayoutClass();
 		this.address = Utils.readBytesAsUnsignedLong(bb, rootObject.getSuperblock().sizeOfOffsets);
 		this.size = Utils.readBytesAsUnsignedLong(bb, rootObject.getSuperblock().sizeOfLengths);
+		if(H5RootObject.HDF5_DEBUG) {
+			System.out.println("[HDF5] Data layout (version=" + layoutVersion + ", class=" + layoutClass + ") address="
+				+ address + " size=" + size);
+		}
 	}
 
 	public H5DataLayoutMessage(H5RootObject rootObject, BitSet flags, long address, long size) {
 		super(rootObject, flags);
 		this.address = address;
 		this.size = size;
+		this.layoutVersion = rootObject.getDataLayoutVersion();
+		this.layoutClass = rootObject.getDataLayoutClass();
 	}
 
 	@Override
@@ -74,5 +89,12 @@ public class H5DataLayoutMessage extends H5Message {
 	public long getSize() {
 		return size;
 	}
+	
+	public byte getLayoutClass() {
+		return layoutClass;
+	}
 
+	public byte getLayoutVersion() {
+		return layoutVersion;
+	}
 }

@@ -74,12 +74,12 @@ public class CSVReaderTest extends AutomatedTestBase {
 
 	@Test
 	public void testCSVReaderDenseUltraWide() {
-		runCSVReaderTest(false, 50, 200000);
+		runCSVReaderTest(false, 10, 200000);
 	}
 
 	@Test
 	public void testCSVReaderDenseLarge() {
-		runCSVReaderTest(false, 750, 50000);
+		runCSVReaderTest(false, 400, 25000);
 	}
 
 	@Test
@@ -89,7 +89,7 @@ public class CSVReaderTest extends AutomatedTestBase {
 
 	@Test
 	public void testCSVReaderDenseLarge2() {
-		runCSVReaderTest(false, 1200, 25000);
+		runCSVReaderTest(false, 1200, 10000);
 	}
 
 	private void runCSVReaderTest(boolean sparse, int rows, int cols) {

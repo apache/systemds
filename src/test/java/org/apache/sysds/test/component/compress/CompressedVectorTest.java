@@ -29,15 +29,18 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.functionobjects.CM;
+import org.apache.sysds.runtime.functionobjects.SortIndex;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
+import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.component.compress.TestConstants.MatrixTypology;
 import org.apache.sysds.test.component.compress.TestConstants.OverLapping;
 import org.apache.sysds.test.component.compress.TestConstants.SparsityType;
 import org.apache.sysds.test.component.compress.TestConstants.ValueRange;
 import org.apache.sysds.test.component.compress.TestConstants.ValueType;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -117,7 +120,7 @@ public class CompressedVectorTest extends CompressedTestBase {
 			double ret2 = cmb.sortOperations().pickValue(0.95);
 
 			if(_cs.lossy)
-				TestUtils.compareCellValue(ret1, ret2, lossyTolerance, false);
+				Assert.assertEquals(ret1, ret2, lossyTolerance);
 			else
 				assertTrue(bufferedToString, TestUtils.compareScalarBits(ret1, ret2, 0));
 
@@ -136,6 +139,26 @@ public class CompressedVectorTest extends CompressedTestBase {
 
 			MatrixBlock ret1 = mb.sortOperations();
 			MatrixBlock ret2 = cmb.sortOperations();
+
+			compareResultMatrices(ret1, ret2, 1);
+
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException(bufferedToString + "\n" + e.getMessage(), e);
+		}
+	}
+
+	@Test
+	public void testSort() {
+		try {
+			if(!(cmb instanceof CompressedMatrixBlock) || cols != 1)
+				return; // Input was not compressed then just pass test
+
+			// order() builtin: sort the single column ascending (compressed fast-path or decompress fallback).
+			ReorgOperator op = new ReorgOperator(new SortIndex(1, false, false), _k);
+			MatrixBlock ret1 = mb.reorgOperations(op, new MatrixBlock(), 0, 0, 0);
+			MatrixBlock ret2 = cmb.reorgOperations(op, new MatrixBlock(), 0, 0, 0);
 
 			compareResultMatrices(ret1, ret2, 1);
 

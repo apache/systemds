@@ -142,6 +142,12 @@ public abstract class H5Message {
 			case H5Constants.OBJECT_MODIFICATION_TIME_MESSAGE:
 				return new H5ObjectModificationTimeMessage(rootObject, flags, bb);
 
+			case H5Constants.FILTER_PIPELINE_MESSAGE:
+				return new H5FilterPipelineMessage(rootObject, flags, bb);
+
+			case H5Constants.ATTRIBUTE_MESSAGE:
+				return new H5AttributeMessage(rootObject, flags, bb);
+
 			default:
 				throw new H5RuntimeException("Unrecognized message type = " + messageType);
 		}

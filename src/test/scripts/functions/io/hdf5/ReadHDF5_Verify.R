@@ -26,5 +26,19 @@ options(digits=22)
 
 library("rhdf5")
 
-Y = h5read(args[1],args[2],native = TRUE)
-writeMM(as(Y, "CsparseMatrix"), paste(args[3], "Y", sep=""))
+Y = h5read(args[1], args[2], native = TRUE)
+dims = dim(Y)
+
+if(length(dims) == 1) {
+  # convert to a column matrix
+  Y_mat = matrix(Y, ncol = 1)
+} else if(length(dims) > 2) {
+  # flatten everything beyond the first dimension into columns
+  perm = c(1, rev(seq(2, length(dims))))
+  Y_mat = matrix(aperm(Y, perm), nrow = dims[1], ncol = prod(dims[-1]))
+} else {
+  # for 2d , systemds treats it the same
+  Y_mat = Y
+}
+
+writeMM(as(Y_mat, "CsparseMatrix"), paste(args[3], "Y", sep=""))

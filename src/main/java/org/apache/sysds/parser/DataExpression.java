@@ -1019,6 +1019,18 @@ public class DataExpression extends DataIdentifier
 					inferredFormatType = true;
 				}
 			}
+
+			// check if file is HDF5 format (by file extension)
+			if (formatTypeString == null && shouldReadMTD) {
+				formatTypeString = MetaDataAll.checkHasHDF5Format(inputFileName);
+				if (formatTypeString != null) {
+					addVarParam(FORMAT_TYPE, new StringIdentifier(formatTypeString, this));
+					configObj.setFormatTypeString(formatTypeString);
+					inferredFormatType = true;
+					// HDF5 doesn't require metadata file for dimension validation
+					shouldReadMTD = false;
+				}
+			}
 			
 			if (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.MM.toString())){
 				/*
@@ -1166,6 +1178,10 @@ public class DataExpression extends DataIdentifier
 
 			boolean isCOG = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.COG.toString()));
 
+			// Delta tables are self-describing (schema + dimensions discovered from the
+			// transaction log at read time), so dimensions are optional like CSV.
+			boolean isDelta = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.DELTA.toString()));
+
 			dataTypeString = (getVarParam(DATATYPEPARAM) == null) ? null : getVarParam(DATATYPEPARAM).toString();
 			
 			if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(Statement.MATRIX_DATA_TYPE) 
@@ -1190,8 +1206,8 @@ public class DataExpression extends DataIdentifier
 				// initialize size of target data identifier to UNKNOWN
 				getOutput().setDimensions(-1, -1);
 				
-				if (!isCSV && !isLIBSVM && !isHDF5 && !isCOG && ConfigurationManager.getCompilerConfig()
-						.getBool(ConfigType.REJECT_READ_WRITE_UNKNOWNS) //skip check for csv/libsvm format / jmlc api
+				if (!isCSV && !isLIBSVM && !isHDF5 && !isCOG && !isDelta && ConfigurationManager.getCompilerConfig()
+						.getBool(ConfigType.REJECT_READ_WRITE_UNKNOWNS) //skip check for csv/libsvm/delta format / jmlc api
 					&& (getVarParam(READROWPARAM) == null || getVarParam(READCOLPARAM) == null) ) {
 						raiseValidateError("Missing or incomplete dimension information in read statement: "
 								+ mtdFileName, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
@@ -1203,7 +1219,7 @@ public class DataExpression extends DataIdentifier
 					// these are strings that are long values
 					Long dim1 = (getVarParam(READROWPARAM) == null) ? null : Long.valueOf( getVarParam(READROWPARAM).toString());
 					Long dim2 = (getVarParam(READCOLPARAM) == null) ? null : Long.valueOf( getVarParam(READCOLPARAM).toString());
-					if ( !isCSV && (dim1 < 0 || dim2 < 0) && ConfigurationManager
+					if ( !isCSV && !isDelta && (dim1 < 0 || dim2 < 0) && ConfigurationManager
 							.getCompilerConfig().getBool(ConfigType.REJECT_READ_WRITE_UNKNOWNS) ) {
 						raiseValidateError("Invalid dimension information in read statement", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 					}
@@ -1321,7 +1337,8 @@ public class DataExpression extends DataIdentifier
 			}
 			
 			//validate read filename
-			if (getVarParam(FORMAT_TYPE) == null || FileFormat.isTextFormat(getVarParam(FORMAT_TYPE).toString()))
+			if (getVarParam(FORMAT_TYPE) == null || FileFormat.isTextFormat(getVarParam(FORMAT_TYPE).toString())
+				|| checkFormatType(FileFormat.DELTA)) //delta: columnar, no block layout
 				getOutput().setBlocksize(-1);
 			else if (checkFormatType(FileFormat.BINARY, FileFormat.COMPRESSED, FileFormat.UNKNOWN)) {
 				if( getVarParam(ROWBLOCKCOUNTPARAM)!=null )

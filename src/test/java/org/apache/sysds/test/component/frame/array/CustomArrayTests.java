@@ -1899,6 +1899,13 @@ public class CustomArrayTests {
 		assertEquals(Double.POSITIVE_INFINITY, DoubleArray.parseDouble("iff"), 0.0);
 	}
 
+	@Test(expected = NumberFormatException.class)
+	public void parseDoubleThrowsRawNumberFormatException() {
+		// the parse failure must surface as the raw NumberFormatException, not a wrapped DMLRuntimeException,
+		// so callers can distinguish a format error from other runtime failures
+		DoubleArray.parseDouble("not_a_number");
+	}
+
 	@Test(expected = Exception.class)
 	public void setDDCArrayWithDDCArray() {
 		Array<?> c = FrameCompressTestUtils.generateArray(100, 32, 5, ValueType.INT32);
@@ -2851,5 +2858,30 @@ public class CustomArrayTests {
 		for(int i = 0; i < s.size(); i++){
 			assertTrue(Double.isNaN(s.getAsNaNDouble(i)));
 		}
+	}
+
+	@Test
+	public void stringArrayGetDoubleBooleanTokens() {
+		// non-numeric boolean-like tokens fall back to 1/0 (case insensitive, single char or full word)
+		String[] truthy = new String[] {"true", "True", "TRUE", "t", "T"};
+		String[] falsy = new String[] {"false", "False", "FALSE", "f", "F"};
+		Array<String> t = ArrayFactory.create(truthy);
+		for(int i = 0; i < t.size(); i++)
+			assertEquals(1.0, t.getAsDouble(i), 0.0);
+		Array<String> f = ArrayFactory.create(falsy);
+		for(int i = 0; i < f.size(); i++)
+			assertEquals(0.0, f.getAsDouble(i), 0.0);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void stringArrayGetDoubleInvalidThrows() {
+		// a token that is neither numeric nor a boolean word/char must throw
+		ArrayFactory.create(new String[] {"notabool"}).getAsDouble(0);
+	}
+
+	@Test(expected = DMLRuntimeException.class)
+	public void stringArrayGetDoubleAmbiguousLengthThrows() {
+		// length matches neither 1, 4, nor 5 boolean tokens -> reject
+		ArrayFactory.create(new String[] {"tru"}).getAsDouble(0);
 	}
 }

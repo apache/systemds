@@ -26,13 +26,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
-import jdk.incubator.vector.DoubleVector;
-import jdk.incubator.vector.VectorSpecies;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DeltaDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
@@ -43,6 +42,9 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.RangeIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
+import org.apache.sysds.runtime.compress.utils.ACount;
+import org.apache.sysds.runtime.compress.utils.DblArray;
+import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.colgroup.scheme.DDCScheme;
@@ -52,6 +54,7 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
@@ -67,6 +70,9 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.jboss.netty.handler.codec.compression.CompressionException;
 
+import jdk.incubator.vector.DoubleVector;
+import jdk.incubator.vector.VectorSpecies;
+
 /**
  * Class to encapsulate information about a column group that is encoded with dense dictionary encoding (DDC).
  */
@@ -77,7 +83,7 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 
 	static final VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_PREFERRED;
 
-	private ColGroupDDC(IColIndex colIndexes, IDictionary dict, AMapToData data, int[] cachedCounts) {
+	protected ColGroupDDC(IColIndex colIndexes, IDictionary dict, AMapToData data, int[] cachedCounts) {
 		super(colIndexes, dict, cachedCounts);
 		_data = data;
 
@@ -668,7 +674,8 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 		}
 	}
 
-	final void vectMM(double aa, double[] b, double[] c, int endT, int jd, int crl, int cru, int offOut, int k, int vLen, DoubleVector vVec) {
+	final void vectMM(double aa, double[] b, double[] c, int endT, int jd, int crl, int cru, int offOut, int k, int vLen,
+		DoubleVector vVec) {
 		vVec = vVec.broadcast(aa);
 		final int offj = k * jd;
 		final int end = endT + offj;
@@ -1092,6 +1099,21 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	}
 
 	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+		return ColGroupDDC.create(_colIndexes, _dict, _data.removeEmpty(selectV, rOut), null);
+	}
+
+	@Override
+	protected boolean allowShallowIdentityRightMult() {
+		return true;
+	}
+
+	@Override
+	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns) {
+		return ColGroupDDC.create(newColumnIDs, _dict.sliceColumns(selectedColumns, getNumCols()), _data, null);
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
@@ -1100,9 +1122,79 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 		return sb.toString();
 	}
 
-	@Override
-	protected boolean allowShallowIdentityRightMult() {
-		return true;
+	public AColGroup convertToDeltaDDC() {
+		int numCols = _colIndexes.size();
+		int numRows = _data.size();
+
+		DblArrayCountHashMap map = new DblArrayCountHashMap(Math.max(numRows, 64));
+		double[] rowDelta = new double[numCols];
+		double[] prevRow = new double[numCols];
+		DblArray dblArray = new DblArray(rowDelta);
+		int[] rowToDictId = new int[numRows];
+
+		double[] dictVals = _dict.getValues();
+
+		for(int i = 0; i < numRows; i++) {
+			int dictIdx = _data.getIndex(i);
+			int off = dictIdx * numCols;
+			for(int j = 0; j < numCols; j++) {
+				double val = dictVals[off + j];
+				if(i == 0) {
+					rowDelta[j] = val;
+					prevRow[j] = val;
+				} else {
+					rowDelta[j] = val - prevRow[j];
+					prevRow[j] = val;
+				}
+			}
+
+			rowToDictId[i] = map.increment(dblArray);
+		}
+
+		if(map.size() == 0)
+			return new ColGroupEmpty(_colIndexes);
+
+		ACount<DblArray>[] vals = map.extractValues();
+		final int nVals = vals.length;
+		final double[] dictValues = new double[nVals * numCols];
+		final int[] oldIdToNewId = new int[map.size()];
+		int idx = 0;
+		for(int i = 0; i < nVals; i++) {
+			final ACount<DblArray> dac = vals[i];
+			final double[] arrData = dac.key().getData();
+			System.arraycopy(arrData, 0, dictValues, idx, numCols);
+			oldIdToNewId[dac.id] = i;
+			idx += numCols;
+		}
+
+		DeltaDictionary deltaDict = new DeltaDictionary(dictValues, numCols);
+		AMapToData newData = MapToFactory.create(numRows, nVals);
+		for(int i = 0; i < numRows; i++) {
+			newData.set(i, oldIdToNewId[rowToDictId[i]]);
+		}
+		return ColGroupDeltaDDC.create(_colIndexes, deltaDict, newData, null);
 	}
 
+	public AColGroup convertToDDCLZW() {
+		return ColGroupDDCLZW.create(_colIndexes, _dict, _data, null);
+	}
+
+	@Override
+	public AColGroup sort() {
+		// TODO restore support for run length encoding to exploit the runs
+
+		int[] counts = getCounts();
+		// get the sort index
+		int[] r = _dict.sort();
+
+		AMapToData m = MapToFactory.create(_data.size(), counts.length);
+		int off = 0;
+		for(int i = 0; i < counts.length; i++) {
+			for(int j = 0; j < counts[r[i]]; j++) {
+				m.set(off++, r[i]);
+			}
+		}
+
+		return ColGroupDDC.create(_colIndexes, _dict, m, counts);
+	}
 }

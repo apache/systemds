@@ -64,15 +64,16 @@ public class SparseBlockCSC extends SparseBlock {
 		_size = 0;
 	}
 
-	public SparseBlockCSC(int clen, int capacity, int size) {
+	public SparseBlockCSC(int rlen, int clen, int capacity) {
+		_rlen = rlen;
 		_ptr = new int[clen + 1]; //ix0=0
 		_indexes = new int[capacity];
 		_values = new double[capacity];
-		_size = size;
+		_size = 0;
 	}
 
-	public SparseBlockCSC(int[] rowPtr, int[] rowInd, double[] values, int nnz) {
-		_ptr = rowPtr;
+	public SparseBlockCSC(int[] colPtr, int[] rowInd, double[] values, int nnz) {
+		_ptr = colPtr;
 		_indexes = rowInd;
 		_values = values;
 		_size = nnz;
@@ -94,8 +95,9 @@ public class SparseBlockCSC extends SparseBlock {
 
 	private void initialize(SparseBlock sblock) {
 
-		if(_size > Integer.MAX_VALUE)
-			throw new RuntimeException("SparseBlockCSC supports nnz<=Integer.MAX_VALUE but got " + _size);
+		long size = sblock.size();
+		if(size > Integer.MAX_VALUE)
+			throw new RuntimeException("SparseBlockCSC supports nnz<=Integer.MAX_VALUE but got " + size);
 
 		//special case SparseBlockCSC
 		if(sblock instanceof SparseBlockCSC) {
@@ -223,27 +225,6 @@ public class SparseBlockCSC extends SparseBlock {
 
 	}
 
-	public SparseBlockCSC(int cols, int nnz, int[] rowInd) {
-
-		_clenInferred = cols;
-		_ptr = new int[cols + 1];
-		_indexes = Arrays.copyOf(rowInd, nnz);
-		_values = new double[nnz];
-		Arrays.fill(_values, 1);
-		_size = nnz;
-
-		//single-pass construction of col pointers
-		//and copy of row indexes if necessary
-		for(int i = 0, pos = 0; i < cols; i++) {
-			if(rowInd[i] >= 0) {
-				if(cols > nnz)
-					_indexes[pos] = rowInd[i];
-				pos++;
-			}
-			_ptr[i + 1] = pos;
-		}
-	}
-
 	/**
 	 * Initializes the CSC sparse block from an ordered input stream of ultra-sparse ijv triples.
 	 *
@@ -288,7 +269,6 @@ public class SparseBlockCSC extends SparseBlock {
 		// Allocate space if necessary
 		if(_values.length < nnz) {
 			resize(newCapacity(nnz));
-			System.out.println("hallo");
 		}
 		// Read sparse columns, append and update pointers
 		_ptr[0] = 0;
@@ -378,11 +358,35 @@ public class SparseBlockCSC extends SparseBlock {
 	}
 
 	@Override
+	public void compact() {
+		int pos = 0;
+		for(int i=0; i<numCols(); i++) {
+			int apos = posCol(i);
+			int alen = sizeCol(i);
+			_ptr[i] = pos;
+			for(int j=apos; j<apos+alen; j++) {
+				if(_values[j] != 0){
+					_values[pos] = _values[j];
+					_indexes[pos] = _indexes[j];
+					pos++;
+				}
+			}
+		}
+		_ptr[numCols()] = pos;
+		_size = pos;
+	}
+
+	@Override
+	public SparseBlock.Type getSparseBlockType() {
+		return Type.CSC;
+	}
+
+	@Override
 	public int numRows() {
 		if(_rlen > -1)
 			return _rlen;
 		else {
-			int rlen = Arrays.stream(_indexes).max().getAsInt();
+			int rlen = Arrays.stream(_indexes).max().getAsInt()+1;
 			_rlen = rlen;
 			return rlen;
 		}
@@ -550,12 +554,12 @@ public class SparseBlockCSC extends SparseBlock {
 		}
 
 		//2. correct array lengths
-		if(_size != nnz && _ptr.length < clen + 1 && _values.length < nnz && _indexes.length < nnz) {
+		if(_size != nnz || _ptr.length < clen + 1 || _values.length < nnz || _indexes.length < nnz) {
 			throw new RuntimeException("Incorrect array lengths.");
 		}
 
-		//3. non-decreasing row pointers
-		for(int i = 1; i < clen; i++) {
+		//3. non-decreasing col pointers
+		for(int i = 1; i <= clen; i++) {
 			if(_ptr[i - 1] > _ptr[i] && strict)
 				throw new RuntimeException(
 					"Column pointers are decreasing at column: " + i + ", with pointers " + _ptr[i - 1] + " > " +
@@ -569,10 +573,9 @@ public class SparseBlockCSC extends SparseBlock {
 			for(int k = apos + 1; k < apos + alen; k++)
 				if(_indexes[k - 1] >= _indexes[k])
 					throw new RuntimeException(
-						"Wrong sparse column ordering: " + k + " " + _indexes[k - 1] + " " + _indexes[k]);
-			for(int k = apos; k < apos + alen; k++)
-				if(_values[k] == 0)
-					throw new RuntimeException("Wrong sparse column: zero at " + k + " at row index " + _indexes[k]);
+						"Wrong sparse column ordering, at column=" + i + ", pos=" + k + " with row indexes " +
+							_indexes[k - 1] + ">=" + _indexes[k]
+					);
 		}
 
 		//5. non-existing zero values
@@ -581,11 +584,13 @@ public class SparseBlockCSC extends SparseBlock {
 				throw new RuntimeException(
 					"The values array should not contain zeros." + " The " + i + "th value is " + _values[i]);
 			}
+			if(_indexes[i] < 0)
+				throw new RuntimeException("Invalid index at pos=" + i);
 		}
 
 		//6. a capacity that is no larger than nnz times resize factor.
 		int capacity = _values.length;
-		if(capacity > nnz * RESIZE_FACTOR1) {
+		if(capacity > INIT_CAPACITY && capacity > nnz * RESIZE_FACTOR1) {
 			throw new RuntimeException(
 				"Capacity is larger than the nnz times a resize factor." + " Current size: " + capacity +
 					", while Expected size:" + nnz * RESIZE_FACTOR1);
@@ -938,7 +943,7 @@ public class SparseBlockCSC extends SparseBlock {
 		int len = sizeCol(c);
 		int end = internPosFIndexGTECol(ru, c);
 		if(end < 0) //delete all remaining
-			end = start + len;
+			end = posCol(c) + len;
 
 		//overlapping array copy (shift rhs values left)
 		System.arraycopy(_indexes, end, _indexes, start, _size - end);
@@ -1059,7 +1064,7 @@ public class SparseBlockCSC extends SparseBlock {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("SparseBlockCSR: clen=");
+		sb.append("SparseBlockCSC: clen=");
 		sb.append(numCols());
 		sb.append(", nnz=");
 		sb.append(size());

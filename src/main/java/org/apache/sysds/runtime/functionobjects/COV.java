@@ -19,7 +19,7 @@
 
 package org.apache.sysds.runtime.functionobjects;
 
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 
@@ -62,7 +62,7 @@ public class COV extends ValueFunction
 	@Override
 	public Data execute(Data in1, double u, double v, double w2) 
 	{
-		CM_COV_Object cov1=(CM_COV_Object) in1;
+		CmCovObject cov1=(CmCovObject) in1;
 		if(cov1.isCOVAllZeros())
 		{
 			cov1.w=w2;
@@ -94,7 +94,7 @@ public class COV extends ValueFunction
 	@Override
 	public Data execute(Data in1, double u, double v) 
 	{
-		CM_COV_Object cov1=(CM_COV_Object) in1;
+		CmCovObject cov1=(CmCovObject) in1;
 		if(cov1.isCOVAllZeros())
 		{
 			cov1.w=1L;
@@ -118,8 +118,8 @@ public class COV extends ValueFunction
 	@Override
 	public Data execute(Data in1, Data in2)
 	{
-		CM_COV_Object cov1=(CM_COV_Object) in1;
-		CM_COV_Object cov2=(CM_COV_Object) in2;
+		CmCovObject cov1=(CmCovObject) in1;
+		CmCovObject cov2=(CmCovObject) in2;
 		if(cov1.isCOVAllZeros())
 		{
 			cov1.w=cov2.w;

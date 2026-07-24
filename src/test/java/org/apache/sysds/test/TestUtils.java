@@ -2941,6 +2941,25 @@ public class TestUtils {
 		}
 	}
 
+
+	/**
+	 * Write scalar to file
+	 * 
+	 * @param file  File to write to
+	 * @param value Value to write
+	 */
+	public static void writeTestScalar(String file, String value) {
+		try {
+			DataOutputStream out = new DataOutputStream(new FileOutputStream(file));
+			try(PrintWriter pw = new PrintWriter(out)) {
+				pw.println(value);
+			}
+		}
+		catch(IOException e) {
+			fail("unable to write test scalar (" + file + "): " + e.getMessage());
+		}
+	}
+
 	/**
 	 * Write scalar to file
 	 * 
@@ -3489,15 +3508,23 @@ public class TestUtils {
 		}
 	}
 
+	/** Upper bound (ms) on how long {@link #shutdownThread(Thread)} waits for a worker to stop. */
+	private static final long THREAD_SHUTDOWN_JOIN_MS = 30_000;
+
 	public static void shutdownThread(Thread t) {
 		// kill the worker
 		if( t != null ) {
 			t.interrupt();
 			try {
-				t.join();
+				// Bounded join: workers are daemon threads, so even if one ignores the interrupt
+				// we must not block cleanup (and the JVM) indefinitely waiting for it.
+				t.join(THREAD_SHUTDOWN_JOIN_MS);
+				if( t.isAlive() )
+					LOG.warn("Federated worker thread " + t.getName()
+						+ " did not stop within " + THREAD_SHUTDOWN_JOIN_MS + "ms; leaving it as a daemon.");
 			}
 			catch (InterruptedException e) {
-				e.printStackTrace();
+				Thread.currentThread().interrupt();
 			}
 		}
 	}
@@ -3514,7 +3541,8 @@ public class TestUtils {
 					forciblyDestroyed.waitFor(); // Wait until it's definitely terminated
 				}
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				LOG.warn("Interrupted while shutting down federated worker process", e);
+				Thread.currentThread().interrupt();
 			}
 		}
 	}
@@ -3989,5 +4017,11 @@ public class TestUtils {
 		public int numBlocks() {
 			return 2;
 		}
+	}
+
+	public static void compareTensorValues(MatrixBlock actual, MatrixBlock expected, double epsilon) {
+		double[] a = actual.getDenseBlockValues();
+		double[] e = expected.getDenseBlockValues();
+		compareMatrices(e, a, epsilon);
 	}
 }

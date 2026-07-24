@@ -35,6 +35,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   doc1:
     runs-on: ${{ matrix.os }}
@@ -47,7 +51,7 @@ jobs:
     name: Java
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v7
 
     - name: Setup Java ${{ matrix.java }} ${{ matrix.javadist }}
       uses: actions/setup-java@v5
@@ -64,7 +68,7 @@ jobs:
     name: Python
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v7
 
     - name: Setup Python
       uses: actions/setup-python@v6
@@ -73,7 +77,7 @@ jobs:
         architecture: 'x64'
 
     - name: Cache Pip Dependencies
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-docs-${{ hashFiles('src/main/python/docs/requires-docs.txt') }}

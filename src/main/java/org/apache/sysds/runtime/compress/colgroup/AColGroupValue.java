@@ -26,7 +26,7 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
 
 public abstract class AColGroupValue extends ADictBasedColGroup {
@@ -59,8 +59,6 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 	 * produce an overhead in cases where the count is calculated, but the overhead will be limited to number of distinct
 	 * tuples in the dictionary.
 	 * 
-	 * The returned counts always contains the number of zero tuples as well if there are some contained, even if they
-	 * are not materialized.
 	 *
 	 * @return The count of each value in the MatrixBlock.
 	 */
@@ -189,7 +187,7 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 	}
 
 	@Override
-	public CM_COV_Object centralMoment(CMOperator op, int nRows) {
+	public CmCovObject centralMoment(CMOperator op, int nRows) {
 		return _dict.centralMoment(op.fn, getCounts(), nRows);
 	}
 
@@ -211,6 +209,7 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 	public void clear() {
 		counts = null;
 	}
+
 
 	@Override
 	public String toString() {

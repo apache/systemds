@@ -173,7 +173,9 @@ public class ReorgOp extends MultiThreadedHop
 				for (int i = 0; i < 2; i++)
 					linputs[i] = getInput().get(i).constructLops();
 
-				Transform transform1 = new Transform(linputs, _op, getDataType(), getValueType(), et, 1);
+				Transform transform1 = new Transform(
+						linputs, _op, getDataType(), getValueType(), et,
+						OptimizerUtils.getConstrainedNumThreads(_maxNumThreads));
 
 				setOutputDimensions(transform1);
 				setLineNumbers(transform1);

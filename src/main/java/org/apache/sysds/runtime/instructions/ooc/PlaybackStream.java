@@ -20,20 +20,36 @@
 package org.apache.sysds.runtime.instructions.ooc;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.ooc.primitives.OOCPrimitive;
 
-public class PlaybackStream implements OOCStream<IndexedMatrixValue>, OOCStreamable<IndexedMatrixValue> {
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+
+public class PlaybackStream implements OOCStream<IndexedMatrixValue> {
 	private final CachingStream _streamCache;
-	private int _streamIdx;
+	private final AtomicInteger _streamIdx;
+	private final AtomicBoolean _subscriberSet;
+	private QueueCallback<IndexedMatrixValue> _lastDequeue;
 
 	public PlaybackStream(CachingStream streamCache) {
 		this._streamCache = streamCache;
-		this._streamIdx = 0;
+		this._streamIdx = new AtomicInteger(0);
+		this._subscriberSet = new AtomicBoolean(false);
+		streamCache.incrSubscriberCount(1);
 	}
 
 	@Override
 	public void enqueue(IndexedMatrixValue t) {
+		throw new DMLRuntimeException("Cannot enqueue to a playback stream");
+	}
+
+	@Override
+	public void enqueue(QueueCallback<IndexedMatrixValue> callback) {
 		throw new DMLRuntimeException("Cannot enqueue to a playback stream");
 	}
 
@@ -43,17 +59,32 @@ public class PlaybackStream implements OOCStream<IndexedMatrixValue>, OOCStreama
 	}
 
 	@Override
-	public LocalTaskQueue<IndexedMatrixValue> toLocalTaskQueue() {
-		final SubscribableTaskQueue<IndexedMatrixValue> q = new SubscribableTaskQueue<>();
-		setSubscriber(() -> q.enqueue(dequeue()));
-		return q;
+	public synchronized IndexedMatrixValue dequeue() {
+		if(_subscriberSet.get())
+			throw new IllegalStateException("Cannot dequeue from a playback stream if a subscriber has been set");
+
+		try {
+			if(_lastDequeue != null)
+				_lastDequeue.close();
+			_lastDequeue = _streamCache.get(_streamIdx.getAndIncrement()).get();
+			return _lastDequeue.get();
+		} catch (InterruptedException | ExecutionException e) {
+			throw new DMLRuntimeException(e);
+		}
 	}
 
 	@Override
-	public synchronized IndexedMatrixValue dequeue() {
+	public synchronized QueueCallback<IndexedMatrixValue> dequeueCB() {
+		if(_subscriberSet.get())
+			throw new IllegalStateException("Cannot dequeue from a playback stream if a subscriber has been set");
+
 		try {
-			return _streamCache.get(_streamIdx++);
-		} catch (InterruptedException e) {
+			if(_lastDequeue != null)
+				_lastDequeue.close();
+			_lastDequeue = _streamCache.get(_streamIdx.getAndIncrement()).get();
+			return _lastDequeue;
+		}
+		catch(InterruptedException | ExecutionException e) {
 			throw new DMLRuntimeException(e);
 		}
 	}
@@ -74,8 +105,26 @@ public class PlaybackStream implements OOCStream<IndexedMatrixValue>, OOCStreama
 	}
 
 	@Override
-	public void setSubscriber(Runnable subscriber) {
-		_streamCache.setSubscriber(subscriber);
+	public DataCharacteristics getDataCharacteristics() {
+		return _streamCache.getDataCharacteristics();
+	}
+
+	@Override
+	public CacheableData<?> getData() {
+		return _streamCache.getData();
+	}
+
+	@Override
+	public void setData(CacheableData<?> data) {
+		_streamCache.setData(data);
+	}
+
+	@Override
+	public void setSubscriber(Consumer<QueueCallback<IndexedMatrixValue>> subscriber) {
+		if(!_subscriberSet.compareAndSet(false, true))
+			throw new IllegalArgumentException("Subscriber cannot be set multiple times");
+
+		_streamCache.setSubscriber(subscriber, false);
 	}
 
 	@Override
@@ -91,5 +140,10 @@ public class PlaybackStream implements OOCStream<IndexedMatrixValue>, OOCStreama
 	@Override
 	public CachingStream getStreamCache() {
 		return _streamCache;
+	}
+
+	@Override
+	public OOCPrimitive getPrimitive() {
+		return _streamCache.getPrimitive();
 	}
 }

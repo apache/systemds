@@ -46,3 +46,5 @@ To execute the Federated Tests, use:
 Federated experiments are a little different from the rest, since they require some setup in form of federated workers.
 
 See more details in the [script](federated/runFedTest.sh)
+
+https://github.com/nttcslab/byol-a/blob/master/pretrained_weights/AudioNTT2020-BYOLA-64x96d512.pth

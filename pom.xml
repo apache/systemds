@@ -25,7 +25,7 @@
 		<version>24</version>
 	</parent>
 	<groupId>org.apache.systemds</groupId>
-	<version>3.4.0-SNAPSHOT</version>
+	<version>3.5.0-SNAPSHOT</version>
 	<artifactId>systemds</artifactId>
 	<packaging>jar</packaging>
 	<name>Apache SystemDS</name>
@@ -42,9 +42,12 @@
 		<hadoop.version>3.3.6</hadoop.version>
 		<antlr.version>4.8</antlr.version>
 		<protobuf.version>3.23.4</protobuf.version>
-		<spark.version>3.5.0</spark.version>
+		<spark.version>3.5.7</spark.version>
+		<jackson.version>2.15.4</jackson.version>
 		<scala.version>2.12.18</scala.version>
 		<scala.binary.version>2.12</scala.binary.version>
+		<delta-kernel.version>3.3.2</delta-kernel.version>
+		<parquet.version>1.13.1</parquet.version>
 		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
 		<project.build.outputTimestamp>1</project.build.outputTimestamp>
 		<enableGPU>false</enableGPU>
@@ -53,7 +56,8 @@
 		<slf4j.version>2.0.11</slf4j.version>
 		<log4j.version>2.22.1</log4j.version>
 		<maven-clean-plugin.version>3.2.0</maven-clean-plugin.version>
-		<maven-surefire-plugin.version>3.0.0</maven-surefire-plugin.version>
+		<maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
+        <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
 		<maven-remote-resources-plugin.version>3.0.0</maven-remote-resources-plugin.version>
 		<maven-javadoc-plugin.version>3.5.0</maven-javadoc-plugin.version>
 		<maven-javadoc-plugin.version2>3.2.0</maven-javadoc-plugin.version2>
@@ -75,8 +79,14 @@
 		<test-parallel>classes</test-parallel>
 		<test-threadCount>2</test-threadCount>
 		<test-forkCount>1C</test-forkCount>
+		<!-- Per-fork timeout in seconds; kills hung forks before the 30 min CI cap.
+		     Kept well below the cap minus the time spent on earlier forks so the
+		     timeout actually fires (and names the hung test) instead of letting CI
+		     cancel the whole job first. -->
+		<test-forkedProcessTimeout>600</test-forkedProcessTimeout>
 		<rerun.failing.tests.count>2</rerun.failing.tests.count>
 		<jacoco.skip>false</jacoco.skip>
+		<checkstyle.skip>true</checkstyle.skip>
 		<doc.skip>false</doc.skip>
 		<jacoco.include>**</jacoco.include>
 		<automatedtestbase.outputbuffering>false</automatedtestbase.outputbuffering>
@@ -365,7 +375,34 @@
 			</plugin>
 
 
-			<plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${maven-checkstyle-plugin.version}</version>
+
+                <executions>
+                    <execution>
+                        <id>checkstyle</id>
+                        <!-- runs on mvn test -->
+                        <phase>test</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <configuration>
+                    <configLocation>dev/checkstyle/checkstyle.xml</configLocation>
+                    <skip>${checkstyle.skip}</skip>
+                    <failOnViolation>true</failOnViolation>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                    <outputFile>${project.build.directory}/checkstyle-result.xml</outputFile>
+                    <outputFileFormat>xml</outputFileFormat>
+                    <consoleOutput>true</consoleOutput>
+                </configuration>
+            </plugin>
+
+            <plugin>
 				<!-- unit tests -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
@@ -377,6 +414,12 @@
 					<!-- 1C means the number of threads times 1 possible maximum forks for testing-->
 					<forkCount>${test-forkCount}</forkCount>
 					<reuseForks>false</reuseForks>
+					<!-- Kill hung test forks before CI cancels the whole job. -->
+					<forkedProcessTimeoutInSeconds>${test-forkedProcessTimeout}</forkedProcessTimeoutInSeconds>
+					<!-- Force-kill forks that still have live threads after the test class completes. -->
+					<forkedProcessExitTimeoutInSeconds>30</forkedProcessExitTimeoutInSeconds>
+					<!-- Let forks detect a dead parent and self-terminate. -->
+					<enableProcessChecker>native</enableProcessChecker>
 					<!-- <reportFormat>brief</reportFormat> -->
 					<trimStackTrace>true</trimStackTrace>
 					<rerunFailingTestsCount>${rerun.failing.tests.count}</rerunFailingTestsCount>
@@ -927,6 +970,48 @@
 	</profiles>
 
 	<dependencies>
+		<!-- Delta Lake native (Spark-free) read/write via Delta Kernel -->
+		<dependency>
+			<groupId>io.delta</groupId>
+			<artifactId>delta-kernel-api</artifactId>
+			<version>${delta-kernel.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.delta</groupId>
+			<artifactId>delta-kernel-defaults</artifactId>
+			<version>${delta-kernel.version}</version>
+		</dependency>
+		<!-- Delta Kernel needs parquet >= 1.13 (the version Spark 3.5.x ships);
+		     declared directly via ${parquet.version} so Maven's nearest-wins
+		     mediation does not downgrade it to an older transitive version. The
+		     jackson trio Delta Kernel relies on is pinned globally via
+		     ${jackson.version}. -->
+		<dependency>
+			<groupId>org.apache.parquet</groupId>
+			<artifactId>parquet-hadoop</artifactId>
+			<version>${parquet.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.parquet</groupId>
+			<artifactId>parquet-column</artifactId>
+			<version>${parquet.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.parquet</groupId>
+			<artifactId>parquet-common</artifactId>
+			<version>${parquet.version}</version>
+		</dependency>
+		<!-- Delta's Spark connector, test-only: an independent (reference) Delta engine
+		     used purely to cross-check that tables our Delta Kernel writer produces are
+		     readable by Spark/Delta, and that tables Spark/Delta writes (including
+		     deletion vectors and multiple commits) are readable by our reader. Delta
+		     3.3.x targets Spark 3.5.x, matching ${spark.version}. -->
+		<dependency>
+			<groupId>io.delta</groupId>
+			<artifactId>delta-spark_${scala.binary.version}</artifactId>
+			<version>${delta-kernel.version}</version>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcuda</artifactId>
@@ -1395,8 +1480,20 @@
 
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>${jackson.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.15.2</version>
+			<version>${jackson.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
+			<version>${jackson.version}</version>
 		</dependency>
 
 		<dependency>

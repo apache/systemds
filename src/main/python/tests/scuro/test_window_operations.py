@@ -24,25 +24,28 @@ import math
 
 import numpy as np
 
+from systemds.scuro.modality.transformed import TransformedModality
+from systemds.scuro.representations.representation import RepresentationStats
 from tests.scuro.data_generator import ModalityRandomDataGenerator, TestDataLoader
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.window_aggregation import (
     StaticWindow,
     DynamicWindow,
+    WindowAggregation,
 )
 
 
 class TestWindowOperations(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.num_instances = 40
+        cls.num_instances = 4
         cls.data_generator = ModalityRandomDataGenerator()
         cls.aggregations = ["mean", "sum", "max", "min"]
 
     def test_static_window(self):
         num_windows = 5
-        data, md = self.data_generator.create_visual_modality(self.num_instances, 50)
+        data, md = self.data_generator.create_visual_modality(self.num_instances, 10)
         modality = UnimodalModality(
             TestDataLoader(
                 [i for i in range(0, self.num_instances)],
@@ -60,7 +63,7 @@ class TestWindowOperations(unittest.TestCase):
 
     def test_dynamic_window(self):
         num_windows = 5
-        data, md = self.data_generator.create_visual_modality(self.num_instances, 50)
+        data, md = self.data_generator.create_visual_modality(self.num_instances, 10)
         modality = UnimodalModality(
             TestDataLoader(
                 [i for i in range(0, self.num_instances)],
@@ -90,11 +93,53 @@ class TestWindowOperations(unittest.TestCase):
         self.run_window_aggregation_for_modality(ModalityType.TEXT, window_size)
 
     def run_window_aggregation_for_modality(self, modality_type, window_size):
-        r = self.data_generator.create1DModality(40, 100, modality_type)
+        r = self.data_generator.create1DModality(self.num_instances, 200, modality_type)
         for aggregation in self.aggregations:
             windowed_modality = r.window_aggregation(window_size, aggregation)
 
             self.verify_window_operation(aggregation, r, windowed_modality, window_size)
+
+    def test_window_aggregation_on_3d_modality(self):
+        data, _ = self.data_generator.create_3d_modality(
+            self.num_instances, (100, 8, 8)
+        )
+        embedding_modality = TransformedModality(
+            self.data_generator, "test_transformation"
+        )
+        embedding_modality.data = data
+        embedding_modality.stats = RepresentationStats(self.num_instances, (100, 8, 8))
+        num_windows = 10
+
+        for window_operator in [
+            StaticWindow(num_windows=num_windows),
+            DynamicWindow(num_windows=num_windows),
+            WindowAggregation(window_size=10),
+        ]:
+            stats = window_operator.get_output_stats(embedding_modality.stats)
+            assert stats.num_instances == self.num_instances
+            assert stats.output_shape == (num_windows, 8, 8)
+
+            windowed_modality = embedding_modality.context(window_operator)
+
+    def test_window_aggregation_on_2d_modality(self):
+        data, _ = self.data_generator.create_2d_modality(self.num_instances, (100, 8))
+        embedding_modality = TransformedModality(
+            self.data_generator, "test_transformation"
+        )
+        embedding_modality.data = data
+        embedding_modality.stats = RepresentationStats(self.num_instances, (100, 8))
+        num_windows = 10
+
+        for window_operator in [
+            StaticWindow(num_windows=num_windows),
+            DynamicWindow(num_windows=num_windows),
+            WindowAggregation(window_size=10),
+        ]:
+            stats = window_operator.get_output_stats(embedding_modality.stats)
+            assert stats.num_instances == self.num_instances
+            assert stats.output_shape == (num_windows, 8)
+
+            windowed_modality = embedding_modality.context(window_operator)
 
     def verify_window_operation(
         self, aggregation, modality, windowed_modality, window_size

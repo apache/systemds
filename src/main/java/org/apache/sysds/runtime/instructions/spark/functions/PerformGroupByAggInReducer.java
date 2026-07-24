@@ -23,7 +23,7 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.functionobjects.CM;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.data.WeightedCell;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
@@ -44,7 +44,7 @@ public class PerformGroupByAggInReducer implements Function<Iterable<WeightedCel
 		throws Exception 
 	{
 		WeightedCell outCell = new WeightedCell();
-		CM_COV_Object cmObj = new CM_COV_Object(); 
+		CmCovObject cmObj = new CmCovObject(); 
 		if(op instanceof CMOperator) //everything except sum
 		{
 			cmObj.reset();

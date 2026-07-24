@@ -30,9 +30,9 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
-import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
+import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
@@ -210,7 +210,7 @@ public class TensorObject extends CacheableData<TensorBlock> {
 	
 
 	@Override
-	protected TensorBlock readBlobFromStream(LocalTaskQueue<IndexedMatrixValue> stream) throws IOException {
+	protected TensorBlock readBlobFromStream(OOCStream<IndexedMatrixValue> stream) throws IOException {
 		// TODO Auto-generated method stub
 		return null;
 	}

@@ -100,15 +100,36 @@ public class RollTest {
 	/**
 	 * The actual test method that performs the roll operation on both
 	 * sparse and dense matrices and compares the results.
+	 * This test will execute the single threaded operation
 	 */
 	@Test
-	public void test() {
+	public void testSingleThreadedOperation() {
+		int numThreads = 1;
+		compareDenseAndSparseRepresentation(numThreads);
+	}
+
+
+	/**
+	 * The actual test method that performs the roll operation on both
+	 * sparse and dense matrices and compares the results.
+	 * This test will execute the multithreaded operation
+	 */
+	@Test
+	public void testMultiThreadedOperation() {
+		// number of threads should be at least two to invoke multithreaded operation
+		int cores = Runtime.getRuntime().availableProcessors();
+		int numThreads = Math.max(2, cores);
+
+		compareDenseAndSparseRepresentation(numThreads);
+	}
+
+	private void compareDenseAndSparseRepresentation(int numThreads) {
 		try {
 			IndexFunction op = new RollIndex(shift);
 			MatrixBlock outputDense = inputDense.reorgOperations(
-					new ReorgOperator(op), new MatrixBlock(), 0, 0, 0);
+					new ReorgOperator(op, numThreads), new MatrixBlock(), 0, 0, 0);
 			MatrixBlock outputSparse = inputSparse.reorgOperations(
-					new ReorgOperator(op), new MatrixBlock(), 0, 0, 0);
+					new ReorgOperator(op, numThreads), new MatrixBlock(), 0, 0, 0);
 			outputSparse.sparseToDense();
 
 			// Compare the dense representations of both outputs

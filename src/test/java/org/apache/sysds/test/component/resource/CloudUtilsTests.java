@@ -30,9 +30,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 
-import static org.apache.sysds.resource.CloudUtils.*;
-import static org.apache.sysds.test.component.resource.ResourceTestUtils.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @net.jcip.annotations.NotThreadSafe
 public class CloudUtilsTests {
@@ -132,7 +133,7 @@ public class CloudUtilsTests {
 
 		for (String region : regions) {
 			try {
-				double[] prices = CloudUtils.loadRegionalPrices(DEFAULT_REGIONAL_PRICE_TABLE, region);
+				double[] prices = CloudUtils.loadRegionalPrices(ResourceTestUtils.DEFAULT_REGIONAL_PRICE_TABLE, region);
 				double feeRatio = prices[0];
 				double ebsPrice = prices[1];
 				Assert.assertTrue(feeRatio >= 0.15 && feeRatio <= 0.25);
@@ -148,18 +149,20 @@ public class CloudUtilsTests {
 		// test the proper loading of the table
 		File file = ResourceTestUtils.getMinimalInstanceInfoTableFile();
 
-		HashMap<String, CloudInstance> actual = CloudUtils.loadInstanceInfoTable(file.getPath(), TEST_FEE_RATIO, TEST_STORAGE_PRICE);
-		HashMap<String, CloudInstance> expected = getSimpleCloudInstanceMap();
+		HashMap<String, CloudInstance> actual = CloudUtils.loadInstanceInfoTable(file.getPath(),
+			ResourceTestUtils.TEST_FEE_RATIO, ResourceTestUtils.TEST_STORAGE_PRICE);
+		HashMap<String, CloudInstance> expected = ResourceTestUtils.getSimpleCloudInstanceMap();
 
 		for (String instanceName: expected.keySet()) {
-			assertEqualsCloudInstances(expected.get(instanceName), actual.get(instanceName));
+			ResourceTestUtils.assertEqualsCloudInstances(expected.get(instanceName), actual.get(instanceName));
 		}
 	}
 
 	@Test
 	public void loadDefaultInstanceInfoTableFileTest() throws IOException {
 		// test that the provided default file is accounted as valid by the function for loading
-		HashMap<String, CloudInstance> instanceMap = CloudUtils.loadInstanceInfoTable(DEFAULT_INSTANCE_INFO_TABLE, TEST_FEE_RATIO, TEST_STORAGE_PRICE);
+		HashMap<String, CloudInstance> instanceMap = CloudUtils.loadInstanceInfoTable(
+			ResourceTestUtils.DEFAULT_INSTANCE_INFO_TABLE, ResourceTestUtils.TEST_FEE_RATIO, ResourceTestUtils.TEST_STORAGE_PRICE);
 		// test if all instances from 'M', 'C' or 'R' families
 		// and if the minimum size is xlarge as required for EMR
 		for (String instanceType : instanceMap.keySet()) {
@@ -170,7 +173,7 @@ public class CloudUtilsTests {
 
 	@Test
 	public void getEffectiveExecutorResourcesGeneralCaseTest() {
-		long inputMemory = GBtoBytes(16);
+		long inputMemory = CloudUtils.GBtoBytes(16);
 		int inputCores = 4;
 		int inputNumExecutors = 4;
 
@@ -181,7 +184,7 @@ public class CloudUtilsTests {
 		int expectedAmCores = 1;
 		int expectedExecutorCores = inputCores - expectedAmCores;
 
-		int[] result = getEffectiveExecutorResources(inputMemory, inputCores, inputNumExecutors);
+		int[] result = CloudUtils.getEffectiveExecutorResources(inputMemory, inputCores, inputNumExecutors);
 		int resultExecutorMemoryMB = result[0];
 		int resultExecutorCores = result[1];
 		int resultNumExecutors = result[2];
@@ -198,13 +201,13 @@ public class CloudUtilsTests {
 	@Test
 	public void getEffectiveExecutorResourcesEdgeCaseTest() {
 		// edge case -> large cluster with small machines -> dedicated machine for the AM
-		long inputMemory = GBtoBytes(8);
+		long inputMemory = CloudUtils.GBtoBytes(8);
 		int inputCores = 4;
 		int inputNumExecutors = 48;
 
 		int expectedContainerMemoryMB = (int) (((0.75 * inputMemory / (1024 * 1024))) / 1.1);
 
-		int[] result = getEffectiveExecutorResources(inputMemory, inputCores, inputNumExecutors);
+		int[] result = CloudUtils.getEffectiveExecutorResources(inputMemory, inputCores, inputNumExecutors);
 		int resultExecutorMemoryMB = result[0];
 		int resultExecutorCores = result[1];
 		int resultNumExecutors = result[2];

@@ -49,6 +49,7 @@ import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
@@ -59,7 +60,7 @@ import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
@@ -468,6 +469,24 @@ public class ColGroupNegativeTests {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException("Unimplemented method 'splitReshapePushDown'");
 		}
+
+		@Override
+		public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'removeEmptyRows'");
+		}
+
+		@Override
+		protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'removeEmptyColsSubset'");
+		}
+
+		@Override
+		public AColGroup sort() {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'sort'");
+		}
 	}
 
 	private class FakeDictBasedColGroup extends ADictBasedColGroup {
@@ -634,7 +653,7 @@ public class ColGroupNegativeTests {
 		}
 
 		@Override
-		public CM_COV_Object centralMoment(CMOperator op, int nRows) {
+		public CmCovObject centralMoment(CMOperator op, int nRows) {
 			return null;
 		}
 
@@ -776,6 +795,24 @@ public class ColGroupNegativeTests {
 			throws Exception {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException("Unimplemented method 'splitReshapePushDown'");
+		}
+
+		@Override
+		public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'removeEmptyRows'");
+		}
+
+		@Override
+		protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'removeEmptyColsSubset'");
+		}
+
+		@Override
+		public AColGroup sort() {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'sort'");
 		}
 	}
 }

@@ -111,7 +111,7 @@ public class LibMatrixReorg {
 	}
 	
 	/////////////////////////
-	// public interface    //
+	// public interface	//
 	/////////////////////////
 
 	public static boolean isSupportedReorgOperator( ReorgOperator op ) {
@@ -134,6 +134,8 @@ public class LibMatrixReorg {
 					return rev(in, out);
 			case ROLL:
 				RollIndex rix = (RollIndex) op.fn;
+				if(op.getNumThreads() > 1)
+					return roll(in, out, rix.getShift(), op.getNumThreads());
 				return roll(in, out, rix.getShift());
 			case DIAG:
 				return diag(in, out);
@@ -514,6 +516,124 @@ public class LibMatrixReorg {
 		return out;
 	}
 
+	public static MatrixBlock roll(MatrixBlock input, MatrixBlock output, int shift, int numThreads) {
+
+		final int numRows = input.rlen;
+		final int numCols = input.clen;
+		final boolean isSparse = input.sparse;
+
+		// sparse-safe operation
+		if(input.isEmptyBlock(false))
+			return output;
+
+		// special case: row vector
+		if(numRows == 1) {
+			output.copy(input);
+			return output;
+		}
+
+		if(numThreads <= 1 || input.getLength() < PAR_NUMCELL_THRESHOLD) {
+			return roll(input, output, shift); // fallback to single-threaded
+		}
+
+		final int normalizedShift = getNormalizedShiftForRoll(shift, numRows);
+
+		output.reset(numRows, numCols, isSparse);
+		output.nonZeros = input.nonZeros;
+
+		if(isSparse) {
+			output.allocateSparseRowsBlock(false);
+		}
+		else {
+			output.allocateDenseBlock(false);
+		}
+
+		//TODO experiment with more tasks per thread for better load balance
+		//TODO call common kernel from both single- and multi-threaded execution
+		
+		ExecutorService threadPool = CommonThreadPool.get(numThreads);
+		try {
+			final int rowsPerThread = (int) Math.ceil((double) numRows / numThreads);
+			List<Future<?>> tasks = new ArrayList<>();
+
+			for(int threadIndex = 0; threadIndex < numThreads; threadIndex++) {
+
+				final int startRow = threadIndex * rowsPerThread;
+				final int endRow = Math.min((threadIndex + 1) * rowsPerThread, numRows);
+
+				tasks.add(threadPool.submit(() -> {
+					if(isSparse)
+						rollSparseBlock(input, output, normalizedShift, startRow, endRow);
+					else
+						rollDenseBlock(input, output, normalizedShift, startRow, endRow);
+				}));
+			}
+
+			for(Future<?> task : tasks)
+				task.get();
+
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+		finally {
+			threadPool.shutdown();
+		}
+
+		return output;
+	}
+
+	private static int getNormalizedShiftForRoll(int shift, int numRows) {
+		shift = shift % numRows;
+		if(shift < 0)
+			shift += numRows;
+
+		return shift;
+	}
+
+	private static void rollDenseBlock(MatrixBlock input, MatrixBlock output, 
+			int shift, int startRow, int endRow) 
+	{
+		DenseBlock inputBlock = input.getDenseBlock();
+		DenseBlock outputBlock = output.getDenseBlock();
+		final int numRows = input.rlen;
+		final int numCols = input.clen;
+
+		for(int targetRow = startRow; targetRow < endRow; targetRow++) {
+			int sourceRow = targetRow - shift;
+			if(sourceRow < 0)
+				sourceRow += numRows;
+
+			System.arraycopy(inputBlock.values(sourceRow), inputBlock.pos(sourceRow), outputBlock.values(targetRow),
+				outputBlock.pos(targetRow), numCols);
+		}
+	}
+
+	private static void rollSparseBlock(MatrixBlock input, MatrixBlock output, 
+		int shift, int startRow, int endRow) 
+	{
+		SparseBlock inputBlock = input.getSparseBlock();
+		SparseBlock outputBlock = output.getSparseBlock();
+		final int numRows = input.rlen;
+
+		for(int targetRow = startRow; targetRow < endRow; targetRow++) {
+			int sourceRow = targetRow - shift;
+			if(sourceRow < 0)
+				sourceRow += numRows;
+
+			if(!inputBlock.isEmpty(sourceRow)) {
+				int rowStart = inputBlock.pos(sourceRow);
+				int rowEnd = rowStart + inputBlock.size(sourceRow);
+				int[] colIndexes = inputBlock.indexes(sourceRow);
+				double[] values = inputBlock.values(sourceRow);
+
+				for(int k = rowStart; k < rowEnd; k++) {
+					outputBlock.set(targetRow, colIndexes[k], values[k]);
+				}
+			}
+		}
+	}
+
 	public static void roll(IndexedMatrixValue in, long rlen, int blen, int shift, ArrayList<IndexedMatrixValue> out) {
 		MatrixIndexes inMtxIdx = in.getIndexes();
 		MatrixBlock inMtxBlk = (MatrixBlock) in.getValue();
@@ -715,9 +835,9 @@ public class LibMatrixReorg {
 	 * default, while R uses always a column-wise read, rowwise specifying the write order and column-wise being the
 	 * default.
 	 * 
-	 * @param in      input matrix
-	 * @param rows    number of rows
-	 * @param cols    number of columns
+	 * @param in	  input matrix
+	 * @param rows	number of rows
+	 * @param cols	number of columns
 	 * @param rowwise if true, reshape by row
 	 * @return output matrix
 	 */
@@ -732,10 +852,10 @@ public class LibMatrixReorg {
 	 * default, while R uses always a column-wise read, rowwise specifying the write order and column-wise being the
 	 * default.
 	 * 
-	 * @param in      input matrix
-	 * @param out     output matrix
-	 * @param rows    number of rows
-	 * @param cols    number of columns
+	 * @param in	  input matrix
+	 * @param out	 output matrix
+	 * @param rows	number of rows
+	 * @param cols	number of columns
 	 * @param rowwise if true, reshape by row
 	 * @return output matrix
 	 */
@@ -750,12 +870,12 @@ public class LibMatrixReorg {
 	 * default, while R uses always a column-wise read, rowwise specifying the write order and column-wise being the
 	 * default.
 	 * 
-	 * @param in      input matrix
-	 * @param out     output matrix
-	 * @param rows    number of rows
-	 * @param cols    number of columns
+	 * @param in	  input matrix
+	 * @param out	 output matrix
+	 * @param rows	number of rows
+	 * @param cols	number of columns
 	 * @param rowwise if true, reshape by row
-	 * @param k       The parallelization degree
+	 * @param k	   The parallelization degree
 	 * @return output matrix
 	 */
 	public static MatrixBlock reshape(MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise, int k) {
@@ -819,7 +939,7 @@ public class LibMatrixReorg {
 	 * @return list of indexed matrix values
 	 */
 	public static List<IndexedMatrixValue> reshape(IndexedMatrixValue in, DataCharacteristics mcIn,
-	                                               DataCharacteristics mcOut, boolean rowwise, boolean outputEmptyBlocks ) {
+												   DataCharacteristics mcOut, boolean rowwise, boolean outputEmptyBlocks ) {
 		//prepare inputs
 		MatrixIndexes ixIn = in.getIndexes();
 		MatrixBlock mbIn = (MatrixBlock) in.getValue();
@@ -844,16 +964,45 @@ public class LibMatrixReorg {
 	}
 
 	/**
-	 * CP rmempty operation (single input, single output matrix) 
+	 * CP rmempty operation (single input, single output matrix)
 	 * 
-	 * @param in input matrix
-	 * @param ret output matrix
-	 * @param rows ?
-	 * @param emptyReturn return row/column of zeros for empty input
-	 * @param select ?
-	 * @return matrix block
+	 * @param in          The input matrix
+	 * @param ret         The output matrix
+	 * @param rows        If we are removing based on rows, or columns.
+	 * @param emptyReturn Return row/column of zeros for empty input
+	 * @param select      An optional selection vector, to remove based on rather than empty rows or columns
+	 * @return The result MatrixBlock
 	 */
 	public static MatrixBlock rmempty(MatrixBlock in, MatrixBlock ret, boolean rows, boolean emptyReturn, MatrixBlock select) {
+		if(ret == null)
+			ret = new MatrixBlock();
+		MatrixBlock ret2 = rmemptyEarlyAbort(in, ret, rows, emptyReturn, select);
+		if(ret2 != null )
+			return ret2;
+		// core removeEmpty
+		return rmemptyUnsafe(in, ret, rows, emptyReturn, select);
+	}
+
+	public static MatrixBlock rmemptyUnsafe(MatrixBlock in, MatrixBlock ret, boolean rows, boolean emptyReturn,
+		MatrixBlock select) {
+		if( rows )
+			return removeEmptyRows(in, ret, select, emptyReturn);
+		else // cols
+			return removeEmptyColumns(in, ret, select, emptyReturn);
+	}
+
+	/**
+	 * Handle the early-termination cases of removeEmpty that do not require scanning for empty rows/columns.
+	 *
+	 * @param in          The input matrix
+	 * @param ret         The output matrix, reused for the empty-input case
+	 * @param rows        If removing based on rows, or columns
+	 * @param emptyReturn Return a row/column of zeros for empty input
+	 * @param select      An optional selection vector
+	 * @return The early-abort result, or {@code null} if no early termination applies and the caller must continue.
+	 *         For the select-all case the returned block is the input {@code in} itself (a shallow alias, not a copy).
+	 */
+	public static MatrixBlock rmemptyEarlyAbort(MatrixBlock in, MatrixBlock ret, boolean rows, boolean emptyReturn, MatrixBlock select){
 		//check for empty inputs 
 		//(the semantics of removeEmpty are that for an empty m-by-n matrix, the output 
 		//is an empty 1-by-n or m-by-1 matrix because we don't allow matrices with dims 0)
@@ -870,12 +1019,8 @@ public class LibMatrixReorg {
 		if( select != null && (select.nonZeros == (rows?in.rlen:in.clen)) ) {
 			return in;
 		}
-		
-		// core removeEmpty
-		if( rows )
-			return removeEmptyRows(in, ret, select, emptyReturn);
-		else //cols
-			return removeEmptyColumns(in, ret, select, emptyReturn);
+
+		return null;
 	}
 
 	/**
@@ -893,7 +1038,7 @@ public class LibMatrixReorg {
 		//sanity check inputs
 		if( !(data.getValue() instanceof MatrixBlock && offset.getValue() instanceof MatrixBlock) )
 			throw new DMLRuntimeException("Unsupported input data: expected "+MatrixBlock.class.getName()+" but got "+data.getValue().getClass().getName()+" and "+offset.getValue().getClass().getName());
-		if(     rmRows && data.getValue().getNumRows()!=offset.getValue().getNumRows() 
+		if(	 rmRows && data.getValue().getNumRows()!=offset.getValue().getNumRows() 
 			|| !rmRows && data.getValue().getNumColumns()!=offset.getValue().getNumColumns()  ){
 			throw new DMLRuntimeException("Dimension mismatch between input data and offsets: ["
 					+data.getValue().getNumRows()+"x"+data.getValue().getNumColumns()+" vs "+offset.getValue().getNumRows()+"x"+offset.getValue().getNumColumns());
@@ -970,13 +1115,13 @@ public class LibMatrixReorg {
 	 * CP rexpand operation (single input, single output), the classic example of this operation is one hot encoding of a
 	 * column to multiple columns.
 	 * 
-	 * @param in     Input matrix
-	 * @param ret    Output matrix
-	 * @param max    Number of rows/cols of the output
+	 * @param in	 Input matrix
+	 * @param ret	Output matrix
+	 * @param max	Number of rows/cols of the output
 	 * @param rows   If the expansion is in rows direction
 	 * @param cast   If the values contained should be cast to double (rounded up and down)
 	 * @param ignore Ignore if the input contain values below zero that technically is incorrect input.
-	 * @param k      Degree of parallelism
+	 * @param k	  Degree of parallelism
 	 * @return Output matrix rexpanded
 	 */
 	public static MatrixBlock rexpand(MatrixBlock in, MatrixBlock ret, double max, boolean rows, boolean cast, boolean ignore, int k) {
@@ -987,13 +1132,13 @@ public class LibMatrixReorg {
 	 * CP rexpand operation (single input, single output), the classic example of this operation is one hot encoding of a
 	 * column to multiple columns.
 	 * 
-	 * @param in     Input matrix
-	 * @param ret    Output matrix
-	 * @param max    Number of rows/cols of the output
+	 * @param in	 Input matrix
+	 * @param ret	Output matrix
+	 * @param max	Number of rows/cols of the output
 	 * @param rows   If the expansion is in rows direction
 	 * @param cast   If the values contained should be cast to double (rounded up and down)
 	 * @param ignore Ignore if the input contain values below zero that technically is incorrect input.
-	 * @param k      Degree of parallelism
+	 * @param k	  Degree of parallelism
 	 * @return Output matrix rexpanded
 	 */
 	public static MatrixBlock rexpand(MatrixBlock in, MatrixBlock ret, int max, boolean rows, boolean cast, boolean ignore, int k){
@@ -1024,8 +1169,8 @@ public class LibMatrixReorg {
 	 * ret = table(seq(1, nrow(A)), A, w)
 	 * 
 	 * @param seqHeight A sequence vector height.
-	 * @param A         The MatrixBlock vector to encode.
-	 * @param w         The weight matrix to multiply on output cells.
+	 * @param A		 The MatrixBlock vector to encode.
+	 * @param w		 The weight matrix to multiply on output cells.
 	 * @return A new MatrixBlock with the table result.
 	 */
 	public static MatrixBlock fusedSeqRexpand(int seqHeight, MatrixBlock A, double w) {
@@ -1039,12 +1184,12 @@ public class LibMatrixReorg {
 	 * ret = table(seq(1, nrow(A)), A, w)
 	 * 
 	 * @param seqHeight  A sequence vector height.
-	 * @param A          The MatrixBlock vector to encode.
-	 * @param w          The weight scalar to multiply on output cells.
-	 * @param ret        The output MatrixBlock, does not have to be used, but depending on updateClen determine the
-	 *                   output size.
+	 * @param A		  The MatrixBlock vector to encode.
+	 * @param w		  The weight scalar to multiply on output cells.
+	 * @param ret		The output MatrixBlock, does not have to be used, but depending on updateClen determine the
+	 *				   output size.
 	 * @param updateClen Update clen, if set to true, ignore dimensions of ret, otherwise use the column dimension of
-	 *                   ret.
+	 *				   ret.
 	 * @return A new MatrixBlock or ret.
 	 */
 	public static MatrixBlock fusedSeqRexpand(int seqHeight, MatrixBlock A, double w, MatrixBlock ret,
@@ -1059,12 +1204,12 @@ public class LibMatrixReorg {
 	 * ret = table(seq(1, nrow(A)), A, w)
 	 * 
 	 * @param seqHeight  A sequence vector height.
-	 * @param A          The MatrixBlock vector to encode.
-	 * @param w          The weight matrix to multiply on output cells.
-	 * @param ret        The output MatrixBlock, does not have to be used, but depending on updateClen determine the
-	 *                   output size.
+	 * @param A		  The MatrixBlock vector to encode.
+	 * @param w		  The weight matrix to multiply on output cells.
+	 * @param ret		The output MatrixBlock, does not have to be used, but depending on updateClen determine the
+	 *				   output size.
 	 * @param updateClen Update clen, if set to true, ignore dimensions of ret, otherwise use the column dimension of
-	 *                   ret.
+	 *				   ret.
 	 * @param k			   Parallelization degree
 	 * @return A new MatrixBlock or ret.
 	 */
@@ -1198,7 +1343,7 @@ public class LibMatrixReorg {
 	/**
 	 * Quick check if the input is valid for rexpand, this check does not guarantee that the input is valid for rexpand
 	 * 
-	 * @param in     Input matrix block
+	 * @param in	 Input matrix block
 	 * @param ignore If zero valued cells should be ignored
 	 */
 	public static void checkRexpand(MatrixBlock in, boolean ignore){
@@ -1210,12 +1355,12 @@ public class LibMatrixReorg {
 	/**
 	 * MR/Spark rexpand operation (single input, multiple outputs incl empty blocks)
 	 * 
-	 * @param data    Input indexed matrix block
-	 * @param max     Total nrows/cols of the output
-	 * @param rows    If the expansion is in rows direction
-	 * @param cast    If the values contained should be cast to double (rounded up and down)
+	 * @param data	Input indexed matrix block
+	 * @param max	 Total nrows/cols of the output
+	 * @param rows	If the expansion is in rows direction
+	 * @param cast	If the values contained should be cast to double (rounded up and down)
 	 * @param ignore  Ignore if the input contain values below zero that technically is incorrect input.
-	 * @param blen    The block size to slice the output up into
+	 * @param blen	The block size to slice the output up into
 	 * @param outList The output indexedMatrixValues (a list to add all the output blocks to / modify)
 	 */
 	public static void rexpand(IndexedMatrixValue data, double max, boolean rows, boolean cast, boolean ignore, long blen, ArrayList<IndexedMatrixValue> outList) {
@@ -1982,7 +2127,7 @@ public class LibMatrixReorg {
 				if(m > 10 && n > 100) {
 					int blkz = Math.max((n - c) / k, 1);
 					for(int j = c; j * blkz < n; j++) {
-						tasks.add(new rTask(A, j * blkz, Math.min((j + 1) * blkz, n), b, n, m));
+						tasks.add(new RTask(A, j * blkz, Math.min((j + 1) * blkz, n), b, n, m));
 					}
 					for(Future<Object> rt : pool.invokeAll(tasks))
 						rt.get();
@@ -2000,7 +2145,7 @@ public class LibMatrixReorg {
 			if(m > 10 && n > 100) {
 				int blkz = Math.max(m / k, 1);
 				for(int i = 0; i * blkz < m; i++) {
-					tasks.add(new dTask(A, i * blkz, Math.min((i + 1) * blkz, m), b, n, m));
+					tasks.add(new DTask(A, i * blkz, Math.min((i + 1) * blkz, m), b, n, m));
 				}
 				for(Future<Object> rt : pool.invokeAll(tasks))
 					rt.get();
@@ -2017,7 +2162,7 @@ public class LibMatrixReorg {
 			if(m > 10 && n > 100) {
 				int blkz = Math.max(n / k, 1);
 				for(int j = 0; j * blkz < n; j++) {
-					tasks.add(new sTask(A, j * blkz, Math.min((j + 1) * blkz, n), a, n, m));
+					tasks.add(new STask(A, j * blkz, Math.min((j + 1) * blkz, n), a, n, m));
 				}
 				for(Future<Object> rt : pool.invokeAll(tasks))
 					rt.get();
@@ -2051,7 +2196,7 @@ public class LibMatrixReorg {
 		}
 	}
 
-	private static class rTask implements Callable<Object> {
+	private static class RTask implements Callable<Object> {
 		final double[] _A;
 
 		final int _jStart;
@@ -2060,7 +2205,7 @@ public class LibMatrixReorg {
 		final int _n;
 		final int _m;
 
-		rTask(double[] A, int jStart, int jEnd, int b, int n, int m){
+		RTask(double[] A, int jStart, int jEnd, int b, int n, int m){
 			_A = A;
 			_jStart = jStart;
 			_jEnd = jEnd;
@@ -2095,7 +2240,7 @@ public class LibMatrixReorg {
 
 	}
 
-	private static class dTask implements Callable<Object>{
+	private static class DTask implements Callable<Object>{
 		final double[] _A;
 
 		final int _iStart;
@@ -2104,7 +2249,7 @@ public class LibMatrixReorg {
 		final int _n;
 		final int _m;
 
-		dTask(double[] A, int iStart, int iEnd, int b, int n, int m){
+		DTask(double[] A, int iStart, int iEnd, int b, int n, int m){
 			_A = A;
 			_iStart = iStart;
 			_iEnd = iEnd;
@@ -2142,7 +2287,7 @@ public class LibMatrixReorg {
 		}
 	}
 
-	private static class sTask implements Callable<Object>{
+	private static class STask implements Callable<Object>{
 		final double[] _A;
 
 		// final int _j;
@@ -2152,7 +2297,7 @@ public class LibMatrixReorg {
 		final int _n;
 		final int _m;
 
-		sTask(double[] A, int jStart, int jEnd, int a, int n, int m){
+		STask(double[] A, int jStart, int jEnd, int a, int n, int m){
 			_A = A;
 			_jStart = jStart;
 			_jEnd = jEnd;
@@ -2198,7 +2343,7 @@ public class LibMatrixReorg {
 			if(m > 10 && n > 100) {
 				int blkz = Math.max(n / k, 1);
 				for(int j = 0; j * blkz < n; j++) {
-					tasks.add(new s_invTask(A, j * blkz, Math.min((j + 1) * blkz, n), a, n, m));
+					tasks.add(new SinvTask(A, j * blkz, Math.min((j + 1) * blkz, n), a, n, m));
 				}
 				for(Future<Object> rt : pool.invokeAll(tasks))
 					rt.get();
@@ -2214,7 +2359,7 @@ public class LibMatrixReorg {
 			if(m > 10 && n > 100) {
 				int blkz = Math.max(m / k, 1);
 				for(int i = 0; i * blkz < m; i++) {
-					tasks.add(new d_invTask(A, i * blkz, Math.min((i + 1) * blkz, m), a_inv, b, c, n, m));
+					tasks.add(new DinvTask(A, i * blkz, Math.min((i + 1) * blkz, m), a_inv, b, c, n, m));
 				}
 				for(Future<Object> rt : pool.invokeAll(tasks))
 					rt.get();
@@ -2238,7 +2383,7 @@ public class LibMatrixReorg {
 				if(m > 10 && n > 100) {
 					int blkz = Math.max((n - c) / k, 1);
 					for(int j = c; j * blkz < n; j++) {
-						tasks.add(new r_invTask(A, j * blkz, Math.min((j + 1) * blkz, n), b, n, m));
+						tasks.add(new RinvTask(A, j * blkz, Math.min((j + 1) * blkz, n), b, n, m));
 					}
 					for(Future<Object> rt : pool.invokeAll(tasks))
 						rt.get();
@@ -2276,7 +2421,7 @@ public class LibMatrixReorg {
 			}
 	}
 
-	private static class s_invTask implements Callable<Object>{
+	private static class SinvTask implements Callable<Object>{
 		final double[] _A;
 
 		// final int _j;
@@ -2286,7 +2431,7 @@ public class LibMatrixReorg {
 		final int _n;
 		final int _m;
 
-		s_invTask(double[] A, int jStart, int jEnd, int a, int n, int m){
+		SinvTask(double[] A, int jStart, int jEnd, int a, int n, int m){
 			_A = A;
 			_jStart = jStart;
 			_jEnd = jEnd;
@@ -2338,7 +2483,7 @@ public class LibMatrixReorg {
 		System.arraycopy(tmp, 0, A, i*n, n);
 	}
 
-	private static class d_invTask implements Callable<Object>{
+	private static class DinvTask implements Callable<Object>{
 		final double[] _A;
 
 		final int _iStart;
@@ -2349,7 +2494,7 @@ public class LibMatrixReorg {
 		final int _n;
 		final int _m;
 
-		d_invTask(double[] A, int iStart, int iEnd, int a_inv, int b, int c, int n, int m){
+		DinvTask(double[] A, int iStart, int iEnd, int a_inv, int b, int c, int n, int m){
 			_A = A;
 			_iStart = iStart;
 			_iEnd = iEnd;
@@ -2392,7 +2537,7 @@ public class LibMatrixReorg {
 		}
 	}
 
-	private static class r_invTask implements Callable<Object>{
+	private static class RinvTask implements Callable<Object>{
 		final double[] _A;
 
 		// final int _j;
@@ -2402,7 +2547,7 @@ public class LibMatrixReorg {
 		final int _n;
 		final int _m;
 
-		r_invTask(double[] A, int jStart, int jEnd, int b, int n, int m){
+		RinvTask(double[] A, int jStart, int jEnd, int b, int n, int m){
 			_A = A;
 			_jStart = jStart;
 			_jEnd = jEnd;
@@ -2554,7 +2699,7 @@ public class LibMatrixReorg {
 
 	private static void rollDense(MatrixBlock in, MatrixBlock out, int shift) {
 		final int m = in.rlen;
-		shift %= (m != 0 ? m : 1); // roll matrix with axis=none
+		shift = getNormalizedShiftForRoll(shift, m); // roll matrix with axis=none
 
 		copyDenseMtx(in, out, 0, shift, m - shift, false, true);
 		copyDenseMtx(in, out, m - shift, 0, shift, true, true);
@@ -2562,7 +2707,7 @@ public class LibMatrixReorg {
 
 	private static void rollSparse(MatrixBlock in, MatrixBlock out, int shift) {
 		final int m = in.rlen;
-		shift %= (m != 0 ? m : 1); // roll matrix with axis=0
+		shift = getNormalizedShiftForRoll(shift, m); // roll matrix with axis=0
 
 		copySparseMtx(in, out, 0, shift, m - shift, false, true);
 		copySparseMtx(in, out, m-shift, 0, shift, false, true);
@@ -3296,7 +3441,7 @@ public class LibMatrixReorg {
 	}
 	
 	private static void createNonZeroIndexes(DataCharacteristics mcIn, DataCharacteristics mcOut,
-	                                         MatrixBlock in, long row_offset, long col_offset, boolean rowwise, HashSet<MatrixIndexes> ret) {
+											 MatrixBlock in, long row_offset, long col_offset, boolean rowwise, HashSet<MatrixIndexes> ret) {
 		Iterator<IJV> iter = in.getSparseBlockIterator();
 		while( iter.hasNext() ) {
 			IJV cell = iter.next();
@@ -3324,7 +3469,7 @@ public class LibMatrixReorg {
 	}
 
 	private static void reshapeDense(MatrixBlock in, long row_offset, long col_offset, Map<MatrixIndexes,MatrixBlock> rix,
-	                                 DataCharacteristics mcIn, DataCharacteristics mcOut, boolean rowwise ) {
+									 DataCharacteristics mcIn, DataCharacteristics mcOut, boolean rowwise ) {
 		if( in.isEmptyBlock(false) )
 			return;
 		
@@ -3360,7 +3505,7 @@ public class LibMatrixReorg {
 	}
 
 	private static void reshapeSparse(MatrixBlock in, long row_offset, long col_offset, Map<MatrixIndexes,MatrixBlock> rix,
-	                                  DataCharacteristics mcIn, DataCharacteristics mcOut, boolean rowwise ) {
+									  DataCharacteristics mcIn, DataCharacteristics mcOut, boolean rowwise ) {
 		if( in.isEmptyBlock(false) )
 			return;
 		
@@ -3422,7 +3567,7 @@ public class LibMatrixReorg {
 	}
 	
 	private static MatrixIndexes computeInBlockIndex(MatrixIndexes ixout, long ai, long aj,
-	                                                 DataCharacteristics mcIn, DataCharacteristics mcOut, boolean rowwise )
+													 DataCharacteristics mcIn, DataCharacteristics mcOut, boolean rowwise )
 	{
 		long tempc = computeGlobalCellIndex(mcIn, ai, aj, rowwise);
 		long ci = rowwise ? (tempc/mcOut.getCols())%mcOut.getBlocksize() : 
@@ -3500,6 +3645,25 @@ public class LibMatrixReorg {
 			rlen2 = (int)select.getNonZeros();
 		}
 
+		return removeEmptyRows(in, ret, emptyReturn, select == null, flags, rlen2);
+	}
+
+	/**
+	 * Remove selected rows, based on the boolean array given. Note this function is internal use only, and require a
+	 * boolean vector to be constructed first.
+	 * 
+	 * @param in          Input to remove rows from
+	 * @param ret         Output to assign the result into
+	 * @param emptyReturn If the output is allowed to be empty.
+	 * @param selectNull  If the original caller did not have a selection matrix.
+	 * @param flags       The boolean selection vector to specify which rows to keep.
+	 * @param rlen2       The number of true values in the flags argument.
+	 * @return Another reference to the ret matrix input argument.
+	 */
+	public static MatrixBlock removeEmptyRows(MatrixBlock in, MatrixBlock ret, boolean emptyReturn, boolean selectNull,
+		boolean[] flags, int rlen2) {
+		final int m = in.rlen;
+		final int n = in.clen;
 		//Step 2: reset result and copy rows
 		//dense stays dense if correct input representation (but robust for any input), 
 		//sparse might be dense/sparse
@@ -3509,7 +3673,7 @@ public class LibMatrixReorg {
 		if( in.isEmptyBlock(false) )
 			return ret;
 		
-		if( SHALLOW_COPY_REORG && m == rlen2 && select == null ) {
+		if( SHALLOW_COPY_REORG && m == rlen2 && selectNull ) {
 			// the condition m==rlen2 is not enough with non-empty 1-row input but empty 
 			// 1-row select vector because if emptyReturn should output a single empty row
 			ret.sparse = in.sparse;
@@ -3552,7 +3716,7 @@ public class LibMatrixReorg {
 		}
 		
 		//check sparsity
-		ret.nonZeros = (select==null) ?
+		ret.nonZeros = (selectNull) ?
 			in.nonZeros : ret.recomputeNonZeros();
 		ret.examSparsity();
 		
@@ -4397,13 +4561,13 @@ public class LibMatrixReorg {
 	 * https://dl.acm.org/doi/pdf/10.1145/355611.362542.
 	 *
 	 * @param matrix   The matrix whose elements are being shifted.
-	 * @param moved    Boolean array tracking whether an element has already been moved.
-	 * @param rows     The number of rows in the matrix.
+	 * @param moved	Boolean array tracking whether an element has already been moved.
+	 * @param rows	 The number of rows in the matrix.
 	 * @param maxIndex The maximum valid index in the matrix.
-	 * @param count    The number of elements left to process.
+	 * @param count	The number of elements left to process.
 	 * @param workSize The length of moved.
-	 * @param start    The starting index for the cycle shift.
-	 * @param comp     The corresponding companion index.
+	 * @param start	The starting index for the cycle shift.
+	 * @param comp	 The corresponding companion index.
 	 * @return The updated count of elements remaining to shift.
 	 */
 	private static int simultaneousCycleShift(double[] matrix, boolean[] moved, int rows, int maxIndex, int count,
@@ -4465,10 +4629,10 @@ public class LibMatrixReorg {
 	 * Performs prime factorization of a given number n. The method calculates the prime factors of n, their exponents,
 	 * powers and stores the results in the provided arrays.
 	 *
-	 * @param n         The number to be factorized.
-	 * @param primes    Array to store the unique prime factors of n.
+	 * @param n		 The number to be factorized.
+	 * @param primes	Array to store the unique prime factors of n.
 	 * @param exponents Array to store the exponents of the respective prime factors.
-	 * @param powers    Array to store the powers of the respective prime factors.
+	 * @param powers	Array to store the powers of the respective prime factors.
 	 * @return The number of unique prime factors.
 	 */
 	private static int primeFactorization(int n, int[] primes, int[] exponents, int[] powers) {
@@ -4514,5 +4678,677 @@ public class LibMatrixReorg {
 			count = (count / primes[ip]) * (primes[ip] - 1);
 		}
 		return count;
+	}
+
+	// TENSOR
+	/**
+	 * Performs prime in-place tensor transposition for arbitrary permutations.
+	 *
+	 * @param in
+	 *			Tensor stored as MatrixBlock
+	 * @param shape
+	 *			Original shape informtion of tensor
+	 * @param perm
+	 *			Permutation of tensor
+	 */
+	// (A) If permutation is split-index reducible -> reduce to 2D and use transposeInPlaceDenseBrenner()
+	// (B) Else -> decompose perm into adjacent swaps and apply each via 1324 primitive from EITHOT algorithm
+	// (https://dl.acm.org/doi/10.1145/3711871)
+	// with Brenner's method instead of Catanzaro's algorithm for generalizability to arbitrary large dimensions
+	// ------------------------------------------------------------
+	public static boolean transposeInPlaceTensor(MatrixBlock in, int[] shape, int[] perm) {
+		final int rank = shape.length;
+
+		// final shape
+		final int[] finalShape = new int[rank];
+		for (int i = 0; i < rank; i++)
+			finalShape[i] = shape[perm[i]];
+
+		// Identity perm -> metadata only
+		boolean identity = true;
+		for (int i = 0; i < rank; i++) {
+			if (perm[i] != i) {
+				identity = false;
+				break;
+			}
+		}
+		if (identity) {
+			restoreMetadata(in, finalShape);
+			return true;
+		}
+
+		// (A) Split-index reducible
+		int splitIdx = findSplitIndex(perm);
+		if (splitIdx != -1) {
+			int newRows = 1;
+			for (int i = 0; i < splitIdx; i++)
+				newRows *= shape[perm[i]];
+
+			long newColsL = 1;
+			for (int i = splitIdx; i < rank; i++)
+				newColsL *= shape[perm[i]];
+			int newCols = (int) newColsL;
+
+			try {
+				in.setNumRows(newCols);
+				in.setNumColumns(newRows);
+				transposeInPlaceDenseBrenner(in, 1);
+			} finally {
+				restoreMetadata(in, finalShape);
+			}
+			return true;
+		}
+
+		// (B) General path: usage of 1324 primitv
+
+		final double[] tensor = in.getDenseBlockValues();
+		int[] curShape = Arrays.copyOf(shape, rank);
+		in.getDenseBlock().setDims(curShape);
+
+		// plan adjacent swaps to realize perm
+		int[] swaps = permutationToAdjacentSwaps(rank, perm);
+		int swapCount = swaps[0];
+
+		for (int s = 1; s <= swapCount; s++) {
+			int k = swaps[s];
+			reshape1324(in, tensor, curShape, k);
+			int tmp = curShape[k];
+			curShape[k] = curShape[k + 1];
+			curShape[k + 1] = tmp;
+			in.getDenseBlock().setDims(curShape);
+		}
+
+		restoreMetadata(in, finalShape);
+		return true;
+	}
+
+	/**
+	 * Applies a single adjacent-axis swap (k <-> k+1) to a dense tensor **in-place** by reducing it to a rank-4 view
+	 * and calling primitive 1324.
+	 *
+	 * @param in
+	 *			MatrixBlock holding the dense tensor buffer (metadata is temporarily modified)
+	 * @param a
+	 *			backing dense buffer (row-major, contiguous)
+	 * @param curShape
+	 *			current logical tensor shape/order before applying this adjacent swap
+	 * @param k
+	 *			adjacent axis index to swap (swaps axis k with axis k+1)
+	 */
+	private static void reshape1324(MatrixBlock in, double[] a, int[] curShape, int k) {
+		int lastDim = curShape.length;
+
+		int left = prod(curShape, 0, k);
+		int A = curShape[k];
+		int B = curShape[k + 1];
+		int right = prod(curShape, k + 2, lastDim);
+
+		// metadata-only reshape to 4D
+		in.getDenseBlock().setDims(new int[] { left, A, B, right });
+
+		// in-place 1324 on that view
+		prim1324(a, 0, left, A, B, right);
+
+		// caller restores dims to curShape after it swaps curShape[k],curShape[k+1]
+	}
+
+	private static int prod(int[] shape, int start, int end) {
+		long p = 1;
+		for (int i = start; i < end; i++) {
+			p *= shape[i];
+		}
+		return (int) p;
+	}
+
+	/**
+	 * Decomposes an arbitrary permutation into a sequence of adjacent swaps.
+	 *
+	 * @param rank
+	 *			tensor rank
+	 * @param perm
+	 *			target permutation (maps output axis i to input axis perm[i])
+	 *
+	 * @return swap plan array
+	 */
+	private static int[] permutationToAdjacentSwaps(int rank, int[] perm) {
+		int[] order = new int[rank];
+		// original order of permutation
+		for (int i = 0; i < rank; i++)
+			order[i] = i;
+
+		int maxSwaps = rank * (rank - 1) / 2;
+		int[] out = new int[maxSwaps + 1]; // stores swap order
+		int cnt = 0; // number of swaps needed
+
+		for (int targetPos = 0; targetPos < rank; targetPos++) {
+			int wantedAxis = perm[targetPos];
+
+			// index of dimension in current permutation
+			int curPos = -1;
+			for (int p = targetPos; p < rank; p++) {
+				if (order[p] == wantedAxis) {
+					curPos = p;
+					break;
+				}
+			}
+			if (curPos < 0)
+				throw new IllegalArgumentException("Invalid perm");
+
+			while (curPos > targetPos) {
+				int t = order[curPos - 1];
+				order[curPos - 1] = order[curPos];
+				order[curPos] = t;
+
+				out[++cnt] = curPos - 1;
+				curPos--;
+			}
+		}
+
+		out[0] = cnt;
+		return out;
+	}
+
+	/**
+	 * Primitive {@code 1324}: swaps dimensions 2 and 3 while keeping dimensions 1 and 4 fixed:
+	 *
+	 * @param a
+	 *			dense buffer
+	 * @param offset
+	 *			base offset into {a} (usually 0)
+	 * @param d1
+	 *			first dimension (number of slices)
+	 * @param d2
+	 *			second dimension (matrix rows)
+	 * @param d3
+	 *			third dimension (matrix cols)
+	 * @param d4
+	 *			fourth dimension (block length per matrix cell)
+	 */
+	private static void prim1324(double[] a, int offset, int d1, int d2, int d3, int d4) {
+		for (int i1 = 0; i1 < d1; i1++) {
+			int slice = d2 * d3 * d4;
+			int base = offset + i1 * slice;
+			transposeBlocksInPlace(a, base, d2, d3, d4);
+		}
+	}
+
+	/**
+	 * In-place transpose of an matrix where each element is a contiguous block of length {blk}. Performs a cycle-walk
+	 * permutation over block positions induced by transpose. For each unvisited start position, we rotate blocks along
+	 * its cycle using one temporary block buffer.
+	 *
+	 * @param tensor
+	 *			backing dense buffer
+	 * @param base
+	 *			offset of the (m*n*blk) region
+	 * @param d2
+	 *			number of rows in the block-matrix
+	 * @param d3
+	 *			number of columns in the block-matrix
+	 * @param blk
+	 *			block length (number of doubles per cell), d4
+	 */
+	private static void transposeBlocksInPlace(double[] tensor, int base, int d2, int d3, int blk) {
+		int numBlocks = d2 * d3;
+		boolean[] visited = new boolean[numBlocks];
+		double[] tmp = new double[blk]; // buffer for one block
+
+		for (int start = 0; start < numBlocks; start++) {
+			if (visited[start])
+				continue;
+
+			int next = transposeBlockIndex(start, d2, d3);
+
+			// no movement
+			if (next == start) {
+				visited[start] = true;
+				continue;
+			}
+
+			// save start
+			System.arraycopy(tensor, base + start * blk, tmp, 0, blk);
+
+			// cycle-following
+			int cur = start;
+			while (true) {
+				visited[cur] = true;
+				int prev = inverseTransposeBlockIndex(cur, d2, d3);
+				if (prev == start)
+					break;
+
+				System.arraycopy(tensor, base + prev * blk, tensor, base + cur * blk, blk);
+				cur = prev;
+			}
+
+			System.arraycopy(tmp, 0, tensor, base + cur * blk, blk);
+			visited[cur] = true;
+		}
+	}
+
+	/**
+	 * Finds the target index of a current block
+	 *
+	 * @param block_idx
+	 *			index of block
+	 * @param m
+	 *			number of rows
+	 * @param n
+	 *			number of columns
+	 *
+	 * @return new block idx
+	 */
+	private static int transposeBlockIndex(int block_idx, int m, int n) {
+		int i = block_idx / n;
+		int j = block_idx % n;
+		return j * m + i;
+	}
+
+	/**
+	 * Finds the idx of the element which moves to the current block index duing permutation
+	 *
+	 * @param curr_block_idx
+	 *			index of current block
+	 * @param m
+	 *			number of rows
+	 * @param n
+	 *			number of columns
+	 *
+	 * @return new block idx
+	 */
+	private static int inverseTransposeBlockIndex(int curr_block_idx, int m, int n) {
+		int i = curr_block_idx % m;
+		int j = curr_block_idx / m;
+		return i * n + j;
+	}
+
+	/**
+	 * Finds a split index for a tensor permutation that allows reduction of the permutation to a 2D matrix transpose.
+	 * @param perm  permutation of tensor axes
+	 * @return  split index {i} if reducible, otherwise {-1}
+	 */
+	public static int findSplitIndex(int[] perm) {
+		if (perm == null || perm.length < 2)
+			return -1;
+		int n = perm.length;
+
+		for (int i = 1; i < n; i++) {
+			boolean contiguousFirst = isContiguousRange(perm, 0, i);
+			boolean contiguousSecond = isContiguousRange(perm, i, n);
+
+			if (contiguousFirst && contiguousSecond) {
+				if (isSorted(perm, 0, i) && isSorted(perm, i, n)) {
+					return i;
+				}
+			}
+		}
+		return -1;
+	}
+
+	private static boolean isSorted(int[] perm, int start, int end) {
+		for (int i = start; i < end - 1; i++)
+			if (perm[i] > perm[i + 1])
+				return false;
+		return true;
+	}
+
+	private static boolean isContiguousRange(int[] perm, int start, int end) {
+		int min = perm[start], max = perm[start];
+		for (int i = start + 1; i < end; i++) {
+			if (perm[i] < min)
+				min = perm[i];
+			if (perm[i] > max)
+				max = perm[i];
+		}
+		return (max - min + 1) == (end - start);
+	}
+
+	/**
+	 * Restores SystemDS matrix/tensor metadata after an in-place tensor permutation.
+	 * @param in           matrix/tensor block whose metadata is restored
+	 * @param finalShape   final tensor shape after permutation
+	 */
+	private static void restoreMetadata(MatrixBlock in, int[] finalShape) {
+		in.setNumRows(finalShape[0]);
+		long totalRemaining = 1;
+		for (int i = 1; i < finalShape.length; i++)
+			totalRemaining *= finalShape[i];
+		in.setNumColumns((int) totalRemaining);
+		if (in.getDenseBlock() != null)
+			in.getDenseBlock().setDims(finalShape);
+	}
+		
+	private static long[] getStridesForPermutation(int[] dims) {
+		long[] strides = new long[dims.length];
+		long stride = 1;
+		for( int i = dims.length - 1; i >= 0; i-- ) {
+			strides[i] = stride;
+			stride *= dims[i];
+		}
+		return strides;
+	}
+
+	public static MatrixBlock permute(MatrixBlock in, int[] inDims, int[] perm) {
+		return permute(in, inDims, perm, 1);
+	}
+
+	public static MatrixBlock permute(MatrixBlock in, int[] inDims, int[] perm, int k) {
+		int rank = inDims.length;
+		
+		boolean isIdentity = true;
+		for( int i = 0; i < rank; i++ ) {
+			if( perm[i] != i ) {
+				isIdentity = false;
+				break;
+			}
+		}
+
+		if( isIdentity ) {
+			return new MatrixBlock(in);
+		}
+
+		int[] outDims = new int[rank];
+		for( int i = 0; i < rank; i++ ) { 
+			outDims[i] = inDims[perm[i]];
+		}
+
+		long length = 1;
+		for( int d : outDims ) {
+			length *= d;
+		}
+
+		MatrixBlock out = new MatrixBlock(1, (int)length, false);
+		out.allocateDenseBlock();
+
+		DenseBlock inDB = in.getDenseBlock();
+		DenseBlock outDB = out.getDenseBlock();
+
+		long[] inStrides = getStridesForPermutation(inDims);
+		long[] outStrides = getStridesForPermutation(outDims);
+		
+		long[] permutedStrides = new long[rank];
+		for( int i = 0; i < rank; i++ ) {
+			permutedStrides[i] = outStrides[perm[i]];
+		}
+
+		boolean useParallel = (k > 1 || k == -1) && length >= PAR_NUMCELL_THRESHOLD;
+		int numThreads = k == -1 ? Runtime.getRuntime().availableProcessors() : k;
+
+		if( inDB.numBlocks() == 1 && outDB.numBlocks() == 1 ) {
+			double[] inData = inDB.valuesAt(0);
+			double[] outData = outDB.valuesAt(0);
+			
+			if( useParallel && rank > 0 ) {
+				permuteSingleBlockParallel(inData, outData, inDims, inStrides, 
+					permutedStrides, numThreads, length);
+			} else {
+				permuteSingleBlock(inData, outData, inDims, inStrides, 
+					permutedStrides, 0, 0, 0);
+			}
+		} else {
+			if( useParallel && rank > 0 ) {
+				permuteMultiBlockParallel(inDB, outDB, inDims, inStrides, 
+					permutedStrides, numThreads, length);
+			} else {
+				permuteMultiBlock(inDB, outDB, inDims, inStrides, 
+					permutedStrides, 0, 0L, 0L);
+			}
+		}
+		return out;
+	}
+
+	private static void permuteSingleBlock(
+		double[] inData, double[] outData,
+		int[] inDims, long[] inStrides, long[] permutedStrides,
+		int dim, int inOffset, int outOffset) 
+	{
+		if( dim == inDims.length - 1 ) {
+			int len = inDims[dim];
+			int outStride = (int) permutedStrides[dim];
+
+			if( outStride == 1 ) {
+				System.arraycopy(inData, inOffset, outData, outOffset, len);
+			} else {
+				transposeRow(inData, outData, inOffset, outOffset, outStride, len);
+			}
+			return;
+		}
+
+		int dimSize = inDims[dim];
+		long inStep = inStrides[dim];
+		long outStep = permutedStrides[dim];
+
+		final int BLOCK_SIZE = 128;
+		for( int bi = 0; bi < dimSize; bi += BLOCK_SIZE ) {
+			int bimin = Math.min(bi + BLOCK_SIZE, dimSize);
+			for( int i = bi; i < bimin; i++ ) {
+				permuteSingleBlock(
+						inData, outData, inDims, inStrides, permutedStrides,
+						dim + 1,
+						inOffset + (int)(i * inStep),
+						outOffset + (int)(i * outStep)
+				);
+			}
+		}
+	}
+
+	private static void permuteSingleBlockParallel(
+			double[] inData, double[] outData,
+			int[] inDims, long[] inStrides, long[] permutedStrides,
+			int k, long totalElements) {
+		
+		final long elementsPerThread = Math.max(1024, (totalElements + k - 1) / k);
+		final int actualThreads = (int) Math.min(k, (totalElements + elementsPerThread - 1) / elementsPerThread);
+		
+		final ExecutorService pool = CommonThreadPool.get(actualThreads);
+		try {
+			final ArrayList<PermuteSingleBlockTask> tasks = new ArrayList<>();
+			
+			for( int t = 0; t < actualThreads; t++ ) {
+				final long start = t * elementsPerThread;
+				final long end = Math.min(start + elementsPerThread, totalElements);
+				
+				if( start >= totalElements ) {
+					break;
+				}
+				
+				tasks.add(new PermuteSingleBlockTask(inData, outData, inDims, 
+					inStrides, permutedStrides, start, end));
+			}
+
+			for( Future<Object> task : pool.invokeAll(tasks) ) {
+				task.get();
+			}
+		} catch (Exception ex) {
+			throw new DMLRuntimeException(ex);
+		} finally {
+			pool.shutdown();
+		}
+	}
+
+	private static void permuteMultiBlock(
+		DenseBlock inDB, DenseBlock outDB,
+		int[] inDims, long[] inStrides, long[] permutedStrides,
+		int dim, long inOffset, long outOffset) {
+
+		if( dim == inDims.length - 1 ) {
+			int len = inDims[dim];
+			long outStride = permutedStrides[dim];
+			
+			int inBlockSize = inDB.blockSize();
+			int outBlockSize = outDB.blockSize();
+
+			for( int i = 0; i < len; i++ ) {
+				long currentInAbs = inOffset + i * inStrides[dim];
+				long currentOutAbs = outOffset + i * outStride;
+				
+				int inBlockIdx = (int) (currentInAbs / inBlockSize);
+				int inRelIdx = (int) (currentInAbs % inBlockSize);
+				
+				int outBlockIdx = (int) (currentOutAbs / outBlockSize);
+				int outRelIdx = (int) (currentOutAbs % outBlockSize);
+				
+				double[] inArr = inDB.valuesAt(inBlockIdx);
+				double[] outArr = outDB.valuesAt(outBlockIdx);
+				
+				if( inArr != null && outArr != null && 
+					inRelIdx < inArr.length && outRelIdx < outArr.length ) {
+					outArr[outRelIdx] = inArr[inRelIdx];
+				}
+			}
+			return;
+		}
+
+		int dimSize = inDims[dim];
+		long inStep = inStrides[dim];
+		long outStep = permutedStrides[dim];
+
+		final int BLOCK_SIZE = 128;
+		for( int bi = 0; bi < dimSize; bi += BLOCK_SIZE ) {
+			int bimin = Math.min(bi + BLOCK_SIZE, dimSize);
+			for( int i = bi; i < bimin; i++ ) {
+				permuteMultiBlock(
+					inDB, outDB, inDims, inStrides, permutedStrides,
+					dim + 1,
+					inOffset + i * inStep,
+					outOffset + i * outStep
+				);
+			}
+		}
+	}
+
+	private static void permuteMultiBlockParallel(
+			DenseBlock inDB, DenseBlock outDB,
+			int[] inDims, long[] inStrides, long[] permutedStrides,
+			int k, long totalElements) {
+		
+		final long elementsPerThread = Math.max(1024, (totalElements + k - 1) / k);
+		final int actualThreads = (int) Math.min(k, (totalElements + elementsPerThread - 1) / elementsPerThread);
+
+		final ExecutorService pool = CommonThreadPool.get(actualThreads);
+		try {
+			final ArrayList<PermuteMultiBlockTask> tasks = new ArrayList<>();
+			
+			for( int t = 0; t < actualThreads; t++ ) {
+				final long start = t * elementsPerThread;
+				final long end = Math.min(start + elementsPerThread, totalElements);
+				
+				if( start >= totalElements ) {
+					break;
+				}
+				
+				tasks.add(new PermuteMultiBlockTask(inDB, outDB, inDims, 
+					inStrides, permutedStrides, start, end));
+			}
+
+			for( Future<Object> task : pool.invokeAll(tasks) ) {
+				task.get();
+			}
+
+		} catch (Exception ex) {
+			throw new DMLRuntimeException(ex);
+		} finally {
+			pool.shutdown();
+		}
+	}
+
+	private static class PermuteSingleBlockTask implements Callable<Object> {
+		//TODO call single-threaded kernel for block
+		
+		private final double[] inData;
+		private final double[] outData;
+		private final int[] inDims;
+		private final long[] inStrides;
+		private final long[] permutedStrides;
+		private final long start;
+		private final long end;
+		
+		protected PermuteSingleBlockTask(double[] inData, double[] outData,
+				int[] inDims, long[] inStrides, long[] permutedStrides,
+				long start, long end) {
+			this.inData = inData;
+			this.outData = outData;
+			this.inDims = inDims;
+			this.inStrides = inStrides;
+			this.permutedStrides = permutedStrides;
+			this.start = start;
+			this.end = end;
+		}
+		
+		@Override
+		public Object call() {
+			for( long idx = start; idx < end; idx++ ) {
+				long inIdx = 0;
+				long outIdx = 0;
+				long remaining = idx;
+				
+				for( int d = 0; d < inDims.length; d++ ) {
+					long coord = remaining / inStrides[d];
+					remaining = remaining % inStrides[d];
+					inIdx += coord * inStrides[d];
+					outIdx += coord * permutedStrides[d];
+				}
+				
+				outData[(int)outIdx] = inData[(int)inIdx];
+			}
+			return null;
+		}
+	}
+
+	private static class PermuteMultiBlockTask implements Callable<Object> {
+		//TODO call single-threaded kernel for block
+		
+		private final DenseBlock inDB;
+		private final DenseBlock outDB;
+		private final int[] inDims;
+		private final long[] inStrides;
+		private final long[] permutedStrides;
+		private final long start;
+		private final long end;
+		
+		protected PermuteMultiBlockTask(DenseBlock inDB, DenseBlock outDB,
+				int[] inDims, long[] inStrides, long[] permutedStrides,
+				long start, long end) {
+			this.inDB = inDB;
+			this.outDB = outDB;
+			this.inDims = inDims;
+			this.inStrides = inStrides;
+			this.permutedStrides = permutedStrides;
+			this.start = start;
+			this.end = end;
+		}
+		
+		@Override
+		public Object call() {
+			int inBlockSize = inDB.blockSize();
+			int outBlockSize = outDB.blockSize();
+			
+			for( long idx = start; idx < end; idx++ ) {
+				long inIdx = 0;
+				long outIdx = 0;
+				long remaining = idx;
+				
+				for( int d = 0; d < inDims.length; d++ ) {
+					long coord = remaining / inStrides[d];
+					remaining = remaining % inStrides[d];
+					inIdx += coord * inStrides[d];
+					outIdx += coord * permutedStrides[d];
+				}
+				
+				int inBlockIdx = (int) (inIdx / inBlockSize);
+				int inRelIdx = (int) (inIdx % inBlockSize);
+				
+				int outBlockIdx = (int) (outIdx / outBlockSize);
+				int outRelIdx = (int) (outIdx % outBlockSize);
+				
+				double[] inArr = inDB.valuesAt(inBlockIdx);
+				double[] outArr = outDB.valuesAt(outBlockIdx);
+				
+				if( inArr != null && outArr != null && 
+					inRelIdx < inArr.length && outRelIdx < outArr.length ) {
+					outArr[outRelIdx] = inArr[inRelIdx];
+				}
+			}
+			return null;
+		}
 	}
 }

@@ -19,10 +19,12 @@
 
 package org.apache.sysds.runtime.io.hdf5;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.sysds.runtime.io.hdf5.message.H5SymbolTableMessage;
 
@@ -35,16 +37,15 @@ public class H5 {
 	// 4. Write/Read
 	// 5. Close File
 
-	public static H5RootObject H5Fopen(BufferedInputStream bis) {
+	public static H5RootObject H5Fopen(H5ByteReader reader) {
 		H5RootObject rootObject = new H5RootObject();
-		bis.mark(0);
 		try {
 			// Find out if the file is a HDF5 file
 			int maxSignatureLength = 2048;
 			boolean validSignature = false;
 			long offset;
 			for(offset = 0; offset < maxSignatureLength; offset = nextOffset(offset)) {
-				validSignature = H5Superblock.verifySignature(bis, offset);
+				validSignature = H5Superblock.verifySignature(reader, offset);
 				if(validSignature) {
 					break;
 				}
@@ -52,9 +53,9 @@ public class H5 {
 			if(!validSignature) {
 				throw new H5RuntimeException("No valid HDF5 signature found");
 			}
-			rootObject.setBufferedInputStream(bis);
+			rootObject.setByteReader(reader);
 
-			final H5Superblock superblock = new H5Superblock(bis, offset);
+			final H5Superblock superblock = new H5Superblock(reader, offset);
 			rootObject.setSuperblock(superblock);
 		}
 		catch(Exception exception) {
@@ -113,38 +114,79 @@ public class H5 {
 	// Open a Data Space
 	public static H5ContiguousDataset H5Dopen(H5RootObject rootObject, String datasetName) {
 		try {
-			H5SymbolTableEntry symbolTableEntry = new H5SymbolTableEntry(rootObject,
+			List<String> datasetPath = normalizeDatasetPath(datasetName);
+			H5SymbolTableEntry currentEntry = new H5SymbolTableEntry(rootObject,
 				rootObject.getSuperblock().rootGroupSymbolTableAddress - rootObject.getSuperblock().baseAddressByte);
+			rootObject.setDatasetName(datasetName);
 
-			H5ObjectHeader objectHeader = new H5ObjectHeader(rootObject, symbolTableEntry.getObjectHeaderAddress());
-
-			final H5SymbolTableMessage stm = (H5SymbolTableMessage) objectHeader.getMessages().get(0);
-			final H5BTree rootBTreeNode = new H5BTree(rootObject, stm.getbTreeAddress());
-			final H5LocalHeap rootNameHeap = new H5LocalHeap(rootObject, stm.getLocalHeapAddress());
-			final ByteBuffer nameBuffer = rootNameHeap.getDataBuffer();
-			final List<Long> childAddresses = rootBTreeNode.getChildAddresses();
-
-			long child = childAddresses.get(0);
-
-			H5GroupSymbolTableNode groupSTE = new H5GroupSymbolTableNode(rootObject, child);
-
-			symbolTableEntry = groupSTE.getSymbolTableEntries()[0];
-
-			nameBuffer.position(symbolTableEntry.getLinkNameOffset());
-			String childName = Utils.readUntilNull(nameBuffer);
-
-			if(!childName.equals(datasetName)) {
-				throw new H5RuntimeException("The requested dataset '" + datasetName + "' differs from available '"+childName+"'.");
+			StringBuilder traversedPath = new StringBuilder("/");
+			for(String segment : datasetPath) {
+				currentEntry = descendIntoChild(rootObject, currentEntry, segment, traversedPath.toString());
+				if(traversedPath.length() > 1)
+					traversedPath.append('/');
+				traversedPath.append(segment);
 			}
 
-			final H5ObjectHeader header = new H5ObjectHeader(rootObject, symbolTableEntry.getObjectHeaderAddress());
-			final H5ContiguousDataset contiguousDataset = new H5ContiguousDataset(rootObject, header);
-			return contiguousDataset;
+			if(H5RootObject.HDF5_DEBUG) {
+				System.out.println("[HDF5] Opening dataset '" + datasetName + "' resolved to object header @ "
+					+ currentEntry.getObjectHeaderAddress());
+			}
+
+			final H5ObjectHeader header = new H5ObjectHeader(rootObject, currentEntry.getObjectHeaderAddress());
+			return new H5ContiguousDataset(rootObject, header);
 
 		}
 		catch(Exception exception) {
 			throw new H5RuntimeException(exception);
 		}
+	}
+
+	private static H5SymbolTableEntry descendIntoChild(H5RootObject rootObject, H5SymbolTableEntry parentEntry,
+		String childSegment, String currentPath) {
+		H5ObjectHeader objectHeader = new H5ObjectHeader(rootObject, parentEntry.getObjectHeaderAddress());
+		H5SymbolTableMessage symbolTableMessage = objectHeader.getMessageOfType(H5SymbolTableMessage.class);
+		List<H5SymbolTableEntry> children = readSymbolTableEntries(rootObject, symbolTableMessage);
+		H5LocalHeap heap = new H5LocalHeap(rootObject, symbolTableMessage.getLocalHeapAddress());
+		ByteBuffer nameBuffer = heap.getDataBuffer();
+		List<String> availableNames = new ArrayList<>();
+		for(H5SymbolTableEntry child : children) {
+			nameBuffer.position(child.getLinkNameOffset());
+			String candidateName = Utils.readUntilNull(nameBuffer);
+			if(H5RootObject.HDF5_DEBUG) {
+				System.out.println("[HDF5] Visit '" + currentPath + "' child -> '" + candidateName + "'");
+			}
+			availableNames.add(candidateName);
+			if(candidateName.equals(childSegment)) {
+				return child;
+			}
+		}
+		throw new H5RuntimeException("Dataset path segment '" + childSegment + "' not found under '" + currentPath
+			+ "'. Available entries: " + availableNames);
+	}
+
+	private static List<H5SymbolTableEntry> readSymbolTableEntries(H5RootObject rootObject,
+		H5SymbolTableMessage symbolTableMessage) {
+		H5BTree btree = new H5BTree(rootObject, symbolTableMessage.getbTreeAddress());
+		List<H5SymbolTableEntry> entries = new ArrayList<>();
+		for(Long childAddress : btree.getChildAddresses()) {
+			H5GroupSymbolTableNode groupNode = new H5GroupSymbolTableNode(rootObject, childAddress);
+			entries.addAll(Arrays.asList(groupNode.getSymbolTableEntries()));
+		}
+		return entries;
+	}
+
+	private static List<String> normalizeDatasetPath(String datasetName) {
+		if(datasetName == null) {
+			throw new H5RuntimeException("Dataset name cannot be null");
+		}
+		List<String> tokens = Arrays.stream(datasetName.split("/"))
+			.map(String::trim)
+			.filter(token -> !token.isEmpty())
+			.collect(Collectors.toList());
+		if(tokens.isEmpty()) {
+			throw new H5RuntimeException("Dataset name '" + datasetName + "' is invalid.");
+		}
+		return tokens;
 	}
 
 	// Create Dataset
@@ -196,14 +238,12 @@ public class H5 {
 
 	public static void H5Dread(H5RootObject rootObject, H5ContiguousDataset dataset, double[][] data) {
 		for(int i = 0; i < rootObject.getRow(); i++) {
-			ByteBuffer buffer = dataset.getDataBuffer(i);
-			dataset.getDataType().getDoubleDataType().fillData(buffer, data[i]);
+			dataset.readRowDoubles(i, data[i], 0);
 		}
 	}
 
 	public static void H5Dread(H5ContiguousDataset dataset, int row, double[] data) {
-		ByteBuffer buffer = dataset.getDataBuffer(row);
-		dataset.getDataType().getDoubleDataType().fillData(buffer, data);
+		dataset.readRowDoubles(row, data, 0);
 	}
 
 }

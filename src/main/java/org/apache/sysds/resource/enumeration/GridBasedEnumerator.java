@@ -19,7 +19,7 @@
 
 package org.apache.sysds.resource.enumeration;
 
-import java.util.*;
+import java.util.ArrayList;
 
 public class GridBasedEnumerator extends Enumerator {
 	/** sets the step size at iterating over number of executors at enumeration */

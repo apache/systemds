@@ -204,6 +204,11 @@ public class OptimizerUtils
 	 * ALLOW_SUM_PRODUCT_REWRITES.
 	 */
 	public static boolean ALLOW_ADVANCED_MMCHAIN_REWRITES = false;
+
+	/**
+	 * Enables a DPSize inspired algorithm rewrite for MMChain with transposes
+	 */
+	public static boolean ALLOW_NEW_MMCHAIN_REWRITE = false;
 	
 	/**
 	 * Enables a specific hop dag rewrite that splits hop dags after csv persistent reads with 
@@ -302,6 +307,7 @@ public class OptimizerUtils
 	 */
 	public static boolean ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = true;
 
+	public static boolean ALLOW_JOIN_REORDERING_REWRITE = false;
 	/**
 	 * Enable prefetch and broadcast. Prefetch asynchronously calls acquireReadAndRelease() to trigger remote
 	 * operations, which would otherwise make the next instruction wait till completion. Broadcast allows
@@ -333,6 +339,11 @@ public class OptimizerUtils
 	 */
 
 	public static boolean AUTO_GPU_CACHE_EVICTION = true;
+
+	/**
+	 * Boolean specifying if relational algebra rewrites are allowed (e.g. Selection Pushdowns).
+	 */
+	public static boolean ALLOW_RA_REWRITES = false;
 
 	//////////////////////
 	// Optimizer levels //

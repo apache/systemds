@@ -180,6 +180,7 @@ from .builtin.rmse import rmse
 from .builtin.scale import scale 
 from .builtin.scaleApply import scaleApply 
 from .builtin.scaleMinMax import scaleMinMax 
+from .builtin.scaleRobustApply import scaleRobustApply 
 from .builtin.selectByVarThresh import selectByVarThresh 
 from .builtin.ses import ses 
 from .builtin.setdiff import setdiff 
@@ -381,6 +382,7 @@ __all__ = ['WoE',
  'scale',
  'scaleApply',
  'scaleMinMax',
+ 'scaleRobustApply',
  'selectByVarThresh',
  'ses',
  'setdiff',

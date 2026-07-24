@@ -19,6 +19,10 @@
  
 package org.apache.sysds.api;
 
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -66,6 +70,10 @@ public class DMLOptions {
 	public boolean              gpu           = false;            // Whether to use the GPU
 	public boolean              forceGPU      = false;            // Whether to ignore memory & estimates and always use the GPU
 	public boolean              ooc           = false;            // Whether to use the OOC backend
+	public boolean              oocLogEvents  = false;            // Whether to record I/O and task compute events (fine grained, may impact performance on many small tasks)
+	public String               oocLogPath    = "./";             // The directory where to save the recorded event logs (csv)
+	public boolean              oocStats      = false;            // Wether to record and print coarse grained ooc statistics
+	public int                  oocStatsCount = 10;               // Default ooc statistics count
 	public boolean              debug         = false;            // to go into debug mode to be able to step through a program
 	public String               filePath      = null;             // path to script
 	public String               script        = null;             // the script itself
@@ -105,7 +113,11 @@ public class DMLOptions {
 			", fedStats=" + fedStats +
 			", fedStatsCount=" + fedStatsCount +
 			", fedMonitoring=" + fedMonitoring +
-			", fedMonitoringAddress" + fedMonitoringAddress +
+			", fedMonitoringAddress=" + fedMonitoringAddress +
+			", oocStats=" + oocStats +
+			", oocStatsCount=" + oocStatsCount +
+			", oocLogEvents=" + oocLogEvents +
+			", oocLogPath=" + oocLogPath +
 			", memStats=" + memStats +
 			", explainType=" + explainType +
 			", execMode=" + execMode +
@@ -193,7 +205,7 @@ public class DMLOptions {
 			else if (execMode.equalsIgnoreCase("hybrid")) dmlOptions.execMode = ExecMode.HYBRID;
 			else if (execMode.equalsIgnoreCase("spark")) dmlOptions.execMode = ExecMode.SPARK;
 			else throw new org.apache.commons.cli.ParseException("Invalid argument specified for -exec option, must be one of [hadoop, singlenode, hybrid, HYBRID, spark]");
-	}
+		}
 		if (line.hasOption("explain")) {
 			dmlOptions.explainType = ExplainType.RUNTIME;
 			String explainType = line.getOptionValue("explain");
@@ -256,6 +268,33 @@ public class DMLOptions {
 				} catch (NumberFormatException e) {
 					throw new org.apache.commons.cli.ParseException("Invalid argument specified for -fedStats option, must be a valid integer");
 				}
+			}
+		}
+
+		dmlOptions.oocStats = line.hasOption("oocStats");
+		if (dmlOptions.oocStats) {
+			String oocStatsCount = line.getOptionValue("oocStats");
+			if (oocStatsCount != null) {
+				try {
+					dmlOptions.oocStatsCount = Integer.parseInt(oocStatsCount);
+				} catch (NumberFormatException e) {
+					throw new org.apache.commons.cli.ParseException("Invalid argument specified for -oocStats option, must be a valid integer");
+				}
+			}
+		}
+
+		dmlOptions.oocLogEvents = line.hasOption("oocLogEvents");
+		if (dmlOptions.oocLogEvents) {
+			String eventLogPath = line.getOptionValue("oocLogEvents");
+			if (eventLogPath != null) {
+				try {
+					Path p = Paths.get(eventLogPath);
+					if (!Files.isDirectory(p))
+						throw new org.apache.commons.cli.ParseException("Invalid argument specified for -oocLogEvents option, must be valid directory");
+				} catch (InvalidPathException e) {
+					throw new org.apache.commons.cli.ParseException("Invalid argument specified for -oocLogEvents option, must be a valid path");
+				}
+				dmlOptions.oocLogPath = eventLogPath;
 			}
 		}
 
@@ -387,6 +426,12 @@ public class DMLOptions {
 		Option fedStatsOpt = OptionBuilder.withArgName("count")
 			.withDescription("monitors and reports summary execution statistics of federated workers; heavy hitter <count> is 10 unless overridden; default off")
 			.hasOptionalArg().create("fedStats");
+		Option oocStatsOpt = OptionBuilder
+			.withDescription("monitors and reports summary execution statistics of ooc operators and tasks; heavy hitter <count> is 10 unless overriden; default off")
+			.hasOptionalArg().create("oocStats");
+		Option oocLogEventsOpt = OptionBuilder
+			.withDescription("records fine grained events of compute tasks, I/O, and cache; -oocLogEvents [dir='./']")
+			.hasOptionalArg().create("oocLogEvents");
 		Option memOpt = OptionBuilder.withDescription("monitors and reports max memory consumption in CP; default off")
 			.create("mem");
 		Option explainOpt = OptionBuilder.withArgName("level")
@@ -452,6 +497,8 @@ public class DMLOptions {
 		options.addOption(statsOpt);
 		options.addOption(ngramsOpt);
 		options.addOption(fedStatsOpt);
+		options.addOption(oocStatsOpt);
+		options.addOption(oocLogEventsOpt);
 		options.addOption(memOpt);
 		options.addOption(explainOpt);
 		options.addOption(execOpt);

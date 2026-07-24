@@ -21,18 +21,19 @@
 
 from typing import List
 
-
+import numpy as np
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.utils import pad_sequences
 
 from systemds.scuro.representations.fusion import Fusion
+from systemds.scuro.representations.representation import RepresentationStats
 
 from systemds.scuro.drsearch.operator_registry import register_fusion_operator
 
 
 @register_fusion_operator()
 class Sum(Fusion):
-    def __init__(self):
+    def __init__(self, params=None):
         """
         Combines modalities using colum-wise sum
         """
@@ -40,9 +41,44 @@ class Sum(Fusion):
         self.needs_alignment = True
 
     def execute(self, modalities: List[Modality]):
-        data = modalities[0].data
+        data = np.asarray(
+            modalities[0].data,
+            dtype=modalities[0].metadata[0]["data_layout"]["type"],
+        )
 
         for m in range(1, len(modalities)):
-            data += modalities[m].data
-
+            data += np.asarray(
+                modalities[m].data,
+                dtype=modalities[m].metadata[0]["data_layout"]["type"],
+            )
         return data
+
+    def get_output_stats(self, input_stats_list) -> RepresentationStats:
+        if isinstance(input_stats_list, RepresentationStats):
+            return input_stats_list
+
+        stats_list = list(input_stats_list)
+        if not stats_list:
+            return RepresentationStats(0, (0,))
+
+        max_dim = max([stats.output_shape[-1] for stats in stats_list])
+        return RepresentationStats(stats_list[0].num_instances, (max_dim,))
+
+    def estimate_peak_memory_bytes(self, input_stats_list) -> dict:
+        elem_size = np.dtype(np.float64).itemsize
+
+        def stats_payload_bytes(s: RepresentationStats) -> int:
+            numel = int(np.prod(s.output_shape)) if len(s.output_shape) > 0 else 1
+            return int(s.num_instances * numel * elem_size)
+
+        first_bytes = stats_payload_bytes(input_stats_list[0])
+        max_other_bytes = 0
+        if len(input_stats_list) > 1:
+            max_other_bytes = max(stats_payload_bytes(s) for s in input_stats_list[1:])
+
+        ufunc_workspace_bytes = int(0.1 * max(first_bytes, max_other_bytes))
+        cpu_peak = int(
+            (first_bytes + max_other_bytes + ufunc_workspace_bytes) * 1.15
+            + 8 * 1024 * 1024
+        )
+        return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}

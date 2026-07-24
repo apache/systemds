@@ -882,7 +882,8 @@ public abstract class Lop
 		boolean isLiteral = (isData && ((Data)this).isLiteral());
 		
 		StringBuilder sb = new StringBuilder("");
-		if ( et == ExecType.CP || et == ExecType.SPARK || et == ExecType.GPU || (isData && isLiteral)) {
+		if ( et == ExecType.CP || et == ExecType.SPARK || et == ExecType.GPU || et == ExecType.OOC
+			|| (isData && isLiteral)) {
 			sb.append(label);
 		}
 		else {

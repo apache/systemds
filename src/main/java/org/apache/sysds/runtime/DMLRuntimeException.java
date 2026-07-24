@@ -28,11 +28,15 @@ public class DMLRuntimeException extends DMLException
 {
 	private static final long serialVersionUID = 1L;
 
+	public static DMLRuntimeException of(Throwable t) {
+		return t instanceof DMLRuntimeException ? (DMLRuntimeException) t : new DMLRuntimeException(t);
+	}
+
 	public DMLRuntimeException(String string) {
 		super(string);
 	}
 	
-	public DMLRuntimeException(Exception e) {
+	public DMLRuntimeException(Throwable e) {
 		super(e);
 	}
 

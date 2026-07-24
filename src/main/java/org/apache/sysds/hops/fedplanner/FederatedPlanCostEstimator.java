@@ -19,6 +19,12 @@
 
 package org.apache.sysds.hops.fedplanner;
 
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.DataOp;
@@ -28,7 +34,6 @@ import org.apache.sysds.hops.fedplanner.FederatedMemoTable.FedPlan;
 import org.apache.sysds.hops.fedplanner.FederatedMemoTable.HopCommon;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 
-import java.util.*;
 
 /**
  * Cost estimator for federated execution plans.

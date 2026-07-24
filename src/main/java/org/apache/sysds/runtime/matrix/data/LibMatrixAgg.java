@@ -58,7 +58,7 @@ import org.apache.sysds.runtime.functionobjects.ReduceDiag;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
@@ -475,8 +475,8 @@ public class LibMatrixAgg {
 	 * @param fn Value function to apply
 	 * @return Central Moment or Covariance object
 	 */
-	public static CM_COV_Object aggregateCmCov(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, ValueFunction fn) {
-		CM_COV_Object cmobj = new CM_COV_Object();
+	public static CmCovObject aggregateCmCov(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, ValueFunction fn) {
+		CmCovObject cmobj = new CmCovObject();
 		
 		// empty block handling (important for result correctness, otherwise
 		// we get a NaN due to 0/0 on reading out the required result)
@@ -502,11 +502,11 @@ public class LibMatrixAgg {
 	 * @param k Parallelization degree
 	 * @return Central Moment or Covariance object
 	 */
-	public static CM_COV_Object aggregateCmCov(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, ValueFunction fn, int k) {
+	public static CmCovObject aggregateCmCov(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, ValueFunction fn, int k) {
 		if( in1.isEmptyBlock(false) || !satisfiesMultiThreadingConstraints(in1, k) )
 			return aggregateCmCov(in1, in2, in3, fn);
 		
-		CM_COV_Object ret = null;
+		CmCovObject ret = null;
 		
 		ExecutorService pool = CommonThreadPool.get(k);
 		try {
@@ -514,7 +514,7 @@ public class LibMatrixAgg {
 			ArrayList<Integer> blklens = UtilFunctions.getBalancedBlockSizesDefault(in1.rlen, k, false);
 			for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ )
 				tasks.add(new AggCmCovTask(in1, in2, in3, fn, lb, lb+blklens.get(i)));
-			List<Future<CM_COV_Object>> rtasks = pool.invokeAll(tasks);
+			List<Future<CmCovObject>> rtasks = pool.invokeAll(tasks);
 			
 			//aggregate partial results and error handling
 			ret = rtasks.get(0).get();
@@ -811,8 +811,8 @@ public class LibMatrixAgg {
 			out.binaryOperationsInPlace(laop.increOp, partout);
 	}
 	
-	private static CM_COV_Object aggregateCmCov(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, ValueFunction fn, int rl, int ru) {
-		CM_COV_Object ret = new CM_COV_Object();
+	private static CmCovObject aggregateCmCov(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, ValueFunction fn, int rl, int ru) {
+		CmCovObject ret = new CmCovObject();
 		
 		if( in2 == null && in3 == null ) { //CM
 			int nzcount = 0;
@@ -1142,10 +1142,10 @@ public class LibMatrixAgg {
 		
 		//init group buffers
 		int numCols2 = cu-cl;
-		CM_COV_Object[][] cmValues = new CM_COV_Object[numGroups][numCols2];
+		CmCovObject[][] cmValues = new CmCovObject[numGroups][numCols2];
 		for ( int i=0; i < numGroups; i++ )
 			for( int j=0; j < numCols2; j++  )
-				cmValues[i][j] = new CM_COV_Object();
+				cmValues[i][j] = new CmCovObject();
 		
 		//column vector or matrix
 		if( target.sparse ) { //SPARSE target
@@ -1600,7 +1600,7 @@ public class LibMatrixAgg {
 				break;
 			}
 			case VAR: { //VAR
-				CM_COV_Object cbuff = new CM_COV_Object();
+				CmCovObject cbuff = new CmCovObject();
 				if( ixFn instanceof ReduceAll ) //VAR
 					d_uavar(a, c, n, cbuff, (CM)vFn, rl, ru);
 				else if( ixFn instanceof ReduceCol ) //ROWVAR
@@ -1724,7 +1724,7 @@ public class LibMatrixAgg {
 				break;
 			}
 			case VAR: { //VAR
-				CM_COV_Object cbuff = new CM_COV_Object();
+				CmCovObject cbuff = new CmCovObject();
 				if( ixFn instanceof ReduceAll ) //VAR
 					s_uavar(a, c, n, cbuff, (CM)vFn, rl, ru);
 				else if( ixFn instanceof ReduceCol ) //ROWVAR
@@ -2429,7 +2429,7 @@ public class LibMatrixAgg {
 	 * @param rl Lower row limit.
 	 * @param ru Upper row limit.
 	 */
-	private static void d_uavar(DenseBlock a, DenseBlock c, int n, CM_COV_Object cbuff, CM cm, int rl, int ru) {
+	private static void d_uavar(DenseBlock a, DenseBlock c, int n, CmCovObject cbuff, CM cm, int rl, int ru) {
 		final int bil = a.index(rl);
 		final int biu = a.index(ru-1);
 		for(int bi=bil; bi<=biu; bi++) {
@@ -2460,7 +2460,7 @@ public class LibMatrixAgg {
 	 * @param rl Lower row limit.
 	 * @param ru Upper row limit.
 	 */
-	private static void d_uarvar(DenseBlock a, DenseBlock c, int n, CM_COV_Object cbuff, CM cm, int rl, int ru) {
+	private static void d_uarvar(DenseBlock a, DenseBlock c, int n, CmCovObject cbuff, CM cm, int rl, int ru) {
 		// calculate variance for each row
 		for (int i=rl; i<ru; i++) {
 			cbuff.reset(); // reset buffer for each row
@@ -2489,7 +2489,7 @@ public class LibMatrixAgg {
 	 * @param rl Lower row limit.
 	 * @param ru Upper row limit.
 	 */
-	private static void d_uacvar(DenseBlock a, DenseBlock c, int n, CM_COV_Object cbuff, CM cm, int rl, int ru) {
+	private static void d_uacvar(DenseBlock a, DenseBlock c, int n, CmCovObject cbuff, CM cm, int rl, int ru) {
 		// calculate variance for each column incrementally
 		for (int i=rl; i<ru; i++)
 			varAgg(a.values(i), c, a.pos(i), n, cbuff, cm);
@@ -3306,7 +3306,7 @@ public class LibMatrixAgg {
 	 * @param rl Lower row limit.
 	 * @param ru Upper row limit.
 	 */
-	private static void s_uavar(SparseBlock a, DenseBlock c, int n, CM_COV_Object cbuff, CM cm, int rl, int ru) {
+	private static void s_uavar(SparseBlock a, DenseBlock c, int n, CmCovObject cbuff, CM cm, int rl, int ru) {
 		// compute and store count of empty cells before aggregation
 		int count = (ru-rl)*n - (int)a.size(rl, ru);
 		cbuff.w = count;
@@ -3342,7 +3342,7 @@ public class LibMatrixAgg {
 	 * @param rl Lower row limit.
 	 * @param ru Upper row limit.
 	 */
-	private static void s_uarvar(SparseBlock a, DenseBlock c, int n, CM_COV_Object cbuff, CM cm, int rl, int ru) {
+	private static void s_uarvar(SparseBlock a, DenseBlock c, int n, CmCovObject cbuff, CM cm, int rl, int ru) {
 		// calculate aggregated variance for each row
 		for( int i=rl; i<ru; i++ ) {
 			cbuff.reset(); // reset buffer for each row
@@ -3374,7 +3374,7 @@ public class LibMatrixAgg {
 	 * @param rl Lower row limit.
 	 * @param ru Upper row limit.
 	 */
-	private static void s_uacvar(SparseBlock a, DenseBlock c, int n, CM_COV_Object cbuff, CM cm, int rl, int ru) {
+	private static void s_uacvar(SparseBlock a, DenseBlock c, int n, CmCovObject cbuff, CM cm, int rl, int ru) {
 		// compute and store counts of empty cells per column before aggregation
 		// note: column results are { var | mean, count, m2 correction, mean correction }
 		// - first, store total possible column counts in 3rd row of output
@@ -3598,12 +3598,12 @@ public class LibMatrixAgg {
 		}
 	}
 
-	private static void var(double[] a, int ai, final int len, CM_COV_Object cbuff, CM cm) {
+	private static void var(double[] a, int ai, final int len, CmCovObject cbuff, CM cm) {
 		for(int i=0; i<len; i++, ai++)
-			cbuff = (CM_COV_Object) cm.execute(cbuff, a[ai]);
+			cbuff = (CmCovObject) cm.execute(cbuff, a[ai]);
 	}
 
-	private static void varAgg(double[] a, DenseBlock c, int ai, final int len, CM_COV_Object cbuff, CM cm) {
+	private static void varAgg(double[] a, DenseBlock c, int ai, final int len, CmCovObject cbuff, CM cm) {
 		//note: output might span multiple physical blocks
 		double[] var = c.values(0);
 		double[] mean = c.values(1);
@@ -3620,7 +3620,7 @@ public class LibMatrixAgg {
 			cbuff.m2._correction = m2corr[pos3+i];
 			cbuff.mean._correction = mcorr[pos4+i];
 			// calculate incremental aggregated variance
-			cbuff = (CM_COV_Object) cm.execute(cbuff, a[ai+i]);
+			cbuff = (CmCovObject) cm.execute(cbuff, a[ai+i]);
 			// store updated values: { var | mean, count, m2 correction, mean correction }
 			var[pos0+i] = cbuff.getRequiredResult(AggregateOperationTypes.VARIANCE);
 			mean[pos1+i] = cbuff.mean._sum;
@@ -3630,7 +3630,7 @@ public class LibMatrixAgg {
 		}
 	}
 
-	private static void varAgg(double[] a, DenseBlock c, int[] aix, int ai, final int len, final int n, CM_COV_Object cbuff, CM cm)
+	private static void varAgg(double[] a, DenseBlock c, int[] aix, int ai, final int len, final int n, CmCovObject cbuff, CM cm)
 	{
 		//note: output might span multiple physical blocks
 		double[] var = c.values(0);
@@ -3649,7 +3649,7 @@ public class LibMatrixAgg {
 			cbuff.m2._correction = m2corr[pos3+ix];
 			cbuff.mean._correction = mcorr[pos4+ix];
 			// calculate incremental aggregated variance
-			cbuff = (CM_COV_Object) cm.execute(cbuff, a[i]);
+			cbuff = (CmCovObject) cm.execute(cbuff, a[i]);
 			// store updated values: { var | mean, count, m2 correction, mean correction }
 			var[pos0+ix] = cbuff.getRequiredResult(AggregateOperationTypes.VARIANCE);
 			mean[pos1+ix] = cbuff.mean._sum;
@@ -4062,7 +4062,7 @@ public class LibMatrixAgg {
 		}
 	}
 	
-	private static class AggCmCovTask implements Callable<CM_COV_Object> {
+	private static class AggCmCovTask implements Callable<CmCovObject> {
 		private final MatrixBlock _in1, _in2, _in3;
 		private final ValueFunction _fn;
 		private final int _rl, _ru;
@@ -4077,7 +4077,7 @@ public class LibMatrixAgg {
 		}
 		
 		@Override
-		public CM_COV_Object call() {
+		public CmCovObject call() {
 			//deep copy stateful CM function (has Kahan objects inside)
 			//for correctness and to avoid cache thrashing among threads
 			ValueFunction fn = (_fn instanceof CM) ? CM.getCMFnObject((CM)_fn) : _fn;

@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -48,7 +49,7 @@ import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
@@ -403,9 +404,9 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 	}
 
 	@Override
-	public CM_COV_Object centralMoment(CMOperator op, int nRows) {
+	public CmCovObject centralMoment(CMOperator op, int nRows) {
 		// should be guaranteed to be one column therefore only one reference value.
-		CM_COV_Object ret = _dict.centralMomentWithReference(op.fn, getCounts(), _reference[0], nRows);
+		CmCovObject ret = _dict.centralMomentWithReference(op.fn, getCounts(), _reference[0], nRows);
 		return ret;
 	}
 
@@ -547,6 +548,20 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 	}
 
 	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+		return ColGroupDDCFOR.create(_colIndexes, _dict, _data.removeEmpty(selectV, rOut), null, _reference);
+	}
+
+	@Override
+	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns) {
+		double[] ref = new double[selectedColumns.size()];
+		for(int i = 0; i < selectedColumns.size(); i++) {
+			ref[i] = _reference[selectedColumns.get(i)];
+		}
+		return ColGroupDDCFOR.create(newColumnIDs, _dict.sliceColumns(selectedColumns, getNumCols()), _data, null, ref);
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
@@ -555,5 +570,24 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 		sb.append(String.format("\n%15s", "Reference:"));
 		sb.append(Arrays.toString(_reference));
 		return sb.toString();
+	}
+
+	@Override
+	public AColGroup sort() {
+		// TODO restore support for run length encoding.
+
+		int[] counts = getCounts();
+		// get the sort index
+		int[] r = _dict.sort();
+
+		AMapToData m = MapToFactory.create(_data.size(), counts.length);
+		int off = 0;
+		for(int i = 0; i < counts.length; i++) {
+			for(int j = 0; j < counts[r[i]]; j++) {
+				m.set(off++, r[i]);
+			}
+		}
+
+		return ColGroupDDCFOR.create(_colIndexes, _dict, m, counts, _reference);
 	}
 }

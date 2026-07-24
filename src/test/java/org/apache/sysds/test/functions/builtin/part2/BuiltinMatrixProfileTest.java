@@ -28,7 +28,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.lang.Math;
 import java.util.Random;
 import java.util.Collections;
 import java.util.Comparator;

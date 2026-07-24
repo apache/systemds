@@ -121,7 +121,7 @@ public class RewriteFusedRandTest extends AutomatedTestBase
 			//compare matrices 
 			Double ret = readDMLMatrixFromOutputDir("R").get(new CellIndex(1,1));
 			if( testname.equals(TEST_NAME1) )
-				Assert.assertEquals("Wrong result", Double.valueOf(rows), ret);
+				Assert.assertEquals("Wrong result", Double.valueOf(rows*cols), ret);
 			else if( testname.equals(TEST_NAME2) )
 				Assert.assertEquals("Wrong result", Double.valueOf(Math.pow(rows*cols, 2)), ret);
 			else if( testname.equals(TEST_NAME3) )

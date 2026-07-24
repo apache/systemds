@@ -197,7 +197,10 @@ public abstract class AComEst {
 			return null; // This combination is clearly not a good idea return null to indicate that.
 		else if(g1.getMap() == null || g2.getMap() == null)
 			// the previous information did not contain maps, therefore fall back to extract from sample
-			return getColGroupInfo(combinedColumns, Math.max(g1V, g2V), (int) max);
+			if(_cs.preferDeltaEncoding)
+				return getDeltaColGroupInfo(combinedColumns, Math.max(g1V, g2V), (int) max);
+			else
+				return getColGroupInfo(combinedColumns, Math.max(g1V, g2V), (int) max);
 		else // Default combine the previous subject to max value calculated.
 			return combine(combinedColumns, g1, g2, (int) max);
 	}
@@ -254,8 +257,12 @@ public abstract class AComEst {
 		List<CompressedSizeInfoColGroup> ret = new ArrayList<>(clen);
 		if(!_cs.transposed && !_data.isEmpty() && _data.isInSparseFormat())
 			nnzCols = LibMatrixReorg.countNnzPerColumn(_data);
-		for(int col = 0; col < clen; col++)
-			ret.add(getColGroupInfo(new SingleIndex(col)));
+		for(int col = 0; col < clen; col++) {
+			if(_cs.preferDeltaEncoding)
+				ret.add(getDeltaColGroupInfo(new SingleIndex(col)));
+			else
+				ret.add(getColGroupInfo(new SingleIndex(col)));
+		}
 		return ret;
 	}
 
@@ -286,9 +293,14 @@ public abstract class AComEst {
 			for(int col = 0; col < clen; col += blkz) {
 				final int start = col;
 				final int end = Math.min(clen, col + blkz);
+				final boolean useDelta = _cs.preferDeltaEncoding;
 				tasks.add(pool.submit(() -> {
-					for(int c = start; c < end; c++)
-						res[c] = getColGroupInfo(new SingleIndex(c));
+					for(int c = start; c < end; c++) {
+						if(useDelta)
+							res[c] = getDeltaColGroupInfo(new SingleIndex(c));
+						else
+							res[c] = getColGroupInfo(new SingleIndex(c));
+					}
 					return null;
 				}));
 			}

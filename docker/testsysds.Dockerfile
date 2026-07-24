@@ -77,7 +77,7 @@ RUN apt-get install -y --no-install-recommends \
 	https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.15%2B6/OpenJDK17U-jdk_x64_linux_hotspot_17.0.15_6.tar.gz  | tar xzf - \
 	&& mv jdk-17.0.15+6 $JAVA_HOME \
 	&& wget -qO- \
-	http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xzf - \ 
+	https://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xzf - \ 
 	&& mv apache-maven-$MAVEN_VERSION /usr/lib/mvn
 
 

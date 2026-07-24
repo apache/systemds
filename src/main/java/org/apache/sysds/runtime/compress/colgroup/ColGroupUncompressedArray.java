@@ -19,16 +19,18 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.frame.data.columns.Array;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -203,7 +205,7 @@ public class ColGroupUncompressedArray extends AColGroup {
 	}
 
 	@Override
-	public CM_COV_Object centralMoment(CMOperator op, int nRows) {
+	public CmCovObject centralMoment(CMOperator op, int nRows) {
 		throw new UnsupportedOperationException("Unimplemented method 'centralMoment'");
 	}
 
@@ -282,4 +284,18 @@ public class ColGroupUncompressedArray extends AColGroup {
 		throw new UnsupportedOperationException("Unimplemented method 'splitReshape'");
 	}
 
+	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+		throw new NotImplementedException("Unimplemented method 'removeEmptyRows'");
+	}
+
+	@Override
+	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns){
+		throw new NotImplementedException("Unimplemented method 'removeEmptyColumns'");
+	}
+
+	@Override
+	public AColGroup sort() {
+		throw new NotImplementedException("Unimplemented method 'sort'");
+	}
 }

@@ -30,7 +30,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.functionobjects.COV;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -88,17 +88,17 @@ public class CovarianceSPInstruction extends BinarySPInstruction {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryMatrixBlockRDDHandleForVariable( input2.getName() );
 		
 		//process central moment instruction
-		CM_COV_Object cmobj = null; 
+		CmCovObject cmobj = null; 
 		if( input3 == null ) { //w/o weights
 			cmobj = in1.join( in2 )
 				.values().map(new RDDCOVFunction(cop))
-				.fold(new CM_COV_Object(), new RDDCOVReduceFunction(cop));
+				.fold(new CmCovObject(), new RDDCOVReduceFunction(cop));
 		}
 		else { //with weights
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in3 = sec.getBinaryMatrixBlockRDDHandleForVariable( input3.getName() );
 			cmobj = in1.join( in2 ).join( in3 )
 				.values().map(new RDDCOVWeightsFunction(cop))
-				.fold(new CM_COV_Object(), new RDDCOVReduceFunction(cop));
+				.fold(new CmCovObject(), new RDDCOVReduceFunction(cop));
 		}
 
 		//create scalar output (no lineage information required)
@@ -106,7 +106,7 @@ public class CovarianceSPInstruction extends BinarySPInstruction {
 		ec.setScalarOutput(output.getName(), new DoubleObject(val));
 	}
 
-	private static class RDDCOVFunction implements Function<Tuple2<MatrixBlock,MatrixBlock>, CM_COV_Object>
+	private static class RDDCOVFunction implements Function<Tuple2<MatrixBlock,MatrixBlock>, CmCovObject>
 	{
 		private static final long serialVersionUID = -9088449969750217519L;
 		
@@ -117,7 +117,7 @@ public class CovarianceSPInstruction extends BinarySPInstruction {
 		}
 
 		@Override
-		public CM_COV_Object call(Tuple2<MatrixBlock,MatrixBlock> arg0) 
+		public CmCovObject call(Tuple2<MatrixBlock,MatrixBlock> arg0) 
 			throws Exception 
 		{
 			MatrixBlock input1 = arg0._1();
@@ -128,7 +128,7 @@ public class CovarianceSPInstruction extends BinarySPInstruction {
 		}
 	}
 
-	private static class RDDCOVWeightsFunction implements Function<Tuple2<Tuple2<MatrixBlock,MatrixBlock>,MatrixBlock>, CM_COV_Object> 
+	private static class RDDCOVWeightsFunction implements Function<Tuple2<Tuple2<MatrixBlock,MatrixBlock>,MatrixBlock>, CmCovObject> 
 	{
 		private static final long serialVersionUID = 1945166819152577077L;
 		
@@ -139,7 +139,7 @@ public class CovarianceSPInstruction extends BinarySPInstruction {
 		}
 
 		@Override
-		public CM_COV_Object call(Tuple2<Tuple2<MatrixBlock,MatrixBlock>,MatrixBlock> arg0) 
+		public CmCovObject call(Tuple2<Tuple2<MatrixBlock,MatrixBlock>,MatrixBlock> arg0) 
 			throws Exception 
 		{
 			MatrixBlock input1 = arg0._1()._1();
@@ -151,7 +151,7 @@ public class CovarianceSPInstruction extends BinarySPInstruction {
 		}
 	}
 
-	private static class RDDCOVReduceFunction implements Function2<CM_COV_Object, CM_COV_Object, CM_COV_Object>
+	private static class RDDCOVReduceFunction implements Function2<CmCovObject, CmCovObject, CmCovObject>
 	{
 		private static final long serialVersionUID = 1118102911706607118L;
 		
@@ -162,7 +162,7 @@ public class CovarianceSPInstruction extends BinarySPInstruction {
 		}
 
 		@Override
-		public CM_COV_Object call(CM_COV_Object arg0, CM_COV_Object arg1) 
+		public CmCovObject call(CmCovObject arg0, CmCovObject arg1) 
 			throws Exception 
 		{
 			//execute cov combine operations

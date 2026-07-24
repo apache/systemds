@@ -25,6 +25,8 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -32,10 +34,16 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
-public interface MatrixBlockFromFrame {
+public class MatrixBlockFromFrame {
 	public static final Log LOG = LogFactory.getLog(MatrixBlockFromFrame.class.getName());
 
 	public static final int blocksizeIJ = 32;
+
+	public static Boolean WARNED_FOR_FAILED_CAST = false;
+
+	private MatrixBlockFromFrame(){
+		// private constructor for code coverage.
+	}
 
 	/**
 	 * Converts a frame block with arbitrary schema into a matrix block. Since matrix block only supports value type
@@ -68,11 +76,15 @@ public interface MatrixBlockFromFrame {
 			if(k == -1)
 				k = InfrastructureAnalyzer.getLocalParallelism();
 
+			// Read once on the calling thread: the thread-local config is not visible to pool workers.
+			final boolean warnCast = ConfigurationManager.getDMLConfig()
+				.getBooleanValue(DMLConfig.FRAME_TO_MATRIX_WARN_CAST);
+
 			long nnz = 0;
 			if(k == 1)
-				nnz = convert(frame, ret, n, 0, m);
+				nnz = convert(frame, ret, n, 0, m, warnCast);
 			else
-				nnz = convertParallel(frame, ret, m, n, k);
+				nnz = convertParallel(frame, ret, m, n, k, warnCast);
 
 			ret.setNonZeros(nnz);
 			ret.examSparsity();
@@ -93,14 +105,37 @@ public interface MatrixBlockFromFrame {
 		return ret;
 	}
 
-	private static long convert(FrameBlock frame, MatrixBlock mb, int n, int rl, int ru) {
+	private static long convert(FrameBlock frame, MatrixBlock mb, int n, int rl, int ru, boolean warnCast) {
+		// Strict (default): let number format errors propagate and fail the conversion.
+		if(!warnCast)
+			return convertStrict(frame, mb, n, rl, ru);
+
+		// Warn-only: on number format errors fall back to writing NaN for the incompatible cells.
+		try {
+			return convertStrict(frame, mb, n, rl, ru);
+		}
+		catch(NumberFormatException | DMLRuntimeException e) {
+			synchronized(WARNED_FOR_FAILED_CAST){
+				if(!WARNED_FOR_FAILED_CAST) {
+					LOG.error(
+						"Failed to convert to Matrix because of number format errors, falling back to NaN on incompatible cells",
+						e);
+					WARNED_FOR_FAILED_CAST = true;
+				}
+			}
+			return convertSafeCast(frame, mb, n, rl, ru);
+		}
+	}
+
+	private static long convertStrict(FrameBlock frame, MatrixBlock mb, int n, int rl, int ru) {
 		if(mb.getDenseBlock().isContiguous())
 			return convertContiguous(frame, mb, n, rl, ru);
 		else
 			return convertGeneric(frame, mb, n, rl, ru);
 	}
 
-	private static long convertParallel(FrameBlock frame, MatrixBlock mb, int m, int n, int k) throws Exception {
+	private static long convertParallel(FrameBlock frame, MatrixBlock mb, int m, int n, int k, boolean warnCast)
+		throws Exception {
 		ExecutorService pool = CommonThreadPool.get(k);
 		try {
 			List<Future<Long>> tasks = new ArrayList<>();
@@ -109,7 +144,7 @@ public interface MatrixBlockFromFrame {
 			for(int i = 0; i < m; i += blkz) {
 				final int start = i;
 				final int end = Math.min(i + blkz, m);
-				tasks.add(pool.submit(() -> convert(frame, mb, n, start, end)));
+				tasks.add(pool.submit(() -> convert(frame, mb, n, start, end, warnCast)));
 			}
 
 			long nnz = 0;
@@ -169,4 +204,37 @@ public interface MatrixBlockFromFrame {
 		}
 		return lnnz;
 	}
+
+	private static long convertSafeCast(final FrameBlock frame, final MatrixBlock mb, final int n, final int rl,
+		final int ru) {
+		final DenseBlock c = mb.getDenseBlock();
+		long lnnz = 0;
+		for(int bi = rl; bi < ru; bi += blocksizeIJ) {
+			for(int bj = 0; bj < n; bj += blocksizeIJ) {
+				int bimin = Math.min(bi + blocksizeIJ, ru);
+				int bjmin = Math.min(bj + blocksizeIJ, n);
+				lnnz = convertBlockSafeCast(frame, lnnz, c, bi, bj, bimin, bjmin);
+			}
+		}
+		return lnnz;
+	}
+
+	private static long convertBlockSafeCast(final FrameBlock frame, long lnnz, final DenseBlock c, final int rl,
+		final int cl, final int ru, final int cu) {
+		for(int i = rl; i < ru; i++) {
+			final double[] cvals = c.values(i);
+			final int cpos = c.pos(i);
+			for(int j = cl; j < cu; j++) {
+				try {
+					lnnz += (cvals[cpos + j] = frame.getDoubleNaN(i, j)) != 0 ? 1 : 0;
+				}
+				catch(NumberFormatException | DMLRuntimeException e) {
+					lnnz += 1;
+					cvals[cpos + j] = Double.NaN;
+				}
+			}
+		}
+		return lnnz;
+	}
+
 }

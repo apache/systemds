@@ -54,6 +54,7 @@ tensors (multi-dimensional arrays) whose first dimension may have a heterogeneou
    guide/federated.rst
    guide/algorithms_basics.rst
    guide/python_end_to_end_tut.rst
+   guide/movie_recommender.rst
 
 .. toctree::
    :maxdepth: 1

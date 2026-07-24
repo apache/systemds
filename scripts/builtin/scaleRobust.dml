@@ -1,0 +1,60 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Robust scaling using median and IQR (Interquartile Range)
+# Resistant to outliers by centering with the median and scaling with IQR.
+#
+# INPUT:
+# -------------------------------------------------------------------------------------
+#   X    Input feature matrix of shape n-by-m
+# -------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -------------------------------------------------------------------------------------
+#   Y    Scaled output matrix of shape n-by-m
+#   med  Column medians (Q2) of shape 1-by-m
+#   q1   Column first quantiles (Q1) of shape 1-by-m
+#   q3   Column first quantiles (Q3) of shape 1-by-m
+# -------------------------------------------------------------------------------------
+
+m_scaleRobust = function(Matrix[Double] X)
+  return (Matrix[Double] Y, Matrix[Double] med, Matrix[Double] q1, Matrix[Double] q3)
+{
+  n = nrow(X)
+  m = ncol(X)
+
+  med = matrix(0.0, rows=1, cols=m)
+  q1  = matrix(0.0, rows=1, cols=m)
+  q3  = matrix(0.0, rows=1, cols=m)
+
+  # Define quantile probabilities once, outside the loop
+  q_probs = as.matrix(list(0.25, 0.5, 0.75));
+
+  # Loop over columns to compute quantiles
+  parfor (j in 1:m) {
+    q = quantile(X[,j], q_probs)
+    med[1,j] = q[2,1]
+    q1[1,j]  = q[1,1]
+    q3[1,j]  = q[3,1]
+  }
+
+  Y = scaleRobustApply(X, med, q1, q3);
+}

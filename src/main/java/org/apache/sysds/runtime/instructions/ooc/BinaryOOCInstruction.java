@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.ooc;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -29,6 +30,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.ooc.util.OOCInstructionUtils;
 
 public class BinaryOOCInstruction extends ComputationOOCInstruction {
 	
@@ -62,17 +64,76 @@ public class BinaryOOCInstruction extends ComputationOOCInstruction {
 		MatrixObject m1 = ec.getMatrixObject(input1);
 		MatrixObject m2 = ec.getMatrixObject(input2);
 
-		OOCStream<IndexedMatrixValue> qIn1 = m1.getStreamHandle();
-		OOCStream<IndexedMatrixValue> qIn2 = m2.getStreamHandle();
 		OOCStream<IndexedMatrixValue> qOut = new SubscribableTaskQueue<>();
 		ec.getMatrixObject(output).setStreamHandle(qOut);
 
-		joinOOC(qIn1, qIn2, qOut, (tmp1, tmp2) -> {
-			IndexedMatrixValue tmpOut = new IndexedMatrixValue();
-			tmpOut.set(tmp1.getIndexes(),
-				tmp1.getValue().binaryOperations((BinaryOperator)_optr, tmp2.getValue(), tmpOut.getValue()));
-			return tmpOut;
-		}, IndexedMatrixValue::getIndexes);
+		final boolean known1 = (m1.getNumRows() >= 0 && m1.getNumColumns() >= 0);
+		final boolean known2 = (m2.getNumRows() >= 0 && m2.getNumColumns() >= 0);
+
+		// If dimensions are unknown, we cannot safely detect broadcasting.
+		// Fall back to strict key-based join and let downstream operators validate as needed.
+		if(!known1 || !known2) {
+			OOCStream<IndexedMatrixValue> qIn1 = m1.getStreamHandle();
+			OOCStream<IndexedMatrixValue> qIn2 = m2.getStreamHandle();
+			if(LOG.isWarnEnabled()) {
+				LOG.warn("Falling back to key-wise OOC binary join for opcode '" + getOpcode()
+					+ "' due to unknown matrix dimensions: " + input1.getName() + "=" + m1.getNumRows() + "x"
+					+ m1.getNumColumns() + ", " + input2.getName() + "=" + m2.getNumRows() + "x"
+					+ m2.getNumColumns());
+			}
+			joinOOC(qIn1, qIn2, qOut, (tmp1, tmp2) -> {
+				IndexedMatrixValue tmpOut = new IndexedMatrixValue();
+				tmpOut.set(tmp1.getIndexes(),
+					tmp1.getValue().binaryOperations((BinaryOperator)_optr, tmp2.getValue(), tmpOut.getValue()));
+				return tmpOut;
+			}, IndexedMatrixValue::getIndexes);
+			return;
+		}
+
+		boolean isColBroadcast = m1.getNumColumns() > 1 && m2.getNumColumns() == 1;
+		boolean isRowBroadcast = m1.getNumRows() > 1 && m2.getNumRows() == 1;
+
+		if (isColBroadcast && !isRowBroadcast) {
+			OOCStream<IndexedMatrixValue> qIn1 = m1.getStreamHandle();
+			OOCStream<IndexedMatrixValue> qIn2 = m2.getStreamHandle();
+			final long maxProcessesPerBroadcast = (m1.getNumColumns() + m1.getBlocksize() - 1) / m1.getBlocksize();
+
+			broadcastJoinOOC(qIn1, qIn2, qOut, (tmp1, b) -> {
+				IndexedMatrixValue tmpOut = new IndexedMatrixValue();
+				tmpOut.set(tmp1.getIndexes(),
+					tmp1.getValue().binaryOperations((BinaryOperator)_optr, b.getValue().getValue(), tmpOut.getValue()));
+
+				if (b.incrProcessCtrAndGet() >= maxProcessesPerBroadcast)
+					b.release();
+
+				return tmpOut;
+			}, tmp -> tmp.getIndexes().getRowIndex());
+		}
+		else if (isRowBroadcast && !isColBroadcast) {
+			OOCStream<IndexedMatrixValue> qIn1 = m1.getStreamHandle();
+			OOCStream<IndexedMatrixValue> qIn2 = m2.getStreamHandle();
+			final long maxProcessesPerBroadcast = (m1.getNumRows() + m1.getBlocksize() - 1) / m1.getBlocksize();
+
+			broadcastJoinOOC(qIn1, qIn2, qOut, (tmp1, b) -> {
+				IndexedMatrixValue tmpOut = new IndexedMatrixValue();
+				tmpOut.set(tmp1.getIndexes(),
+					tmp1.getValue().binaryOperations((BinaryOperator)_optr, b.getValue().getValue(), tmpOut.getValue()));
+
+				if (b.incrProcessCtrAndGet() >= maxProcessesPerBroadcast)
+					b.release();
+
+				return tmpOut;
+			}, tmp -> tmp.getIndexes().getColumnIndex());
+		}
+		else {
+			if (m1.getNumColumns() != m2.getNumColumns() || m1.getNumRows() != m2.getNumRows())
+				throw new NotImplementedException("Invalid dimensions for matrix-matrix binary op: "
+					+ m1.getNumRows() + "x" + m1.getNumColumns() + " <=> "
+					+ m2.getNumRows() + "x" + m2.getNumColumns());
+
+			OOCInstructionUtils.equiJoin(m1.getStreamable(), m2.getStreamable(), qOut,
+				(left, right) -> left.binaryOperations((BinaryOperator) _optr, right, new MatrixBlock()), getContext());
+		}
 	}
 
 	protected void processScalarMatrixInstruction(ExecutionContext ec) {

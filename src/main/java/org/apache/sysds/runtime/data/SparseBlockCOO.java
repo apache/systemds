@@ -194,6 +194,25 @@ public class SparseBlockCOO extends SparseBlock
 	}
 
 	@Override
+	public void compact() {
+		int pos = 0;
+		for(int i=0; i< _values.length; i++) {
+			if(_values[i] != 0){
+				_values[pos] = _values[i];
+				_rindexes[pos] = _rindexes[i];
+				_cindexes[pos] = _cindexes[i];
+				pos++;
+			}
+		}
+		_size = pos;
+	}
+
+	@Override
+	public SparseBlock.Type getSparseBlockType() {
+		return Type.COO;
+	}
+
+	@Override
 	public int numRows() {
 		return _rlen;
 	}
@@ -221,12 +240,12 @@ public class SparseBlockCOO extends SparseBlock
 		}
 
 		//2. correct array lengths
-		if(_size != nnz && _cindexes.length < nnz && _rindexes.length < nnz && _values.length < nnz) {
+		if(_size != nnz || _cindexes.length < nnz || _rindexes.length < nnz || _values.length < nnz) {
 			throw new RuntimeException("Incorrect array lengths.");
 		}
 
 		//3.1. sort order of row indices
-		for( int i=1; i<=nnz; i++ ) {
+		for( int i=1; i<nnz; i++ ) {
 			if(_rindexes[i] < _rindexes[i-1])
 				throw new RuntimeException("Wrong sorted order of row indices");
 		}
@@ -235,14 +254,10 @@ public class SparseBlockCOO extends SparseBlock
 		for( int i=0; i<rlen; i++ ) {
 			int apos = pos(i);
 			int alen = size(i);
-			for(int k=apos+i; k<apos+alen; k++)
-				if( _cindexes[k+1] >= _cindexes[k] )
+			for(int k=apos+1; k<apos+alen; k++)
+				if(_cindexes[k-1] > _cindexes[k])
 					throw new RuntimeException("Wrong sparse row ordering: "
 							+ k + " "+_cindexes[k-1]+" "+_cindexes[k]);
-			for( int k=apos; k<apos+alen; k++ )
-				if(_values[k] == 0)
-					throw new RuntimeException("Wrong sparse row: zero at "
-							+ k + " at col index " + _cindexes[k]);
 		}
 
 		//4. non-existing zero values
@@ -250,11 +265,13 @@ public class SparseBlockCOO extends SparseBlock
 			if( _values[i] == 0)
 				throw new RuntimeException("The values array should not contain zeros."
 						+ " The " + i + "th value is "+_values[i]);
+			if(_cindexes[i] < 0 || _rindexes[i] < 0)
+				throw new RuntimeException("Invalid index at pos=" + i);
 		}
 
 		//5. a capacity that is no larger than nnz times the resize factor
 		int capacity = _values.length;
-		if( capacity > nnz*RESIZE_FACTOR1 ) {
+		if( capacity > INIT_CAPACITY && capacity > nnz*RESIZE_FACTOR1 ) {
 			throw new RuntimeException("Capacity is larger than the nnz times a resize factor."
 					+ " Current size: "+capacity+ ", while Expected size:"+nnz*RESIZE_FACTOR1);
 		}

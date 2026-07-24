@@ -71,8 +71,8 @@ public abstract class AIterator {
 	/**
 	 * Get the current data index associated with the index returned from value.
 	 * 
-	 * This index points to a position int the mapToData object, that then inturn can be used to lookup the dictionary
-	 * entry in ADictionary.
+	 * This index points to a position in the AMapToData object, that can be used to lookup the dictionary entry in
+	 * ADictionary.
 	 * 
 	 * @return The Data Index.
 	 */

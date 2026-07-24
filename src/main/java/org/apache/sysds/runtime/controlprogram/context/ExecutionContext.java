@@ -810,7 +810,7 @@ public class ExecutionContext {
 		for (String varName : varList) {
 			Data dat = _variables.get(varName);
 			if (dat instanceof CacheableData<?>)
-				((CacheableData<?>)dat).enableCleanup(varsState.poll());
+				((CacheableData<?>)dat).enableCleanup(Boolean.TRUE.equals(varsState.poll()));
 			else if (dat instanceof ListObject)
 				((ListObject)dat).enableCleanup(varsState);
 		}

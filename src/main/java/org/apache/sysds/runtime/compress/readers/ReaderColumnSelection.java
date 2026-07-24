@@ -193,13 +193,63 @@ public abstract class ReaderColumnSelection {
 		else {
 			return new ReaderColumnSelectionDenseSingleBlockQuantized(rawBlock, colIndices, rl, ru, scaleFactors);
 		}
-	}	
+	}
+
+	/**
+	 * Create a reader of the matrix block that computes delta values (current row - previous row) on-the-fly.
+	 * 
+	 * Note the reader reuse the return, therefore if needed for something please copy the returned rows.
+	 * The first row is returned as-is (no delta computation).
+	 * 
+	 * @param rawBlock   The block to iterate though
+	 * @param colIndices The column indexes to extract and insert into the double array
+	 * @param transposed If the raw block should be treated as transposed
+	 * @return A delta reader of the columns specified
+	 */
+	public static ReaderColumnSelection createDeltaReader(MatrixBlock rawBlock, IColIndex colIndices, boolean transposed) {
+		final int rl = 0;
+		final int ru = transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows();
+		return createDeltaReader(rawBlock, colIndices, transposed, rl, ru);
+	}
+
+	/**
+	 * Create a reader of the matrix block that computes delta values (current row - previous row) on-the-fly.
+	 * 
+	 * Note the reader reuse the return, therefore if needed for something please copy the returned rows.
+	 * The first row is returned as-is (no delta computation).
+	 * 
+	 * @param rawBlock   The block to iterate though
+	 * @param colIndices The column indexes to extract and insert into the double array
+	 * @param transposed If the raw block should be treated as transposed
+	 * @param rl         The row to start at
+	 * @param ru         The row to end at (not inclusive)
+	 * @return A delta reader of the columns specified
+	 */
+	public static ReaderColumnSelection createDeltaReader(MatrixBlock rawBlock, IColIndex colIndices, boolean transposed,
+		int rl, int ru) {
+		checkInput(rawBlock, colIndices, rl, ru, transposed);
+		rl = rl - 1;
+		if(rawBlock.isEmpty()) {
+			LOG.warn("It is likely an error occurred when reading an empty block, but we do support it!");
+			return new ReaderColumnSelectionEmpty(rawBlock, colIndices, rl, ru, transposed);
+		}
+
+		if(transposed) {
+			throw new NotImplementedException("Delta encoding for transposed matrices not yet implemented");
+		}
+
+		if(rawBlock.isInSparseFormat())
+			return new ReaderColumnSelectionSparseDelta(rawBlock, colIndices, rl, ru);
+		else if(rawBlock.getDenseBlock().numBlocks() > 1)
+			return new ReaderColumnSelectionDenseMultiBlockDelta(rawBlock, colIndices, rl, ru);
+		return new ReaderColumnSelectionDenseSingleBlockDelta(rawBlock, colIndices, rl, ru);
+	}
 
 	private static void checkInput(final MatrixBlock rawBlock, final IColIndex colIndices, final int rl, final int ru,
 		final boolean transposed) {
-		if(colIndices.size() <= 1)
+		if(colIndices.size() < 1)
 			throw new DMLCompressionException(
-				"Column selection reader should not be done on single column groups: " + colIndices);
+				"Column selection reader should not be done on empty column groups: " + colIndices);
 		else if(rl >= ru)
 			throw new DMLCompressionException("Invalid inverse range for reader " + rl + " to " + ru);
 

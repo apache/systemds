@@ -22,6 +22,7 @@ package org.apache.sysds.test.component.codegen;
 import java.lang.reflect.Method;
 
 import org.apache.sysds.runtime.data.SparseRowVector;
+import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary.BinType;
@@ -44,7 +45,7 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 	private static final int n = 132;
 	private static final double sparsity1 = 0.9;
 	private static final double sparsity2 = 0.09;
-	private static final double eps = Math.pow(10, -10);
+	private static final double eps = 1e-10;
 	
 	private enum InputType {
 		SCALAR,
@@ -998,7 +999,6 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 		testVectorUnarySparsePrimitive(UnaryType.VECT_SIGN, InputType.VECTOR_SPARSE);
 	}
 
-	@SuppressWarnings("incomplete-switch")
 	private static void testVectorAggPrimitive(UnaryType aggtype, InputType type1)
 	{
 		try {
@@ -1031,7 +1031,7 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 				}
 				
 				//compare results
-				TestUtils.compareCellValue(ret1, ret2, eps, false);
+				Assert.assertEquals(ret1, ret2, eps);
 			}
 		} 
 		catch( Exception ex ) {

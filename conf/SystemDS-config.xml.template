@@ -57,6 +57,10 @@
     <!-- #blocks the input frame is split up for multithreaded tokenization -->
     <sysds.parallel.tokenize.numBlocks>64</sysds.parallel.tokenize.numBlocks>
 
+    <!-- if true, frame-to-matrix conversion writes NaN for cells that cannot be cast to double and warns once,
+         instead of failing the conversion (default false: strict, fail-fast) -->
+    <sysds.frame.tomatrix.warncast>false</sysds.frame.tomatrix.warncast>
+
     <!-- enables compressed linear algebra, experimental feature -->
     <sysds.compressed.linalg>false</sysds.compressed.linalg>
     

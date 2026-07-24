@@ -317,7 +317,7 @@ public class OptTreeConverter
 			Types.ExecType et = (hop.getExecType()!=null) ? 
 					   hop.getExecType() : Types.ExecType.CP;
 			switch( et ) {
-				case CP:case GPU:
+				case CP:case GPU:case OOC:
 					node.setExecType(ExecType.CP); break;
 				case SPARK:
 					node.setExecType(ExecType.SPARK); break;
@@ -329,7 +329,7 @@ public class OptTreeConverter
 			}
 			
 			//handle degree of parallelism
-			if( et == Types.ExecType.CP && hop instanceof MultiThreadedHop ){
+			if( (et == Types.ExecType.CP || et == Types.ExecType.OOC) && hop instanceof MultiThreadedHop ){
 				MultiThreadedHop mtop = (MultiThreadedHop) hop;
 				node.setK( OptimizerUtils.getConstrainedNumThreads(mtop.getMaxNumThreads()) );
 			}

@@ -26,11 +26,18 @@ import java.net.InetSocketAddress;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.AutomatedTestBase;
 
 public abstract class FedWorkerBase {
 	protected static final Log LOG = LogFactory.getLog(FedWorkerBase.class.getName());
+
+	/** Upper bound (ms) for {@link #awaitCompressed(long)} polling against async worker-side compression. */
+	protected static final int COMPRESS_TIMEOUT_MS = 10_000;
+
+	/** Poll interval used by {@link #awaitCompressed(long)} between successive reads. */
+	private static final int COMPRESS_POLL_INTERVAL_MS = 25;
 
 	private final InetSocketAddress addr;
 	public final int port;
@@ -68,6 +75,38 @@ public abstract class FedWorkerBase {
 
 	public MatrixBlock getMatrixBlock(long id) {
 		return FederatedTestUtils.getMatrixBlock(id, addr);
+	}
+
+	/**
+	 * Poll the federated worker until the matrix at {@code id} is observed as a
+	 * {@link CompressedMatrixBlock}, or {@link #COMPRESS_TIMEOUT_MS} elapses.
+	 *
+	 * <p>Federated workers compress asynchronously after a PUT/READ_VAR (see
+	 * {@code CompressedMatrixBlockFactory.compressAsync}), so a {@code getMatrixBlock} fired right
+	 * after the operation can race against the in-flight compression and return the uncompressed
+	 * block. Tests that need to observe the compressed form should poll instead of sleeping a fixed
+	 * amount.
+	 *
+	 * <p>On timeout this returns the most recent (uncompressed) read so the caller can produce a
+	 * meaningful assertion failure naming the variable.
+	 *
+	 * @param id federated variable id
+	 * @return the matrix block, compressed if compression finished in time, otherwise the latest read
+	 */
+	public MatrixBlock awaitCompressed(long id) {
+		final long deadline = System.currentTimeMillis() + COMPRESS_TIMEOUT_MS;
+		MatrixBlock mb = getMatrixBlock(id);
+		while(!(mb instanceof CompressedMatrixBlock) && System.currentTimeMillis() < deadline) {
+			try {
+				Thread.sleep(COMPRESS_POLL_INTERVAL_MS);
+			}
+			catch(InterruptedException ie) {
+				Thread.currentThread().interrupt();
+				fail("Interrupted while waiting for federated compression of id=" + id);
+			}
+			mb = getMatrixBlock(id);
+		}
+		return mb;
 	}
 
 	public long matrixMult(long idLeft, long idRight) {

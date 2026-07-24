@@ -45,7 +45,6 @@ import java.util.HashMap;
 
 import static org.apache.sysds.resource.ResourceOptimizer.createOptions;
 import static org.apache.sysds.resource.ResourceOptimizer.initEnumerator;
-import static org.apache.sysds.test.component.resource.ResourceTestUtils.*;
 
 public class ResourceOptimizerTest extends AutomatedTestBase {
 	private static final String TEST_DIR = "component/resource/";
@@ -59,15 +58,15 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 		String[] args = {
 				"-f", HOME+"Algorithm_L2SVM.dml",
 		};
-		PropertiesConfiguration options = generateTestingOptionsRequired("any");
+		PropertiesConfiguration options = ResourceTestUtils.generateTestingOptionsRequired("any");
 
 		Enumerator actualEnumerator = assertProperEnumeratorInitialization(args, options);
 		Assert.assertTrue(actualEnumerator instanceof GridBasedEnumerator);
 		// assert all defaults
-		HashMap<String, CloudInstance> expectedInstances = getSimpleCloudInstanceMap();
+		HashMap<String, CloudInstance> expectedInstances = ResourceTestUtils.getSimpleCloudInstanceMap();
 		HashMap<String, CloudInstance> actualInstances = actualEnumerator.getInstances();
 		for (String instanceName: expectedInstances.keySet()) {
-			assertEqualsCloudInstances(expectedInstances.get(instanceName), actualInstances.get(instanceName));
+			ResourceTestUtils.assertEqualsCloudInstances(expectedInstances.get(instanceName), actualInstances.get(instanceName));
 		}
 		Assert.assertEquals(Enumerator.EnumerationStrategy.GridBased, actualEnumerator.getEnumStrategy());
 		Assert.assertEquals(Enumerator.OptimizationStrategy.MinCosts, actualEnumerator.getOptStrategy());
@@ -79,13 +78,13 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 
 	@Test
 	public void initEnumeratorFromArgsWithArgNTest() throws IOException {
-		File dmlScript = generateTmpDMLScript("m = $1;", "n = $2;");
+		File dmlScript = ResourceTestUtils.generateTmpDMLScript("m = $1;", "n = $2;");
 
 		String[] args = {
 				"-f", dmlScript.getPath(),
 				"-args", "10", "100"
 		};
-		PropertiesConfiguration options = generateTestingOptionsRequired("any");
+		PropertiesConfiguration options = ResourceTestUtils.generateTestingOptionsRequired("any");
 
 		assertProperEnumeratorInitialization(args, options);
 
@@ -94,13 +93,13 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 
 	@Test
 	public void initEnumeratorFromArgsWithNvargTest() throws IOException {
-		File dmlScript = generateTmpDMLScript("m = $m;", "n = $n;");
+		File dmlScript = ResourceTestUtils.generateTmpDMLScript("m = $m;", "n = $n;");
 
 		String[] args = {
 				"-f", dmlScript.getPath(),
 				"-nvargs", "m=10", "n=100"
 		};
-		PropertiesConfiguration options = generateTestingOptionsRequired("any");
+		PropertiesConfiguration options = ResourceTestUtils.generateTestingOptionsRequired("any");
 
 		assertProperEnumeratorInitialization(args, options);
 
@@ -120,7 +119,7 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 		} catch (ParseException e) {
 			Assert.fail("ParseException should not have been raise here: "+e);
 		}
-		PropertiesConfiguration invalidOptions = generateTestingOptionsRequired("any");
+		PropertiesConfiguration invalidOptions = ResourceTestUtils.generateTestingOptionsRequired("any");
 		invalidOptions.setProperty("OPTIMIZATION_FUNCTION", "costs");
 		invalidOptions.setProperty("COSTS_WEIGHT", "10");
 		try {
@@ -134,7 +133,7 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 		String[] validArgs = {
 				"-f", HOME+"Algorithm_L2SVM.dml",
 		};
-		PropertiesConfiguration validOptions = generateTestingOptionsRequired("any");
+		PropertiesConfiguration validOptions = ResourceTestUtils.generateTestingOptionsRequired("any");
 		validOptions.setProperty("OPTIMIZATION_FUNCTION", "costs");
 		validOptions.setProperty("COSTS_WEIGHT", "0.1");
 		Enumerator actualEnumerator = assertProperEnumeratorInitialization(validArgs, validOptions);
@@ -155,7 +154,7 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 		} catch (ParseException e) {
 			Assert.fail("ParseException should not have been raise here: "+e);
 		}
-		PropertiesConfiguration invalidOptions = generateTestingOptionsRequired("any");
+		PropertiesConfiguration invalidOptions = ResourceTestUtils.generateTestingOptionsRequired("any");
 		invalidOptions.setProperty("OPTIMIZATION_FUNCTION", "time");
 		try {
 			initEnumerator(line, invalidOptions);
@@ -168,7 +167,7 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 		String[] validArgs = {
 				"-f", HOME+"Algorithm_L2SVM.dml",
 		};
-		PropertiesConfiguration validOptions = generateTestingOptionsRequired("any");
+		PropertiesConfiguration validOptions = ResourceTestUtils.generateTestingOptionsRequired("any");
 		validOptions.setProperty("OPTIMIZATION_FUNCTION", "time");
 		validOptions.setProperty("MAX_PRICE", "1000");
 		Enumerator actualEnumerator = assertProperEnumeratorInitialization(validArgs, validOptions);
@@ -189,7 +188,7 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 		} catch (ParseException e) {
 			Assert.fail("ParseException should not have been raise here: "+e);
 		}
-		PropertiesConfiguration invalidOptions = generateTestingOptionsRequired("any");
+		PropertiesConfiguration invalidOptions = ResourceTestUtils.generateTestingOptionsRequired("any");
 		invalidOptions.setProperty("OPTIMIZATION_FUNCTION", "price");
 		try {
 			initEnumerator(line, invalidOptions);
@@ -202,7 +201,7 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 		String[] validArgs = {
 				"-f", HOME+"Algorithm_L2SVM.dml",
 		};
-		PropertiesConfiguration validOptions = generateTestingOptionsRequired("any");
+		PropertiesConfiguration validOptions = ResourceTestUtils.generateTestingOptionsRequired("any");
 		validOptions.setProperty("OPTIMIZATION_FUNCTION", "price");
 		validOptions.setProperty("MAX_TIME", "1000");
 		Enumerator actualEnumerator = assertProperEnumeratorInitialization(validArgs, validOptions);
@@ -215,7 +214,7 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 		String[] args = {
 				"-f", HOME+"Algorithm_L2SVM.dml",
 		};
-		PropertiesConfiguration options = generateTestingOptionsRequired("any");
+		PropertiesConfiguration options = ResourceTestUtils.generateTestingOptionsRequired("any");
 		options.setProperty("ENUMERATION", "grid");
 		options.setProperty("STEP_SIZE", "3");
 		options.setProperty("EXPONENTIAL_BASE", "2");
@@ -232,7 +231,7 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 		String[] args = {
 				"-f", HOME+"Algorithm_L2SVM.dml",
 		};
-		PropertiesConfiguration options = generateTestingOptionsRequired("any");
+		PropertiesConfiguration options = ResourceTestUtils.generateTestingOptionsRequired("any");
 		options.setProperty("ENUMERATION", "interest");
 
 		Enumerator actualEnumerator = assertProperEnumeratorInitialization(args, options);
@@ -250,7 +249,7 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 		String[] args = {
 				"-f", HOME+"Algorithm_L2SVM.dml",
 		};
-		PropertiesConfiguration options = generateTestingOptionsRequired("any");
+		PropertiesConfiguration options = ResourceTestUtils.generateTestingOptionsRequired("any");
 		options.setProperty("ENUMERATION", "prune");
 
 		Enumerator actualEnumerator = assertProperEnumeratorInitialization(args, options);
@@ -263,7 +262,7 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 		String[] args = {
 				"-f", HOME+"Algorithm_L2SVM.dml",
 		};
-		PropertiesConfiguration options = generateTestingOptionsRequired("any");
+		PropertiesConfiguration options = ResourceTestUtils.generateTestingOptionsRequired("any");
 		options.setProperty("ENUMERATION", "interest");
 		options.setProperty("USE_LARGEST_ESTIMATE", "false");
 		options.setProperty("USE_CP_ESTIMATES", "false");
@@ -284,20 +283,20 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 		String[] args = {
 				"-f", HOME+"Algorithm_L2SVM.dml",
 		};
-		PropertiesConfiguration options = generateTestingOptionsRequired("any");
+		PropertiesConfiguration options = ResourceTestUtils.generateTestingOptionsRequired("any");
 		options.setProperty("INSTANCE_FAMILIES", "m5");
 		options.setProperty("INSTANCE_SIZES", "2xlarge");
 
 		Enumerator actualEnumerator = assertProperEnumeratorInitialization(args, options);
 
-		HashMap<String, CloudInstance> inputInstances = getSimpleCloudInstanceMap();
+		HashMap<String, CloudInstance> inputInstances = ResourceTestUtils.getSimpleCloudInstanceMap();
 		HashMap<String, CloudInstance> expectedInstances = new HashMap<>();
 		expectedInstances.put("m5.2xlarge", inputInstances.get("m5.2xlarge"));
 
 		HashMap<String, CloudInstance> actualInstances = actualEnumerator.getInstances();
 
 		for (String instanceName: expectedInstances.keySet()) {
-			assertEqualsCloudInstances(expectedInstances.get(instanceName), actualInstances.get(instanceName));
+			ResourceTestUtils.assertEqualsCloudInstances(expectedInstances.get(instanceName), actualInstances.get(instanceName));
 		}
 	}
 
@@ -306,7 +305,7 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 		String[] args = {
 				"-f", HOME+"Algorithm_L2SVM.dml",
 		};
-		PropertiesConfiguration options = generateTestingOptionsRequired("any");
+		PropertiesConfiguration options = ResourceTestUtils.generateTestingOptionsRequired("any");
 		options.setProperty("CPU_QUOTA", "256");
 
 		Enumerator actualEnumerator = assertProperEnumeratorInitialization(args, options);
@@ -357,13 +356,13 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 		} catch (ParseException e) {
 			Assert.fail("ParseException should not have been raise here: "+e);
 		}
-		PropertiesConfiguration options = generateTestingOptionsRequired(tmpOutFolder.toString());
+		PropertiesConfiguration options = ResourceTestUtils.generateTestingOptionsRequired(tmpOutFolder.toString());
 		options.setProperty("MAX_EXECUTORS", "10");
 
 		ResourceOptimizer.execute(line, options);
 
 		if (!DEBUG) {
-			deleteDirectoryWithFiles(tmpOutFolder);
+			ResourceTestUtils.deleteDirectoryWithFiles(tmpOutFolder);
 		}
 	}
 
@@ -383,7 +382,7 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 		} catch (ParseException e) {
 			Assert.fail("ParseException should not have been raise here: "+e);
 		}
-		PropertiesConfiguration options = generateTestingOptionsRequired(tmpOutFolder.toString());
+		PropertiesConfiguration options = ResourceTestUtils.generateTestingOptionsRequired(tmpOutFolder.toString());
 		options.setProperty("MAX_EXECUTORS", "10");
 		options.setProperty("INSTANCE_FAMILIES", "c5,c5d,c5n");
 		options.setProperty("INSTANCE_SIZES", "xlarge");
@@ -391,7 +390,7 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 		ResourceOptimizer.execute(line, options);
 
 		if (!DEBUG) {
-			deleteDirectoryWithFiles(tmpOutFolder);
+			ResourceTestUtils.deleteDirectoryWithFiles(tmpOutFolder);
 		}
 	}
 
@@ -415,7 +414,7 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 		} catch (ParseException e) {
 			Assert.fail("ParseException should not have been raise here: "+e);
 		}
-		PropertiesConfiguration options = generateTestingOptionsRequired(tmpOutFolder.toString());
+		PropertiesConfiguration options = ResourceTestUtils.generateTestingOptionsRequired(tmpOutFolder.toString());
 		options.setProperty("MAX_EXECUTORS", "2");
 		String localInputs = "s3://data/in/A.csv=" + HOME + "data/A.csv";
 		options.setProperty("LOCAL_INPUTS", localInputs);
@@ -423,7 +422,7 @@ public class ResourceOptimizerTest extends AutomatedTestBase {
 		ResourceOptimizer.execute(line, options);
 
 		if (!DEBUG) {
-			deleteDirectoryWithFiles(tmpOutFolder);
+			ResourceTestUtils.deleteDirectoryWithFiles(tmpOutFolder);
 		}
 	}
 

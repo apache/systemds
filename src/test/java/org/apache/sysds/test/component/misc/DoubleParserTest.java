@@ -152,6 +152,18 @@ public class DoubleParserTest {
 		compareToDoubleParser("   132.14");
 	}
 
+	@Test
+	public void parseTrailingDot() {
+		// last char '.' is below '0', forcing the slow Double.parseDouble path
+		compareToDoubleParser("132.");
+	}
+
+	@Test
+	public void parseTrailingWhitespace() {
+		// last char ' ' is below '0', forcing the slow Double.parseDouble path
+		compareToDoubleParser("132.14 ");
+	}
+
 	@Test 
 	public void parsePowerOf10(){
 		compareToDoubleParser("132e10");

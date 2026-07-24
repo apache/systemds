@@ -19,73 +19,152 @@
 
 package org.apache.sysds.test.component.matrixmult;
 
-import org.apache.sysds.runtime.data.DenseBlock;
+import java.util.Random;
+
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
-import java.util.Random;
-
 public class MatrixMultTransposedTest {
 
-	// run multiple random scenarios
 	@Test
-	public void testCaseNoTransATransB() {
-		for(int i=0; i<10; i++) {
-			runTest(false, true);
-		}
+	public void testDenseDenseTransA() throws Exception {
+		for(int i = 0; i < 10; i++)
+			runRandomTest(false, false, true, false);
 	}
 
 	@Test
-	public void testCaseTransANoTransB() {
-		for(int i=0; i<10; i++) {
-			runTest(true, false);
-		}
+	public void testDenseDenseTransB() throws Exception {
+		for(int i = 0; i < 10; i++)
+			runRandomTest(false, false, false, true);
 	}
 
 	@Test
-	public void testCaseTransATransB() {
-		for(int i=0; i<10; i++) {
-			runTest(true, true);
-		}
+	public void testDenseDenseTransATransB() throws Exception {
+		for(int i = 0; i < 10; i++)
+			runRandomTest(false, false, true, true);
 	}
 
-	private void runTest(boolean tA, boolean tB) {
+	@Test
+	public void testSparseDenseTransA() throws Exception {
+		for(int i = 0; i < 10; i++)
+			runRandomTest(true, false, true, false);
+	}
+
+	@Test
+	public void testSparseDenseTransB() throws Exception {
+		for(int i = 0; i < 10; i++)
+			runRandomTest(true, false, false, true);
+	}
+
+	@Test
+	public void testSparseDenseTransATransB() throws Exception {
+		for(int i = 0; i < 10; i++)
+			runRandomTest(true, false, true, true);
+	}
+
+	@Test
+	public void testDenseSparseTransA() throws Exception {
+		for(int i = 0; i < 10; i++)
+			runRandomTest(false, true, true, false);
+	}
+
+	@Test
+	public void testDenseSparseTransB() throws Exception {
+		for(int i = 0; i < 10; i++)
+			runRandomTest(false, true, false, true);
+	}
+
+	@Test
+	public void testDenseSparseTransATransB() throws Exception {
+		for(int i = 0; i < 10; i++)
+			runRandomTest(false, true, true, true);
+	}
+
+	private void runRandomTest(boolean sparseA, boolean sparseB, boolean tA, boolean tB) throws Exception {
 		Random rand = new Random();
-
-		// generate random dimensions between 1 and 300
 		int m = rand.nextInt(300) + 1;
 		int n = rand.nextInt(300) + 1;
 		int k = rand.nextInt(300) + 1;
 
+		double spA = sparseA ? 0.05 : 1.0;
+		double spB = sparseB ? 0.05 : 1.0;
 
+		runTest(spA, spB, tA, tB, m, n, k);
+	}
+
+	private void runTest(double spA, double spB, boolean tA, boolean tB, int m, int n, int k) throws Exception {
 		int rowsA = tA ? k : m;
 		int colsA = tA ? m : k;
 		int rowsB = tB ? n : k;
 		int colsB = tB ? k : n;
 
-		MatrixBlock ma = MatrixBlock.randOperations(rowsA, colsA, 1.0, -1, 1, "uniform", 7);
-		MatrixBlock mb = MatrixBlock.randOperations(rowsB, colsB, 1.0, -1, 1, "uniform", 3);
-
+		MatrixBlock ma = generateInput(rowsA, colsA, spA, 7);
+		MatrixBlock mb = generateInput(rowsB, colsB, spB, 3);
 		MatrixBlock mc = new MatrixBlock(m, n, false);
 		mc.allocateDenseBlock();
 
-		DenseBlock a = ma.getDenseBlock();
-		DenseBlock b = mb.getDenseBlock();
-		DenseBlock c = mc.getDenseBlock();
+		runNewKernel(ma, mb, mc, tA, tB);
 
-		LibMatrixMult.matrixMultDenseDenseMM(a, b, c, tA, tB, n, k, 0, m, 0, n);
+		MatrixBlock A_in = tA ? LibMatrixReorg.transpose(ma) : ma;
+		MatrixBlock B_in = tB ? LibMatrixReorg.transpose(mb) : mb;
+		MatrixBlock expected = LibMatrixMult.matrixMult(A_in, B_in);
 
-		mc.recomputeNonZeros();
-
-		// calc true result with existing methods
-		MatrixBlock ma_in = tA ? LibMatrixReorg.transpose(ma) : ma;
-		MatrixBlock mb_in = tB ? LibMatrixReorg.transpose(mb) : mb;
-		MatrixBlock expected = LibMatrixMult.matrixMult(ma_in, mb_in);
-
-		// compare results
 		TestUtils.compareMatrices(expected, mc, 1e-8);
+	}
+
+	private MatrixBlock generateInput(int rows, int cols, double sparsity, long seed) {
+		MatrixBlock mb = MatrixBlock.randOperations(rows, cols, sparsity, -1, 1, "uniform", seed);
+		mb.examSparsity();
+		if (sparsity < 1.0) {
+			if (!mb.isInSparseFormat())
+				mb.denseToSparse(true);
+			if (mb.getSparseBlock() == null)
+				mb.allocateSparseRowsBlock();
+		}
+		return mb;
+	}
+
+	private void runNewKernel(MatrixBlock ma, MatrixBlock mb, MatrixBlock mc, boolean tA, boolean tB) throws Exception {
+		mc.reset();
+		mc.allocateDenseBlock();
+
+		boolean sparseA = ma.isInSparseFormat();
+		boolean sparseB = mb.isInSparseFormat();
+
+		int m = tA ? ma.getNumColumns() : ma.getNumRows();
+		int n = tB ? mb.getNumRows() : mb.getNumColumns();
+		int k = tA ? ma.getNumRows() : ma.getNumColumns();
+
+		if (!sparseA && !sparseB) {
+			LibMatrixMult.matrixMultDenseDenseMM(
+				ma.getDenseBlock(),
+				mb.getDenseBlock(),
+				mc.getDenseBlock(),
+				tA, tB, n, k, 0, m, 0, n
+			);
+		}
+		else if (sparseA && !sparseB) {
+			int cd = tB ? mb.getNumColumns() : mb.getNumRows();
+			long xsp = (long) m * cd / Math.max(1L, ma.getNonZeros());
+			LibMatrixMult.matrixMultSparseDenseMM(
+				ma.getSparseBlock(),
+				mb.getDenseBlock(),
+				mc.getDenseBlock(),
+				tA, tB, n, cd, xsp, 0, m
+			);
+		}
+		else if (!sparseA && sparseB) {
+			long xsp = (long) ma.getNumRows() * ma.getNumColumns() / Math.max(1L, ma.getNonZeros());
+			LibMatrixMult.matrixMultDenseSparseMM(
+				ma.getDenseBlock(),
+				mb.getSparseBlock(),
+				mc.getDenseBlock(),
+				tA, tB, n, k, xsp, 0, m
+			);
+		}
+		mc.recomputeNonZeros();
 	}
 }

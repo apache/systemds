@@ -30,7 +30,7 @@ import org.apache.sysds.test.functions.mlcontext.MLContextTestBase;
 public abstract class BaseTest extends MLContextTestBase {
 	protected static final Log LOG = LogFactory.getLog(BaseTest.class.getName());
 
-	private static final String ERROR_STRING = "ERROR:";
+	protected static final String ERROR_STRING = "ERROR:";
 
 	protected void run(String name) {
 		run(name, false);

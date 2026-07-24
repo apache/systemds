@@ -1,0 +1,71 @@
+
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/optim/lars.dml") as lars
+source("src/test/scripts/applications/nn/util.dml") as testutil
+source("src/test/scripts/applications/nn/component/optim/optim_check.dml") as optim_check
+
+test_lars_init = function() {
+  #test velocity init all 0
+  W = rand(rows=4, cols=4, min=-1, max=1)
+  v = lars::init(W)
+  testutil::check_all_equal(v, matrix(0, rows=4, cols=4)) 
+}
+
+test_lars_global_learning_rate_fallback = function() {
+  # biases get unstable with lars.
+  # This LARS contains a fallback for the effective learning rate from local_lr*global_lr to global_lr only
+  b = rand(rows=4, cols=1, min=-1, max=1)
+  db = matrix(1, rows=4, cols=1)
+  v = lars::init(b)
+  lr = 0.1
+  mu = 0.0005
+  expected_b1 = b + (mu*v - lr*db)
+  [b1, v1] = lars::update(b, db, lr, 0, v, mu, 0.001)
+  testutil::check_all_close(b1, expected_b1, 1e-4)
+}
+
+test_lars_results_all_finite = function() {
+  M0 = matrix(0, rows=100, cols=100)
+  M1 = matrix(1, rows=100, cols=100)
+
+  lr = 0.1
+  mu = 0.0005
+
+  [X1, v1] = lars::update(M0, M0, lr, 0, M0, mu, 0.001)
+  [X2, v2] = lars::update(M1, M0, lr, 0, M0, mu, 0.001)
+  [X3, v3] = lars::update(M0, M1, lr, 0, M0, mu, 0.001)
+  [X4, v4] = lars::update(M1, M1, lr, 0, M0, mu, 0.001)
+
+  optim_check::check_finite(X1, "lars")
+  optim_check::check_finite(v1, "lars")
+  optim_check::check_finite(X2, "lars")
+  optim_check::check_finite(v2, "lars")
+  optim_check::check_finite(X3, "lars")
+  optim_check::check_finite(v3, "lars")
+  optim_check::check_finite(X4, "lars")
+  optim_check::check_finite(v4, "lars")
+}
+
+test_lars_init()
+test_lars_global_learning_rate_fallback()
+test_lars_results_all_finite()

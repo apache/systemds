@@ -74,7 +74,7 @@ cd svn-release-systemds
 
 if [[ $dry_run_flag != 1 ]]; then
   # This step prompts for the Apache Credentials
-  svn ci --username $ASF_USERNAME -m'Apache SystemDS $RELEASE_VERSION Released' --no-auth-cache \n
+  svn ci --username "$ASF_USERNAME" -m"Apache SystemDS $RELEASE_VERSION Released" --no-auth-cache
   [[ $? == 0 ]] && printf '\n Publishing to $RELEASE_LOCATION is complete!\n'
 else
   printf "\n==========\n"
@@ -82,7 +82,7 @@ else
   printf "At $RELEASE_LOCATION \n"
   printf "\n==========\n"
   printf "You might want to manually check the files and run the following:\n"
-  printf "svn ci --username $ASF_USERNAME -m'Apache SystemDS $RELEASE_VERSION Released' --no-auth-cache \n"
+  printf "svn ci --username $ASF_USERNAME -m\"Apache SystemDS $RELEASE_VERSION Released\" --no-auth-cache\n"
   printf "\n==========\n"
 fi
 

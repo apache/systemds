@@ -56,7 +56,8 @@
 # INPUT:
 # ---------------------------------------------------------------------------------------------
 # iForestModel  The trained iForest model as returned by outlierByIsolationForest
-# X             Samples to calculate the anomaly score for
+# X             Samples to calculate the anomaly score for. X must contain every feature referenced
+#               by an internal model node
 # ---------------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -71,29 +72,30 @@ s_outlierByIsolationForestApply = function(List[Unknown] iForestModel, Matrix[Do
   anomaly_scores = m_outlierByIsolationForestApply(iForestModel, X)
 }
 
-# modification 9: Scoring a single row and using a one-tree model are valid edge cases.
-
 m_outlierByIsolationForestApply = function(List[Unknown] iForestModel, Matrix[Double] X)
-return(Matrix[Double] anomaly_scores)
+  return(Matrix[Double] anomaly_scores)
 {
-    s_warning_assert(nrow(X) >= 1, "iForestApply: X must contain at least one row.")
+  if (nrow(X) < 1)
+    stop("outlierByIsolationForestApply: X must contain at least one row.")
 
-    M = as.matrix(iForestModel["model"])
-    subsampling_size = as.integer(as.scalar(iForestModel["subsampling_size"]))
+  M = as.matrix(iForestModel["model"])
+  subsampling_size = as.integer(as.scalar(iForestModel["subsampling_size"]))
 
-    s_warning_assert(subsampling_size > 1, "iForestApply: invalid subsampling_size.")
-    s_warning_assert(nrow(M) >= 1, "iForestApply: model must contain at least one tree.")
+  if (subsampling_size <= 1)
+    stop("outlierByIsolationForestApply: model subsampling_size must be greater than 1.")
+  if (nrow(M) < 1)
+    stop("outlierByIsolationForestApply: model must contain at least one tree.")
 
-    height_limit = ceil(log(subsampling_size, 2))
-    tree_size = 2 * (2^(height_limit + 1) - 1)
+  height_limit = ceil(log(subsampling_size, 2))
+  tree_size = 2 * (2^(height_limit + 1) - 1)
 
-    s_warning_assert(ncol(M) == tree_size, "iForestApply: model has invalid number of columns.")
+  if (ncol(M) != tree_size)
+    stop("outlierByIsolationForestApply: model has an invalid number of columns.")
 
-    anomaly_scores = matrix(0, rows = nrow(X), cols = 1)
+  anomaly_scores = matrix(0, rows = nrow(X), cols = 1)
 
-    for (i_x in 1:nrow(X)) {
-        anomaly_scores[i_x, 1] = m_score(M, X[i_x, ], subsampling_size)
-    }
+  for (i_x in 1:nrow(X))
+    anomaly_scores[i_x, 1] = m_score(M, X[i_x, ], subsampling_size)
 }
 
 # Calculates the PathLength as defined in [Liu2008] based on a sample x
@@ -137,49 +139,53 @@ m_PathLength = function(Matrix[Double] M, Matrix[Double] x)
 # OUTPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
 # nrEdgesTraversed         The number of edges traversed until an external node was reached
-# externalNodeSize   The size of of the external node assigned to during training
+# externalNodeSize   The size of the external node assigned during training
 # ---------------------------------------------------------------------------------------------
 
-# modification 10: Traversal must use the same split rule as training. Reaching a placeholder means the tree model is invalid, so fail fast.
-
 s_traverseITree = function(Matrix[Double] M, Matrix[Double] x)
-return(Integer nrEdgesTraversed, Integer externalNodeSize)
+  return(Integer nrEdgesTraversed, Integer externalNodeSize)
 {
-    s_warning_assert(nrow(x) == 1, "s_traverseITree: x must be a single row.")
+  if (nrow(x) != 1)
+    stop("s_traverseITree: x must be a single row.")
 
-    nrEdgesTraversed = 0
-    externalNodeSize = 0
-    is_external_node = FALSE
-    node_id = 1
+  nrEdgesTraversed = 0
+  externalNodeSize = 0
+  is_external_node = FALSE
+  node_id = 1
 
-    while (!is_external_node) {
-        node_start_idx = node_id * 2 - 1
+  while (!is_external_node) {
+    node_start_idx = node_id * 2 - 1
 
-        s_warning_assert(node_start_idx + 1 <= ncol(M), "s_traverseITree: node index out of bounds.")
+    if (node_start_idx + 1 > ncol(M))
+      stop("s_traverseITree: invalid iTree model; node index is out of bounds.")
 
-        split_feature = as.integer(as.scalar(M[1, node_start_idx]))
-        node_value = as.scalar(M[1, node_start_idx + 1])
+    split_feature = as.integer(as.scalar(M[1, node_start_idx]))
+    node_value = as.scalar(M[1, node_start_idx + 1])
 
-        if (split_feature > 0) {
-            nrEdgesTraversed = nrEdgesTraversed + 1
+    if (split_feature > 0) {
+      if (split_feature > ncol(x))
+        stop("s_traverseITree: model split feature exceeds the input width.")
 
-            x_val = as.scalar(x[1, split_feature])
+      nrEdgesTraversed = nrEdgesTraversed + 1
+      x_val = as.scalar(x[1, split_feature])
 
-            if (x_val < node_value) {
-                node_id = node_id * 2
-            }
-            else {
-                node_id = node_id * 2 + 1
-            }
-        }
-        else if (split_feature == 0) {
-            externalNodeSize = as.integer(node_value)
-            is_external_node = TRUE
-        }
-        else {
-            s_warning_assert(FALSE, "s_traverseITree: invalid iTree model; reached placeholder node.")
-        }
+      # Training uses the same < / >= partition at every internal node.
+      if (x_val < node_value)
+        node_id = node_id * 2
+      else
+        node_id = node_id * 2 + 1
     }
+    else if (split_feature == 0) {
+      if (node_value < 1)
+        stop("s_traverseITree: invalid iTree model; external-node size must be positive.")
+
+      externalNodeSize = as.integer(node_value)
+      is_external_node = TRUE
+    }
+    else {
+      stop("s_traverseITree: invalid iTree model; reached a placeholder node.")
+    }
+  }
 }
 
 
@@ -190,8 +196,8 @@ return(Integer nrEdgesTraversed, Integer externalNodeSize)
 # ---------------------------------------------------------------------------------------------
 # NAME          TYPE             DEFAULT      MEANING
 # ---------------------------------------------------------------------------------------------
-# n             Int                           Number of samples that corresponding to an external
-#                                             node for which c(n) should be calculated
+# n             Int                           Number of samples in the external node for which c(n)
+#                                             should be calculated
 # ---------------------------------------------------------------------------------------------
 # OUTPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
@@ -200,28 +206,25 @@ return(Integer nrEdgesTraversed, Integer externalNodeSize)
 s_cn = function(Integer n)
   return(Double cn)
 {
-  s_warning_assert(n > 1, "s_cn: Requirement `n > 1` not satisfied!")
+  if (n <= 1)
+    stop("s_cn: n must be greater than 1.")
 
-  # Calculate H(n-1)
-  # The approximation of the Harmonic Number H using `log(n) + eulergamma` has a higher error
-  # for low n. We hence calculate it directly for the first 1000 values
-  # TODO: Discuss a good value for n --> use e.g. HarmonicNumber(1000) - (ln(1000) + 0.5772156649) in WA
+  # The logarithmic approximation has noticeable error for small n, so H(n-1)
+  # is evaluated directly below 1000.
   if (n < 1000) {
-    indices = seq(1,n-1)
-    H_nminus1 =  sum(1/indices)
-
+    indices = seq(1, n - 1)
+    H_nminus1 = sum(1 / indices)
   }
-  else{
+  else {
     # Euler–Mascheroni's constant
     eulergamma = 0.57721566490153
-    # Approximation harmonic number H(n - 1)
-    H_nminus1 = log(n-1) + eulergamma
+    H_nminus1 = log(n - 1) + eulergamma
   }
 
-  cn = 2*H_nminus1 - 2*(n-1)/n
+  cn = 2 * H_nminus1 - 2 * (n - 1) / n
 }
 
-# Scors a sample `x` according to score function `s(x, n)` for a sample x and a testset-size n, as described in [Liu2008].
+# Scores a sample `x` according to the score function `s(x, n)` described in [Liu2008].
 #
 # INPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
@@ -233,41 +236,25 @@ s_cn = function(Integer n)
 # ---------------------------------------------------------------------------------------------
 # OUTPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
-# score   The score for
+# score   The anomaly score for x
 # ---------------------------------------------------------------------------------------------
-
-# modification 11: Only the mean path length is required for scoring, so accumulate directly.
-
 m_score = function(Matrix[Double] M, Matrix[Double] x, Integer n)
-return(Double score)
+  return(Double score)
 {
-    s_warning_assert(n > 1, "m_score: n must be greater than 1.")
-    s_warning_assert(nrow(x) == 1, "m_score: sample has wrong dimension.")
-    s_warning_assert(nrow(M) >= 1, "m_score: invalid iForest model.")
+  if (n <= 1)
+    stop("m_score: n must be greater than 1.")
+  if (nrow(x) != 1)
+    stop("m_score: x must be a single row.")
+  if (nrow(M) < 1)
+    stop("m_score: model must contain at least one tree.")
 
-    path_length_sum = 0.0
+  # Only the mean path length is required, so no intermediate vector is built.
+  path_length_sum = 0.0
 
-    for (i_iTree in 1:nrow(M)) {
-        path_length_sum = path_length_sum + m_PathLength(M[i_iTree, ], x)
-    }
+  for (i_iTree in 1:nrow(M))
+    path_length_sum = path_length_sum + m_PathLength(M[i_iTree, ], x)
 
-    avg_path_length = path_length_sum / nrow(M)
+  avg_path_length = path_length_sum / nrow(M)
 
-    score = 2^-(avg_path_length / s_cn(n))
-}
-
-# Function that gives a warning if a assertion is violated. This is used instead of `assert` and
-# `stop` since these function can not be used in parfor .
-#
-# INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME          TYPE             DEFAULT      MEANING
-# ---------------------------------------------------------------------------------------------
-# assertion     Boolean                         Assertion to check
-# warning       String                          Warning message to print if assertion is violated
-# ---------------------------------------------------------------------------------------------
-s_warning_assert = function(Boolean assertion, String warning)
-{
-  if (!assertion)
-    print("outlierIsolationForest: "+warning)
+  score = 2^-(avg_path_length / s_cn(n))
 }

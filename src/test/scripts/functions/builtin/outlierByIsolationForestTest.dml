@@ -20,107 +20,68 @@
 #-------------------------------------------------------------
 
 X = read($X)
-test_case = $test_case
+X_apply = read($X_apply)
 
-# test_case meanings:
-# 1: basic model
-# 2: anomaly ranking
-# 3: subsampling clamp
-# 4: single-row apply
-# 5: single-tree model
-# 6: constant data
-# 7: seed reproducibility
+iForestModel = outlierByIsolationForest(
+  X = X,
+  n_trees = $n_trees,
+  subsampling_size = $subsampling_size,
+  seed = $seed
+)
 
-if (test_case == 2) {
-    # Train on the provided normal data.
-    model = outlierByIsolationForest(
-        X = X,
-        n_trees = $n_trees,
-        subsampling_size = $subsampling_size,
-        seed = $seed
-    )
+M = as.matrix(iForestModel["model"])
+actual_subsampling_size = as.scalar(iForestModel["subsampling_size"])
 
-    M = as.matrix(model["model"])
-    subsampling_size_out = as.scalar(model["subsampling_size"])
+apply_start = time()
+anomaly_scores = outlierByIsolationForestApply(
+  iForestModel = iForestModel,
+  X = X_apply
+)
+dml_apply_runtime = (time() - apply_start) / 1e9
 
-    # Score two normal points and two obvious outliers.
-    X_normal = X[1:2, ]
-    X_outliers = matrix(10, rows = 2, cols = ncol(X))
-    X_test = rbind(X_normal, X_outliers)
-
-    scores = outlierByIsolationForestApply(
-        iForestModel = model,
-        X = X_test
-    )
-
-    normal_mean = mean(scores[1:2, 1])
-    anomaly_mean = mean(scores[3:4, 1])
-
-    assert(anomaly_mean > normal_mean)
-
-    write(scores, $output)
-    write(M, $model_output)
-    write(subsampling_size_out, $subsampling_size_output)
+# A repeated training run verifies deterministic seed handling. A second seed
+# must produce a different model, proving that the seed is not simply ignored.
+M_same_seed = M
+M_different_seed = M
+if ($check_seed == 1) {
+  sameSeedModel = outlierByIsolationForest(
+    X = X,
+    n_trees = $n_trees,
+    subsampling_size = $subsampling_size,
+    seed = $seed
+  )
+  differentSeedModel = outlierByIsolationForest(
+    X = X,
+    n_trees = $n_trees,
+    subsampling_size = $subsampling_size,
+    seed = $seed + 1
+  )
+  M_same_seed = as.matrix(sameSeedModel["model"])
+  M_different_seed = as.matrix(differentSeedModel["model"])
 }
 
-if (test_case == 7) {
-    # Same input and same seed should produce the same forest.
-    model1 = outlierByIsolationForest(
-        X = X,
-        n_trees = $n_trees,
-        subsampling_size = $subsampling_size,
-        seed = $seed
-    )
+# This hand-built tree provides an implementation-independent oracle for the
+# apply function, including the exact-threshold branch at x = 0.5.
+reference_M = read($reference_model)
+reference_X = read($reference_X)
+referenceModel = list(
+  model = reference_M,
+  subsampling_size = 4
+)
+reference_anomaly_scores = outlierByIsolationForestApply(
+  iForestModel = referenceModel,
+  X = reference_X
+)
 
-    model2 = outlierByIsolationForest(
-        X = X,
-        n_trees = $n_trees,
-        subsampling_size = $subsampling_size,
-        seed = $seed
-    )
+write(anomaly_scores, $scores)
+write(M, $model)
+write(actual_subsampling_size, $subsampling_size_out)
+write(M_same_seed, $same_seed_model)
+write(M_different_seed, $different_seed_model)
+write(reference_anomaly_scores, $reference_scores)
+write(dml_apply_runtime, $dml_apply_runtime)
 
-    M1 = as.matrix(model1["model"])
-    M2 = as.matrix(model2["model"])
-
-    subsampling_size_out = as.scalar(model1["subsampling_size"])
-
-    diff = sum(abs(M1 - M2))
-    assert(diff == 0)
-
-    scores = outlierByIsolationForestApply(
-        iForestModel = model1,
-        X = X
-    )
-
-    write(scores, $output)
-    write(M1, $model_output)
-    write(subsampling_size_out, $subsampling_size_output)
-}
-
-if (test_case != 2 & test_case != 7) {
-    model = outlierByIsolationForest(
-        X = X,
-        n_trees = $n_trees,
-        subsampling_size = $subsampling_size,
-        seed = $seed
-    )
-
-    M = as.matrix(model["model"])
-    subsampling_size_out = as.scalar(model["subsampling_size"])
-
-    X_apply = X
-
-    if (test_case == 4) {
-        # Single-row apply test.
-        X_apply = X[1, ]
-    }
-
-    scores = outlierByIsolationForestApply(
-        iForestModel = model,
-        X = X_apply
-    )
-
-    write(scores, $output)
-    write(M, $model_output)
-    write(subsampling_size_out, $subsampling_size_output)
-}
+# The R reference implementation scores this exact serialized forest. Writing
+# only for the extended BASIC/SINGLE_NODE check avoids unnecessary test I/O.
+if ($check_seed == 1)
+  write(M, $model_for_r, format = "mm")

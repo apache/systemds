@@ -29,9 +29,10 @@ import org.apache.sysds.runtime.instructions.ooc.AggregateUnaryOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.BinaryOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.CSVReblockOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.CentralMomentOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.CovarianceOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.CtableOOCInstruction;
-import org.apache.sysds.runtime.instructions.ooc.IndexingOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.DataGenOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.IndexingOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.OOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.ParameterizedBuiltinOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.ReblockOOCInstruction;
@@ -103,6 +104,8 @@ public class OOCInstructionParser extends InstructionParser {
 				return TeeOOCInstruction.parseInstruction(str);
 			case CentralMoment:
 				return  CentralMomentOOCInstruction.parseInstruction(str);
+			case Covariance:
+				return CovarianceOOCInstruction.parseInstruction(str);
 			case Ctable:
 				return CtableOOCInstruction.parseInstruction(str);
 			case ParameterizedBuiltin:

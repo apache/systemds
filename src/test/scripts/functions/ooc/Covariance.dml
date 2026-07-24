@@ -19,10 +19,10 @@
 #
 #-------------------------------------------------------------
 
-# Read input matrix from command line args
-X = read($1);
+A = read($1);
+B = read($2);
 
-# Operation under test
-res = t(X) %*% X;
+s = cov(A, B);
+res = as.matrix(s);
 
-write(res, $2, format="binary")
+write(res, $3, format="binary");

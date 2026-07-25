@@ -35,14 +35,18 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 public class LibMatrixSketch {
 	private static final long PAR_UNIQUE_NUMCELL_THRESHOLD = 1024 * 16;
 	private static final long PAR_UNIQUE_MAX_LOCAL_BYTES_FRACTION = 4;
-	private static final long PAR_UNIQUE_LOCAL_BYTES_OVERHEAD = 8;
+	/**
+	 * Conservative footprint of one value retained in a HashSet&lt;Double&gt;: the boxed Double plus amortized hash-map
+	 * node and backing-array overhead.
+	 */
+	private static final long PAR_UNIQUE_BYTES_PER_CELL = Double.BYTES * 8;
 
 	/**
-	 * Computes unique values with the original single-threaded behavior.
-	 * The overload with a parallelism argument keeps this path as the k=1 baseline.
+	 * Computes unique values with the original single-threaded behavior. The overload with a parallelism argument keeps
+	 * this path as the k=1 baseline.
 	 *
 	 * @param blkIn input matrix block
-	 * @param dir unique direction
+	 * @param dir   unique direction
 	 * @return matrix block containing unique values
 	 */
 	public static MatrixBlock getUniqueValues(MatrixBlock blkIn, Types.Direction dir) {
@@ -50,45 +54,58 @@ public class LibMatrixSketch {
 	}
 
 	/**
-	 * Computes unique values. For sufficiently large inputs and k > 1, this uses
-	 * parallel local deduplication or its batched variant.
+	 * Computes unique values. For sufficiently large inputs and k > 1, this uses parallel local deduplication or its
+	 * batched variant.
 	 *
 	 * @param blkIn input matrix block
-	 * @param dir unique direction
-	 * @param k requested degree of parallelism
+	 * @param dir   unique direction
+	 * @param k     requested degree of parallelism
 	 * @return matrix block containing unique values
 	 */
 	public static MatrixBlock getUniqueValues(MatrixBlock blkIn, Types.Direction dir, int k) {
+		return getUniqueValues(blkIn, dir, k, getDefaultLocalBytesBudget());
+	}
+
+	/**
+	 * Computes unique values with an explicit budget for the transient deduplication structures. The budget decides
+	 * between the full parallel path, its batched variant, and the sequential fallback. This overload exists so tests
+	 * can inject a small budget and deterministically exercise the batched path, which the heap-derived default would
+	 * not trigger.
+	 *
+	 * @param blkIn         input matrix block
+	 * @param dir           unique direction
+	 * @param k             requested degree of parallelism
+	 * @param maxLocalBytes budget in bytes for transient deduplication structures
+	 * @return matrix block containing unique values
+	 */
+	public static MatrixBlock getUniqueValues(MatrixBlock blkIn, Types.Direction dir, int k, long maxLocalBytes) {
 		// Similar to R's unique, this operation computes unique values according
 		// to the requested direction.
-		if( !satisfiesMultiThreadingConstraints(blkIn, dir, k) )
+		if(!satisfiesMultiThreadingConstraints(blkIn, dir, k))
 			return getUniqueValuesSequential(blkIn, dir);
 
-		boolean localDedupMemorySafe = isLocalDedupMemoryBudgetSafe(blkIn, dir);
+		boolean localDedupMemorySafe = isLocalDedupMemoryBudgetSafe(blkIn, dir, k, maxLocalBytes);
 		switch(dir) {
 			case RowCol:
-				return localDedupMemorySafe ?
-					getUniqueValuesRowColParallel(blkIn, k) :
-					getUniqueValuesRowColBatchedParallel(blkIn, dir, k);
+				return localDedupMemorySafe ? getUniqueValuesRowColParallel(blkIn,
+					k) : getUniqueValuesRowColBatchedParallel(blkIn, dir, k, maxLocalBytes);
 			case Row:
-				return localDedupMemorySafe ?
-					getUniqueRowValuesParallel(blkIn, k) :
-					getUniqueRowValuesBatchedParallel(blkIn, dir, k);
+				return localDedupMemorySafe ? getUniqueRowValuesParallel(blkIn,
+					k) : getUniqueRowValuesBatchedParallel(blkIn, dir, k, maxLocalBytes);
 			case Col:
-				return localDedupMemorySafe ?
-					getUniqueColumnValuesParallel(blkIn, k) :
-					getUniqueColumnValuesBatchedParallel(blkIn, dir, k);
+				return localDedupMemorySafe ? getUniqueColumnValuesParallel(blkIn,
+					k) : getUniqueColumnValuesBatchedParallel(blkIn, dir, k, maxLocalBytes);
 			default:
 				throw new IllegalArgumentException("Unrecognized direction: " + dir);
 		}
 	}
 
 	/**
-	 * Single-threaded baseline implementation for all unique directions.
-	 * This preserves the original row-wise and column-wise unique behavior.
+	 * Single-threaded baseline implementation for all unique directions. This preserves the original row-wise and
+	 * column-wise unique behavior.
 	 *
 	 * @param blkIn input matrix block
-	 * @param dir unique direction
+	 * @param dir   unique direction
 	 * @return matrix block containing unique values
 	 */
 	private static MatrixBlock getUniqueValuesSequential(MatrixBlock blkIn, Types.Direction dir) {
@@ -129,7 +146,7 @@ public class LibMatrixSketch {
 					for( int j=0; j<clen; j++ )
 						rowSet.add(blkIn.get(i, j));
 					int pos = 0;
-					for( Double val : rowSet )
+					for(Double val : rowSet)
 						blkOut.set(i, pos++, val);
 				}
 				break;
@@ -152,7 +169,7 @@ public class LibMatrixSketch {
 					for( int i=0; i<rlen; i++ )
 						colSet.add(blkIn.get(i, j));
 					int pos = 0;
-					for( Double val : colSet )
+					for(Double val : colSet)
 						blkOut.set(pos++, j, val);
 				}
 				break;
@@ -167,11 +184,11 @@ public class LibMatrixSketch {
 	}
 
 	/**
-	 * Parallel unique for all matrix values. Rows are split into balanced partitions,
-	 * each task builds a local set, and the caller merges all local sets afterwards.
+	 * Parallel unique for all matrix values. Rows are split into balanced partitions, each task builds a local set, and
+	 * the caller merges all local sets afterwards.
 	 *
 	 * @param blkIn input matrix block
-	 * @param k requested degree of parallelism
+	 * @param k     requested degree of parallelism
 	 * @return one-column matrix block containing the unique values
 	 */
 	private static MatrixBlock getUniqueValuesRowColParallel(MatrixBlock blkIn, int k) {
@@ -179,13 +196,13 @@ public class LibMatrixSketch {
 		ExecutorService pool = CommonThreadPool.get(numThreads);
 		try {
 			ArrayList<UniqueValueTask> tasks = new ArrayList<>();
-			for( int[] range : getBalancedRanges(blkIn.getNumRows(), numThreads) )
+			for(int[] range : getBalancedRanges(blkIn.getNumRows(), numThreads))
 				tasks.add(new UniqueValueTask(blkIn, range[0], range[1]));
 
 			// Merge local sets after the workers complete.
 			HashSet<Double> hashSet = new HashSet<>();
 			List<Future<HashSet<Double>>> rtasks = pool.invokeAll(tasks);
-			for( int i = 0; i < rtasks.size(); i++ ) {
+			for(int i = 0; i < rtasks.size(); i++) {
 				HashSet<Double> localSet = rtasks.get(i).get();
 				hashSet.addAll(localSet);
 				localSet.clear();
@@ -203,11 +220,11 @@ public class LibMatrixSketch {
 	}
 
 	/**
-	 * Parallel row-wise unique values. A first pass computes the output width,
-	 * and a second pass materializes the row-local unique values.
+	 * Parallel row-wise unique values. A first pass computes the output width, and a second pass materializes the
+	 * row-local unique values.
 	 *
 	 * @param blkIn input matrix block
-	 * @param k requested degree of parallelism
+	 * @param k     requested degree of parallelism
 	 * @return matrix block containing row-wise unique values
 	 */
 	private static MatrixBlock getUniqueRowValuesParallel(MatrixBlock blkIn, int k) {
@@ -232,11 +249,11 @@ public class LibMatrixSketch {
 	}
 
 	/**
-	 * Parallel column-wise unique values. A first pass computes the output height,
-	 * and a second pass materializes the column-local unique values.
+	 * Parallel column-wise unique values. A first pass computes the output height, and a second pass materializes the
+	 * column-local unique values.
 	 *
 	 * @param blkIn input matrix block
-	 * @param k requested degree of parallelism
+	 * @param k     requested degree of parallelism
 	 * @return matrix block containing column-wise unique values
 	 */
 	private static MatrixBlock getUniqueColumnValuesParallel(MatrixBlock blkIn, int k) {
@@ -264,28 +281,29 @@ public class LibMatrixSketch {
 	 * Batched parallel unique for all matrix values.
 	 *
 	 * @param blkIn input matrix block
-	 * @param dir unique direction
-	 * @param k requested degree of parallelism
+	 * @param dir   unique direction
+	 * @param k     requested degree of parallelism
 	 * @return one-column matrix block containing the unique values
 	 */
-	private static MatrixBlock getUniqueValuesRowColBatchedParallel(MatrixBlock blkIn, Types.Direction dir, int k) {
-		BatchConfig config = getBatchConfig(blkIn, dir, k);
-		if( config == null )
+	private static MatrixBlock getUniqueValuesRowColBatchedParallel(MatrixBlock blkIn, Types.Direction dir, int k,
+		long maxLocalBytes) {
+		BatchConfig config = getRowColBatchConfig(blkIn, dir, k, maxLocalBytes);
+		if(config == null)
 			return getUniqueValuesSequential(blkIn, dir);
 
 		ExecutorService pool = CommonThreadPool.get(config._numThreads);
 		try {
 			HashSet<Double> hashSet = new HashSet<>();
-			for( int pos = 0; pos < config._len; ) {
+			for(int pos = 0; pos < config._len;) {
 				ArrayList<UniqueValueTask> tasks = new ArrayList<>();
-				for( int i = 0; i < config._numThreads && pos < config._len; i++ ) {
-					int end = Math.min(pos + config._taskLen, config._len);
+				for(int i = 0; i < config._numThreads && pos < config._len; i++) {
+					int end = (int) Math.min((long) pos + config._taskLen, config._len);
 					tasks.add(new UniqueValueTask(blkIn, pos, end));
 					pos = end;
 				}
 
 				List<Future<HashSet<Double>>> rtasks = pool.invokeAll(tasks);
-				for( int i = 0; i < rtasks.size(); i++ ) {
+				for(int i = 0; i < rtasks.size(); i++) {
 					HashSet<Double> localSet = rtasks.get(i).get();
 					hashSet.addAll(localSet);
 					localSet.clear();
@@ -307,13 +325,14 @@ public class LibMatrixSketch {
 	 * Batched parallel row-wise unique values.
 	 *
 	 * @param blkIn input matrix block
-	 * @param dir unique direction
-	 * @param k requested degree of parallelism
+	 * @param dir   unique direction
+	 * @param k     requested degree of parallelism
 	 * @return matrix block containing row-wise unique values
 	 */
-	private static MatrixBlock getUniqueRowValuesBatchedParallel(MatrixBlock blkIn, Types.Direction dir, int k) {
-		BatchConfig config = getBatchConfig(blkIn, dir, k);
-		if( config == null )
+	private static MatrixBlock getUniqueRowValuesBatchedParallel(MatrixBlock blkIn, Types.Direction dir, int k,
+		long maxLocalBytes) {
+		BatchConfig config = getBatchConfig(blkIn, dir, k, maxLocalBytes);
+		if(config == null)
 			return getUniqueValuesSequential(blkIn, dir);
 
 		ExecutorService pool = CommonThreadPool.get(config._numThreads);
@@ -338,13 +357,14 @@ public class LibMatrixSketch {
 	 * Batched parallel column-wise unique values.
 	 *
 	 * @param blkIn input matrix block
-	 * @param dir unique direction
-	 * @param k requested degree of parallelism
+	 * @param dir   unique direction
+	 * @param k     requested degree of parallelism
 	 * @return matrix block containing column-wise unique values
 	 */
-	private static MatrixBlock getUniqueColumnValuesBatchedParallel(MatrixBlock blkIn, Types.Direction dir, int k) {
-		BatchConfig config = getBatchConfig(blkIn, dir, k);
-		if( config == null )
+	private static MatrixBlock getUniqueColumnValuesBatchedParallel(MatrixBlock blkIn, Types.Direction dir, int k,
+		long maxLocalBytes) {
+		BatchConfig config = getBatchConfig(blkIn, dir, k, maxLocalBytes);
+		if(config == null)
 			return getUniqueValuesSequential(blkIn, dir);
 
 		ExecutorService pool = CommonThreadPool.get(config._numThreads);
@@ -371,12 +391,12 @@ public class LibMatrixSketch {
 	private static int getMaxUniqueValues(ExecutorService pool, MatrixBlock blkIn, Types.Direction dir,
 		ArrayList<int[]> ranges) throws Exception {
 		ArrayList<UniqueCountTask> tasks = new ArrayList<>();
-		for( int[] range : ranges )
+		for(int[] range : ranges)
 			tasks.add(new UniqueCountTask(blkIn, dir, range[0], range[1]));
 
 		int ret = 0;
 		List<Future<Integer>> rtasks = pool.invokeAll(tasks);
-		for( int i = 0; i < rtasks.size(); i++ ) {
+		for(int i = 0; i < rtasks.size(); i++) {
 			ret = Math.max(ret, rtasks.get(i).get());
 			rtasks.set(i, null);
 		}
@@ -389,10 +409,10 @@ public class LibMatrixSketch {
 	private static void fillUniqueValues(ExecutorService pool, MatrixBlock blkIn, MatrixBlock blkOut,
 		Types.Direction dir, ArrayList<int[]> ranges) throws Exception {
 		ArrayList<UniqueOutputTask> tasks = new ArrayList<>();
-		for( int[] range : ranges )
+		for(int[] range : ranges)
 			tasks.add(new UniqueOutputTask(blkIn, blkOut, dir, range[0], range[1]));
 		List<Future<Void>> rtasks = pool.invokeAll(tasks);
-		for( int i = 0; i < rtasks.size(); i++ ) {
+		for(int i = 0; i < rtasks.size(); i++) {
 			rtasks.get(i).get();
 			rtasks.set(i, null);
 		}
@@ -404,16 +424,16 @@ public class LibMatrixSketch {
 	private static int getMaxUniqueValuesBatched(ExecutorService pool, MatrixBlock blkIn, Types.Direction dir,
 		BatchConfig config) throws Exception {
 		int ret = 0;
-		for( int pos = 0; pos < config._len; ) {
+		for(int pos = 0; pos < config._len;) {
 			ArrayList<UniqueCountTask> tasks = new ArrayList<>();
-			for( int i = 0; i < config._numThreads && pos < config._len; i++ ) {
-				int end = Math.min(pos + config._taskLen, config._len);
+			for(int i = 0; i < config._numThreads && pos < config._len; i++) {
+				int end = (int) Math.min((long) pos + config._taskLen, config._len);
 				tasks.add(new UniqueCountTask(blkIn, dir, pos, end));
 				pos = end;
 			}
 
 			List<Future<Integer>> rtasks = pool.invokeAll(tasks);
-			for( int i = 0; i < rtasks.size(); i++ ) {
+			for(int i = 0; i < rtasks.size(); i++) {
 				ret = Math.max(ret, rtasks.get(i).get());
 				rtasks.set(i, null);
 			}
@@ -426,16 +446,16 @@ public class LibMatrixSketch {
 	 */
 	private static void fillUniqueValuesBatched(ExecutorService pool, MatrixBlock blkIn, MatrixBlock blkOut,
 		Types.Direction dir, BatchConfig config) throws Exception {
-		for( int pos = 0; pos < config._len; ) {
+		for(int pos = 0; pos < config._len;) {
 			ArrayList<UniqueOutputTask> tasks = new ArrayList<>();
-			for( int i = 0; i < config._numThreads && pos < config._len; i++ ) {
-				int end = Math.min(pos + config._taskLen, config._len);
+			for(int i = 0; i < config._numThreads && pos < config._len; i++) {
+				int end = (int) Math.min((long) pos + config._taskLen, config._len);
 				tasks.add(new UniqueOutputTask(blkIn, blkOut, dir, pos, end));
 				pos = end;
 			}
 
 			List<Future<Void>> rtasks = pool.invokeAll(tasks);
-			for( int i = 0; i < rtasks.size(); i++ ) {
+			for(int i = 0; i < rtasks.size(); i++) {
 				rtasks.get(i).get();
 				rtasks.set(i, null);
 			}
@@ -446,12 +466,12 @@ public class LibMatrixSketch {
 	 * Decides whether the input is large enough to justify local deduplication tasks.
 	 *
 	 * @param blkIn input matrix block
-	 * @param dir unique direction
-	 * @param k requested degree of parallelism
+	 * @param dir   unique direction
+	 * @param k     requested degree of parallelism
 	 * @return true if the parallel path should be used
 	 */
 	private static boolean satisfiesMultiThreadingConstraints(MatrixBlock blkIn, Types.Direction dir, int k) {
-		if( k <= 1 || ((long) blkIn.getNumRows()) * blkIn.getNumColumns() < PAR_UNIQUE_NUMCELL_THRESHOLD )
+		if(k <= 1 || ((long) blkIn.getNumRows()) * blkIn.getNumColumns() < PAR_UNIQUE_NUMCELL_THRESHOLD)
 			return false;
 
 		switch(dir) {
@@ -467,17 +487,16 @@ public class LibMatrixSketch {
 	}
 
 	/**
-	 * Creates balanced half-open ranges [start, end) using the same utility pattern as
-	 * other SystemDS matrix libraries.
+	 * Creates balanced half-open ranges [start, end) using the same utility pattern as other SystemDS matrix libraries.
 	 *
 	 * @param len number of rows or columns to partition
-	 * @param k requested degree of parallelism
+	 * @param k   requested degree of parallelism
 	 * @return list of balanced index ranges
 	 */
 	private static ArrayList<int[]> getBalancedRanges(int len, int k) {
 		ArrayList<int[]> ranges = new ArrayList<>();
 		ArrayList<Integer> blklens = UtilFunctions.getBalancedBlockSizesDefault(len, getNumThreads(k, len), false);
-		for( int i = 0, lb = 0; i < blklens.size(); lb += blklens.get(i), i++ )
+		for(int i = 0, lb = 0; i < blklens.size(); lb += blklens.get(i), i++)
 			ranges.add(new int[] {lb, lb + blklens.get(i)});
 		return ranges;
 	}
@@ -485,7 +504,7 @@ public class LibMatrixSketch {
 	/**
 	 * Caps the number of workers by the number of row or column partitions available.
 	 *
-	 * @param k requested degree of parallelism
+	 * @param k   requested degree of parallelism
 	 * @param len number of rows or columns to partition
 	 * @return effective number of worker threads
 	 */
@@ -497,18 +516,18 @@ public class LibMatrixSketch {
 	 * Builds the execution plan for the batched parallel path.
 	 *
 	 * @param blkIn input matrix block
-	 * @param dir unique direction
-	 * @param k requested degree of parallelism
+	 * @param dir   unique direction
+	 * @param k     requested degree of parallelism
 	 * @return batch configuration, or null if batching would not use parallelism
 	 */
-	private static BatchConfig getBatchConfig(MatrixBlock blkIn, Types.Direction dir, int k) {
+	private static BatchConfig getBatchConfig(MatrixBlock blkIn, Types.Direction dir, int k, long budget) {
 		int len = getPartitionLength(blkIn, dir);
-		long maxBatchIndexes = getMaxLocalDedupIndexes(blkIn, dir);
-		if( maxBatchIndexes < 2 )
+		long maxBatchIndexes = getMaxLocalDedupIndexes(blkIn, dir, budget);
+		if(maxBatchIndexes < 2)
 			return null;
 
 		int numThreads = getNumThreads(k, (int) Math.min(len, maxBatchIndexes));
-		if( numThreads <= 1 )
+		if(numThreads <= 1)
 			return null;
 
 		int taskLen = Math.max(1, (int) Math.min(Integer.MAX_VALUE, maxBatchIndexes / numThreads));
@@ -516,10 +535,47 @@ public class LibMatrixSketch {
 	}
 
 	/**
+	 * Builds the batched execution plan for RowCol. Unlike the row-wise and column-wise workers, the RowCol workers
+	 * accumulate over their entire range and the merged set grows toward the total distinct count, so the merged worst
+	 * case is reserved up front and only the remaining budget sizes the concurrent local sets. If not even the merged
+	 * set fits, batching cannot help and the caller falls back to sequential execution.
+	 *
+	 * @param blkIn  input matrix block
+	 * @param dir    unique direction
+	 * @param k      requested degree of parallelism
+	 * @param budget budget in bytes for transient deduplication structures
+	 * @return batch configuration, or null if batching would not use parallelism safely
+	 */
+	private static BatchConfig getRowColBatchConfig(MatrixBlock blkIn, Types.Direction dir, int k, long budget) {
+		int len = getPartitionLength(blkIn, dir);
+		long cellsPerIndex = getCellsPerIndex(blkIn, dir);
+		if(cellsPerIndex <= 0 || cellsPerIndex > Long.MAX_VALUE / PAR_UNIQUE_BYTES_PER_CELL)
+			return null;
+
+		// reserve the worst case (all cells distinct) for the merged set
+		long numCells = (long) len * cellsPerIndex;
+		if(!fits(numCells, PAR_UNIQUE_BYTES_PER_CELL, budget))
+			return null;
+		long localBudget = budget - numCells * PAR_UNIQUE_BYTES_PER_CELL;
+
+		long bytesPerIndex = cellsPerIndex * PAR_UNIQUE_BYTES_PER_CELL;
+		int numThreads = getNumThreads(k, (int) Math.min(len, Math.max(1, localBudget / bytesPerIndex)));
+		if(numThreads <= 1)
+			return null;
+
+		long maxIdxPerTask = localBudget / (numThreads * bytesPerIndex);
+		if(maxIdxPerTask < 1)
+			return null;
+
+		int taskLen = (int) Math.min(Integer.MAX_VALUE, maxIdxPerTask);
+		return new BatchConfig(numThreads, taskLen, len);
+	}
+
+	/**
 	 * Returns the number of rows or columns that define the partition direction.
 	 *
 	 * @param blkIn input matrix block
-	 * @param dir unique direction
+	 * @param dir   unique direction
 	 * @return number of partition indexes
 	 */
 	private static int getPartitionLength(MatrixBlock blkIn, Types.Direction dir) {
@@ -530,30 +586,81 @@ public class LibMatrixSketch {
 	 * Estimates how many partition indexes can be processed in one batch.
 	 *
 	 * @param blkIn input matrix block
-	 * @param dir unique direction
+	 * @param dir   unique direction
 	 * @return maximum number of rows or columns per batch
 	 */
-	private static long getMaxLocalDedupIndexes(MatrixBlock blkIn, Types.Direction dir) {
-		long cellsPerIndex = dir == Types.Direction.Col ? blkIn.getNumRows() : blkIn.getNumColumns();
-		if( cellsPerIndex <= 0 ||
-			cellsPerIndex > Long.MAX_VALUE / Double.BYTES / PAR_UNIQUE_LOCAL_BYTES_OVERHEAD )
+	private static long getMaxLocalDedupIndexes(MatrixBlock blkIn, Types.Direction dir, long budget) {
+		long cellsPerIndex = getCellsPerIndex(blkIn, dir);
+		if(cellsPerIndex <= 0 || cellsPerIndex > Long.MAX_VALUE / PAR_UNIQUE_BYTES_PER_CELL)
 			return 0;
 
-		long bytesPerIndex = cellsPerIndex * Double.BYTES * PAR_UNIQUE_LOCAL_BYTES_OVERHEAD;
-		long maxLocalBytes = Runtime.getRuntime().maxMemory() / PAR_UNIQUE_MAX_LOCAL_BYTES_FRACTION;
-		return maxLocalBytes / bytesPerIndex;
+		long bytesPerIndex = cellsPerIndex * PAR_UNIQUE_BYTES_PER_CELL;
+		return budget / bytesPerIndex;
 	}
 
 	/**
-	 * Conservative memory guard for full local deduplication. The estimate includes
-	 * a small overhead factor for set objects.
+	 * Default per-operation budget for the transient deduplication structures.
+	 *
+	 * @return budget in bytes
+	 */
+	private static long getDefaultLocalBytesBudget() {
+		return Runtime.getRuntime().maxMemory() / PAR_UNIQUE_MAX_LOCAL_BYTES_FRACTION;
+	}
+
+	/**
+	 * Returns the number of cells scanned per partition index (columns per row, or rows per column).
 	 *
 	 * @param blkIn input matrix block
-	 * @param dir unique direction
-	 * @return true if local deduplication is small enough for the parallel path
+	 * @param dir   unique direction
+	 * @return number of cells per row or column
 	 */
-	private static boolean isLocalDedupMemoryBudgetSafe(MatrixBlock blkIn, Types.Direction dir) {
-		return getMaxLocalDedupIndexes(blkIn, dir) >= getPartitionLength(blkIn, dir);
+	private static long getCellsPerIndex(MatrixBlock blkIn, Types.Direction dir) {
+		return dir == Types.Direction.Col ? blkIn.getNumRows() : blkIn.getNumColumns();
+	}
+
+	/**
+	 * Overflow-safe check for {@code count * bytesPerUnit <= budget}.
+	 *
+	 * @param count        number of units
+	 * @param bytesPerUnit bytes charged per unit
+	 * @param budget       budget in bytes
+	 * @return true if the total fits the budget
+	 */
+	private static boolean fits(long count, long bytesPerUnit, long budget) {
+		if(count <= 0)
+			return true;
+		return count <= budget / bytesPerUnit;
+	}
+
+	/**
+	 * Memory guard deciding whether the full (non-batched) parallel path fits the budget.
+	 *
+	 * <p>
+	 * The row-wise and column-wise workers reuse a single set that is cleared per row/column, so only one live set per
+	 * thread is charged, i.e. {@code numThreads * cellsPerIndex * bytesPerCell
+	 * <= budget}. Charging all indexes instead would force batched execution where it is safely avoidable. The RowCol
+	 * workers instead accumulate over their whole range and are merged into a set that grows toward the total distinct
+	 * count, so the all-distinct worst case is charged for the local sets and the merged set alike.
+	 *
+	 * @param blkIn  input matrix block
+	 * @param dir    unique direction
+	 * @param k      requested degree of parallelism
+	 * @param budget budget in bytes for transient deduplication structures
+	 * @return true if the full parallel path is safe; false to use the batched path
+	 */
+	private static boolean isLocalDedupMemoryBudgetSafe(MatrixBlock blkIn, Types.Direction dir, int k, long budget) {
+		int len = getPartitionLength(blkIn, dir);
+		long cellsPerIndex = getCellsPerIndex(blkIn, dir);
+		if(len <= 0 || cellsPerIndex <= 0)
+			return true;
+		if(cellsPerIndex > Long.MAX_VALUE / PAR_UNIQUE_BYTES_PER_CELL)
+			return false;
+
+		if(dir == Types.Direction.RowCol)
+			return fits((long) len * cellsPerIndex, 2 * PAR_UNIQUE_BYTES_PER_CELL, budget);
+
+		int numThreads = getNumThreads(k, len);
+		return fits(numThreads * cellsPerIndex, PAR_UNIQUE_BYTES_PER_CELL, budget);
 	}
 
 	/**
@@ -566,7 +673,7 @@ public class LibMatrixSketch {
 		int rlen = values.size();
 		MatrixBlock blkOut = allocateOutputBlock(rlen, 1);
 		Iterator<Double> iter = values.iterator();
-		for( int i = 0; i < rlen; i++ )
+		for(int i = 0; i < rlen; i++)
 			blkOut.set(i, 0, iter.next());
 		blkOut.recomputeNonZeros();
 		blkOut.examSparsity();
@@ -582,7 +689,7 @@ public class LibMatrixSketch {
 	 */
 	private static MatrixBlock allocateOutputBlock(int rlen, int clen) {
 		MatrixBlock blkOut = new MatrixBlock(rlen, clen, false);
-		if( rlen > 0 && clen > 0 )
+		if(rlen > 0 && clen > 0)
 			blkOut.allocateBlock();
 		return blkOut;
 	}
@@ -619,8 +726,8 @@ public class LibMatrixSketch {
 		@Override
 		public HashSet<Double> call() {
 			HashSet<Double> ret = new HashSet<>();
-			for( int i = _rl; i < _ru; i++ )
-				for( int j = 0; j < _blkIn.getNumColumns(); j++ )
+			for(int i = _rl; i < _ru; i++)
+				for(int j = 0; j < _blkIn.getNumColumns(); j++)
 					ret.add(_blkIn.get(i, j));
 			return ret;
 		}
@@ -646,18 +753,18 @@ public class LibMatrixSketch {
 		public Integer call() {
 			HashSet<Double> hashSet = new HashSet<>();
 			int ret = 0;
-			if( _dir == Types.Direction.Row ) {
-				for( int i = _l; i < _u; i++ ) {
+			if(_dir == Types.Direction.Row) {
+				for(int i = _l; i < _u; i++) {
 					hashSet.clear();
-					for( int j = 0; j < _blkIn.getNumColumns(); j++ )
+					for(int j = 0; j < _blkIn.getNumColumns(); j++)
 						hashSet.add(_blkIn.get(i, j));
 					ret = Math.max(ret, hashSet.size());
 				}
 			}
 			else {
-				for( int j = _l; j < _u; j++ ) {
+				for(int j = _l; j < _u; j++) {
 					hashSet.clear();
-					for( int i = 0; i < _blkIn.getNumRows(); i++ )
+					for(int i = 0; i < _blkIn.getNumRows(); i++)
 						hashSet.add(_blkIn.get(i, j));
 					ret = Math.max(ret, hashSet.size());
 				}
@@ -687,23 +794,23 @@ public class LibMatrixSketch {
 		@Override
 		public Void call() {
 			HashSet<Double> hashSet = new HashSet<>();
-			if( _dir == Types.Direction.Row ) {
-				for( int i = _l; i < _u; i++ ) {
+			if(_dir == Types.Direction.Row) {
+				for(int i = _l; i < _u; i++) {
 					hashSet.clear();
-					for( int j = 0; j < _blkIn.getNumColumns(); j++ )
+					for(int j = 0; j < _blkIn.getNumColumns(); j++)
 						hashSet.add(_blkIn.get(i, j));
 					int pos = 0;
-					for( Double val : hashSet )
+					for(Double val : hashSet)
 						_blkOut.set(i, pos++, val);
 				}
 			}
 			else {
-				for( int j = _l; j < _u; j++ ) {
+				for(int j = _l; j < _u; j++) {
 					hashSet.clear();
-					for( int i = 0; i < _blkIn.getNumRows(); i++ )
+					for(int i = 0; i < _blkIn.getNumRows(); i++)
 						hashSet.add(_blkIn.get(i, j));
 					int pos = 0;
-					for( Double val : hashSet )
+					for(Double val : hashSet)
 						_blkOut.set(pos++, j, val);
 				}
 			}

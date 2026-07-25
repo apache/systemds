@@ -17,23 +17,26 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.matrix.data;
+package org.apache.sysds.test.functions.unique;
 
 import static org.junit.Assert.assertEquals;
 
 import java.util.HashSet;
 
 import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.matrix.data.LibMatrixSketch;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
 
 /**
- * Tests LibMatrixSketch unique paths with k=1 and k>1.
+ * Tests LibMatrixSketch unique paths with k=1 and k&gt;1. The batched paths are selected by injecting a small
+ * local-memory budget, since the heap-derived default budget never triggers them in CI.
  */
 public class LibMatrixSketchUniqueParallelTest {
 	@Test
 	public void testRowColUniqueMatchesBaseline() {
 		MatrixBlock input = new MatrixBlock(20000, 2, false).allocateBlock();
-		for( int i = 0; i < input.getNumRows(); i++ ) {
+		for(int i = 0; i < input.getNumRows(); i++) {
 			input.set(i, 0, i % 7);
 			input.set(i, 1, (i + 3) % 11);
 		}
@@ -49,7 +52,7 @@ public class LibMatrixSketchUniqueParallelTest {
 	@Test
 	public void testRowUniqueMatchesBaselineAndExpectedValues() {
 		MatrixBlock input = new MatrixBlock(12000, 4, false).allocateBlock();
-		for( int i = 0; i < input.getNumRows(); i++ ) {
+		for(int i = 0; i < input.getNumRows(); i++) {
 			int pattern = i % 4;
 			input.set(i, 0, pattern);
 			input.set(i, 1, pattern);
@@ -69,7 +72,7 @@ public class LibMatrixSketchUniqueParallelTest {
 	@Test
 	public void testColumnUniqueMatchesBaselineAndExpectedValues() {
 		MatrixBlock input = new MatrixBlock(4, 5000, false).allocateBlock();
-		for( int j = 0; j < input.getNumColumns(); j++ ) {
+		for(int j = 0; j < input.getNumColumns(); j++) {
 			int pattern = j % 4;
 			input.set(0, j, pattern);
 			input.set(1, j, pattern);
@@ -95,7 +98,7 @@ public class LibMatrixSketchUniqueParallelTest {
 
 	private static void testRowColLargeInput() {
 		MatrixBlock input = new MatrixBlock(1200000, 1, false).allocateBlock();
-		for( int i = 0; i < input.getNumRows(); i++ )
+		for(int i = 0; i < input.getNumRows(); i++)
 			input.set(i, 0, i % 7);
 		input.recomputeNonZeros();
 
@@ -108,8 +111,8 @@ public class LibMatrixSketchUniqueParallelTest {
 
 	private static void testRowLargeInput() {
 		MatrixBlock input = new MatrixBlock(80000, 16, false).allocateBlock();
-		for( int i = 0; i < input.getNumRows(); i++ )
-			for( int j = 0; j < input.getNumColumns(); j++ )
+		for(int i = 0; i < input.getNumRows(); i++)
+			for(int j = 0; j < input.getNumColumns(); j++)
 				input.set(i, j, j % 4 + 1);
 		input.recomputeNonZeros();
 
@@ -123,8 +126,8 @@ public class LibMatrixSketchUniqueParallelTest {
 
 	private static void testColumnLargeInput() {
 		MatrixBlock input = new MatrixBlock(16, 80000, false).allocateBlock();
-		for( int j = 0; j < input.getNumColumns(); j++ )
-			for( int i = 0; i < input.getNumRows(); i++ )
+		for(int j = 0; j < input.getNumColumns(); j++)
+			for(int i = 0; i < input.getNumRows(); i++)
 				input.set(i, j, i % 4 + 1);
 		input.recomputeNonZeros();
 
@@ -137,14 +140,146 @@ public class LibMatrixSketchUniqueParallelTest {
 	}
 
 	/**
+	 * Forces the batched RowCol path with a budget that reserves the all-distinct merged set but leaves too little for
+	 * the full parallel path.
+	 */
+	@Test
+	public void testRowColBatchedPathMatchesBaseline() {
+		MatrixBlock input = new MatrixBlock(20000, 2, false).allocateBlock();
+		for(int i = 0; i < input.getNumRows(); i++) {
+			input.set(i, 0, i % 7);
+			input.set(i, 1, (i + 3) % 11);
+		}
+		input.recomputeNonZeros();
+
+		// numCells=40000; full path needs 2*40000*64 bytes, batching needs at least 40000*64
+		long budget = 3000000;
+
+		MatrixBlock baseline = LibMatrixSketch.getUniqueValues(input, Types.Direction.RowCol);
+		MatrixBlock batched = LibMatrixSketch.getUniqueValues(input, Types.Direction.RowCol, 4, budget);
+
+		assertDimensions(batched, 11, 1, "RowCol batched dimensions");
+		assertSameScalarSet(baseline, batched, "RowCol batched baseline vs parallel");
+	}
+
+	/**
+	 * A budget too small to hold even the merged set must fall back to sequential execution and still return the
+	 * correct result.
+	 */
+	@Test
+	public void testRowColTinyBudgetFallsBackToSequential() {
+		MatrixBlock input = new MatrixBlock(20000, 2, false).allocateBlock();
+		for(int i = 0; i < input.getNumRows(); i++) {
+			input.set(i, 0, i % 7);
+			input.set(i, 1, (i + 3) % 11);
+		}
+		input.recomputeNonZeros();
+
+		MatrixBlock baseline = LibMatrixSketch.getUniqueValues(input, Types.Direction.RowCol);
+		MatrixBlock fallback = LibMatrixSketch.getUniqueValues(input, Types.Direction.RowCol, 4, 1024);
+
+		assertDimensions(fallback, 11, 1, "RowCol tiny-budget dimensions");
+		assertSameScalarSet(baseline, fallback, "RowCol tiny-budget baseline vs fallback");
+	}
+
+	/**
+	 * Forces the batched row-wise path with a budget below one live row set per thread.
+	 */
+	@Test
+	public void testRowBatchedPathMatchesBaseline() {
+		MatrixBlock input = new MatrixBlock(12000, 4, false).allocateBlock();
+		for(int i = 0; i < input.getNumRows(); i++) {
+			int pattern = i % 4;
+			input.set(i, 0, pattern);
+			input.set(i, 1, pattern);
+			input.set(i, 2, pattern + 10);
+			input.set(i, 3, pattern + 20);
+		}
+		input.recomputeNonZeros();
+
+		// full path needs numThreads*clen*64 = 4*4*64 = 1024 bytes
+		MatrixBlock baseline = LibMatrixSketch.getUniqueValues(input, Types.Direction.Row);
+		MatrixBlock batched = LibMatrixSketch.getUniqueValues(input, Types.Direction.Row, 4, 512);
+
+		assertDimensions(batched, input.getNumRows(), 3, "Row batched dimensions");
+		assertBlockEquals(baseline, batched, "Row batched baseline vs parallel");
+		assertSameRowSet(batched, 5, new double[] {1, 11, 21}, "Row batched expected values");
+	}
+
+	/**
+	 * Row-wise unique under a budget too small for any batch must fall back to sequential execution.
+	 */
+	@Test
+	public void testRowTinyBudgetFallsBackToSequential() {
+		MatrixBlock input = new MatrixBlock(12000, 4, false).allocateBlock();
+		for(int i = 0; i < input.getNumRows(); i++) {
+			int pattern = i % 4;
+			input.set(i, 0, pattern);
+			input.set(i, 1, pattern);
+			input.set(i, 2, pattern + 10);
+			input.set(i, 3, pattern + 20);
+		}
+		input.recomputeNonZeros();
+
+		MatrixBlock baseline = LibMatrixSketch.getUniqueValues(input, Types.Direction.Row);
+		MatrixBlock fallback = LibMatrixSketch.getUniqueValues(input, Types.Direction.Row, 4, 64);
+
+		assertBlockEquals(baseline, fallback, "Row tiny-budget baseline vs fallback");
+	}
+
+	/**
+	 * Forces the batched column-wise path with a budget below one live column set per thread.
+	 */
+	@Test
+	public void testColumnBatchedPathMatchesBaseline() {
+		MatrixBlock input = new MatrixBlock(4, 5000, false).allocateBlock();
+		for(int j = 0; j < input.getNumColumns(); j++) {
+			int pattern = j % 4;
+			input.set(0, j, pattern);
+			input.set(1, j, pattern);
+			input.set(2, j, pattern + 10);
+			input.set(3, j, pattern + 20);
+		}
+		input.recomputeNonZeros();
+
+		// full path needs numThreads*rlen*64 = 4*4*64 = 1024 bytes
+		MatrixBlock baseline = LibMatrixSketch.getUniqueValues(input, Types.Direction.Col);
+		MatrixBlock batched = LibMatrixSketch.getUniqueValues(input, Types.Direction.Col, 4, 512);
+
+		assertDimensions(batched, 3, input.getNumColumns(), "Col batched dimensions");
+		assertBlockEquals(baseline, batched, "Col batched baseline vs parallel");
+		assertSameColumnSet(batched, 5, new double[] {1, 11, 21}, "Col batched expected values");
+	}
+
+	/**
+	 * Column-wise unique under a budget too small for any batch must fall back to sequential execution.
+	 */
+	@Test
+	public void testColumnTinyBudgetFallsBackToSequential() {
+		MatrixBlock input = new MatrixBlock(4, 5000, false).allocateBlock();
+		for(int j = 0; j < input.getNumColumns(); j++) {
+			int pattern = j % 4;
+			input.set(0, j, pattern);
+			input.set(1, j, pattern);
+			input.set(2, j, pattern + 10);
+			input.set(3, j, pattern + 20);
+		}
+		input.recomputeNonZeros();
+
+		MatrixBlock baseline = LibMatrixSketch.getUniqueValues(input, Types.Direction.Col);
+		MatrixBlock fallback = LibMatrixSketch.getUniqueValues(input, Types.Direction.Col, 4, 64);
+
+		assertBlockEquals(baseline, fallback, "Col tiny-budget baseline vs fallback");
+	}
+
+	/**
 	 * Compares two MatrixBlocks cell by cell with exact equality.
 	 */
 	private static void assertBlockEquals(MatrixBlock expected, MatrixBlock actual, String message) {
 		assertDimensions(actual, expected.getNumRows(), expected.getNumColumns(), message);
-		for( int i = 0; i < expected.getNumRows(); i++ )
-			for( int j = 0; j < expected.getNumColumns(); j++ )
-				assertEquals(message + " mismatch at (" + i + ", " + j + ")", expected.get(i, j),
-					actual.get(i, j), 0);
+		for(int i = 0; i < expected.getNumRows(); i++)
+			for(int j = 0; j < expected.getNumColumns(); j++)
+				assertEquals(message + " mismatch at (" + i + ", " + j + ")", expected.get(i, j), actual.get(i, j), 0);
 	}
 
 	/**
@@ -162,7 +297,7 @@ public class LibMatrixSketchUniqueParallelTest {
 	 */
 	private static HashSet<Double> collectScalars(MatrixBlock block) {
 		HashSet<Double> ret = new HashSet<>();
-		for( int i = 0; i < block.getNumRows(); i++ )
+		for(int i = 0; i < block.getNumRows(); i++)
 			ret.add(block.get(i, 0));
 		return ret;
 	}
@@ -173,7 +308,7 @@ public class LibMatrixSketchUniqueParallelTest {
 	private static void assertSameRowSet(MatrixBlock block, int row, double[] expectedValues, String message) {
 		HashSet<Double> expected = collectExpected(expectedValues);
 		HashSet<Double> actual = new HashSet<>();
-		for( int j = 0; j < block.getNumColumns(); j++ )
+		for(int j = 0; j < block.getNumColumns(); j++)
 			actual.add(block.get(row, j));
 		assertEquals(message + " mismatch", expected, actual);
 	}
@@ -184,7 +319,7 @@ public class LibMatrixSketchUniqueParallelTest {
 	private static void assertSameColumnSet(MatrixBlock block, int col, double[] expectedValues, String message) {
 		HashSet<Double> expected = collectExpected(expectedValues);
 		HashSet<Double> actual = new HashSet<>();
-		for( int i = 0; i < block.getNumRows(); i++ )
+		for(int i = 0; i < block.getNumRows(); i++)
 			actual.add(block.get(i, col));
 		assertEquals(message + " mismatch", expected, actual);
 	}
@@ -194,7 +329,7 @@ public class LibMatrixSketchUniqueParallelTest {
 	 */
 	private static HashSet<Double> collectExpected(double[] values) {
 		HashSet<Double> ret = new HashSet<>();
-		for( double value : values )
+		for(double value : values)
 			ret.add(value);
 		return ret;
 	}

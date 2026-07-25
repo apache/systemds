@@ -31,6 +31,7 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 public class LibMatrixSketch {
 	private static final long PAR_UNIQUE_NUMCELL_THRESHOLD = 1024 * 16;
@@ -87,14 +88,17 @@ public class LibMatrixSketch {
 		boolean localDedupMemorySafe = isLocalDedupMemoryBudgetSafe(blkIn, dir, k, maxLocalBytes);
 		switch(dir) {
 			case RowCol:
-				return localDedupMemorySafe ? getUniqueValuesRowColParallel(blkIn,
-					k) : getUniqueValuesRowColBatchedParallel(blkIn, dir, k, maxLocalBytes);
+				if(localDedupMemorySafe)
+					return getUniqueValuesRowColParallel(blkIn, k);
+				return getUniqueValuesRowColBatchedParallel(blkIn, dir, k, maxLocalBytes);
 			case Row:
-				return localDedupMemorySafe ? getUniqueRowValuesParallel(blkIn,
-					k) : getUniqueRowValuesBatchedParallel(blkIn, dir, k, maxLocalBytes);
+				if(localDedupMemorySafe)
+					return getUniqueRowValuesParallel(blkIn, k);
+				return getUniqueRowValuesBatchedParallel(blkIn, dir, k, maxLocalBytes);
 			case Col:
-				return localDedupMemorySafe ? getUniqueColumnValuesParallel(blkIn,
-					k) : getUniqueColumnValuesBatchedParallel(blkIn, dir, k, maxLocalBytes);
+				if(localDedupMemorySafe)
+					return getUniqueColumnValuesParallel(blkIn, k);
+				return getUniqueColumnValuesBatchedParallel(blkIn, dir, k, maxLocalBytes);
 			default:
 				throw new IllegalArgumentException("Unrecognized direction: " + dir);
 		}
@@ -599,12 +603,13 @@ public class LibMatrixSketch {
 	}
 
 	/**
-	 * Default per-operation budget for the transient deduplication structures.
+	 * Default per-operation budget for the transient deduplication structures. This uses the infrastructure-analyzer
+	 * view of the local JVM memory, which parfor adjusts per worker, rather than the raw JVM maximum.
 	 *
 	 * @return budget in bytes
 	 */
 	private static long getDefaultLocalBytesBudget() {
-		return Runtime.getRuntime().maxMemory() / PAR_UNIQUE_MAX_LOCAL_BYTES_FRACTION;
+		return InfrastructureAnalyzer.getLocalMaxMemory() / PAR_UNIQUE_MAX_LOCAL_BYTES_FRACTION;
 	}
 
 	/**

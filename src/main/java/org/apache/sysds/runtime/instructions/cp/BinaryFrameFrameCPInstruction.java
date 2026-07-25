@@ -69,18 +69,6 @@ public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction {
 			FrameBlock in = ec.getFrameInput(input1.getName());
 			FrameBlock names = ec.getFrameInput(input2.getName());
 
-			if (names == null)
-				throw new DMLRuntimeException("Column names cannot be null.");
-
-			if (names.getNumRows() != 1)
-				throw new DMLRuntimeException(
-						"Column names must be provided as a 1 x n frame.");
-
-			if (names.getNumColumns() != in.getNumColumns())
-				throw new DMLRuntimeException(
-						"Expected " + in.getNumColumns() +
-								" column names but got " + names.getNumColumns());
-
 			String[] colNames = new String[(int) names.getNumColumns()];
 			for(int i = 0; i < colNames.length; i++){
 				colNames[i] = names.get(0, i).toString();

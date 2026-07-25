@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.spark.functions.SetColumnNamesFunction;
 import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDAggregateUtils;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import scala.Tuple2;
@@ -110,29 +111,6 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction {
 				rightNames.length);
 
 		return result;
-	}
-
-	private static class SetColumnNamesFunction
-			implements Function<FrameBlock, FrameBlock> {
-		private static final long serialVersionUID = 1L;
-
-		private final String[] _columnNames;
-
-		protected SetColumnNamesFunction(String[] columnNames) {
-			_columnNames = columnNames != null
-					? columnNames.clone()
-					: null;
-		}
-
-		@Override
-		public FrameBlock call(FrameBlock block) {
-			block.setColumnNames(
-					_columnNames != null
-							? _columnNames.clone()
-							: null);
-
-			return block;
-		}
 	}
 
 	public static JavaPairRDD<Long, FrameBlock> appendFrameRSP(JavaPairRDD<Long, FrameBlock> in1, JavaPairRDD<Long, FrameBlock> in2, long leftRows, boolean cbind) {

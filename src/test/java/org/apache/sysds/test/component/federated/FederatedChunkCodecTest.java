@@ -19,8 +19,11 @@
 
 package org.apache.sysds.test.component.federated;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.sysds.runtime.controlprogram.federated.FederatedChunkDecoder;
@@ -30,7 +33,10 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.Respo
 import org.junit.Assert;
 import org.junit.Test;
 
+import io.netty.buffer.AbstractByteBufAllocator;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
@@ -40,12 +46,18 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.compression.JdkZlibDecoder;
 import io.netty.handler.codec.compression.JdkZlibEncoder;
 import io.netty.handler.codec.compression.ZlibWrapper;
+import io.netty.handler.stream.ChunkedInput;
 import io.netty.handler.stream.ChunkedWriteHandler;
 
 public class FederatedChunkCodecTest {
 	private static final int CHUNK_SIZE = 4096; // tiny on purpose: forces a multi-frame stream
 	private static final int MAX_FRAME = 1 << 20; // 1 MB: frame-decoder ceiling, must exceed CHUNK_SIZE + header
 	private static final int PAYLOAD_DOUBLES = 20000; // ~160 KB serialized, many CHUNK_SIZE frames
+	private static final int QUEUED_DOUBLES = 2000; // ~16 KB serialized, few enough frames to never block the queue
+	// mirrors the package-private FederatedChunkProtocol, which this test cannot import
+	private static final byte TYPE_DATA = 0;
+	private static final byte TYPE_ERROR = 2;
+	private static final int HEADER_LEN = 5;
 
 	@Test
 	public void roundTripPlainSplitsIntoManyFrames() throws Exception {
@@ -61,14 +73,83 @@ public class FederatedChunkCodecTest {
 		assertSamePayload(original, decode(encode(original, true), true));
 	}
 
+	@Test
+	public void producerFailureEmitsErrorFrame() throws Exception {
+		List<ByteBuf> frames = encode(new Unserializable(), false);
+		Assert.assertFalse("expected an error frame", frames.isEmpty());
+		ByteBuf last = frames.get(frames.size() - 1);
+		Assert.assertEquals(TYPE_ERROR, last.getByte(0));
+		Assert.assertTrue(frameMessage(last).contains("NotSerializableException"));
+		for(ByteBuf frame : frames)
+			frame.release();
+	}
+
+	@Test
+	public void errorFrameSurfacesAsException() throws Exception {
+		EmbeddedChannel channel = new EmbeddedChannel(frameDecoder(), new FederatedChunkDecoder());
+		channel.writeInbound(errorFrame("remote failure"));
+		Throwable caught = awaitException(channel);
+		Assert.assertTrue("expected an IOException, got " + caught, caught instanceof IOException);
+		Assert.assertTrue(String.valueOf(caught).contains("remote failure"));
+	}
+
+	@Test
+	public void closeReleasesQueuedFrames() throws Exception {
+		RecordingAllocator alloc = new RecordingAllocator();
+		EmbeddedChannel channel = new EmbeddedChannel(new ChunkedWriteHandler());
+		ChunkedInput<ByteBuf> input = FederatedChunkEncoder.chunkedInput(sampleResponse(QUEUED_DOUBLES), CHUNK_SIZE,
+			alloc, channel.pipeline().get(ChunkedWriteHandler.class));
+		awaitProducerFinished(alloc);
+		input.close();
+		for(ByteBuf frame : alloc.frames())
+			Assert.assertEquals("frame left unreleased by close()", 0, frame.refCnt());
+	}
+
 	private static FederatedResponse sampleResponse() {
-		double[] data = new double[PAYLOAD_DOUBLES];
+		return sampleResponse(PAYLOAD_DOUBLES);
+	}
+
+	private static FederatedResponse sampleResponse(int doubles) {
+		double[] data = new double[doubles];
 		for(int i = 0; i < data.length; i++)
 			data[i] = i;
 		return new FederatedResponse(ResponseType.SUCCESS, data);
 	}
 
-	private static List<ByteBuf> encode(FederatedResponse response, boolean compress) throws Exception {
+	private static ByteBuf errorFrame(String message) {
+		byte[] cause = message.getBytes(StandardCharsets.UTF_8);
+		return Unpooled.buffer(HEADER_LEN + cause.length).writeByte(TYPE_ERROR).writeInt(cause.length)
+			.writeBytes(cause);
+	}
+
+	private static String frameMessage(ByteBuf frame) {
+		return frame.toString(HEADER_LEN, frame.getInt(1), StandardCharsets.UTF_8);
+	}
+
+	private static Throwable awaitException(EmbeddedChannel channel) throws InterruptedException {
+		for(int i = 0; i < 200; i++) {
+			channel.runPendingTasks();
+			try {
+				channel.checkException();
+			}
+			catch(Throwable t) {
+				return t;
+			}
+			Thread.sleep(5);
+		}
+		throw new AssertionError("no exception propagated");
+	}
+
+	private static void awaitProducerFinished(RecordingAllocator alloc) throws InterruptedException {
+		for(int i = 0; i < 200; i++) {
+			if(alloc.sawFinalFrame())
+				return;
+			Thread.sleep(5);
+		}
+		throw new AssertionError("producer did not finish");
+	}
+
+	private static List<ByteBuf> encode(Serializable response, boolean compress) throws Exception {
 		EmbeddedChannel channel = compress ? new EmbeddedChannel(new JdkZlibEncoder(ZlibWrapper.ZLIB),
 			new ChunkedWriteHandler(), chunkEncoder()) : new EmbeddedChannel(new ChunkedWriteHandler(), chunkEncoder());
 		channel.config().setWriteBufferHighWaterMark(MAX_FRAME * 64);
@@ -133,5 +214,52 @@ public class FederatedChunkCodecTest {
 		Assert.assertNotNull(actual);
 		Assert.assertTrue(actual.isSuccessful());
 		Assert.assertArrayEquals((double[]) expected.getData()[0], (double[]) actual.getData()[0], 0.0);
+	}
+
+	private static class Unserializable implements Serializable {
+		private static final long serialVersionUID = 1L;
+		private final Object _payload = new Object();
+
+		@Override
+		public String toString() {
+			return String.valueOf(_payload);
+		}
+	}
+
+	private static final class RecordingAllocator extends AbstractByteBufAllocator {
+		private final List<ByteBuf> _frames = Collections.synchronizedList(new ArrayList<>());
+
+		@Override
+		protected ByteBuf newHeapBuffer(int initialCapacity, int maxCapacity) {
+			return record(UnpooledByteBufAllocator.DEFAULT.heapBuffer(initialCapacity, maxCapacity));
+		}
+
+		@Override
+		protected ByteBuf newDirectBuffer(int initialCapacity, int maxCapacity) {
+			return record(UnpooledByteBufAllocator.DEFAULT.directBuffer(initialCapacity, maxCapacity));
+		}
+
+		@Override
+		public boolean isDirectBufferPooled() {
+			return false;
+		}
+
+		private ByteBuf record(ByteBuf buf) {
+			_frames.add(buf);
+			return buf;
+		}
+
+		List<ByteBuf> frames() {
+			return _frames;
+		}
+
+		boolean sawFinalFrame() {
+			synchronized(_frames) {
+				for(ByteBuf frame : _frames)
+					if(frame.isReadable() && frame.getByte(0) != TYPE_DATA)
+						return true;
+			}
+			return false;
+		}
 	}
 }

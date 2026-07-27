@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-X = read($in_X1)
-B = seq(1, $cols)
+X = read($in_X)
+B = rand(rows=$cols, cols=1, min=0, max=1, seed=7)
 Z = X %*% B
 write(Z, $out)

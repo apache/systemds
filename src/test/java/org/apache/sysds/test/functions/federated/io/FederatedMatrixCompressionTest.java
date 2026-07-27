@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Random;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
@@ -66,6 +65,8 @@ public class FederatedMatrixCompressionTest extends AutomatedTestBase {
 	public double sparsity;
 	@Parameterized.Parameter(4)
 	public int bits;
+	@Parameterized.Parameter(5)
+	public int workers;
 
 	@Override
 	public void setUp() {
@@ -76,8 +77,10 @@ public class FederatedMatrixCompressionTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
-			// {compressionType, rows, cols, sparsity, bits}
-			{CompressionType.TOPK, 60, 20, 0.5, 8}, {CompressionType.PROBABILISTIC_QUANTIZATION, 60, 20, 1.0, 2},});
+			// {compressionType, rows, cols, sparsity, bits, workers}
+			{CompressionType.TOPK, 60, 20, 0.5, 8, 1}, {CompressionType.TOPK, 60, 20, 0.5, 8, 2},
+			{CompressionType.PROBABILISTIC_QUANTIZATION, 60, 20, 1.0, 2, 1},
+			{CompressionType.PROBABILISTIC_QUANTIZATION, 60, 20, 1.0, 2, 2},});
 	}
 
 	@Test
@@ -94,32 +97,58 @@ public class FederatedMatrixCompressionTest extends AutomatedTestBase {
 
 		fullDMLScriptName = "";
 		int port1 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
+		int port2 = getRandomAvailablePort();
+		Thread[] threads = (workers == 2) ? startLocalFedWorkerThreads(new int[] {port1, port2}, null,
+			FED_WORKER_WAIT) : new Thread[] {startLocalFedWorkerThread(port1)};
 		String host = "localhost";
 
 		try {
-			// createRandomMatrix takes (width, height), i.e. (cols, rows)
-			double[][] X1 = createRandomMatrix(cols, rows);
-			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, blocksize, (long) rows * cols);
-			writeCSVMatrix("X1", X1, false, mc);
-
-			long[][] begins = new long[][] {new long[] {0, 0}};
-			long[][] ends = new long[][] {new long[] {rows, cols}};
-			MatrixObject fed = FederatedTestObjectConstructor.constructFederatedInput(rows, cols, blocksize, host,
-				begins, ends, new int[] {port1}, new String[] {input("X1")}, input("X.json"));
+			// Random input matrix X, row-partitioned across the workers
+			int halfRows = rows / 2;
+			double[][] X;
+			MatrixObject fed;
+			if(workers == 2) {
+				double[][] X1 = getRandomMatrix(halfRows, cols, 0, 1, 1, 42);
+				double[][] X2 = getRandomMatrix(rows - halfRows, cols, 0, 1, 1, 13);
+				writeInputMatrixWithMTD("X1", X1, false,
+					new MatrixCharacteristics(halfRows, cols, blocksize, (long) halfRows * cols));
+				writeInputMatrixWithMTD("X2", X2, false,
+					new MatrixCharacteristics(rows - halfRows, cols, blocksize, (long) (rows - halfRows) * cols));
+				// stitch X1/X2 into a single reference matrix
+				X = new double[rows][cols];
+				for(int i = 0; i < halfRows; i++)
+					X[i] = X1[i];
+				for(int i = 0; i < rows - halfRows; i++)
+					X[halfRows + i] = X2[i];
+				writeInputMatrixWithMTD("X", X, false,
+					new MatrixCharacteristics(rows, cols, blocksize, (long) rows * cols));
+				long[][] begins = new long[][] {new long[] {0, 0}, new long[] {halfRows, 0}};
+				long[][] ends = new long[][] {new long[] {halfRows, cols}, new long[] {rows, cols}};
+				fed = FederatedTestObjectConstructor.constructFederatedInput(rows, cols, blocksize, host, begins, ends,
+					new int[] {port1, port2}, new String[] {input("X1"), input("X2")}, input("X.json"));
+			}
+			else {
+				X = getRandomMatrix(rows, cols, 0, 1, 1, 42);
+				writeInputMatrixWithMTD("X", X, false,
+					new MatrixCharacteristics(rows, cols, blocksize, (long) rows * cols));
+				long[][] begins = new long[][] {new long[] {0, 0}};
+				long[][] ends = new long[][] {new long[] {rows, cols}};
+				fed = FederatedTestObjectConstructor.constructFederatedInput(rows, cols, blocksize, host, begins, ends,
+					new int[] {port1}, new String[] {input("X")}, input("X.json"));
+			}
 			writeInputFederatedWithMTD("X.json", fed);
 
-			// 1. Local reference (no federation, no compression)
+			// 1. Local reference: plain read of X, no federation, no compression
 			fullDMLScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME + "Reference.dml";
-			programArgs = new String[] {"-nvargs", "in_X1=" + input("X1"), "rows=" + rows, "cols=" + cols,
+			programArgs = new String[] {"-nvargs", "in_X=" + input("X"), "cols=" + cols,
 				"out=" + expected(OUTPUT_NAME)};
 			runTest(null);
 			HashMap<MatrixValue.CellIndex, Double> refResults = readDMLMatrixFromExpectedDir(OUTPUT_NAME);
 
-			// 2. Federated WITHOUT compression - must match the reference exactly
+			// 2. Federated WITHOUT compression - must match the reference
 			DMLScript.FEDERATED_COMPRESSION = false;
 			fullDMLScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME + ".dml";
-			programArgs = new String[] {"-nvargs", "in_X1=" + input("X.json"), "rows=" + rows, "cols=" + cols,
+			programArgs = new String[] {"-nvargs", "in_X=" + input("X.json"), "cols=" + cols,
 				"out=" + output(OUTPUT_NAME)};
 			runTest(null);
 			HashMap<MatrixValue.CellIndex, Double> uncompressed = readDMLMatrixFromOutputDir(OUTPUT_NAME);
@@ -133,19 +162,19 @@ public class FederatedMatrixCompressionTest extends AutomatedTestBase {
 			runTest(null);
 			HashMap<MatrixValue.CellIndex, Double> compressed = readDMLMatrixFromOutputDir(OUTPUT_NAME);
 
-			// 4. Compression must have altered the data
+			// 4. Compression must have altered the data (feature is exercised)
 			double maxDiff = maxAbsDifference(compressed, uncompressed);
-			Assert.assertTrue("Compression with " + compressionType
-				+ " did not alter the broadcast data - the feature is not being exercised", maxDiff > 1e-9);
+			Assert.assertTrue(
+				"Compression with " + compressionType + " did not alter the data - the feature is not being exercised",
+				maxDiff > 1e-9);
 
-			// 5. ... but reconstruction must still be bounded
+			// 5. ... but the result must still be reasonable, not corrupted
 			double bound = reconstructionBound();
 			Assert.assertTrue("Reconstruction error " + maxDiff + " exceeds bound " + bound + " for " + compressionType,
 				maxDiff <= bound);
 		}
 		catch(Exception e) {
-			LOG.warn("Failed to run test with compressionType = " + compressionType + ", rows = " + rows + ", cols = "
-				+ cols);
+			LOG.warn("Failed with compressionType = " + compressionType + ", workers = " + workers);
 			e.printStackTrace();
 			Assert.assertTrue(false);
 		}
@@ -156,7 +185,7 @@ public class FederatedMatrixCompressionTest extends AutomatedTestBase {
 			resetExecMode(oldPlatform);
 		}
 
-		TestUtils.shutdownThreads(t1);
+		TestUtils.shutdownThreads(threads);
 	}
 
 	/**
@@ -177,28 +206,18 @@ public class FederatedMatrixCompressionTest extends AutomatedTestBase {
 
 	/**
 	 * Upper bound on the reconstruction error in Z = X %*% B, derived from the compression parameters rather than
-	 * measured. X entries are in [0,1) and B = seq(1, cols), so each element of Z is a weighted sum of at most cols
-	 * terms with weights 1..cols.
+	 * measured. X entries are in [0,1) and B is random in [0,1), so each element of Z is a weighted sum of at most cols
+	 * terms with weights each &lt; 1.
 	 */
 	private double reconstructionBound() {
 		if(compressionType == CompressionType.TOPK) {
-			// TopK keeps the k largest weights and zeroes the rest; the dropped weights are 1..d
+			// TopK zeroes the smallest (cols - kept) weights of B; each weight < 1
 			int kept = (int) Math.max(1, Math.ceil(cols * sparsity));
-			int d = Math.max(0, cols - kept);
-			return (double) d * (d + 1) / 2 * SAFETY;
+			int dropped = Math.max(0, cols - kept);
+			return dropped * 1.0 * SAFETY;
 		}
-		// Quantization: each weight moves by at most one level step
-		double step = (double) (cols - 1) / ((1 << bits) - 1);
+		// Quantization: each of cols weights moves by at most one level step (range 1, levels 2^bits)
+		double step = 1.0 / ((1 << bits) - 1);
 		return cols * step * SAFETY;
-	}
-
-	public double[][] createRandomMatrix(int width, int height) {
-		Random rd = new Random();
-		double[][] matrix = new double[height][];
-
-		for(int i = 0; i < height; i++)
-			matrix[i] = rd.doubles(width).toArray();
-
-		return matrix;
 	}
 }

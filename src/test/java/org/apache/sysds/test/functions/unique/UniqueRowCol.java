@@ -70,4 +70,38 @@ public class UniqueRowCol extends UniqueBase {
 		double[][] expectedMatrix = {{1,6,9,4,2,0}};
 		uniqueTest(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
 	}
+
+	/**
+	 * Large enough to take the multi-threaded path. The result is a single column, so the comparison is unaffected by
+	 * the order in which the merged hash set is iterated.
+	 */
+	@Test
+	public void testMultiThreadedCP() {
+		uniqueTest(cyclicValues(500, 40, 37), expectedCyclicValues(37), Types.ExecType.CP, 0.0);
+	}
+
+	/**
+	 * Same input, but with a local memory budget that is too small to hold the thread-local sets and the merged set at
+	 * once. This selects the batched path from an end-to-end script run.
+	 */
+	@Test
+	public void testBatchedCP() {
+		uniqueTestConstrainedMemory(cyclicValues(500, 40, 37), expectedCyclicValues(37), Types.ExecType.CP, 0.0,
+			8 * 1024 * 1024);
+	}
+
+	private static double[][] cyclicValues(int rlen, int clen, int distinct) {
+		double[][] ret = new double[rlen][clen];
+		for(int i = 0; i < rlen; i++)
+			for(int j = 0; j < clen; j++)
+				ret[i][j] = ((long) i * clen + j) % distinct;
+		return ret;
+	}
+
+	private static double[][] expectedCyclicValues(int distinct) {
+		double[][] ret = new double[distinct][1];
+		for(int i = 0; i < distinct; i++)
+			ret[i][0] = i;
+		return ret;
+	}
 }

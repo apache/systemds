@@ -76,4 +76,39 @@ public class UniqueRow extends UniqueBase {
 		double[][] expectedMatrix = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
 		uniqueTest(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
 	}
+
+	/**
+	 * Large enough to take the multi-threaded path. Every row holds a single distinct value, so the expected result is
+	 * one column and independent of any hash set iteration order.
+	 */
+	@Test
+	public void testMultiThreadedCP() {
+		uniqueTestOrdered(constantRows(400, 64), expectedConstantRows(400), Types.ExecType.CP, 0.0);
+	}
+
+	/**
+	 * Same input under a heavily reduced local memory budget. Row-wise workers reuse a single set that is cleared per
+	 * row, so only one live set per thread is charged and the parallel path stays applicable; this guards against
+	 * needlessly falling back to batched or sequential execution.
+	 */
+	@Test
+	public void testReducedMemoryBudgetCP() {
+		uniqueTestConstrainedMemory(constantRows(400, 64), expectedConstantRows(400), Types.ExecType.CP, 0.0,
+			16 * 1024 * 1024);
+	}
+
+	private static double[][] constantRows(int rlen, int clen) {
+		double[][] ret = new double[rlen][clen];
+		for(int i = 0; i < rlen; i++)
+			for(int j = 0; j < clen; j++)
+				ret[i][j] = i;
+		return ret;
+	}
+
+	private static double[][] expectedConstantRows(int rlen) {
+		double[][] ret = new double[rlen][1];
+		for(int i = 0; i < rlen; i++)
+			ret[i][0] = i;
+		return ret;
+	}
 }

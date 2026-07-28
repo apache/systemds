@@ -952,8 +952,14 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 	{
 		if( !(that instanceof ParameterizedBuiltinOp) )
 			return false;
-		
-		ParameterizedBuiltinOp that2 = (ParameterizedBuiltinOp)that;	
+
+		// NOTE: dp_laplace/dp_gaussian draw fresh random noise on every call and record a
+		// privacy-budget charge as a side effect (see DPBuiltinCPInstruction), so two
+		// syntactically identical calls must never be merged into one execution.
+		if( _op == ParamBuiltinOp.DP_LAPLACE || _op == ParamBuiltinOp.DP_GAUSSIAN )
+			return false;
+
+		ParameterizedBuiltinOp that2 = (ParameterizedBuiltinOp)that;
 		boolean ret = (_op == that2._op
 					  && _paramIndexMap!=null && that2._paramIndexMap!=null
 					  && _paramIndexMap.size() == that2._paramIndexMap.size()

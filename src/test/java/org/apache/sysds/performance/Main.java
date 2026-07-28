@@ -145,7 +145,7 @@ public class Main {
 				MatrixMultiplicationPerf.main(args);
 				break;
 			case 1010:
-				StreamCompress.main(args);
+				ParquetIOBenchmark.main(args);
 				break;
 			case 1011:
 				HDF5IOBenchmark.main(args);

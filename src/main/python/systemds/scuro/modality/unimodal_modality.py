@@ -18,6 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import gc
 import time
 import numpy as np
@@ -135,7 +136,7 @@ class UnimodalModality(Modality):
         if self.data is None:
             raise Exception("Data is None")
 
-    def apply_representations(self, representations, aggregation=None):
+    def apply_representations(self, representations, aggregation=None, parallel=False):
         """
         Applies a list of representations to the modality. Specifically, it applies the representations to the modality in a chunked manner.
         :param representations: List of representations to apply
@@ -158,20 +159,29 @@ class UnimodalModality(Modality):
             time.time()
         )  # TODO: should be repalced in unimodal_representation.transform
         if self.data_loader.chunk_size:
-            for _ in self.iter_raw_data_chunks(reset=True):
-                for representation in representations:
-                    transformed_chunk = representation.transform(self)
-                    transformed_modalities_per_representation[
-                        representation.name
-                    ].data.extend(transformed_chunk.data)
-                    transformed_modalities_per_representation[
-                        representation.name
-                    ].metadata.extend(transformed_chunk.metadata)
-                    for d in transformed_chunk.data:
-                        original_lengths_per_representation[representation.name].append(
-                            d.shape[0]
-                        )
-
+            with ThreadPoolExecutor(
+                max_workers=len(representations) if parallel else 1
+            ) as executor:
+                time_s = time.time()
+                for _ in self.iter_raw_data_chunks(reset=True):
+                    representations_futures = {}
+                    for representation in representations:
+                        future = executor.submit(representation.transform, self)
+                        representations_futures[future] = representation.name
+                    for future in as_completed(representations_futures.keys()):
+                        representation_name = representations_futures.get(future)
+                        transformed_chunk = future.result()
+                        transformed_modalities_per_representation[
+                            representation_name
+                        ].data.extend(transformed_chunk.data)
+                        transformed_modalities_per_representation[
+                            representation_name
+                        ].metadata.extend(transformed_chunk.metadata)
+                        for d in transformed_chunk.data:
+                            original_lengths_per_representation[
+                                representation_name
+                            ].append(d.shape[0])
+                print(f"Time for transforming data chunks: {time.time() - time_s}")
         else:
             if not self.has_data():
                 self.extract_raw_data()

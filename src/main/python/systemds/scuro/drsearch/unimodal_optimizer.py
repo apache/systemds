@@ -313,6 +313,37 @@ class UnimodalOptimizer:
             metric_name=self.metric_name,
         )
 
+        dags, dags_with_pushdown, expanded_dags_with_task_roots = (
+            self._build_execution_dags_for_modality(modality, skip_remaining)
+        )
+
+        node_executor = NodeExecutor(
+            expanded_dags_with_task_roots,
+            [modality],
+            self.tasks,
+            self._checkpoint_manager,
+            self.max_num_workers,
+            self.result_path,
+            enable_checkpointing=self.enable_checkpointing,
+        )
+
+        exec_out = node_executor.run()
+        task_results = exec_out["task_results"]
+
+        for task_result in task_results:
+            local_results.add_task_result(task_result, dags)
+
+        if self.save_all_results:
+            timestr = time.strftime("%Y%m%d-%H%M%S")
+            file_name = f"{modality.modality_id}_unimodal_results_{timestr}.pkl"
+            with open(file_name, "wb") as f:
+                pickle.dump(local_results.results, f)
+
+        return local_results
+
+    def _build_execution_dags_for_modality(
+        self, modality: Modality, skip_remaining: int = 0
+    ) -> tuple:
         modality_specific_operators = self._get_modality_operators(
             modality.modality_type
         )
@@ -341,28 +372,7 @@ class UnimodalOptimizer:
         expanded_dags_with_task_roots = self._expand_dags_with_task_roots(
             dags_with_pushdown
         )
-
-        node_executor = NodeExecutor(
-            expanded_dags_with_task_roots,
-            [modality],
-            self.tasks,
-            self._checkpoint_manager,
-            self.max_num_workers,
-            self.result_path,
-            enable_checkpointing=self.enable_checkpointing,
-        )
-        task_results = node_executor.run()
-
-        for task_result in task_results:
-            local_results.add_task_result(task_result, dags)
-
-        if self.save_all_results:
-            timestr = time.strftime("%Y%m%d-%H%M%S")
-            file_name = f"{modality.modality_id}_unimodal_results_{timestr}.pkl"
-            with open(file_name, "wb") as f:
-                pickle.dump(local_results.results, f)
-
-        return local_results
+        return dags, dags_with_pushdown, expanded_dags_with_task_roots
 
     def _merge_results(self, local_results):
         for modality_id in local_results.results:
@@ -498,15 +508,22 @@ class UnimodalOptimizer:
         return dags
 
     def _aggregation_needed(self, dag: RepresentationDag) -> bool:
+        input_stats = {}
+        # TODO: adapt this to the fusion of multiple modalities, list of input stats needed
         for modality in self.modalities:
             if modality.modality_id == dag.nodes[0].modality_id:
-                last_stats = modality.stats
+                input_stats[dag.nodes[0].node_id] = modality.stats
                 break
         for node in dag.nodes[1:]:
-            last_stats = node.operation(params=node.parameters).get_output_stats(
-                last_stats
+            previous_stats = [
+                input_stats.get(input_node_id, None) for input_node_id in node.inputs
+            ]
+            current_stats = node.operation(params=node.parameters).get_output_stats(
+                previous_stats if len(previous_stats) > 1 else previous_stats[0]
             )
-        return len(last_stats.output_shape) > 1
+            input_stats[node.node_id] = current_stats
+
+        return len(input_stats.get(dag.root_node_id, None).output_shape) > 1
 
     def add_aggregation_operator(self, builder, dags):
         new_dags = []
@@ -675,7 +692,12 @@ class UnimodalResults:
                     print(f"{modality}_{task_name}: {entry}")
 
     def get_k_best_results(
-        self, modality, task, performance_metric_name, prune_cache=False
+        self,
+        modality,
+        task,
+        performance_metric_name,
+        prune_cache=False,
+        cache_needed=True,
     ):
         """
         Get the k best results for the given modality
@@ -693,36 +715,38 @@ class UnimodalResults:
 
         results = results[: self.k]
         sorted_indices = sorted_indices[: self.k]
-        task_cache = self.cache.get(modality.modality_id, {}).get(task.model.name, None)
-        if not task_cache:
-            cache = []
-            for result in results:
-                if result.dag.nodes[-1].parameters.get("_node_kind", False) == "task":
-                    dag = copy.deepcopy(result.dag)
-                    dag.nodes = dag.nodes[:-1]
-                    dag.root_node_id = dag.nodes[-1].node_id
-                    cache.append(dag.execute([modality]))
+        cache = []
+        if cache_needed:
+            task_cache = self.cache.get(modality.modality_id, {}).get(
+                task.model.name, None
+            )
+            if not task_cache:
+                cache = []
+                for result in results:
+                    cache.append(result.dag.execute([modality]))
 
-        elif isinstance(task_cache, list):
-            cache = task_cache
-        else:
-            cache_items = list(task_cache.items()) if task_cache else []
-            cache = [cache_items[i][1] for i in sorted_indices if i < len(cache_items)]
+            elif isinstance(task_cache, list):
+                cache = task_cache
+            else:
+                cache_items = list(task_cache.items()) if task_cache else []
+                cache = [
+                    cache_items[i][1] for i in sorted_indices if i < len(cache_items)
+                ]
 
-        if prune_cache:
-            # Note: in case the unimodal results are loaded from a file, we need to initialize the cache for the modality and task
-            if modality.modality_id not in self.operator_performance.cache:
-                self.operator_performance.cache[modality.modality_id] = {}
-            if (
-                task.model.name
-                not in self.operator_performance.cache[modality.modality_id]
-            ):
+            if prune_cache:
+                # Note: in case the unimodal results are loaded from a file, we need to initialize the cache for the modality and task
+                if modality.modality_id not in self.operator_performance.cache:
+                    self.operator_performance.cache[modality.modality_id] = {}
+                if (
+                    task.model.name
+                    not in self.operator_performance.cache[modality.modality_id]
+                ):
+                    self.operator_performance.cache[modality.modality_id][
+                        task.model.name
+                    ] = {}
                 self.operator_performance.cache[modality.modality_id][
                     task.model.name
-                ] = {}
-            self.operator_performance.cache[modality.modality_id][
-                task.model.name
-            ] = cache
+                ] = cache
 
         return results, cache
 

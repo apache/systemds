@@ -148,7 +148,8 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 					_q[i].close();
 				}
 			}
-			catch(InterruptedException ignored) {
+			catch(InterruptedException e) {
+				Thread.currentThread().interrupt();
 			}
 		}
 		_writeExec.getQueue().clear();
@@ -174,7 +175,8 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 			int i = (int)(q % WRITER_SIZE);
 			_q[i].enqueueIfOpen(new Tuple2<>(block, future));
 		}
-		catch(InterruptedException ignored) {
+		catch(InterruptedException e) {
+			Thread.currentThread().interrupt();
 		}
 
 		return future;

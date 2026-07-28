@@ -1196,7 +1196,7 @@ public abstract class OOCInstruction extends Instruction {
 	}
 
 	protected CompletableFuture<Void> submitOOCTask(Runnable r, StreamContext ctx) {
-		ExecutorService pool = CommonThreadPool.get();
+		ExecutorService pool = CommonThreadPool.getDynamicPool();
 		final CompletableFuture<Void> future = new CompletableFuture<>();
 		try {
 			COMPUTE_IN_FLIGHT.incrementAndGet();
@@ -1219,9 +1219,6 @@ public abstract class OOCInstruction extends Instruction {
 		catch (Exception ex) {
 			COMPUTE_IN_FLIGHT.decrementAndGet();
 			throw new DMLRuntimeException(ex);
-		}
-		finally {
-			pool.shutdown();
 		}
 
 		return future;

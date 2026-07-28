@@ -233,7 +233,7 @@ class LSTM(Fusion):
                 TensorDataset(X_tensor), batch_size=self.batch_size, shuffle=False
             )
             for (batch_X,) in inference_dataloader:
-                batch_X = batch_X.to(device)
+                batch_X = batch_X.to(self.device)
                 features, _ = self.model(batch_X)
                 all_features.append(features.cpu())
 

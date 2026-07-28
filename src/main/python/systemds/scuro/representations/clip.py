@@ -21,6 +21,7 @@
 import numpy as np
 from torchvision import transforms
 
+from systemds.scuro.dataloader.video_loader import VideoStats
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
@@ -48,14 +49,20 @@ from torch.utils.data import DataLoader
 
 @register_representation([ModalityType.VIDEO, ModalityType.IMAGE])
 class CLIPVisual(UnimodalRepresentation):
-    def __init__(self, output_file=None, batch_size=32, params=None):
-        parameters = {}
+    def __init__(self, output_file=None, batch_size=32, layer_name="", params=None):
+        parameters = self._get_parameters()
         super().__init__("CLIPVisual", ModalityType.EMBEDDING, parameters)
         self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
         self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        if params is not None:
+            self.batch_size = int(params.get("batch_size", batch_size))
+            self.layer_name = params.get("layer_name", layer_name)
+        else:
+            self.batch_size = batch_size
+            self.layer_name = layer_name
         self.output_file = output_file
+
         self.data_type = torch.float32
-        self.batch_size = batch_size
         self.gpu_id = None
         self.device = get_device()
 
@@ -68,11 +75,42 @@ class CLIPVisual(UnimodalRepresentation):
         self._gpu_id = gpu_id
         self.device = get_device(gpu_id)
 
+    def _get_parameters(self):
+        parameters = {
+            "batch_size": [1, 2, 4, 8, 16, 32, 64, 128],
+            "layer_name": [
+                "",
+                "encoder.layers.0.layer_norm2",
+                "encoder.layers.1.layer_norm2",
+                "encoder.layers.2.layer_norm2",
+                "encoder.layers.3.layer_norm2",
+                "encoder.layers.4.layer_norm2",
+                "encoder.layers.5.layer_norm2",
+                "encoder.layers.6.layer_norm2",
+                "encoder.layers.7.layer_norm2",
+                "encoder.layers.8.layer_norm2",
+                "encoder.layers.9.layer_norm2",
+                "encoder.layers.10.layer_norm2",
+                "encoder.layers.11.layer_norm2",
+                "post_layernorm",
+            ],
+        }
+
+        return parameters
+
     def estimate_output_memory_bytes(self, input_stats) -> int:
         return input_stats.num_instances * 512 * self.data_type.itemsize
 
     def get_output_stats(self, input_stats) -> RepresentationStats:
-        if not isinstance(input_stats, RepresentationStats):
+        if isinstance(input_stats, VideoStats):
+            return RepresentationStats(
+                input_stats.num_instances,
+                (
+                    input_stats.max_length,
+                    512,
+                ),
+            )
+        elif not isinstance(input_stats, RepresentationStats):
             return RepresentationStats(input_stats.num_instances, (512,))
         else:
             return RepresentationStats(
@@ -177,6 +215,21 @@ class CLIPVisual(UnimodalRepresentation):
             self.model = self.model.to(self.data_type)
 
         self.model = self.model.to(self.device)
+        self.clip_output = None
+
+        def get_activation(name):
+            def hook(model, input, output):
+                self.clip_output = (
+                    output[0].detach() if isinstance(output, tuple) else output.detach()
+                )
+
+            return hook
+
+        if self.layer_name != "":
+            for name, layer in self.model.vision_model.named_modules():
+                if name == self.layer_name:
+                    layer.register_forward_hook(get_activation(name))
+                    break
 
         embeddings = self.create_visual_embeddings(modality)
 
@@ -212,9 +265,14 @@ class CLIPVisual(UnimodalRepresentation):
                 inputs.to(self.device)
 
                 with torch.no_grad():
-                    output = self.model.get_image_features(**inputs)
-                if len(output.shape) > 2:
-                    output = torch.nn.functional.adaptive_avg_pool2d(output, (1, 1))
+                    if self.layer_name != "":
+                        _ = self.model.vision_model(**inputs)
+                        output = self.clip_output
+                    else:
+                        output = self.model.get_image_features(**inputs)
+
+                output = self._pool_visual_output(output)
+
                 embeddings.extend(
                     torch.flatten(output, 1)
                     .detach()
@@ -241,13 +299,13 @@ class CLIPVisual(UnimodalRepresentation):
                 )
                 inputs.to(self.device)
                 with torch.no_grad():
-                    output = self.model.get_image_features(**inputs)
+                    if self.layer_name != "":
+                        _ = self.model.vision_model(**inputs)
+                        output = self.clip_output
+                    else:
+                        output = self.model.get_image_features(**inputs)
 
-                if hasattr(output, "pooler_output"):
-                    output = output.pooler_output
-
-                if len(output.shape) > 2:
-                    output = torch.nn.functional.adaptive_avg_pool2d(output, (1, 1))
+                output = self._pool_visual_output(output)
 
                 embeddings[id].extend(
                     torch.flatten(output, 1)
@@ -261,13 +319,28 @@ class CLIPVisual(UnimodalRepresentation):
             embeddings[id] = np.array(embeddings[id])
         return list(embeddings.values())
 
+    def _pool_visual_output(self, output: torch.Tensor) -> torch.Tensor:
+        if output.ndim == 4:
+            output = torch.nn.functional.adaptive_avg_pool2d(output, (1, 1))
+            return torch.flatten(output, 1)
+        if output.ndim == 3:
+            return output.mean(dim=1)
+        if output.ndim == 2:
+            return output
+        raise ValueError(f"Unexpected CLIP visual output shape: {tuple(output.shape)}")
+
 
 @register_representation(ModalityType.TEXT)
 class CLIPText(UnimodalRepresentation):
-    def __init__(self, output_file=None, batch_size=32, params=None):
-        self.batch_size = batch_size
+    def __init__(self, output_file=None, batch_size=32, layer_name="", params=None):
+        if params is not None:
+            self.batch_size = int(params.get("batch_size", batch_size))
+            self.layer_name = params.get("layer_name", layer_name)
+        else:
+            self.batch_size = batch_size
+            self.layer_name = layer_name
         self.max_seq_length = 77
-        parameters = {"batch_size": [1, 2, 4, 8, 16, 32, 64, 128]}
+        parameters = self._get_parameters()
 
         super().__init__("CLIPText", ModalityType.EMBEDDING, parameters)
         self.model = None
@@ -294,6 +367,29 @@ class CLIPText(UnimodalRepresentation):
         return int(
             input_stats.num_instances * np.prod(output_stats) * self.data_type.itemsize
         )
+
+    def _get_parameters(self):
+        parameters = {
+            "batch_size": [1, 2, 4, 8, 16, 32, 64, 128],
+            "layer_name": [
+                "",
+                "encoder.layers.0.layer_norm2",
+                "encoder.layers.1.layer_norm2",
+                "encoder.layers.2.layer_norm2",
+                "encoder.layers.3.layer_norm2",
+                "encoder.layers.4.layer_norm2",
+                "encoder.layers.5.layer_norm2",
+                "encoder.layers.6.layer_norm2",
+                "encoder.layers.7.layer_norm2",
+                "encoder.layers.8.layer_norm2",
+                "encoder.layers.9.layer_norm2",
+                "encoder.layers.10.layer_norm2",
+                "encoder.layers.11.layer_norm2",
+                "final_layer_norm",
+            ],
+        }
+
+        return parameters
 
     def get_output_stats(self, input_stats) -> RepresentationStats:
         if not isinstance(input_stats, RepresentationStats):
@@ -379,6 +475,21 @@ class CLIPText(UnimodalRepresentation):
         self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
         self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
         self.model = self.model.to(self.device)
+        self.clip_output = None
+
+        def get_activation(name):
+            def hook(model, input, output):
+                self.clip_output = (
+                    output[0].detach() if isinstance(output, tuple) else output.detach()
+                )
+
+            return hook
+
+        if self.layer_name != "":
+            for name, layer in self.model.text_model.named_modules():
+                if name == self.layer_name:
+                    layer.register_forward_hook(get_activation(name))
+                    break
 
         if ModalityType.TEXT.has_field(modality.metadata, "text_spans"):
             dataset = TextSpanDataset(modality.data, modality.metadata)
@@ -415,9 +526,15 @@ class CLIPText(UnimodalRepresentation):
             )
             inputs.to(self.device)
             with torch.no_grad():
-                text_features = model.get_text_features(**inputs)
+                if self.layer_name != "":
+                    _ = model.text_model(**inputs)
 
-                batch_np = text_features.detach().cpu().float().numpy()
+                    batch_np = self.clip_output.cpu().float().numpy()
+                    if batch_np.ndim == 3:
+                        batch_np = batch_np.mean(axis=1)
+                else:
+                    batch_np = model.get_text_features(**inputs).cpu().float().numpy()
+
                 if aggregation is not None:
                     batch_np = aggregation.execute(batch_np)
 

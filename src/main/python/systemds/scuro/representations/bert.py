@@ -51,11 +51,13 @@ class BertFamily(UnimodalRepresentation):
         aggregation=None,
         params=None,
     ):
-        parameters = {"batch_size": [1, 2, 4, 8, 16, 32, 64, 128]}
+        parameters = {
+            **(parameters or {}),
+            "batch_size": [1, 2, 4, 8, 16, 32, 64, 128],
+        }
         self.model_name = model_name
         super().__init__(representation_name, ModalityType.EMBEDDING, parameters)
-
-        self.layer_name = layer
+        self.layer = layer
         self.output_file = output_file
         self.max_seq_length = max_seq_length
         self.needs_context = True
@@ -67,6 +69,9 @@ class BertFamily(UnimodalRepresentation):
         self.data_type = torch.float32
         self.aggregation = aggregation
         self.params = params
+        if params is not None:
+            self.layer = params.get("layer", self.layer)
+            self.batch_size = int(params.get("batch_size", self.batch_size))
 
     @property
     def gpu_id(self):
@@ -83,12 +88,12 @@ class BertFamily(UnimodalRepresentation):
         if params is not None:
             self.max_seq_length = int(params.get("max_seq_length", max_seq_length))
             self.batch_size = int(params.get("batch_size", batch_size))
-            self.layer_name = params.get("layer_name", layer)
+            self.layer = params.get("layer", layer)
             self.output_file = params.get("output_file", output_file)
         else:
             self.max_seq_length = max_seq_length
             self.batch_size = batch_size
-            self.layer_name = layer
+            self.layer = layer
             self.output_file = output_file
 
     def get_output_stats(self, input_stats) -> RepresentationStats:
@@ -184,14 +189,19 @@ class BertFamily(UnimodalRepresentation):
 
         def get_activation(name):
             def hook(model, input, output):
-                self.bert_output = output.detach().cpu().numpy()
+                if isinstance(output, tuple):
+                    self.bert_output = output[0]
+                elif hasattr(output, "last_hidden_state"):
+                    self.bert_output = output.last_hidden_state
+                else:
+                    self.bert_output = output
 
             return hook
 
         aggregate_dim = (0,)
-        if self.layer_name != "cls":
+        if self.layer != "cls":
             for name, layer in self.model.named_modules():
-                if name == self.layer_name:
+                if name == self.layer:
                     layer.register_forward_hook(get_activation(name))
                     break
         if ModalityType.TEXT.has_field(modality.metadata, "text_spans"):
@@ -211,7 +221,6 @@ class BertFamily(UnimodalRepresentation):
             embeddings = self.create_embeddings(
                 modality.data, self.model, tokenizer, aggregation
             )
-
         if self.output_file is not None:
             save_embeddings(embeddings, self.output_file)
 
@@ -274,11 +283,15 @@ class BertFamily(UnimodalRepresentation):
 
             with torch.no_grad():
                 outputs = model(**inputs)
-                if self.layer_name == "cls":
+                if self.layer == "cls":
                     cls_embedding = outputs.last_hidden_state.detach().cpu().numpy()
                 else:
                     cls_embedding = self.bert_output.cpu().numpy()
-                if aggregation is not None:
+                if (
+                    aggregation is not None
+                    and self.layer != "pooler"
+                    and self.layer != "pooler.activation"
+                ):
                     cls_embedding = aggregation.execute(cls_embedding)
                 cls_embeddings.extend(cls_embedding)
 
@@ -298,7 +311,7 @@ class Bert(BertFamily):
         self.set_parameters(params, max_seq_length, batch_size, layer, output_file)
 
         parameters = {
-            "layer_name": [
+            "layer": [
                 "cls",
                 "encoder.layer.0",
                 "encoder.layer.1",
@@ -342,7 +355,7 @@ class RoBERTa(BertFamily):
         self.set_parameters(params, max_seq_length, batch_size, layer, output_file)
 
         parameters = {
-            "layer_name": [
+            "layer": [
                 "cls",
                 "encoder.layer.0",
                 "encoder.layer.1",
@@ -386,7 +399,7 @@ class DistillBERT(BertFamily):
         self.set_parameters(params, max_seq_length, batch_size, layer, output_file)
 
         parameters = {
-            "layer_name": [
+            "layer": [
                 "cls",
                 "transformer.layer.0",
                 "transformer.layer.1",
@@ -420,7 +433,7 @@ class ALBERT(BertFamily):
         params=None,
     ):
         self.set_parameters(params, max_seq_length, batch_size, layer, output_file)
-        parameters = {"layer_name": ["cls", "encoder.albert_layer_groups.0", "pooler"]}
+        parameters = {"layer": ["cls", "encoder.albert_layer_groups.0", "pooler"]}
         super().__init__(
             "ALBERT",
             "albert-base-v2",
@@ -445,7 +458,7 @@ class ELECTRA(BertFamily):
         params=None,
     ):
         parameters = {
-            "layer_name": [
+            "layer": [
                 "cls",
                 "encoder.layer.0",
                 "encoder.layer.1",

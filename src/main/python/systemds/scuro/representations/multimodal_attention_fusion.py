@@ -42,6 +42,7 @@ class AttentionFusion(Fusion):
         batch_size=32,
         num_epochs=20,
         learning_rate=0.001,
+        params=None,
     ):
         parameters = {
             "hidden_dim": [32, 128, 256, 384, 512, 768],

@@ -110,43 +110,45 @@ public class FedUDFReuseTest extends AutomatedTestBase {
 		Lineage.resetInternalState();
 		Thread[] workers = startLocalFedWorkerThreads(new int[] {port1, port2, port3, port4}, otherargs, FED_WORKER_WAIT);
 
-		rtplatform = execMode;
-		if(rtplatform == ExecMode.SPARK) {
-			System.out.println(7);
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		try {
+			rtplatform = execMode;
+			if(rtplatform == ExecMode.SPARK) {
+				System.out.println(7);
+				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+			}
+			TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
+			loadTestConfiguration(config);
+
+			// Run reference dml script with normal matrix
+			fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
+			programArgs = new String[] {"-lineage", "reuse_full", "-stats", "100", "-args", 
+				input("X1"), input("X2"), input("X3"), input("X4"),
+				Boolean.toString(rowPartitioned).toUpperCase(), expected("S")};
+			runTest(null);
+
+			// Run actual dml script with federated matrix
+			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+			programArgs = new String[] {"-lineage", "reuse_full", "-stats", "100", "-nvargs",
+				"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+				"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
+				"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
+				"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + cols,
+				"rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out_S=" + output("S")};
+
+			runTest(null);
+
+			// compare via files
+			compareResults(1e-9);
+			// check if lowertri is federated
+			Assert.assertTrue(heavyHittersContainsString("fed_lowertri"));
+			// assert reuse count
+			Assert.assertTrue(LineageCacheStatistics.getInstHits() > 0);
 		}
-		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
-		loadTestConfiguration(config);
-
-		// Run reference dml script with normal matrix
-		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-		programArgs = new String[] {"-lineage", "reuse_full", "-stats", "100", "-args", 
-			input("X1"), input("X2"), input("X3"), input("X4"),
-			Boolean.toString(rowPartitioned).toUpperCase(), expected("S")};
-		runTest(null);
-
-		// Run actual dml script with federated matrix
-		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-lineage", "reuse_full", "-stats", "100", "-nvargs",
-			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
-			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
-			"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
-			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + cols,
-			"rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out_S=" + output("S")};
-
-		runTest(null);
-
-		// compare via files
-		compareResults(1e-9);
-		// check if lowertri is federated
-		Assert.assertTrue(heavyHittersContainsString("fed_lowertri"));
-		// assert reuse count
-		Assert.assertTrue(LineageCacheStatistics.getInstHits() > 0);
-
-		TestUtils.shutdownThreads(workers);
-
-		rtplatform = platformOld;
-		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		finally {
+			TestUtils.shutdownThreads(workers);
+			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		}
 	}
 }
 

@@ -37,6 +37,7 @@ class VideoStats:
     max_height: int
     max_channels: int
     num_instances: int
+    num_total_instances: int
 
     @property
     def output_shape(self):
@@ -132,8 +133,20 @@ class VideoLoader(BaseLoader):
             max_height = max(max_height, height)
             max_num_channels = max(max_num_channels, num_channels)
             num_instances += 1
+        num_total_instances = num_instances
+        num_instances = (
+            min(num_instances, self.chunk_size)
+            if self.chunk_size is not None
+            else num_instances
+        )
         return VideoStats(
-            fps, max_length, max_width, max_height, max_num_channels, num_instances
+            fps,
+            max_length,
+            max_width,
+            max_height,
+            max_num_channels,
+            num_instances,
+            num_total_instances,
         )
 
     def estimate_peak_memory_bytes(self) -> dict:

@@ -1899,6 +1899,13 @@ public class CustomArrayTests {
 		assertEquals(Double.POSITIVE_INFINITY, DoubleArray.parseDouble("iff"), 0.0);
 	}
 
+	@Test(expected = NumberFormatException.class)
+	public void parseDoubleThrowsRawNumberFormatException() {
+		// the parse failure must surface as the raw NumberFormatException, not a wrapped DMLRuntimeException,
+		// so callers can distinguish a format error from other runtime failures
+		DoubleArray.parseDouble("not_a_number");
+	}
+
 	@Test(expected = Exception.class)
 	public void setDDCArrayWithDDCArray() {
 		Array<?> c = FrameCompressTestUtils.generateArray(100, 32, 5, ValueType.INT32);

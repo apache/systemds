@@ -37,6 +37,17 @@ from systemds.scuro.utils.identifier import get_op_id, get_node_id
 from collections import OrderedDict, defaultdict, deque
 
 
+def pushdown_aggregation_for_node(
+    node_parameters: Optional[Dict[str, Any]],
+) -> Optional[AggregatedRepresentation]:
+    if not node_parameters:
+        return None
+    pushdown_config = node_parameters.get("_pushdown_aggregation")
+    if pushdown_config is None:
+        return None
+    return AggregatedRepresentation(params=pushdown_config)
+
+
 class LRUCache:
     def __init__(self, max_size: int = 256):
         self.max_size = max_size
@@ -231,6 +242,23 @@ class RepresentationDag:
         params_items = tuple(sorted((node.parameters or {}).items()))
         return ("op", op_cls, params_items, input_sig_tuple)
 
+    def get_represntation_names(self) -> str:
+        representation_names = []
+        visited = set()
+
+        def visit_node(node_id):
+            if node_id in visited:
+                return
+            node = self.get_node_by_id(node_id)
+            for input_id in node.inputs:
+                visit_node(input_id)
+            visited.add(node_id)
+            if node.operation is not None:
+                representation_names.append(node.operation().name)
+
+        visit_node(self.root_node_id)
+        return " -> ".join(representation_names)
+
     def execute(
         self,
         modalities: List[Modality],
@@ -282,9 +310,9 @@ class RepresentationDag:
                             if rep_cache is not None:
                                 result = rep_cache[node_operation.name]
                             else:
-                                # Compute the representation
+                                agg = pushdown_aggregation_for_node(node.parameters)
                                 result = input_mods[0].apply_representation(
-                                    node_operation
+                                    node_operation, aggregation=agg
                                 )
                     else:
                         # It's a fusion operation
@@ -314,8 +342,10 @@ class RepresentationDag:
                         if rep_cache is not None:
                             result = rep_cache[node_operation.name]
                         else:
-                            # Compute the representation
-                            result = input_mods[0].apply_representation(node_operation)
+                            agg = pushdown_aggregation_for_node(node.parameters)
+                            result = input_mods[0].apply_representation(
+                                node_operation, aggregation=agg
+                            )
                 else:
                     # It's a fusion operation
                     fusion_op = node_operation
@@ -387,13 +417,17 @@ def get_modality_by_id_and_instance_id(
     modalities: List[Modality], modality_id: int, instance_id: int
 ):
     counter = 0
+    modality_per_id = {}
     for modality in modalities:
-        if modality.modality_id == modality_id:
-            if counter == instance_id or instance_id == -1:
-                return modality
-            else:
-                counter += 1
-    return None
+        if modality.modality_id not in modality_per_id:
+            modality_per_id[modality.modality_id] = []
+        modality_per_id[modality.modality_id].append(modality)
+    if modality_id not in modality_per_id:
+        return None
+    if instance_id == -1 or len(modality_per_id[modality_id]) == 1:
+        return modality_per_id[modality_id][0]
+    else:
+        return modality_per_id[modality_id][instance_id]
 
 
 class RepresentationDAGBuilder:

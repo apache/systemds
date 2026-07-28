@@ -27,7 +27,8 @@ from systemds.scuro.representations.clip import CLIPText, CLIPVisual
 from systemds.scuro.representations.color_histogram import ColorHistogram
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.drsearch.unimodal_optimizer import UnimodalOptimizer
-
+from systemds.scuro.representations.mfcc import MFCC
+from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
 from systemds.scuro.representations.word2vec import W2V
 from systemds.scuro.representations.bow import BoW
 from systemds.scuro.representations.bert import Bert
@@ -48,7 +49,6 @@ from systemds.scuro.drsearch.representation_dag import (
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
-from systemds.scuro.representations.bert import Bert
 from systemds.scuro.modality.type import ModalityType
 
 from unittest.mock import patch
@@ -67,7 +67,6 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
 
         cls.tasks = [
             TestTask("UnimodalRepresentationTask1", "Test1", cls.num_instances),
-            TestTask("UnimodalRepresentationTask2", "Test2", cls.num_instances),
         ]
 
     def test_unimodal_optimizer_for_text_modality(self):
@@ -110,6 +109,18 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
             )
         )
         self.optimize_unimodal_representation_for_modality([text, image])
+
+    def test_unimodal_optimizer_for_audio_modality(self):
+        audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
+            self.num_instances, 3000
+        )
+        audio = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.AUDIO, audio_data, np.float32, audio_md
+            )
+        )
+
+        self.optimize_unimodal_representation_for_modality([audio])
 
     def test_unimodal_optimizer_for_video_modality(self):
         video_data, video_md = ModalityRandomDataGenerator().create_visual_modality(
@@ -194,7 +205,14 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
                     Bert,
                     CLIPText,
                 ],
-                ModalityType.VIDEO: [ResNet],
+                ModalityType.AUDIO: [
+                    MFCC,
+                    MelSpectrogram,
+                ],
+                ModalityType.VIDEO: [
+                    ResNet,
+                    CLIPVisual,
+                ],
                 ModalityType.IMAGE: [ColorHistogram, CLIPVisual],
                 ModalityType.EMBEDDING: [],
             },
@@ -216,7 +234,7 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
                     in unimodal_optimizer.operator_performance.modality_ids
                 )
 
-            assert len(unimodal_optimizer.operator_performance.task_names) == 2
+            assert len(unimodal_optimizer.operator_performance.task_names) == 1
             result, cached = unimodal_optimizer.operator_performance.get_k_best_results(
                 modalities[0], self.tasks[0], "accuracy"
             )

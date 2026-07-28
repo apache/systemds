@@ -1939,6 +1939,9 @@ public abstract class AutomatedTestBase {
 				LOG.error("Exception in startup of federated worker", e);
 			}
 		});
+		// Daemon so a worker left running by a failed/forgetful test cannot keep the
+		// surefire fork JVM alive and stall CI until the job-level timeout.
+		t.setDaemon(true);
 		t.start();
 		return t;
 	}
@@ -1979,6 +1982,9 @@ public abstract class AutomatedTestBase {
 				LOG.error("Exception in startup of federated worker on port " + port, e);
 			}
 		});
+		// Daemon so a worker left running by a failed/forgetful test cannot keep the
+		// surefire fork JVM alive and stall CI until the job-level timeout.
+		t.setDaemon(true);
 		t.start();
 		FederatedWorkerUtils.waitForWorker(t, port, FED_WORKER_WAIT);
 		return t;

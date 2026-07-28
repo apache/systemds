@@ -19,7 +19,7 @@
 #
 # -------------------------------------------------------------
 from __future__ import annotations
-
+import re
 from typing import List, Dict, Optional, Any
 from collections import defaultdict, deque
 from collections import deque
@@ -93,8 +93,25 @@ class MemoryAwareNodeScheduler:
             ok, gpu_id = self._check_memory_constraints(node)
             if ok:
                 self.mapping[node].gpu_id = gpu_id
-                self.ready_nodes.append(node)
                 self._reserve_memory(node, gpu_id)
+                self.ready_nodes.append(node)
+        contains_leaf = []
+        for node in self.ready_nodes:
+            if any(re.fullmatch(r"leaf_\d+", i) for i in self.mapping[node].inputs):
+                for mod in self.modalities:
+                    if (
+                        mod.modality_id
+                        == self.mapping[self.mapping[node].inputs[0]].modality_id
+                    ):
+                        if mod.data_loader.chunk_size is not None:
+                            contains_leaf.append(node)
+                            break
+
+        for node in contains_leaf:
+            self.ready_nodes.remove(node)
+
+        if len(contains_leaf) > 0:
+            self.ready_nodes.append(contains_leaf)
         return self.ready_nodes
 
     def _get_runnable_nodes(self) -> List[str]:
@@ -128,9 +145,12 @@ class MemoryAwareNodeScheduler:
 
         self._release_memory(node_id, self.mapping[node_id].gpu_id)
 
-    def move_to_running(self, node_id: str):
+    def move_to_running(self, node_id: str | list):
         self.ready_nodes.remove(node_id)
-        self.running_nodes.append(node_id)
+        if isinstance(node_id, list):
+            self.running_nodes.extend(node_id)
+        else:
+            self.running_nodes.append(node_id)
 
     def complete_node(self, node_id: str):
         self.running_nodes.remove(node_id)

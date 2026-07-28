@@ -77,8 +77,8 @@ class Mean(TimeSeriesRepresentation):
     def __init__(self, params=None):
         super().__init__("Mean")
 
-    def compute_feature(self, signal):
-        return np.array(np.mean(signal))
+    def compute_feature(self, signal, axis=-1):
+        return np.array(np.mean(signal, axis=axis))
 
 
 @register_representation([ModalityType.TIMESERIES])
@@ -87,8 +87,8 @@ class Min(TimeSeriesRepresentation):
     def __init__(self, params=None):
         super().__init__("Min")
 
-    def compute_feature(self, signal):
-        return np.array(np.min(signal))
+    def compute_feature(self, signal, axis=-1):
+        return np.array(np.min(signal, axis=axis))
 
 
 @register_representation([ModalityType.TIMESERIES])
@@ -97,8 +97,8 @@ class Max(TimeSeriesRepresentation):
     def __init__(self, params=None):
         super().__init__("Max")
 
-    def compute_feature(self, signal):
-        return np.array(np.max(signal))
+    def compute_feature(self, signal, axis=-1):
+        return np.array(np.max(signal, axis=axis))
 
 
 @register_representation([ModalityType.TIMESERIES])
@@ -107,8 +107,8 @@ class Sum(TimeSeriesRepresentation):
     def __init__(self, params=None):
         super().__init__("Sum")
 
-    def compute_feature(self, signal):
-        return np.array(np.sum(signal))
+    def compute_feature(self, signal, axis=-1):
+        return np.array(np.sum(signal, axis=axis))
 
 
 @register_representation([ModalityType.TIMESERIES])
@@ -117,8 +117,8 @@ class Std(TimeSeriesRepresentation):
     def __init__(self, params=None):
         super().__init__("Std")
 
-    def compute_feature(self, signal):
-        return np.array(np.std(signal))
+    def compute_feature(self, signal, axis=-1):
+        return np.array(np.std(signal, axis=axis))
 
 
 @register_representation([ModalityType.TIMESERIES])
@@ -127,8 +127,8 @@ class Skew(TimeSeriesRepresentation):
     def __init__(self, params=None):
         super().__init__("Skew")
 
-    def compute_feature(self, signal):
-        return np.array(stats.skew(signal))
+    def compute_feature(self, signal, axis=-1):
+        return np.array(stats.skew(signal, axis=axis))
 
 
 @register_representation([ModalityType.TIMESERIES])
@@ -140,8 +140,8 @@ class Quantile(TimeSeriesRepresentation):
         )
         self.quantile = quantile
 
-    def compute_feature(self, signal):
-        return np.array(np.quantile(signal, self.quantile))
+    def compute_feature(self, signal, axis=-1):
+        return np.array(np.quantile(signal, self.quantile, axis=axis))
 
 
 @register_representation([ModalityType.TIMESERIES])
@@ -150,8 +150,8 @@ class Kurtosis(TimeSeriesRepresentation):
     def __init__(self, params=None):
         super().__init__("Kurtosis")
 
-    def compute_feature(self, signal):
-        return np.array(stats.kurtosis(signal, fisher=True, bias=False))
+    def compute_feature(self, signal, axis=-1):
+        return np.array(stats.kurtosis(signal, fisher=True, bias=True, axis=axis))
 
 
 @register_representation([ModalityType.TIMESERIES])
@@ -160,8 +160,8 @@ class RMS(TimeSeriesRepresentation):
     def __init__(self, params=None):
         super().__init__("RMS")
 
-    def compute_feature(self, signal):
-        return np.array(np.sqrt(np.mean(np.square(signal))))
+    def compute_feature(self, signal, axis=-1):
+        return np.array(np.sqrt(np.mean(np.square(signal), axis=axis)))
 
 
 @register_representation([ModalityType.TIMESERIES])
@@ -170,8 +170,8 @@ class ZeroCrossingRate(TimeSeriesRepresentation):
     def __init__(self, params=None):
         super().__init__("ZeroCrossingRate")
 
-    def compute_feature(self, signal):
-        return np.array(np.sum(np.diff(np.signbit(signal)) != 0))
+    def compute_feature(self, signal, axis=-1):
+        return np.array(np.sum(np.diff(np.signbit(signal), axis=axis) != 0, axis=axis))
 
 
 @register_representation([ModalityType.TIMESERIES])
@@ -181,16 +181,23 @@ class ACF(TimeSeriesRepresentation):
         super().__init__("ACF", {"k": [1, 2, 5, 10, 20, 25, 50, 100, 200, 500]})
         self.k = k
 
-    def compute_feature(self, signal):
-        x = np.asarray(signal) - np.mean(signal)
+    def compute_feature(self, signal, axis=-1):
+        x = np.asarray(signal, dtype=np.float64)
+        x = x - np.mean(x, axis=axis, keepdims=True)
         k = int(self.k)
-        if k <= 0 or k >= len(x):
-            return np.array(0.0)
-        den = np.dot(x, x)
-        if not np.isfinite(den) or np.isclose(den, 0.0):
-            return np.array(0.0)
-        corr = np.correlate(x[:-k], x[k:])[0]
-        return np.array(corr / den)
+        n = x.shape[axis]
+        if k <= 0 or k >= n:
+            out_shape = list(x.shape)
+            del out_shape[axis]
+            return np.zeros(out_shape) if out_shape else np.array(0.0)
+        den = np.sum(x * x, axis=axis)
+        xm = np.moveaxis(x, axis, -1)
+        corr = np.sum(xm[..., :-k] * xm[..., k:], axis=-1)
+        with np.errstate(invalid="ignore", divide="ignore"):
+            out = corr / den
+        bad = ~np.isfinite(den) | np.isclose(den, 0.0)
+        out = np.where(bad, 0.0, out)
+        return np.asarray(out)
 
     def get_k_values(self, max_length, percent=0.2, num=10, log=False):
         # TODO: Probably would be useful to invoke this function while tuning the hyperparameters depending on the max length of the singal
@@ -205,11 +212,11 @@ class ACF(TimeSeriesRepresentation):
 @register_representation([ModalityType.TIMESERIES])
 @register_context_representation_operator(ModalityType.TIMESERIES)
 class FrequencyMagnitude(TimeSeriesRepresentation):
-    def __init__(self):
+    def __init__(self, params=None):
         super().__init__("FrequencyMagnitude")
 
-    def compute_feature(self, signal):
-        return np.array(np.abs(np.fft.rfft(signal)))
+    def compute_feature(self, signal, axis=-1):
+        return np.array(np.abs(np.fft.rfft(signal, axis=axis)))
 
 
 @register_representation([ModalityType.TIMESERIES])
@@ -219,11 +226,17 @@ class SpectralCentroid(TimeSeriesRepresentation):
         super().__init__("SpectralCentroid", parameters={"fs": [0.5, 1.0, 2.0]})
         self.fs = fs
 
-    def compute_feature(self, signal):
-        frequency_magnitude = FrequencyMagnitude().compute_feature(signal)
-        freqencies = np.fft.rfftfreq(len(signal), d=1.0 / self.fs)
-        num = np.sum(freqencies * frequency_magnitude)
-        den = np.sum(frequency_magnitude) + 1e-12
+    def compute_feature(self, signal, axis=-1):
+        signal = np.asarray(signal, dtype=np.float64)
+        n = signal.shape[axis]
+        frequency_magnitude = FrequencyMagnitude().compute_feature(signal, axis=axis)
+        frequencies = np.fft.rfftfreq(n, d=1.0 / self.fs)
+        ax = axis if axis >= 0 else frequency_magnitude.ndim + axis
+        freq_shape = [1] * frequency_magnitude.ndim
+        freq_shape[ax] = frequencies.size
+        frequencies = frequencies.reshape(freq_shape)
+        num = np.sum(frequencies * frequency_magnitude, axis=axis)
+        den = np.sum(frequency_magnitude, axis=axis) + 1e-12
         return np.array(num / den)
 
 
@@ -239,11 +252,17 @@ class BandpowerFFT(TimeSeriesRepresentation):
         self.f1 = f1
         self.f2 = f2
 
-    def compute_feature(
-        self,
-        signal,
-    ):
-        frequency_magnitude = FrequencyMagnitude().compute_feature(signal)
-        freqencies = np.fft.rfftfreq(len(signal), d=1.0 / self.fs)
-        m = (freqencies >= self.f1) & (freqencies < self.f2)
-        return np.array(np.sum(frequency_magnitude[m] ** 2))
+    def compute_feature(self, signal, axis=-1):
+        signal = np.asarray(signal, dtype=np.float64)
+        n = signal.shape[axis]
+
+        frequency_magnitude = FrequencyMagnitude().compute_feature(signal, axis=axis)
+        frequencies = np.fft.rfftfreq(n, d=1.0 / self.fs)
+
+        ax = axis if axis >= 0 else frequency_magnitude.ndim + axis
+        freq_shape = [1] * frequency_magnitude.ndim
+        freq_shape[ax] = frequencies.size
+        frequencies = frequencies.reshape(freq_shape)
+
+        in_band = (frequencies >= self.f1) & (frequencies < self.f2)
+        return np.array(np.sum((frequency_magnitude**2) * in_band, axis=axis))

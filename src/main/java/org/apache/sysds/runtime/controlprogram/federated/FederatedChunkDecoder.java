@@ -44,19 +44,19 @@ public class FederatedChunkDecoder extends MessageToMessageDecoder<ByteBuf> {
 	private volatile boolean _throttled;
 
 	@Override
-	protected void decode(ChannelHandlerContext ctx, ByteBuf frame, List<Object> out) {
+	protected void decode(ChannelHandlerContext ctx, ByteBuf buf, List<Object> out) {
 		startReader(ctx);
-		byte type = frame.readByte();
-		int len = frame.readInt();
+		byte type = buf.readByte();
+		int len = buf.readInt();
 		switch(type) {
 			case FederatedChunkProtocol.TYPE_DATA:
-				_payloads.add(readBytes(frame, len));
+				_payloads.add(readBytes(buf, len));
 				break;
 			case FederatedChunkProtocol.TYPE_END:
 				_payloads.add(END_OF_STREAM);
 				break;
 			case FederatedChunkProtocol.TYPE_ERROR:
-				_payloads.add(new IOException(frame.toString(frame.readerIndex(), len, StandardCharsets.UTF_8)));
+				_payloads.add(new IOException(buf.toString(buf.readerIndex(), len, StandardCharsets.UTF_8)));
 				break;
 		}
 		if(_payloads.size() >= FederatedChunkProtocol.QUEUE_DEPTH) {
@@ -73,7 +73,7 @@ public class FederatedChunkDecoder extends MessageToMessageDecoder<ByteBuf> {
 	}
 
 	private void runDeserializer(ChannelHandlerContext ctx) {
-		try(ObjectInputStream ois = objectInputStream(new PayloadInputStream(this, ctx))) {
+		try(ObjectInputStream ois = getObjectInputStream(new PayloadInputStream(this, ctx))) {
 			Object msg = ois.readObject();
 			ctx.channel().eventLoop().execute(() -> ctx.fireChannelRead(msg));
 		}
@@ -93,7 +93,7 @@ public class FederatedChunkDecoder extends MessageToMessageDecoder<ByteBuf> {
 		}
 	}
 
-	private static ObjectInputStream objectInputStream(InputStream in) throws IOException {
+	private static ObjectInputStream getObjectInputStream(InputStream in) throws IOException {
 		return new ObjectInputStream(in) {
 			@Override
 			protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
@@ -107,9 +107,9 @@ public class FederatedChunkDecoder extends MessageToMessageDecoder<ByteBuf> {
 		};
 	}
 
-	private static byte[] readBytes(ByteBuf frame, int len) {
+	private static byte[] readBytes(ByteBuf buf, int len) {
 		byte[] bytes = new byte[len];
-		frame.readBytes(bytes);
+		buf.readBytes(bytes);
 		return bytes;
 	}
 

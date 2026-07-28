@@ -2006,35 +2006,6 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			else
 				raiseValidateError("Local instruction not allowed in dml script");
 			break;
-		case DP_LAPLACE: {
-			checkNumParameters(4);
-			checkMatrixParam(getFirstExpr());
-			checkScalarParam(getSecondExpr());
-			checkValueTypeParam(getSecondExpr(), ValueType.STRING);
-			checkScalarParam(getThirdExpr());
-			checkScalarParam(getFourthExpr());
-			long[] dpLaplaceDims = getDPOutputDims(getSecondExpr(),
-				getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
-			output.setDataType(DataType.MATRIX);
-			output.setValueType(ValueType.FP64);
-			output.setDimensions(dpLaplaceDims[0], dpLaplaceDims[1]);
-			break;
-		}
-		case DP_GAUSSIAN: {
-			checkNumParameters(5);
-			checkMatrixParam(getFirstExpr());
-			checkScalarParam(getSecondExpr());
-			checkValueTypeParam(getSecondExpr(), ValueType.STRING);
-			checkScalarParam(getThirdExpr());
-			checkScalarParam(getFourthExpr());
-			checkScalarParam(getFifthExpr());
-			long[] dpGaussianDims = getDPOutputDims(getSecondExpr(),
-				getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
-			output.setDataType(DataType.MATRIX);
-			output.setValueType(ValueType.FP64);
-			output.setDimensions(dpGaussianDims[0], dpGaussianDims[1]);
-			break;
-		}
 		case DP_SET_BUDGET: {
 			checkNumParameters(2);
 			checkScalarParam(getFirstExpr());
@@ -2160,29 +2131,6 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 				else
 					raiseValidateError("Unsupported function "+op, false, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
-		}
-	}
-
-	/** Output dimensions of T %*% X for the given named query, X being n x d. */
-	private long[] getDPOutputDims(Expression queryExpr, long n, long d) {
-		// dp_laplace/dp_gaussian require the "query" parameter to be a compile-time string literal so that the output shape
-	    // (and thus the transformation matrix T built at runtime) is known during validation.
-		if(!(queryExpr instanceof StringIdentifier))
-			raiseValidateError(getOpCode() + ": 'query' must be a string literal", false,
-				LanguageErrorCodes.INVALID_PARAMETERS);
-		String query = ((StringIdentifier) queryExpr).getValue();
-
-		switch(query) {
-			case "colMeans":
-			case "colSums":
-				return new long[] {1, d};
-			case "identity":
-				return new long[] {n, d};
-			default:
-				raiseValidateError(
-					getOpCode() + ": unknown query type '" + query + "' (expected colMeans, colSums, or identity)",
-					false, LanguageErrorCodes.INVALID_PARAMETERS);
-				return null; // unreachable
 		}
 	}
 

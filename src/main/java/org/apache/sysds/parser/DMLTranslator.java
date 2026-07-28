@@ -2014,6 +2014,8 @@ public class DMLTranslator
 			case TRANSFORMMETA:
 			case PARAMSERV:
 			case AUTODIFF:
+			case DP_LAPLACE:
+			case DP_GAUSSIAN:
 				currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), target.getDataType(),
 					target.getValueType(), ParamBuiltinOp.valueOf(source.getOpCode().name()), paramHops);
 				break;
@@ -2589,34 +2591,6 @@ public class DMLTranslator
 		case DECOMPRESS:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.FP64, OpOp1.DECOMPRESS, expr);
 			break;
-		case DP_LAPLACE: {
-			String[] dpLaplaceParamNames = {"target", "query", "sensitivity", "epsilon"};
-			LinkedHashMap<String, Hop> dpLaplaceParams = new LinkedHashMap<>();
-			dpLaplaceParams.put(dpLaplaceParamNames[0], expr);
-			dpLaplaceParams.put(dpLaplaceParamNames[1], expr2);
-			dpLaplaceParams.put(dpLaplaceParamNames[2], expr3);
-			for (int i = 3; i < dpLaplaceParamNames.length; i++) {
-				dpLaplaceParams.put(dpLaplaceParamNames[i],
-					source.getExpr(i) != null ? processExpression(source.getExpr(i), null, hops) : null);
-			}
-			currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), DataType.MATRIX, ValueType.FP64,
-				ParamBuiltinOp.DP_LAPLACE, dpLaplaceParams);
-			break;
-		}
-		case DP_GAUSSIAN: {
-			String[] dpGaussianParamNames = {"target", "query", "sensitivity", "epsilon", "delta"};
-			LinkedHashMap<String, Hop> dpGaussianParams = new LinkedHashMap<>();
-			dpGaussianParams.put(dpGaussianParamNames[0], expr);
-			dpGaussianParams.put(dpGaussianParamNames[1], expr2);
-			dpGaussianParams.put(dpGaussianParamNames[2], expr3);
-			for (int i = 3; i < dpGaussianParamNames.length; i++) {
-				dpGaussianParams.put(dpGaussianParamNames[i],
-					source.getExpr(i) != null ? processExpression(source.getExpr(i), null, hops) : null);
-			}
-			currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), DataType.MATRIX, ValueType.FP64,
-				ParamBuiltinOp.DP_GAUSSIAN, dpGaussianParams);
-			break;
-		}
 		case DP_SET_BUDGET: {
 			// Resolved entirely at compile time: BuiltinFunctionExpression.validateExpression
 			// already enforced that both arguments are numeric literals, so 'expr'/'expr2' are

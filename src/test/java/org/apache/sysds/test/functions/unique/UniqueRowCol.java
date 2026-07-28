@@ -90,6 +90,28 @@ public class UniqueRowCol extends UniqueBase {
 			8 * 1024 * 1024);
 	}
 
+	/**
+	 * Sparse counterpart of the multi-threaded case: only every tenth cell is populated, so the input is read in sparse
+	 * format. The result is a single column holding zero plus the fillers.
+	 */
+	@Test
+	public void testSparseMultiThreadedCP() {
+		int rlen = 500, clen = 40, distinct = 36;
+		double[][] inputMatrix = new double[rlen][clen];
+		for(int i = 0; i < rlen; i++)
+			for(int j = 0; j < clen; j++) {
+				long pos = (long) i * clen + j;
+				inputMatrix[i][j] = (pos % 10 == 0) ? (pos / 10) % distinct + 1 : 0;
+			}
+
+		// zero plus the fillers 1..distinct
+		double[][] expectedMatrix = new double[distinct + 1][1];
+		for(int i = 0; i <= distinct; i++)
+			expectedMatrix[i][0] = i;
+
+		uniqueTest(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
+	}
+
 	private static double[][] cyclicValues(int rlen, int clen, int distinct) {
 		double[][] ret = new double[rlen][clen];
 		for(int i = 0; i < rlen; i++)

@@ -105,4 +105,23 @@ public class UniqueCol extends UniqueBase {
 		}
 		uniqueTestConstrainedMemory(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0, 16 * 1024 * 1024);
 	}
+
+	/**
+	 * Sparse counterpart of the multi-threaded case: only every eighth column is populated, so the input is read in
+	 * sparse format. Every column still holds a single distinct value, either its filler or zero, so the expected
+	 * result stays one row.
+	 */
+	@Test
+	public void testSparseMultiThreadedCP() {
+		int rlen = 64, clen = 400;
+		double[][] inputMatrix = new double[rlen][clen];
+		double[][] expectedMatrix = new double[1][clen];
+		for(int j = 0; j < clen; j++) {
+			double value = (j % 8 == 0) ? j + 1 : 0;
+			for(int i = 0; i < rlen; i++)
+				inputMatrix[i][j] = value;
+			expectedMatrix[0][j] = value;
+		}
+		uniqueTestOrdered(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
+	}
 }

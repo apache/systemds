@@ -97,6 +97,25 @@ public class UniqueRow extends UniqueBase {
 			16 * 1024 * 1024);
 	}
 
+	/**
+	 * Sparse counterpart of the multi-threaded case: only every eighth row is populated, so the input is read in sparse
+	 * format. Every row still holds a single distinct value, either its filler or zero, so the expected result stays
+	 * one column.
+	 */
+	@Test
+	public void testSparseMultiThreadedCP() {
+		int rlen = 400, clen = 64;
+		double[][] inputMatrix = new double[rlen][clen];
+		double[][] expectedMatrix = new double[rlen][1];
+		for(int i = 0; i < rlen; i++) {
+			double value = (i % 8 == 0) ? i + 1 : 0;
+			for(int j = 0; j < clen; j++)
+				inputMatrix[i][j] = value;
+			expectedMatrix[i][0] = value;
+		}
+		uniqueTestOrdered(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
+	}
+
 	private static double[][] constantRows(int rlen, int clen) {
 		double[][] ret = new double[rlen][clen];
 		for(int i = 0; i < rlen; i++)

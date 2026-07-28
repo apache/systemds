@@ -43,8 +43,14 @@ print(toString(X, rows=6, cols=3, decimal=6))
 # ------------------------------------------------------------------
 
 identityLambdas = matrix("1 1 1", rows=1, cols=3)
+emptyStats = matrix(0.0, rows=0, cols=0)
 
-YIdentity = powerTransformApply(X, identityLambdas)
+YIdentity = powerTransformApply(
+  X=X,
+  lambdas=identityLambdas,
+  means=emptyStats,
+  scales=emptyStats
+)
 
 print("Apply result with lambda = 1:")
 print(toString(YIdentity, rows=6, cols=3, decimal=6))
@@ -58,10 +64,10 @@ assert(identityError < 1e-10)
 
 
 # ------------------------------------------------------------------
-# Test 2: Estimate lambdas and transform X
+# Test 2: Estimate lambdas, transform X, and standardize by default
 # ------------------------------------------------------------------
 
-[Y, lambdas] = powerTransform(X)
+[Y, lambdas, means, scales] = powerTransform(X=X)
 
 print("Estimated lambdas:")
 print(toString(lambdas, rows=1, cols=3, decimal=6))
@@ -82,6 +88,12 @@ assert(ncol(Y) == ncol(X))
 assert(nrow(lambdas) == 1)
 assert(ncol(lambdas) == ncol(X))
 
+# Standardization must return one mean and scale per input column.
+assert(nrow(means) == 1)
+assert(ncol(means) == ncol(X))
+assert(nrow(scales) == 1)
+assert(ncol(scales) == ncol(X))
+
 # The constant third column should use lambda = 1.
 constantLambda = as.scalar(lambdas[1,3])
 assert(abs(constantLambda - 1.0) < 1e-10)
@@ -92,5 +104,43 @@ assert(sum(is.infinite(Y)) == 0)
 
 assert(sum(is.nan(lambdas)) == 0)
 assert(sum(is.infinite(lambdas)) == 0)
+
+# Reapplying the fitted state must reproduce the fitted output.
+YReapplied = powerTransformApply(X, lambdas, means, scales, "yeo-johnson")
+assert(max(abs(Y - YReapplied)) < 1e-10)
+
+# Standardized nonconstant columns must have zero mean and unit population variance.
+standardizedMeans = colMeans(Y)
+standardizedScales = sqrt(colSums(Y^2) / nrow(Y))
+assert(max(abs(standardizedMeans)) < 1e-10)
+assert(abs(as.scalar(standardizedScales[1,1]) - 1.0) < 1e-10)
+assert(abs(as.scalar(standardizedScales[1,2]) - 1.0) < 1e-10)
+assert(max(abs(Y[,3])) < 1e-10)
+
+
+# ------------------------------------------------------------------
+# Test 3: Disable standardization and select Yeo-Johnson explicitly
+# ------------------------------------------------------------------
+
+[YRaw, rawLambdas, rawMeans, rawScales] = powerTransform(
+  X,
+  "yeo-johnson",
+  FALSE
+)
+
+assert(nrow(rawMeans) == 0)
+assert(ncol(rawMeans) == 0)
+assert(nrow(rawScales) == 0)
+assert(ncol(rawScales) == 0)
+
+YRawReapplied = powerTransformApply(
+  X,
+  rawLambdas,
+  matrix(0.0, rows=0, cols=0),
+  matrix(0.0, rows=0, cols=0),
+  "yeo-johnson"
+)
+assert(max(abs(YRaw - YRawReapplied)) < 1e-10)
+assert(max(abs(rawLambdas - lambdas)) < 1e-10)
 
 print("powerTransform smoke test passed.")

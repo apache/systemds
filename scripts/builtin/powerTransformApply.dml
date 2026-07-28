@@ -18,13 +18,16 @@
 # under the License.
 #
 #-------------------------------------------------------------
-# Applies a fitted Yeo-Johnson power transformation.
-# Transforms each feature using its previously estimated lambda parameter.
+# Applies a fitted power transformation and optional standardization.
+# Transforms each feature using its previously estimated lambda and scaling parameters.
 #
 # INPUT:
 # -------------------------------------------------------------------------------------
-#   X    Input feature matrix of shape n-by-m
+#   X        Input feature matrix of shape n-by-m
 #   lambdas  Precomputed lambda parameters of shape 1-by-m, one per column
+#   means    Transformed column means of shape 1-by-m; empty to skip standardization
+#   scales   Transformed column scales of shape 1-by-m; empty to skip standardization
+#   method   Power transformation method; currently supports "yeo-johnson"
 # -------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -33,11 +36,36 @@
 # -------------------------------------------------------------------------------------
 
 
-m_powerTransformApply = function(Matrix[Double] X, Matrix[Double] lambdas)
+m_powerTransformApply = function(
+    Matrix[Double] X,
+    Matrix[Double] lambdas,
+    Matrix[Double] means,
+    Matrix[Double] scales,
+    String method="yeo-johnson")
     return (Matrix[Double] Y)
 {
     n = nrow(X)
     m = ncol(X)
+
+    if (method != "yeo-johnson") {
+        stop("powerTransformApply: unsupported method '" + method + "'; expected 'yeo-johnson'")
+    }
+
+    if (nrow(lambdas) != 1 | ncol(lambdas) != m) {
+        stop("powerTransformApply: lambdas must have shape 1-by-ncol(X)")
+    }
+
+    hasMeans = nrow(means) > 0 | ncol(means) > 0
+    hasScales = nrow(scales) > 0 | ncol(scales) > 0
+
+    if (hasMeans != hasScales) {
+        stop("powerTransformApply: means and scales must either both be provided or both be empty")
+    }
+
+    if (hasMeans & (nrow(means) != 1 | ncol(means) != m |
+        nrow(scales) != 1 | ncol(scales) != m)) {
+        stop("powerTransformApply: means and scales must have shape 1-by-ncol(X)")
+    }
 
     Y = matrix(0.0, rows=n, cols=m)
 
@@ -72,5 +100,9 @@ m_powerTransformApply = function(Matrix[Double] X, Matrix[Double] lambdas)
 
         # Combine the two branches
         Y[,j] = ifelse(nonnegative, y_pos, y_neg)
+    }
+
+    if (hasMeans) {
+        Y = (Y - means) / scales
     }
 }

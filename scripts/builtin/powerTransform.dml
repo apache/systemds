@@ -18,28 +18,43 @@
 # under the License.
 #
 #-------------------------------------------------------------
-# Power transformation using the Yeo-Johnson method.
+# Power transformation using the selected method.
 # Reduces feature skewness by estimating and applying an optimal transformation parameter for each column.
 #
 # INPUT:
 # -------------------------------------------------------------------------------------
-#   X    Input feature matrix of shape n-by-m
+#   X            Input feature matrix of shape n-by-m
+#   method       Power transformation method; currently supports "yeo-johnson"
+#   standardize  Whether to normalize transformed columns to zero mean and unit variance
 # -------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # -------------------------------------------------------------------------------------
-#   Y    Power-transformed matrix of shape n-by-m
+#   Y        Power-transformed matrix of shape n-by-m
 #   lambdas  Estimated lambda parameters of shape 1-by-m, one per column
+#   means    Transformed column means of shape 1-by-m, or an empty matrix when not standardized
+#   scales   Transformed column scales of shape 1-by-m, or an empty matrix when not standardized
 # -------------------------------------------------------------------------------------
 
-m_powerTransform = function(Matrix[Double] X)
-  return (Matrix[Double] Y, Matrix[Double] lambdas)
+m_powerTransform = function(
+    Matrix[Double] X,
+    String method="yeo-johnson",
+    Boolean standardize=TRUE)
+  return (
+    Matrix[Double] Y,
+    Matrix[Double] lambdas,
+    Matrix[Double] means,
+    Matrix[Double] scales)
 {
+  if (method != "yeo-johnson") {
+    stop("powerTransform: unsupported method '" + method + "'; expected 'yeo-johnson'")
+  }
+
+  n = nrow(X)
   m = ncol(X)
   lambdas = matrix(1.0, rows=1, cols=m) # Initialize first, then replace each column with the best lambdas
 
-
-# Estimate lambda for each column separately
+  # Estimate lambda for each column separately
   for (j in 1:m){
     x = X[,j]
 
@@ -48,17 +63,26 @@ m_powerTransform = function(Matrix[Double] X)
         lambdas[1,j] = 1.0;
     }
     else{
-      lambdas[1,j]= ptEstimateLambda(x);
+      lambdas[1,j] = ptEstimateLambda(x);
     }
+  }
+
+  # Apply the fitted transformation before optional standardization
+  emptyStats = matrix(0.0, rows=0, cols=0)
+  Y = powerTransformApply(X, lambdas, emptyStats, emptyStats, method);
+
+  means = matrix(0.0, rows=0, cols=0)
+  scales = matrix(0.0, rows=0, cols=0)
+
+  if (standardize) {
+    means = colMeans(Y)
+    Y = Y - means
+    scales = sqrt(colSums(Y^2) / n)
+    scales = replace(target=scales, pattern=NaN, replacement=1.0)
+    scales = replace(target=scales, pattern=0.0, replacement=1.0)
+    Y = Y / scales
+  }
 }
-# Pass the parameters to Apply
-  Y = powerTransformApply(X, lambdas);
-}
-
-
-
-
-
 ptEstimateLambda = function(Matrix[Double] x)
     return (Double lambda)
 {
@@ -79,7 +103,8 @@ ptYJNegLogLikelihood = function(
     lambdaMatrix = matrix(lambda, rows=1, cols=1);
 
     # Apply one YJ transform with this lambda and use the temporary y for scoring
-    y = powerTransformApply(x, lambdaMatrix);
+    emptyStats = matrix(0.0, rows=0, cols=0)
+    y = powerTransformApply(x, lambdaMatrix, emptyStats, emptyStats, "yeo-johnson");
 
     # Safety check; give a huge penalty score when variance is below 0
     n = nrow(x);

@@ -25,8 +25,11 @@ X = read($1);
 # Read the lambda for each column from the second command line argument
 lambdas = read($2);
 
+# Skip standardization for the fixed-lambda formula reference test
+emptyStats = matrix(0.0, rows=0, cols=0);
+
 # Directly call the registered SystemDS builtin
-Y = powerTransformApply(X, lambdas);
+Y = powerTransformApply(X, lambdas, emptyStats, emptyStats, "yeo-johnson");
 
 # Write the transformed result to the location from the third command line argument
 write(Y, $3);

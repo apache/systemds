@@ -219,8 +219,8 @@ public class H5 {
 	public static void H5Dwrite(H5RootObject rootObject, double[] data) {
 		try {
 			H5BufferBuilder bb = new H5BufferBuilder();
-			for(Double d : data) {
-				bb.writeDouble(d);
+			for(int i = 0; i < data.length; i++) {
+				bb.writeDouble(data[i]);
 			}
 			rootObject.getBufferedOutputStream().write(bb.noOrderBuild().array());
 		}

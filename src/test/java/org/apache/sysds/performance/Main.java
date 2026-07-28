@@ -31,6 +31,7 @@ import org.apache.sysds.performance.generators.FrameTransformFile;
 import org.apache.sysds.performance.generators.GenMatrices;
 import org.apache.sysds.performance.generators.IGenerate;
 import org.apache.sysds.performance.generators.MatrixFile;
+import org.apache.sysds.performance.io.HDF5IOBenchmark;
 import org.apache.sysds.performance.matrix.MatrixAppend;
 import org.apache.sysds.performance.matrix.MatrixBinaryCellPerf;
 import org.apache.sysds.performance.matrix.MatrixMultiplicationPerf;
@@ -142,6 +143,12 @@ public class Main {
 				break;
 			case 1009:
 				MatrixMultiplicationPerf.main(args);
+				break;
+			case 1010:
+				StreamCompress.main(args);
+				break;
+			case 1011:
+				HDF5IOBenchmark.main(args);
 				break;
 			default:
 				break;

@@ -2013,8 +2013,7 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			checkValueTypeParam(getSecondExpr(), ValueType.STRING);
 			checkScalarParam(getThirdExpr());
 			checkScalarParam(getFourthExpr());
-			String dpLaplaceQuery = getDPQueryLiteral(getSecondExpr());
-			long[] dpLaplaceDims = getDPOutputDims(dpLaplaceQuery,
+			long[] dpLaplaceDims = getDPOutputDims(getSecondExpr(),
 				getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
 			output.setDataType(DataType.MATRIX);
 			output.setValueType(ValueType.FP64);
@@ -2029,8 +2028,7 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			checkScalarParam(getThirdExpr());
 			checkScalarParam(getFourthExpr());
 			checkScalarParam(getFifthExpr());
-			String dpGaussianQuery = getDPQueryLiteral(getSecondExpr());
-			long[] dpGaussianDims = getDPOutputDims(dpGaussianQuery,
+			long[] dpGaussianDims = getDPOutputDims(getSecondExpr(),
 				getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
 			output.setDataType(DataType.MATRIX);
 			output.setValueType(ValueType.FP64);
@@ -2165,19 +2163,15 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 		}
 	}
 
-	/**
-	 * dp_laplace/dp_gaussian require the "query" parameter to be a compile-time string literal so that the output shape
-	 * (and thus the transformation matrix T built at runtime) is known during validation.
-	 */
-	private String getDPQueryLiteral(Expression queryExpr) {
+	/** Output dimensions of T %*% X for the given named query, X being n x d. */
+	private long[] getDPOutputDims(Expression queryExpr, long n, long d) {
+		// dp_laplace/dp_gaussian require the "query" parameter to be a compile-time string literal so that the output shape
+	    // (and thus the transformation matrix T built at runtime) is known during validation.
 		if(!(queryExpr instanceof StringIdentifier))
 			raiseValidateError(getOpCode() + ": 'query' must be a string literal", false,
 				LanguageErrorCodes.INVALID_PARAMETERS);
-		return ((StringIdentifier) queryExpr).getValue();
-	}
+		String query = ((StringIdentifier) queryExpr).getValue();
 
-	/** Output dimensions of T %*% X for the given named query, X being n x d. */
-	private long[] getDPOutputDims(String query, long n, long d) {
 		switch(query) {
 			case "colMeans":
 			case "colSums":

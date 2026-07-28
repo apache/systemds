@@ -143,4 +143,49 @@ YRawReapplied = powerTransformApply(
 assert(max(abs(YRaw - YRawReapplied)) < 1e-10)
 assert(max(abs(rawLambdas - lambdas)) < 1e-10)
 
+
+# ------------------------------------------------------------------
+# Test 4: Fit and apply Box-Cox on strictly positive input
+# ------------------------------------------------------------------
+
+XPositive = matrix(
+  "0.5 1
+    1.0 2
+    2.0 3
+    4.0 5
+    8.0 9
+   16.0 17",
+  rows=6,
+  cols=2
+)
+
+[YBoxCox, boxCoxLambdas, boxCoxMeans, boxCoxScales] = powerTransform(
+  XPositive,
+  "box-cox",
+  TRUE
+)
+
+assert(nrow(YBoxCox) == nrow(XPositive))
+assert(ncol(YBoxCox) == ncol(XPositive))
+assert(nrow(boxCoxLambdas) == 1)
+assert(ncol(boxCoxLambdas) == ncol(XPositive))
+assert(sum(is.nan(YBoxCox)) == 0)
+assert(sum(is.infinite(YBoxCox)) == 0)
+assert(sum(is.nan(boxCoxLambdas)) == 0)
+assert(sum(is.infinite(boxCoxLambdas)) == 0)
+
+YBoxCoxReapplied = powerTransformApply(
+  XPositive,
+  boxCoxLambdas,
+  boxCoxMeans,
+  boxCoxScales,
+  "box-cox"
+)
+assert(max(abs(YBoxCox - YBoxCoxReapplied)) < 1e-10)
+
+boxCoxStandardizedMeans = colMeans(YBoxCox)
+boxCoxStandardizedScales = sqrt(colSums(YBoxCox^2) / nrow(YBoxCox))
+assert(max(abs(boxCoxStandardizedMeans)) < 1e-10)
+assert(max(abs(boxCoxStandardizedScales - 1.0)) < 1e-10)
+
 print("powerTransform smoke test passed.")

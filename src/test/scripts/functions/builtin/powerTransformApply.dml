@@ -29,7 +29,7 @@ lambdas = read($2);
 emptyStats = matrix(0.0, rows=0, cols=0);
 
 # Directly call the registered SystemDS builtin
-Y = powerTransformApply(X, lambdas, emptyStats, emptyStats, "yeo-johnson");
+Y = powerTransformApply(X, lambdas, emptyStats, emptyStats, $4);
 
 # Write the transformed result to the location from the third command line argument
 write(Y, $3);

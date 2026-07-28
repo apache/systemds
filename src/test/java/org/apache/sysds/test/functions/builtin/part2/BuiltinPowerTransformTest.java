@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -52,12 +53,40 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testPowerTransformApplyDenseCP() {
-		// Only test single-node CP execution mode here
-		runPowerTransformApplyTest(ExecType.CP);
+	public void testPowerTransformApplyYeoJohnsonDenseCP() {
+		double[][] input = {
+			{-2, -2, -2},
+			{-1, -1, -1},
+			{ 0,  0,  0},
+			{ 1,  1,  1},
+			{ 2,  2,  2}
+		};
+		runPowerTransformApplyTest(ExecType.CP, "yeo-johnson", input, false);
 	}
 
-	private void runPowerTransformApplyTest(ExecType execType) {
+	@Test
+	public void testPowerTransformApplyBoxCoxDenseCP() {
+		double[][] input = {
+			{0.5, 0.5, 0.5},
+			{1.0, 1.0, 1.0},
+			{2.0, 2.0, 2.0},
+			{4.0, 4.0, 4.0},
+			{8.0, 8.0, 8.0}
+		};
+		runPowerTransformApplyTest(ExecType.CP, "box-cox", input, false);
+	}
+
+	@Test
+	public void testPowerTransformApplyBoxCoxRejectsNonPositiveInput() {
+		double[][] input = {
+			{0, 1, 2},
+			{1, 2, 3}
+		};
+		runPowerTransformApplyTest(ExecType.CP, "box-cox", input, true);
+	}
+
+	private void runPowerTransformApplyTest(
+		ExecType execType, String method, double[][] input, boolean shouldFail) {
 		// Save the old execution mode and restore it after the test
 		ExecMode oldExecMode = setExecMode(execType);
 
@@ -75,26 +104,19 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 			// 1. Input matrix X
 			// 2. Lambda row matrix L
 			// 3. Output matrix Y
+			// 4. Transformation method
 			programArgs = new String[] {
 				"-exec", "singlenode",
 				"-args",
 				input("X"),
 				input("L"),
-				output("Y")
+				output("Y"),
+				method
 			};
 
 			// R script receives the input directory and expected output directory
 			rCmd = "Rscript " + fullRScriptName + " "
-				+ inputDir() + " " + expectedDir();
-
-			// Use the same input values in three columns to test lambda 0, 1, and 2
-			double[][] X = {
-				{-2, -2, -2},
-				{-1, -1, -1},
-				{ 0,  0,  0},
-				{ 1,  1,  1},
-				{ 2,  2,  2}
-			};
+				+ inputDir() + " " + expectedDir() + " " + method;
 
 			// First column lambda=0, second column lambda=1, third column lambda=2
 			double[][] L = {
@@ -102,11 +124,13 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 			};
 
 			// Write both input matrices to the test input directory and generate metadata
-			writeInputMatrixWithMTD("X", X, true);
+			writeInputMatrixWithMTD("X", input, true);
 			writeInputMatrixWithMTD("L", L, true);
 
 			// DML test
-			runTest(true, false, null, -1);
+			runTest(true, shouldFail, shouldFail ? DMLScriptException.class : null, -1);
+			if (shouldFail)
+				return;
 
 			// R reference implementation
 			runRScript(true);

@@ -30,13 +30,14 @@ options(digits = 22)
 # Read test matrix X and lambda row matrix L from the input directory
 X <- as.matrix(readMM(paste(args[1], "X.mtx", sep = "")))
 lambdas <- as.matrix(readMM(paste(args[1], "L.mtx", sep = "")))
+method <- args[3]
 
 # Check every column has a matching lambda
 if (ncol(X) != ncol(lambdas)) {
     stop("The number of lambdas must match the number of columns in X.")
 }
 
-# Apply the YJ transform with a given lambda to one vector
+# Apply the Yeo-Johnson transform with a given lambda to one vector
 yeoJohnsonApply <- function(x, lambda) {
     y <- numeric(length(x))
 
@@ -76,6 +77,23 @@ yeoJohnsonApply <- function(x, lambda) {
     return(y)
 }
 
+# Apply the Box-Cox transform with a given lambda to one vector
+boxCoxApply <- function(x, lambda) {
+    if (any(x <= 0)) {
+        stop("Box-Cox requires strictly positive input.")
+    }
+
+    if (abs(lambda) < 1e-12) {
+        return(log(x))
+    }
+
+    return((x^lambda - 1) / lambda)
+}
+
+if (!(method %in% c("yeo-johnson", "box-cox"))) {
+    stop("Unsupported power transformation method.")
+}
+
 # Create a result matrix with the same dimensions as the input matrix
 Y <- matrix(
     0.0,
@@ -86,7 +104,12 @@ Y <- matrix(
 # Transform each column independently using its matching lambda
 for (j in seq_len(ncol(X))) {
     lambda <- as.numeric(lambdas[1, j])
-    Y[, j] <- yeoJohnsonApply(X[, j], lambda)
+    if (method == "box-cox") {
+        Y[, j] <- boxCoxApply(X[, j], lambda)
+    }
+    else {
+        Y[, j] <- yeoJohnsonApply(X[, j], lambda)
+    }
 }
 
 # Write the expected result computed by R to the expected output directory

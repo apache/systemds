@@ -24,7 +24,7 @@
 # INPUT:
 # -------------------------------------------------------------------------------------
 #   X            Input feature matrix of shape n-by-m
-#   method       Power transformation method; currently supports "yeo-johnson"
+#   method       Power transformation method: "yeo-johnson" (default) or "box-cox"
 #   standardize  Whether to normalize transformed columns to zero mean and unit variance
 # -------------------------------------------------------------------------------------
 #
@@ -46,8 +46,13 @@ m_powerTransform = function(
     Matrix[Double] means,
     Matrix[Double] scales)
 {
-  if (method != "yeo-johnson") {
-    stop("powerTransform: unsupported method '" + method + "'; expected 'yeo-johnson'")
+  if (method != "yeo-johnson" & method != "box-cox") {
+    stop("powerTransform: unsupported method '" + method +
+      "'; expected 'yeo-johnson' or 'box-cox'")
+  }
+
+  if (method == "box-cox" & min(X) <= 0.0) {
+    stop("powerTransform: Box-Cox requires strictly positive input")
   }
 
   n = nrow(X)
@@ -58,12 +63,17 @@ m_powerTransform = function(
   for (j in 1:m){
     x = X[,j]
 
-    # For constant columns, variance is 0, so skip optimization and use lambda = 1
+    # Yeo-Johnson leaves constant columns unchanged; Box-Cox rejects them
     if (max(x) == min(x)) {
+      if (method == "yeo-johnson") {
         lambdas[1,j] = 1.0;
+      }
+      else {
+        stop("powerTransform: Box-Cox does not support constant columns")
+      }
     }
     else{
-      lambdas[1,j] = ptEstimateLambda(x);
+      lambdas[1,j] = ptEstimateLambda(x, method);
     }
   }
 
@@ -83,28 +93,29 @@ m_powerTransform = function(
     Y = Y / scales
   }
 }
-ptEstimateLambda = function(Matrix[Double] x)
+ptEstimateLambda = function(Matrix[Double] x, String method)
     return (Double lambda)
 {
     lower = -2.0;
     upper = 2.0;
 
-    lambda = ptGoldenSectionSearch(x, lower, upper);
+    lambda = ptGoldenSectionSearch(x, lower, upper, method);
 }
 
 # Compute negative log likelihood; lower lambda score is better
 
-ptYJNegLogLikelihood = function(
+ptNegLogLikelihood = function(
     Matrix[Double] x,
-    Double lambda)
+    Double lambda,
+    String method)
   return (Double negLogLikelihood)
 {
     # powerTransformApply needs lambda as a matrix
     lambdaMatrix = matrix(lambda, rows=1, cols=1);
 
-    # Apply one YJ transform with this lambda and use the temporary y for scoring
+    # Apply one transform with this lambda and use the temporary y for scoring
     emptyStats = matrix(0.0, rows=0, cols=0)
-    y = powerTransformApply(x, lambdaMatrix, emptyStats, emptyStats, "yeo-johnson");
+    y = powerTransformApply(x, lambdaMatrix, emptyStats, emptyStats, method);
 
     # Safety check; give a huge penalty score when variance is below 0
     n = nrow(x);
@@ -122,8 +133,13 @@ ptYJNegLogLikelihood = function(
         # Variance Term
         logLikelihood = -n / 2.0 * log(yVariance);
 
-        # Jacobian term
-        jacobian = (lambda - 1.0) * sum(sign(x) * log(abs(x) + 1.0));
+        # Jacobian term for the selected transformation
+        if (method == "box-cox") {
+            jacobian = (lambda - 1.0) * sum(log(x));
+        }
+        else {
+            jacobian = (lambda - 1.0) * sum(sign(x) * log(abs(x) + 1.0));
+        }
 
         # Combine
         logLikelihood = logLikelihood + jacobian;
@@ -136,7 +152,8 @@ ptYJNegLogLikelihood = function(
 ptGoldenSectionSearch = function(
     Matrix[Double] x,
     Double lower,
-    Double upper)
+    Double upper,
+    String method)
   return (Double lambdaOptimal)
 {
   # Golden ratio, tolerance, and max attempts
@@ -150,8 +167,8 @@ ptGoldenSectionSearch = function(
   c = b - goldenRatio * (b - a);
   d = a + goldenRatio * (b - a);
 
-  fc = ptYJNegLogLikelihood(x, c);
-  fd = ptYJNegLogLikelihood(x, d);
+  fc = ptNegLogLikelihood(x, c, method);
+  fd = ptNegLogLikelihood(x, d, method);
 
   iteration = 0;
   while (((b - a) > tolerance) & (iteration < maxIterations)) {
@@ -161,14 +178,14 @@ ptGoldenSectionSearch = function(
       d = c;
       fd = fc;
       c = b - goldenRatio * (b - a);
-      fc = ptYJNegLogLikelihood(x, c);
+      fc = ptNegLogLikelihood(x, c, method);
     }
     else {
       a = c;
       c = d;
       fc = fd;
       d = a + goldenRatio * (b - a);
-      fd = ptYJNegLogLikelihood(x, d);
+      fd = ptNegLogLikelihood(x, d, method);
     }
 
     iteration = iteration + 1;

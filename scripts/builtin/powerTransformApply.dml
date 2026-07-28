@@ -27,7 +27,7 @@
 #   lambdas  Precomputed lambda parameters of shape 1-by-m, one per column
 #   means    Transformed column means of shape 1-by-m; empty to skip standardization
 #   scales   Transformed column scales of shape 1-by-m; empty to skip standardization
-#   method   Power transformation method; currently supports "yeo-johnson"
+#   method   Power transformation method: "yeo-johnson" (default) or "box-cox"
 # -------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -47,8 +47,13 @@ m_powerTransformApply = function(
     n = nrow(X)
     m = ncol(X)
 
-    if (method != "yeo-johnson") {
-        stop("powerTransformApply: unsupported method '" + method + "'; expected 'yeo-johnson'")
+    if (method != "yeo-johnson" & method != "box-cox") {
+        stop("powerTransformApply: unsupported method '" + method +
+            "'; expected 'yeo-johnson' or 'box-cox'")
+    }
+
+    if (method == "box-cox" & min(X) <= 0.0) {
+        stop("powerTransformApply: Box-Cox requires strictly positive input")
     }
 
     if (nrow(lambdas) != 1 | ncol(lambdas) != m) {
@@ -76,30 +81,41 @@ m_powerTransformApply = function(
     for (j in 1:m){
         x = X[,j]
         lambda_j = as.scalar(lambdas[1,j])
-        nonnegative = x >= 0
 
-        # Use intermediate inputs to avoid invalid domains in scoring or fractional powers
-        x_pos = ifelse(nonnegative, x, 0.0)
-        x_neg = ifelse(nonnegative, 0.0, x)
-
-        # Transform nonnegative values (x>=0)
-        if (abs(lambda_j) < eps) {
-            y_pos = log(x_pos + 1)
+        if (method == "box-cox") {
+            if (abs(lambda_j) < eps) {
+                Y[,j] = log(x)
+            }
+            else {
+                Y[,j] = (x^lambda_j - 1.0) / lambda_j
+            }
         }
         else {
-            y_pos = ((x_pos + 1)^lambda_j - 1) / lambda_j
-        }
+            nonnegative = x >= 0
 
-        # Transform negative values (x<0)
-        if (abs(lambda_j - 2) < eps) {
-            y_neg = -log(1 - x_neg)
-        }
-        else {
-            y_neg = -((1 - x_neg)^(2 - lambda_j) - 1) / (2 - lambda_j)
-        }
+            # Use intermediate inputs to avoid invalid domains in scoring or fractional powers
+            x_pos = ifelse(nonnegative, x, 0.0)
+            x_neg = ifelse(nonnegative, 0.0, x)
 
-        # Combine the two branches
-        Y[,j] = ifelse(nonnegative, y_pos, y_neg)
+            # Transform nonnegative values (x>=0)
+            if (abs(lambda_j) < eps) {
+                y_pos = log(x_pos + 1)
+            }
+            else {
+                y_pos = ((x_pos + 1)^lambda_j - 1) / lambda_j
+            }
+
+            # Transform negative values (x<0)
+            if (abs(lambda_j - 2) < eps) {
+                y_neg = -log(1 - x_neg)
+            }
+            else {
+                y_neg = -((1 - x_neg)^(2 - lambda_j) - 1) / (2 - lambda_j)
+            }
+
+            # Combine the two branches
+            Y[,j] = ifelse(nonnegative, y_pos, y_neg)
+        }
     }
 
     if (hasMeans) {

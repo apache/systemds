@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.sysds.runtime.io;
 
 import java.io.IOException;
@@ -27,7 +28,6 @@ import org.apache.parquet.example.data.Group;
 import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.example.GroupReadSupport;
-import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.apache.parquet.hadoop.util.HadoopInputFile;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType;
@@ -42,6 +42,44 @@ import org.apache.sysds.runtime.util.HDFSTool;
  * 
  */
 public class FrameReaderParquet extends FrameReader {
+
+	protected PrimitiveType.PrimitiveTypeName[] getParquetColumnTypes(MessageType parquetSchema, int[] columnIndices) {
+		PrimitiveType.PrimitiveTypeName[] columnTypes = new PrimitiveType.PrimitiveTypeName[columnIndices.length];
+		for(int i = 0; i < columnIndices.length; i++)
+			columnTypes[i] = parquetSchema.getType(columnIndices[i]).asPrimitiveType().getPrimitiveTypeName();
+		return columnTypes;
+	}
+
+	protected int[] getParquetColumnIndices(MessageType parquetSchema, String[] columnNames) {
+		int[] columnIndices = new int[columnNames.length];
+		for (int i = 0; i < columnNames.length; i++) {
+			columnIndices[i] = parquetSchema.getFieldIndex(columnNames[i]);
+		}
+		return columnIndices;
+	}
+
+	protected Object readTypedParquetValue(Group group, PrimitiveType.PrimitiveTypeName type, int columnIndex) throws IOException {
+		if (group.getFieldRepetitionCount(columnIndex) == 0) {
+			return null;
+		}
+
+		switch (type) {
+			case INT32:
+				return group.getInteger(columnIndex, 0);
+			case INT64:
+				return group.getLong(columnIndex, 0);
+			case FLOAT:
+				return group.getFloat(columnIndex, 0);
+			case DOUBLE:
+				return group.getDouble(columnIndex, 0);
+			case BOOLEAN:
+				return group.getBoolean(columnIndex, 0);
+			case BINARY:
+				return group.getBinary(columnIndex, 0).toStringUsingUTF8();
+			default:
+				throw new IOException("Unsupported data type: " + type);
+		}
+	}
 
 	/**
 	 * Reads a Parquet file from HDFS and converts it into a FrameBlock.
@@ -59,7 +97,7 @@ public class FrameReaderParquet extends FrameReader {
 		Configuration conf = ConfigurationManager.getCachedJobConf();
 		Path path = new Path(fname);
 
-		// Check existence and non-empty file
+		// Check existence
 		if (!HDFSTool.existsFileOnHDFS(path.toString())) {
 			throw new IOException("File does not exist on HDFS: " + fname);
 		}
@@ -70,7 +108,7 @@ public class FrameReaderParquet extends FrameReader {
 		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
 
 		// Read Parquet file
-		readParquetFrameFromHDFS(path, conf, ret, lschema, rlen, clen);
+		readParquetFrameFromHDFS(path, conf, ret, rlen, clen);
 
 		return ret;
 	}
@@ -84,23 +122,22 @@ public class FrameReaderParquet extends FrameReader {
 	 * @param path   The HDFS path to the Parquet file.
 	 * @param conf   The Hadoop configuration.
 	 * @param dest   The FrameBlock to populate with data.
-	 * @param schema The expected value types for the output columns.
 	 * @param rlen   The expected number of rows.
 	 * @param clen   The expected number of columns.
 	 */
-	protected void readParquetFrameFromHDFS(Path path, Configuration conf, FrameBlock dest, ValueType[] schema, long rlen, long clen) throws IOException {
+	protected void readParquetFrameFromHDFS(Path path, Configuration conf, FrameBlock dest, long rlen, long clen) throws IOException {
 		// Retrieve schema from Parquet footer
-		ParquetMetadata metadata = ParquetFileReader.open(HadoopInputFile.fromPath(path, conf)).getFooter();
-		MessageType parquetSchema = metadata.getFileMetaData().getSchema();
+		MessageType parquetSchema;
+		try (ParquetFileReader fileReader = ParquetFileReader.open(HadoopInputFile.fromPath(path, conf))) {
+			parquetSchema = fileReader.getFooter().getFileMetaData().getSchema();
+		}
 
 		// Map column names to Parquet schema indices
 		String[] columnNames = dest.getColumnNames();
-		int[] columnIndices = new int[columnNames.length];
-		for (int i = 0; i < columnNames.length; i++) {
-			columnIndices[i] = parquetSchema.getFieldIndex(columnNames[i]);
-		}
+		int[] columnIndices = getParquetColumnIndices(parquetSchema, columnNames);
+		PrimitiveType.PrimitiveTypeName[] columnTypes = getParquetColumnTypes(parquetSchema, columnIndices);
 
-		// Read data usind ParquetReader
+		// Read data using ParquetReader
 		try (ParquetReader<Group> rowReader = ParquetReader.builder(new GroupReadSupport(), path)
 				.withConf(conf)
 				.build()) {
@@ -108,35 +145,12 @@ public class FrameReaderParquet extends FrameReader {
 			Group group;
 			int row = 0;
 			while ((group = rowReader.read()) != null) {
+				if(row >= rlen)
+					throw new IOException("Mismatch in row count: expected " + rlen + ", but got more rows.");
+				
 				for (int col = 0; col < clen; col++) {
 					int colIndex = columnIndices[col];
-					if (group.getFieldRepetitionCount(colIndex) > 0) {
-						PrimitiveType.PrimitiveTypeName type = parquetSchema.getType(columnNames[col]).asPrimitiveType().getPrimitiveTypeName();
-						switch (type) {
-							case INT32:
-								dest.set(row, col, group.getInteger(colIndex, 0));
-								break;
-							case INT64:
-								dest.set(row, col, group.getLong(colIndex, 0));
-								break;
-							case FLOAT:
-								dest.set(row, col, group.getFloat(colIndex, 0));
-								break;
-							case DOUBLE:
-								dest.set(row, col, group.getDouble(colIndex, 0));
-								break;
-							case BOOLEAN:
-								dest.set(row, col, group.getBoolean(colIndex, 0));
-								break;
-							case BINARY:
-								dest.set(row, col, group.getBinary(colIndex, 0).toStringUsingUTF8());
-								break;
-							default:
-								throw new IOException("Unsupported data type: " + type);
-						}
-					} else {
-						dest.set(row, col, null);
-					}
+					dest.set(row, col, readTypedParquetValue(group, columnTypes[col], colIndex));
 				}
 				row++;
 			}

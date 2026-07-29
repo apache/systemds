@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.sysds.runtime.io;
 
 import java.io.IOException;
@@ -43,6 +44,10 @@ import org.apache.sysds.common.Types.ValueType;
  * 
  */
 public class FrameWriterParquet extends FrameWriter {
+
+	protected void writeParquetFrameToHDFS(Path path, Configuration conf, FrameBlock src) throws IOException{
+		writeParquetFrameToHDFS(path, conf, src, 0, src.getNumRows());
+	}
 
 	/**
 	 * Writes a FrameBlock to a Parquet file on HDFS.
@@ -78,18 +83,21 @@ public class FrameWriterParquet extends FrameWriter {
 	 * @param path The HDFS path where the Parquet file will be written.
 	 * @param conf The Hadoop configuration.
 	 * @param src  The FrameBlock containing the data to write.
+	 * @param startRow The starting row index for the write operation.
+	 * @param endRow The ending row index for the write operation.
 	 */
-	protected void writeParquetFrameToHDFS(Path path, Configuration conf, FrameBlock src) 
-		throws IOException 
-	{
+	protected void writeParquetFrameToHDFS(Path path, Configuration conf, FrameBlock src, int startRow, int endRow) throws IOException {
+		if(startRow < 0 || endRow < startRow || endRow > src.getNumRows())
+			throw new IOException("Invalid row range for Parquet write: " + startRow + " to " + endRow);
+		
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
 
 		// Create schema based on frame block metadata
 		MessageType schema = createParquetSchema(src);
 
 		// TODO:Experiment with different batch sizes?
-		int batchSize = 1000;  
-		int rowCount = 0;
+		//int batchSize = 1000;  
+		//int rowCount = 0;
 
 		// Write data using ParquetWriter //FIXME replace example writer? 
 		try (ParquetWriter<Group> writer = ExampleParquetWriter.builder(path)
@@ -101,55 +109,46 @@ public class FrameWriterParquet extends FrameWriter {
 				.withDictionaryEncoding(true)
 				.build()) 
 		{
+			final int numCols = src.getNumColumns();
+			final String[] columnNames = src.getColumnNames();
+			final ValueType[] schemaTypes = src.getSchema();
 
 			SimpleGroupFactory groupFactory = new SimpleGroupFactory(schema);
 			
-			List<Group> rowBuffer = new ArrayList<>(batchSize);
+			//List<Group> rowBuffer = new ArrayList<>(batchSize);
 			
-			for (int i = 0; i < src.getNumRows(); i++) {
+			for (int i = startRow; i < endRow; i++) {
 				Group group = groupFactory.newGroup();
-				for (int j = 0; j < src.getNumColumns(); j++) {
+				for (int j = 0; j < numCols; j++) {
 					Object value = src.get(i, j);
 					if (value != null) {
-						ValueType type = src.getSchema()[j];
+						ValueType type = schemaTypes[j];
 						switch (type) {
 							case STRING:
-								group.add(src.getColumnNames()[j], value.toString());
+								group.add(columnNames[j], value.toString());
 								break;
 							case INT32:
-								group.add(src.getColumnNames()[j], (int) value);
+								group.add(columnNames[j], (int) value);
 								break;
 							case INT64:
-								group.add(src.getColumnNames()[j], (long) value);
+								group.add(columnNames[j], (long) value);
 								break;
 							case FP32:
-								group.add(src.getColumnNames()[j], (float) value);
+								group.add(columnNames[j], (float) value);
 								break;
 							case FP64:
-								group.add(src.getColumnNames()[j], (double) value);
+								group.add(columnNames[j], (double) value);
 								break;
 							case BOOLEAN:
-								group.add(src.getColumnNames()[j], (boolean) value);
+								group.add(columnNames[j], (boolean) value);
 								break;
 							default:
 								throw new IOException("Unsupported value type: " + type);
 						}
 					}
 				}
-				rowBuffer.add(group);
-				rowCount++;
 
-				if (rowCount >= batchSize) {
-					for (Group g : rowBuffer) {
-						writer.write(g);
-					}
-					rowBuffer.clear();
-					rowCount = 0;
-				}
-			}
-			
-			for (Group g : rowBuffer) {
-				writer.write(g);
+				writer.write(group);
 			}
 		}
 		

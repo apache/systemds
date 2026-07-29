@@ -100,6 +100,30 @@ public class TopKCompressorTest {
 				assertEquals(input.get(i, j), result.get(i, j), 1e-10);
 	}
 
+	@Test
+	public void testTopKRoundTripKeepsLargestValues() throws Exception {
+		// A known matrix where we can predict exactly which values survive.
+		MatrixBlock in = new MatrixBlock(1, 6, false);
+		in.allocateDenseBlock();
+		double[] vals = {0.1, 5.0, 0.2, 4.0, 0.3, 3.0};
+		for(int j = 0; j < vals.length; j++)
+			in.set(0, j, vals[j]);
+		in.examSparsity();
+
+		// keep top 3 of 6
+		TopKCompressor c = new TopKCompressor(0.5);
+		CompressedMatrix cm = c.compress(in);
+		MatrixBlock out = c.decompress(cm);
+
+		// The three largest (5,4,3) survive exactly; the three smallest become 0.
+		assertEquals(5.0, out.get(0, 1), 1e-12);
+		assertEquals(4.0, out.get(0, 3), 1e-12);
+		assertEquals(3.0, out.get(0, 5), 1e-12);
+		assertEquals(0.0, out.get(0, 0), 1e-12);
+		assertEquals(0.0, out.get(0, 2), 1e-12);
+		assertEquals(0.0, out.get(0, 4), 1e-12);
+	}
+
 	@Test(expected = IllegalArgumentException.class)
 	public void testInvalidSparsityThrowsException() {
 		new TopKCompressor(0.0);

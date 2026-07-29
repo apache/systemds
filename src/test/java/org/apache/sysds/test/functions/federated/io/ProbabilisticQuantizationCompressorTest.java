@@ -105,6 +105,33 @@ public class ProbabilisticQuantizationCompressorTest {
 		assertEquals(3, result.getNumColumns());
 	}
 
+	@Test
+	public void testQuantizationRoundTripWithinStepError() throws Exception {
+		MatrixBlock in = new MatrixBlock(4, 4, false);
+		in.allocateDenseBlock();
+		java.util.Random r = new java.util.Random(11);
+		double min = Double.MAX_VALUE, max = -Double.MAX_VALUE;
+		for(int i = 0; i < 4; i++)
+			for(int j = 0; j < 4; j++) {
+				double v = r.nextDouble();
+				in.set(i, j, v);
+				min = Math.min(min, v);
+				max = Math.max(max, v);
+			}
+		in.examSparsity();
+
+		int bits = 8;
+		ProbabilisticQuantizationCompressor c = new ProbabilisticQuantizationCompressor(bits);
+		CompressedMatrix cm = c.compress(in);
+		MatrixBlock out = c.decompress(cm);
+
+		// Every reconstructed value is within one quantization step of the original.
+		double step = (max - min) / ((1 << bits) - 1);
+		for(int i = 0; i < 4; i++)
+			for(int j = 0; j < 4; j++)
+				assertTrue("value off by more than one step", Math.abs(out.get(i, j) - in.get(i, j)) <= step + 1e-9);
+	}
+
 	@Test(expected = IllegalArgumentException.class)
 	public void testInvalidBitsThrowsException() {
 		new ProbabilisticQuantizationCompressor(3);

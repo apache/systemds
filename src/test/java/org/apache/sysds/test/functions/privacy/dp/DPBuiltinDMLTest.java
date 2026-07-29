@@ -136,13 +136,13 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
 	@Test
 	public void testHighEpsilonIsCloserToTruth() {
 		double[][] data = TestUtils.generateTestMatrix(ROWS, COLS, 0, 1, 1.0, 42);
-		// Higher ε → less noise → result closer to the true mean.
+		// Higher epsilon => less noise => result closer to the true mean.
 		// NOTE: the DPBudgetAccountant caps total spend at the default budget
-		// (ε = 1.0) regardless of the per-release ε requested, so ε values
+		// (epsilon = 1.0) regardless of the per-release epsilon requested, so epsilon values
 		// here must stay well under that cap or the release is rejected.
 		double noisyLow = runAndGetMaxAbsColMeansDiffFromClean(data, "DPGaussian", DML_GAUSSIAN, "0.1");
 		double noisyHigh = runAndGetMaxAbsColMeansDiffFromClean(data, "DPGaussian", DML_GAUSSIAN, "0.5");
-		assertTrue("ε=0.5 should give less noise than ε=0.1", noisyHigh < noisyLow);
+		assertTrue("epsilon=0.5 should give less noise than epsilon=0.1", noisyHigh < noisyLow);
 	}
 
 	@Test
@@ -168,7 +168,7 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
 	public void testSetBudgetCalledTwiceFailsAtCompileTime() {
 		// Thrown from DMLTranslator.processBuiltinFunctionExpression (HOP construction),
 		// which wraps all case-block exceptions in ParseException (see processExpression's
-		// catch-all) — unlike the non-literal check below, which runs during validation
+		// catch-all) - unlike the non-literal check below, which runs during validation
 		// and so surfaces as a bare LanguageException.
 		double[][] data = TestUtils.generateTestMatrix(ROWS, COLS, 0, 1, 1.0, 42);
 		runExpectingException("DPSetBudget", DML_SET_BUDGET_TWICE, "0.5", data, ParseException.class);

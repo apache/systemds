@@ -45,10 +45,10 @@ if baseline_path.exists():
 for eps in [0.5, 1, 4, 8]:
     p = RESULTS / f"acc_eps_{eps}.txt"
     if p.exists():
-        rows.append(dict(label=f"ε={eps}", epsilon=eps,
+        rows.append(dict(label=f"epsilon={eps}", epsilon=eps,
                          private=1, accuracy=parse_acc(p)))
     else:
-        print(f"Warning: {p} not found — skipping")
+        print(f"Warning: {p} not found - skipping")
 
 out = RESULTS / "results.csv"
 with open(out, "w", newline="") as f:

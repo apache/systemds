@@ -2595,7 +2595,7 @@ public class DMLTranslator
 			// Resolved entirely at compile time: BuiltinFunctionExpression.validateExpression
 			// already enforced that both arguments are numeric literals, so 'expr'/'expr2' are
 			// guaranteed LiteralOps here. There is deliberately no runtime Hop/Lop/Instruction for
-			// this call — the budget is applied directly to the DMLProgram (reachable later from
+			// this call - the budget is applied directly to the DMLProgram (reachable later from
 			// ExecutionContext via Program.getDMLProg(), see ExecutionContext.getDPBudgetAccountant())
 			// before any instruction executes, so there is nothing for the DAG linearizer to reorder
 			// or drop as dead code.

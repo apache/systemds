@@ -28,29 +28,33 @@ import org.apache.sysds.runtime.instructions.cp.DPBuiltinCPInstruction;
  * Tracks composition of DP releases across the lifetime of a DML script execution. Each call to {@link #compose}
  * records one release and checks whether the cumulative privacy cost has exceeded the user-specified budget.
  *
- * The mechanism type (Laplace vs Gaussian) is inferred from the {@code delta} argument passed to {@link #compose}:
+ * The mechanism type (Laplace vs Gaussian) is inferred from the delta argument passed to {@link #compose}:
  *
- * - Laplace (delta == 0): pure ε-DP. The budget cost is tracked via basic composition — each release contributes
- * exactly its ε to a running sum. This is the tightest possible bound for pure DP and avoids the looser estimate that
- * results from routing Laplace through the RDP conversion path (which would introduce an unnecessary δ). Noise scale is
- * calibrated to L1 sensitivity (see {@link #compose}). - Gaussian (delta > 0): (ε, δ)-DP via Rényi DP composition.
- * Rényi divergences at a discrete set of orders α compose additively; the accumulated sum is converted to (ε, δ) at
+ * - Laplace (delta == 0): pure epsilon-DP. The budget cost is tracked via basic composition: each release contributes
+ * exactly its epsilon to a running sum. This is the tightest possible bound for pure DP and avoids the looser estimate that
+ * results from routing Laplace through the RDP conversion path (which would introduce an unnecessary delta). Noise scale is
+ * calibrated to L1 sensitivity (see {@link #compose}).
+ * - Gaussian (delta > 0): (epsilon, delta)-DP via Renyi DP composition.
+ * Renyi divergences at a discrete set of orders alpha compose additively; the accumulated sum is converted to (epsilon, delta) at
  * query time using the formula from Mironov 2017. This is substantially tighter than basic composition for repeated
  * Gaussian releases, which is the common case in federated learning.
  *
- * When both mechanisms are used in the same script the total cost is: ε_total = ε_Laplace_sum + ε_Gaussian_RDP This
- * follows from basic composition of a pure-DP mechanism with an approximate-DP mechanism, which is additive in ε.
+ * When both mechanisms are used in the same script the total cost is:
+ * epsilon_total = epsilon_Laplace_sum + epsilon_Gaussian_RDP
+ * This follows from basic composition of a pure-DP mechanism with an approximate-DP mechanism, which is additive in epsilon.
  *
- * Rényi orders tracked (Gaussian path) α ∈ {2, 4, 8, 16, 32, 64, 128, 256, 512, 1024}. At query time the minimum
- * converted ε across all orders is taken as the tightest available bound.
+ * Renyi orders tracked (Gaussian path) alpha in {2, 4, 8, 16, 32, 64, 128, 256, 512, 1024}. At query time the minimum
+ * converted epsilon across all orders is taken as the tightest available bound.
  *
- * Gaussian RDP divergence For the Gaussian mechanism with noise scale σ and L2 sensitivity Δf: D_α = α · Δf² / (2σ²) σ
- * is back-derived from the caller's (ε, δ) via the standard calibration formula (see {@link #gaussianSigma}). Note that
- * sensitivity cancels in the final expression, so the RDP cost depends only on the (ε, δ) parameters.
+ * Gaussian RDP divergence For the Gaussian mechanism with noise scale sigma and L2 sensitivity delta_f:
+ * D_alpha = alpha * delta_f^2 / (2*sigma^2) sigma
+ * is back-derived from the caller's (epsilon, delta) via the standard calibration formula (see {@link #gaussianSigma}). Note that
+ * sensitivity cancels in the final expression, so the RDP cost depends only on the (epsilon, delta) parameters.
  *
- * RDP → (ε, δ) conversion (Mironov 2017, Proposition 3) ε(α) = R[α] + log(1 − 1/α) − log(δ·(α−1)) / α
+ * RDP => (epsilon, delta) conversion (Mironov 2017, Proposition 3):
+ * epsilon(alpha) = R[alpha] + log(1 − 1/alpha) − log(delta*(alpha−1)) / alpha
  *
- * One instance is created per {@code ExecutionContext} (lazy init). It is garbage-collected with the context when the
+ * One instance is created per ExecutionContext (lazy init). It is garbage-collected with the context when the
  * script finishes; no state leaks between script executions or between concurrent scripts.
  *
  * Not thread-safe. A single DML script executes instructions sequentially on one thread, so no synchronisation is
@@ -61,7 +65,7 @@ import org.apache.sysds.runtime.instructions.cp.DPBuiltinCPInstruction;
 public class DPBudgetAccountant {
 
 	// -----------------------------------------------------------------------
-	// Rényi orders used for Gaussian composition
+	// Renyi orders used for Gaussian composition
 	// -----------------------------------------------------------------------
 
 	private static final double DEFAULT_EPSILON_BUDGET = 1.0;
@@ -69,7 +73,7 @@ public class DPBudgetAccountant {
 	private static final double DEFAULT_DELTA = 1e-5;
 
 	/**
-	 * Discrete set of Rényi orders α. All must be > 1. Finer grids give tighter bounds; this set covers the range
+	 * Discrete set of Renyi orders alpha. All must be > 1. Finer grids give tighter bounds; this set covers the range
 	 * relevant for typical ML workloads.
 	 */
 	private static final double[] ORDERS = {2, 4, 8, 16, 32, 64, 128, 256, 512, 1024};
@@ -78,22 +82,22 @@ public class DPBudgetAccountant {
 	// State
 	// -----------------------------------------------------------------------
 
-	/** Accumulated Rényi divergence at each order (Gaussian releases only). */
+	/** Accumulated Renyi divergence at each order (Gaussian releases only). */
 	private final double[] _rdpSum = new double[ORDERS.length];
 
 	/**
-	 * Running sum of pure ε from Laplace releases.
+	 * Running sum of pure epsilon from Laplace releases.
 	 *
-	 * Laplace gives pure ε-DP (no δ). Basic composition is exact and tighter than the RDP conversion path for Laplace
-	 * (which would introduce an unnecessary δ and produce a looser bound). Each Laplace release adds its ε here; the
+	 * Laplace gives pure epsilon-DP (no delta). Basic composition is exact and tighter than the RDP conversion path for Laplace
+	 * (which would introduce an unnecessary delta and produce a looser bound). Each Laplace release adds its epsilon here; the
 	 * total is added directly in {@link #totalEpsilonSpent()}.
 	 */
 	private double _pureEpsilonSum = 0.0;
 
-	/** Total privacy budget (ε) for the script execution. */
+	/** Total privacy budget (epsilon) for the script execution. */
 	private final double _epsilonBudget;
 
-	/** δ used for the Gaussian RDP-to-(ε,δ) conversion. */
+	/** delta used for the Gaussian RDP-to-(epsilon,delta) conversion. */
 	private final double _delta;
 
 	/** Number of releases recorded so far (for error messages). */
@@ -107,11 +111,11 @@ public class DPBudgetAccountant {
 	 * Creates an accountant with the given global budget.
 	 *
 	 * Typical usage: the DML script sets the budget once at the top (future work: a
-	 * {@code dp_set_budget(epsilon, delta)} built-in), or the accountant is created with defaults and the budget is
+	 * dp_set_budget(epsilon, delta) built-in), or the accountant is created with defaults and the budget is
 	 * checked after each release.
 	 *
-	 * @param epsilonBudget total ε budget for the script execution (must be > 0)
-	 * @param delta         δ used for the Gaussian RDP-to-(ε,δ) conversion (must be in (0,1))
+	 * @param epsilonBudget total epsilon budget for the script execution (must be > 0)
+	 * @param delta         delta used for the Gaussian RDP-to-(epsilon,delta) conversion (must be in (0,1))
 	 */
 	public DPBudgetAccountant(double epsilonBudget, double delta) {
 		if(!(epsilonBudget > 0))
@@ -123,7 +127,7 @@ public class DPBudgetAccountant {
 	}
 
 	/**
-	 * Convenience constructor using a liberal default δ = 1e-5. Suitable when the calling script does not specify δ
+	 * Convenience constructor using a liberal default delta = 1e-5. Suitable when the calling script does not specify delta
 	 * explicitly.
 	 */
 	public DPBudgetAccountant(double epsilonBudget) {
@@ -131,7 +135,7 @@ public class DPBudgetAccountant {
 	}
 
 	/**
-	 * Default constructor using defaults. Suitable when the calling script does not specify ε, δ explicitly.
+	 * Default constructor using defaults. Suitable when the calling script does not specify epsilon, delta explicitly.
 	 */
 	public DPBudgetAccountant() {
 		this(DEFAULT_EPSILON_BUDGET, DEFAULT_DELTA);
@@ -147,27 +151,28 @@ public class DPBudgetAccountant {
 	 * This method must be called before the result is written to the variable table. If the budget is exhausted it
 	 * throws and the caller's result is discarded, preventing an unaccounted release.
 	 *
-	 * Mechanism selection (see class-level Javadoc for details): - {@code delta == 0} → Laplace, pure ε-DP basic
-	 * composition - {@code delta > 0} → Gaussian, Rényi DP composition
+	 * Mechanism selection (see class-level Javadoc for details):
+	 * - delta == 0 => Laplace, pure epsilon-DP basic composition
+	 * - delta > 0 => Gaussian, Renyi DP composition
 	 *
-	 * @param epsilon     per-release ε parameter (must be &gt; 0)
-	 * @param delta       per-release δ parameter (0 for Laplace, &gt;0 for Gaussian)
-	 * @param sensitivity sensitivity Δf of the released quantity (must be > 0). The norm depends on the mechanism
-	 *                    selected by {@code delta}: callers must supply the L1 sensitivity ‖f(D) − f(D′)‖₁ when
-	 *                    {@code delta == 0} (Laplace), and the L2 sensitivity ‖f(D) − f(D′)‖₂ when {@code delta > 0}
+	 * @param epsilon     per-release epsilon parameter (must be >= 0)
+	 * @param delta       per-release delta parameter (0 for Laplace, >= 0 for Gaussian)
+	 * @param sensitivity sensitivity of the released quantity (must be > 0). The norm depends on the mechanism
+	 *                    selected by delta: callers must supply the L1 sensitivity when
+	 *                    delta == 0 (Laplace), and the L2 sensitivity when delta > 0
 	 *                    (Gaussian). The two coincide for scalar-valued releases but diverge for vector-valued ones, so
 	 *                    passing the wrong norm silently under- or over-calibrates the noise.
-	 * @throws DMLRuntimeException if the cumulative ε after this release would exceed the budget
+	 * @throws DMLRuntimeException if the cumulative epsilon after this release would exceed the budget
 	 */
 	public void compose(double epsilon, double delta, double sensitivity) {
 		_releaseCount++;
 
 		if(delta == 0.0) {
-			// Laplace: pure ε-DP, basic composition — cost is exactly epsilon.
+			// Laplace: pure epsilon-DP, basic composition - cost is exactly epsilon.
 			_pureEpsilonSum += epsilon;
 		}
 		else {
-			// Gaussian: accumulate Rényi divergence at each order, then convert.
+			// Gaussian: accumulate Renyi divergence at each order, then convert.
 			for(int i = 0; i < ORDERS.length; i++) {
 				double sigma = gaussianSigma(sensitivity, epsilon, delta);
 				_rdpSum[i] += rdpGaussian(ORDERS[i], sensitivity, sigma);
@@ -177,7 +182,7 @@ public class DPBudgetAccountant {
 		double spentEpsilon = totalEpsilonSpent();
 		if(spentEpsilon > _epsilonBudget) {
 			throw new DMLRuntimeException(String.format(
-				"Privacy budget exhausted after %d release(s): " + "spent ε ≈ %.6f exceeds budget ε = %.6f (δ = %.2e). "
+				"Privacy budget exhausted after %d release(s): " + "spent epsilon %.6f exceeds budget epsilon = %.6f (delta = %.2e). "
 					+ "Reduce the number of releases or widen the budget.",
 				_releaseCount, spentEpsilon, _epsilonBudget, _delta));
 		}
@@ -188,13 +193,13 @@ public class DPBudgetAccountant {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Returns the current total privacy cost as an ε value.
+	 * Returns the current total privacy cost as an epsilon value.
 	 *
-	 * Total = Laplace pure-ε sum + Gaussian RDP-converted ε (clamped to zero when no Gaussian releases have been
+	 * Total = Laplace pure-epsilon sum + Gaussian RDP-converted epsilon (clamped to zero when no Gaussian releases have been
 	 * recorded).
 	 */
 	public double totalEpsilonSpent() {
-		// Take min_α(ε_α) as the current total privacy cost
+		// Take min_alpha(epsilon_alpha) as the current total privacy cost
 		double gaussianEps = Double.MAX_VALUE;
 		for(int i = 0; i < ORDERS.length; i++) {
 			double alpha = ORDERS[i];
@@ -204,13 +209,13 @@ public class DPBudgetAccountant {
 		}
 		// Clamp: with no Gaussian releases the RDP sum is 0 and the log-delta
 		// term alone drives gaussianEps to a small positive value; clamp to 0
-		// so Laplace-only scripts are not penalised by δ they never requested.
+		// so Laplace-only scripts are not penalised by delta they never requested.
 		if(gaussianEps < 0)
 			gaussianEps = 0.0;
 		return _pureEpsilonSum + gaussianEps;
 	}
 
-	/** Returns the remaining ε budget (negative if the budget is exceeded). */
+	/** Returns the remaining epsilon budget (negative if the budget is exceeded). */
 	public double remainingBudget() {
 		return _epsilonBudget - totalEpsilonSpent();
 	}
@@ -225,17 +230,18 @@ public class DPBudgetAccountant {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Rényi divergence of order α for the Gaussian mechanism (Mironov 2017, Proposition 3, example 2): D_α = α · Δf² /
-	 * (2σ²)
+	 * Renyi divergence of order alpha for the Gaussian mechanism (Mironov 2017, Proposition 3, example 2):
+	 * D_alpha = alpha * delta_f^2 / (2 * sigma^2)
 	 */
 	private static double rdpGaussian(double alpha, double sensitivity, double sigma) {
 		return alpha * (sensitivity * sensitivity) / (2.0 * sigma * sigma);
 	}
 
 	/**
-	 * Gaussian noise scale σ calibrated to (ε, δ)-DP: σ = Δf · sqrt(2 · log(1.25 / δ)) / ε Must match the formula used
-	 * in {@link DPBuiltinCPInstruction} so that the RDP cost recorded here is consistent with the noise actually
-	 * injected.
+	 * Gaussian noise scale sigma calibrated to (epsilon, delta)-DP:
+	 * sigma = delta_f * sqrt(2 * log(1.25 / delta)) / epsilon
+	 * Must match the formula used in {@link DPBuiltinCPInstruction} so that the RDP cost recorded here
+	 * is consistent with the noise actually injected.
 	 */
 	private static double gaussianSigma(double sensitivity, double epsilon, double delta) {
 		return sensitivity * Math.sqrt(2.0 * Math.log(1.25 / delta)) / epsilon;

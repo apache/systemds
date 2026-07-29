@@ -22,7 +22,7 @@
 Read results.csv and produce two figures:
 
 1. accuracy_vs_epsilon.png
-   Line plot: x = ε, y = accuracy.
+   Line plot: x = epsilon, y = accuracy.
    Horizontal dashed line = non-private baseline.
    Points labelled with accuracy values.
 
@@ -57,7 +57,7 @@ eps_vals = [r["epsilon"] for r in dp_rows]
 acc_vals = [r["accuracy"] for r in dp_rows]
 baseline_acc = baseline["accuracy"]
 
-# ── Figure 1: Accuracy vs ε ───────────────────────────────────────────────
+# ── Figure 1: Accuracy vs epsilon ───────────────────────────────────────────────
 fig, ax = plt.subplots(figsize=(7, 4.5))
 
 ax.plot(eps_vals, acc_vals, marker="o", linewidth=2,
@@ -74,9 +74,9 @@ for eps, acc in zip(eps_vals, acc_vals):
 ax.set_xscale("log")
 ax.set_xticks(eps_vals)
 ax.get_xaxis().set_major_formatter(ticker.ScalarFormatter())
-ax.set_xlabel("Privacy budget ε  (smaller = stronger privacy)", fontsize=11)
+ax.set_xlabel("Privacy budget epsilon  (smaller = stronger privacy)", fontsize=11)
 ax.set_ylabel("Test accuracy", fontsize=11)
-ax.set_title("Accuracy vs. Privacy Budget — DP-FedAvg on Adult (4 workers)",
+ax.set_title("Accuracy vs. Privacy Budget - DP-FedAvg on Adult (4 workers)",
              fontsize=12)
 ax.legend(fontsize=9)
 ax.set_ylim(max(0, min(acc_vals) - 0.05), min(1.0, baseline_acc + 0.05))
@@ -93,9 +93,9 @@ fig, ax = plt.subplots(figsize=(6, 4))
 
 drops = [baseline_acc - acc for acc in acc_vals]
 colors = ["#B91C1C" if d > 0.02 else "#028090" for d in drops]
-# Position bars at their true ε value on a log-scaled x-axis (rather than
-# evenly-spaced categorical slots) so the visual spacing between 0.5→1 and
-# 4→8 reflects the same 2x ratio. Bar widths scale with x so they stay a
+# Position bars at their true epsilon value on a log-scaled x-axis (rather than
+# evenly-spaced categorical slots) so the visual spacing between 0.5 to 1 and
+# 4 to 8 reflects the same 2x ratio. Bar widths scale with x so they stay a
 # constant fraction of their slot in log space instead of shrinking/growing.
 widths = [e * 0.4 for e in eps_vals]
 bars = ax.bar(eps_vals, drops, color=colors, width=widths,
@@ -112,9 +112,9 @@ for bar, drop in zip(bars, drops):
 ax.legend(["drop > 0.02", "drop <= 0.02"])
 
 ax.axhline(0, color="black", linewidth=0.8)
-ax.set_xlabel("Privacy budget ε", fontsize=11)
+ax.set_xlabel("Privacy budget epsilon", fontsize=11)
 ax.set_ylabel("Accuracy drop vs. baseline", fontsize=11)
-ax.set_title("Utility Cost of Differential Privacy — DP-FedAvg on Adult",
+ax.set_title("Utility Cost of Differential Privacy - DP-FedAvg on Adult",
              fontsize=11)
 ax.grid(True, axis="y", linestyle=":", alpha=0.5)
 
@@ -126,9 +126,9 @@ plt.close()
 
 # ── Console summary table ─────────────────────────────────────────────────
 print()
-print(f"{'ε':>8}  {'accuracy':>10}  {'drop':>8}")
+print(f"{'epsilon':>8}  {'accuracy':>10}  {'drop':>8}")
 print("-" * 34)
-print(f"{'baseline':>8}  {baseline_acc:10.4f}  {'—':>8}")
+print(f"{'baseline':>8}  {baseline_acc:10.4f}  {'-':>8}")
 for eps, acc, drop in zip(eps_vals, acc_vals, drops):
     print(f"{eps:>8.1f}  {acc:10.4f}  {drop:8.4f}")
 

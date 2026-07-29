@@ -67,7 +67,7 @@ def download(url, dest):
 def load_adult(path, skip_rows=0):
     df = pd.read_csv(path, names=COLS, skipinitialspace=True,
                      skiprows=skip_rows, na_values="?").dropna()
-    # binarise label: >50K → 1, else 0
+    # binarise label: >50K => 1, else 0
     df["label"] = (df["label"].str.strip().str.rstrip(".") == ">50K").astype(float)
     # one-hot encode categoricals
     cats = [c for c in COLS[:-1] if c not in NUMERIC]

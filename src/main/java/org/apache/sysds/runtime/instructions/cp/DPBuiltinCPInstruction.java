@@ -33,24 +33,25 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * CP instruction for differential-privacy release of a linear query over the original matrix.
  *
- * DML syntax (raw-matrix form): result = dp_laplace(X, query="colMeans", sensitivity=1.0, epsilon=0.5) result =
- * dp_gaussian(X, query="colMeans", sensitivity=1.0, epsilon=0.5, delta=1e-5)
+ * DML syntax (raw-matrix form):
+ * result = dp_laplace(X, query="colMeans", sensitivity=1.0, epsilon=0.5)
+ * result = dp_gaussian(X, query="colMeans", sensitivity=1.0, epsilon=0.5, delta=1e-5)
  *
- * The instruction receives the original {@code n x d} matrix {@code X}, builds a transformation matrix {@code T}
- * ({@code k x n}) from the named {@code query} (see {@link #buildTransform}), and returns a noisy release of
- * {@code T %*% X}. The noise is not added as a separate elementwise pass over a materialised aggregate: it is injected
- * by augmenting {@code T} with an identity block and {@code X} with the noise matrix, so that the noisy release is the
+ * The instruction receives the original n x d} matrix X, builds a transformation matrix T
+ * (k x n) from the named query (see {@link #buildTransform}), and returns a noisy release of
+ * T %*% X. The noise is not added as a separate elementwise pass over a materialised aggregate: it is injected
+ * by augmenting T with an identity block and X with the noise matrix, so that the noisy release is the
  * result of a single {@link LibMatrixMult#matrixMult} call (see {@link #processInstruction} for the derivation).
  *
- * Sensitivity norm: {@code sensitivity} is not interchangeable between the two builtins. {@code dp_laplace} calibrates
- * its noise scale to the L1 sensitivity of {@code T %*% X} to a single-record change; {@code dp_gaussian} calibrates
- * its σ to the L2 sensitivity. For a scalar release (e.g. {@code query="colMeans"} on single-column {@code X}) the two
- * norms coincide, but for a vector- or matrix-valued release they generally differ — the caller is responsible for
+ * Sensitivity norm: sensitivity is not interchangeable between the two builtins. dp_laplace calibrates
+ * its noise scale to the L1 sensitivity of T %*% X to a single-record change; dp_gaussian calibrates
+ * its stdev to the L2 sensitivity. For a scalar release (e.g. query="colMeans" on single-column X) the two
+ * norms coincide, but for a vector- or matrix-valued release they generally differ - the caller is responsible for
  * supplying the norm matching the builtin invoked (see {@link #sensitivityOf}).
  *
  * The {@link #sensitivityOf} method is deliberately separated from the noise-scale computation. It currently returns
  * the caller-supplied constant. A future rewrite pass could replace the body of this single method with a static
- * analysis that derives sensitivity from {@code T}'s column norms and a declared per-record bound on {@code X}; every
+ * analysis that derives sensitivity from T's column norms and a declared per-record bound on X; every
  * other line in this class would stay unchanged.
  */
 public class DPBuiltinCPInstruction extends ComputationCPInstruction {
@@ -91,7 +92,7 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Reconstructs a {@code DPBuiltinCPInstruction} from its serialised instruction string produced by the LOP layer.
+	 * Reconstructs a DPBuiltinCPInstruction from its serialised instruction string produced by the LOP layer.
 	 *
 	 * Expected format (OPERAND_DELIM = '\u00b0'):
 	 * dp_gaussian°target=mVar1·MATRIX·FP64°query=colMeans·SCALAR·STRING·true
@@ -138,16 +139,17 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
 	/**
 	 * Executes the DP release.
 	 *
-	 * - Read the original {@link MatrixBlock} {@code X} from the variable table. - Build the transformation matrix
-	 * {@code T} ({@code k x n}) from {@code query} (see {@link #buildTransform}). - Determine sensitivity via
-	 * {@link #sensitivityOf}. - Generate a noise {@link MatrixBlock} shaped {@code k x d}. - Fuse
-	 * {@code T %*% X + noise} into a single {@link LibMatrixMult#matrixMult} call (see below). - Record the release
-	 * with the session-scoped {@link DPBudgetAccountant}; throw if budget is exhausted. - Write the noisy block back to
-	 * the variable table and release the input pin.
+	 * - Read the original {@link MatrixBlock} X from the variable table.
+	 * - Build the transformation matrix T (k x n) from query (see {@link #buildTransform}).
+	 * - Determine sensitivity via {@link #sensitivityOf}.
+	 * - Generate a noise {@link MatrixBlock} shaped k x d.
+	 * - Fuse T %*% X + noise into a single {@link LibMatrixMult#matrixMult} call (see below).
+	 * - Record the release with the session-scoped {@link DPBudgetAccountant}; throw if budget is exhausted.
+	 * - Write the noisy block back to the variable table and release the input pin.
 	 *
-	 * Fusion derivation: for {@code T} ({@code k x n}), {@code X} ({@code n x d}) and noise {@code N} ({@code k x d}),
-	 * let {@code T' = [T | I_k]} ({@code k x (n+k)}) and {@code X' = [X ; N]} ({@code (n+k) x d}). Then
-	 * {@code T' %*% X' = T %*% X + I_k %*% N = T %*% X + N}, computed as one matrix multiply instead of a multiply
+	 * Fusion derivation: for T (k x n), X (n x d) and noise N (k x d),
+	 * let T' = [T | I_k] (k x (n+k)) and X' = [X ; N] ((n+k) x d). Then
+	 * T' %*% X' = T %*% X + I_k %*% N = T %*% X + N, computed as one matrix multiply instead of a multiply
 	 * followed by a separate elementwise add.
 	 */
 	@Override
@@ -194,16 +196,16 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Builds the {@code k x n} transformation matrix {@code T} for the given named query, to be left-multiplied against
-	 * the {@code n x d} input {@code X} as {@code T %*% X}.
+	 * Builds the k x n transformation matrix T for the given named query, to be left-multiplied against
+	 * the n x d input X as T %*% X.
 	 *
-	 * - {@code "colMeans"}: {@code T} is {@code 1 x n}, filled with {@code 1/n} — {@code T %*% X} is the column-mean
-	 * row vector. - {@code "colSums"}: {@code T} is {@code 1 x n}, filled with {@code 1.0} — {@code T %*% X} is the
-	 * column-sum row vector. - {@code "identity"}: {@code T} is the {@code n x n} identity (built sparsely via
-	 * {@link #identity}) — {@code T %*% X} is {@code X} itself, i.e. a noisy release of the raw matrix.
+	 * - "colMeans": T is 1 x n, filled with 1/n - T %*% X is the column-mean row vector.
+	 * - "colSums": T is 1 x n, filled with 1.0 - T %*% X is the column-sum row vector.
+	 * - "identity": T is the n x n identity (built sparsely via {@link #identity}) - T %*% X is X itself,
+	 * i.e. a noisy release of the raw matrix.
 	 *
-	 * Row-wise aggregates ({@code rowMeans}/{@code rowSums}) reduce across the feature axis of {@code X}, i.e. they are
-	 * naturally {@code X %*% T'} (right-multiply), not {@code T %*% X}, so they are intentionally not supported here.
+	 * Row-wise aggregates (rowMeans/rowSums) reduce across the feature axis of X, i.e. they are
+	 * naturally X %*% T' (right-multiply), not T %*% X, so they are intentionally not supported here.
 	 */
 	private static MatrixBlock buildTransform(String query, int n) {
 		switch(query) {
@@ -233,10 +235,10 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
 	}
 
 	/**
-	 * Builds a {@code k x k} identity matrix, sparsely, by reusing the existing {@link LibMatrixReorg#diag} reorg
-	 * operator (the same runtime path DML's {@code diag()} builtin uses to expand a vector into a diagonal matrix).
-	 * Keeps memory {@code O(k)} rather than {@code O(k^2)}, which matters for the {@code query="identity"} case where
-	 * {@code k} equals the number of rows of {@code X}.
+	 * Builds a k x k identity matrix, sparsely, by reusing the existing {@link LibMatrixReorg#diag} reorg
+	 * operator (the same runtime path DML's diag() builtin uses to expand a vector into a diagonal matrix).
+	 * Keeps memory O(k) rather than O(k^2), which matters for the query="identity" case where
+	 * k equals the number of rows of X.
 	 */
 	private static MatrixBlock identity(int k) {
 		MatrixBlock ones = new MatrixBlock(k, 1, false);
@@ -252,14 +254,14 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Returns the sensitivity of the release {@code T %*% X} to a single-record change, in the norm required by the
-	 * mechanism actually invoked: L1 for {@code dp_laplace}, L2 for {@code dp_gaussian} (see the class Javadoc). The
+	 * Returns the sensitivity of the release T %*% X to a single-record change, in the norm required by the
+	 * mechanism actually invoked: L1 for dp_laplace, L2 for dp_gaussian (see the class Javadoc). The
 	 * two only coincide when the release is scalar.
 	 *
-	 * Returns the caller-supplied literal from the DML script as-is, with no norm conversion or validation — the DML
+	 * Returns the caller-supplied literal from the DML script as-is, with no norm conversion or validation - the DML
 	 * author must compute the sensitivity in the correct norm for the builtin they call. A future rewrite pass could
-	 * replace this body with an analysis that derives sensitivity from {@code T}'s column norms and a declared
-	 * per-record bound on {@code X}; no other line in this class would need to change.
+	 * replace this body with an analysis that derives sensitivity from T's column norms and a declared
+	 * per-record bound on X; no other line in this class would need to change.
 	 *
 	 * @param T the transformation matrix (unused for now; kept as the seam for a future sensitivity-derivation pass)
 	 * @return caller-supplied sensitivity constant, expected to already be in the L1 norm (Laplace) or L2 norm
@@ -274,9 +276,9 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Generates a {@code rows x cols} noise {@link MatrixBlock} — matching the shape of the release {@code T %*% X} —
-	 * filled with samples from the mechanism-appropriate distribution calibrated to ({@code sensitivity},
-	 * {@code epsilon}, {@code delta}).
+	 * Generates a rows x cols noise {@link MatrixBlock} - matching the shape of the release T %*% X -
+	 * filled with samples from the mechanism-appropriate distribution calibrated to (sensitivity,
+	 * epsilon, delta).
 	 *
 	 * Both mechanisms produce a dense block. Sparsity exploitation is left for future work; for the releases targeted
 	 * here (e.g. column means, column sums) the noise is dense regardless.
@@ -305,9 +307,9 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
 	}
 
 	/**
-	 * Fills {@code block} with i.i.d. Laplace(0, scale) samples using the inverse-CDF method.
+	 * Fills block with i.i.d. Laplace(0, scale) samples using the inverse-CDF method.
 	 *
-	 * For u ~ Uniform(0, 1): X = -scale * sign(u - 0.5) * ln(1 - 2|u - 0.5|)
+	 * For u in Uniform(0, 1): X = -scale * sign(u - 0.5) * ln(1 - 2|u - 0.5|)
 	 */
 	private static void fillLaplaceNoise(MatrixBlock block, double scale) {
 		ThreadLocalRandom rng = ThreadLocalRandom.current();
@@ -327,7 +329,7 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
 	}
 
 	/**
-	 * Fills {@code block} with i.i.d. N(0, sigma²) samples.
+	 * Fills block with i.i.d. N(0, sigma^2) samples.
 	 *
 	 * Uses {@link ThreadLocalRandom#nextGaussian()} which is thread-safe and does not require external libraries.
 	 */
@@ -347,7 +349,7 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Parses a parameter value as a positive {@code double}.
+	 * Parses a parameter value as a positive double.
 	 *
 	 * @throws DMLRuntimeException if the key is absent, unparseable, or non-positive
 	 */

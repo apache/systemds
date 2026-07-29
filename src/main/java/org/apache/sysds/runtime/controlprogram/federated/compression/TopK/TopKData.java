@@ -31,7 +31,7 @@ public class TopKData implements Serializable {
 
 	public final int[] indices; // Linear indices of kept elements (row*numCols + col)
 	public final double[] values; // Corresponding original values
-	public final int numCols; // Needed for index → (row, col) conversion
+	public final int numCols; // Needed for index to (row, col) conversion
 
 	public TopKData(int[] indices, double[] values, int numCols) {
 		if(indices.length != values.length) {

@@ -31,11 +31,11 @@ import java.util.Random;
 /**
  * Probabilistic Quantization Compressor.
  *
- * Reduces numerical precision using stochastic rounding to maintain an unbiased estimator — meaning E[quantized] =
+ * Reduces numerical precision using stochastic rounding to maintain an unbiased estimator, meaning E[quantized] =
  * original on average. This is critical for federated learning convergence guarantees.
  *
- * Supports 2, 4, or 8 bits per value: 2-bit → 4 levels → 16x compression vs 32-bit float 4-bit → 16 levels → 8x
- * compression 8-bit → 256 levels → 4x compression
+ * Supports 2, 4, or 8 bits per value: 2-bit gives 4 levels for 16x compression vs 32-bit float; 4-bit gives 16 levels
+ * for 8x compression; 8-bit gives 256 levels for 4x compression.
  */
 public class ProbabilisticQuantizationCompressor implements MatrixCompressor {
 

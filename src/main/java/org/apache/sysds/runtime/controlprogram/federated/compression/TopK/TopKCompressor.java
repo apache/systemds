@@ -37,7 +37,7 @@ import java.util.PriorityQueue;
  * Keeps only the K largest-magnitude elements in the matrix, setting all others to zero. Optimal for gradient
  * sparsification in federated learning where most gradient values are near zero.
  *
- * Compression ratio: approximately 1/sparsityRatio e.g. sparsityRatio=0.01 keeps 1% of elements → ~100x compression
+ * Compression ratio: approximately 1/sparsityRatio e.g. sparsityRatio=0.01 keeps 1% of elements for ~100x compression
  */
 public class TopKCompressor implements MatrixCompressor {
 

@@ -35,7 +35,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public class CompressionFactory {
 
 	private CompressionFactory() {
-		// Utility class — no instantiation
+		// Utility class - no instantiation
 	}
 
 	/**

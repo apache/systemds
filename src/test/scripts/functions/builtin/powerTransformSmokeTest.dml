@@ -98,6 +98,10 @@ assert(ncol(scales) == ncol(X))
 constantLambda = as.scalar(lambdas[1,3])
 assert(abs(constantLambda - 1.0) < 1e-10)
 
+# Fitted lambdas must match independently computed bounded Brent references.
+assert(abs(as.scalar(lambdas[1,1]) - 0.768464996781626) < 1e-5)
+assert(abs(as.scalar(lambdas[1,2]) + 0.588195649632719) < 1e-5)
+
 # Results should not contain invalid numerical values.
 assert(sum(is.nan(Y)) == 0)
 assert(sum(is.infinite(Y)) == 0)
@@ -173,6 +177,8 @@ assert(sum(is.nan(YBoxCox)) == 0)
 assert(sum(is.infinite(YBoxCox)) == 0)
 assert(sum(is.nan(boxCoxLambdas)) == 0)
 assert(sum(is.infinite(boxCoxLambdas)) == 0)
+assert(abs(as.scalar(boxCoxLambdas[1,1])) < 1e-5)
+assert(abs(as.scalar(boxCoxLambdas[1,2]) + 0.032109966964980) < 1e-5)
 
 YBoxCoxReapplied = powerTransformApply(
   XPositive,

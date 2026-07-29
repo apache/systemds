@@ -99,7 +99,7 @@ ptEstimateLambda = function(Matrix[Double] x, String method)
     lower = -2.0;
     upper = 2.0;
 
-    lambda = ptGoldenSectionSearch(x, lower, upper, method);
+    lambda = ptBrentSearch(x, lower, upper, method);
 }
 
 # Compute negative log likelihood; lower lambda score is better
@@ -148,53 +148,143 @@ ptNegLogLikelihood = function(
     }
 }
 
-# Temporarily use golden section search for best lambdas; replace with Brent later
-ptGoldenSectionSearch = function(
+# Minimize the negative log likelihood with bounded Brent optimization
+ptBrentSearch = function(
     Matrix[Double] x,
     Double lower,
     Double upper,
     String method)
   return (Double lambdaOptimal)
 {
-  # Golden ratio, tolerance, and max attempts
-  goldenRatio = 0.6180339887498949;
-  tolerance = 1e-6;
-  maxIterations = 100;
+  # Brent combines inverse parabolic interpolation with a golden-section fallback
+  goldenMean = 0.3819660112501051;
+  sqrtEpsilon = sqrt(2.2e-16);
+  tolerance = 1.48e-8;
+  maxIterations = 500;
 
   a = lower;
   b = upper;
 
-  c = b - goldenRatio * (b - a);
-  d = a + goldenRatio * (b - a);
+  xf = a + goldenMean * (b - a);
+  nfc = xf;
+  fulc = xf;
+  fx = ptNegLogLikelihood(x, xf, method);
+  fnfc = fx;
+  ffulc = fx;
 
-  fc = ptNegLogLikelihood(x, c, method);
-  fd = ptNegLogLikelihood(x, d, method);
+  rat = 0.0;
+  e = 0.0;
+  midpoint = 0.5 * (a + b);
+  tol1 = sqrtEpsilon * abs(xf) + tolerance / 3.0;
+  tol2 = 2.0 * tol1;
 
   iteration = 0;
-  while (((b - a) > tolerance) & (iteration < maxIterations)) {
+  while ((abs(xf - midpoint) > (tol2 - 0.5 * (b - a))) &
+      (iteration < maxIterations)) {
+    goldenStep = TRUE;
 
-    if (fc < fd) {
-      b = d;
-      d = c;
-      fd = fc;
-      c = b - goldenRatio * (b - a);
-      fc = ptNegLogLikelihood(x, c, method);
+    # Try an inverse parabolic step when the three tracked points support it
+    if (abs(e) > tol1) {
+      goldenStep = FALSE;
+      r = (xf - nfc) * (fx - ffulc);
+      q = (xf - fulc) * (fx - fnfc);
+      p = (xf - fulc) * q - (xf - nfc) * r;
+      q = 2.0 * (q - r);
+
+      if (q > 0.0) {
+        p = -p;
+      }
+
+      q = abs(q);
+      previousE = e;
+      e = rat;
+
+      # Reject interpolation outside the bracket or larger than the previous step
+      if ((q > 0.0) & (abs(p) < abs(0.5 * q * previousE)) &
+          (p > q * (a - xf)) & (p < q * (b - xf))) {
+        rat = p / q;
+        candidate = xf + rat;
+
+        if (((candidate - a) < tol2) | ((b - candidate) < tol2)) {
+          if (midpoint >= xf) {
+            rat = tol1;
+          }
+          else {
+            rat = -tol1;
+          }
+        }
+      }
+      else {
+        goldenStep = TRUE;
+      }
+    }
+
+    # Fall back to a golden-section step when interpolation is unreliable
+    if (goldenStep) {
+      if (xf >= midpoint) {
+        e = a - xf;
+      }
+      else {
+        e = b - xf;
+      }
+      rat = goldenMean * e;
+    }
+
+    if (rat >= 0.0) {
+      candidate = xf + max(abs(rat), tol1);
     }
     else {
-      a = c;
-      c = d;
-      fc = fd;
-      d = a + goldenRatio * (b - a);
-      fd = ptNegLogLikelihood(x, d, method);
+      candidate = xf - max(abs(rat), tol1);
     }
 
+    fCandidate = ptNegLogLikelihood(x, candidate, method);
+
+    # Update the bracket and retain the three best distinct points
+    if (fCandidate <= fx) {
+      if (candidate >= xf) {
+        a = xf;
+      }
+      else {
+        b = xf;
+      }
+
+      fulc = nfc;
+      ffulc = fnfc;
+      nfc = xf;
+      fnfc = fx;
+      xf = candidate;
+      fx = fCandidate;
+    }
+    else {
+      if (candidate < xf) {
+        a = candidate;
+      }
+      else {
+        b = candidate;
+      }
+
+      if ((fCandidate <= fnfc) | (nfc == xf)) {
+        fulc = nfc;
+        ffulc = fnfc;
+        nfc = candidate;
+        fnfc = fCandidate;
+      }
+      else if ((fCandidate <= ffulc) | (fulc == xf) | (fulc == nfc)) {
+        fulc = candidate;
+        ffulc = fCandidate;
+      }
+    }
+
+    midpoint = 0.5 * (a + b);
+    tol1 = sqrtEpsilon * abs(xf) + tolerance / 3.0;
+    tol2 = 2.0 * tol1;
     iteration = iteration + 1;
   }
 
-  # Keep the best one after shrinking
-  if (fc < fd) {
-    lambdaOptimal = c; # Whoever has the lower score wins
-  } else {
-    lambdaOptimal = d;
+  if ((iteration >= maxIterations) &
+      (abs(xf - midpoint) > (tol2 - 0.5 * (b - a)))) {
+    stop("powerTransform: Brent optimization failed to converge")
   }
+
+  lambdaOptimal = xf;
 }

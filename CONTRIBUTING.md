@@ -42,6 +42,29 @@ let's make sure the changes are consistent with the guidelines and coding style.
     transferred to the SystemDS team. The benefit of the contribution is to be compared
     against the cost of maintaining the feature.
 
+## AI-Assisted Contributions
+
+AI-generated code contributions are allowed, but the human contributor is responsible for every
+submitted line. Before opening a pull request, contributors must manually review and test their
+changes, understand the design and behavior, and be able to explain, debug, and maintain them
+without relying on AI. AI use must be disclosed in the pull request and commit message if it
+meaningfully contributed to the submitted work:
+
+```text
+Assisted-by: AI
+```
+
+The use of AI for inline autocomplete does not need to be disclosed. See the
+[disclosure examples](AGENTS.md#disclosure) for additional guidance.
+
+Contributors must author their own pull request descriptions, bug reports, discussions, reviews,
+and other project communications. Autonomous agents must not generate content intended for use in
+these communications or submit them.
+
+Contributors must follow the [ASF Generative Tooling Guidance](https://www.apache.org/legal/generative-tooling.html).
+Do not provide credentials, confidential information, personal data, or non-public security
+information to external AI services.
+
 ## Code Style
 
 We suggest applying a code formatter to the written code. Generally, this is done automatically.

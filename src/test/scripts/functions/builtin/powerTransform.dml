@@ -20,14 +20,29 @@
 #-------------------------------------------------------------
 
 X = read($1);
-lambdas = read($2);
-means = read($3);
-scales = read($4);
 
-if (!as.boolean($7)) {
-    means = matrix(0.0, rows=0, cols=0);
-    scales = matrix(0.0, rows=0, cols=0);
+if ($5 == "default") {
+    [Y, lambdas, means, scales] = powerTransform(X=X);
+    standardize = TRUE;
+}
+else {
+    standardize = as.boolean($6);
+    [Y, lambdas, means, scales] = powerTransform(
+        X=X,
+        method=$5,
+        standardize=standardize
+    );
 }
 
-Y = powerTransformApply(X, lambdas, means, scales, $6);
-write(Y, $5);
+if (standardize) {
+    state = rbind(means, scales);
+}
+else {
+    assert(nrow(means) == 0 & ncol(means) == 0);
+    assert(nrow(scales) == 0 & ncol(scales) == 0);
+    state = matrix(0.0, rows=2, cols=ncol(X));
+}
+
+write(Y, $2);
+write(lambdas, $3);
+write(state, $4);

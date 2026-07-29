@@ -23,11 +23,10 @@ library("Matrix")
 
 args <- commandArgs(TRUE)
 X <- as.matrix(readMM(paste(args[1], "X.mtx", sep = "")))
-lambdas <- as.matrix(readMM(paste(args[1], "L.mtx", sep = "")))
 method <- args[3]
 standardize <- as.logical(args[4])
 
-yeoJohnsonApply <- function(x, lambda) {
+yeoJohnson <- function(x, lambda) {
     y <- numeric(length(x))
     nonnegative <- x >= 0
 
@@ -47,7 +46,7 @@ yeoJohnsonApply <- function(x, lambda) {
     y
 }
 
-boxCoxApply <- function(x, lambda) {
+boxCox <- function(x, lambda) {
     if (abs(lambda) < 1e-12) {
         log(x)
     } else {
@@ -55,21 +54,57 @@ boxCoxApply <- function(x, lambda) {
     }
 }
 
+transformColumn <- function(x, lambda, method) {
+    if (method == "box-cox") boxCox(x, lambda) else yeoJohnson(x, lambda)
+}
+
+objective <- function(lambda, x, method) {
+    y <- transformColumn(x, lambda, method)
+    n <- length(x)
+    variance <- sum((y - mean(y))^2) / n
+
+    if (variance <= 0) {
+        return(1e300)
+    }
+
+    logLikelihood <- -n / 2 * log(variance)
+    if (method == "box-cox") {
+        jacobian <- (lambda - 1) * sum(log(x))
+    } else {
+        jacobian <- (lambda - 1) * sum(sign(x) * log(abs(x) + 1))
+    }
+
+    -(logLikelihood + jacobian)
+}
+
+lambdas <- matrix(1.0, nrow = 1, ncol = ncol(X))
 Y <- matrix(0.0, nrow = nrow(X), ncol = ncol(X))
 
 for (j in seq_len(ncol(X))) {
-    lambda <- as.numeric(lambdas[1, j])
-    if (method == "box-cox") {
-        Y[, j] <- boxCoxApply(X[, j], lambda)
-    } else {
-        Y[, j] <- yeoJohnsonApply(X[, j], lambda)
+    x <- X[, j]
+    if (max(x) != min(x)) {
+        lambdas[1, j] <- optimize(
+            objective,
+            interval = c(-2, 2),
+            x = x,
+            method = method,
+            tol = 1.48e-8
+        )$minimum
     }
+    Y[, j] <- transformColumn(x, lambdas[1, j], method)
 }
 
 if (standardize) {
-    means <- as.matrix(readMM(paste(args[1], "M.mtx", sep = "")))
-    scales <- as.matrix(readMM(paste(args[1], "S.mtx", sep = "")))
-    Y <- sweep(sweep(Y, 2, means), 2, scales, "/")
+    means <- colMeans(Y)
+    centered <- sweep(Y, 2, means)
+    scales <- sqrt(colSums(centered^2) / nrow(Y))
+    scales[scales == 0 | is.nan(scales)] <- 1
+    Y <- sweep(centered, 2, scales, "/")
+    state <- rbind(means, scales)
+} else {
+    state <- matrix(0.0, nrow = 2, ncol = ncol(X))
 }
 
 writeMM(as(Y, "CsparseMatrix"), paste(args[2], "Y", sep = ""))
+writeMM(as(lambdas, "CsparseMatrix"), paste(args[2], "L", sep = ""))
+writeMM(as(state, "CsparseMatrix"), paste(args[2], "S", sep = ""))

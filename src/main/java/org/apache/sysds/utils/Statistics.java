@@ -233,6 +233,9 @@ public class Statistics
 	private static final LongAdder oocEvictionWriteCalls = new LongAdder();
 	private static final LongAdder oocEvictionWriteTimeNanos = new LongAdder();
 	private static final LongAdder oocEvictionWriteBytesSize = new LongAdder();
+	private static final LongAdder oocMemoryReclaimRuns = new LongAdder();
+	private static final LongAdder oocMemoryReclaimTime = new LongAdder();
+	private static final LongAdder oocMemoryReclaimBytes = new LongAdder();
 	private static final AtomicLong oocStatsStartTime = new AtomicLong(System.nanoTime());
 
 	public static long getNoOfExecutedSPInst() {
@@ -362,6 +365,9 @@ public class Statistics
 		oocEvictionWriteCalls.reset();
 		oocEvictionWriteTimeNanos.reset();
 		oocEvictionWriteBytesSize.reset();
+		oocMemoryReclaimRuns.reset();
+		oocMemoryReclaimTime.reset();
+		oocMemoryReclaimBytes.reset();
 		oocStatsStartTime.set(System.nanoTime());
 	}
 
@@ -481,6 +487,18 @@ public class Statistics
 		oocEvictionWriteBytesSize.add(bytes);
 	}
 
+	public static void incrementOOCMemoryReclaimRun() {
+		oocMemoryReclaimRuns.increment();
+	}
+
+	public static void accumulateOOCMemoryReclaimTime(long nanos) {
+		oocMemoryReclaimTime.add(nanos);
+	}
+
+	public static void accumulateOOCMemoryReclaimBytes(long bytes) {
+		oocMemoryReclaimBytes.add(bytes);
+	}
+
 	public static String displayOOCEvictionStats() {
 		long elapsedNanos = Math.max(1, System.nanoTime() - oocStatsStartTime.get());
 		double elapsedSeconds = elapsedNanos / 1e9;
@@ -499,6 +517,9 @@ public class Statistics
 			oocLoadFromDiskCalls.longValue(), oocLoadFromDiskTimeNanos.longValue() / 1e9, oocLoadFromDiskBytesSize.longValue() / 1e9));
 		sb.append(String.format(Locale.US, "  evict writes:\t\t%d (time %.3f sec, %.3f GB)\n",
 			oocEvictionWriteCalls.longValue(), oocEvictionWriteTimeNanos.longValue() / 1e9, oocEvictionWriteBytesSize.longValue() / 1e9));
+		sb.append(String.format(Locale.US, "  reclaim runs:\t\t%d (time %.3f sec, %.3f GB)\n",
+			oocMemoryReclaimRuns.longValue(), oocMemoryReclaimTime.longValue() / 1e9,
+			oocMemoryReclaimBytes.longValue() / 1e9));
 		return sb.toString();
 	}
 	
@@ -540,15 +561,15 @@ public class Statistics
 	}
 
 	public static void resetJITCompileTime(){
-		jitCompileTime = -1 * getJITCompileTime();
+		jitCompileTime = -1 * getCurrentJITCompileTime();
 	}
 	
 	public static void resetJVMgcTime(){
-		jvmGCTime = -1 * getJVMgcTime();
+		jvmGCTime = -1 * getCurrentJVMgcTime();
 	}
 	
 	public static void resetJVMgcCount(){
-		jvmGCTime = -1 * getJVMgcCount();
+		jvmGCCount = -1 * getCurrentJVMgcCount();
 	}
 
 	public static void resetCPHeavyHitters(){
@@ -1117,38 +1138,53 @@ public class Statistics
 	 * @return JIT compile time
 	 */
 	public static long getJITCompileTime(){
-		long ret = -1; //unsupported
+		long ret = getCurrentJITCompileTime();
+		if(ret >= 0)
+			ret += jitCompileTime; // add from remote processes
+		return ret;
+	}
+
+	private static long getCurrentJITCompileTime() {
+		long ret = -1; // unsupported
 		CompilationMXBean cmx = ManagementFactory.getCompilationMXBean();
-		if( cmx.isCompilationTimeMonitoringSupported() ) {
+		if(cmx.isCompilationTimeMonitoringSupported())
 			ret = cmx.getTotalCompilationTime();
-			ret += jitCompileTime; //add from remote processes
-		}
 		return ret;
 	}
 	
 	public static long getJVMgcTime(){
-		long ret = 0; 
+		long ret = getCurrentJVMgcTime();
+		if(ret > 0)
+			ret += jvmGCTime;
+
+		return ret;
+	}
+
+	private static long getCurrentJVMgcTime() {
+		long ret = 0;
 		
 		List<GarbageCollectorMXBean> gcxs = ManagementFactory.getGarbageCollectorMXBeans();
 		
 		for( GarbageCollectorMXBean gcx : gcxs )
 			ret += gcx.getCollectionTime();
+		return ret;
+	}
+
+	public static long getJVMgcCount() {
+		long ret = getCurrentJVMgcCount();
 		if( ret>0 )
-			ret += jvmGCTime;
+			ret += jvmGCCount;
 		
 		return ret;
 	}
-	
-	public static long getJVMgcCount(){
-		long ret = 0; 
+
+	private static long getCurrentJVMgcCount() {
+		long ret = 0;
 		
 		List<GarbageCollectorMXBean> gcxs = ManagementFactory.getGarbageCollectorMXBeans();
 		
 		for( GarbageCollectorMXBean gcx : gcxs )
 			ret += gcx.getCollectionCount();
-		if( ret>0 )
-			ret += jvmGCCount;
-		
 		return ret;
 	}
 

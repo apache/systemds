@@ -408,7 +408,6 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>${maven-surefire-plugin.version}</version>
 				<configuration>
-					<reportFormat>plain</reportFormat>
 					<skipTests>${maven.test.skip}</skipTests>
 					<parallel>${test-parallel}</parallel>
 					<threadCount>${test-threadCount}</threadCount>

@@ -130,6 +130,7 @@ public class FrameColNamesPropagationTest extends AutomatedTestBase {
 		runPropagationLeftIndexingTest(_matrixDim, ExecType.SPARK);
 	}
 
+
 	private String[] genColnames(int n, String prefix) {
 		String[] colName = new String[n];
 		for (int i = 0; i < n; i++) {
@@ -255,10 +256,6 @@ public class FrameColNamesPropagationTest extends AutomatedTestBase {
 					String.valueOf(matrixDim),
 					output("B")};
 
-			FrameWriter writer = FrameWriterFactory.createFrameWriter(FileFormat.CSV,
-					new FileFormatPropertiesCSV(true, ",", false));
-
-
 			writeInputFrame("X1", matrixDim, matrixDim, "A", 14123);
 
 			runTest(true, false, null, -1);
@@ -309,9 +306,8 @@ public class FrameColNamesPropagationTest extends AutomatedTestBase {
 
 			FrameBlock out = readDMLFrameFromHDFS("B", FileFormat.BINARY);
 
-			String[] expected = Arrays.copyOfRange(colNames, 1, colNames.length - 1);
+			String[] expected = colNames;
 
-			// expected are the sliced column names
 			for (int i = 0; i < expected.length; i++) {
 				Assert.assertEquals(
 						"Wrong colName at pos:" + i,

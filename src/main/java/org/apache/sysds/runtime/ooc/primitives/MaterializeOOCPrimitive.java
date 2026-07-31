@@ -23,7 +23,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.ToIntFunction;
 
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.ooc.CachingStream;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.ooc.OOCStreamable;
@@ -128,11 +127,6 @@ public final class MaterializeOOCPrimitive extends OOCPrimitive {
 			fail(failure);
 			finish();
 		}
-	}
-
-	private void fail(Throwable error) {
-		if(getContext() != null)
-			getContext().failAll(DMLRuntimeException.of(error));
 	}
 
 	private void finish() {

@@ -65,6 +65,38 @@ public class OOCInstructionUtilsTest {
 	}
 
 	@Test
+	public void testSubmitCloseableOOCTasks() throws Exception {
+		SubscribableTaskQueue<OwnedTask> source = new SubscribableTaskQueue<>();
+		AtomicInteger processed = new AtomicInteger();
+		AtomicInteger closed = new AtomicInteger();
+		CompletableFuture<Void> completion = OOCInstructionUtils.submitCloseableOOCTasks(source,
+			(OwnedTask work) -> processed.addAndGet(work._value), new StreamContext().addOutStream());
+
+		source.enqueue(new OwnedTask(1, closed));
+		source.enqueue(new OwnedTask(2, closed));
+		source.closeInput();
+		completion.get(10, TimeUnit.SECONDS);
+
+		Assert.assertEquals(3, processed.get());
+		Assert.assertEquals(2, closed.get());
+	}
+
+	private static final class OwnedTask implements AutoCloseable {
+		private final int _value;
+		private final AtomicInteger _closed;
+
+		private OwnedTask(int value, AtomicInteger closed) {
+			_value = value;
+			_closed = closed;
+		}
+
+		@Override
+		public void close() {
+			_closed.incrementAndGet();
+		}
+	}
+
+	@Test
 	public void testSubmitTasksWaitsForAllStreams() throws Exception {
 		SubscribableTaskQueue<Integer> first = new SubscribableTaskQueue<>();
 		SubscribableTaskQueue<Integer> second = new SubscribableTaskQueue<>();

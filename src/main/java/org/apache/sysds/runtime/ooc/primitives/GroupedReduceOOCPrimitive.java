@@ -49,7 +49,6 @@ public final class GroupedReduceOOCPrimitive extends OOCPrimitive {
 	private final OOCStreamable<IndexedMatrixValue> _output;
 	private final BiFunction<MatrixBlock, MatrixBlock, MatrixBlock> _merge;
 	private final AtomicBoolean _cleaned;
-	private final AtomicBoolean _failed;
 	private final AtomicBoolean _sourceComplete;
 	private final AtomicInteger _active;
 	private final AtomicInteger _finalizedGroups;
@@ -66,7 +65,6 @@ public final class GroupedReduceOOCPrimitive extends OOCPrimitive {
 		_output = output;
 		_merge = merge;
 		_cleaned = new AtomicBoolean();
-		_failed = new AtomicBoolean();
 		_sourceComplete = new AtomicBoolean();
 		_active = new AtomicInteger(1);
 		_finalizedGroups = new AtomicInteger();
@@ -100,7 +98,7 @@ public final class GroupedReduceOOCPrimitive extends OOCPrimitive {
 		getContext().addInStream(input).addOutStream(_outputStream, _ready);
 		_table = new StateTable<>(OOCCacheManager.getGlobalCache(), CachingStream._streamSeq.getNextID());
 
-		OOCInstructionUtils.submitOOCTasks(_ready, callback -> process(callback.get()), getContext())
+		OOCInstructionUtils.submitCloseableOOCTasks(_ready, this::process, getContext())
 			.whenComplete((ignored, error) -> {
 				try {
 					_outputStream.closeInput();
@@ -222,7 +220,6 @@ public final class GroupedReduceOOCPrimitive extends OOCPrimitive {
 		catch(Throwable failure) {
 			if(merged != null)
 				merged.release();
-			work.close();
 			budget.close();
 			fail(failure);
 			completeOne();
@@ -276,7 +273,7 @@ public final class GroupedReduceOOCPrimitive extends OOCPrimitive {
 		int remaining = _active.decrementAndGet();
 		if(remaining != 0)
 			return;
-		if(!_failed.get() && _finalizedGroups.get() != _numGroups)
+		if(!hasFailed() && _finalizedGroups.get() != _numGroups)
 			fail(new DMLRuntimeException(
 				"Grouped reduction completed " + _finalizedGroups.get() + " of " + _numGroups + " row groups."));
 		try {
@@ -285,14 +282,6 @@ public final class GroupedReduceOOCPrimitive extends OOCPrimitive {
 		catch(IllegalStateException ignored) {
 			// Failure propagation may already have closed the ready stream.
 		}
-	}
-
-	private void fail(Throwable error) {
-		if(!_failed.compareAndSet(false, true))
-			return;
-		DMLRuntimeException failure = DMLRuntimeException.of(error);
-		_outputStream.propagateFailure(failure);
-		getContext().failAll(failure);
 	}
 
 	private void cleanup() {

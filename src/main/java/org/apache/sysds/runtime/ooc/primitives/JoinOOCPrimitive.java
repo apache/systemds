@@ -19,7 +19,8 @@
 
 package org.apache.sysds.runtime.ooc.primitives;
 
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -44,6 +45,9 @@ public class JoinOOCPrimitive extends OOCPrimitive {
 	private final OOCStreamable<IndexedMatrixValue> _right;
 	private final OOCStreamable<IndexedMatrixValue> _output;
 	private final BiFunction<MatrixBlock, MatrixBlock, MatrixBlock> _operation;
+	private final AtomicInteger _pending = new AtomicInteger(1);
+	private final AtomicInteger _unmatched = new AtomicInteger();
+	private final CompletableFuture<Void> _pendingCompletion = new CompletableFuture<>();
 	private StateTable<IndexedMatrixValue> _table;
 
 	public JoinOOCPrimitive(OOCStreamable<IndexedMatrixValue> left, OOCStreamable<IndexedMatrixValue> right,
@@ -87,16 +91,13 @@ public class JoinOOCPrimitive extends OOCPrimitive {
 		long taskBytes = outputBytes + 2 * inputBytes;
 
 		getContext().addOutStream(output);
-		OOCInstructionUtils.submitOOCTasks(matches, callback -> {
-			try(JoinWork work = callback.get()) {
-				IndexedMatrixValue mleft = work._left.get();
-				IndexedMatrixValue mright = work._right.get();
-				OOCUtils.enqueueExact(output,
-					new IndexedMatrixValue(mleft.getIndexes(),
-						_operation.apply((MatrixBlock) mleft.getValue(), (MatrixBlock) mright.getValue())),
-					work._budget);
-			}
-		}, callback -> true, (index, callback) -> callback.get().close(), getContext()).thenRun(() -> {
+		CompletableFuture<Void> processing = OOCInstructionUtils.submitCloseableOOCTasks(matches, (JoinWork work) -> {
+			IndexedMatrixValue mleft = work._left.get();
+			IndexedMatrixValue mright = work._right.get();
+			OOCUtils.enqueueExact(output, new IndexedMatrixValue(mleft.getIndexes(),
+				_operation.apply((MatrixBlock) mleft.getValue(), (MatrixBlock) mright.getValue())), work._budget);
+		}, getContext());
+		CompletableFuture.allOf(processing, _pendingCompletion).thenRun(() -> {
 			try {
 				_table.close();
 				onComplete();
@@ -113,7 +114,6 @@ public class JoinOOCPrimitive extends OOCPrimitive {
 	private void drive(OOCStream<IndexedMatrixValue> leftInput, OOCStream<IndexedMatrixValue> rightInput,
 		OOCStream<JoinWork> matches, long taskBytes) {
 		long cols = _right.getDataCharacteristics().getNumColBlocks();
-		int unmatched = 0;
 		try {
 			while(true) {
 				OOCStream.QueueCallback<IndexedMatrixValue> left = leftInput.dequeueCB();
@@ -129,23 +129,26 @@ public class JoinOOCPrimitive extends OOCPrimitive {
 						throw new DMLRuntimeException("Join inputs contain a different number of blocks");
 					break;
 				}
-				unmatched += accept(left, true, cols, taskBytes, matches);
-				unmatched += accept(right, false, cols, taskBytes, matches);
+				accept(left, true, cols, taskBytes, matches);
+				accept(right, false, cols, taskBytes, matches);
 			}
-			if(unmatched != 0)
-				throw new DMLRuntimeException("Join inputs contain " + unmatched + " unmatched blocks");
+		}
+		catch(Throwable failure) {
+			fail(failure);
+			throw DMLRuntimeException.of(failure);
 		}
 		finally {
-			matches.closeInput();
+			completePending(matches);
 		}
 	}
 
-	private int accept(OOCStream.QueueCallback<IndexedMatrixValue> callback, boolean left, long cols, long taskBytes,
+	private void accept(OOCStream.QueueCallback<IndexedMatrixValue> callback, boolean left, long cols, long taskBytes,
 		OOCStream<JoinWork> matches) {
 		if(callback == null)
-			return 0;
+			return;
 		OOCStream.QueueCallback<IndexedMatrixValue> owned = null;
 		ReservationBudget budget = null;
+		boolean pending = false;
 		try {
 			owned = callback.keepOpen();
 			callback.close();
@@ -155,25 +158,18 @@ public class JoinOOCPrimitive extends OOCPrimitive {
 			long row = value.getIndexes().getRowIndex() - 1;
 			long col = value.getIndexes().getColumnIndex() - 1;
 			int slot = Math.toIntExact(row * cols + col);
+			_pending.incrementAndGet();
+			pending = true;
 			OOCFuture<StateTableUtils.Match> future = StateTableUtils.putOrTake(_table, slot, owned, budget);
 			owned = null;
-			StateTableUtils.Match match = await(future);
-			if(match == null)
-				return 1;
-			JoinWork work = left ? new JoinWork(match.left(), match.right(), budget) : new JoinWork(match.right(),
-				match.left(), budget);
+			ReservationBudget pendingBudget = budget;
 			budget = null;
-			try {
-				matches.enqueue(work);
-				work = null;
-			}
-			finally {
-				if(work != null)
-					work.close();
-			}
-			return -1;
+			future.whenComplete((match, error) -> matchReady(match, left, pendingBudget, error, matches));
+			pending = false;
 		}
 		finally {
+			if(pending)
+				completePending(matches);
 			if(callback != null)
 				callback.close();
 			if(owned != null)
@@ -183,16 +179,57 @@ public class JoinOOCPrimitive extends OOCPrimitive {
 		}
 	}
 
-	private static StateTableUtils.Match await(OOCFuture<StateTableUtils.Match> future) {
+	private void matchReady(StateTableUtils.Match match, boolean left, ReservationBudget budget, Throwable error,
+		OOCStream<JoinWork> matches) {
+		JoinWork work = null;
 		try {
-			return future.get();
+			if(error != null)
+				throw DMLRuntimeException.of(error);
+			if(match == null) {
+				_unmatched.incrementAndGet();
+				return;
+			}
+			_unmatched.decrementAndGet();
+			work = left ? new JoinWork(match.left(), match.right(), budget) : new JoinWork(match.right(), match.left(),
+				budget);
+			match = null;
+			budget = null;
+			matches.enqueue(work);
+			work = null;
 		}
-		catch(InterruptedException error) {
-			Thread.currentThread().interrupt();
-			throw new DMLRuntimeException(error);
+		catch(Throwable failure) {
+			fail(failure);
 		}
-		catch(ExecutionException error) {
-			throw DMLRuntimeException.of(error.getCause());
+		finally {
+			if(work != null)
+				work.close();
+			if(match != null) {
+				match.left().close();
+				match.right().close();
+			}
+			if(budget != null)
+				budget.close();
+			completePending(matches);
+		}
+	}
+
+	private void completePending(OOCStream<JoinWork> matches) {
+		if(_pending.decrementAndGet() != 0)
+			return;
+		try {
+			int unmatched = _unmatched.get();
+			if(unmatched != 0)
+				fail(new DMLRuntimeException("Join inputs contain " + unmatched + " unmatched blocks"));
+			else {
+				try {
+					matches.closeInput();
+				}
+				catch(Exception ignored) {
+				}
+			}
+		}
+		finally {
+			_pendingCompletion.complete(null);
 		}
 	}
 

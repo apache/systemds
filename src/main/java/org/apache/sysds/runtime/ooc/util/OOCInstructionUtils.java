@@ -119,6 +119,25 @@ public final class OOCInstructionUtils {
 		return submitOOCTasks(List.of(queue), (i, callback) -> consumer.accept(callback), null, null, context);
 	}
 
+	public static <T extends AutoCloseable> CompletableFuture<Void> submitCloseableOOCTasks(OOCStream<T> queue,
+		Consumer<T> consumer, StreamContext context) {
+		return submitOOCTasks(List.of(queue), (index, callback) -> {
+			try(T value = callback.get()) {
+				consumer.accept(value);
+			}
+			catch(Exception error) {
+				throw DMLRuntimeException.of(error);
+			}
+		}, null, (index, callback) -> {
+			try {
+				callback.get().close();
+			}
+			catch(Exception error) {
+				throw DMLRuntimeException.of(error);
+			}
+		}, context);
+	}
+
 	public static CompletableFuture<Void> submitAdmittedOOCTasks(OOCStream<IndexedMatrixValue> in,
 		OOCStream<IndexedMatrixValue> out, Function<IndexedMatrixValue, IndexedMatrixValue> operation,
 		MemoryAllowance allowance, StreamContext context) {

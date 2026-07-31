@@ -47,10 +47,10 @@ preceding conversation.
 
 ## Project Interactions
 
-Agents may perform local analysis, including private review notes, but must **under no circumstances**:
+Agents may perform local analysis, including, for instance, private review notes. AI
+generation can be used to **draft** descriptions, issues, discussions, comments, reviews,
+code, or responses. Agents must **under no circumstances**:
 
-- Generate text intended for use in pull request descriptions, issues, discussions, comments,
-  reviews, or responses.
 - Open pull requests.
 - Open issues.
 - Post project communications.

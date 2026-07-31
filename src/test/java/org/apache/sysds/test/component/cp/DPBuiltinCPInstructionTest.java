@@ -24,7 +24,11 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysds.runtime.instructions.cp.DPBuiltinCPInstruction;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.privacy.dp.DPBudgetAccountant;
+
+import java.lang.reflect.Method;
 
 import org.junit.Test;
 import org.junit.Assert;
@@ -40,7 +44,6 @@ import org.junit.Assert;
  * (Kolmogorov-Smirnov style sanity checks).
  * - DML integration tests - run complete DML scripts and verify
  * end-to-end correctness via the existing AutomatedTestBase machinery.
- *
  * The DML integration tests require a built SystemDS jar and are separated into a companion class
  * {@link org.apache.sysds.test.functions.privacy.dp.DPBuiltinDMLTest}.
  */
@@ -53,51 +56,43 @@ public class DPBuiltinCPInstructionTest {
 	// =======================================================================
 
 	@Test
-	public void testAccountantInitialisesAtZeroCost() {
+	public void testAccountantInitialisesAtZeroCostThenAcceptsSingleReleases() {
 		DPBudgetAccountant acc = new DPBudgetAccountant(1.0, 1e-5);
 		// No releases yet: total cost should be a large negative number
 		// (conversion formula gives -inf when rdpSum = 0 for all orders),
 		// so remainingBudget() should exceed the budget.
 		Assert.assertTrue("No releases should leave budget intact", acc.remainingBudget() > 0);
 		Assert.assertEquals(0, acc.releaseCount());
-	}
 
-	@Test
-	public void testSingleLaplaceReleaseDoesNotExceedBudget() {
-		// epsilon=0.5, budget=1.0: one release should consume < budget.
-		DPBudgetAccountant acc = new DPBudgetAccountant(1.0, 1e-5);
+		// epsilon=0.5, budget=1.0: one Laplace release should consume < budget.
 		acc.compose(0.5, 0.0, 1.0); // Laplace, sensitivity=1
 		Assert.assertEquals(1, acc.releaseCount());
 		Assert.assertTrue("Single release within budget", acc.totalEpsilonSpent() <= 1.0);
-	}
 
-	@Test
-	public void testSingleGaussianReleaseDoesNotExceedBudget() {
-		DPBudgetAccountant acc = new DPBudgetAccountant(1.0, 1e-5);
-		acc.compose(0.5, 1e-5, 1.0); // Gaussian
-		Assert.assertEquals(1, acc.releaseCount());
-		Assert.assertTrue("Single Gaussian release within budget", acc.totalEpsilonSpent() <= 1.0);
+		// Likewise, a single Gaussian release on a fresh accountant should stay within budget.
+		DPBudgetAccountant gaussianAcc = new DPBudgetAccountant(1.0, 1e-5);
+		gaussianAcc.compose(0.5, 1e-5, 1.0); // Gaussian
+		Assert.assertEquals(1, gaussianAcc.releaseCount());
+		Assert.assertTrue("Single Gaussian release within budget", gaussianAcc.totalEpsilonSpent() <= 1.0);
 	}
 
 	@Test(expected = DMLRuntimeException.class)
 	public void testBudgetExhaustionThrows() {
-		// Budget = 0.1, but we try to make 10 releases at epsilon=0.5 each.
+		// Budget = 0.5, but we try to make 10 releases at epsilon=0.1 each.
 		// After enough releases the budget must be exceeded.
-		DPBudgetAccountant acc = new DPBudgetAccountant(0.1, 1e-5);
+		DPBudgetAccountant acc = new DPBudgetAccountant(0.5, 1e-5);
+		double prevEpsilonSpent = acc.totalEpsilonSpent();
+		double prevRemainingBudget = acc.remainingBudget();
 		for(int i = 0; i < 10; i++) {
-			acc.compose(0.5, 0.0, 1.0); // will throw before the 10th
-		}
-	}
-
-	@Test
-	public void testCompositionIsMonotonicallyIncreasing() {
-		DPBudgetAccountant acc = new DPBudgetAccountant(100.0, 1e-5); // large budget
-		double prev = acc.totalEpsilonSpent();
-		for(int i = 0; i < 5; i++) {
-			acc.compose(0.3, 1e-5, 1.0);
-			double current = acc.totalEpsilonSpent();
-			Assert.assertTrue("Epsilon spent must increase with each release", current > prev);
-			prev = current;
+			acc.compose(0.1, 0.0, 1.0); // will throw before the 10th
+			double currentEpsilonSpent = acc.totalEpsilonSpent();
+			double currentRemainingBudget = acc.remainingBudget();
+			int releaseCount = acc.releaseCount();
+			Assert.assertTrue("Epsilon spent must increase with each release", currentEpsilonSpent > prevEpsilonSpent);
+			Assert.assertTrue("Remaining budget must decrease", currentRemainingBudget < prevRemainingBudget);
+			Assert.assertEquals("Release count must match", i+1, releaseCount);
+			prevEpsilonSpent = currentEpsilonSpent;
+			prevRemainingBudget = currentRemainingBudget;
 		}
 	}
 
@@ -125,18 +120,6 @@ public class DPBuiltinCPInstructionTest {
 	}
 
 	@Test
-	public void testRemainingBudgetDecreasesMonotonically() {
-		DPBudgetAccountant acc = new DPBudgetAccountant(2.0, 1e-5);
-		double prev = acc.remainingBudget();
-		for(int i = 0; i < 3; i++) {
-			acc.compose(0.2, 1e-5, 1.0);
-			double current = acc.remainingBudget();
-			Assert.assertTrue("Remaining budget must decrease", current < prev);
-			prev = current;
-		}
-	}
-
-	@Test
 	public void testHigherEpsilonCostMoreForLaplace() {
 		// For Laplace, the accountant uses basic (pure epsilon-DP) composition: cost = epsilon.
 		// Sensitivity determines noise scale but NOT the budget consumed - that is set
@@ -153,24 +136,22 @@ public class DPBuiltinCPInstructionTest {
 
 	// --- Constructor error paths ------------------------------------
 
-	@Test(expected = DMLRuntimeException.class)
-	public void testConstructorRejectsZeroEpsilonBudget() {
-		new DPBudgetAccountant(0.0, 1e-5);
+	@Test
+	public void testConstructorRejectsInvalidBudgetParameters() {
+		assertConstructorRejects(0.0, 1e-5); // zero epsilon budget
+		assertConstructorRejects(-0.5, 1e-5); // negative epsilon budget
+		assertConstructorRejects(1.0, 0.0); // delta = 0
+		assertConstructorRejects(1.0, 1.0); // delta = 1
 	}
 
-	@Test(expected = DMLRuntimeException.class)
-	public void testConstructorRejectsNegativeEpsilonBudget() {
-		new DPBudgetAccountant(-0.5, 1e-5);
-	}
-
-	@Test(expected = DMLRuntimeException.class)
-	public void testConstructorRejectsDeltaZero() {
-		new DPBudgetAccountant(1.0, 0.0);
-	}
-
-	@Test(expected = DMLRuntimeException.class)
-	public void testConstructorRejectsDeltaOne() {
-		new DPBudgetAccountant(1.0, 1.0);
+	private static void assertConstructorRejects(double epsilonBudget, double delta) {
+		try {
+			new DPBudgetAccountant(epsilonBudget, delta);
+			Assert.fail("Expected DMLRuntimeException for epsilonBudget=" + epsilonBudget + ", delta=" + delta);
+		}
+		catch(DMLRuntimeException e) {
+			// expected
+		}
 	}
 
 	// =======================================================================
@@ -244,10 +225,12 @@ public class DPBuiltinCPInstructionTest {
 
 	@Test(expected = DMLRuntimeException.class)
 	public void testGaussianBudgetExhaustionThrows() {
-		// Budget = 0.1. Each Gaussian release costs more than 0.005, so 20
+		// Budget = 0.5. Each Gaussian release costs more than 0.005, so 20
 		// releases must exceed the budget well before the loop ends.
 		DPBudgetAccountant acc = new DPBudgetAccountant(0.1, 1e-5);
 		for(int i = 0; i < 20; i++) {
+			System.out.println("totalEpsilonSpent: " + acc.totalEpsilonSpent());
+			System.out.println("remainingBudget: " + acc.remainingBudget());
 			acc.compose(0.3, 1e-5, 1.0);
 		}
 	}
@@ -326,42 +309,33 @@ public class DPBuiltinCPInstructionTest {
 	//
 
 	@Test
-	public void testLaplaceNoiseMeanNearZero() {
-		// For 10000 samples the empirical mean should be within 3*sigma/sqrt(n) of 0.
-		int n = 10_000;
-		double scale = 2.0;
-		double[] samples = sampleLaplace(n, scale);
-		double mean = mean(samples);
-		double theoreticalStdErr = scale * Math.sqrt(2.0) / Math.sqrt(n);
-		Assert.assertTrue("Laplace mean should be near 0", Math.abs(mean) < 5 * theoreticalStdErr);
-	}
-
-	@Test
-	public void testLaplaceNoiseVarianceCorrect() {
-		// Var[Laplace(0, b)] = 2b^2. Allow 10% relative error for n=10000.
+	public void testLaplaceNoiseDistribution() throws ReflectiveOperationException {
+		// For 10000 samples the empirical mean should be within 5*sigma/sqrt(n) of 0,
+		// and Var[Laplace(0, b)] = 2b^2 should match within 10% relative error.
 		int n = 10_000;
 		double scale = 1.5;
 		double[] samples = sampleLaplace(n, scale);
+
+		double mean = mean(samples);
+		double theoreticalStdErr = scale * Math.sqrt(2.0) / Math.sqrt(n);
+		Assert.assertTrue("Laplace mean should be near 0", Math.abs(mean) < 5 * theoreticalStdErr);
+
 		double variance = variance(samples);
 		double expected = 2.0 * scale * scale;
 		Assert.assertEquals("Laplace variance", expected, variance, 0.1 * expected);
 	}
 
 	@Test
-	public void testGaussianNoiseMeanNearZero() {
-		int n = 10_000;
-		double sigma = 3.0;
-		double[] samples = sampleGaussian(n, sigma);
-		double mean = mean(samples);
-		double theoreticalStdErr = sigma / Math.sqrt(n);
-		Assert.assertTrue("Gaussian mean should be near 0", Math.abs(mean) < 5 * theoreticalStdErr);
-	}
-
-	@Test
-	public void testGaussianNoiseVarianceCorrect() {
+	public void testGaussianNoiseDistribution() throws ReflectiveOperationException {
+		// Same idea as testLaplaceNoiseDistribution: check mean and variance from one sample set.
 		int n = 10_000;
 		double sigma = 2.0;
 		double[] samples = sampleGaussian(n, sigma);
+
+		double mean = mean(samples);
+		double theoreticalStdErr = sigma / Math.sqrt(n);
+		Assert.assertTrue("Gaussian mean should be near 0", Math.abs(mean) < 5 * theoreticalStdErr);
+
 		double variance = variance(samples);
 		double expected = sigma * sigma;
 		Assert.assertEquals("Gaussian variance", expected, variance, 0.1 * expected);
@@ -371,27 +345,31 @@ public class DPBuiltinCPInstructionTest {
 	// Helpers for noise distribution tests
 	// -----------------------------------------------------------------------
 
-	/** Sample n Laplace(0, scale) values using the inverse-CDF method. */
-	private static double[] sampleLaplace(int n, double scale) {
-		java.util.concurrent.ThreadLocalRandom rng = java.util.concurrent.ThreadLocalRandom.current();
-		double[] out = new double[n];
-		for(int i = 0; i < n; i++) {
-			double u = rng.nextDouble();
-			double v = u - 0.5;
-			if(v == 0.0)
-				v = 1e-15;
-			out[i] = -scale * Math.signum(v) * Math.log(1.0 - 2.0 * Math.abs(v));
-		}
-		return out;
+	/** Sample n Laplace(0, scale) values via the fillLaplaceNoise method. */
+	private static double[] sampleLaplace(int n, double scale) throws ReflectiveOperationException {
+		return sampleViaReflection("fillLaplaceNoise", n, scale);
 	}
 
-	/** Sample n N(0, sigma^2) values. */
-	private static double[] sampleGaussian(int n, double sigma) {
-		java.util.concurrent.ThreadLocalRandom rng = java.util.concurrent.ThreadLocalRandom.current();
+	/** Sample n N(0, sigma^2) values via the production fillGaussianNoise method. */
+	private static double[] sampleGaussian(int n, double sigma) throws ReflectiveOperationException {
+		return sampleViaReflection("fillGaussianNoise", n, sigma);
+	}
+
+	/**
+	 * Invokes DPBuiltinCPInstruction's private fill*Noise(MatrixBlock, double) method to fill an
+	 * n x 1 block, so the distribution tests exercise the actual noise generation code.
+	 */
+	private static double[] sampleViaReflection(String methodName, int n, double param)
+		throws ReflectiveOperationException {
+		MatrixBlock block = new MatrixBlock(n, 1, false);
+		block.allocateDenseBlock();
+		Method m = DPBuiltinCPInstruction.class.getDeclaredMethod(methodName, MatrixBlock.class, double.class);
+		m.setAccessible(true);
+		m.invoke(null, block, param);
+
 		double[] out = new double[n];
-		for(int i = 0; i < n; i++) {
-			out[i] = sigma * rng.nextGaussian();
-		}
+		for(int i = 0; i < n; i++)
+			out[i] = block.get(i, 0);
 		return out;
 	}
 

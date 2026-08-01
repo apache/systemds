@@ -22,12 +22,14 @@ package org.apache.sysds.test.component.ooc;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.instructions.ooc.CachingStream;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
+import org.apache.sysds.runtime.instructions.ooc.OOCStreamable;
 import org.apache.sysds.runtime.instructions.ooc.SubscribableTaskQueue;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -36,7 +38,11 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.ooc.cache.OOCCacheManager;
 import org.apache.sysds.runtime.ooc.planning.OOCAccessPattern;
+import org.apache.sysds.runtime.ooc.planning.OOCStoreLayout;
+import org.apache.sysds.runtime.ooc.primitives.MaterializeOOCPrimitive;
 import org.apache.sysds.runtime.ooc.primitives.OOCPrimitive;
+import org.apache.sysds.runtime.ooc.store.CountingLiveness;
+import org.apache.sysds.runtime.ooc.store.IndexedMaterializedStoreReader;
 import org.apache.sysds.runtime.ooc.stream.FilteredOOCStream;
 import org.apache.sysds.runtime.ooc.stream.StreamContext;
 import org.apache.sysds.runtime.ooc.util.OOCInstructionUtils;
@@ -64,8 +70,8 @@ public class OOCPrimitiveTest {
 		TestPrimitive source = new TestPrimitive(List.of());
 		TestPrimitive sink = new TestPrimitive(List.of(source, source));
 
-		Assert.assertEquals(List.of(source), sink.getChildren());
-		Assert.assertEquals(List.of(sink), source.getParents());
+		Assert.assertEquals(Set.of(source), sink.getChildren());
+		Assert.assertEquals(Set.of(sink), source.getParents());
 		source.inferPatterns();
 		Assert.assertEquals(OOCAccessPattern.ANY, source.getAccessPattern());
 		Assert.assertEquals(OOCAccessPattern.ANY, sink.getAccessPattern());
@@ -85,6 +91,30 @@ public class OOCPrimitiveTest {
 		sink.inferPatterns();
 		sink.requestPattern(OOCAccessPattern.COL_MAJOR);
 		Assert.assertEquals(OOCAccessPattern.ROW_MAJOR, sink.getAccessPattern());
+	}
+
+	@Test
+	public void testPlannerDoubleMaterialize() {
+		OOCCacheManager.reset();
+		try {
+			SubscribableTaskQueue<IndexedMatrixValue> source = new SubscribableTaskQueue<>();
+			source.setData(new MatrixObject(ValueType.FP64, "/dev/null",
+				new MetaDataFormat(new MatrixCharacteristics(0, 0, 1), FileFormat.BINARY)));
+			CachingStream cached = new CachingStream(source);
+			source.closeInput();
+			MaterializingTestPrimitive sink = new MaterializingTestPrimitive(cached);
+			cached.getReadStream().setSubscriber(OOCStream.QueueCallback::close);
+			cached.scheduleDeletion();
+
+			sink.start();
+
+			Assert.assertEquals(1, sink.getChildren().size());
+			Assert.assertTrue(sink.getChildPrimitiveAt(0) instanceof MaterializeOOCPrimitive);
+			Assert.assertEquals(1, sink._executions);
+		}
+		finally {
+			OOCCacheManager.reset();
+		}
 	}
 
 	@Test
@@ -154,6 +184,54 @@ public class OOCPrimitiveTest {
 			}
 		Assert.assertEquals(Map.of(1L, 111.0, 2L, 222.0), values);
 		cachedLeft.scheduleDeletion();
+	}
+
+	private static final class MaterializingTestPrimitive extends OOCPrimitive {
+		private int _executions;
+
+		private MaterializingTestPrimitive(OOCStreamable<IndexedMatrixValue> source) {
+			super(new StreamContext(), source, source);
+		}
+
+		@Override
+		public List<OOCMaterializedInputRequest> requiredMaterializedInputs() {
+			return List.of(new OOCMaterializedInputRequest(0, OOCStoreLayout.ROW_MAJOR, 1),
+				new OOCMaterializedInputRequest(1, OOCStoreLayout.ROW_MAJOR, 1));
+		}
+
+		@Override
+		protected void startExecution() {
+			getMaterializedInput(0).whenComplete((store, error) -> {
+				if(error != null)
+					return;
+				store.completion().whenComplete((ignored, completionError) -> {
+					if(completionError != null)
+						return;
+					IndexedMaterializedStoreReader<IndexedMatrixValue> first = store
+						.openIndexedReader(new CountingLiveness(0, 0));
+					IndexedMaterializedStoreReader<IndexedMatrixValue> second = store
+						.openIndexedReader(new CountingLiveness(0, 0));
+					Assert.assertTrue(store.readersSealed().isDone());
+					first.close();
+					second.close();
+					store.close();
+					store.close();
+					_executions++;
+					onComplete();
+				});
+			});
+		}
+
+		@Override
+		protected void inferPatternsInternal() {
+			_pattern = OOCAccessPattern.ANY;
+			inferParentPatterns();
+		}
+
+		@Override
+		protected void requestPatternInternal(OOCAccessPattern accessPattern) {
+			_pattern = accessPattern;
+		}
 	}
 
 	private static final class TestPrimitive extends OOCPrimitive {

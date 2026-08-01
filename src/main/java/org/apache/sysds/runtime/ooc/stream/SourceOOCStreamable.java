@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 public class SourceOOCStreamable implements OOCStreamable<IndexedMatrixValue> {
 	private final CacheableData<?> _data;
+	private OOCStream<IndexedMatrixValue> _reservedReadStream;
 
 	public SourceOOCStreamable(CacheableData<?> data) {
 		_data = data;
@@ -35,12 +36,12 @@ public class SourceOOCStreamable implements OOCStreamable<IndexedMatrixValue> {
 
 	@Override
 	public OOCStream<IndexedMatrixValue> getReadStream() {
-		return _data.getStreamHandle();
+		return _reservedReadStream != null ? _reservedReadStream : _data.getStreamHandle();
 	}
 
 	@Override
 	public OOCStream<IndexedMatrixValue> getWriteStream() {
-		return _data.getStreamHandle();
+		return _reservedReadStream != null ? _reservedReadStream : _data.getStreamHandle();
 	}
 
 	@Override
@@ -71,5 +72,11 @@ public class SourceOOCStreamable implements OOCStreamable<IndexedMatrixValue> {
 	@Override
 	public void setData(CacheableData<?> data) {
 		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public synchronized void reserveLazyHandle() {
+		if(_reservedReadStream == null)
+			_reservedReadStream = _data.getStreamHandle();
 	}
 }

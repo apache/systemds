@@ -33,7 +33,7 @@ import org.apache.sysds.runtime.ooc.store.StoreLease;
 public final class StateTableUtils {
 	public static OOCFuture<Match> putOrTake(StateTable<IndexedMatrixValue> table, int slot,
 		OOCStream.QueueCallback<IndexedMatrixValue> tile, MemoryAllowance allowance) {
-		if(tile instanceof MaterializedCallback pinned && pinned.pinnedEntry() != null)
+		if(tile instanceof MaterializedCallback<IndexedMatrixValue> pinned && pinned.pinnedEntry() != null)
 			return putReferenceOrTake(table, slot, pinned, allowance);
 		ManagedPayload<IndexedMatrixValue> payload;
 		if(tile instanceof InMemoryQueueCallback managed && managed.getManagedBytes() > 0) {
@@ -64,14 +64,15 @@ public final class StateTableUtils {
 			else if(lease == null)
 				result.complete(null);
 			else
-				result.complete(new Match(new MaterializedCallback(new StoreLease<>(payload.value(), payload::release)),
-					new MaterializedCallback(lease)));
+				result.complete(
+					new Match(new MaterializedCallback<>(StoreLease.create(payload.value(), payload::release)),
+						new MaterializedCallback<>(lease)));
 		});
 		return result;
 	}
 
 	private static OOCFuture<Match> putReferenceOrTake(StateTable<IndexedMatrixValue> table, int slot,
-		MaterializedCallback pinned, MemoryAllowance allowance) {
+		MaterializedCallback<IndexedMatrixValue> pinned, MemoryAllowance allowance) {
 		OOCFuture<Match> result = new OOCFuture<>();
 		OOCFuture<StoreLease<IndexedMatrixValue>> matched;
 		try {
@@ -91,7 +92,7 @@ public final class StateTableUtils {
 				result.complete(null);
 			}
 			else
-				result.complete(new Match(pinned, new MaterializedCallback(lease)));
+				result.complete(new Match(pinned, new MaterializedCallback<>(lease)));
 		});
 		return result;
 	}

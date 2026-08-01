@@ -79,6 +79,7 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 
 	private boolean _deletable = false;
 	private int _maxConsumptionCount = 0;
+	private int _lazyHandleReservations = 0;
 	private String _watchdogId = null;
 
 	public CachingStream(OOCStream<IndexedMatrixValue> source) {
@@ -356,7 +357,7 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 		if (_deletable)
 			return; // Deletion already scheduled
 
-		if (_cacheInProgress && _maxConsumptionCount == 0)
+		if(_cacheInProgress && _maxConsumptionCount == 0 && _lazyHandleReservations == 0)
 			System.out.println("[WARN] Scheduling deletion for caching stream with no listeners: " + this);
 
 		_deletable = true;
@@ -370,6 +371,8 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 	}
 
 	private synchronized void tryDeleteBlock(int i) {
+		if(_lazyHandleReservations > 0)
+			return;
 		int cnt = _consumptionCounts.getInt(i);
 		if (cnt > _maxConsumptionCount)
 			throw new DMLRuntimeException("Cannot have more than " + _maxConsumptionCount + " consumptions.");
@@ -583,6 +586,11 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 	}
 
 	@Override
+	public OOCStream<IndexedMatrixValue> getReservedReadStream() {
+		return new PlaybackStream(this, consumeLazyHandleReservation());
+	}
+
+	@Override
 	public OOCStream<IndexedMatrixValue> getWriteStream() {
 		return _source.getWriteStream();
 	}
@@ -719,6 +727,29 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 			throw new IllegalStateException("Cannot increment the subscriber count if flagged for deletion");
 
 		_maxConsumptionCount += count;
+	}
+
+	@Override
+	public synchronized void reserveLazyHandle() {
+		_lazyHandleReservations++;
+	}
+
+	@Override
+	public synchronized void discardHandle() {
+		if(_lazyHandleReservations <= 0)
+			return;
+		_lazyHandleReservations--;
+		if(_deletable)
+			for(int i = 0; i < _consumptionCounts.size(); i++)
+				tryDeleteBlock(i);
+	}
+
+	private synchronized boolean consumeLazyHandleReservation() {
+		if(_lazyHandleReservations <= 0)
+			return false;
+		_lazyHandleReservations--;
+		_maxConsumptionCount++;
+		return true;
 	}
 
 	/**

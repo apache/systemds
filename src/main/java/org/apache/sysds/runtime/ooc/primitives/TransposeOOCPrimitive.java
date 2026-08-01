@@ -51,7 +51,7 @@ public class TransposeOOCPrimitive extends OOCPrimitive {
 
 	@Override
 	protected void inferPatternsInternal() {
-		_pattern = (getChildren().isEmpty() ? OOCAccessPattern.ANY : getChildren().get(0).getAccessPattern())
+		_pattern = (getChildren().isEmpty() ? OOCAccessPattern.ANY : getChildren().iterator().next().getAccessPattern())
 			.transposed();
 		inferParentPatterns();
 	}
@@ -59,8 +59,8 @@ public class TransposeOOCPrimitive extends OOCPrimitive {
 	@Override
 	protected void requestPatternInternal(OOCAccessPattern accessPattern) {
 		_pattern = accessPattern;
-		if(!getChildren().isEmpty())
-			getChildren().get(0).requestPattern(accessPattern.transposed());
+		for(OOCPrimitive child : getChildren())
+			child.requestPattern(accessPattern.transposed());
 	}
 
 	@Override

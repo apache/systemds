@@ -41,20 +41,38 @@ public final class MaterializedStore<T extends SpillableObject> {
 	private final BitSet _forgotten;
 	private final AtomicInteger _published;
 	private final AtomicInteger _publishedCount;
+	private final OOCFuture<Void> _completion;
+	private final OOCFuture<Void> _readersSealedFuture;
+	private final boolean _autoSealReaders;
 
 	private volatile List<StoreReader> _readers;
 	private volatile int _completedSize;
 	private volatile boolean _complete;
 	private volatile boolean _readersSealed;
 	private volatile boolean _closed;
+	private int _pendingReaders;
+	private int _consumers;
 
 	public MaterializedStore(OOCCache cache, long streamId) {
+		this(cache, streamId, -1, 1);
+	}
+
+	public MaterializedStore(OOCCache cache, long streamId, int expectedReaders, int consumers) {
+		if(expectedReaders == 0 || expectedReaders < -1)
+			throw new IllegalArgumentException("Expected reader count must be positive or disabled.");
+		if(consumers <= 0)
+			throw new IllegalArgumentException("Materialized store requires at least one consumer.");
 		_cache = cache;
 		_streamId = streamId;
 		_registeredReaders = new ArrayList<>();
 		_forgotten = new BitSet();
 		_published = new AtomicInteger();
 		_publishedCount = new AtomicInteger();
+		_completion = new OOCFuture<>();
+		_readersSealedFuture = new OOCFuture<>();
+		_autoSealReaders = expectedReaders > 0;
+		_pendingReaders = expectedReaders;
+		_consumers = consumers;
 		_readers = Collections.emptyList();
 	}
 
@@ -74,9 +92,10 @@ public final class MaterializedStore<T extends SpillableObject> {
 		}
 		_publishedCount.incrementAndGet();
 		updatePublished(index + 1);
-		return new StoreLease<>(entry, () -> {
-			_cache.unpin(entry, allowance);
+		return StoreLease.createAsync(entry, () -> {
+			OOCCache.UnpinHandle unpin = _cache.unpin(entry, allowance);
 			tryForget(index);
+			return unpin.getCompletionFuture();
 		});
 	}
 
@@ -93,6 +112,19 @@ public final class MaterializedStore<T extends SpillableObject> {
 			throw new IllegalStateException("Incomplete publication: " + _publishedCount.get()
 				+ " published items for logical range [0, " + _completedSize + ")");
 		_complete = true;
+		_completion.complete(null);
+	}
+
+	void failMaterialization(Throwable error) {
+		_completion.completeExceptionally(error);
+	}
+
+	public OOCFuture<Void> completion() {
+		return _completion;
+	}
+
+	public OOCFuture<Void> readersSealed() {
+		return _readersSealedFuture;
 	}
 
 	public synchronized OrderedMaterializedStoreReader<T> openReader(AccessPattern pattern, MemoryAllowance allowance,
@@ -109,6 +141,7 @@ public final class MaterializedStore<T extends SpillableObject> {
 		OrderedMaterializedStoreReader<T> reader = new OrderedMaterializedStoreReader<>(_cache, _streamId, pattern,
 			allowance, Math.max(1, maxPrefetch), softOrdering, this::forgetAfterReaderClose, this::tryForget);
 		_registeredReaders.add(reader);
+		readerRegistered();
 		return reader;
 	}
 
@@ -120,6 +153,7 @@ public final class MaterializedStore<T extends SpillableObject> {
 		IndexedMaterializedStoreReader<T> reader = new IndexedMaterializedStoreReader<>(_cache, _streamId,
 			() -> _completedSize, liveness, this::forgetAfterReaderClose, this::tryForget);
 		_registeredReaders.add(reader);
+		readerRegistered();
 		return reader;
 	}
 
@@ -136,7 +170,8 @@ public final class MaterializedStore<T extends SpillableObject> {
 			else if(entry == null)
 				result.complete(null);
 			else
-				result.complete(new StoreLease<>(entry, () -> _cache.unpin(entry, allowance)));
+				result.complete(
+					StoreLease.createAsync(entry, () -> _cache.unpin(entry, allowance).getCompletionFuture()));
 		});
 		return result;
 	}
@@ -151,6 +186,16 @@ public final class MaterializedStore<T extends SpillableObject> {
 		int publishedSize = _complete ? _completedSize : _published.get();
 		for(int i = 0; i < publishedSize; i++)
 			tryForget(i);
+		_readersSealedFuture.complete(null);
+	}
+
+	private void readerRegistered() {
+		if(!_autoSealReaders)
+			return;
+		if(_pendingReaders <= 0)
+			throw new IllegalStateException("More materialized readers opened than declared.");
+		if(--_pendingReaders == 0)
+			sealReaders();
 	}
 
 	public int size() {
@@ -161,6 +206,8 @@ public final class MaterializedStore<T extends SpillableObject> {
 		List<StoreReader> localReaders;
 		synchronized(this) {
 			if(_closed)
+				return;
+			if(--_consumers > 0)
 				return;
 			_closed = true;
 			localReaders = _readersSealed ? _readers : new ArrayList<>(_registeredReaders);

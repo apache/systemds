@@ -19,32 +19,43 @@
 
 package org.apache.sysds.runtime.ooc.store;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
+
 import org.apache.sysds.runtime.ooc.cache.BlockEntry;
+import org.apache.sysds.runtime.ooc.cache.OOCFuture;
 import org.apache.sysds.runtime.ooc.cache.io.SpillableObject;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 public final class StoreLease<T extends SpillableObject> implements AutoCloseable {
-	private final Runnable _releaser;
 	private final T _value;
 	private final BlockEntry _entry;
-	private final AtomicInteger _shared;
+	private final SharedStoreLease _sharedLease;
 	private boolean _open;
 
-	public StoreLease(BlockEntry entry, Runnable releaser) {
-		this(null, entry, releaser, new AtomicInteger(1));
-	}
-
-	public StoreLease(T value, Runnable releaser) {
-		this(value, null, releaser, new AtomicInteger(1));
-	}
-
-	private StoreLease(T value, BlockEntry entry, Runnable releaser, AtomicInteger shared) {
-		_releaser = releaser;
+	private StoreLease(T value, BlockEntry entry, SharedStoreLease release) {
 		_value = value;
 		_entry = entry;
-		_shared = shared;
+		_sharedLease = release;
 		_open = true;
+	}
+
+	public static <T extends SpillableObject> StoreLease<T> create(T value, Runnable releaser) {
+		return new StoreLease<>(value, null, new SharedStoreLease(() -> {
+			releaser.run();
+			return OOCFuture.completed(null);
+		}, new AtomicInteger(1), new OOCFuture<>()));
+	}
+
+	public static <T extends SpillableObject> StoreLease<T> create(BlockEntry entry, Runnable releaser) {
+		return new StoreLease<>(null, entry, new SharedStoreLease(() -> {
+			releaser.run();
+			return OOCFuture.completed(null);
+		}, new AtomicInteger(1), new OOCFuture<>()));
+	}
+
+	public static <T extends SpillableObject> StoreLease<T> createAsync(BlockEntry entry,
+		Supplier<? extends OOCFuture<?>> releaser) {
+		return new StoreLease<>(null, entry, new SharedStoreLease(releaser, new AtomicInteger(1), new OOCFuture<>()));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -63,16 +74,48 @@ public final class StoreLease<T extends SpillableObject> implements AutoCloseabl
 	public synchronized StoreLease<T> retain() {
 		if(!_open)
 			throw new IllegalStateException("Lease is closed");
-		_shared.incrementAndGet();
-		return new StoreLease<>(_value, _entry, _releaser, _shared);
+		_sharedLease.references.incrementAndGet();
+		return new StoreLease<>(_value, _entry, _sharedLease);
+	}
+
+	public OOCFuture<Void> closeAsync() {
+		boolean release;
+		synchronized(this) {
+			if(!_open)
+				return _sharedLease.future;
+			_open = false;
+			release = _sharedLease.references.decrementAndGet() == 0;
+		}
+		if(release) {
+			OOCFuture<?> released;
+			try {
+				released = _sharedLease.releaser.get();
+			}
+			catch(Throwable error) {
+				_sharedLease.future.completeExceptionally(error);
+				return _sharedLease.future;
+			}
+			if(released == null) {
+				_sharedLease.future
+					.completeExceptionally(new NullPointerException("Asynchronous lease releaser returned null"));
+				return _sharedLease.future;
+			}
+			released.whenComplete((ignored, error) -> {
+				if(error == null)
+					_sharedLease.future.complete(null);
+				else
+					_sharedLease.future.completeExceptionally(error);
+			});
+		}
+		return _sharedLease.future;
 	}
 
 	@Override
-	public synchronized void close() {
-		if(!_open)
-			return;
-		_open = false;
-		if(_shared.decrementAndGet() == 0)
-			_releaser.run();
+	public void close() {
+		closeAsync();
+	}
+
+	private record SharedStoreLease(Supplier<? extends OOCFuture<?>> releaser, AtomicInteger references,
+		OOCFuture<Void> future) {
 	}
 }

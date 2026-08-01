@@ -63,8 +63,16 @@ public final class StateTable<T extends SpillableObject> implements AutoCloseabl
 
 	public void addEvictionPolicy(IntToLongFunction slotPolicy) {
 		_evictionPolicies.add(slotPolicy);
-		if(_evictionPolicyInstalled.compareAndSet(false, true))
+		if(_evictionPolicyInstalled.compareAndSet(false, true)) {
+			synchronized(this) {
+				for(int index = 0; index < _slots.length; index++) {
+					Slot slot = _slots[index];
+					if(slot != null && slot._putFuture == null && slot._tableOwnedKey)
+						registerGeneration(index, slot._key);
+				}
+			}
 			_cache.addEvictionPolicy(_streamId, this::scoreTableEntry);
+		}
 	}
 
 	public void put(int index, ManagedPayload<T> payload) {
@@ -169,8 +177,8 @@ public final class StateTable<T extends SpillableObject> implements AutoCloseabl
 			if(error != null)
 				result.completeExceptionally(error);
 			else
-				result.complete(
-					entry == null ? null : new StoreLease<>(entry, () -> _cache.unpin(entry, leaseAllowance)));
+				result.complete(entry == null ? null : StoreLease.createAsync(entry,
+					() -> _cache.unpin(entry, leaseAllowance).getCompletionFuture()));
 		});
 		return result;
 	}
@@ -187,7 +195,8 @@ public final class StateTable<T extends SpillableObject> implements AutoCloseabl
 			key = slot._key;
 		}
 		BlockEntry entry = _cache.pinIfLive(key.getStreamId(), key.getSequenceNumber(), leaseAllowance);
-		return entry == null ? null : new StoreLease<>(entry, () -> _cache.unpin(entry, leaseAllowance));
+		return entry == null ? null : StoreLease.createAsync(entry,
+			() -> _cache.unpin(entry, leaseAllowance).getCompletionFuture());
 	}
 
 	public void clear(int index) {
@@ -255,9 +264,8 @@ public final class StateTable<T extends SpillableObject> implements AutoCloseabl
 		synchronized(this) {
 			slot._key = key;
 			slot._tableOwnedKey = true;
-			int generation = blockIndex(key.getSequenceNumber());
-			ensureGenerationCapacity(generation);
-			_generationSlots.set(generation, index + 1);
+			if(_evictionPolicyInstalled.get())
+				registerGeneration(index, key);
 			cleared = slot._cleared;
 			putFuture = slot._putFuture;
 			slot._putFuture = null;
@@ -329,19 +337,26 @@ public final class StateTable<T extends SpillableObject> implements AutoCloseabl
 				result.completeExceptionally(completionError);
 				return;
 			}
-			result.complete(new StoreLease<>(entry, () -> _cache.unpin(entry, leaseAllowance)));
+			result.complete(
+				StoreLease.createAsync(entry, () -> _cache.unpin(entry, leaseAllowance).getCompletionFuture()));
 		});
 		return result;
 	}
 
 	private void releaseSlot(Slot slot) {
-		if(slot._tableOwnedKey) {
+		if(slot._tableOwnedKey && _evictionPolicyInstalled.get()) {
 			int generation = blockIndex(slot._key.getSequenceNumber());
 			AtomicIntegerArray slots = _generationSlots;
 			if(generation < slots.length())
 				slots.set(generation, 0);
 		}
 		_cache.dereference(slot._key);
+	}
+
+	private void registerGeneration(int index, BlockKey key) {
+		int generation = blockIndex(key.getSequenceNumber());
+		ensureGenerationCapacity(generation);
+		_generationSlots.set(generation, index + 1);
 	}
 
 	private long scoreTableEntry(long generation) {

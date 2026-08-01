@@ -50,8 +50,8 @@ public class MappingOOCPrimitive extends OOCPrimitive {
 
 	@Override
 	protected void inferPatternsInternal() {
-		OOCAccessPattern inputPattern = getChildren().isEmpty() ? OOCAccessPattern.ANY : getChildren().get(0)
-			.getAccessPattern();
+		OOCAccessPattern inputPattern = getChildren().isEmpty() ? OOCAccessPattern.ANY : getChildren().stream()
+			.findFirst().get().getAccessPattern();
 		_pattern = _pattern.preferred(inputPattern);
 		inferParentPatterns();
 	}
@@ -60,7 +60,7 @@ public class MappingOOCPrimitive extends OOCPrimitive {
 	protected void requestPatternInternal(OOCAccessPattern accessPattern) {
 		_pattern = _pattern.preferred(accessPattern);
 		if(!getChildren().isEmpty())
-			getChildren().get(0).requestPattern(accessPattern);
+			getChildren().forEach(c -> c.requestPattern(accessPattern));
 	}
 
 	@Override

@@ -56,7 +56,7 @@ public class OOCInstructionUtilsTest {
 		}, new StreamContext().addOutStream());
 
 		IndexedMatrixValue value = new IndexedMatrixValue(new MatrixIndexes(1, 1), new MatrixBlock(1, 1, 1.0));
-		source.enqueue(new MaterializedCallback<>(new StoreLease<>(value, released::incrementAndGet)));
+		source.enqueue(new MaterializedCallback<>(StoreLease.create(value, released::incrementAndGet)));
 		source.closeInput();
 		completion.get(10, TimeUnit.SECONDS);
 

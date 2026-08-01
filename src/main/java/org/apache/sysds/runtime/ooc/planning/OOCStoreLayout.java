@@ -17,44 +17,20 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.instructions.ooc;
+package org.apache.sysds.runtime.ooc.planning;
 
-import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.ooc.primitives.OOCPrimitive;
 
-public interface OOCStreamable<T> {
-	OOCStream<T> getReadStream();
+public enum OOCStoreLayout {
+	ROW_MAJOR;
 
-	OOCStream<T> getWriteStream();
-
-	boolean hasStreamCache();
-
-	CachingStream getStreamCache();
-
-	boolean isProcessed();
-
-	DataCharacteristics getDataCharacteristics();
-
-	CacheableData<?> getData();
-
-	void setData(CacheableData<?> data);
-
-	default OOCPrimitive getPrimitive() {
-		return null;
-	}
-
-	default void assignPrimitive(OOCPrimitive primitive) {
-		throw new UnsupportedOperationException("Stream does not support primitive assignment");
-	}
-
-	default OOCStream<T> getReservedReadStream() {
-		return getReadStream();
-	}
-
-	default void reserveLazyHandle() {
-	}
-
-	default void discardHandle() {
+	public int linearize(MatrixIndexes indexes, DataCharacteristics characteristics) {
+		if(characteristics == null || !characteristics.dimsKnown() || characteristics.getBlocksize() <= 0)
+			throw new IllegalArgumentException("Materialized store layout requires known dimensions and block size.");
+		long columns = characteristics.getNumColBlocks();
+		long index = Math.addExact(Math.multiplyExact(indexes.getRowIndex() - 1, columns),
+			indexes.getColumnIndex() - 1);
+		return Math.toIntExact(index);
 	}
 }

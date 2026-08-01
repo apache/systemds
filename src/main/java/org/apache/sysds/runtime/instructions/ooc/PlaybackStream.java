@@ -37,10 +37,15 @@ public class PlaybackStream implements OOCStream<IndexedMatrixValue> {
 	private QueueCallback<IndexedMatrixValue> _lastDequeue;
 
 	public PlaybackStream(CachingStream streamCache) {
+		this(streamCache, false);
+	}
+
+	public PlaybackStream(CachingStream streamCache, boolean reserved) {
 		this._streamCache = streamCache;
 		this._streamIdx = new AtomicInteger(0);
 		this._subscriberSet = new AtomicBoolean(false);
-		streamCache.incrSubscriberCount(1);
+		if(!reserved)
+			streamCache.incrSubscriberCount(1);
 	}
 
 	@Override

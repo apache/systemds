@@ -81,7 +81,7 @@ public final class IndexedMaterializedStoreReader<T extends SpillableObject> imp
 				result.complete(null);
 			}
 			else
-				result.complete(new StoreLease<>(entry, () -> release(index, entry, requestAllowance)));
+				result.complete(StoreLease.createAsync(entry, () -> release(index, entry, requestAllowance)));
 		});
 		return result;
 	}
@@ -94,13 +94,14 @@ public final class IndexedMaterializedStoreReader<T extends SpillableObject> imp
 			_liveness.unreserve(index);
 			return null;
 		}
-		return new StoreLease<>(entry, () -> release(index, entry, requestAllowance));
+		return StoreLease.createAsync(entry, () -> release(index, entry, requestAllowance));
 	}
 
-	private void release(int index, BlockEntry entry, MemoryAllowance requestAllowance) {
-		_cache.unpin(entry, requestAllowance);
+	private OOCFuture<Boolean> release(int index, BlockEntry entry, MemoryAllowance requestAllowance) {
+		OOCCache.UnpinHandle unpin = _cache.unpin(entry, requestAllowance);
 		_liveness.consumed(index);
 		_afterRelease.accept(index);
+		return unpin.getCompletionFuture();
 	}
 
 	private void reserve(int index) {

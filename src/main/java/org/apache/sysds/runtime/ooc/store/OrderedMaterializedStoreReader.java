@@ -140,13 +140,14 @@ public final class OrderedMaterializedStoreReader<T extends SpillableObject> imp
 				throw ex;
 			}
 		}
-		return new StoreLease<>(entry, () -> release(request._index, entry));
+		return StoreLease.createAsync(entry, () -> release(request._index, entry));
 	}
 
-	public void release(int index, BlockEntry entry) {
-		_cache.unpin(entry, _allowance);
+	public OOCFuture<Boolean> release(int index, BlockEntry entry) {
+		OOCCache.UnpinHandle unpin = _cache.unpin(entry, _allowance);
 		_pattern.consumed(index);
 		_afterRelease.accept(index);
+		return unpin.getCompletionFuture();
 	}
 
 	private void checkReady() {
@@ -172,7 +173,7 @@ public final class OrderedMaterializedStoreReader<T extends SpillableObject> imp
 		if(entry == null)
 			throw new IllegalStateException("Reader is closed");
 		fillSoft();
-		return new StoreLease<>(entry, () -> release(request._index, entry));
+		return StoreLease.createAsync(entry, () -> release(request._index, entry));
 	}
 
 	private void fillStrict() {

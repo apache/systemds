@@ -78,7 +78,7 @@ public class StateTableUtilsTest {
 		_source.put(0, new ManagedPayload<>(tile(1.0), TILE_BYTES, _producer));
 		StoreLease<IndexedMatrixValue> pinned = _source.peek(0, _reader);
 		Assert.assertNotNull(pinned);
-		Assert.assertNull(StateTableUtils.putOrTake(_table, 0, new MaterializedCallback(pinned), _reader)
+		Assert.assertNull(StateTableUtils.putOrTake(_table, 0, new MaterializedCallback<>(pinned), _reader)
 			.get(WAIT_SECONDS, TimeUnit.SECONDS));
 		Assert.assertEquals(0, _reader.getUsedMemory());
 
@@ -122,10 +122,10 @@ public class StateTableUtilsTest {
 			Assert.assertNotNull(lease);
 			Assert.assertEquals(5.0, lease.value().getValue().get(0, 0), 0.0);
 		}
-		try(StoreLease<IndexedMatrixValue> lease = _table.take(0, _reader).get(WAIT_SECONDS, TimeUnit.SECONDS)) {
-			Assert.assertNotNull(lease);
-			Assert.assertEquals(5.0, lease.value().getValue().get(0, 0), 0.0);
-		}
+		StoreLease<IndexedMatrixValue> taken = _table.take(0, _reader).get(WAIT_SECONDS, TimeUnit.SECONDS);
+		Assert.assertNotNull(taken);
+		Assert.assertEquals(5.0, taken.value().getValue().get(0, 0), 0.0);
+		taken.closeAsync().get(WAIT_SECONDS, TimeUnit.SECONDS);
 		Assert.assertNull(_table.take(0, _reader).get(WAIT_SECONDS, TimeUnit.SECONDS));
 
 		_producer.reserveBlocking(TILE_BYTES);

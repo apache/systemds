@@ -58,6 +58,9 @@ public class FederatedChunkDecoder extends MessageToMessageDecoder<ByteBuf> {
 			case FederatedChunkProtocol.TYPE_ERROR:
 				_payloads.add(new IOException(buf.toString(buf.readerIndex(), len, StandardCharsets.UTF_8)));
 				break;
+			default:
+				_payloads.add(new IOException("Unknown federated chunk frame type: " + type));
+				break;
 		}
 		if(_payloads.size() >= FederatedChunkProtocol.QUEUE_DEPTH) {
 			_throttled = true;
@@ -65,6 +68,11 @@ public class FederatedChunkDecoder extends MessageToMessageDecoder<ByteBuf> {
 		}
 	}
 
+	/**
+	 * Start the deserializer on a pool thread, at most once per channel.
+	 *
+	 * @param ctx handler context
+	 */
 	private void startReader(ChannelHandlerContext ctx) {
 		if(_started)
 			return;
@@ -72,6 +80,12 @@ public class FederatedChunkDecoder extends MessageToMessageDecoder<ByteBuf> {
 		CommonThreadPool.getDynamicPool().execute(() -> runDeserializer(ctx));
 	}
 
+	/**
+	 * Read one object from the queued payloads and fire it up the pipeline. A failure is fired as an exception on the
+	 * event loop instead.
+	 *
+	 * @param ctx handler context
+	 */
 	private void runDeserializer(ChannelHandlerContext ctx) {
 		try(ObjectInputStream ois = getObjectInputStream(new PayloadInputStream(this, ctx))) {
 			Object msg = ois.readObject();
@@ -82,10 +96,21 @@ public class FederatedChunkDecoder extends MessageToMessageDecoder<ByteBuf> {
 		}
 	}
 
+	/**
+	 * Take the next queued payload, blocking until one arrives.
+	 *
+	 * @return payload bytes, the end of stream marker or a queued failure
+	 * @throws InterruptedException on interrupt while the queue is empty
+	 */
 	private Object nextPayload() throws InterruptedException {
 		return _payloads.take();
 	}
 
+	/**
+	 * Re-enable channel reads once the payload queue has drained to the low watermark.
+	 *
+	 * @param ctx handler context
+	 */
 	private void resumeReadingIfDrained(ChannelHandlerContext ctx) {
 		if(_throttled && _payloads.size() <= LOW_WATERMARK) {
 			_throttled = false;
@@ -93,6 +118,13 @@ public class FederatedChunkDecoder extends MessageToMessageDecoder<ByteBuf> {
 		}
 	}
 
+	/**
+	 * Create an object input stream using the system class loader.
+	 *
+	 * @param in stream of payload bytes
+	 * @return object input stream
+	 * @throws IOException on stream header failure
+	 */
 	private static ObjectInputStream getObjectInputStream(InputStream in) throws IOException {
 		return new ObjectInputStream(in) {
 			@Override
@@ -144,6 +176,13 @@ public class FederatedChunkDecoder extends MessageToMessageDecoder<ByteBuf> {
 			return n;
 		}
 
+		/**
+		 * Advance to the next payload when the current one is exhausted. A queued failure is rethrown as an
+		 * IOException.
+		 *
+		 * @return true if bytes are available, false at end of stream
+		 * @throws IOException on a queued failure or on interrupt
+		 */
 		private boolean ensureCurrent() throws IOException {
 			while(_pos == _current.length) {
 				if(_eof)
@@ -161,6 +200,12 @@ public class FederatedChunkDecoder extends MessageToMessageDecoder<ByteBuf> {
 			return true;
 		}
 
+		/**
+		 * Take the next payload and resume reading if the queue has drained.
+		 *
+		 * @return payload bytes, the end of stream marker or a queued failure
+		 * @throws IOException on interrupt
+		 */
 		private Object take() throws IOException {
 			try {
 				Object next = _decoder.nextPayload();

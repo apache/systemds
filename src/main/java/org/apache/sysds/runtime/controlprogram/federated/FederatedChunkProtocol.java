@@ -40,10 +40,21 @@ final class FederatedChunkProtocol {
 	static final int LENGTH_ADJUSTMENT = 0;
 	static final int INITIAL_BYTES_TO_STRIP = 0;
 
+	/**
+	 * Get the largest frame a chunk of the given size can produce.
+	 *
+	 * @param chunkSize payload bytes per data frame
+	 * @return frame size including the header
+	 */
 	static int maxFrameLength(int chunkSize) {
 		return chunkSize + HEADER_LEN;
 	}
 
+	/**
+	 * Create a length based frame decoder for the chunked wire format.
+	 *
+	 * @return frame decoder sized for the default chunk size
+	 */
 	static LengthFieldBasedFrameDecoder newFrameDecoder() {
 		return new LengthFieldBasedFrameDecoder(maxFrameLength(DEFAULT_CHUNK_SIZE), LENGTH_FIELD_OFFSET,
 			LENGTH_FIELD_LENGTH, LENGTH_ADJUSTMENT, INITIAL_BYTES_TO_STRIP);

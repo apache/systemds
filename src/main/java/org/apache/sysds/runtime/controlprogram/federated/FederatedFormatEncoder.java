@@ -59,13 +59,28 @@ public class FederatedFormatEncoder extends ChannelOutboundHandlerAdapter {
 		}
 	}
 
+	/**
+	 * Check whether a message must take the object encoder path.
+	 *
+	 * @param msg outbound message
+	 * @return true if lineage reuse is enabled and the message is a reusable response below the stream threshold
+	 */
 	private boolean useObjectEncoder(Object msg) {
+		// no streaming for lineage cacheable responses: LineageCache.putSerializedObject
+		// needs one INT_MAX bounded byte[] that the chunked path never materializes
 		if(ReuseCacheType.isNone() || !(msg instanceof FederatedResponse))
 			return false;
 		FederatedResponse resp = (FederatedResponse) msg;
 		return resp.isLineageReusable() && resp.estimateSerializationBufferSize() < _streamThreshold;
 	}
 
+	/**
+	 * Create a one byte buffer holding the given format marker.
+	 *
+	 * @param ctx  handler context supplying the allocator
+	 * @param type marker byte
+	 * @return buffer holding the marker
+	 */
 	private static ByteBuf markerBuffer(ChannelHandlerContext ctx, byte type) {
 		return ctx.alloc().buffer(1).writeByte(type);
 	}

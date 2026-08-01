@@ -2014,8 +2014,8 @@ public class DMLTranslator
 			case TRANSFORMMETA:
 			case PARAMSERV:
 			case AUTODIFF:
-			case DP_LAPLACE:
 			case DP_GAUSSIAN:
+			case DP_LAPLACE:
 				currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), target.getDataType(),
 					target.getValueType(), ParamBuiltinOp.valueOf(source.getOpCode().name()), paramHops);
 				break;

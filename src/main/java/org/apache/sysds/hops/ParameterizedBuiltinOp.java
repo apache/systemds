@@ -195,8 +195,8 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 			case PARAMSERV:
 			case LIST:
 			case AUTODIFF:
-			case DP_LAPLACE:
-			case DP_GAUSSIAN: {
+			case DP_GAUSSIAN:
+			case DP_LAPLACE: {
 				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops, _op, getDataType(), getValueType(),
 					et);
 				if(isMultiThreadedOpType())
@@ -690,7 +690,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 				return new MatrixCharacteristics(dc.getRows(), dc.getCols(), -1, dc.getLength());
 			}
 		}
-		else if(_op == ParamBuiltinOp.DP_LAPLACE || _op == ParamBuiltinOp.DP_GAUSSIAN) {
+		else if(_op == ParamBuiltinOp.DP_GAUSSIAN || _op == ParamBuiltinOp.DP_LAPLACE) {
 			if(dc.dimsKnown()) {
 				Hop query = getParameterHop("query");
 				String queryVal = (query instanceof LiteralOp) ? ((LiteralOp) query).getStringValue() : null;
@@ -769,8 +769,8 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 		// to determine the local or remote workers
 		if(_op == ParamBuiltinOp.TRANSFORMCOLMAP || _op == ParamBuiltinOp.TRANSFORMMETA ||
 			_op == ParamBuiltinOp.TOSTRING || _op == ParamBuiltinOp.LIST || _op == ParamBuiltinOp.CDF ||
-			_op == ParamBuiltinOp.INVCDF || _op == ParamBuiltinOp.PARAMSERV || _op == ParamBuiltinOp.DP_LAPLACE ||
-			_op == ParamBuiltinOp.DP_GAUSSIAN) {
+			_op == ParamBuiltinOp.INVCDF || _op == ParamBuiltinOp.PARAMSERV || _op == ParamBuiltinOp.DP_GAUSSIAN ||
+			_op == ParamBuiltinOp.DP_LAPLACE) {
 			_etype = ExecType.CP;
 		}
 
@@ -953,10 +953,10 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 		if( !(that instanceof ParameterizedBuiltinOp) )
 			return false;
 
-		// NOTE: dp_laplace/dp_gaussian draw fresh random noise on every call and record a
+		// NOTE: dp_gaussian, dp_laplace draw fresh random noise on every call and record a
 		// privacy-budget charge as a side effect (see DPBuiltinCPInstruction), so two
 		// syntactically identical calls must never be merged into one execution.
-		if( _op == ParamBuiltinOp.DP_LAPLACE || _op == ParamBuiltinOp.DP_GAUSSIAN )
+		if( _op == ParamBuiltinOp.DP_GAUSSIAN || _op == ParamBuiltinOp.DP_LAPLACE )
 			return false;
 
 		ParameterizedBuiltinOp that2 = (ParameterizedBuiltinOp)that;

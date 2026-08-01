@@ -88,6 +88,7 @@ public class MatrixIndexingOOCInstruction extends IndexingOOCInstruction {
 				Double scalarOut = null;
 				IndexedMatrixValue tmp;
 
+				qIn.start();
 				while((tmp = qIn.dequeue()) != LocalTaskQueue.NO_MORE_TASKS) {
 					if(tmp.getIndexes().getRowIndex() == firstBlockRow + 1 &&
 						tmp.getIndexes().getColumnIndex() == firstBlockCol + 1) {
@@ -122,30 +123,6 @@ public class MatrixIndexingOOCInstruction extends IndexingOOCInstruction {
 			OOCStream<IndexedMatrixValue> qOut = createWritableStream();
 			addOutStream(qOut);
 			mOut.setStreamHandle(qOut);
-
-			qIn.setDownstreamMessageRelay(qOut::messageDownstream);
-			qOut.setUpstreamMessageRelay(qIn::messageUpstream);
-			qOut.setIXTransform((downstream, range) -> {
-				if(downstream) {
-					long rs = range.rowStart - ix.rowStart + 1;
-					long re = range.rowEnd - ix.rowStart + 1;
-					long cs = range.colStart - ix.colStart + 1;
-					long ce = range.colEnd - ix.colStart + 1;
-					// TODO What happens if range is out of bounds?
-					rs = Math.max(1, rs);
-					cs = Math.max(1, cs);
-					re = Math.min(ix.rowSpan(), re);
-					ce = Math.min(ix.colSpan(), ce);
-					return new IndexRange(rs, re, cs, ce);
-				}
-				else {
-					long rs = range.rowStart + ix.rowStart;
-					long re = range.rowEnd + ix.rowStart;
-					long cs = range.colStart + ix.colStart;
-					long ce = range.colEnd + ix.colStart;
-					return new IndexRange(rs, re, cs, ce);
-				}
-			});
 
 			if(firstBlockRow == lastBlockRow && firstBlockCol == lastBlockCol) {
 				MatrixIndexes srcBlock = new MatrixIndexes(firstBlockRow + 1, firstBlockCol + 1);
@@ -325,6 +302,7 @@ public class MatrixIndexingOOCInstruction extends IndexingOOCInstruction {
 				qOut.propagateFailure(DMLRuntimeException.of(err));
 				return null;
 			});
+			qIn.start();
 
 			if(hasIntermediateStream)
 				cachedStream.scheduleDeletion(); // We can immediately delete blocks after consumption
@@ -380,6 +358,7 @@ public class MatrixIndexingOOCInstruction extends IndexingOOCInstruction {
 					qOutRaw.closeInput();
 					return null;
 				});
+				qLhs.start();
 				return;
 			}
 
@@ -476,6 +455,8 @@ public class MatrixIndexingOOCInstruction extends IndexingOOCInstruction {
 				qOutRaw.closeInput();
 				return null;
 			});
+			qLhs.start();
+			qRhs.start();
 		}
 		else
 			throw new DMLRuntimeException(

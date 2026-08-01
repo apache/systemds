@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.binary.matrix;
 
 import java.util.HashMap;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
@@ -35,6 +36,8 @@ public class QuantileTest extends AutomatedTestBase
 	private final static String TEST_NAME2 = "Median";
 	private final static String TEST_NAME3 = "IQM";
 	private final static String TEST_NAME4 = "QuantileBug";
+	private final static String TEST_NAME5 = "MedianBug";
+	private final static String TEST_NAME6 = "QuartileArray";
 	
 	private final static String TEST_DIR = "functions/binary/matrix/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + QuantileTest.class.getSimpleName() + "/";
@@ -49,14 +52,18 @@ public class QuantileTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, 
-			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) ); 
-		addTestConfiguration(TEST_NAME2, 
-			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) ); 
-		addTestConfiguration(TEST_NAME3, 
-			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
-		addTestConfiguration(TEST_NAME4, 
-			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
+		addTestConfiguration(TEST_NAME1,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME2,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME3,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME4,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME5,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME6,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {"R"}));
 	}
 	
 	@Test
@@ -164,12 +171,33 @@ public class QuantileTest extends AutomatedTestBase
 		runQuantileTest(TEST_NAME4, 0.5, false, ExecType.CP);
 	}
 
-// TODO reimplement distributed value pick logic
-//	@Test
-//	public void testQuantileBugSP() {
-//		runQuantileTest(TEST_NAME4, 0.5, false, ExecType.SPARK);
-//	}
-	
+	@Test
+	public void testQuantileBugSP() {
+		runQuantileTest(TEST_NAME4, 0.5, false, ExecType.SPARK);
+	}
+
+	@Test
+	public void testMedianBugCP() {
+		runQuantileTest(TEST_NAME5, -1, false, ExecType.CP);
+	}
+
+	@Test
+	public void testMedianBugSP() {
+		runQuantileTest(TEST_NAME5, -1, false, ExecType.SPARK);
+	}
+
+	@Test
+	@Ignore // FIXME: fix SYSTEMDS-3953
+	public void testQuartileArrayCP() {
+		runQuantileTest(TEST_NAME6, 0, false, ExecType.CP);
+	}
+
+	@Test
+	@Ignore // FIXME: fix SYSTEMDS-3953
+	public void testQuartileArraySP() {
+		runQuantileTest(TEST_NAME6, 0, false, ExecType.SPARK);
+	}
+
 	private void runQuantileTest( String TEST_NAME, double p, boolean sparse, ExecType et)
 	{
 		ExecMode platformOld = setExecMode(et);

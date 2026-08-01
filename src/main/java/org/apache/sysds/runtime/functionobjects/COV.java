@@ -63,6 +63,8 @@ public class COV extends ValueFunction
 	public Data execute(Data in1, double u, double v, double w2) 
 	{
 		CmCovObject cov1=(CmCovObject) in1;
+		if(w2 == 0)
+			return cov1;
 		if(cov1.isCOVAllZeros())
 		{
 			cov1.w=w2;

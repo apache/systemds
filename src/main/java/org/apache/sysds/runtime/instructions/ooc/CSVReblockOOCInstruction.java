@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.io.ReaderTextCSVParallel;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.ooc.stream.StreamContext;
+import org.apache.sysds.runtime.ooc.util.OOCInstructionUtils;
 
 public class CSVReblockOOCInstruction extends ComputationOOCInstruction {
 	private final int blen;
@@ -74,14 +75,14 @@ public class CSVReblockOOCInstruction extends ComputationOOCInstruction {
 		final long cols = mc.getCols();
 		final long nnz = mc.getNonZeros();
 
-		submitOOCTask(() -> {
+		OOCInstructionUtils.submitOOCTask(() -> {
 			try {
 				reader.readMatrixAsStream(qOut, fileName, rows, cols, blen, nnz);
 			}
 			catch(Exception ex) {
 				throw (ex instanceof DMLRuntimeException) ? (DMLRuntimeException) ex : new DMLRuntimeException(ex);
 			}
-		}, new StreamContext().addOutStream(qOut));
+		}, new StreamContext(_callerId, getExtendedOpcode()).addOutStream(qOut));
 
 		MatrixObject mout = ec.getMatrixObject(output);
 		mout.setStreamHandle(qOut);

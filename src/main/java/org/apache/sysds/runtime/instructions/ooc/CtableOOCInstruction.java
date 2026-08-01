@@ -106,6 +106,12 @@ public class CtableOOCInstruction extends ComputationOOCInstruction {
 		} else
 			cst3 = ec.getScalarInput(input3).getDoubleValue();
 
+		qIn1.start();
+		if(qIn2 != null)
+			qIn2.start();
+		if(qIn3 != null)
+			qIn3.start();
+
 		HashMap<Long, MatrixBlock> blocksIn2 = new HashMap<>(), blocksIn3 = new HashMap<>();
 		MatrixBlock block2, block3;
 

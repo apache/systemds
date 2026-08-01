@@ -1057,7 +1057,8 @@ public class DMLTranslator
 						case CSV:
 						case LIBSVM:
 						case HDF5:
-							// write output in textcell format
+						case DELTA:
+							// columnar/text formats: no block layout (blocksize -1)
 							ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), -1);
 							break;
 						case BINARY:

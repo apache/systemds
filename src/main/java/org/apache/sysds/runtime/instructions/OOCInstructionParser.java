@@ -29,9 +29,10 @@ import org.apache.sysds.runtime.instructions.ooc.AggregateUnaryOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.BinaryOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.CSVReblockOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.CentralMomentOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.CovarianceOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.CtableOOCInstruction;
-import org.apache.sysds.runtime.instructions.ooc.IndexingOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.DataGenOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.IndexingOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.OOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.ParameterizedBuiltinOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.ReblockOOCInstruction;
@@ -43,6 +44,7 @@ import org.apache.sysds.runtime.instructions.ooc.MapMMChainOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.ReorgOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.TeeOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.AppendOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.ReshapeOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.QuaternaryOOCInstruction;
 
 public class OOCInstructionParser extends InstructionParser {
@@ -97,11 +99,13 @@ public class OOCInstructionParser extends InstructionParser {
 			case Reorg:
 				return ReorgOOCInstruction.parseInstruction(str);
 			case Reshape:
-				return ReorgOOCInstruction.parseInstruction(str);
+				return ReshapeOOCInstruction.parseInstruction(str);
 			case Tee:
 				return TeeOOCInstruction.parseInstruction(str);
 			case CentralMoment:
 				return  CentralMomentOOCInstruction.parseInstruction(str);
+			case Covariance:
+				return CovarianceOOCInstruction.parseInstruction(str);
 			case Ctable:
 				return CtableOOCInstruction.parseInstruction(str);
 			case ParameterizedBuiltin:

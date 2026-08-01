@@ -109,8 +109,6 @@ public class TernaryOOCInstruction extends ComputationOOCInstruction {
 		OOCStream<IndexedMatrixValue> qIn = mo.getStreamHandle();
 		OOCStream<IndexedMatrixValue> qOut = createWritableStream();
 		ec.getMatrixObject(output).setStreamHandle(qOut);
-		qIn.setDownstreamMessageRelay(qOut::messageDownstream);
-		qOut.setUpstreamMessageRelay(qIn::messageUpstream);
 
 		mapOOC(qIn, qOut, tmp -> {
 			IndexedMatrixValue outVal = new IndexedMatrixValue();
@@ -135,12 +133,6 @@ public class TernaryOOCInstruction extends ComputationOOCInstruction {
 
 		OOCStream<IndexedMatrixValue> qOut = createWritableStream();
 		ec.getMatrixObject(output).setStreamHandle(qOut);
-		qOut.setUpstreamMessageRelay(msg -> {
-			leftStream.messageUpstream(msg.split());
-			rightStream.messageUpstream(msg.split());
-		});
-		leftStream.setDownstreamMessageRelay(qOut::messageDownstream);
-		rightStream.setDownstreamMessageRelay(qOut::messageDownstream);
 
 		joinOOC(leftStream, rightStream, qOut, (l, r) -> {
 			IndexedMatrixValue outVal = new IndexedMatrixValue();
@@ -163,9 +155,6 @@ public class TernaryOOCInstruction extends ComputationOOCInstruction {
 
 		List<OOCStream<IndexedMatrixValue>> streams = List.of(
 			m1.getStreamHandle(), m2.getStreamHandle(), m3.getStreamHandle());
-
-		streams.forEach(s -> s.setDownstreamMessageRelay(qOut::messageDownstream));
-		qOut.setUpstreamMessageRelay(msg -> streams.forEach(s -> s.messageUpstream(msg)));
 
 		joinOOC(streams, qOut, blocks -> {
 			IndexedMatrixValue b1 = blocks.get(0);

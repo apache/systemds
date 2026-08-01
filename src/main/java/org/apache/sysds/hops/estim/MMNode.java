@@ -47,6 +47,15 @@ public class MMNode
 		_op = null;
 		_misc = null;
 	}
+
+	public MMNode(DataCharacteristics mc) {
+		_m1 = null;
+		_m2 = null;
+		_data = null;
+		_mc = mc;
+		_op = null;
+		_misc = null;
+	}
 	
 	public MMNode(MMNode left, MMNode right, OpCode op, long[] misc) {
 		_m1 = left;
@@ -112,7 +121,7 @@ public class MMNode
 	}
 	
 	public boolean isLeaf() {
-		return _data != null;
+		return _op == null;
 	}
 	
 	public MatrixBlock getData() {

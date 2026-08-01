@@ -66,6 +66,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.concurrent.Promise;
 
 @SuppressWarnings("deprecation")
@@ -299,7 +300,11 @@ public class FederatedData {
 
 	public synchronized static void createWorkGroup() {
 		if(workerGroup == null)
-			workerGroup = new NioEventLoopGroup(DMLConfig.DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS);
+			// Daemon event loops so a leaked client-side group (e.g. in-JVM coordinator tests, a missed
+			// clearWorkGroup(), or an in-flight async shutdownGracefully) cannot block JVM exit. This mirrors
+			// the daemon factory used for the server-side worker in FederatedWorker.
+			workerGroup = new NioEventLoopGroup(DMLConfig.DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS,
+				new DefaultThreadFactory("fed-client-worker", true));
 	}
 
 	private static class DataRequestHandler extends ChannelInboundHandlerAdapter {

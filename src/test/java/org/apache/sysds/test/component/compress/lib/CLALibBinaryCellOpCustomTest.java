@@ -22,14 +22,20 @@ package org.apache.sysds.test.component.compress.lib;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import static org.junit.Assert.assertTrue;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.CompressionStatistics;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.lib.CLALibBinaryCellOp;
 import org.apache.sysds.runtime.functionobjects.GreaterThanEquals;
 import org.apache.sysds.runtime.functionobjects.LessThanEquals;
 import org.apache.sysds.runtime.functionobjects.Minus;
+import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.test.TestUtils;
@@ -130,6 +136,41 @@ public class CLALibBinaryCellOpCustomTest {
 		MatrixBlock cRet = CLALibBinaryCellOp.binaryOperationsRight(op, spy, c2);
 
 		TestUtils.compareMatricesBitAvgDistance(new MatrixBlock(10, 10, 2.5 - 324.0), cRet, 0, 0, op.toString());
+	}
+
+	@Test
+	public void sparseSparseColVectorNonSDCGroup() {
+		// Drive the sparse-sparse column-vector path of CLALibBinaryCellOp through a compressed input whose
+		// column groups are not all SDC. The constant non-zero first column compresses to a non-SDC (Const/DDC)
+		// group, while the remaining columns stay sparse so the overall matrix is sparse enough to pick the
+		// sparse-sparse path. This exercises the non-SDC branch of decompressToTmpBlock(SparseBlock), which the
+		// all-SDC sparse inputs of CLALibBinaryCellOpTest never reach.
+		final int nRow = 300;
+		final int nCol = 12;
+		MatrixBlock mb = new MatrixBlock(nRow, nCol, false);
+		mb.allocateDenseBlock();
+		for(int i = 0; i < nRow; i++)
+			mb.set(i, 0, 3.0); // constant non-zero column -> non-SDC group
+		for(int i = 0; i < nRow; i += 7)
+			mb.set(i, 3, 1.0 + (i % 4)); // a few sparse non-zeros
+		for(int i = 0; i < nRow; i += 11)
+			mb.set(i, 8, 4.0);
+		mb.recomputeNonZeros();
+
+		CompressedMatrixBlock cmb = (CompressedMatrixBlock) CompressedMatrixBlockFactory.compress(mb, 1).getLeft();
+		assertTrue("input must compress to exercise the compressed path", cmb instanceof CompressedMatrixBlock);
+		boolean hasNonSDC = false;
+		for(AColGroup g : cmb.getColGroups())
+			hasNonSDC |= g.getCompType() != CompressionType.SDC;
+		assertTrue("need a non-SDC column group to cover the non-SDC decompress branch", hasNonSDC);
+
+		// Multiply is sparse-safe (f(0,v)==0), so the sparse-safe gate routes it through the sparse-sparse path.
+		BinaryOperator op = new BinaryOperator(Multiply.getMultiplyFnObject(), 1);
+		MatrixBlock cv = TestUtils.round(TestUtils.generateTestMatrixBlock(nRow, 1, -5, 5, 1.0, 7));
+
+		MatrixBlock cRet = CLALibBinaryCellOp.binaryOperationsRight(op, cmb, cv);
+		MatrixBlock uRet = LibMatrixBincell.bincellOp(mb, cv, null, op);
+		TestUtils.compareMatricesBitAvgDistance(uRet, cRet, 0, 0, op.toString());
 	}
 
 	@Test

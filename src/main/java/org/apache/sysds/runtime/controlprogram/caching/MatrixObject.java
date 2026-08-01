@@ -453,7 +453,8 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 			DataConverter.readMatrixFromHDFS(fname, iimd.getFileFormat(),
 				rlen, clen, blen, mc.getNonZeros(), getFileFormatProperties());
 
-		if(iimd.getFileFormat() == FileFormat.CSV) {
+		if(iimd.getFileFormat() == FileFormat.CSV || iimd.getFileFormat() == FileFormat.DELTA) {
+			//dimensions/nnz are discovered at read time for these self-describing formats
 			_metaData = _metaData instanceof MetaDataFormat ? new MetaDataFormat(newData.getDataCharacteristics(),
 				iimd.getFileFormat()) : new MetaData(newData.getDataCharacteristics());
 		}
@@ -636,8 +637,10 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		FileFormat fmt = (ofmt != null ? FileFormat.safeValueOf(ofmt) : iimd.getFileFormat());
 		MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(fmt, rep, fprop);
-		return writer.writeMatrixFromStream(fname, getStreamHandle(),
-			getNumRows(), getNumColumns(), ConfigurationManager.getBlocksize());
+		OOCStream<IndexedMatrixValue> stream = getStreamHandle();
+		stream.start();
+		return writer.writeMatrixFromStream(fname, stream, getNumRows(), getNumColumns(),
+			ConfigurationManager.getBlocksize());
 	}
 
 	@Override

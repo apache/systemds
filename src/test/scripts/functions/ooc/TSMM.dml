@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-# Read input matrix and operator from command line args
+# Read input matrix from command line args
 X = read($1);
 
 # Operation under test

@@ -233,6 +233,8 @@ class HyperparamResults:
     def add_result(self, results):
         # TODO: Check if order of best results matters (deterministic)
         for result in results:
+            if result is None:
+                continue
             if result.mm_opt:
                 self.results[result.task_name]["mm_results"].append(result)
             else:

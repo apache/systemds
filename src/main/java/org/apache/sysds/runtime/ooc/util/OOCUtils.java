@@ -20,15 +20,58 @@
 package org.apache.sysds.runtime.ooc.util;
 
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.instructions.ooc.OOCStream;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
+import org.apache.sysds.runtime.ooc.cache.BlockEntry;
+import org.apache.sysds.runtime.ooc.cache.OOCCache;
+import org.apache.sysds.runtime.ooc.cache.OOCFuture;
+import org.apache.sysds.runtime.ooc.memory.InMemoryQueueCallback;
+import org.apache.sysds.runtime.ooc.memory.MemoryAllowance;
+import org.apache.sysds.runtime.ooc.memory.ReservationBudget;
+import org.apache.sysds.runtime.ooc.planning.OOCAccessPattern;
 import org.apache.sysds.runtime.util.IndexRange;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.function.BooleanSupplier;
 
 public class OOCUtils {
+	public static OOCFuture<BlockEntry> pinAdmitted(OOCCache cache, long streamId, long sequenceNumber,
+		MemoryAllowance allowance, BooleanSupplier cancelled) {
+		if(cancelled.getAsBoolean())
+			return OOCFuture.completed(null);
+		if(allowance.isShutdown())
+			return OOCFuture
+				.failed(new IllegalStateException("Allowance was shut down while a pin admission was pending."));
+
+		OOCFuture<BlockEntry> admitted;
+		try {
+			admitted = cache.pinAdmitted(streamId, sequenceNumber, allowance);
+		}
+		catch(RuntimeException ex) {
+			return OOCFuture.failed(ex);
+		}
+		OOCFuture<BlockEntry> result = new OOCFuture<>();
+		admitted.whenComplete((entry, error) -> {
+			if(error != null) {
+				result.completeExceptionally(error);
+				return;
+			}
+			if(entry != null && cancelled.getAsBoolean()) {
+				cache.unpin(entry, allowance);
+				result.complete(null);
+				return;
+			}
+			result.complete(entry);
+		});
+		return result;
+	}
+
 	public static IndexRange getRangeOfTile(MatrixIndexes tileIdx, long blen) {
 		long rs = 1 + tileIdx.getRowIndex() * blen;
 		long re = (tileIdx.getRowIndex() + 1) * blen;
@@ -69,5 +112,67 @@ public class OOCUtils {
 			return dc.getNumBlocks();
 		}
 		return -1;
+	}
+
+	public static Iterable<MatrixIndexes> getAccessPattern(DataCharacteristics dc, OOCAccessPattern pattern) {
+		long rows = dc.getRows() == 0 ? 0 : dc.getNumRowBlocks();
+		long cols = dc.getCols() == 0 ? 0 : dc.getNumColBlocks();
+		return getAccessPattern(rows, cols, pattern);
+	}
+
+	public static Iterable<MatrixIndexes> getAccessPattern(long rows, long cols, OOCAccessPattern pattern) {
+		return () -> new Iterator<>() {
+			private final long _size = rows * cols;
+			private long _position;
+
+			@Override
+			public boolean hasNext() {
+				return _position < _size;
+			}
+
+			@Override
+			public MatrixIndexes next() {
+				long position = _position++;
+				return pattern == OOCAccessPattern.COL_MAJOR ? new MatrixIndexes(position % rows + 1,
+					position / rows + 1) : new MatrixIndexes(position / cols + 1, position % cols + 1);
+			}
+		};
+	}
+
+	public static long estimateOutputTileBytes(DataCharacteristics dc) {
+		if(dc == null || dc.getBlocksize() <= 0 || !dc.dimsKnown()) {
+			int blocksize = dc != null && dc.getBlocksize() > 0 ? dc.getBlocksize() : 1000;
+			return estimateMatrixBlockBytes(blocksize, blocksize);
+		}
+		return estimateMatrixBlockBytes(Math.min(dc.getBlocksize(), dc.getRows()),
+			Math.min(dc.getBlocksize(), dc.getCols()));
+	}
+
+	private static long estimateMatrixBlockBytes(long rows, long cols) {
+		return Math.max(MatrixBlock.estimateSizeDenseInMemory(rows, cols),
+			MatrixBlock.estimateSizeSparseInMemory(rows, cols, 1.0));
+	}
+
+	public static void enqueueExact(OOCStream<IndexedMatrixValue> out, IndexedMatrixValue value,
+		ReservationBudget budget) {
+		long bytes = ((MatrixBlock) value.getValue()).getExactSerializedSize();
+		OOCStream.QueueCallback<IndexedMatrixValue> callback = null;
+		try {
+			budget.reserveBlocking(bytes);
+			callback = new InMemoryQueueCallback(value, null, budget, bytes);
+			budget.close();
+			out.enqueue(callback);
+			callback = null;
+		}
+		finally {
+			budget.close();
+			if(callback != null)
+				callback.close();
+		}
+	}
+
+	public static ReservationBudget reserveBudget(MemoryAllowance allowance, long bytes) {
+		allowance.reserveBlocking(bytes);
+		return new ReservationBudget(allowance, bytes);
 	}
 }

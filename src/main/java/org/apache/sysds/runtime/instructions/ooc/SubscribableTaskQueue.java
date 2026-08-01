@@ -23,32 +23,28 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.ooc.stream.message.OOCGetStreamTypeMessage;
-import org.apache.sysds.runtime.ooc.stream.message.OOCStreamMessage;
+import org.apache.sysds.runtime.ooc.primitives.OOCPrimitive;
 import org.apache.sysds.runtime.ooc.util.OOCUtils;
-import org.apache.sysds.runtime.util.IndexRange;
 
 import java.util.LinkedList;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
-public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCStream<T> {
+public class SubscribableTaskQueue<T> extends LocalTaskQueue<OOCStream.QueueCallback<T>> implements OOCStream<T> {
 
 	private final AtomicInteger _availableCtr = new AtomicInteger(1);
 	private final AtomicBoolean _closed = new AtomicBoolean(false);
+	private final AtomicBoolean _terminalDelivered = new AtomicBoolean(false);
 	private final AtomicInteger _blockCount = new AtomicInteger(0);
+	private QueueCallback<T> _lastDequeued = null;
 	private CacheableData<?> _cdata;
+	private volatile OOCPrimitive _primitive;
 	private volatile Consumer<QueueCallback<T>> _subscriber = null;
-	private volatile CopyOnWriteArrayList<Consumer<OOCStreamMessage>> _upstreamMsgRelays = null;
-	private volatile CopyOnWriteArrayList<Consumer<OOCStreamMessage>> _downstreamMsgRelays = null;
-	private volatile BiFunction<Boolean, IndexRange, IndexRange> _ixTransform = null;
 	private String _watchdogId;
 
 	public SubscribableTaskQueue() {
-		if (OOCWatchdog.WATCH) {
+		if(OOCWatchdog.WATCH) {
 			_watchdogId = "STQ-" + hashCode();
 			// Capture a short context to help identify origin
 			OOCWatchdog.registerOpen(_watchdogId, "SubscribableTaskQueue@" + hashCode(), getCtxMsg(), this);
@@ -71,12 +67,16 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 
 	@Override
 	public void enqueue(T t) {
-		if (t == NO_MORE_TASKS)
-			throw new DMLRuntimeException("Cannot enqueue NO_MORE_TASKS item");
+		enqueue(new SimpleQueueCallback<>(t, _failure));
+	}
 
+	@Override
+	public void enqueue(QueueCallback<T> cb) {
+		if(cb == NO_MORE_TASKS)
+			throw new DMLRuntimeException("Cannot enqueue NO_MORE_TASKS item");
 		int cnt = _availableCtr.incrementAndGet();
 
-		if (cnt <= 1) { // Then the queue was already closed and we disallow further enqueues
+		if(cnt <= 1) { // Then the queue was already closed and we disallow further enqueues
 			_availableCtr.decrementAndGet(); // Undo increment
 			throw new DMLRuntimeException("Cannot enqueue into closed SubscribableTaskQueue");
 		}
@@ -86,17 +86,17 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 		Consumer<QueueCallback<T>> s = _subscriber;
 		final Consumer<QueueCallback<T>> fS = s;
 
-		if (fS != null) {
-			fS.accept(new SimpleQueueCallback<>(t, _failure));
+		if(fS != null) {
+			fS.accept(cb);
 			onDeliveryFinished();
 			return;
 		}
 
-		synchronized (this) {
+		synchronized(this) {
 			// Re-check that subscriber is really null to avoid race conditions
-			if (_subscriber == null) {
+			if(_subscriber == null) {
 				try {
-					super.enqueueTask(t);
+					super.enqueueTask(cb);
 				}
 				catch(InterruptedException e) {
 					throw new DMLRuntimeException(e);
@@ -108,16 +108,16 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 		}
 
 		// Last case if due to race a subscriber has been set
-		s.accept(new SimpleQueueCallback<>(t, _failure));
+		s.accept(cb);
 		onDeliveryFinished();
 	}
 
 	protected boolean tryDeliverCallback(QueueCallback<T> cb, int blockCount) {
 		Consumer<QueueCallback<T>> s = _subscriber;
-		if (s == null)
+		if(s == null)
 			return false;
 		int cnt = _availableCtr.incrementAndGet();
-		if (cnt <= 1) { // Then the queue was already closed and we disallow further enqueues
+		if(cnt <= 1) { // Then the queue was already closed and we disallow further enqueues
 			_availableCtr.decrementAndGet(); // Undo increment
 			throw new DMLRuntimeException("Cannot enqueue into closed SubscribableTaskQueue");
 		}
@@ -128,19 +128,27 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 	}
 
 	@Override
-	public synchronized void enqueueTask(T t) {
+	public synchronized void enqueueTask(OOCStream.QueueCallback<T> t) {
 		enqueue(t);
 	}
 
 	@Override
 	public T dequeue() {
 		try {
-			if (OOCWatchdog.WATCH)
+			if(OOCWatchdog.WATCH)
 				OOCWatchdog.addEvent(_watchdogId, "dequeue -- " + getCtxMsg());
-			T deq = super.dequeueTask();
-			if (deq != NO_MORE_TASKS)
+			if(_lastDequeued != null) {
+				_lastDequeued.close();
+				_lastDequeued = null;
+			}
+			OOCStream.QueueCallback<T> deq = super.dequeueTask();
+			if(deq != NO_MORE_TASKS) {
 				onDeliveryFinished();
-			return deq;
+				_lastDequeued = deq;
+				return deq.get();
+			}
+			_terminalDelivered.set(true);
+			return null;
 		}
 		catch(InterruptedException e) {
 			throw new DMLRuntimeException(e);
@@ -148,29 +156,51 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 	}
 
 	@Override
-	public synchronized T dequeueTask() {
-		return dequeue();
+	public OOCStream.QueueCallback<T> dequeueCB() {
+		try {
+			if(OOCWatchdog.WATCH)
+				OOCWatchdog.addEvent(_watchdogId, "dequeue -- " + getCtxMsg());
+			if(_lastDequeued != null) {
+				_lastDequeued.close();
+				_lastDequeued = null;
+			}
+			OOCStream.QueueCallback<T> deq = super.dequeueTask();
+			if(deq != NO_MORE_TASKS) {
+				onDeliveryFinished();
+				_lastDequeued = deq;
+			}
+			else
+				_terminalDelivered.set(true);
+			return deq == NO_MORE_TASKS ? null : deq;
+		}
+		catch(InterruptedException e) {
+			throw new DMLRuntimeException(e);
+		}
+	}
+
+	@Override
+	public synchronized OOCStream.QueueCallback<T> dequeueTask() {
+		return dequeueCB();
 	}
 
 	@Override
 	public synchronized void closeInput() {
-		if (_closed.compareAndSet(false, true)) {
+		if(_closed.compareAndSet(false, true)) {
 			super.closeInput();
 			onDeliveryFinished();
-			_upstreamMsgRelays = null;
-			_downstreamMsgRelays = null;
-		} else {
+		}
+		else {
 			throw new IllegalStateException("Multiple close input calls");
 		}
 	}
 
 	private void validateBlockCountOnClose() {
 		DataCharacteristics dc = getDataCharacteristics();
-		if (dc != null && dc.dimsKnown() && dc.getBlocksize() > 0) {
+		if(dc != null && dc.dimsKnown() && dc.getBlocksize() > 0) {
 			long expected = OOCUtils.getNumBlocks(dc);
-			if (expected >= 0 && _blockCount.get() != expected) {
-				throw new DMLRuntimeException("OOCStream block count mismatch: expected "
-					+ expected + " but saw " + _blockCount.get() + " (" + dc.getRows() + "x" + dc.getCols() + ")");
+			if(expected >= 0 && _blockCount.get() != expected) {
+				throw new DMLRuntimeException("OOCStream block count mismatch: expected " + expected + " but saw "
+					+ _blockCount.get() + " (" + dc.getRows() + "x" + dc.getCols() + ")");
 			}
 		}
 	}
@@ -180,7 +210,7 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 		if(subscriber == null)
 			throw new IllegalArgumentException("Cannot set subscriber to null");
 
-		LinkedList<T> data;
+		LinkedList<QueueCallback<T>> data;
 		boolean needsEos;
 
 		synchronized(this) {
@@ -198,8 +228,8 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 				_availableCtr.incrementAndGet(); // route terminal emission via onDeliveryFinished
 		}
 
-		for (T t : data) {
-			subscriber.accept(new SimpleQueueCallback<>(t, _failure));
+		for(QueueCallback<T> t : data) {
+			subscriber.accept(t);
 			onDeliveryFinished();
 		}
 
@@ -207,17 +237,18 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 			onDeliveryFinished();
 	}
 
-	@SuppressWarnings("unchecked")
 	private void onDeliveryFinished() {
 		int ctr = _availableCtr.decrementAndGet();
 
-		if (ctr == 0) {
+		if(ctr == 0) {
 			validateBlockCountOnClose();
 			Consumer<QueueCallback<T>> s = _subscriber;
-			if (s != null)
-				s.accept(new SimpleQueueCallback<>((T) LocalTaskQueue.NO_MORE_TASKS, _failure));
+			if(s != null) {
+				s.accept(OOCStream.eos(_failure));
+				_terminalDelivered.set(true);
+			}
 
-			if (OOCWatchdog.WATCH)
+			if(OOCWatchdog.WATCH)
 				OOCWatchdog.registerClose(_watchdogId);
 		}
 	}
@@ -225,12 +256,14 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 	@Override
 	public synchronized void propagateFailure(DMLRuntimeException re) {
 		// Ignore late failures
-		if(_closed.get() && _availableCtr.get() == 0)
+		if(_terminalDelivered.get())
 			return;
 		super.propagateFailure(re);
 		Consumer<QueueCallback<T>> s = _subscriber;
-		if(s != null)
+		if(s != null) {
 			s.accept(new SimpleQueueCallback<>(null, re));
+			_terminalDelivered.set(true);
+		}
 	}
 
 	@Override
@@ -244,43 +277,6 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 	}
 
 	@Override
-	public void messageUpstream(OOCStreamMessage msg) {
-		if(msg.isCancelled())
-			return;
-		msg.addIXTransform(_ixTransform);
-		if (msg.isCancelled())
-			return;
-		if (msg instanceof OOCGetStreamTypeMessage) {
-			if (_cdata != null)
-				((OOCGetStreamTypeMessage) msg).setInMemoryType();
-			return;
-		}
-		CopyOnWriteArrayList<Consumer<OOCStreamMessage>> relays = _upstreamMsgRelays;
-		if(relays != null) {
-			for (Consumer<OOCStreamMessage> relay : relays) {
-				if (msg.isCancelled())
-					break;
-				relay.accept(msg);
-			}
-		}
-	}
-
-	@Override
-	public void messageDownstream(OOCStreamMessage msg) {
-		if(!msg.isCancelled())
-			return;
-		msg.addIXTransform(_ixTransform);
-		CopyOnWriteArrayList<Consumer<OOCStreamMessage>> relays = _downstreamMsgRelays;
-		if(relays != null) {
-			for (Consumer<OOCStreamMessage> relay : relays) {
-				if (msg.isCancelled())
-					break;
-				relay.accept(msg);
-			}
-		}
-	}
-
-	@Override
 	public boolean hasStreamCache() {
 		return false;
 	}
@@ -288,6 +284,18 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 	@Override
 	public CachingStream getStreamCache() {
 		return null;
+	}
+
+	@Override
+	public OOCPrimitive getPrimitive() {
+		return _primitive;
+	}
+
+	@Override
+	public void assignPrimitive(OOCPrimitive primitive) {
+		if(_primitive != null)
+			throw new IllegalStateException("Primitive already assigned");
+		_primitive = primitive;
 	}
 
 	@Override
@@ -305,61 +313,6 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 		if(_cdata == null && _closed.get())
 			System.out.println("[WARN] Data type was defined after closing, which may bypass validation checks");
 		_cdata = data;
-	}
-
-	@Override
-	public void setUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		addUpstreamMessageRelay(relay);
-	}
-
-	@Override
-	public void setDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		addDownstreamMessageRelay(relay);
-	}
-
-	@Override
-	public void addUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		if(relay == null)
-			throw new IllegalArgumentException("Cannot set upstream relay to null");
-		CopyOnWriteArrayList<Consumer<OOCStreamMessage>> relays = _upstreamMsgRelays;
-		if(relays == null) {
-			synchronized(this) {
-				if(_upstreamMsgRelays == null)
-					_upstreamMsgRelays = new CopyOnWriteArrayList<>();
-				relays = _upstreamMsgRelays;
-			}
-		}
-		relays.add(0, relay);
-	}
-
-	@Override
-	public void addDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		if(relay == null)
-			throw new IllegalArgumentException("Cannot set downstream relay to null");
-		CopyOnWriteArrayList<Consumer<OOCStreamMessage>> relays = _downstreamMsgRelays;
-		if(relays == null) {
-			synchronized(this) {
-				if(_downstreamMsgRelays == null)
-					_downstreamMsgRelays = new CopyOnWriteArrayList<>();
-				relays = _downstreamMsgRelays;
-			}
-		}
-		relays.add(0, relay);
-	}
-
-	@Override
-	public void clearUpstreamMessageRelays() {
-		_upstreamMsgRelays = null;
-	}
-
-	@Override
-	public void clearDownstreamMessageRelays() {
-		_downstreamMsgRelays = null;
-	}
-
-	@Override
-	public void setIXTransform(BiFunction<Boolean, IndexRange, IndexRange> transform) {
-		_ixTransform = transform;
 	}
 
 	@Override

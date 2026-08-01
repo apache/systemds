@@ -19,8 +19,6 @@
 
 package org.apache.sysds.hops.rewrite;
 
-import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
-
 public class ProgramRewriteStatus 
 {
 	//status of applied rewrites
@@ -30,17 +28,11 @@ public class ProgramRewriteStatus
 	
 	//current context
 	private boolean _inParforCtx = false;
-	private LocalVariableMap _vars = null;
 	
 	public ProgramRewriteStatus() {
 		_rmBranches = false;
 		_inParforCtx = false;
 		_injectCheckpoints = false;
-	}
-	
-	public ProgramRewriteStatus(LocalVariableMap vars) {
-		this();
-		_vars = vars;
 	}
 	
 	public void setRemovedBranches(){
@@ -73,9 +65,5 @@ public class ProgramRewriteStatus
 	
 	public boolean getInjectedCheckpoints(){
 		return _injectCheckpoints;
-	}
-	
-	public LocalVariableMap getVariables() {
-		return _vars;
 	}
 }

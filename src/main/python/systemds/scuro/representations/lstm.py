@@ -25,7 +25,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 from typing import List, Dict, Any
-from systemds.scuro.utils.static_variables import get_device, get_device_for_model
+from systemds.scuro.utils.static_variables import get_device
 import numpy as np
 
 from systemds.scuro.modality.modality import Modality

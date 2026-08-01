@@ -25,23 +25,21 @@ import org.apache.sysds.runtime.instructions.ooc.CachingStream;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.ooc.SubscribableTaskQueue;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.ooc.stream.message.OOCStreamMessage;
-import org.apache.sysds.runtime.util.IndexRange;
+import org.apache.sysds.runtime.ooc.primitives.OOCPrimitive;
 
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 public class SubOOCStream<T> implements OOCStream<T> {
 	private OOCStream<T> _sourceStream;
-	private SubscribableTaskQueue<QueueCallback<T>> _taskQueue;
+	private SubscribableTaskQueue<T> _taskQueue;
 	private QueueCallback<T> _last;
 
 	public SubOOCStream(OOCStream<T> sourceStream) {
 		_sourceStream = sourceStream;
 		_taskQueue = new SubscribableTaskQueue<>();
-		_taskQueue.setUpstreamMessageRelay(_sourceStream::messageUpstream);
 	}
 
+	@Override
 	public void enqueue(QueueCallback<T> callback) {
 		_taskQueue.enqueue(callback);
 	}
@@ -55,10 +53,18 @@ public class SubOOCStream<T> implements OOCStream<T> {
 	public synchronized T dequeue() {
 		if(_last != null)
 			_last.close();
-		_last = _taskQueue.dequeue();
+		_last = _taskQueue.dequeueCB();
 		if(_last != null)
 			return _last.get();
 		return null;
+	}
+
+	@Override
+	public synchronized QueueCallback<T> dequeueCB() {
+		if(_last != null)
+			_last.close();
+		_last = _taskQueue.dequeueCB();
+		return _last;
 	}
 
 	@Override
@@ -82,6 +88,11 @@ public class SubOOCStream<T> implements OOCStream<T> {
 	}
 
 	@Override
+	public OOCPrimitive getPrimitive() {
+		return _sourceStream.getPrimitive();
+	}
+
+	@Override
 	public void setSubscriber(Consumer<QueueCallback<T>> subscriber) {
 		_taskQueue.setSubscriber(cb -> {
 			if(cb.isEos()) {
@@ -98,7 +109,7 @@ public class SubOOCStream<T> implements OOCStream<T> {
 				}
 			}
 			else
-				subscriber.accept(cb.get());
+				subscriber.accept(cb);
 		});
 	}
 
@@ -130,51 +141,5 @@ public class SubOOCStream<T> implements OOCStream<T> {
 	@Override
 	public void setData(CacheableData<?> data) {
 		_taskQueue.setData(data);
-	}
-
-	@Override
-	public void messageUpstream(OOCStreamMessage msg) {
-		_taskQueue.messageUpstream(msg);
-	}
-
-	@Override
-	public void messageDownstream(OOCStreamMessage msg) {
-		_taskQueue.messageDownstream(msg);
-	}
-
-	@Override
-	public void setUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		// Upstream is handled by source stream
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void setDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		_taskQueue.setDownstreamMessageRelay(relay);
-	}
-
-	@Override
-	public void addUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void addDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		_taskQueue.addDownstreamMessageRelay(relay);
-	}
-
-	@Override
-	public void clearUpstreamMessageRelays() {
-		_taskQueue.clearUpstreamMessageRelays();
-	}
-
-	@Override
-	public void clearDownstreamMessageRelays() {
-		_taskQueue.clearDownstreamMessageRelays();
-	}
-
-	@Override
-	public void setIXTransform(BiFunction<Boolean, IndexRange, IndexRange> transform) {
-		_taskQueue.setIXTransform(transform);
 	}
 }

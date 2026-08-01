@@ -21,11 +21,7 @@ package org.apache.sysds.runtime.instructions.ooc;
 
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.ooc.stream.message.OOCStreamMessage;
-import org.apache.sysds.runtime.util.IndexRange;
-
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
+import org.apache.sysds.runtime.ooc.primitives.OOCPrimitive;
 
 public interface OOCStreamable<T> {
 	OOCStream<T> getReadStream();
@@ -44,21 +40,21 @@ public interface OOCStreamable<T> {
 
 	void setData(CacheableData<?> data);
 
-	void messageUpstream(OOCStreamMessage msg);
+	default OOCPrimitive getPrimitive() {
+		return null;
+	}
 
-	void messageDownstream(OOCStreamMessage msg);
+	default void assignPrimitive(OOCPrimitive primitive) {
+		throw new UnsupportedOperationException("Stream does not support primitive assignment");
+	}
 
-	void setUpstreamMessageRelay(Consumer<OOCStreamMessage> relay);
+	default OOCStream<T> getReservedReadStream() {
+		return getReadStream();
+	}
 
-	void setDownstreamMessageRelay(Consumer<OOCStreamMessage> relay);
+	default void reserveLazyHandle() {
+	}
 
-	void addUpstreamMessageRelay(Consumer<OOCStreamMessage> relay);
-
-	void addDownstreamMessageRelay(Consumer<OOCStreamMessage> relay);
-
-	void clearUpstreamMessageRelays();
-
-	void clearDownstreamMessageRelays();
-
-	void setIXTransform(BiFunction<Boolean, IndexRange, IndexRange> transform);
+	default void discardHandle() {
+	}
 }

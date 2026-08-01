@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -94,6 +95,11 @@ public final class CLALibMMChain {
 		Timing t = new Timing();
 		if(x.isEmpty())
 			return returnEmpty(x, out);
+
+		if(ctype == ChainType.XtXv && x.getColGroups().size() < 5 && x.getNumColumns()> 30){
+			MatrixBlock tmp = CLALibTSMM.leftMultByTransposeSelf(x, k);
+			return tmp.aggregateBinaryOperations(tmp, v, out, InstructionUtils.getMatMultOperator(k));
+		}
 
 		// Morph the columns to efficient types for the operation.
 		x = filterColGroups(x);

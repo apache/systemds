@@ -234,6 +234,7 @@ def _execute_multiple_reps_for_leaf_dependencies(
 
 
 def _execute_node_worker(node, input_mods, task, rep_cache, gpu_id):
+    start_time = time.perf_counter()
     if gpu_id is not None:
         device = torch.device(f"cuda:{gpu_id}")
         torch.cuda.set_device(device)
@@ -287,23 +288,28 @@ def _execute_node_worker(node, input_mods, task, rep_cache, gpu_id):
         )
     else:
         result = _run_node_op()
-
+    end_time = time.perf_counter()
+    pid = os.getpid()
     return {
         "result": result,
         "peak_bytes": peak_delta_bytes,
         "peak_abs_rss_bytes": peak_abs_rss,
         "gpu_peak_bytes": gpu_peak_bytes,
         "operation_name": operation_name,
+        "start_time": start_time,
+        "end_time": end_time,
+        "pid": pid,
     }
 
 
 def _execute_task_worker(
     task_node_id: str,
     task: Any,
-    data: Any,
+    modality: Any,
     gpu_id: Optional[int],
+    aggregation: AggregatedRepresentation = None,
 ) -> Dict[str, Any]:
-
+    start_time = time.perf_counter()
     if DEBUG:
         print(f"Executing task {task_node_id} on GPU {gpu_id}")
     if gpu_id is not None:
@@ -316,6 +322,14 @@ def _execute_task_worker(
 
     def _run_task():
         start = time.perf_counter()
+        if aggregation is not None:
+            data = (
+                aggregation.operation(params=aggregation.parameters)
+                .transform(modality)
+                .data
+            )
+        else:
+            data = modality.data
         scores = task.run(data)
         end = time.perf_counter()
         return scores, end - start
@@ -336,12 +350,16 @@ def _execute_task_worker(
         )
     else:
         result = _run_task()
-
+    end_time = time.perf_counter()
+    pid = os.getpid()
     return {
         "scores": result[0],
         "task_time": result[1],
         "peak_bytes": peak_delta_bytes,
         "gpu_peak_bytes": gpu_peak_bytes,
+        "start_time": start_time,
+        "end_time": end_time,
+        "pid": pid,
     }
 
 
@@ -385,6 +403,9 @@ class NodeExecutor:
             checkpoint_every=1,
             resume=False,
         )
+        self.statistics = {}
+        self.statistics["worker_stats"] = {}
+        self.statistics["node_stats"] = {}
 
     def _shm_names_for_submit(
         self, parent_node_ids: List[str], payload_data: Any
@@ -451,6 +472,10 @@ class NodeExecutor:
                     ]
 
                 if self._is_task_node(node):
+                    # potentially batch task nodes and then execute them together
+                    # by the the same task type (index, gpu vs cpu)
+                    # either enough nodes to batch or enough time to batch whatever happens first
+
                     task_result = ResultEntry(
                         dag=self._get_dag_from_node_ids(node_id),
                         representation_time=parent_results[0].transform_time,
@@ -458,17 +483,20 @@ class NodeExecutor:
                     task_results[node_id] = task_result
                     task_idx = int(node.parameters.get("_task_idx", 0))
                     payload_data = (
-                        self.modalities[0].data
+                        self.modalities[0]
                         if parent_results is None
-                        else parent_results[0].data
+                        else parent_results[0]
                     )
                     retained = self._retain_for_submit(parent_node_ids, payload_data)
+                    aggregation = node.aggregation
+
                     future = executor.submit(
                         _execute_task_worker,
                         node_id,
                         self.tasks[task_idx],
                         payload_data,
                         gpu_id,
+                        aggregation,
                     )
                 else:
                     payload_data = (
@@ -538,6 +566,14 @@ class NodeExecutor:
                         peak_bytes = result["peak_bytes"]
                         gpu_peak_bytes = result["gpu_peak_bytes"]
                         node = self.scheduler.mapping[node_id]
+                        self.statistics["worker_stats"][result["pid"]] = {
+                            "start_time": result["start_time"],
+                            "end_time": result["end_time"],
+                        }
+                        self.statistics["node_stats"][node_id] = {
+                            "start_time": result["start_time"],
+                            "end_time": result["end_time"],
+                        }
                         if self._is_task_node(node):
                             task_results[node_id].task_time = result["task_time"]
                             task_results[node_id].train_score = result["scores"][
@@ -594,7 +630,10 @@ class NodeExecutor:
 
         self.result_cache.cleanup_all()
         self._cleanup_leaf_shared_memory()
-        return {"task_results": list(task_results.values())}
+        return {
+            "task_results": list(task_results.values()),
+            "statistics": self.statistics,
+        }
 
     def _handle_modality_result(
         self,

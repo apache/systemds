@@ -33,7 +33,6 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
-import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
 /*
@@ -55,6 +54,8 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
 	private static final String TEST_CLASS = TEST_DIR + DPBuiltinDMLTest.class.getSimpleName() + "/";
 	private static final int ROWS = 100;
 	private static final int COLS = 10;
+
+	private double[][] data;
 
 	private static final String DML_LAPLACE_TEMPLATE = "X = read($1);\n"
 		+ "result = dp_laplace(X, query=\"%s\", sensitivity=1.0, epsilon=$2);\n"
@@ -92,6 +93,7 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
 		addTestConfiguration("DPLaplace", new TestConfiguration(TEST_CLASS, "DPLaplace"));
 		addTestConfiguration("DPGaussian", new TestConfiguration(TEST_CLASS, "DPGaussian"));
 		addTestConfiguration("DPSetBudget", new TestConfiguration(TEST_CLASS, "DPSetBudget"));
+		data = this.getRandomMatrix(ROWS, COLS, 0, 1, 1.0, 42);
 	}
 
 	@Test
@@ -107,7 +109,6 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
 	@Test
 	public void testLaplaceColSums() {
 		// query="colSums": T is 1 x n filled with 1.0, output is the noisy column-sum row vector.
-		double[][] data = TestUtils.generateTestMatrix(ROWS, COLS, 0, 1, 1.0, 42);
 		HashMap<CellIndex, Double> result = runAndGetResult("DPLaplace", String.format(DML_LAPLACE_TEMPLATE, "colSums"),
 			"0.5", data);
 		assertShape(result, 1, COLS);
@@ -118,7 +119,6 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
 	@Test
 	public void testGaussianIdentity() {
 		// query="identity": T is the n x n identity, output is a noisy release of X itself.
-		double[][] data = TestUtils.generateTestMatrix(ROWS, COLS, 0, 1, 1.0, 42);
 		HashMap<CellIndex, Double> result = runAndGetResult("DPGaussian",
 			String.format(DML_GAUSSIAN_TEMPLATE, "identity"), "0.5", data);
 		assertShape(result, ROWS, COLS);
@@ -135,7 +135,6 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
 
 	@Test
 	public void testHighEpsilonIsCloserToTruth() {
-		double[][] data = TestUtils.generateTestMatrix(ROWS, COLS, 0, 1, 1.0, 42);
 		// Higher epsilon => less noise => result closer to the true mean.
 		// NOTE: the DPBudgetAccountant caps total spend at the default budget
 		// (epsilon = 1.0) regardless of the per-release epsilon requested, so epsilon values
@@ -149,7 +148,6 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
 	public void testSetBudgetLiteralAllowsExceedingDefaultBudget() {
 		// Default budget is epsilon=1.0; a single release at epsilon=1.5 would be
 		// rejected unless dp_set_budget(3.0, ...) widens it first.
-		double[][] data = TestUtils.generateTestMatrix(ROWS, COLS, 0, 1, 1.0, 42);
 		HashMap<CellIndex, Double> result = runAndGetResult("DPSetBudget",
 			String.format(DML_SET_BUDGET_TEMPLATE, "3.0"), "1.5", data);
 		assertShape(result, 1, COLS);
@@ -159,7 +157,6 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
 	public void testSetBudgetNarrowBudgetStillEnforced() {
 		// An explicit narrow budget must still be enforced: epsilon=0.8 exceeds
 		// the explicit budget of 0.5.
-		double[][] data = TestUtils.generateTestMatrix(ROWS, COLS, 0, 1, 1.0, 42);
 		runExpectingException("DPSetBudget", String.format(DML_SET_BUDGET_TEMPLATE, "0.5"), "0.8", data,
 			DMLRuntimeException.class);
 	}
@@ -170,18 +167,15 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
 		// which wraps all case-block exceptions in ParseException (see processExpression's
 		// catch-all) - unlike the non-literal check below, which runs during validation
 		// and so surfaces as a bare LanguageException.
-		double[][] data = TestUtils.generateTestMatrix(ROWS, COLS, 0, 1, 1.0, 42);
 		runExpectingException("DPSetBudget", DML_SET_BUDGET_TWICE, "0.5", data, ParseException.class);
 	}
 
 	@Test
 	public void testSetBudgetRejectsNonLiteralArgs() {
-		double[][] data = TestUtils.generateTestMatrix(ROWS, COLS, 0, 1, 1.0, 42);
 		runExpectingException("DPSetBudget", DML_SET_BUDGET_NON_LITERAL, "0.5", data, LanguageException.class);
 	}
 
 	private void runColMeansDPTest(String testName, String dml, String epsilonStr) {
-		double[][] data = TestUtils.generateTestMatrix(ROWS, COLS, 0, 1, 1.0, 42);
 		HashMap<CellIndex, Double> result = runAndGetResult(testName, dml, epsilonStr, data);
 		assertShape(result, 1, COLS);
 		// Must differ from the exact (clean) mean by a non-trivial amount.

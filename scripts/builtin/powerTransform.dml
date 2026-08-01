@@ -148,7 +148,7 @@ ptNegLogLikelihood = function(
     }
 }
 
-# Minimize the negative log likelihood with bounded Brent optimization
+# Minimize the negative log likelihood with Brent optimization
 ptBrentSearch = function(
     Matrix[Double] x,
     Double lower,
@@ -156,14 +156,59 @@ ptBrentSearch = function(
     String method)
   return (Double lambdaOptimal)
 {
+  # Expand the initial interval until it brackets a minimum
+  goldenRatio = 1.618034;
+  maxBracketIterations = 1000;
+  lowerScore = ptNegLogLikelihood(x=x, lambda=lower, method=method);
+  upperScore = ptNegLogLikelihood(x=x, lambda=upper, method=method);
+
+  if (lowerScore < upperScore) {
+    xa = upper;
+    fa = upperScore;
+    xb = lower;
+    fb = lowerScore;
+  }
+  else {
+    xa = lower;
+    fa = lowerScore;
+    xb = upper;
+    fb = upperScore;
+  }
+
+  initialXc = xb + goldenRatio * (xb - xa);
+  initialFc = ptNegLogLikelihood(x=x, lambda=initialXc, method=method);
+  xc = initialXc;
+  fc = initialFc;
+  bracketIteration = 0;
+  while ((fc < fb) & (bracketIteration < maxBracketIterations)) {
+    nextXc = xc + goldenRatio * (xc - xb);
+    nextFc = ptNegLogLikelihood(x=x, lambda=nextXc, method=method);
+    xa = xb;
+    fa = fb;
+    xb = xc;
+    fb = fc;
+    xc = nextXc;
+    fc = nextFc;
+    bracketIteration = bracketIteration + 1;
+  }
+
+  if ((bracketIteration >= maxBracketIterations) & (fc < fb)) {
+    stop("powerTransform: failed to bracket lambda minimum")
+  }
+
+  validBracket = ((fb < fa) & (fb <= fc)) | ((fb <= fa) & (fb < fc));
+  if (!validBracket) {
+    stop("powerTransform: failed to bracket lambda minimum")
+  }
+
+  a = min(xa, xc);
+  b = max(xa, xc);
+
   # Brent combines inverse parabolic interpolation with a golden-section fallback
   goldenMean = 0.3819660112501051;
   sqrtEpsilon = sqrt(2.2e-16);
   tolerance = 1.48e-8;
   maxIterations = 500;
-
-  a = lower;
-  b = upper;
 
   xf = a + goldenMean * (b - a);
   nfc = xf;

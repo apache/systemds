@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.builtin.part2;
 
 import java.util.HashMap;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysds.common.Types.ExecMode;
@@ -85,6 +86,32 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 			{16.0, 17}
 		};
 		runPowerTransformTest("box-cox", false, input, false);
+	}
+
+	@Test
+	public void testPowerTransformYeoJohnsonLambdaAboveInitialInterval() {
+		double[][] input = {
+			{0.00},
+			{0.97},
+			{0.98},
+			{0.99},
+			{1.00}
+		};
+		runPowerTransformTest("yeo-johnson", false, input, false);
+		assertLambdaOutsideInitialInterval(true);
+	}
+
+	@Test
+	public void testPowerTransformBoxCoxLambdaBelowInitialInterval() {
+		double[][] input = {
+			{1.00},
+			{1.01},
+			{1.02},
+			{1.03},
+			{10.0}
+		};
+		runPowerTransformTest("box-cox", false, input, false);
+		assertLambdaOutsideInitialInterval(false);
 	}
 
 	@Test
@@ -234,5 +261,11 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 		HashMap<CellIndex, Double> dmlResult = readDMLMatrixFromOutputDir(name);
 		HashMap<CellIndex, Double> rResult = readRMatrixFromExpectedDir(name);
 		TestUtils.compareMatrices(dmlResult, rResult, tolerance, "DML", "R");
+	}
+
+	private void assertLambdaOutsideInitialInterval(boolean above) {
+		double lambda = readDMLMatrixFromOutputDir("L").get(new CellIndex(1, 1));
+		Assert.assertTrue("Expected lambda outside the initial interval, but was " + lambda,
+			above ? lambda > 2.0 : lambda < -2.0);
 	}
 }

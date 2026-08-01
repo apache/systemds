@@ -77,15 +77,57 @@ objective <- function(lambda, x, method) {
     -(logLikelihood + jacobian)
 }
 
+bracketMinimum <- function(x, method, initialLower = -2, initialUpper = 2) {
+    goldenRatio <- 1.618034
+    maxIterations <- 1000
+
+    xa <- initialLower
+    xb <- initialUpper
+    fa <- objective(xa, x, method)
+    fb <- objective(xb, x, method)
+
+    if (fa < fb) {
+        point <- xa
+        xa <- xb
+        xb <- point
+
+        score <- fa
+        fa <- fb
+        fb <- score
+    }
+
+    xc <- xb + goldenRatio * (xb - xa)
+    fc <- objective(xc, x, method)
+
+    iteration <- 0
+    while (fc < fb && iteration < maxIterations) {
+        xa <- xb
+        fa <- fb
+        xb <- xc
+        fb <- fc
+        xc <- xb + goldenRatio * (xb - xa)
+        fc <- objective(xc, x, method)
+        iteration <- iteration + 1
+    }
+
+    validBracket <- (fb < fa && fb <= fc) || (fb <= fa && fb < fc)
+    if (!validBracket) {
+        stop("failed to bracket lambda minimum")
+    }
+
+    c(min(xa, xc), max(xa, xc))
+}
+
 lambdas <- matrix(1.0, nrow = 1, ncol = ncol(X))
 Y <- matrix(0.0, nrow = nrow(X), ncol = ncol(X))
 
 for (j in seq_len(ncol(X))) {
     x <- X[, j]
     if (max(x) != min(x)) {
+        interval <- bracketMinimum(x, method)
         lambdas[1, j] <- optimize(
             objective,
-            interval = c(-2, 2),
+            interval = interval,
             x = x,
             method = method,
             tol = 1.48e-8

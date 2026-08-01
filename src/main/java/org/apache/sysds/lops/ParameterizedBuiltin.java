@@ -204,14 +204,14 @@ public class ParameterizedBuiltin extends Lop
 				compileGenericParamMap(sb, _inputParams);
 				break;
 			}
-			case DP_LAPLACE: {
-				sb.append(Opcodes.DP_LAPLACE);
+			case DP_GAUSSIAN: {
+				sb.append(Opcodes.DP_GAUSSIAN);
 				sb.append(OPERAND_DELIMITOR);
 				compileGenericParamMap(sb, _inputParams);
 				break;
 			}
-			case DP_GAUSSIAN: {
-				sb.append(Opcodes.DP_GAUSSIAN);
+			case DP_LAPLACE: {
+				sb.append(Opcodes.DP_LAPLACE);
 				sb.append(OPERAND_DELIMITOR);
 				compileGenericParamMap(sb, _inputParams);
 				break;

@@ -61,8 +61,8 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
 	// -----------------------------------------------------------------------
 
 	/** Opcode registered in Builtins and CPInstructionParser. */
-	public static final String OPCODE_LAPLACE = "dp_laplace";
 	public static final String OPCODE_GAUSSIAN = "dp_gaussian";
+	public static final String OPCODE_LAPLACE = "dp_laplace";
 
 	// -----------------------------------------------------------------------
 	// Fields

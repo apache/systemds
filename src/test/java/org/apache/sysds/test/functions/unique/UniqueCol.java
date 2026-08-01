@@ -61,7 +61,7 @@ public class UniqueCol extends UniqueBase {
 		// every column holds a single distinct value, so the result has one row
 		double[][] inputMatrix = {{1, 2, 3}, {1, 2, 3}, {1, 2, 3}};
 		double[][] expectedMatrix = {{1, 2, 3}};
-		uniqueTestOrdered(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
+		uniqueTest(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
 	}
 
 	@Test
@@ -72,44 +72,29 @@ public class UniqueCol extends UniqueBase {
 	}
 
 	/**
-	 * Large enough to take the multi-threaded path. Every column holds a single distinct value, so the expected result
-	 * is one row and independent of any hash set iteration order.
+	 * The cases above stay below the 16,384 cell threshold of the multi-threaded implementation and therefore only
+	 * exercise the sequential path. This one is above it, so the column partitions are actually deduplicated in
+	 * parallel.
 	 */
 	@Test
 	public void testMultiThreadedCP() {
-		int rlen = 64, clen = 400; // 25,600 cells, above the multi-threading threshold
-		double[][] inputMatrix = new double[rlen][clen];
-		double[][] expectedMatrix = new double[1][clen];
-		for(int j = 0; j < clen; j++) {
-			for(int i = 0; i < rlen; i++)
-				inputMatrix[i][j] = j;
-			expectedMatrix[0][j] = j;
-		}
-		uniqueTestOrdered(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
+		uniqueTest(constantColumns(64, 400), expectedConstantColumns(400), Types.ExecType.CP, 0.0);
 	}
 
 	/**
-	 * Same input under a heavily reduced local memory budget. Column-wise workers reuse a single set that is cleared
-	 * per column, so only one live set per thread is charged and the parallel path stays applicable; this guards
-	 * against needlessly falling back to batched or sequential execution.
+	 * Selects the batched path: with 8 threads and a 4 MB local memory budget, one live column set per thread no longer
+	 * fits, while the budget still holds several columns worth of values so batching remains applicable.
 	 */
 	@Test
-	public void testReducedMemoryBudgetCP() {
-		int rlen = 64, clen = 400;
-		double[][] inputMatrix = new double[rlen][clen];
-		double[][] expectedMatrix = new double[1][clen];
-		for(int j = 0; j < clen; j++) {
-			for(int i = 0; i < rlen; i++)
-				inputMatrix[i][j] = j;
-			expectedMatrix[0][j] = j;
-		}
-		uniqueTestConstrainedMemory(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0, 16 * 1024 * 1024);
+	public void testBatchedCP() {
+		uniqueTestConstrainedMemory(constantColumns(4096, 8), expectedConstantColumns(8), Types.ExecType.CP, 0.0,
+			4 * 1024 * 1024, 8);
 	}
 
 	/**
-	 * Sparse counterpart of the multi-threaded case: only every eighth column is populated, so the input is read in
-	 * sparse format. Every column still holds a single distinct value, either its filler or zero, so the expected
-	 * result stays one row.
+	 * Same as the multi-threaded case, but with an input that is read in sparse format, so unique() reaches the values
+	 * through the sparse block lookup rather than the dense array. Only every eighth column is populated, and every
+	 * column still holds a single distinct value, either its filler or zero.
 	 */
 	@Test
 	public void testSparseMultiThreadedCP() {
@@ -122,6 +107,22 @@ public class UniqueCol extends UniqueBase {
 				inputMatrix[i][j] = value;
 			expectedMatrix[0][j] = value;
 		}
-		uniqueTestOrdered(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
+		uniqueTest(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
+	}
+
+	/** Every column holds a single distinct value, so the expected result is one row. */
+	private static double[][] constantColumns(int rlen, int clen) {
+		double[][] ret = new double[rlen][clen];
+		for(int j = 0; j < clen; j++)
+			for(int i = 0; i < rlen; i++)
+				ret[i][j] = j + 1;
+		return ret;
+	}
+
+	private static double[][] expectedConstantColumns(int clen) {
+		double[][] ret = new double[1][clen];
+		for(int j = 0; j < clen; j++)
+			ret[0][j] = j + 1;
+		return ret;
 	}
 }

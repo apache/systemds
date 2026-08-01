@@ -78,29 +78,28 @@ public class UniqueRow extends UniqueBase {
 	}
 
 	/**
-	 * Large enough to take the multi-threaded path. Every row holds a single distinct value, so the expected result is
-	 * one column and independent of any hash set iteration order.
+	 * The cases above stay below the 16,384 cell threshold of the multi-threaded implementation and therefore only
+	 * exercise the sequential path. This one is above it, so the row partitions are actually deduplicated in parallel.
 	 */
 	@Test
 	public void testMultiThreadedCP() {
-		uniqueTestOrdered(constantRows(400, 64), expectedConstantRows(400), Types.ExecType.CP, 0.0);
+		uniqueTest(constantRows(400, 64), expectedConstantRows(400), Types.ExecType.CP, 0.0);
 	}
 
 	/**
-	 * Same input under a heavily reduced local memory budget. Row-wise workers reuse a single set that is cleared per
-	 * row, so only one live set per thread is charged and the parallel path stays applicable; this guards against
-	 * needlessly falling back to batched or sequential execution.
+	 * Selects the batched path: with 8 threads and a 4 MB local memory budget, one live row set per thread no longer
+	 * fits, while the budget still holds several rows worth of values so batching remains applicable.
 	 */
 	@Test
-	public void testReducedMemoryBudgetCP() {
-		uniqueTestConstrainedMemory(constantRows(400, 64), expectedConstantRows(400), Types.ExecType.CP, 0.0,
-			16 * 1024 * 1024);
+	public void testBatchedCP() {
+		uniqueTestConstrainedMemory(constantRows(8, 4096), expectedConstantRows(8), Types.ExecType.CP, 0.0,
+			4 * 1024 * 1024, 8);
 	}
 
 	/**
-	 * Sparse counterpart of the multi-threaded case: only every eighth row is populated, so the input is read in sparse
-	 * format. Every row still holds a single distinct value, either its filler or zero, so the expected result stays
-	 * one column.
+	 * Same as the multi-threaded case, but with an input that is read in sparse format, so unique() reaches the values
+	 * through the sparse block lookup rather than the dense array. Only every eighth row is populated, and every row
+	 * still holds a single distinct value, either its filler or zero.
 	 */
 	@Test
 	public void testSparseMultiThreadedCP() {
@@ -113,21 +112,22 @@ public class UniqueRow extends UniqueBase {
 				inputMatrix[i][j] = value;
 			expectedMatrix[i][0] = value;
 		}
-		uniqueTestOrdered(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
+		uniqueTest(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
 	}
 
+	/** Every row holds a single distinct value, so the expected result is one column. */
 	private static double[][] constantRows(int rlen, int clen) {
 		double[][] ret = new double[rlen][clen];
 		for(int i = 0; i < rlen; i++)
 			for(int j = 0; j < clen; j++)
-				ret[i][j] = i;
+				ret[i][j] = i + 1;
 		return ret;
 	}
 
 	private static double[][] expectedConstantRows(int rlen) {
 		double[][] ret = new double[rlen][1];
 		for(int i = 0; i < rlen; i++)
-			ret[i][0] = i;
+			ret[i][0] = i + 1;
 		return ret;
 	}
 }

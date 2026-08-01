@@ -87,7 +87,7 @@ public class UniqueRowCol extends UniqueBase {
 	@Test
 	public void testBatchedCP() {
 		uniqueTestConstrainedMemory(cyclicValues(500, 40, 37), expectedCyclicValues(37), Types.ExecType.CP, 0.0,
-			8 * 1024 * 1024);
+			8 * 1024 * 1024, 8);
 	}
 
 	/**

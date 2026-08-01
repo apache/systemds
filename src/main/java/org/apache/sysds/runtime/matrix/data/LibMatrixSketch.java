@@ -69,9 +69,7 @@ public class LibMatrixSketch {
 
 	/**
 	 * Computes unique values with an explicit budget for the transient deduplication structures. The budget decides
-	 * between the full parallel path, its batched variant, and the sequential fallback. This overload exists so tests
-	 * can inject a small budget and deterministically exercise the batched path, which the heap-derived default would
-	 * not trigger.
+	 * between the full parallel path, its batched variant, and the sequential fallback.
 	 *
 	 * @param blkIn         input matrix block
 	 * @param dir           unique direction
@@ -79,7 +77,7 @@ public class LibMatrixSketch {
 	 * @param maxLocalBytes budget in bytes for transient deduplication structures
 	 * @return matrix block containing unique values
 	 */
-	public static MatrixBlock getUniqueValues(MatrixBlock blkIn, Types.Direction dir, int k, long maxLocalBytes) {
+	private static MatrixBlock getUniqueValues(MatrixBlock blkIn, Types.Direction dir, int k, long maxLocalBytes) {
 		// Similar to R's unique, this operation computes unique values according
 		// to the requested direction.
 		if(!satisfiesMultiThreadingConstraints(blkIn, dir, k))

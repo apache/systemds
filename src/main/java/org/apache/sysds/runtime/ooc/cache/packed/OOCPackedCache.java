@@ -130,6 +130,14 @@ public final class OOCPackedCache implements OOCCache {
 	}
 
 	@Override
+	public long maxPhysicalPinBytes(long logicalBytes) {
+		if(logicalBytes >= _packThresholdBytes)
+			return logicalBytes;
+		return _packTargetBytes > Long.MAX_VALUE - _packThresholdBytes ? Long.MAX_VALUE : _packTargetBytes +
+			_packThresholdBytes;
+	}
+
+	@Override
 	public BlockEntry putPinned(long sId, long tId, Object data, long size, MemoryAllowance allowance) {
 		if(size >= _packThresholdBytes)
 			return _physical.putPinned(sId, tId, data, size, allowance);

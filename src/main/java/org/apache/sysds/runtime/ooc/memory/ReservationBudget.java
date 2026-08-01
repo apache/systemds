@@ -26,6 +26,7 @@ public final class ReservationBudget implements MemoryAllowance, AutoCloseable {
 	private long _outstanding;
 	private long _available;
 	private boolean _closed;
+	private boolean _reusable;
 
 	public ReservationBudget(MemoryAllowance parent, long bytes) {
 		if(parent == null)
@@ -35,6 +36,13 @@ public final class ReservationBudget implements MemoryAllowance, AutoCloseable {
 		_parent = parent;
 		_outstanding = bytes;
 		_available = bytes;
+	}
+
+	public synchronized ReservationBudget enableReuse() {
+		if(_closed || getUsedMemory() != 0)
+			throw new IllegalStateException("Budget reuse must be enabled before reserving memory.");
+		_reusable = true;
+		return this;
 	}
 
 	@Override
@@ -64,13 +72,19 @@ public final class ReservationBudget implements MemoryAllowance, AutoCloseable {
 		checkNonNegative(bytes);
 		if(bytes == 0)
 			return;
+		boolean releaseParent;
 		synchronized(this) {
 			long used = _outstanding - _available;
 			if(bytes > used)
 				throw new IllegalStateException("Cannot release " + bytes + " bytes from a budget using " + used);
-			_outstanding -= bytes;
+			releaseParent = _closed || !_reusable;
+			if(releaseParent)
+				_outstanding -= bytes;
+			else
+				_available += bytes;
 		}
-		_parent.release(bytes);
+		if(releaseParent)
+			_parent.release(bytes);
 	}
 
 	@Override

@@ -25,6 +25,14 @@ import java.util.function.LongUnaryOperator;
 
 public interface OOCCache {
 	/**
+	 * Maximum bytes charged given the logical bytes of the requested entry. Use this method for reservation budget
+	 * planning as logical byte size and pinned entry bytes may differ.
+	 */
+	default long maxPhysicalPinBytes(long logicalBytes) {
+		return logicalBytes;
+	}
+
+	/**
 	 * Pins an item backed by an allowance. A successful pin transfers memory ownership from the cache to the owner of
 	 * the allowance and guarantees data availability. While pinned, the bytes of the entry are not counted as
 	 * cache-owned memory.

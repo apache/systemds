@@ -58,6 +58,10 @@
 # iForestModel  The trained iForest model as returned by outlierByIsolationForest
 # X             Samples to calculate the anomaly score for. X must contain every feature referenced
 #               by an internal model node
+#
+# To compare implementations element by element, apply the same serialized iForestModel in each
+# implementation. Independently trained forests are generally different even when given the same
+# numeric seed because RNG and sampling semantics are implementation-specific.
 # ---------------------------------------------------------------------------------------------
 #
 # OUTPUT:

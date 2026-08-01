@@ -59,7 +59,12 @@
 # n_trees           Number of iTrees to build
 # subsampling_size  Size of the subsample used to build each iTree. Values larger than nrow(X)
 #                   are clamped to nrow(X)
-# seed              Seed for calls to `sample` and `rand`. -1 corresponds to a random seed
+# seed              Seed for calls to `sample` and `rand`. -1 corresponds to a random seed.
+#                   A fixed seed reproduces a forest within SystemDS, but is not a portable forest
+#                   identifier: other implementations use different RNGs, sampling algorithms,
+#                   and random-number consumption orders, so the same numeric seed can produce a
+#                   different forest. Serialize and reuse the model when exact score agreement
+#                   across implementations is required.
 # ---------------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -135,7 +140,10 @@ m_outlierByIsolationForest = function(Matrix[Double] X, Integer n_trees, Integer
 # n_trees           Int                           Number of iTrees to build
 # subsampling_size  Int                           Size of the subsample to build iTrees with
 # seed              Int              -1           Seed for calls to `sample` and `rand`.
-#                                                 -1 corresponds to a random seed
+#                                                 -1 corresponds to a random seed. Reproducibility
+#                                                 is guaranteed within this implementation only;
+#                                                 equal seeds in other runtimes need not build the
+#                                                 same forest.
 # ---------------------------------------------------------------------------------------------
 # OUTPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
@@ -496,12 +504,17 @@ s_sampleRows = function(Matrix[Double] X, Integer size, Integer seed = -1)
   s_warning_assert_outlierByIsolationForest(nrow(X) >= size,
     "s_sampleRows: size must be <= nrow(X).")
 
-  random_vector = rand(rows = nrow(X), cols = 1, seed = seed)
-  X_rand = cbind(X, random_vector)
-
-  X_rand = order(target = X_rand, by = ncol(X_rand))
-
-  X_extracted = X_rand[1:size, 1:ncol(X)]
+  # Draw row indices directly instead of attaching a full-length random column
+  # and sorting all rows. The sparse selection matrix preserves the sampled
+  # order while making the work proportional to the requested sample size.
+  sampled_rows = sample(nrow(X), size, FALSE, seed)
+  selection = table(
+    seq(1, size),
+    sampled_rows,
+    size,
+    nrow(X)
+  )
+  X_extracted = selection %*% X
 }
 
 # Prints a warning for internal invariant violations. Helpers called from the

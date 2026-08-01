@@ -19,9 +19,14 @@
 
 package org.apache.sysds.test.functions.builtin.part2;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 
 import org.apache.sysds.common.Types.ExecMode;
@@ -49,6 +54,16 @@ public class BuiltinIsolationForestTest extends AutomatedTestBase
 	private static final int DATA_SEED = 314159265;
 	private static final int FOREST_SEED = 42;
 	private static final int REFERENCE_SUBSAMPLING_SIZE = 4;
+	private static final int[] BENCHMARK_ROWS = {1000, 2000, 4000, 8000, 16000, 32000, 64000};
+	private static final int BENCHMARK_REPETITIONS = 20;
+	private static final int BENCHMARK_NUM_COLS = 30;
+	private static final int BENCHMARK_NUM_TREES = 100;
+	private static final int BENCHMARK_SUBSAMPLING_SIZE = 256;
+	private static final int BENCHMARK_SEED = 271828;
+	private static final String R_TRAINING_RUNTIMES = "training_runtimes_R";
+	private static final String MEDIAN_RUNTIME_TABLE = "isolation_forest_median_runtimes.csv";
+	private static final String RUNTIME_PLOT = "isolation_forest_runtime_by_data_size.png";
+	private static final String SPEEDUP_TABLE = "isolation_forest_speedup.csv";
 
 	private enum TestCase {
 		BASIC,
@@ -81,10 +96,12 @@ public class BuiltinIsolationForestTest extends AutomatedTestBase
 
 	@Override
 	public void setUp() {
+		setOutAndExpectedDeletionDisabled(true);
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,
 			new String[] {"scores", "model", "subsampling_size", "same_seed_model",
-				"different_seed_model", "reference_scores", "dml_apply_runtime", "model_for_r"}));
+				"different_seed_model", "reference_scores", "dml_apply_runtime", "model_for_r",
+				"dml_training_runtimes"}));
 	}
 
 	@Test
@@ -111,6 +128,8 @@ public class BuiltinIsolationForestTest extends AutomatedTestBase
 			writeInputMatrixWithMTD("X_apply", X_apply, true);
 			writeInputMatrixWithMTD("ReferenceModel", referenceModel(), true);
 			writeInputMatrixWithMTD("ReferenceX", referenceSamples(), true);
+			if (runExtendedChecks)
+				writeInputMatrixWithMTD("BenchmarkX", createBenchmarkData(), true);
 
 			String home = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = home + TEST_NAME + ".dml";
@@ -123,6 +142,14 @@ public class BuiltinIsolationForestTest extends AutomatedTestBase
 				"subsampling_size=" + subsamplingSize,
 				"seed=" + FOREST_SEED,
 				"check_seed=" + (runExtendedChecks ? 1 : 0),
+				"run_benchmark=" + (runExtendedChecks ? 1 : 0),
+				"benchmark_X=" + input("BenchmarkX"),
+				"benchmark_base_rows=" + BENCHMARK_ROWS[0],
+				"benchmark_num_sizes=" + BENCHMARK_ROWS.length,
+				"benchmark_repetitions=" + BENCHMARK_REPETITIONS,
+				"benchmark_n_trees=" + BENCHMARK_NUM_TREES,
+				"benchmark_subsampling_size=" + BENCHMARK_SUBSAMPLING_SIZE,
+				"benchmark_seed=" + BENCHMARK_SEED,
 				"scores=" + output("scores"),
 				"model=" + output("model"),
 				"subsampling_size_out=" + output("subsampling_size"),
@@ -130,7 +157,8 @@ public class BuiltinIsolationForestTest extends AutomatedTestBase
 				"different_seed_model=" + output("different_seed_model"),
 				"reference_scores=" + output("reference_scores"),
 				"dml_apply_runtime=" + output("dml_apply_runtime"),
-				"model_for_r=" + output("model_for_r")};
+				"model_for_r=" + output("model_for_r"),
+				"dml_training_runtimes=" + output("dml_training_runtimes")};
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 
@@ -284,7 +312,19 @@ public class BuiltinIsolationForestTest extends AutomatedTestBase
 			input("X_apply.mtx"),
 			Integer.toString(actualSubsamplingSize),
 			expected("scores_R"),
-			expected("runtime_R"));
+			expected("runtime_R"),
+			input("BenchmarkX.mtx"),
+			output("dml_training_runtimes"),
+			Integer.toString(BENCHMARK_ROWS[0]),
+			Integer.toString(BENCHMARK_ROWS.length),
+			Integer.toString(BENCHMARK_REPETITIONS),
+			Integer.toString(BENCHMARK_NUM_TREES),
+			Integer.toString(BENCHMARK_SUBSAMPLING_SIZE),
+			Integer.toString(BENCHMARK_SEED),
+			expected(R_TRAINING_RUNTIMES),
+			expected(MEDIAN_RUNTIME_TABLE),
+			expected(RUNTIME_PLOT),
+			expected(SPEEDUP_TABLE));
 
 		runRScript(true);
 
@@ -302,6 +342,80 @@ public class BuiltinIsolationForestTest extends AutomatedTestBase
 
 		System.out.printf(Locale.ROOT, "Isolation Forest Apply runtime: SystemDS %.6f s, R %.6f s%n",
 			dmlRuntime, rRuntime);
+
+		assertTrainingBenchmark();
+	}
+
+	private void assertTrainingBenchmark() {
+		// MatrixMarket output has no SystemDS .mtd dimensions (reported as -1).
+		// The R script reads the SystemDS MatrixMarket file, validates its exact
+		// 140-by-5 shape and alignment, and asserts that the cross-runtime forest
+		// fingerprints differ before writing the R measurements used below.
+		HashMap<CellIndex, Double> rRuntimes = readRMatrixFromExpectedDir(R_TRAINING_RUNTIMES);
+
+		for (int sizeId = 0; sizeId < BENCHMARK_ROWS.length; sizeId++) {
+			for (int repetition = 1; repetition <= BENCHMARK_REPETITIONS; repetition++) {
+				int measurement = sizeId * BENCHMARK_REPETITIONS + repetition;
+				assertBenchmarkMeasurement(rRuntimes, measurement, sizeId, repetition, "R");
+			}
+		}
+
+		assertBenchmarkArtifact(MEDIAN_RUNTIME_TABLE, BENCHMARK_ROWS.length + 1);
+		assertBenchmarkArtifact(SPEEDUP_TABLE, BENCHMARK_ROWS.length + 1);
+
+		File runtimePlot = new File(expected(RUNTIME_PLOT));
+		Assert.assertTrue("The runtime-versus-data-size plot must be generated", runtimePlot.isFile());
+		Assert.assertTrue("The runtime-versus-data-size plot must not be empty", runtimePlot.length() > 0);
+		printBenchmarkReport();
+	}
+
+	private void assertBenchmarkMeasurement(HashMap<CellIndex, Double> measurements,
+		int measurement, int sizeId, int repetition, String implementation)
+	{
+		Assert.assertEquals(implementation + " benchmark data size is out of order",
+			BENCHMARK_ROWS[sizeId], valueAt(measurements, measurement, 1), SCORE_EPS);
+		Assert.assertEquals(implementation + " benchmark repetition is out of order",
+			repetition, valueAt(measurements, measurement, 2), SCORE_EPS);
+
+		double runtime = valueAt(measurements, measurement, 3);
+		Assert.assertTrue(implementation + " training runtime must be finite and positive",
+			Double.isFinite(runtime) && runtime > 0);
+	}
+
+	private void assertBenchmarkArtifact(String name, int expectedLines) {
+		File artifact = new File(expected(name));
+		Assert.assertTrue(name + " must be generated", artifact.isFile());
+		Assert.assertTrue(name + " must not be empty", artifact.length() > 0);
+
+		try {
+			List<String> lines = Files.readAllLines(artifact.toPath(), StandardCharsets.UTF_8);
+			Assert.assertEquals(name + " must contain a header and one row per data size",
+				expectedLines, lines.size());
+		}
+		catch (IOException ex) {
+			Assert.fail("Unable to read benchmark artifact " + artifact + ": " + ex.getMessage());
+		}
+	}
+
+	private void printBenchmarkReport() {
+		try {
+			List<String> medianTable = Files.readAllLines(
+				new File(expected(MEDIAN_RUNTIME_TABLE)).toPath(), StandardCharsets.UTF_8);
+			System.out.println("Isolation Forest training medians (20 repetitions per data size):");
+			for (String row : medianTable)
+				System.out.println(row.replace(',', '\t'));
+		}
+		catch (IOException ex) {
+			Assert.fail("Unable to print the Isolation Forest benchmark table: " + ex.getMessage());
+		}
+
+		System.out.println("Small-data explanation: fixed SystemDS costs include JVM/DML startup and " +
+			"compilation for end-to-end runs, plus parfor scheduling and task setup for every training call. " +
+			"The reported in-script training times exclude one-off process startup but retain per-call setup.");
+		System.out.println("Seed explanation: a seed is reproducible only within an implementation. " +
+			"SystemDS and R use different RNGs, sampling procedures, and random-number consumption orders, " +
+			"so equal numeric seeds still build different forests. Exact anomaly-score agreement is preserved " +
+			"by scoring the same serialized SystemDS forest in both implementations.");
 	}
 
 	private double[][] createTrainingData() {
@@ -316,6 +430,11 @@ public class BuiltinIsolationForestTest extends AutomatedTestBase
 				return getRandomMatrix(numRows, numCols, -1, 1, 1,
 					DATA_SEED + testCase.ordinal());
 		}
+	}
+
+	private double[][] createBenchmarkData() {
+		return getRandomMatrix(BENCHMARK_ROWS[BENCHMARK_ROWS.length - 1], BENCHMARK_NUM_COLS,
+			-1, 1, 1, DATA_SEED + 1000);
 	}
 
 	private double[][] createApplyData(double[][] X) {

@@ -71,6 +71,10 @@ public class DMLConfig
 	public static final String CP_PARALLEL_OPS      = "sysds.cp.parallel.ops";
 	public static final String CP_PARALLEL_IO       = "sysds.cp.parallel.io";
 	public static final String IO_COMPRESSION_CODEC = "sysds.io.compression.encoding";
+	public static final String DELTA_READER_BATCH_SIZE = "sysds.io.delta.reader.batchsize"; // int: rows per parquet read batch
+	public static final String DELTA_WRITER_BATCH_SIZE = "sysds.io.delta.writer.batchsize"; // int: matrix rows materialized per columnar batch handed to the engine
+	public static final String DELTA_WRITER_TARGET_FILE_SIZE = "sysds.io.delta.writer.targetfilesize"; // long: upper bound on target data-file size in bytes; adaptive sizing may pick smaller -> more files -> more parallel-read throughput
+	public static final String DELTA_WRITER_ADAPTIVE_FILE_SIZE = "sysds.io.delta.writer.adaptivefilesize"; // boolean: size data files toward one per parallel reader (capped by targetfilesize)
 	public static final String PARALLEL_ENCODE      = "sysds.parallel.encode";  // boolean: enable multi-threaded transformencode and apply
 	public static final String PARALLEL_ENCODE_STAGED = "sysds.parallel.encode.staged";
 	public static final String PARALLEL_ENCODE_APPLY_BLOCKS = "sysds.parallel.encode.applyBlocks";
@@ -78,6 +82,7 @@ public class DMLConfig
 	public static final String PARALLEL_ENCODE_NUM_THREADS  = "sysds.parallel.encode.numThreads";
 	public static final String PARALLEL_TOKENIZE = "sysds.parallel.tokenize";
 	public static final String PARALLEL_TOKENIZE_NUM_BLOCKS = "sysds.parallel.tokenize.numBlocks";
+	public static final String FRAME_TO_MATRIX_WARN_CAST = "sysds.frame.tomatrix.warncast";
 	public static final String COMPRESSED_LINALG    = "sysds.compressed.linalg";
 	public static final String COMPRESSED_LINALG_INTERMEDIATE    = "sysds.compressed.linalg.intermediate";
 	public static final String COMPRESSED_LOSSY     = "sysds.compressed.lossy";
@@ -157,8 +162,13 @@ public class DMLConfig
 		_defaultVals.put(CP_PARALLEL_OPS,        "true" );
 		_defaultVals.put(CP_PARALLEL_IO,         "true" );
 		_defaultVals.put(IO_COMPRESSION_CODEC,   "none");
+		_defaultVals.put(DELTA_READER_BATCH_SIZE, "4096"); // rows per parquet read batch (Delta Kernel default 1024)
+		_defaultVals.put(DELTA_WRITER_BATCH_SIZE, "4096"); // matrix rows materialized per columnar batch handed to the engine
+		_defaultVals.put(DELTA_WRITER_TARGET_FILE_SIZE, String.valueOf(64L * 1024 * 1024)); // 64MB cap on target data-file size; adaptive sizing may pick smaller -> more files -> more parallel-read throughput
+		_defaultVals.put(DELTA_WRITER_ADAPTIVE_FILE_SIZE, "true"); // size data files toward one per parallel reader
 		_defaultVals.put(PARALLEL_TOKENIZE,      "false");
 		_defaultVals.put(PARALLEL_TOKENIZE_NUM_BLOCKS, "64");
+		_defaultVals.put(FRAME_TO_MATRIX_WARN_CAST, "false");
 		_defaultVals.put(PARALLEL_ENCODE,        "true" );
 		_defaultVals.put(PARALLEL_ENCODE_STAGED, "false" );
 		_defaultVals.put(PARALLEL_ENCODE_APPLY_BLOCKS, "-1");
@@ -456,7 +466,7 @@ public class DMLConfig
 	public String getConfigInfo()  {
 		String[] tmpConfig = new String[] { 
 			LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL, DEFAULT_BLOCK_SIZE,
-			CP_PARALLEL_OPS, CP_PARALLEL_IO, PARALLEL_ENCODE, NATIVE_BLAS, NATIVE_BLAS_DIR,
+			CP_PARALLEL_OPS, CP_PARALLEL_IO, PARALLEL_ENCODE, FRAME_TO_MATRIX_WARN_CAST, NATIVE_BLAS, NATIVE_BLAS_DIR,
 			COMPRESSED_LINALG, COMPRESSED_LOSSY, COMPRESSED_VALID_COMPRESSIONS, COMPRESSED_OVERLAPPING,
 			COMPRESSED_SAMPLING_RATIO, COMPRESSED_SOFT_REFERENCE_COUNT,
 			COMPRESSED_COCODE, COMPRESSED_TRANSPOSE, COMPRESSED_TRANSFORMENCODE, DAG_LINEARIZATION,

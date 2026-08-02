@@ -181,6 +181,26 @@ public class DenseBlockFP64 extends DenseBlockDRB
 		return this;
 	}
 
+	public DenseBlock setPartialRow(DenseBlock row, int rIdx, int srcOffset, int destOffset, int length) {
+		if(destOffset + length > _odims[0])
+			throw new RuntimeException(
+				"Partial row assignment exceeds row length: " + (destOffset + length) + " > " + _odims[0]);
+		System.arraycopy(row.valuesAt(0), srcOffset, _data, this.pos(rIdx, destOffset), length);
+		return this;
+	}
+
+	public DenseBlock setPartialCol(DenseBlock col, int cIdx, int srcOffset, int destOffset, int length) {
+		if(destOffset + length > _rlen)
+			throw new RuntimeException(
+				"Partial column assignment exceeds column length: " + (destOffset + length) + " > " + _rlen);
+		int destPos = this.pos(destOffset, cIdx);
+		double[] src = col.valuesAt(0);
+		for(int i = 0; i < length; i++) {
+			_data[destPos + i * _odims[0]] = src[srcOffset + i];
+		}
+		return this;
+	}
+
 	@Override
 	public DenseBlock set(int r, double[] v) {
 		System.arraycopy(v, 0, _data, pos(r), _odims[0]);

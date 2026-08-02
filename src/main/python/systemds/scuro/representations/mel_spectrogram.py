@@ -30,6 +30,19 @@ from systemds.scuro.drsearch.operator_registry import (
     register_representation,
     register_context_representation_operator,
 )
+from systemds.scuro.utils.static_variables import (
+    NP_ARRAY_HEADER_BYTES,
+    PY_LIST_HEADER_BYTES,
+    PY_LIST_SLOT_BYTES,
+)
+
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    message=r"n_fft=\d+ is too (?:small|large) for input signal",
+    module=r"librosa",
+)
 
 
 @register_representation(ModalityType.AUDIO)
@@ -51,16 +64,16 @@ class MelSpectrogram(UnimodalRepresentation):
         self.n_mels = int(n_mels)
         self.hop_length = int(hop_length)
         self.n_fft = int(n_fft)
+        self.window_size = self.n_fft
 
     def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )
         result = []
-        metadata_values = list(modality.metadata.values())
 
         for i, sample in enumerate(modality.data):
-            sr = metadata_values[i]["frequency"]
+            sr = modality.metadata[i]["frequency"]
             computed_feature = self.compute_feature(sample, sr)
             result.append(computed_feature)
 
@@ -77,7 +90,10 @@ class MelSpectrogram(UnimodalRepresentation):
             hop_length=self.hop_length,
             n_fft=self.n_fft,
         )
-        return S.T
+        if instance.ndim == 1:
+            return S.T
+
+        return S.transpose(0, 2, 1)
 
     def get_output_stats(self, input_stats) -> RepresentationStats:
         num_instances = getattr(input_stats, "num_instances", 0)
@@ -95,7 +111,52 @@ class MelSpectrogram(UnimodalRepresentation):
             if signal_length < self.n_fft:
                 num_frames = 1
             else:
-                num_frames = 1 + (signal_length - self.n_fft) // self.hop_length
+                num_frames = 1 + signal_length // self.hop_length
             num_frames = max(int(num_frames), 1)
 
         return RepresentationStats(num_instances, (num_frames, self.n_mels))
+
+    def estimate_peak_memory_bytes(self, input_stats) -> dict:
+        n = int(getattr(input_stats, "num_instances", 0))
+        if hasattr(input_stats, "max_length"):
+            signal_length = int(getattr(input_stats, "max_length", 0))
+        elif hasattr(input_stats, "output_shape") and input_stats.output_shape:
+            signal_length = int(input_stats.output_shape[0])
+        else:
+            signal_length = 0
+
+        if signal_length <= 0:
+            num_frames = 1
+        elif signal_length < self.n_fft:
+            num_frames = 1
+        else:
+            num_frames = 1 + (signal_length) // self.hop_length
+            num_frames = max(int(num_frames), 1)
+
+        out_elem = np.dtype(np.float32).itemsize
+        num_freq_bins = 1 + self.n_fft // 2
+        output_payload_per_instance = num_frames * self.n_mels * out_elem
+        retained_output_bytes = PY_LIST_HEADER_BYTES + n * (
+            output_payload_per_instance + NP_ARRAY_HEADER_BYTES + PY_LIST_SLOT_BYTES
+        )
+
+        input_copy_bytes = max(signal_length, 1) * out_elem
+        stft_bytes = num_frames * num_freq_bins * np.dtype(np.complex64).itemsize
+        power_spec_bytes = num_frames * num_freq_bins * out_elem
+        mel_output_bytes = output_payload_per_instance
+        fft_workspace_bytes = max(2 * 1024 * 1024, stft_bytes // 2)
+
+        transient_one_instance = (
+            input_copy_bytes
+            + stft_bytes
+            + power_spec_bytes
+            + mel_output_bytes
+            + fft_workspace_bytes
+        )
+        cpu_peak = int(
+            (retained_output_bytes + transient_one_instance) * 2 + 12 * 1024 * 1024
+        )
+        return {
+            "cpu_peak_bytes": cpu_peak,
+            "gpu_peak_bytes": 0,
+        }

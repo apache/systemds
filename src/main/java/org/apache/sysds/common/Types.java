@@ -639,6 +639,7 @@ public interface Types {
 		MINUS_NZ(false), //sparse-safe minus: X-(mean*ppred(X,0,!=))
 		LOG_NZ(false), //sparse-safe log; ppred(X,0,"!=")*log(X,0.5)
 		MINUS1_MULT(false), //1-X*Y
+		GET_CATEGORICAL_MASK(false), // get transformation mask
 		QUANTIZE_COMPRESS(false), //quantization-fused compression
 		UNION_DISTINCT(false);
 
@@ -877,6 +878,7 @@ public interface Types {
 		HDF5,   // Hierarchical Data Format (HDF)
 		COG,   // Cloud-optimized GeoTIFF
 		PARQUET, // parquet format for columnar data storage
+		DELTA, // Delta Lake table (transaction log + parquet), read/written via Delta Kernel
 		UNKNOWN;
 		
 		public boolean isIJV() {
@@ -884,7 +886,7 @@ public interface Types {
 		}
 		
 		public boolean isTextFormat() {
-			return this != BINARY && this != COMPRESSED;
+			return this != BINARY && this != COMPRESSED && this != DELTA;
 		}
 		
 		public static boolean isTextFormat(String fmt) {

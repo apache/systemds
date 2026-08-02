@@ -35,6 +35,13 @@ from systemds.scuro.utils.static_variables import (
     PY_LIST_HEADER_BYTES,
     PY_LIST_SLOT_BYTES,
 )
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    message=r"n_fft=\d+ is too (?:small|large) for input signal",
+    module=r"librosa",
+)
 
 
 @register_representation(ModalityType.AUDIO)
@@ -45,6 +52,7 @@ class Spectrogram(UnimodalRepresentation):
         super().__init__("Spectrogram", ModalityType.TIMESERIES, parameters, False)
         self.hop_length = int(hop_length)
         self.n_fft = int(n_fft)
+        self.window_size = self.n_fft
 
     def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(
@@ -60,10 +68,14 @@ class Spectrogram(UnimodalRepresentation):
         return transformed_modality
 
     def compute_feature(self, instance):
+        data = np.array(instance)
         spectrogram = librosa.stft(
-            y=np.array(np.abs(instance)), hop_length=self.hop_length, n_fft=self.n_fft
+            y=np.abs(data), hop_length=self.hop_length, n_fft=self.n_fft
         )
-        return librosa.amplitude_to_db(np.abs(spectrogram)).T
+        if data.ndim == 1:
+            return librosa.amplitude_to_db(np.abs(spectrogram)).T
+
+        return librosa.amplitude_to_db(np.abs(spectrogram)).transpose(0, 2, 1)
 
     def estimate_peak_memory_bytes(self, input_stats) -> dict:
         # TODO: validate this function
@@ -74,7 +86,7 @@ class Spectrogram(UnimodalRepresentation):
         if signal_length < self.n_fft:
             num_frames = 1
         else:
-            num_frames = 1 + (signal_length - self.n_fft) // self.hop_length
+            num_frames = 1 + signal_length // self.hop_length
         num_frames = max(int(num_frames), 1)
         num_freq_bins = 1 + self.n_fft // 2
 
@@ -121,7 +133,7 @@ class Spectrogram(UnimodalRepresentation):
             if signal_length < self.n_fft:
                 num_frames = 1
             else:
-                num_frames = 1 + (signal_length - self.n_fft) // self.hop_length
+                num_frames = 1 + signal_length // self.hop_length
             num_frames = max(int(num_frames), 1)
 
         num_freq_bins = 1 + self.n_fft // 2

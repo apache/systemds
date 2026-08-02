@@ -1,6 +1,8 @@
 package org.apache.sysds.runtime.compress.colgroup.functional;
+
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -14,7 +16,6 @@ public class PiecewiseLinearUtils {
 	 */
 
 	private PiecewiseLinearUtils() {
-
 	}
 
 	public static final class SegmentedRegression {
@@ -44,34 +45,10 @@ public class PiecewiseLinearUtils {
 	public static double[] getColumn(MatrixBlock in, int colIndex) {
 		final int numRows = in.getNumRows();
 		final double[] column = new double[numRows];
-
-		for(int row = 0; row < numRows; row++) {
+		for (int row = 0; row < numRows; row++) {
 			column[row] = in.get(row, colIndex);
 		}
 		return column;
-	}
-
-	public static SegmentedRegression compressSegmentedLeastSquares(double[] column, CompressionSettings cs) {
-		//compute Breakpoints for a Column with dynamic Programming
-		final List<Integer> breakpointsList = computeBreakpoints(cs, column);
-		final int[] breakpoints = breakpointsList.stream().mapToInt(Integer::intValue).toArray();
-
-		//get values for Regression
-		final int numSeg = breakpoints.length - 1;
-		final double[] slopes = new double[numSeg];
-		final double[] intercepts = new double[numSeg];
-
-		// Regress per Segment
-		for(int seg = 0; seg < numSeg; seg++) {
-			final int SegStart = breakpoints[seg];
-			final int SegEnd = breakpoints[seg + 1];
-
-			final double[] line = regressSegment(column, SegStart, SegEnd);
-			slopes[seg] = line[0]; //slope regession line
-			intercepts[seg] = line[1]; //intercept regression line
-		}
-
-		return new SegmentedRegression(breakpoints, slopes, intercepts);
 	}
 
 	public static SegmentedRegression compressSuccessivePiecewiseLinear(double[] column, CompressionSettings cs) {
@@ -86,7 +63,7 @@ public class PiecewiseLinearUtils {
 		final double[] intercepts = new double[numSeg];
 
 		// Regress per Segment
-		for(int seg = 0; seg < numSeg; seg++) {
+		for (int seg = 0; seg < numSeg; seg++) {
 			final int segstart = breakpoints[seg];
 			final int segEnd = breakpoints[seg + 1];
 			final double[] line = regressSegment(column, segstart, segEnd);
@@ -141,7 +118,6 @@ public class PiecewiseLinearUtils {
 
 	/**
 	 * Computes optimal breakpoints, each segment has a SEE plus a
-
 	 */
 
 	public static List<Integer> computeBreakpointsLambda(double[] column, double lambda) {
@@ -152,18 +128,18 @@ public class PiecewiseLinearUtils {
 		Arrays.fill(costs, Double.POSITIVE_INFINITY);
 		costs[0] = 0.0;
 		// precompute all segment costs to avoid recomputation in dynamic programming
-		double[][] segCosts = new double[n+1][n+1];
-		for(int i = 0; i < n; i++) {
-			for(int j = i+1; j <= n; j++) {
+		double[][] segCosts = new double[n + 1][n + 1];
+		for (int i = 0; i < n; i++) {
+			for (int j = i + 1; j <= n; j++) {
 				segCosts[i][j] = computeSegmentCost(column, i, j);
 			}
 		}
 		// for each point j, find the cheapest previous breakpoint i
-		for(int j = 1; j <= n; j++) {
-			for(int i = 0; i < j; i++) {
+		for (int j = 1; j <= n; j++) {
+			for (int i = 0; i < j; i++) {
 				// cost equals the SSE of segment [i,j] plus penalty plus best costs
 				double cost = costs[i] + segCosts[i][j] + lambda;
-				if(cost < costs[j]) {
+				if (cost < costs[j]) {
 					costs[j] = cost;
 					prev[j] = i;
 				}
@@ -173,7 +149,7 @@ public class PiecewiseLinearUtils {
 		// Backtrack to previous points to recover the breakpoints
 		List<Integer> breaks = new ArrayList<>();
 		int j = n;
-		while(j > 0) {
+		while (j > 0) {
 			breaks.add(j);
 			j = prev[j];
 		}
@@ -184,14 +160,15 @@ public class PiecewiseLinearUtils {
 
 	/**
 	 * computes the segment cost
+	 *
 	 * @param column column values
-	 * @param start start index
-	 * @param end end index
+	 * @param start  start index
+	 * @param end    end index
 	 * @return SSE of the regression line over the segment
 	 */
 	public static double computeSegmentCost(double[] column, int start, int end) {
 		final int segSize = end - start;
-		if(segSize <= 1)
+		if (segSize <= 1)
 			return 0.0;
 
 		final double[] ab = regressSegment(column, start, end);
@@ -199,7 +176,7 @@ public class PiecewiseLinearUtils {
 		final double intercept = ab[1];
 
 		double sse = 0.0;
-		for(int i = start; i < end; i++) {
+		for (int i = start; i < end; i++) {
 			double err = column[i] - (slope * i + intercept);
 			sse += err * err;
 		}
@@ -208,13 +185,14 @@ public class PiecewiseLinearUtils {
 
 	/**
 	 * computes the total SSE over all segments defined by the given breakpoints
+	 *
 	 * @param column
 	 * @param breaks
 	 * @return sum of the total SSE
 	 */
 	public static double computeTotalSSE(double[] column, List<Integer> breaks) {
 		double total = 0.0;
-		for(int s = 0; s < breaks.size() - 1; s++) {
+		for (int s = 0; s < breaks.size() - 1; s++) {
 			final int start = breaks.get(s);
 			final int end = breaks.get(s + 1);
 			total += computeSegmentCost(column, start, end);
@@ -224,11 +202,11 @@ public class PiecewiseLinearUtils {
 
 	public static double[] regressSegment(double[] column, int start, int end) {
 		final int numElements = end - start;
-		if(numElements <= 0)
-			return new double[] {0.0, 0.0};
+		if (numElements <= 0)
+			return new double[]{0.0, 0.0};
 
 		double sumOfRowIndices = 0, sumOfColumnValues = 0, sumOfRowIndicesSquared = 0, productRowIndexTimesColumnValue = 0;
-		for(int i = start; i < end; i++) {
+		for (int i = start; i < end; i++) {
 			sumOfRowIndices += i;
 			sumOfColumnValues += column[i];
 			sumOfRowIndicesSquared += i * i;
@@ -237,30 +215,30 @@ public class PiecewiseLinearUtils {
 
 
 		final double denominatorForSlope =
-			numElements * sumOfRowIndicesSquared - sumOfRowIndices * sumOfRowIndices;
+				numElements * sumOfRowIndicesSquared - sumOfRowIndices * sumOfRowIndices;
 		final double slope;
 		final double intercept;
-		if(denominatorForSlope == 0) {
+		if (denominatorForSlope == 0) {
 			slope = 0.0;
 			intercept = sumOfColumnValues / numElements;
-		}
-		else {
+		} else {
 			slope = (numElements * productRowIndexTimesColumnValue - sumOfRowIndices * sumOfColumnValues) /
-				denominatorForSlope;
+					denominatorForSlope;
 			intercept = (sumOfColumnValues - slope * sumOfRowIndices) / numElements;
 		}
-		return new double[] {slope, intercept};
+		return new double[]{slope, intercept};
 	}
 
 	/**
-	 * computes breakpoints for a column using a successive algorithm
+	 * computes breakpoints for a y using a successive algorithm
 	 * extends each segment until the SEE reaches the target loss, then start a new segment
-	 * @param column column values
+	 *
+	 * @param y  y values
 	 * @param cs compression setting for setting the target loss
 	 * @return list of breakpoint indices
 	 */
-	public static List<Integer> computeBreakpointSuccessive(double[] column, CompressionSettings cs) {
-		final int numElements = column.length;
+	public static List<Integer> computeBreakpointSuccessive(double[] y, CompressionSettings cs) {
+		final int numElements = y.length;
 		final double targetMSE = cs.getPiecewiseTargetLoss();
 		if (Double.isNaN(targetMSE) || targetMSE <= 0) {
 			return Arrays.asList(0, numElements);  // fallback single segment
@@ -268,31 +246,42 @@ public class PiecewiseLinearUtils {
 
 		List<Integer> breakpoints = new ArrayList<>();
 		breakpoints.add(0);
-		int currentStart = 0;
+		double sumX = 0.0, sumY = 0.0, sumXY = 0.0, sumX2 = 0.0, sumY2 = 0.0;
+		int segmentLength = 0;
+		double beta, alpha;
 
-		while (currentStart < numElements) {
-			int bestEnd = -1; // no end found
+		for (int n = 0; n < numElements; n++) {
+			double x = n;
+			double Y = y[n];
+			sumX += x;
+			sumY += Y;
+			sumX2 += x * x;
+			sumY2 += Y * Y;
+			sumXY += x * Y;
+			segmentLength++;
 
-			for (int end = currentStart + 1; end <= numElements; end++) {
-				double sse = computeSegmentCost(column, currentStart, end);
-				if(sse > (end - currentStart) * targetMSE) {
-					// end-1 is last valid end; if end == segStart+1 force min segment of length 1
-					bestEnd = (end == currentStart + 1) ? end : end - 1;
-					break;
+			if (segmentLength > 1) {
+
+				final double alphaBetaDenominator = segmentLength * sumX2 - sumX * sumX;
+				if (alphaBetaDenominator == 0.0) {
+					beta = 0.0;
+					alpha = sumY / segmentLength;
+				} else {
+					beta = (segmentLength * sumXY - sumX * sumY) / alphaBetaDenominator;
+					alpha = (sumY * sumX2 - sumX * sumXY) / alphaBetaDenominator;
+				}
+
+				double sse = Math.max(0.0, sumY2 - alpha * sumY - beta * sumXY); //sum of least squares
+				if (sse > segmentLength * targetMSE) {
+					breakpoints.add(n);
+					segmentLength = 1;
+					sumX = x;
+					sumY = Y;
+					sumX2 = x * x;
+					sumY2 = Y * Y;
+					sumXY = x * Y;
 				}
 			}
-
-			if (bestEnd == -1) {
-				bestEnd = numElements;// all remaining points fitting within budget
-			}
-
-			// safety guard not allow zero segments
-			if (bestEnd <= currentStart) {
-				bestEnd = Math.min(currentStart + 1, numElements);
-			}
-
-			breakpoints.add(bestEnd);
-			currentStart = bestEnd;
 		}
 
 		// make sure, that the last breakpoint equals numElements

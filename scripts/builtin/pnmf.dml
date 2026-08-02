@@ -42,12 +42,12 @@
 # H     List of amplitude matrices, one for each repetition.
 # ------------------------------------------------------------------------------------
 
-m_pnmf = function(Matrix[Double] X, Integer rnk, Double eps = 1e-8, Integer maxi = 10, Boolean verbose=TRUE) 
+m_pnmf = function(Matrix[Double] X, Integer rnk, Double eps = 1e-8, Integer maxi = 10, Boolean verbose=TRUE, Integer seed=-1)
   return (Matrix[Double] W, Matrix[Double] H) 
 {
   #initialize W and H
-  W = rand(rows=nrow(X), cols=rnk, min=0, max=0.025);
-  H = rand(rows=rnk, cols=ncol(X), min=0, max=0.025);
+  W = rand(rows=nrow(X), cols=rnk, min=0, max=0.025, seed=seed);
+  H = rand(rows=rnk, cols=ncol(X), min=0, max=0.025, seed=seed);
 
   i = 0;
   while(i < maxi) {

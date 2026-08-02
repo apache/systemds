@@ -211,6 +211,8 @@ public class QuaternaryOp extends MultiThreadedHop
 						constructCPLopsWeightedDivMM(wtype);
 					else if( et == ExecType.SPARK )
 						constructSparkLopsWeightedDivMM(wtype);
+					else if( et == ExecType.OOC )
+						constructOOCLopsWeightedDivMM(wtype);
 					else
 						throw new HopsException("Unsupported quaternaryop-wdivmm exec type: "+et);
 					break;
@@ -460,6 +462,20 @@ public class QuaternaryOp extends MultiThreadedHop
 			setLineNumbers(wdivmm);
 			setLops(wdivmm);
 		}
+	}
+
+	private void constructOOCLopsWeightedDivMM(WDivMMType wtype)
+	{
+		WeightedDivMM wdiv = new WeightedDivMM(
+			getInput().get(0).constructLops(),
+			getInput().get(1).constructLops(),
+			getInput().get(2).constructLops(),
+			getInput().get(3).constructLops(),
+			getDataType(), getValueType(), wtype, ExecType.OOC);
+
+		setOutputDimensions(wdiv);
+		setLineNumbers(wdiv);
+		setLops(wdiv);
 	}
 
 	private void constructCPLopsWeightedCeMM(WCeMMType wtype) 

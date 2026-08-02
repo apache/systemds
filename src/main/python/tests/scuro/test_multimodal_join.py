@@ -47,7 +47,7 @@ class TestMultimodalJoin(unittest.TestCase):
         cls.num_instances = 4
         cls.indices = np.array(range(cls.num_instances))
         cls.audio_data, cls.audio_md = ModalityRandomDataGenerator().create_audio_data(
-            cls.num_instances, 32000
+            cls.num_instances, 500
         )
 
         cls.video_data, cls.video_md = (
@@ -104,7 +104,7 @@ class TestMultimodalJoin(unittest.TestCase):
                 l_chunk_size,
                 ModalityType.VIDEO,
                 copy.deepcopy(self.video_data),
-                np.float32,
+                np.uint8,
                 copy.deepcopy(self.video_md),
             )
         )
@@ -118,7 +118,7 @@ class TestMultimodalJoin(unittest.TestCase):
             left_modality.join(
                 right_modality, JoinCondition("timestamp", "timestamp", "<")
             )
-            .apply_representation(ResNet(layer="layer1.0.conv2", model_name="ResNet18"))
+            .apply_representation(ResNet())
             .window_aggregation(window_size, "mean")
             .combine("concat")
         )

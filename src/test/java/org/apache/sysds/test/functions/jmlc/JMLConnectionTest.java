@@ -43,11 +43,11 @@ import java.util.HashMap;
 @net.jcip.annotations.NotThreadSafe
 public class JMLConnectionTest extends AutomatedTestBase {
 	public static final String META = "{\"data_type\": \"matrix\",\n" +
-			"    \"value_type\": \"double\",  \n" +
-			"    \"rows\": 1,\n" +
-			"    \"cols\": 1,\n" +
-			"    \"nnz\": 1,\n" +
-			"    \"format\": \"csv\"}";
+			"	\"value_type\": \"double\",  \n" +
+			"	\"rows\": 1,\n" +
+			"	\"cols\": 1,\n" +
+			"	\"nnz\": 1,\n" +
+			"	\"format\": \"csv\"}";
 	private final static String TEST_NAME = "JMLConnectionTest";
 	private final static String TEST_DIR = "functions/jmlc/";
 
@@ -99,36 +99,36 @@ public class JMLConnectionTest extends AutomatedTestBase {
 		conn.gatherMemStats(false);
 		Assert.assertFalse(DMLScript.STATISTICS);
 
-        try (conn) {
-            conn.prepareScript("printx('hello')", new String[]{"$inScalar1", null}, new String[]{null});
-            throw new AssertionError("Test should have thrown a LanguageException");
-        } catch (LanguageException e) {
-            Assert.assertTrue(e.getMessage().startsWith("Invalid variable names"));
-        } finally {
-            DMLScript.STATISTICS = oldStat;
-            DMLScript.JMLC_MEM_STATISTICS = oldJMLCStat;
-        }
+		try (conn) {
+			conn.prepareScript("printx('hello')", new String[]{"$inScalar1", null}, new String[]{null});
+			throw new AssertionError("Test should have thrown a LanguageException");
+		} catch (LanguageException e) {
+			Assert.assertTrue(e.getMessage().startsWith("Invalid variable names"));
+		} finally {
+			DMLScript.STATISTICS = oldStat;
+			DMLScript.JMLC_MEM_STATISTICS = oldJMLCStat;
+		}
 	}
 
 	@Test
 	public void testConnectionParseLanguageException() {
-        try (Connection conn = new Connection()) {
-            conn.prepareScript("printx('hello')", new String[]{}, new String[]{});
-            throw new AssertionError("Test should have thrown a DMLException");
-        } catch (DMLException e) {
-            Throwable cause = e.getCause();
-            Assert.assertTrue(cause.getMessage().startsWith("ERROR: [line 1:0] -> printx('hello') -- function printx is undefined in namespace .builtinNS"));
-        }
+		try (Connection conn = new Connection()) {
+			conn.prepareScript("printx('hello')", new String[]{}, new String[]{});
+			throw new AssertionError("Test should have thrown a DMLException");
+		} catch (DMLException e) {
+			Throwable cause = e.getCause();
+			Assert.assertTrue(cause.getMessage().startsWith("ERROR: [line 1:0] -> printx('hello') -- function printx is undefined in namespace .builtinNS"));
+		}
 	}
 
 	@Test
 	public void testConnectionParseException() {
-        try (Connection conn = new Connection()) {
-            conn.prepareScript("print('hello'", new String[]{}, new String[]{});
-            throw new AssertionError("Test should have thrown a ParseException");
-        } catch (Exception e) {
-            Assert.assertEquals("ParseException", e.getClass().getSimpleName());
-        }
+		try (Connection conn = new Connection()) {
+			conn.prepareScript("print('hello'", new String[]{}, new String[]{});
+			throw new AssertionError("Test should have thrown a ParseException");
+		} catch (Exception e) {
+			Assert.assertEquals("ParseException", e.getClass().getSimpleName());
+		}
 	}
 
 	@Test
@@ -144,11 +144,11 @@ public class JMLConnectionTest extends AutomatedTestBase {
 
 	@Test
 	public void testReadScriptHDFS() {
-        try (Connection conn = new Connection()) {
-            conn.readScript("hdfs://localhost:9000/Test");
-        } catch (IOException e) {
+		try (Connection conn = new Connection()) {
+			conn.readScript("hdfs://localhost:9000/Test");
+		} catch (IOException e) {
 			Assert.assertEquals("ConnectException",e.getClass().getSimpleName());
-        }
+		}
 	}
 
 	@Test

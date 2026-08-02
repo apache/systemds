@@ -21,6 +21,7 @@
 from systemds.scuro.utils.converter import numpy_dtype_to_torch_dtype
 from systemds.scuro.utils.torch_dataset import CustomDataset
 from systemds.scuro.modality.transformed import TransformedModality
+from systemds.scuro.dataloader.video_loader import VideoStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from typing import Tuple, Any
 from systemds.scuro.drsearch.operator_registry import register_representation
@@ -35,6 +36,11 @@ from systemds.scuro.utils.static_variables import (
 )
 from systemds.scuro.dataloader.image_loader import ImageStats
 from systemds.scuro.representations.representation import RepresentationStats
+
+
+class Identity(torch.nn.Module):
+    def forward(self, input_: torch.Tensor) -> torch.Tensor:
+        return input_
 
 
 @register_representation([ModalityType.IMAGE, ModalityType.VIDEO])
@@ -57,10 +63,6 @@ class VGG19(UnimodalRepresentation):
 
         for param in self.model.parameters():
             param.requires_grad = False
-
-        class Identity(torch.nn.Module):
-            def forward(self, input_: torch.Tensor) -> torch.Tensor:
-                return input_
 
         self.model.fc = Identity()
 
@@ -88,9 +90,24 @@ class VGG19(UnimodalRepresentation):
         return parameters
 
     def estimate_output_memory_bytes(self, input_stats: ImageStats) -> int:
+        if isinstance(input_stats, VideoStats):
+            return (
+                input_stats.num_instances
+                * input_stats.max_length
+                * 4096
+                * np.dtype(np.float32).itemsize
+            )
         return input_stats.num_instances * 4096 * np.dtype(np.float32).itemsize
 
     def get_output_stats(self, input_stats) -> RepresentationStats:
+        if isinstance(input_stats, VideoStats):
+            return RepresentationStats(
+                input_stats.num_instances,
+                (
+                    input_stats.max_length,
+                    4096,
+                ),
+            )
         return RepresentationStats(input_stats.num_instances, (4096,))
 
     def estimate_peak_memory_bytes(self, input_stats: ImageStats) -> dict:

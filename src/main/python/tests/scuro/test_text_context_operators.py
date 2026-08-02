@@ -82,9 +82,7 @@ class TestTextContextOperator(unittest.TestCase):
     def test_sentence_boundary_split_indices(self):
         sentence_boundary_split = SentenceBoundarySplitIndices(10, min_words=4)
         sentence_boundary_split.execute(self.text_modality)
-        for instance, md in zip(
-            self.text_modality.data, self.text_modality.metadata.values()
-        ):
+        for instance, md in zip(self.text_modality.data, self.text_modality.metadata):
             for chunk in md["text_spans"]:
                 text = instance[chunk[0] : chunk[1]].split(" ")
                 assert len(text) <= 10 and (
@@ -94,9 +92,7 @@ class TestTextContextOperator(unittest.TestCase):
     def test_overlapping_split_indices(self):
         overlapping_split = OverlappingSplitIndices(40, 0.1)
         overlapping_split.execute(self.text_modality)
-        for instance, md in zip(
-            self.text_modality.data, self.text_modality.metadata.values()
-        ):
+        for instance, md in zip(self.text_modality.data, self.text_modality.metadata):
             prev_chunk = (0, 0)
             for j, chunk in enumerate(md["text_spans"]):
                 if j > 0:

@@ -25,7 +25,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 from typing import List, Dict, Any
-from systemds.scuro.utils.static_variables import get_device, get_device_for_model
+from systemds.scuro.utils.static_variables import get_device
 import numpy as np
 
 from systemds.scuro.modality.modality import Modality
@@ -92,7 +92,7 @@ class LSTM(Fusion):
                 data = np.array(modality.data)
             except:
                 max_len = -1
-                for md in modality.metadata.values():
+                for md in modality.metadata:
                     if max_len < md["data_layout"]["shape"][0]:
                         max_len = md["data_layout"]["shape"][0]
                 data = np.zeros((len(modality.data), max_len))
@@ -233,7 +233,7 @@ class LSTM(Fusion):
                 TensorDataset(X_tensor), batch_size=self.batch_size, shuffle=False
             )
             for (batch_X,) in inference_dataloader:
-                batch_X = batch_X.to(device)
+                batch_X = batch_X.to(self.device)
                 features, _ = self.model(batch_X)
                 all_features.append(features.cpu())
 

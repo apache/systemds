@@ -71,8 +71,8 @@ class ImageLoader(BaseLoader):
 
         image = image.astype(np.uint8, copy=False)
 
-        self.metadata[file] = self.modality_type.create_metadata(
-            width, height, channels
+        self.metadata.append(
+            self.modality_type.create_metadata(width, height, channels)
         )
 
         self.data.append(image)

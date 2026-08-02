@@ -20,12 +20,12 @@
  #-------------------------------------------------------------
 if ($rP) {
     A = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
-        ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
-    		list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
+        ranges=list(list(0, 0), list($rend_X1, $cols), list($rend_X1, 0), list($rend_X2, $cols),
+            list($rend_X2, 0), list($rend_X3, $cols), list($rend_X3, 0), list($rend_X4, $cols)));
 } else {
     A = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
-            ranges=list(list(0, 0), list($rows, $cols/4), list(0,$cols/4), list($rows, $cols/2),
-            	list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
+        ranges=list(list(0, 0), list($rows, $cend_X1), list(0,$cend_X1), list($rows, $cend_X2),
+            list(0,$cend_X2), list($rows, $cend_X3), list(0, $cend_X3), list($rows, $cend_X4)));
 }
 
 s = rev(A);

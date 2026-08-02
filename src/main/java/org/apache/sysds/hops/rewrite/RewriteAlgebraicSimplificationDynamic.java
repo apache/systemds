@@ -184,6 +184,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = simplifySumDiagToTrace(hi);                  //e.g., sum(diag(X)) -> trace(X); if col vector
 			hi = simplifyLowerTriExtraction(hop, hi, i);      //e.g., X * cumsum(diag(matrix(1,nrow(X),1))) -> lower.tri
 			hi = simplifyConstantCumsum(hop, hi, i);          //e.g., cumsum(matrix(1/n,n,1)) -> seq(1/n, 1, 1/n)
+			hi = simplifySumConstantMatrix(hop, hi, i);       //e.g., sum(matrix(a,rows=b,cols=c)) -> a*b*c
 			hi = pushdownBinaryOperationOnDiag(hop, hi, i);   //e.g., diag(X)*7 -> diag(X*7); if col vector
 			hi = pushdownSumOnAdditiveBinary(hop, hi, i);     //e.g., sum(A+B) -> sum(A)+sum(B); if dims(A)==dims(B)
 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION) {
@@ -1270,6 +1271,31 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos);
 			hi = hnew;
 			LOG.debug("Applied simplifyConstantCumsum (line "+hi.getBeginLine()+").");
+		}
+		return hi;
+	}
+
+	private static Hop simplifySumConstantMatrix(Hop parent, Hop hi, int pos) {
+		//pattern: sum(matrix(a, rows=b, cols=c)) -> a*b*c
+		if( HopRewriteUtils.isAggUnaryOp(hi, AggOp.SUM, Direction.RowCol)
+			&& HopRewriteUtils.isDataGenOpWithConstantValue(hi.getInput(0))
+			&& hi.getInput(0).dimsKnown()
+			&& hi.getInput(0).getDim1() >= 1
+			&& hi.getInput(0).getDim2() >= 1
+			&& hi.getInput(0).getParent().size() == 1 )
+		{
+			DataGenOp datagen = (DataGenOp) hi.getInput(0);
+			Hop constVal = datagen.getConstantValue();
+			Hop rows = new LiteralOp(datagen.getDim1());
+			Hop cols = new LiteralOp(datagen.getDim2());
+
+			Hop hnew = HopRewriteUtils.createBinary(
+				HopRewriteUtils.createBinary(constVal, rows, OpOp2.MULT), cols, OpOp2.MULT);
+			HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos);
+			HopRewriteUtils.cleanupUnreferenced(hi, datagen);
+
+			hi = hnew;
+			LOG.debug("Applied simplifySumConstantMatrix (line "+hi.getBeginLine()+").");
 		}
 		return hi;
 	}

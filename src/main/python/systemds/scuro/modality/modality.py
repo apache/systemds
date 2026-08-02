@@ -33,7 +33,7 @@ class Modality:
         self,
         modalityType: ModalityType,
         modality_id=-1,
-        metadata={},
+        metadata=[],
         data_type=None,
         transform_time=0,
     ):
@@ -91,10 +91,10 @@ class Modality:
         ):
             return
 
-        for i, (md_k, md_v) in enumerate(self.metadata.items()):
+        for i, md_v in enumerate(self.metadata):
             md_v = selective_copy_metadata(md_v)
             updated_md = self.modality_type.update_metadata(md_v, self.data[i])
-            self.metadata[md_k] = updated_md
+            self.metadata[i] = updated_md
             if i == 0:
                 self.data_type = updated_md["data_layout"]["type"]
 
@@ -160,13 +160,10 @@ class Modality:
                     if self.has_metadata():
                         attention_mask = np.zeros(maxlen, dtype=np.int8)
                         attention_mask[: len(data)] = 1
-                        md_key = list(self.metadata.keys())[i]
-                        if "attention_mask" in self.metadata[md_key]:
-                            self.metadata[md_key]["attention_mask"] = attention_mask
+                        if "attention_mask" in self.metadata[i]:
+                            self.metadata[i]["attention_mask"] = attention_mask
                         else:
-                            self.metadata[md_key].update(
-                                {"attention_mask": attention_mask}
-                            )
+                            self.metadata[i].update({"attention_mask": attention_mask})
             elif (
                 isinstance(first, list)
                 and len(first) > 0
@@ -190,13 +187,10 @@ class Modality:
                     if self.has_metadata():
                         attention_mask = np.zeros(maxlen, dtype=np.int8)
                         attention_mask[: len(data)] = 1
-                        md_key = list(self.metadata.keys())[i]
-                        if "attention_mask" in self.metadata[md_key]:
-                            self.metadata[md_key]["attention_mask"] = attention_mask
+                        if "attention_mask" in self.metadata[i]:
+                            self.metadata[i]["attention_mask"] = attention_mask
                         else:
-                            self.metadata[md_key].update(
-                                {"attention_mask": attention_mask}
-                            )
+                            self.metadata[i].update({"attention_mask": attention_mask})
             else:
                 maxlen = (
                     max([len(seq) for seq in self.data]) if max_len is None else max_len
@@ -214,19 +208,16 @@ class Modality:
                     if self.has_metadata():
                         attention_mask = np.zeros(result.shape[1], dtype=np.int8)
                         attention_mask[: len(data)] = 1
-                        md_key = list(self.metadata.keys())[i]
-                        if "attention_mask" in self.metadata[md_key]:
-                            self.metadata[md_key]["attention_mask"] = attention_mask
+                        if "attention_mask" in self.metadata[i]:
+                            self.metadata[i]["attention_mask"] = attention_mask
                         else:
-                            self.metadata[md_key].update(
-                                {"attention_mask": attention_mask}
-                            )
+                            self.metadata[i].update({"attention_mask": attention_mask})
         # TODO: this might need to be a new modality (otherwise we loose the original data)
         self.data = result
 
     def get_data_layout(self):
         if self.has_metadata():
-            return list(self.metadata.values())[0]["data_layout"]["representation"]
+            return self.metadata[0]["data_layout"]["representation"]
 
         return None
 
@@ -234,14 +225,14 @@ class Modality:
         return self.data is not None and len(self.data) != 0
 
     def has_metadata(self):
-        return self.metadata is not None and self.metadata != {}
+        return self.metadata is not None and len(self.metadata) != 0
 
     def is_aligned(self, other_modality):
         aligned = True
         for i in range(len(self.data)):
             if (
-                list(self.metadata.values())[i]["data_layout"]["shape"]
-                != list(other_modality.metadata.values())[i]["data_layout"]["shape"]
+                self.metadata[i]["data_layout"]["shape"]
+                != other_modality.metadata[i]["data_layout"]["shape"]
             ):
                 aligned = False
                 break

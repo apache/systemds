@@ -33,10 +33,12 @@ from systemds.scuro.modality.type import ModalityType
 class VideoStats:
     fps: int
     max_length: int
+    avg_length: float
     max_width: int
     max_height: int
     max_channels: int
     num_instances: int
+    num_total_instances: int
 
     @property
     def output_shape(self):
@@ -87,8 +89,10 @@ class VideoLoader(BaseLoader):
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         num_channels = 3
 
-        self.metadata[file] = self.modality_type.create_metadata(
-            self.fps, length, width, height, num_channels
+        self.metadata.append(
+            self.modality_type.create_metadata(
+                self.fps, length, width, height, num_channels
+            )
         )
 
         frames = []
@@ -114,6 +118,7 @@ class VideoLoader(BaseLoader):
         max_height = 0
         max_num_channels = 0
         num_instances = 0
+        avg_length = 0
         for file in os.listdir(source_path):
             file_name = file.split(".")[0]
             if file_name not in self.indices:
@@ -126,12 +131,26 @@ class VideoLoader(BaseLoader):
             height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             num_channels = 3
             max_length = max(max_length, length)
+            avg_length += length
             max_width = max(max_width, width)
             max_height = max(max_height, height)
             max_num_channels = max(max_num_channels, num_channels)
             num_instances += 1
+        num_total_instances = num_instances
+        num_instances = (
+            min(num_instances, self.chunk_size)
+            if self.chunk_size is not None
+            else num_instances
+        )
         return VideoStats(
-            fps, max_length, max_width, max_height, max_num_channels, num_instances
+            fps,
+            max_length,
+            avg_length / num_instances,
+            max_width,
+            max_height,
+            max_num_channels,
+            num_instances,
+            num_total_instances,
         )
 
     def estimate_peak_memory_bytes(self) -> dict:

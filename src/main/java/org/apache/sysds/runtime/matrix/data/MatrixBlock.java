@@ -1387,12 +1387,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		LibMatrixDenseToSparse.denseToSparse(this, allowCSR, k);
 	}
 
-	public final void sparseToDense() {
-		sparseToDense(1);
+	public final MatrixBlock sparseToDense() {
+		return sparseToDense(1);
 	}
 
-	public void sparseToDense(int k) {
+	public MatrixBlock sparseToDense(int k) {
 		LibMatrixSparseToDense.sparseToDense(this, k);
+		return this;
 	}
 
 	/**
@@ -4650,7 +4651,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return sortOperations(weights, null);
 	}
 
-	public MatrixBlock sortOperations(MatrixValue weights, MatrixBlock result) {
+	public final MatrixBlock sortOperations(MatrixValue weights, MatrixBlock result) {
 		return sortOperations(weights, result, 1);
 	}
 
@@ -4754,7 +4755,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return (sum + q25Part*q25Val - q75Part*q75Val) / (sum_wt*0.5); 
 	}
 	
-	public MatrixBlock pickValues(MatrixValue quantiles, MatrixValue ret) {
+	/**
+	 * Pick the quantiles out of this matrix. If this matrix contains two columns it is weighted quantile picking.
+	 * If a single column it is unweighted.
+	 * 
+	 * Note the values are assumed to be sorted.
+	 * 
+	 * @param quantiles The quantiles to pick
+	 * @param ret The result matrix
+	 * @return The result matrix
+	 */
+	public final MatrixBlock pickValues(MatrixValue quantiles, MatrixValue ret) {
 		return pickValues(quantiles, ret, false);
 	}
 	
@@ -4779,16 +4790,62 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return output;
 	}
 	
+	/**
+	 * Pick the median value from this matrix. If this matrix has two columns it is weighted picking using the
+	 * weight column, otherwise it is unweighted over the single column.
+	 * 
+	 * Note the values are assumed to be sorted.
+	 * 
+	 * @return The median value
+	 */
 	public double median() {
+		if(getNumColumns() == 1)
+			return pickValue(0.5, getNumRows() % 2 == 0);
 		double sum_wt = sumWeightForQuantile();
 		return pickValue(0.5, sum_wt%2==0);
 	}
-	
+
+	/**
+	 * Pick a specific quantile from this matrix. If this matrix has two columns it is weighted picking, otherwise it is unweighted.
+	 * 
+	 * Note the values are assumed to be sorted.
+	 * 
+	 * @param quantile The quantile to pick
+	 * @return The quantile
+	 */
 	public final double pickValue(double quantile){
 		return pickValue(quantile, false);
 	}
 	
-	public double pickValue(double quantile, boolean average) {
+	/**
+	 * Pick a specific quantile from this matrix. If this matrix has two columns it is weighted picking, otherwise it is unweighted.
+	 * 
+	 * Note the values are assumed to be sorted.
+	 * 
+	 * @param quantile The quantile to pick
+	 * @param average If the quantile is averaged.
+	 * @return The quantile
+	 */
+	public final double pickValue(double quantile, boolean average) {
+		if(this.getNumColumns() == 1)
+			return pickUnweightedValue(quantile, average);
+		return pickWeightedValue(quantile, average);
+	}
+
+	private double pickUnweightedValue(double quantile, boolean average) {
+		// Mirror the weighted convention (pickWeightedValue) with an implicit weight of 1 per value, so a single
+		// column yields the same quantile as the equivalent two-column (value, weight) representation: take the
+		// ceil-based rank and only average adjacent order statistics when an even number of values straddles it.
+		final int rows = getNumRows();
+		average = average && (rows % 2 == 0);
+		final int pos = (int) Math.ceil(quantile * rows); // 1-based rank
+		final int i = Math.min(Math.max(pos - 1, 0), rows - 1);
+		if(average && pos > 0 && pos < rows)
+			return (get(i, 0) + get(i + 1, 0)) / 2;
+		return get(i, 0);
+	}
+
+	private double pickWeightedValue(double quantile, boolean average) {
 		double sum_wt = sumWeightForQuantile();
 		
 		// do averaging only if it is asked for; and sum_wt is even

@@ -44,9 +44,7 @@ class Concatenation(Fusion):
         if len(modalities) == 1:
             return np.asarray(
                 modalities[0].data,
-                dtype=modalities[0].metadata[list(modalities[0].metadata.keys())[0]][
-                    "data_layout"
-                ]["type"],
+                dtype=modalities[0].metadata[0]["data_layout"]["type"],
             )
 
         max_emb_size = self.get_max_embedding_size(modalities)
@@ -64,9 +62,7 @@ class Concatenation(Fusion):
                     data,
                     np.asarray(
                         other_modality,
-                        dtype=modality.metadata[list(modality.metadata.keys())[0]][
-                            "data_layout"
-                        ]["type"],
+                        dtype=modality.metadata[0]["data_layout"]["type"],
                     ),
                 ],
                 axis=-1,
@@ -83,23 +79,27 @@ class Concatenation(Fusion):
             return RepresentationStats(0, (0,))
 
         num_instances = stats_list[0].num_instances
-        rank = len(stats_list[0].output_shape)
-
-        if rank == 1:
-            total_dim = sum(s.output_shape[0] for s in stats_list)
-            output_shape = (total_dim,)
-        elif rank == 2:
-            time_dim = stats_list[0].output_shape[0]
-            total_dim = sum(s.output_shape[1] for s in stats_list)
-            output_shape = (time_dim, total_dim)
-        else:
-            output_shape = stats_list[0].output_shape
+        total_dim = sum(s.output_shape[-1] for s in stats_list)
+        output_shape = (total_dim,)
 
         return RepresentationStats(num_instances, output_shape)
 
-    def estimate_peak_memory_bytes(self, input_stats) -> dict:
-        # TODO
-        return {
-            "cpu_peak_bytes": 0,
-            "gpu_peak_bytes": 0,
-        }
+    def estimate_peak_memory_bytes(self, input_stats_list) -> dict:
+        elem_size = np.dtype(np.float32).itemsize
+
+        def stats_bytes(s: RepresentationStats) -> int:
+            numel = int(np.prod(s.output_shape)) if len(s.output_shape) > 0 else 1
+            return int(s.num_instances * numel * elem_size)
+
+        current_output = 0
+        peak = 0
+        for s in input_stats_list:
+            chunk = stats_bytes(s)
+            new_output = current_output + chunk
+
+            step_peak = current_output + chunk + new_output + chunk
+            peak = max(peak, step_peak)
+            current_output = new_output
+
+        cpu_peak = int(peak * 1.15 + 16 * 1024 * 1024)
+        return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}

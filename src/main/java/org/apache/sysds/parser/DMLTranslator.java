@@ -1057,7 +1057,8 @@ public class DMLTranslator
 						case CSV:
 						case LIBSVM:
 						case HDF5:
-							// write output in textcell format
+						case DELTA:
+							// columnar/text formats: no block layout (blocksize -1)
 							ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), -1);
 							break;
 						case BINARY:
@@ -2821,6 +2822,9 @@ public class DMLTranslator
 				DataType.MATRIX, target.getValueType(), AggOp.COUNT_DISTINCT, Direction.Col, expr);
 			break;
 
+		case GET_CATEGORICAL_MASK:
+			currBuiltinOp = new BinaryOp(target.getName(), DataType.MATRIX, ValueType.FP64, OpOp2.GET_CATEGORICAL_MASK,  expr, expr2);
+			break;
 		default:
 			throw new ParseException("Unsupported builtin function type: "+source.getOpCode());
 		}

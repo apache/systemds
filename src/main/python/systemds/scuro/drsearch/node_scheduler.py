@@ -19,7 +19,7 @@
 #
 # -------------------------------------------------------------
 from __future__ import annotations
-
+import re
 from typing import List, Dict, Optional, Any
 from collections import defaultdict, deque
 from collections import deque
@@ -93,8 +93,25 @@ class MemoryAwareNodeScheduler:
             ok, gpu_id = self._check_memory_constraints(node)
             if ok:
                 self.mapping[node].gpu_id = gpu_id
-                self.ready_nodes.append(node)
                 self._reserve_memory(node, gpu_id)
+                self.ready_nodes.append(node)
+        contains_leaf = []
+        for node in self.ready_nodes:
+            if any(re.fullmatch(r"leaf_\d+", i) for i in self.mapping[node].inputs):
+                for mod in self.modalities:
+                    if (
+                        mod.modality_id
+                        == self.mapping[self.mapping[node].inputs[0]].modality_id
+                    ):
+                        if mod.data_loader.chunk_size is not None:
+                            contains_leaf.append(node)
+                            break
+
+        for node in contains_leaf:
+            self.ready_nodes.remove(node)
+
+        if len(contains_leaf) > 0:
+            self.ready_nodes.append(contains_leaf)
         return self.ready_nodes
 
     def _get_runnable_nodes(self) -> List[str]:
@@ -128,9 +145,12 @@ class MemoryAwareNodeScheduler:
 
         self._release_memory(node_id, self.mapping[node_id].gpu_id)
 
-    def move_to_running(self, node_id: str):
+    def move_to_running(self, node_id: str | list):
         self.ready_nodes.remove(node_id)
-        self.running_nodes.append(node_id)
+        if isinstance(node_id, list):
+            self.running_nodes.extend(node_id)
+        else:
+            self.running_nodes.append(node_id)
 
     def complete_node(self, node_id: str):
         self.running_nodes.remove(node_id)
@@ -166,11 +186,12 @@ class MemoryAwareNodeScheduler:
 
         return False
 
-    def get_valid_parent(self, node_id: str) -> bool:
+    def get_valid_parents(self, node_id: str) -> bool:
+        parents = []
         for parent_id in self.parents[node_id]:
             if parent_id not in self.leaves:
-                return parent_id
-        return None
+                parents.append(parent_id)
+        return parents
 
     def get_children(self, node_id: str) -> List[str]:
         return list(self.children[node_id])
@@ -207,8 +228,9 @@ class MemoryAwareNodeScheduler:
                     params=self.mapping[desc_id].parameters
                 )
                 peak_memory = operation.estimate_peak_memory_bytes(input_stats)
+                input_stats_for_overhead = self._stats_for_overhead(input_stats)
                 peak_memory["cpu_peak_bytes"] += (
-                    64 * 1024 + 512 * input_stats.num_instances
+                    64 * 1024 + 512 * input_stats_for_overhead.num_instances
                 )
                 output_stats = operation.get_output_stats(input_stats)
 
@@ -395,14 +417,17 @@ class MemoryAwareNodeScheduler:
             else:
                 parent_ids = list(self.parents.get(node, set()))
                 parent_stats = [node_stats[parent_id] for parent_id in parent_ids]
-                input_stats = parent_stats[0] if parent_stats else None
+                input_stats = (
+                    parent_stats[0] if len(parent_stats) == 1 else parent_stats
+                )
                 if node not in self.roots:
                     operation = self.mapping[node].operation(
                         params=self.mapping[node].parameters
                     )
                     peak_memory = operation.estimate_peak_memory_bytes(input_stats)
+                    input_stats_for_overhead = self._stats_for_overhead(input_stats)
                     peak_memory["cpu_peak_bytes"] += (
-                        64 * 1024 + 512 * input_stats.num_instances
+                        64 * 1024 + 512 * input_stats_for_overhead.num_instances
                     )  # Placeholder for transformed modality creation overhead
                     peak_memory["cpu_peak_bytes"] *= 1
                     output_stats = operation.get_output_stats(input_stats)
@@ -428,6 +453,12 @@ class MemoryAwareNodeScheduler:
                     node_stats[node] = task.get_output_stats(input_stats)
         self.node_stats = node_stats
         return node_resources
+
+    @staticmethod
+    def _stats_for_overhead(input_stats: Any) -> Any:
+        if isinstance(input_stats, list) and len(input_stats) > 0:
+            return input_stats[0]
+        return input_stats
 
     @staticmethod
     def _stats_to_bytes(stats: Optional[Any], dtype_size: int = 4) -> int:

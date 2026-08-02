@@ -51,6 +51,7 @@ class TestDataLoader(BaseLoader):
     def __init__(self, indices, chunk_size, modality_type, data, data_type, metadata):
         super().__init__("", indices, data_type, chunk_size, modality_type)
 
+        self._full_metadata = metadata
         self.metadata = metadata
         self.test_data = data
         if modality_type == ModalityType.TEXT:
@@ -74,9 +75,11 @@ class TestDataLoader(BaseLoader):
             self.stats = VideoStats(
                 30,
                 max(d.shape[0] for d in data),
+                sum(d.shape[0] for d in data) / len(data),
                 max(d.shape[1] for d in data),
                 max(d.shape[2] for d in data),
                 max(d.shape[3] for d in data),
+                chunk_size if chunk_size is not None else len(data),
                 len(data),
             )
         elif modality_type == ModalityType.TIMESERIES:
@@ -86,6 +89,8 @@ class TestDataLoader(BaseLoader):
                 sum(len(d) for d in data) / len(data),
                 (max(len(d) for d in data),),
                 True,
+                sum(len(d) for d in data) / len(data),
+                16000,
             )
         elif modality_type == ModalityType.IMAGE:
             self.stats = ImageStats(
@@ -110,8 +115,10 @@ class TestDataLoader(BaseLoader):
     def extract(self, file, indices):
         if isinstance(self.test_data, list):
             self.data = [self.test_data[i] for i in indices]
+            self.metadata = [self._full_metadata[i] for i in indices]
         else:
             self.data = self.test_data[indices]
+            self.metadata = [self._full_metadata[i] for i in indices]
 
 
 class ModalityRandomDataGenerator:
@@ -120,7 +127,7 @@ class ModalityRandomDataGenerator:
         np.random.seed(4)
         self.modality_id = 0
         self.modality_type = None
-        self.metadata = {}
+        self.metadata = []
         self.data_type = np.float32
         self.transform_time = 0
         self.stats = None
@@ -186,21 +193,22 @@ class ModalityRandomDataGenerator:
 
         # TODO: write a dummy method to create the same metadata for all instances to avoid the for loop
         self.modality_type = modality_type
+        self.metadata = []
         for i in range(num_instances):
             if modality_type == ModalityType.AUDIO:
-                self.metadata[i] = modality_type.create_metadata(
-                    num_features / 10, data[i]
+                self.metadata.append(
+                    modality_type.create_metadata(num_features / 10, data[i])
                 )
             elif modality_type == ModalityType.TEXT:
-                self.metadata[i] = modality_type.create_metadata(
-                    num_features / 10, data[i]
+                self.metadata.append(
+                    modality_type.create_metadata(num_features / 10, data[i])
                 )
             elif modality_type == ModalityType.VIDEO:
-                self.metadata[i] = modality_type.create_metadata(
-                    num_features / 30, 10, 0, 0, 1
+                self.metadata.append(
+                    modality_type.create_metadata(num_features / 30, 10, 0, 0, 1)
                 )
             elif modality_type == ModalityType.TIMESERIES:
-                self.metadata[i] = modality_type.create_metadata(["test"], data[i])
+                self.metadata.append(modality_type.create_metadata(["test"], data[i]))
             else:
                 raise NotImplementedError
 
@@ -222,10 +230,10 @@ class ModalityRandomDataGenerator:
         for i in range(num_instances):
             data[i] = np.array(data[i]).astype(self.data_type)
 
-        self.metadata = {
-            i: self.modality_type.create_metadata(16000, np.array(data[i]))
+        self.metadata = [
+            self.modality_type.create_metadata(16000, np.array(data[i]))
             for i in range(num_instances)
-        }
+        ]
 
         return data, self.metadata
 
@@ -237,12 +245,12 @@ class ModalityRandomDataGenerator:
         ]
         if num_features == 1:
             data = [d.squeeze(-1) for d in data]
-        self.metadata = {
-            i: self.modality_type.create_metadata(
+        self.metadata = [
+            self.modality_type.create_metadata(
                 [f"feature_{j}" for j in range(num_features)], data[i]
             )
             for i in range(num_instances)
-        }
+        ]
         return data, self.metadata
 
     def create_text_data(self, num_instances, num_sentences_per_instance=1):
@@ -308,10 +316,10 @@ class ModalityRandomDataGenerator:
                 sentence += f" {verb} {obj}{punct}"
             sentences.append(sentence)
 
-        self.metadata = {
-            i: self.modality_type.create_metadata(len(sentences[i]), sentences[i])
+        self.metadata = [
+            self.modality_type.create_metadata(len(sentences[i]), sentences[i])
             for i in range(num_instances)
-        }
+        ]
 
         return sentences, self.metadata
 
@@ -321,9 +329,9 @@ class ModalityRandomDataGenerator:
             np.random.rand(dims[0], dims[1], dims[2]).astype(self.data_type)
             for _ in range(num_instances)
         ]
-        self.metadata = {
-            i: self.modality_type.create_metadata(data[i]) for i in range(num_instances)
-        }
+        self.metadata = [
+            self.modality_type.create_metadata(data[i]) for i in range(num_instances)
+        ]
         return data, self.metadata
 
     def create_2d_modality(self, num_instances, dims=(100, 28)):
@@ -332,9 +340,9 @@ class ModalityRandomDataGenerator:
             np.random.rand(dims[0], dims[1]).astype(self.data_type)
             for _ in range(num_instances)
         ]
-        self.metadata = {
-            i: self.modality_type.create_metadata(data[i]) for i in range(num_instances)
-        }
+        self.metadata = [
+            self.modality_type.create_metadata(data[i]) for i in range(num_instances)
+        ]
         return data, self.metadata
 
     def create_visual_modality(
@@ -356,12 +364,12 @@ class ModalityRandomDataGenerator:
                 for _ in range(num_instances)
             ]
 
-            self.metadata = {
-                i: self.modality_type.create_metadata(
+            self.metadata = [
+                self.modality_type.create_metadata(
                     30, data[i].shape[0], width, height, color_channels
                 )
                 for i in range(num_instances)
-            }
+            ]
         else:
             self.modality_type = ModalityType.IMAGE
             data = [
@@ -373,10 +381,10 @@ class ModalityRandomDataGenerator:
                 )
                 for _ in range(num_instances)
             ]
-            self.metadata = {
-                i: self.modality_type.create_metadata(width, height, color_channels)
+            self.metadata = [
+                self.modality_type.create_metadata(width, height, color_channels)
                 for i in range(num_instances)
-            }
+            ]
 
         return data, self.metadata
 

@@ -132,12 +132,13 @@ public class FederatedQuantileWeightsTest extends AutomatedTestBase {
 				port2 = getRandomAvailablePort();
 				port3 = getRandomAvailablePort();
 				port4 = getRandomAvailablePort();
-				t1 = startLocalFedWorker(port1, FED_WORKER_WAIT_S);
-				t2 = startLocalFedWorker(port2, FED_WORKER_WAIT_S);
-				t3 = startLocalFedWorker(port3, FED_WORKER_WAIT_S);
-				t4 = startLocalFedWorker(port4);
+				Process[] workers = startLocalFedWorkers(new int[] {port1, port2, port3, port4});
+				t1 = workers[0];
+				t2 = workers[1];
+				t3 = workers[2];
+				t4 = workers[3];
 
-				if(!isAlive(t1, t2, t3, t4))
+				if(!isAlive(workers))
 					throw new RuntimeException("Failed starting federated worker");
 
 				programArgs1 = new String[] {"-explain", "-stats", "100", "-args", String.valueOf(p), expected("S"),

@@ -80,7 +80,7 @@ public abstract class OOCInstruction extends Instruction {
 
 	public enum OOCType {
 		Reblock, Tee, Binary, Ternary, Unary, AggregateUnary, AggregateBinary, AggregateTernary, MAPMM, MMTSJ,
-		MAPMMCHAIN, Reorg, CM, Ctable, MatrixIndexing, ParameterizedBuiltin, Rand, Append
+		MAPMMCHAIN, Reorg, CM, Ctable, MatrixIndexing, ParameterizedBuiltin, Rand, Append, Quaternary, Reshape
 	}
 
 	protected final OOCInstruction.OOCType _ooctype;
@@ -672,8 +672,7 @@ public abstract class OOCInstruction extends Instruction {
 					List<OOCStream.QueueCallback<IndexedMatrixValue>> outList = new ArrayList<>(r.size());
 					for(int j = 0; j < r.size(); j++) {
 						if(explicitCaching[j]) {
-							// Early forget item from cache
-							outList.add(new OOCStream.SimpleQueueCallback<>(r.get(j).get(), null));
+							outList.add(r.get(j).keepOpen());
 						}
 						else {
 							outList.add(r.get(j).keepOpen());
@@ -1197,7 +1196,7 @@ public abstract class OOCInstruction extends Instruction {
 	}
 
 	protected CompletableFuture<Void> submitOOCTask(Runnable r, StreamContext ctx) {
-		ExecutorService pool = CommonThreadPool.get();
+		ExecutorService pool = CommonThreadPool.getDynamicPool();
 		final CompletableFuture<Void> future = new CompletableFuture<>();
 		try {
 			COMPUTE_IN_FLIGHT.incrementAndGet();
@@ -1220,9 +1219,6 @@ public abstract class OOCInstruction extends Instruction {
 		catch (Exception ex) {
 			COMPUTE_IN_FLIGHT.decrementAndGet();
 			throw new DMLRuntimeException(ex);
-		}
-		finally {
-			pool.shutdown();
 		}
 
 		return future;

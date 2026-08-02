@@ -127,7 +127,7 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 	private void runTransformEncodeDecodeTest(boolean recode, boolean sparse, Types.FileFormat format) {
 		ExecMode rtold = setExecMode(ExecMode.SINGLE_NODE);
 		
-		Thread t1 = null, t2 = null, t3 = null, t4 = null;
+		Thread[] workers = null;
 		try {
 			getAndLoadTestConfiguration(TEST_NAME_RECODE);
 
@@ -135,10 +135,7 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 			int port2 = getRandomAvailablePort();
 			int port3 = getRandomAvailablePort();
 			int port4 = getRandomAvailablePort();
-			t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
-			t2 = startLocalFedWorkerThread(port2, FED_WORKER_WAIT_S);
-			t3 = startLocalFedWorkerThread(port3, FED_WORKER_WAIT_S);
-			t4 = startLocalFedWorkerThread(port4);
+			workers = startLocalFedWorkerThreads(new int[] {port1, port2, port3, port4}, null, FED_WORKER_WAIT);
 
 			// schema
 			Types.ValueType[] schema = new Types.ValueType[cols / 2];
@@ -205,7 +202,7 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 			Assert.fail(ex.getMessage());
 		}
 		finally {
-			TestUtils.shutdownThreads(t1, t2, t3, t4);
+			TestUtils.shutdownThreads(workers);
 			resetExecMode(rtold);
 		}
 	}

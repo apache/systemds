@@ -52,7 +52,7 @@ import org.apache.sysds.runtime.instructions.cp.DPBuiltinCPInstruction;
  * sensitivity cancels in the final expression, so the RDP cost depends only on the (epsilon, delta) parameters.
  *
  * RDP => (epsilon, delta) conversion (Mironov 2017, Proposition 3):
- * epsilon(alpha) = R[alpha] + log(1 − 1/alpha) − log(delta*(alpha−1)) / alpha
+ * epsilon(alpha) = R[alpha] + log(1/delta) / (alpha − 1)
  *
  * One instance is created per ExecutionContext (lazy init). It is garbage-collected with the context when the
  * script finishes; no state leaks between script executions or between concurrent scripts.
@@ -102,6 +102,9 @@ public class DPBudgetAccountant {
 
 	/** Number of releases recorded so far (for error messages). */
 	private int _releaseCount = 0;
+
+	/** Whether at least one Gaussian release has been recorded. */
+	private boolean _hasGaussianReleases = false;
 
 	// -----------------------------------------------------------------------
 	// Constructors
@@ -173,8 +176,9 @@ public class DPBudgetAccountant {
 		}
 		else {
 			// Gaussian: accumulate Renyi divergence at each order, then convert.
+			_hasGaussianReleases = true;
 			for(int i = 0; i < ORDERS.length; i++) {
-				double sigma = gaussianSigma(sensitivity, epsilon, delta);
+				double sigma = DPBuiltinCPInstruction.computeGaussianSigma(sensitivity, epsilon, delta);
 				_rdpSum[i] += rdpGaussian(ORDERS[i], sensitivity, sigma);
 			}
 		}
@@ -199,20 +203,18 @@ public class DPBudgetAccountant {
 	 * recorded).
 	 */
 	public double totalEpsilonSpent() {
+		if(!_hasGaussianReleases)
+			return _pureEpsilonSum;
+
 		// Take min_alpha(epsilon_alpha) as the current total privacy cost
 		double gaussianEps = Double.MAX_VALUE;
 		for(int i = 0; i < ORDERS.length; i++) {
 			double alpha = ORDERS[i];
-			double eps = _rdpSum[i] + Math.log(1.0 - 1.0 / alpha) - Math.log(_delta * (alpha - 1.0)) / alpha;
+			double eps = _rdpSum[i] + Math.log(1.0 / _delta) / (alpha - 1.0);
 			if(eps < gaussianEps)
 				gaussianEps = eps;
 		}
-		// Clamp: with no Gaussian releases the RDP sum is 0 and the log-delta
-		// term alone drives gaussianEps to a small positive value; clamp to 0
-		// so Laplace-only scripts are not penalised by delta they never requested.
-		if(gaussianEps < 0)
-			gaussianEps = 0.0;
-		return _pureEpsilonSum + gaussianEps;
+		return _pureEpsilonSum + Math.max(gaussianEps, 0.0);
 	}
 
 	/** Returns the remaining epsilon budget (negative if the budget is exceeded). */
@@ -235,15 +237,5 @@ public class DPBudgetAccountant {
 	 */
 	private static double rdpGaussian(double alpha, double sensitivity, double sigma) {
 		return alpha * (sensitivity * sensitivity) / (2.0 * sigma * sigma);
-	}
-
-	/**
-	 * Gaussian noise scale sigma calibrated to (epsilon, delta)-DP:
-	 * sigma = delta_f * sqrt(2 * log(1.25 / delta)) / epsilon
-	 * Must match the formula used in {@link DPBuiltinCPInstruction} so that the RDP cost recorded here
-	 * is consistent with the noise actually injected.
-	 */
-	private static double gaussianSigma(double sensitivity, double epsilon, double delta) {
-		return sensitivity * Math.sqrt(2.0 * Math.log(1.25 / delta)) / epsilon;
 	}
 }

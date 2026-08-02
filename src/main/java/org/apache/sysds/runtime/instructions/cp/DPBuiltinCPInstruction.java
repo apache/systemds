@@ -335,37 +335,37 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
      * @param delta       target delta
      * @return optimal sigma
      */
-    public static double computeGaussianSigma(double sensitivity, double epsilon, double delta) {
+	public static double computeGaussianSigma(double sensitivity, double epsilon, double delta) {
 
-        // Upper bound: classical Gaussian mechanism (loose but safe)
-        double sigmaHigh = (sensitivity * Math.sqrt(2 * Math.log(1.25 / delta))) / epsilon;
-        double sigmaLow = 1e-12;
+		// Upper bound: classical Gaussian mechanism (loose but safe)
+		double sigmaHigh = (sensitivity * Math.sqrt(2 * Math.log(1.25 / delta))) / epsilon;
+		double sigmaLow = 1e-12;
 
-        for (int i = 0; i < 100; i++) {
-            double sigmaMid = 0.5 * (sigmaLow + sigmaHigh);
+		for (int i = 0; i < 100; i++) {
+			double sigmaMid = 0.5 * (sigmaLow + sigmaHigh);
 
-            if (deltaUpperBound(sigmaMid, epsilon, delta, sensitivity) > delta) {
-                sigmaLow = sigmaMid;
-            } else {
-                sigmaHigh = sigmaMid;
-            }
-        }
+			if (deltaUpperBound(sigmaMid, epsilon, delta, sensitivity) > delta) {
+				sigmaLow = sigmaMid;
+			} else {
+				sigmaHigh = sigmaMid;
+			}
+		}
 
-        return sigmaHigh;
-    }
+		return sigmaHigh;
+	}
 
     /**
      * Analytic Gaussian DP inequality from Balle & Wang (2018).
      */
-    private static double deltaUpperBound(double sigma, double epsilon, double delta, double sensitivity) {
-        double c = sensitivity / (2 * sigma);
+	private static double deltaUpperBound(double sigma, double epsilon, double delta, double sensitivity) {
+		double c = sensitivity / (2 * sigma);
 
-        double term1 = normal.cumulativeProbability(c - epsilon * sigma / sensitivity);
-        double term2 = Math.exp(epsilon) *
-                normal.cumulativeProbability(-c - epsilon * sigma / sensitivity);
+		double term1 = normal.cumulativeProbability(c - epsilon * sigma / sensitivity);
+		double term2 = Math.exp(epsilon) *
+				normal.cumulativeProbability(-c - epsilon * sigma / sensitivity);
 
-        return term1 - term2;
-    }
+		return term1 - term2;
+	}
 
 	/**
 	 * Fills block with i.i.d. Laplace(0, scale) samples.

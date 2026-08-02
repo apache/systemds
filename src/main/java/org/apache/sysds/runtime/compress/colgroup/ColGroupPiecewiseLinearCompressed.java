@@ -1279,16 +1279,21 @@ public class ColGroupPiecewiseLinearCompressed extends AColGroupCompressed {
 	 * (slopes and intercepts), so there are no sparse empty entries to remove.
 	 * Returns null.
 	 */
-	@Override
-	public AColGroup removeEmpty() {
-		return null;
-	}
 
 	@Override
 	public AColGroup removeEmptyColsSubset(IColIndex indexes, IntArrayList emptyCols) {
     	return null; 
 	}
 
+	@Override
+	public AColGroup removeEmptyRows(boolean[] emptyRows, int newNumRows) {
+		return null; 
+	}
+
+	@Override
+	public AColGroup sort() {
+		return this; 
+	}
 	/**
 	 * Piecewise linear column groups cannot be reduced to fewer columns; returns null.
 	 */

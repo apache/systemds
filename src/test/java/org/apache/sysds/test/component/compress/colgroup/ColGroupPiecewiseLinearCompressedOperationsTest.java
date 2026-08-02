@@ -28,7 +28,12 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
-import org.apache.sysds.runtime.functionobjects.*;
+import org.apache.sysds.runtime.functionobjects.Divide;
+import org.apache.sysds.runtime.functionobjects.Minus;
+import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.functionobjects.Multiply2;
+import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.functionobjects.Power2;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
@@ -39,14 +44,13 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.Random;
 
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests for ColGroupPiecewiseLinearCompressed operations containing: scalarOperation, binaryRowOps, computeSum,
@@ -363,7 +367,7 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		assertArrayEquals(db_result.values(NCOLS), db_compare.values(NCOLS), TARGET_LOSS);
 	}
 
-	private double highest_loss(MatrixBlock result, MatrixBlock compare) {
+	private double highestLoss(MatrixBlock result, MatrixBlock compare) {
 		// recompute non zeros
 		result.recomputeNonZeros();
 		compare.recomputeNonZeros();
@@ -401,8 +405,8 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		// do unaryOperation on compare
 		MatrixBlock compare_final = compare.unaryOperations(new UnaryOperator(fn));
 
-		// check if highest_loss smaller than worst case expected loss
-		double biggest_loss = highest_loss(resultMB, compareMB);
+		// check if highestLoss smaller than worst case expected loss
+		double biggest_loss = highestLoss(resultMB, compareMB);
 		assertEquals(TARGET_LOSS * 2, Math.max(biggest_loss, TARGET_LOSS * 2), 0.0);
 	}
 
@@ -419,8 +423,8 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		// do unaryOperation on compare
 		MatrixBlock compare_final = compare.unaryOperations(new UnaryOperator(fn));
 
-		// check if highest_loss smaller than worst case expected loss
-		double biggest_loss = highest_loss(resultMB, compareMB);
+		// check if highestLoss smaller than worst case expected loss
+		double biggest_loss = highestLoss(resultMB, compareMB);
 		assertEquals(TARGET_LOSS * TARGET_LOSS, Math.max(biggest_loss, TARGET_LOSS * TARGET_LOSS), 0.0);
 	}
 

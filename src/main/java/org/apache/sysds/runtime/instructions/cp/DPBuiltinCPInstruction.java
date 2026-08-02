@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.commons.math3.distribution.NormalDistribution;
+
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -76,6 +78,9 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
 	 * CPInstructionParser can call the shared constructParameterMap() helper unchanged.
 	 */
 	private final LinkedHashMap<String, String> _params;
+
+	private static final NormalDistribution normal = new NormalDistribution();
+
 
 	// -----------------------------------------------------------------------
 	// Constructor (private – use parseInstruction)
@@ -295,16 +300,71 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
 			fillLaplaceNoise(noise, sensitivity / epsilon);
 		}
 		else {
-			// Gaussian mechanism: calibrate sigma for (epsilon, delta)-DP.
-			// For a given epsilon, noise is drawn from the normal distribution at
-			// sigma^2 = 2 * sensitivity^2 * log(1.25/delta) / epsilon^2
-			double sigma = sensitivity * Math.sqrt(2.0 * Math.log(1.25 / delta)) / epsilon;
+			// Gaussian mechanism
+			// For a given epsilon and delta, noise is drawn from the Gaussian distribution
+			// N(0, sigma^2)
+			double sigma = computeGaussianSigma(sensitivity, epsilon, delta);
 			fillGaussianNoise(noise, sigma);
 		}
 
 		noise.recomputeNonZeros();
 		return noise;
 	}
+
+	// /**
+	//  * Gaussian mechanism: calibrate sigma for (epsilon, delta)-DP.
+	//  * Classical Gaussian mechanism calibration
+	//  *
+    //  * @param sensitivity L2 sensitivity
+    //  * @param epsilon     target epsilon
+    //  * @param delta       target delta
+    //  * @return optimal sigma
+	//  */
+	// public static double getGaussianSigma(double sensitivity, double epsilon, double delta) {
+	// 	double sigma = sensitivity * Math.sqrt(2.0 * Math.log(1.25 / delta)) / epsilon;
+	// 	return sigma;
+	// }
+
+    /**
+     * Compute the optimal sigma for the Analytic Gaussian Mechanism (Balle & Wang 2018).
+     * Returns the smallest sigma such that the Gaussian mechanism is (epsilon, delta)-DP.
+     *
+     * @param sensitivity L2 sensitivity
+     * @param epsilon     target epsilon
+     * @param delta       target delta
+     * @return optimal sigma
+     */
+    public static double computeGaussianSigma(double sensitivity, double epsilon, double delta) {
+
+        // Upper bound: classical Gaussian mechanism (loose but safe)
+        double sigmaHigh = (sensitivity * Math.sqrt(2 * Math.log(1.25 / delta))) / epsilon;
+        double sigmaLow = 1e-12;
+
+        for (int i = 0; i < 100; i++) {
+            double sigmaMid = 0.5 * (sigmaLow + sigmaHigh);
+
+            if (deltaUpperBound(sigmaMid, epsilon, delta, sensitivity) > delta) {
+                sigmaLow = sigmaMid;
+            } else {
+                sigmaHigh = sigmaMid;
+            }
+        }
+
+        return sigmaHigh;
+    }
+
+    /**
+     * Analytic Gaussian DP inequality from Balle & Wang (2018).
+     */
+    private static double deltaUpperBound(double sigma, double epsilon, double delta, double sensitivity) {
+        double c = sensitivity / (2 * sigma);
+
+        double term1 = normal.cumulativeProbability(c - epsilon * sigma / sensitivity);
+        double term2 = Math.exp(epsilon) *
+                normal.cumulativeProbability(-c - epsilon * sigma / sensitivity);
+
+        return term1 - term2;
+    }
 
 	/**
 	 * Fills block with i.i.d. Laplace(0, scale) samples using the inverse-CDF method.

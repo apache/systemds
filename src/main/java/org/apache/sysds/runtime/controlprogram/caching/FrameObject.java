@@ -178,42 +178,6 @@ public class FrameObject extends CacheableData<FrameBlock>
 
 	/**
 	 *
-	 * @param generateNames
-	 * @return
-	 */
-	public String[] getColumnNames(boolean generateNames) {
-		if (_colnames == null && generateNames) {
-			long ncol = getNumColumns();
-
-			if (ncol < 0 || ncol > Integer.MAX_VALUE)
-				throw new DMLRuntimeException("Error during column name generation");
-
-			_colnames = FrameBlock.createColNames((int) ncol);
-		}
-		return _colnames;
-	}
-
-	/**
-	 * Creates a new collection containing the column names of the current
-	 * frame object concatenated with the column names of the passed frame object.
-	 *
-	 * @param fo frame object
-	 * @return merged column names
-	 */
-	public String[] mergeColumnNames(FrameObject fo) {
-		String[] left = (_colnames != null)
-				? _colnames
-				: FrameBlock.createColNames((int) getNumColumns());
-
-		String[] right = (fo._colnames != null)
-				? fo._colnames
-				: FrameBlock.createColNames((int) fo.getNumColumns());
-
-		return ArrayUtils.addAll(left, right);
-	}
-
-	/**
-	 *
 	 * @param colNames
 	 */
 	public void setColumnNames(String[] colNames) {

@@ -86,11 +86,18 @@ public class FederatedChunkCodecTest {
 
 	@Test
 	public void errorFrameSurfacesAsException() throws Exception {
-		EmbeddedChannel channel = new EmbeddedChannel(frameDecoder(), new FederatedChunkDecoder());
-		channel.writeInbound(errorFrame("remote failure"));
-		Throwable caught = awaitException(channel);
+		Throwable caught = writeAndAwaitException(errorFrame("remote failure"));
 		Assert.assertTrue("expected an IOException, got " + caught, caught instanceof IOException);
 		Assert.assertTrue(String.valueOf(caught).contains("remote failure"));
+	}
+
+	@Test
+	public void unknownFrameTypeSurfacesAsException() throws Exception {
+		byte unknownType = 7; // not part of the protocol, must fail fast instead of stalling
+		ByteBuf unknownTypeFrame = Unpooled.buffer(HEADER_LEN).writeByte(unknownType).writeInt(0);
+		Throwable caught = writeAndAwaitException(unknownTypeFrame);
+		Assert.assertTrue("expected an IOException, got " + caught, caught instanceof IOException);
+		Assert.assertTrue(String.valueOf(caught).contains("Unknown federated chunk frame type: " + unknownType));
 	}
 
 	@Test
@@ -124,6 +131,19 @@ public class FederatedChunkCodecTest {
 
 	private static String frameMessage(ByteBuf frame) {
 		return frame.toString(HEADER_LEN, frame.getInt(1), StandardCharsets.UTF_8);
+	}
+
+	private static Throwable writeAndAwaitException(ByteBuf frame) throws InterruptedException {
+		EmbeddedChannel channel = new EmbeddedChannel(frameDecoder(), new FederatedChunkDecoder());
+		try {
+			// the deserializer thread reports the failure asynchronously: writeInbound throws it if it already arrived,
+			// otherwise awaitException below waits for it
+			channel.writeInbound(frame);
+		}
+		catch(Throwable t) {
+			return t;
+		}
+		return awaitException(channel);
 	}
 
 	private static Throwable awaitException(EmbeddedChannel channel) throws InterruptedException {

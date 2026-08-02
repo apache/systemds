@@ -1,0 +1,12 @@
+{
+    "data_type": "matrix",
+    "value_type": "double",
+    "rows": 3,
+    "cols": 11,
+    "nnz": 33,
+    "format": "csv",
+    "author": "elisawege",
+    "header": false,
+    "sep": ",",
+    "created": "2026-08-02 19:57:31 MESZ"
+}

@@ -1284,6 +1284,11 @@ public class ColGroupPiecewiseLinearCompressed extends AColGroupCompressed {
 		return null;
 	}
 
+	@Override
+	public AColGroup removeEmptyColsSubset(IColIndex indexes, IntArrayList emptyCols) {
+    	return null; 
+	}
+
 	/**
 	 * Piecewise linear column groups cannot be reduced to fewer columns; returns null.
 	 */

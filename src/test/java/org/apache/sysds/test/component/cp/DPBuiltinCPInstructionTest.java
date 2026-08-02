@@ -303,25 +303,22 @@ public class DPBuiltinCPInstructionTest {
 
 	/** Sample n Laplace(0, scale) values via the fillLaplaceNoise method. */
 	private static double[] sampleLaplace(int n, double scale) throws ReflectiveOperationException {
-		return sampleViaReflection("fillLaplaceNoise", n, scale);
+		Method m = DPBuiltinCPInstruction.class.getDeclaredMethod("fillLaplaceNoise", int.class, int.class, double.class);
+		m.setAccessible(true);
+		MatrixBlock block = (MatrixBlock) m.invoke(null, n, 1, scale);
+
+		double[] out = new double[n];
+		for(int i = 0; i < n; i++)
+			out[i] = block.get(i, 0);
+		return out;
 	}
 
 	/** Sample n N(0, sigma^2) values via the production fillGaussianNoise method. */
 	private static double[] sampleGaussian(int n, double sigma) throws ReflectiveOperationException {
-		return sampleViaReflection("fillGaussianNoise", n, sigma);
-	}
-
-	/**
-	 * Invokes DPBuiltinCPInstruction's private fill*Noise(MatrixBlock, double) method to fill an
-	 * n x 1 block, so the distribution tests exercise the actual noise generation code.
-	 */
-	private static double[] sampleViaReflection(String methodName, int n, double param)
-		throws ReflectiveOperationException {
-		MatrixBlock block = new MatrixBlock(n, 1, false);
-		block.allocateDenseBlock();
-		Method m = DPBuiltinCPInstruction.class.getDeclaredMethod(methodName, MatrixBlock.class, double.class);
+		Method m = DPBuiltinCPInstruction.class.getDeclaredMethod("fillGaussianNoise", int.class, int.class,
+			double.class);
 		m.setAccessible(true);
-		m.invoke(null, block, param);
+		MatrixBlock block = (MatrixBlock) m.invoke(null, n, 1, sigma);
 
 		double[] out = new double[n];
 		for(int i = 0; i < n; i++)

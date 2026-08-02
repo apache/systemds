@@ -19,18 +19,21 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.commons.math3.distribution.LaplaceDistribution;
 import org.apache.commons.math3.distribution.NormalDistribution;
+import org.apache.commons.math3.random.Well1024a;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.privacy.dp.DPBudgetAccountant;
 
 import java.util.LinkedHashMap;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * CP instruction for differential-privacy release of a linear query over the original matrix.
@@ -290,24 +293,22 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
 	 */
 	private MatrixBlock generateNoise(int rows, int cols, double sensitivity, double epsilon, double delta) {
 
-		MatrixBlock noise = new MatrixBlock(rows, cols, false); // dense
-		noise.allocateDenseBlock();
+		MatrixBlock noise;
 
 		if(instOpcode.equals(OPCODE_LAPLACE)) {
 			// Laplace mechanism
 			// For a given epsilon, noise is drawn from the Laplace distribution at
 			// scale b = sensitivity / epsilon
-			fillLaplaceNoise(noise, sensitivity / epsilon);
+			noise = fillLaplaceNoise(rows, cols, sensitivity / epsilon);
 		}
 		else {
 			// Gaussian mechanism
 			// For a given epsilon and delta, noise is drawn from the Gaussian distribution
 			// N(0, sigma^2)
 			double sigma = computeGaussianSigma(sensitivity, epsilon, delta);
-			fillGaussianNoise(noise, sigma);
+			noise = fillGaussianNoise(rows, cols, sigma);
 		}
 
-		noise.recomputeNonZeros();
 		return noise;
 	}
 
@@ -367,41 +368,35 @@ public class DPBuiltinCPInstruction extends ComputationCPInstruction {
     }
 
 	/**
-	 * Fills block with i.i.d. Laplace(0, scale) samples using the inverse-CDF method.
+	 * Fills block with i.i.d. Laplace(0, scale) samples.
 	 *
-	 * For u in Uniform(0, 1): X = -scale * sign(u - 0.5) * ln(1 - 2|u - 0.5|)
+	 * Draws from commons-math3's {@link LaplaceDistribution} (its inverse-CDF sampling, tested independently
+	 * of this class) seeded by {@link Well1024a}, the same long-period equidistributed generator
+	 * {@link org.apache.sysds.runtime.matrix.data.LibMatrixDatagen} uses for DML's rand() builtin.
 	 */
-	private static void fillLaplaceNoise(MatrixBlock block, double scale) {
-		ThreadLocalRandom rng = ThreadLocalRandom.current();
-		int rows = block.getNumRows();
-		int cols = block.getNumColumns();
+	private static MatrixBlock fillLaplaceNoise(int rows, int cols, double scale) {
+		MatrixBlock noise = new MatrixBlock(rows, cols, false); // dense
+		noise.allocateDenseBlock();
+		LaplaceDistribution laplace = new LaplaceDistribution(new Well1024a(), 0, scale);
 		for(int r = 0; r < rows; r++) {
 			for(int c = 0; c < cols; c++) {
-				double u = rng.nextDouble(); // u in (0, 1)
-				double v = u - 0.5;
-				// Guard against the degenerate u == 0.5 case (ln(0) = -inf).
-				if(v == 0.0)
-					v = 1e-15;
-				double sample = -scale * Math.signum(v) * Math.log(1.0 - 2.0 * Math.abs(v));
-				block.set(r, c, sample);
+				noise.set(r, c, laplace.sample());
 			}
 		}
+		return noise;
 	}
 
 	/**
-	 * Fills block with i.i.d. N(0, sigma^2) samples.
+	 * Generates a rows x cols block of i.i.d. N(0, sigma^2) samples.
 	 *
-	 * Uses {@link ThreadLocalRandom#nextGaussian()} which is thread-safe and does not require external libraries.
+	 * Reuses the same Well1024a-seeded, Box-Muller normal generator that backs DML's rand(pdf="normal")
+	 * (see {@link MatrixBlock#randOperations}), so the noise gets the same long-period PRNG and block-parallel generation
+	 * as the rest of SystemDS's random matrix generation. randOperations produces standard N(0,1) samples
+	 * (pdf="normal" ignores min/max), so the sigma scaling is applied afterwards as a scalar multiply.
 	 */
-	private static void fillGaussianNoise(MatrixBlock block, double sigma) {
-		ThreadLocalRandom rng = ThreadLocalRandom.current();
-		int rows = block.getNumRows();
-		int cols = block.getNumColumns();
-		for(int r = 0; r < rows; r++) {
-			for(int c = 0; c < cols; c++) {
-				block.set(r, c, sigma * rng.nextGaussian());
-			}
-		}
+	private static MatrixBlock fillGaussianNoise(int rows, int cols, double sigma) {
+		MatrixBlock std = MatrixBlock.randOperations(rows, cols, 1.0, 0, 1, "normal", -1);
+		return std.scalarOperations(new RightScalarOperator(Multiply.getMultiplyFnObject(), sigma), null);
 	}
 
 	// -----------------------------------------------------------------------

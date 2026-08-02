@@ -1273,6 +1273,17 @@ public class ColGroupPiecewiseLinearCompressed extends AColGroupCompressed {
 		return new ColGroupPiecewiseLinearCompressed(newColIndex, newBp, newSlopes, newIntercepts, numRows);
 	}
 
+
+	/**
+	 * For piecewise linear compression, all values are represented through mathematical segments
+	 * (slopes and intercepts), so there are no sparse empty entries to remove.
+	 * Returns null.
+	 */
+	@Override
+	public AColGroup removeEmpty() {
+		return null;
+	}
+
 	/**
 	 * Piecewise linear column groups cannot be reduced to fewer columns; returns null.
 	 */

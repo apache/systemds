@@ -37,6 +37,17 @@ from systemds.scuro.utils.identifier import get_op_id, get_node_id
 from collections import OrderedDict, defaultdict, deque
 
 
+def pushdown_aggregation_for_node(
+    node_parameters: Optional[Dict[str, Any]],
+) -> Optional[AggregatedRepresentation]:
+    if not node_parameters:
+        return None
+    pushdown_config = node_parameters.get("_pushdown_aggregation")
+    if pushdown_config is None:
+        return None
+    return AggregatedRepresentation(params=pushdown_config)
+
+
 class LRUCache:
     def __init__(self, max_size: int = 256):
         self.max_size = max_size
@@ -69,12 +80,14 @@ class RepresentationNode:
     representation_index: int = None
     parameters: Dict[str, Any] = field(default_factory=dict)
     gpu_id: int = None
+    aggregation: AggregatedRepresentation = None
 
 
 @dataclass
 class RepresentationDag:
 
-    def __init__(self, nodes: List[Any], root_node_id):
+    def __init__(self, nodes: List[Any], root_node_id, dag_id: int = None):
+        self.dag_id = dag_id
         self.root_node_id = root_node_id
         self.nodes = self.filter_connected_nodes(nodes)
 
@@ -230,6 +243,23 @@ class RepresentationDag:
         params_items = tuple(sorted((node.parameters or {}).items()))
         return ("op", op_cls, params_items, input_sig_tuple)
 
+    def get_represntation_names(self) -> str:
+        representation_names = []
+        visited = set()
+
+        def visit_node(node_id):
+            if node_id in visited:
+                return
+            node = self.get_node_by_id(node_id)
+            for input_id in node.inputs:
+                visit_node(input_id)
+            visited.add(node_id)
+            if node.operation is not None:
+                representation_names.append(node.operation().name)
+
+        visit_node(self.root_node_id)
+        return " -> ".join(representation_names)
+
     def execute(
         self,
         modalities: List[Modality],
@@ -281,9 +311,9 @@ class RepresentationDag:
                             if rep_cache is not None:
                                 result = rep_cache[node_operation.name]
                             else:
-                                # Compute the representation
+                                agg = pushdown_aggregation_for_node(node.parameters)
                                 result = input_mods[0].apply_representation(
-                                    node_operation
+                                    node_operation, aggregation=agg
                                 )
                     else:
                         # It's a fusion operation
@@ -313,8 +343,10 @@ class RepresentationDag:
                         if rep_cache is not None:
                             result = rep_cache[node_operation.name]
                         else:
-                            # Compute the representation
-                            result = input_mods[0].apply_representation(node_operation)
+                            agg = pushdown_aggregation_for_node(node.parameters)
+                            result = input_mods[0].apply_representation(
+                                node_operation, aggregation=agg
+                            )
                 else:
                     # It's a fusion operation
                     fusion_op = node_operation
@@ -386,19 +418,24 @@ def get_modality_by_id_and_instance_id(
     modalities: List[Modality], modality_id: int, instance_id: int
 ):
     counter = 0
+    modality_per_id = {}
     for modality in modalities:
-        if modality.modality_id == modality_id:
-            if counter == instance_id or instance_id == -1:
-                return modality
-            else:
-                counter += 1
-    return None
+        if modality.modality_id not in modality_per_id:
+            modality_per_id[modality.modality_id] = []
+        modality_per_id[modality.modality_id].append(modality)
+    if modality_id not in modality_per_id:
+        return None
+    if instance_id == -1 or len(modality_per_id[modality_id]) == 1:
+        return modality_per_id[modality_id][0]
+    else:
+        return modality_per_id[modality_id][instance_id]
 
 
 class RepresentationDAGBuilder:
     def __init__(self):
         self.nodes = []
         self.node_counter = 0
+        self.dag_counter = 0
 
     def create_leaf_node(
         self, modality_id: str, representation_index: int = -1, operation=None
@@ -431,10 +468,13 @@ class RepresentationDAGBuilder:
         self.nodes.append(node)
         return node_id
 
-    def build(self, root_node_id: str) -> RepresentationDag:
+    def build(self, root_node_id: str, dag_id: int = None) -> RepresentationDag:
         dag = RepresentationDag(
-            nodes=copy.deepcopy(self.nodes), root_node_id=root_node_id
+            nodes=copy.deepcopy(self.nodes),
+            root_node_id=root_node_id,
+            dag_id=dag_id if dag_id is not None else self.dag_counter + 1,
         )
+        self.dag_counter += 1
         if not dag.validate():
             raise ValueError("Invalid DAG construction")
         return dag
@@ -524,6 +564,7 @@ class CSEAwareDAGBuilder:
         self.signature_to_node: Dict[Hashable, str] = {}
         self.node_to_signature: Dict[str, Hashable] = {}
         self.node_counter = 0
+        self.dag_counter = 0
 
     def _compute_node_signature(
         self, operation: Any, inputs: List[str], parameters: Dict[str, Any] = None
@@ -602,8 +643,13 @@ class CSEAwareDAGBuilder:
             operation=operation, inputs=inputs, parameters=parameters, is_leaf=False
         )
 
-    def build(self, root_node_id: str) -> RepresentationDag:
-        dag = RepresentationDag(nodes=self.global_nodes, root_node_id=root_node_id)
+    def build(self, root_node_id: str, dag_id: int = None) -> RepresentationDag:
+        dag = RepresentationDag(
+            nodes=self.global_nodes,
+            root_node_id=root_node_id,
+            dag_id=dag_id if dag_id is not None else self.dag_counter + 1,
+        )
+        self.dag_counter += 1
         if not dag.validate():
             raise ValueError("Invalid DAG construction")
         return dag

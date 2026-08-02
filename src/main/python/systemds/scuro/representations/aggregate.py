@@ -51,7 +51,7 @@ class Aggregation:
     def __init__(self, aggregation_function="mean", pad_modality=True, params=None):
         if params is not None:
             aggregation_function = params["aggregation_function"]
-            pad_modality = params["pad_modality"]
+            pad_modality = params.get("pad_modality", True)
 
         if aggregation_function not in list(self._aggregation_function.keys()):
             raise ValueError("Invalid aggregation function")
@@ -126,8 +126,8 @@ class Aggregation:
     def transform(self, modality):
         return self.execute(modality)
 
-    def compute_feature(self, instance):
-        return self._aggregation_func(instance)
+    def compute_feature(self, instance, axis=0):
+        return self._aggregation_func(instance, axis)
 
     def get_aggregation_functions(self):
         return list(self._aggregation_function.keys())

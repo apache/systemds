@@ -21,14 +21,50 @@ package org.apache.sysds.runtime.ooc.util;
 
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.ooc.cache.BlockEntry;
+import org.apache.sysds.runtime.ooc.cache.OOCCache;
+import org.apache.sysds.runtime.ooc.cache.OOCFuture;
+import org.apache.sysds.runtime.ooc.memory.MemoryAllowance;
 import org.apache.sysds.runtime.util.IndexRange;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BooleanSupplier;
 
 public class OOCUtils {
+	public static OOCFuture<BlockEntry> pinAdmitted(OOCCache cache, long streamId, long sequenceNumber,
+		MemoryAllowance allowance, BooleanSupplier cancelled) {
+		if(cancelled.getAsBoolean())
+			return OOCFuture.completed(null);
+		if(allowance.isShutdown())
+			return OOCFuture
+				.failed(new IllegalStateException("Allowance was shut down while a pin admission was pending."));
+
+		OOCFuture<BlockEntry> admitted;
+		try {
+			admitted = cache.pinAdmitted(streamId, sequenceNumber, allowance);
+		}
+		catch(RuntimeException ex) {
+			return OOCFuture.failed(ex);
+		}
+		OOCFuture<BlockEntry> result = new OOCFuture<>();
+		admitted.whenComplete((entry, error) -> {
+			if(error != null) {
+				result.completeExceptionally(error);
+				return;
+			}
+			if(entry != null && cancelled.getAsBoolean()) {
+				cache.unpin(entry, allowance);
+				result.complete(null);
+				return;
+			}
+			result.complete(entry);
+		});
+		return result;
+	}
+
 	public static IndexRange getRangeOfTile(MatrixIndexes tileIdx, long blen) {
 		long rs = 1 + tileIdx.getRowIndex() * blen;
 		long re = (tileIdx.getRowIndex() + 1) * blen;

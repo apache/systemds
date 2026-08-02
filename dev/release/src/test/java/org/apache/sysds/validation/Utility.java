@@ -185,6 +185,7 @@ public class Utility
 		try {
 			exitValue = process.waitFor();
 		} catch (InterruptedException ie) {
+			Thread.currentThread().interrupt();
 			debugPrint(Constants.DEBUG_ERROR, "Program interrunpted: " + ie);
 		}
 		debugPrint(Constants.DEBUG_CODE, "Program '" + String.join(" ", command) + "' exited with exit status " + exitValue, strOutputFile);

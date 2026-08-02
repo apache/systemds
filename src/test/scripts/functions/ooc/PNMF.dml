@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 X = read($1);
-[W, H] = pnmf(X=X, rnk=$2, maxi=$3, verbose=FALSE);
+[W, H] = pnmf(X=X, rnk=$2, maxi=$3, verbose=FALSE, seed=$4);
 
-write(W, $4, format="binary");
-write(H, $5, format="binary");
+write(W, $5, format="binary");
+write(H, $6, format="binary");

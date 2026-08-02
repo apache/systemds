@@ -49,6 +49,12 @@ The following steps have to be done for both the cases
 
 ### Building python package
 
+- Make sure you have `setuptools` installed
+
+```bash
+pip install setuptools
+```
+
 - Run `create_python_dist.py`
 
 ```bash

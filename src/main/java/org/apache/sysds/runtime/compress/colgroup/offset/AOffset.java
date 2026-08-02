@@ -55,8 +55,25 @@ public abstract class AOffset implements Serializable {
 
 	protected static final Log LOG = LogFactory.getLog(AOffset.class.getName());
 
-	/** Cached final empty slice to return in cases of empty slice returns to avoid object allocation */
-	protected static final OffsetSliceInfo EMPTY_SLICE = new OffsetSliceInfo(-1, -1, new OffsetEmpty());
+	/**
+	 * Lazy holder for the cached empty slice. The empty slice is built on first use rather than in AOffset's
+	 * static initializer: instantiating the OffsetEmpty subclass from AOffset's {@code <clinit>} forms a
+	 * superclass/subclass class-initialization cycle that deadlocks when several threads first touch the offset
+	 * classes concurrently (e.g. parallel tests). Deferring it to first use guarantees AOffset is already
+	 * initialized by the time OffsetEmpty is loaded, so no cycle exists.
+	 */
+	private static final class EmptySliceHolder {
+		static final OffsetSliceInfo EMPTY_SLICE = new OffsetSliceInfo(-1, -1, new OffsetEmpty());
+	}
+
+	/**
+	 * Get the cached empty slice, returned for empty slice results to avoid object allocation.
+	 *
+	 * @return the shared empty {@link OffsetSliceInfo}
+	 */
+	protected static OffsetSliceInfo emptySlice() {
+		return EmptySliceHolder.EMPTY_SLICE;
+	}
 
 	/** The skip list stride size, aka how many indexes skipped for each index. */
 	protected static final int SKIP_STRIDE = 1000;
@@ -569,13 +586,13 @@ public abstract class AOffset implements Serializable {
 			else
 				return new OffsetSliceInfo(0, s, moveIndex(l));
 		}
-		else if (u < first)
-			return EMPTY_SLICE;
+		else if(u < first)
+			return emptySlice();
 
 		final AIterator it = getIteratorSkipCache(l);
 
 		if(it == null || it.value() >= u)
-			return EMPTY_SLICE;
+			return emptySlice();
 
 		if(u >= last) // If including the last do not iterate.
 			return constructSliceReturn(l, u, it.getDataIndex(), s - 1, it.getOffsetsIndex(), getLength(), it.value(),
@@ -764,6 +781,41 @@ public abstract class AOffset implements Serializable {
 		return OffsetFactory.createOffset(newOff);
 	}
 
+	public RemoveEmptyOffsetsTmp removeEmptyRows(boolean[] selectV, int rOut) {
+		IntArrayList newOff = new IntArrayList();
+		IntArrayList selectMTmp = new IntArrayList();
+
+		final AIterator it = getIterator();
+		final int last = getOffsetToLast();
+		int t = 0;
+		int o = 0;
+		while(it.value() < last) {
+			while(t < it.value()) {
+				if(selectV[t])
+					o++;
+				t++;
+			}
+			if(selectV[it.value()]) {
+				newOff.appendValue(o);
+				selectMTmp.appendValue(it.getDataIndex());
+				o++;
+				t++;
+			}
+			it.next();
+		}
+		while(t < last) {
+			if(selectV[t])
+				o++;
+			t++;
+		}
+		if(selectV[last]) {
+			newOff.appendValue(o);
+			selectMTmp.appendValue(it.getDataIndex());
+		}
+
+		return new RemoveEmptyOffsetsTmp(OffsetFactory.createOffset(newOff), selectMTmp);
+	}
+
 	/**
 	 * Offset slice info containing the start and end index an offset that contains the slice, and an new AOffset
 	 * containing only the sliced elements
@@ -791,6 +843,16 @@ public abstract class AOffset implements Serializable {
 			return sb.toString();
 		}
 
+	}
+
+	public static final class RemoveEmptyOffsetsTmp {
+		public final AOffset retOffset;
+		public final IntArrayList select;
+
+		protected RemoveEmptyOffsetsTmp(AOffset retOffset, IntArrayList select) {
+			this.retOffset = retOffset;
+			this.select = select;
+		}
 	}
 
 	private static class OffsetCache {
@@ -824,4 +886,5 @@ public abstract class AOffset implements Serializable {
 			return "r" + row + " d " + dataIndex + " o " + offIndex + "\n";
 		}
 	}
+
 }

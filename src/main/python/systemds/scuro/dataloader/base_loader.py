@@ -44,9 +44,7 @@ class BaseLoader(ABC):
         (otherwise please provide your own Dataloader that knows about the file name convention)
         """
         self.data = []
-        self.metadata = (
-            {}
-        )  # TODO: check what the index should be for storing the metadata (file_name, counter, ...)
+        self.metadata = []
         self.source_path = source_path
         self.indices = indices
         self.modality_type = modality_type
@@ -87,7 +85,7 @@ class BaseLoader(ABC):
     def reset(self):
         self._next_chunk = 0
         self.data = []
-        self.metadata = {}
+        self.metadata = []
 
     def load(self):
         """
@@ -134,6 +132,7 @@ class BaseLoader(ABC):
         Loads the next chunk of data
         """
         self.data = []
+        # TODO: Handle metadata correctly
         next_chunk_indices = self.indices[
             self._next_chunk
             * self._chunk_size : (self._next_chunk + 1)

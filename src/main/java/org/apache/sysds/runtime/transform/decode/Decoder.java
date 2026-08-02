@@ -23,13 +23,22 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.CommonThreadPool;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
  * Base class for all transform decoders providing both a row and block
@@ -43,9 +52,59 @@ public abstract class Decoder implements Externalizable{
 	protected ValueType[] _schema;
 	protected int[] _colList;
 	protected String[] _colnames = null;
+	// dummycoded columns that were feature-hashed: domain size K is read from the meta cell, not
+	// numDistinct. Only used during initMetaData (driver side), so not serialized.
+	protected transient int[] _dcHashCols = null;
+
 	protected Decoder(ValueType[] schema, int[] colList) {
 		_schema = schema;
 		_colList = colList;
+	}
+
+	protected boolean isHashCol(int colID) {
+		return ArrayUtils.contains(_dcHashCols, colID);
+	}
+
+	/**
+	 * Domain size of a dummycoded source column: the hash domain K from the meta cell for
+	 * feature-hashed columns, otherwise the column's {@code numDistinct} (0 when unset).
+	 *
+	 * @param meta   transform meta frame
+	 * @param colID  1-based column id of the dummycoded source column
+	 * @param isHash whether the column was feature-hashed
+	 * @return the domain size, never negative
+	 */
+	protected static int getNumDummycodeDistinct(FrameBlock meta, int colID, boolean isHash) {
+		if(isHash) {
+			Object o = meta.get(0, colID - 1);
+			return (o == null) ? 0 : (int) UtilFunctions.parseToLong(o.toString());
+		}
+		ColumnMetadata d = meta.getColumnMetadata()[colID - 1];
+		int ndist = d.isDefault() ? 0 : (int) d.getNumDistinct();
+		return Math.max(ndist, 0);
+	}
+
+	/**
+	 * Maps output column ids ({@code _colList}) to source positions in the encoded matrix, shifting past the column
+	 * expansion of any dummycoded columns that precede them. Returns {@code _colList} directly when none apply.
+	 */
+	protected int[] buildSrcCols(FrameBlock meta, int[] dcCols) {
+		if(dcCols == null || dcCols.length == 0)
+			return _colList;
+		int[] srcCols = new int[_colList.length];
+		int ix1 = 0, ix2 = 0, off = 0;
+		while(ix1 < _colList.length) {
+			if(ix2 >= dcCols.length || _colList[ix1] < dcCols[ix2]) {
+				srcCols[ix1] = _colList[ix1] + off;
+				ix1++;
+			}
+			else { // skip past the dummycode expansion
+				int dcCol = dcCols[ix2];
+				off += getNumDummycodeDistinct(meta, dcCol, isHashCol(dcCol)) - 1;
+				ix2++;
+			}
+		}
+		return srcCols;
 	}
 
 	public ValueType[] getSchema() {
@@ -77,8 +136,35 @@ public abstract class Decoder implements Externalizable{
 	 * @param k   Parallelization degree
 	 * @return returns the given output frame block for convenience
 	 */
-	public FrameBlock decode(MatrixBlock in, FrameBlock out, int k) {
-		return decode(in, out);
+	public FrameBlock decode(final MatrixBlock in, final FrameBlock out, final int k) {
+		if(k <= 1)
+			return decode(in, out);
+		final ExecutorService pool = CommonThreadPool.get(k);
+		out.ensureAllocatedColumns(in.getNumRows());
+		try {
+			final List<Future<?>> tasks = new ArrayList<>();
+			int blz = Math.max((in.getNumRows() + k) / k, 1000);
+			
+			for(int i = 0; i < in.getNumRows(); i += blz){
+				final int start = i;
+				final int end = Math.min(in.getNumRows(), i + blz);
+				tasks.add(pool.submit(() -> decode(in, out, start, end)));
+			}
+			
+			for(Future<?> f : tasks)
+				f.get();
+			return out;
+		}
+		catch(InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new DMLRuntimeException("Parallel decode interrupted", e);
+		}
+		catch(ExecutionException e) {
+			throw new DMLRuntimeException("Parallel decode failed", e);
+		}
+		finally {
+			pool.shutdown();
+		}
 	}
 
 	/**

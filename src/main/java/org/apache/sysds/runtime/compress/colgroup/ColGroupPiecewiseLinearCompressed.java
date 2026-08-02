@@ -1282,7 +1282,7 @@ public class ColGroupPiecewiseLinearCompressed extends AColGroupCompressed {
 	public AColGroup removeEmpty() {
 		return null;
 	}
-
+	
 	/**
 	 * Piecewise linear column groups cannot be reduced to fewer columns; returns null.
 	 */

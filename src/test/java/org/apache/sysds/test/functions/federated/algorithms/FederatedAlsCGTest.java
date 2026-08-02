@@ -120,8 +120,7 @@ public class FederatedAlsCGTest extends AutomatedTestBase
 		fullDMLScriptName = "";
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
-		Thread thread1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
-		Thread thread2 = startLocalFedWorkerThread(port2);
+		Thread[] workers = startLocalFedWorkerThreads(new int[] {port1, port2});
 
 		getAndLoadTestConfiguration(testname);
 
@@ -153,7 +152,7 @@ public class FederatedAlsCGTest extends AutomatedTestBase
 		HashMap<CellIndex, Double> fedResults = readDMLMatrixFromOutputDir(OUTPUT_NAME);
 		TestUtils.compareMatrices(fedResults, refResults, TOLERANCE, "Fed", "Ref");
 
-		TestUtils.shutdownThreads(thread1, thread2);
+		TestUtils.shutdownThreads(workers);
 
 		// check for federated operations
 		Assert.assertTrue(heavyHittersContainsString("fed_!="));

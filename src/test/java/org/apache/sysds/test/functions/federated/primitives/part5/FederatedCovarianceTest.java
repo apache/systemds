@@ -134,13 +134,10 @@ public class FederatedCovarianceTest extends AutomatedTestBase {
 		int port2 = getRandomAvailablePort();
 		int port3 = getRandomAvailablePort();
 		int port4 = getRandomAvailablePort();
-		Process t1 = startLocalFedWorker(port1, FED_WORKER_WAIT_S);
-		Process t2 = startLocalFedWorker(port2, FED_WORKER_WAIT_S);
-		Process t3 = startLocalFedWorker(port3, FED_WORKER_WAIT_S);
-		Process t4 = startLocalFedWorker(port4, FED_WORKER_WAIT);
+		Process[] workers = startLocalFedWorkers(new int[] {port1, port2, port3, port4});
 
 		try {
-			if(!isAlive(t1, t2, t3, t4))
+			if(!isAlive(workers))
 				throw new RuntimeException("Failed starting federated worker");
 
 			setExecMode(execMode);
@@ -203,7 +200,7 @@ public class FederatedCovarianceTest extends AutomatedTestBase {
 
 		}
 		finally {
-			TestUtils.shutdownThreads(t1, t2, t3, t4);
+			TestUtils.shutdownThreads(workers);
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
@@ -246,13 +243,10 @@ public class FederatedCovarianceTest extends AutomatedTestBase {
 		int port3 = getRandomAvailablePort();
 		int port4 = getRandomAvailablePort();
 
-		Process t1 = startLocalFedWorker(port1, FED_WORKER_WAIT_S);
-		Process t2 = startLocalFedWorker(port2, FED_WORKER_WAIT_S);
-		Process t3 = startLocalFedWorker(port3, FED_WORKER_WAIT_S);
-		Process t4 = startLocalFedWorker(port4, FED_WORKER_WAIT);
+		Process[] workers = startLocalFedWorkers(new int[] {port1, port2, port3, port4});
 
 		try {
-			if(!isAlive(t1, t2, t3, t4))
+			if(!isAlive(workers))
 				throw new RuntimeException("Failed starting federated worker");
 			TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 			loadTestConfiguration(config);
@@ -364,7 +358,7 @@ public class FederatedCovarianceTest extends AutomatedTestBase {
 
 		}
 		finally {
-			TestUtils.shutdownThreads(t1, t2, t3, t4);
+			TestUtils.shutdownThreads(workers);
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}

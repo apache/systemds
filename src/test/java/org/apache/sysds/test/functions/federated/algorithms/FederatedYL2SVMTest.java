@@ -117,8 +117,7 @@ public class FederatedYL2SVMTest extends AutomatedTestBase {
 		fullDMLScriptName = "";
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
-		Thread t2 = startLocalFedWorkerThread(port2);
+		Thread[] workers = startLocalFedWorkerThreads(new int[] {port1, port2});
 
 		TestConfiguration config = availableTestConfigurations.get(testName);
 		loadTestConfiguration(config);
@@ -140,7 +139,7 @@ public class FederatedYL2SVMTest extends AutomatedTestBase {
 		// compare via files
 		compareResults(1e-9);
 
-		TestUtils.shutdownThreads(t1, t2);
+		TestUtils.shutdownThreads(workers);
 
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;

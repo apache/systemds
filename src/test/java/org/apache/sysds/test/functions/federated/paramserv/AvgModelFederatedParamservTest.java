@@ -142,12 +142,13 @@ public class AvgModelFederatedParamservTest extends AutomatedTestBase {
 		try {
 			// start threads
 			List<Integer> ports = new ArrayList<>();
-			List<Thread> threads = new ArrayList<>();
+			int[] portArr = new int[_numFederatedWorkers];
 			for(int i = 0; i < _numFederatedWorkers; i++) {
-				ports.add(getRandomAvailablePort());
-				threads.add(startLocalFedWorkerThread(ports.get(i),
-					i==(_numFederatedWorkers-1) ? FED_WORKER_WAIT : FED_WORKER_WAIT_S));
+				int port = getRandomAvailablePort();
+				portArr[i] = port;
+				ports.add(port);
 			}
+			Thread[] threads = startLocalFedWorkerThreads(portArr);
 
 			// generate test data
 			double[][] features = generateDummyMNISTFeatures(_dataSetSize, C, Hin, Win);
@@ -169,14 +170,6 @@ public class AvgModelFederatedParamservTest extends AutomatedTestBase {
 				double[][] ranges = generateBalancedFederatedRowRanges(_numFederatedWorkers, features.length);
 				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresName, features, _numFederatedWorkers, ports, ranges);
 				rowFederateLocallyAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports, ranges);
-			}
-
-			try {
-				//wait for all workers to be setup
-				Thread.sleep(FED_WORKER_WAIT);
-			}
-			catch(InterruptedException e) {
-				e.printStackTrace();
 			}
 
 			// dml name
@@ -207,7 +200,7 @@ public class AvgModelFederatedParamservTest extends AutomatedTestBase {
 
 			// shut down threads
 			for(int i = 0; i < _numFederatedWorkers; i++) {
-				TestUtils.shutdownThreads(threads.get(i));
+				TestUtils.shutdownThreads(threads[i]);
 			}
 		}
 		finally {

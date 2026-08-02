@@ -78,7 +78,11 @@ public class MatrixReaderFactory {
 			case COMPRESSED:
 				reader = ReaderCompressed.create();
 				break;
-			
+
+			case DELTA:
+				reader = par ? new ReaderDeltaParallel() : new ReaderDelta();
+				break;
+
 			default:
 				throw new DMLRuntimeException("Failed to create matrix reader for unknown format: " + fmt.toString());
 		}
@@ -140,6 +144,11 @@ public class MatrixReaderFactory {
 			case COMPRESSED:
 				reader = new ReaderCompressed();
 				break;
+
+			case DELTA:
+				reader = par ? new ReaderDeltaParallel() : new ReaderDelta();
+				break;
+
 			default:
 				throw new DMLRuntimeException("Failed to create matrix reader for unknown format: " + fmt.toString());
 		}

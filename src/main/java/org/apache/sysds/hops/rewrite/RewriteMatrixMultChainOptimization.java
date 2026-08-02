@@ -50,7 +50,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 
 		// Find the optimal order for the chain whose result is the current HOP
 		for( Hop h : roots ) 
-			rule_OptimizeMMChains(h, state);
+			ruleOptimizeMMChains(h, state);
 		
 		return roots;
 	}
@@ -62,7 +62,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			return null;
 
 		// Find the optimal order for the chain whose result is the current HOP
-		rule_OptimizeMMChains(root, state);
+		ruleOptimizeMMChains(root, state);
 		
 		return root;
 	}
@@ -73,7 +73,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * 
 	 * @param hop high-level operator
 	 */
-	private void rule_OptimizeMMChains(Hop hop, ProgramRewriteStatus state) 
+	private void ruleOptimizeMMChains(Hop hop, ProgramRewriteStatus state) 
 	{
 		if( hop.isVisited() )
 			return;
@@ -87,7 +87,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		}
 		
 		for( Hop hi : hop.getInput() )
-			rule_OptimizeMMChains(hi, state);
+			ruleOptimizeMMChains(hi, state);
 
 		hop.setVisited();
 	}

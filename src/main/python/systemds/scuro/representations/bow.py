@@ -43,7 +43,7 @@ class BoW(UnimodalRepresentation):
 
     def get_output_stats(self, input_stats: TextStats) -> RepresentationStats:
         vocab_estimate = min(
-            100_000,
+            100000,
             max(
                 1000,
                 input_stats.num_instances * input_stats.max_length * self.ngram_range,
@@ -76,7 +76,11 @@ class BoW(UnimodalRepresentation):
             ngram_range=(1, self.ngram_range), min_df=self.min_df
         )
 
-        X = vectorizer.fit_transform(modality.data).toarray()
+        X = (
+            vectorizer.fit_transform(modality.data)
+            .toarray()
+            .astype(np.float32, copy=False)
+        )
 
         if self.output_file is not None:
             save_embeddings(X, self.output_file)

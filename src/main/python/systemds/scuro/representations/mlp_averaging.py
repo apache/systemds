@@ -118,19 +118,18 @@ class MLPAveraging(DimensionalityReduction):
 
         batch_input_bytes = batch * input_dim * elem_size
         batch_output_bytes = batch * out_dim * elem_size
-
-        num_batches = (n + batch - 1) // batch
-        python_overhead = num_batches * 1024
-
+        input_torch_copy_bytes = input_bytes
+        output_accum_transient_bytes = output_bytes
         cpu_working = (
             input_bytes
-            + 2 * output_bytes
+            + input_torch_copy_bytes
+            + output_bytes
+            + output_accum_transient_bytes
             + weight_bytes
             + batch_input_bytes
             + batch_output_bytes
-            + python_overhead
         )
-        cpu_peak = int(cpu_working * 1.20 + 64 * 1024**2)
+        cpu_peak = int(cpu_working * 1.15 + 64 * 1024**2)
 
         gpu_working = weight_bytes + batch_input_bytes + batch_output_bytes
         gpu_peak = int(gpu_working * 1.35 + 560 * 1024**2)

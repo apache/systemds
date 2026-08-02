@@ -56,19 +56,16 @@ class TfIdf(UnimodalRepresentation):
         )
 
     def estimate_peak_memory_bytes(self, input_stats: TextStats) -> dict:
-        output_bytes = self.estimate_output_memory_bytes(input_stats)
-        vectorizer_overhead = 640 * 1024
-        return {
-            "cpu_peak_bytes": output_bytes + vectorizer_overhead,
-            "gpu_peak_bytes": 0,
-        }
+        dense_bytes = self.estimate_output_memory_bytes(input_stats)
+        cpu_peak = int(dense_bytes * 2.2 + 32 * 1024 * 1024)
+        return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}
 
     def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(modality, self)
 
         vectorizer = TfidfVectorizer(min_df=self.min_df)
 
-        X = vectorizer.fit_transform(modality.data)
+        X = vectorizer.fit_transform(modality.data).astype(np.float32, copy=False)
         if self.output_file is not None:
             save_embeddings(X, self.output_file)
 

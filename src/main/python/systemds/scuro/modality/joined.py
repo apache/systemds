@@ -77,9 +77,8 @@ class JoinedModality(Modality):
             )
 
         for i in range(start, end):
-            idx_1 = list(self.left_modality.metadata.values())[i + starting_idx][
-                self.condition.leftField
-            ]
+            left_meta_idx = i if self.chunk_left else i + starting_idx
+            idx_1 = self.left_modality.metadata[left_meta_idx][self.condition.leftField]
             if (
                 self.condition.alignment is None and self.condition.join_type == "<"
             ):  # TODO compute correct alignment timestamps/spatial params
@@ -90,9 +89,7 @@ class JoinedModality(Modality):
             if self.chunk_left:
                 i = i + starting_idx
 
-            idx_2 = list(self.right_modality.metadata.values())[i][
-                self.condition.rightField
-            ]
+            idx_2 = self.right_modality.metadata[i][self.condition.rightField]
             self.joined_right.data.append([])
 
             c = 0
@@ -228,8 +225,8 @@ class JoinedModality(Modality):
     def _apply_representation_chunked(
         self, left_modality, right_modality, chunk_right, representation
     ):
-        new_left = Modality(left_modality.modality_type, {})
-        new_right = Modality(right_modality.modality_type, {})
+        new_left = Modality(left_modality.modality_type)
+        new_right = Modality(right_modality.modality_type)
 
         for _ in left_modality.iter_raw_data_chunks(reset=True):
             if chunk_right:
@@ -246,11 +243,11 @@ class JoinedModality(Modality):
                 self.joined_right, representation
             )
             new_right.data.extend(right_transformed.data)
-            new_right.metadata.update(right_transformed.metadata)
+            new_right.metadata.extend(right_transformed.metadata)
 
             left_transformed = self._apply_representation(left_modality, representation)
             new_left.data.extend(left_transformed.data)
-            new_left.metadata.update(left_transformed.metadata)
+            new_left.metadata.extend(left_transformed.metadata)
 
         new_left.update_metadata()
         new_right.update_metadata()

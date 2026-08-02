@@ -43,6 +43,8 @@ import org.apache.sysds.runtime.instructions.ooc.MapMMChainOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.ReorgOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.TeeOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.AppendOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.ReshapeOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.QuaternaryOOCInstruction;
 
 public class OOCInstructionParser extends InstructionParser {
 	protected static final Log LOG = LogFactory.getLog(OOCInstructionParser.class.getName());
@@ -96,7 +98,7 @@ public class OOCInstructionParser extends InstructionParser {
 			case Reorg:
 				return ReorgOOCInstruction.parseInstruction(str);
 			case Reshape:
-				return ReorgOOCInstruction.parseInstruction(str);
+				return ReshapeOOCInstruction.parseInstruction(str);
 			case Tee:
 				return TeeOOCInstruction.parseInstruction(str);
 			case CentralMoment:
@@ -111,6 +113,8 @@ public class OOCInstructionParser extends InstructionParser {
 				return DataGenOOCInstruction.parseInstruction(str);
 			case Append:
 				return AppendOOCInstruction.parseInstruction(str);
+			case Quaternary:
+				return QuaternaryOOCInstruction.parseInstruction(str);
 
 			default:
 				throw new DMLRuntimeException("Invalid OOC Instruction Type: " + ooctype);

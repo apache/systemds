@@ -25,7 +25,6 @@ import java.util.Collection;
 import java.util.List;
 
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -34,8 +33,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
-import static org.junit.Assert.fail;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
@@ -147,17 +144,15 @@ public class FederatedParamservTest extends AutomatedTestBase {
 
 		ExecMode platformOld = setExecMode(mode);
 		List<Integer> ports = new ArrayList<>();
-		List<Thread> threads = new ArrayList<>();
+		int[] portArr = new int[_numFederatedWorkers];
+		for(int i = 0; i < _numFederatedWorkers; i++) {
+			int port = getRandomAvailablePort();
+			portArr[i] = port;
+			ports.add(port);
+		}
+		Thread[] threads = new Thread[0];
 		try {
-			// start threads
-			for(int i = 0; i < _numFederatedWorkers; i++) {
-				int port = getRandomAvailablePort();
-				threads.add(startLocalFedWorkerThread(port, FED_WORKER_WAIT_S));
-				ports.add(port);
-
-				if ( threads.get(i).isInterrupted() || !threads.get(i).isAlive() )
-					throw new DMLRuntimeException("Federated worker thread dead or interrupted! Port " + port);
-			}
+			threads = startLocalFedWorkerThreads(portArr);
 
 			// generate test data
 			double[][] features = ParamServTestUtils.generateFeatures(_networkType, _dataSetSize, C, Hin, Win);
@@ -180,11 +175,6 @@ public class FederatedParamservTest extends AutomatedTestBase {
 				rowFederateLocallyAndWriteInputMatrixWithMTD(featuresName, features, _numFederatedWorkers, ports, ranges);
 				rowFederateLocallyAndWriteInputMatrixWithMTD(labelsName, labels, _numFederatedWorkers, ports, ranges);
 			}
-
-			//wait for all workers to be setup
-			Thread.sleep(FED_WORKER_WAIT);
-			if (threads.stream().anyMatch(t -> !t.isAlive()))
-				throw new DMLRuntimeException("Federated worker thread interrupted!");
 
 			// dml name
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -210,10 +200,6 @@ public class FederatedParamservTest extends AutomatedTestBase {
 			programArgs = programArgsList.toArray(new String[0]);
 			String log = runTest(null).toString();
 			Assert.assertEquals("Test Failed \n" + log, 0, Statistics.getNoOfExecutedSPInst());
-		}
-		catch(InterruptedException e) {
-			e.printStackTrace();
-			fail(e.getMessage());
 		}
 		finally {
 			// shut down threads

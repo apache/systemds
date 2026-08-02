@@ -401,3 +401,26 @@ def add_shared_memory_candidate(data: Any, resident_bytes: int = 0) -> bool:
             return data, shm.name, data_nbytes, resident_bytes
 
     return None, None, 0, resident_bytes
+
+
+_SHARED_MEMORY_WRAPPER_TYPES = (
+    SharedStringList,
+    SharedGroupedArrayList,
+    SharedArrayList,
+    SharedNDArray,
+)
+
+
+def collect_shm_names_from_payload(data: Any) -> List[str]:
+    if data is None:
+        return []
+    if isinstance(data, _SHARED_MEMORY_WRAPPER_TYPES):
+        return [data.shm_name]
+    if hasattr(data, "data"):
+        return collect_shm_names_from_payload(data.data)
+    if isinstance(data, (list, tuple)):
+        names: List[str] = []
+        for item in data:
+            names.extend(collect_shm_names_from_payload(item))
+        return names
+    return []

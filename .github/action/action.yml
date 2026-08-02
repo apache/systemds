@@ -28,5 +28,9 @@ inputs:
 runs:
   using: 'docker'
   image: 'Dockerfile'
+  # Run the entrypoint from the mounted workspace rather than the copy baked
+  # into the image, so changes to docker/entrypoint.sh take effect immediately
+  # without rebuilding and republishing apache/systemds:testing-latest.
+  entrypoint: '/github/workspace/docker/entrypoint.sh'
   args:
    - ${{ inputs.test-to-run }}

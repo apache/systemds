@@ -93,10 +93,10 @@ public class NrowNcolUnknownCSVReadTest extends AutomatedTestBase
 			MatrixBlock mb = DataConverter.convertToMatrixBlock(A);
 			DataConverter.writeMatrixToHDFS(mb, input("A"), FileFormat.CSV, 
 				new MatrixCharacteristics(rows,cols,-1,-1));
-	        HDFSTool.deleteFileIfExistOnHDFS(input("A.mtd"));
+			HDFSTool.deleteFileIfExistOnHDFS(input("A.mtd"));
 			
 			//run tests
-	        runTest(true, false, null, -1);
+			runTest(true, false, null, -1);
 		}
 		catch(Exception ex)
 		{

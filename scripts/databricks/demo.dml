@@ -1,0 +1,50 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# SystemDS on Databricks smoke test.
+# Reads a matrix from storage and computes column sums and a Gram-matrix trace,
+# so the read path plus a few distributed-friendly operations are exercised.
+#
+# Args (all optional, with defaults):
+#   -nvargs in=<input-matrix-path> fmt=<format> out=<output-path>
+#
+# `in` is any path readable from the cluster driver (a UC volume, /Workspace,
+# or dbfs:) and `fmt` any SystemDS-supported matrix format (csv, binary,
+# libsvm, mm, ...). Example:
+#   in=/Volumes/<catalog>/<schema>/<volume>/demo_input.csv fmt=csv
+
+in  = ifdef($in, "demo_input.csv")
+fmt = ifdef($fmt, "csv")
+out = ifdef($out, "demo_result.txt")
+
+X = read(in, format=fmt)
+
+# Column sums and a Gram-matrix trace: both push work through Spark
+# instructions for large inputs.
+colSums = colSums(X)
+gramTrace = sum(X * X)
+
+s = sum(colSums) + gramTrace
+
+print("rows=" + nrow(X) + " cols=" + ncol(X))
+print("result=" + s)
+
+write(s, out, format="text")

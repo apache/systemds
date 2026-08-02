@@ -69,7 +69,9 @@ class JSONLoader(BaseLoader):
 
                 text = " ".join(text) if isinstance(text, list) else text
                 self.data.append(text)
-                self.metadata[idx] = self.modality_type.create_metadata(len(text), text)
+                self.metadata.append(
+                    self.modality_type.create_metadata(len(text), text) | json_file[idx]
+                )
 
     def get_stats(self, source_path: str):
         self.file_sanity_check(source_path)

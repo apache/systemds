@@ -19,6 +19,7 @@
 #
 # -------------------------------------------------------------
 from typing import Union, List
+import inspect
 import numpy as np
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.joined import JoinedModality
@@ -66,9 +67,9 @@ class TransformedModality(Modality):
         self.aggregate_dim = aggregate_dim
 
         if modality.__class__.__name__ == "UnimodalModality":
-            for k, v in self.metadata.items():
-                if "attention_masks" in v:
-                    del self.metadata[k]["attention_masks"]
+            for m in self.metadata:
+                if "attention_masks" in m:
+                    del m["attention_masks"]
 
     def copy_from_instance(self):
         """
@@ -82,8 +83,7 @@ class TransformedModality(Modality):
             data_bytes += self._estimate_data_bytes(instance)
 
         md_bytes = 0
-        for key, value in self.metadata.items():
-            md_bytes += self._estimate_data_bytes(key)
+        for value in self.metadata:
             md_bytes += self._estimate_data_bytes(value)
 
         total_bytes = (
@@ -166,7 +166,11 @@ class TransformedModality(Modality):
 
     def apply_representation(self, representation, aggregation=None):
         start = time.time()
-        new_modality = representation.transform(self, aggregation=aggregation)
+        transform_sig = inspect.signature(representation.transform)
+        if "aggregation" in transform_sig.parameters:
+            new_modality = representation.transform(self, aggregation=aggregation)
+        else:
+            new_modality = representation.transform(self)
         new_modality.update_metadata()
         new_modality.transform_time += time.time() - start
         new_modality.self_contained = representation.self_contained

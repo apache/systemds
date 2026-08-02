@@ -107,20 +107,26 @@ jobs:
         GPG_KEY_ID="${GPG_KEY_FINGERPRINT: (-8)}"
         export GPG_KEY=$GPG_KEY_ID
 
-        # Create a GPG wrapper script that injects the passphrase automatically
+        # Create GPG wrapper script
         cat << 'EOF' > $HOME/gpg-wrapper.sh
         #!/bin/bash
         gpg --batch --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" "$@"
         EOF
         chmod +x $HOME/gpg-wrapper.sh
 
-        # Configure Git to use our wrapper for signing operations
+        # Configure Git
         git config --global user.name "$GIT_NAME"
         git config --global user.email "$GIT_EMAIL"
         git config --global user.signingkey "$GPG_KEY"
         git config --global gpg.program "$HOME/gpg-wrapper.sh"
         
-        bash $GITHUB_WORKSPACE/dev/release/do-release.sh -n -g
+        # Run do-release.sh and trap failures to print tag.log
+        if ! bash $GITHUB_WORKSPACE/dev/release/do-release.sh -n -g; then
+          echo "==================== CONTENTS OF tag.log ===================="
+          cat tag.log || cat $GITHUB_WORKSPACE/tag.log || echo "tag.log not found"
+          echo "============================================================="
+          exit 1
+        fi
       env:
         DRY_RUN: '1'
         GIT_BRANCH: 'main'

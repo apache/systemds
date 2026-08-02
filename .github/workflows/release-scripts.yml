@@ -98,7 +98,7 @@ jobs:
         printf "$GITHUB_WORKSPACE --> github workspace\n"
         export GNUPGHOME="$HOME/gnupghome"
         
-        # Reload gpg-agent and enforce loopback config in gnupghome
+        # Enforce loopback config
         echo "allow-loopback-pinentry" >> "$GNUPGHOME/gpg-agent.conf"
         gpgconf --kill gpg-agent
         gpgconf --reload gpg-agent
@@ -106,18 +106,21 @@ jobs:
         GPG_KEY_FINGERPRINT="$(gpg --list-keys | head -n 4 | tail -n 1 | sed 's/^ *//g')"
         GPG_KEY_ID="${GPG_KEY_FINGERPRINT: (-8)}"
         export GPG_KEY=$GPG_KEY_ID
-        
-        # Configure git identity and force gpg to use loopback passphrase entry
+
+        # Create a GPG wrapper script that injects the passphrase automatically
+        cat << 'EOF' > $HOME/gpg-wrapper.sh
+        #!/bin/bash
+        gpg --batch --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" "$@"
+        EOF
+        chmod +x $HOME/gpg-wrapper.sh
+
+        # Configure Git to use our wrapper for signing operations
         git config --global user.name "$GIT_NAME"
         git config --global user.email "$GIT_EMAIL"
         git config --global user.signingkey "$GPG_KEY"
-        git config --global gpg.program gpg
+        git config --global gpg.program "$HOME/gpg-wrapper.sh"
         
-        # Pass passphrase non-interactively via gpg wrapper or pinentry mode
-        git config --global gpg.pinentryMode loopback
-        
-        # Execute release script passing GPG passphrase in loopback batch mode
-        GPG_PASSPHRASE="$GPG_PASSPHRASE" bash $GITHUB_WORKSPACE/dev/release/do-release.sh -n -g
+        bash $GITHUB_WORKSPACE/dev/release/do-release.sh -n -g
       env:
         DRY_RUN: '1'
         GIT_BRANCH: 'main'

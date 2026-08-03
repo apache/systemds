@@ -413,4 +413,107 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		assertTrue(result instanceof ColGroupUncompressed);
 	}
 
+	@Test
+	public void testread2DIntegerArray(){}
+	@Test
+	public void testread2DDoubleArray(){}
+	@Test
+	public void read(){}
+	@Test
+	public void testwrite(){}
+	@Test
+	public void testcomputeMxx(){}
+	@Test
+	public void testcomputeColMxx(){}
+	@Test
+	public void testcomputeSumSq(){}
+	@Test
+	public void testcomputeColSumsSq(){}
+	@Test
+	public void testsegmentSumSq(){}
+	@Test
+	public void testsumOfSquares(){}
+	@Test
+	public void testcomputeRowSums(){}
+	@Test
+	public void testcomputeRowMxx(){}
+	@Test
+	public void testcomputeProduct(){}
+	@Test
+	public void testcomputeRowProduct(){}
+	@Test
+	public void testcomputeColProduct(){}
+	@Test
+	public void testpreAggSumRows(){}
+	@Test
+	public void testpreAggSumSqRows(){}
+	@Test
+	public void testpreAggProductRows(){}
+	@Test
+	public void testpreAggBuiltinRows(){}
+	@Test
+	public void testsameIndexStructure(){}
+	@Test
+	public void testtsmm(){}
+	@Test
+	public void testcrossColDotProduct(){}
+	@Test
+	public void testcopyAndSet(){}
+	@Test
+	public void testdecompressToDenseBlockTransposed(){}
+	@Test
+	public void testdecompressToSparseBlockTransposed(){}
+	@Test
+	public void testdecompressToSparseBlock(){}
+	@Test
+	public void testrightMultByMatrix(){}
+	@Test
+	public void testleftMultByMatrixNoPreAgg(){}
+	@Test
+	public void testleftMultByAColGroup(){}
+	@Test
+	public void testtsmmAColGroup(){}
+	@Test
+	public void testsliceSingleColumn(){}
+	@Test
+	public void testsliceMultiColumns(){}
+	@Test
+	public void testsliceRows(){}
+	@Test
+	public void testgetNumberNonZeros(){}
+	@Test
+	public void testcentralMoment(){}
+	@Test
+	public void testrexpandCols(){}
+	@Test
+	public void testgetCost(){}
+	@Test
+	public void testappend(){}
+	@Test
+	public void testappendNInternal(){}
+	@Test
+	public void testgetCompressionScheme(){}
+	@Test
+	public void recompress(){}
+	@Test
+	public void testgetCompressionInfo(){}
+	@Test
+	public void testfixColIndexes(){}
+	@Test
+	public void testremoveEmptyColsSubset(){}
+	@Test
+	public void testremoveEmptyRows(){}
+	@Test
+	public void testsort(){}
+	@Test
+	public void testreduceCols(){}
+	@Test
+	public void testgetSparsity(){}
+	@Test
+	public void testsparseSelection(){}
+	@Test
+	public void testdenseSelection(){}
+	@Test
+	public void testsplitReshape(){}
+
 }

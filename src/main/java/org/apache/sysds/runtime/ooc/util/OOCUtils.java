@@ -141,11 +141,15 @@ public class OOCUtils {
 
 	public static long estimateOutputTileBytes(DataCharacteristics dc) {
 		if(dc == null || dc.getBlocksize() <= 0 || !dc.dimsKnown()) {
-			int blocksize = dc != null && dc.getBlocksize() > 0 ? dc.getBlocksize() : 1000;
-			return estimateMatrixBlockBytes(blocksize, blocksize);
+			return estimateFullTileBytes(dc);
 		}
 		return estimateMatrixBlockBytes(Math.min(dc.getBlocksize(), dc.getRows()),
 			Math.min(dc.getBlocksize(), dc.getCols()));
+	}
+
+	public static long estimateFullTileBytes(DataCharacteristics dc) {
+		int blocksize = dc != null && dc.getBlocksize() > 0 ? dc.getBlocksize() : 1000;
+		return estimateMatrixBlockBytes(blocksize, blocksize);
 	}
 
 	private static long estimateMatrixBlockBytes(long rows, long cols) {

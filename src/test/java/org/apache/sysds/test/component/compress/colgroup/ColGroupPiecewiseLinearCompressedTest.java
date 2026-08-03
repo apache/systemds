@@ -134,7 +134,7 @@ public class ColGroupPiecewiseLinearCompressedTest extends AutomatedTestBase {
 	@Test
 	public void testCompressAndDecompressSuccessive() {
 
-		//create random matrix
+		// create random matrix
 		final int nrows = 50, ncols = 3;
 		double[][] data = getRandomMatrix(nrows, ncols, -3, 3, 1.0, SEED);
 		MatrixBlock in = DataConverter.convertToMatrixBlock(data);
@@ -199,7 +199,7 @@ public class ColGroupPiecewiseLinearCompressedTest extends AutomatedTestBase {
 	private void testRoundtrip(double[][] data, int nrows, int ncols, double targetLoss, double tolerance,
 		int maxFailures, boolean successive) {
 
-		///create a matrix
+		/// create a matrix
 		MatrixBlock orig = DataConverter.convertToMatrixBlock(data);
 		orig.allocateDenseBlock();
 
@@ -376,8 +376,8 @@ public class ColGroupPiecewiseLinearCompressedTest extends AutomatedTestBase {
 			in.set(r, 0, r * 0.5);
 		}
 
-		CompressionSettings cs = new CompressionSettingsBuilder().addValidCompression(
-			AColGroup.CompressionType.PiecewiseLinearCompressed).create();
+		CompressionSettings cs = new CompressionSettingsBuilder()
+			.addValidCompression(AColGroup.CompressionType.PiecewiseLinearCompressed).create();
 
 		CompressedSizeInfo csi = createTestCompressedSizeInfo();
 
@@ -471,5 +471,3 @@ public class ColGroupPiecewiseLinearCompressedTest extends AutomatedTestBase {
 	}
 
 }
-
-

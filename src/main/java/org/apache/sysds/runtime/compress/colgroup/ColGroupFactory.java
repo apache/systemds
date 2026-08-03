@@ -233,9 +233,8 @@ public class ColGroupFactory {
 					time, retType, estC, actC, act.getNumValues(), cols, wanted, warning));
 		}
 		else {
-			LOG.debug(
-				String.format("time[ms]: %10.2f %25s est %10.0f -- act %10.0f distinct:%5d cols:%s wanted:%s", time,
-					retType, estC, actC, act.getNumValues(), cols, wanted));
+			LOG.debug(String.format("time[ms]: %10.2f %25s est %10.0f -- act %10.0f distinct:%5d cols:%s wanted:%s",
+				time, retType, estC, actC, act.getNumValues(), cols, wanted));
 		}
 
 	}
@@ -836,8 +835,8 @@ public class ColGroupFactory {
 		int fill) {
 
 		ReaderColumnSelection reader = (cs.scaleFactors == null) ? ReaderColumnSelection.createReader(in, colIndexes,
-			cs.transposed, rl, ru) : ReaderColumnSelection.createQuantizedReader(in, colIndexes, cs.transposed, rl, ru,
-			cs.scaleFactors);
+			cs.transposed, rl,
+			ru) : ReaderColumnSelection.createQuantizedReader(in, colIndexes, cs.transposed, rl, ru, cs.scaleFactors);
 
 		DblArray cellVals = reader.nextRow();
 		boolean extra = false;
@@ -1107,8 +1106,8 @@ public class ColGroupFactory {
 		for(int col = 0; col < numCols; col++) {
 			final int colIdx = colIndexes.get(col);
 			double[] column = PiecewiseLinearUtils.getColumn(in, colIdx);
-			PiecewiseLinearUtils.SegmentedRegression fit = PiecewiseLinearUtils.compressSuccessivePiecewiseLinear(column,
-				cs);
+			PiecewiseLinearUtils.SegmentedRegression fit = PiecewiseLinearUtils
+				.compressSuccessivePiecewiseLinear(column, cs);
 			breakpointsPerCol[col] = fit.getBreakpoints();
 			interceptsPerCol[col] = fit.getIntercepts();
 			slopesPerCol[col] = fit.getSlopes();

@@ -115,8 +115,7 @@ public class CompressionSettings {
 	 * Transpose input matrix, to optimize access when extracting bitmaps. This setting is changed inside the script
 	 * based on the transposeInput setting.
 	 *
-	 * This is intentionally left as a mutable value, since the transposition of the input matrix is decided in phase
-	 * 3.
+	 * This is intentionally left as a mutable value, since the transposition of the input matrix is decided in phase 3.
 	 */
 	public boolean transposed = false;
 

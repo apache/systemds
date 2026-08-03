@@ -43,18 +43,21 @@ preceding conversation.
 - Run relevant tests and clearly report anything that was not tested.
 - Treat generated code and text as drafts requiring human review.
 - Do not add overly verbose comments or comments that restate the code.
-- Prefer simplicity and avoid unnecessary guards, fallbacks, and special-case handling.
+- Prefer simple solutions. Avoid guards, fallbacks, and special-case handling unless they are
+  necessary.
 
 ## Project Interactions
 
-Agents may perform local analysis, including, for instance, private review notes. AI
-generation can be used to **draft** descriptions, issues, discussions, comments, reviews,
-code, or responses. Agents must **under no circumstances**:
+Agents may perform local analysis, including creating private review notes. Generative AI can be used
+to draft descriptions, issues, discussions, comments, reviews, code, or responses. Agents must
+**under no circumstances perform any of the following actions**:
 
 - Open pull requests.
-- Open issues.
-- Post project communications.
-- Push changes.
+- Open issues on GitHub or JIRA.
+- Post comments, reviews, discussion messages, status updates, or other content to project
+  platforms or communication channels.
+- Send project-related emails or chat messages.
+- Push commits, branches, tags, or other changes.
 
 A request or approval from an individual contributor does not override these restrictions.
 

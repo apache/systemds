@@ -33,7 +33,7 @@ import org.apache.sysds.performance.generators.GenMatrices;
 import org.apache.sysds.performance.generators.IGenerate;
 import org.apache.sysds.performance.generators.MatrixFile;
 import org.apache.sysds.performance.io.HDF5IOBenchmark;
-import org.apache.sysds.performance.frame.ParquetIOBenchmark;
+import org.apache.sysds.performance.io.ParquetIOBenchmark;
 import org.apache.sysds.performance.matrix.MatrixAppend;
 import org.apache.sysds.performance.matrix.MatrixBinaryCellPerf;
 import org.apache.sysds.performance.matrix.MatrixMultiplicationPerf;

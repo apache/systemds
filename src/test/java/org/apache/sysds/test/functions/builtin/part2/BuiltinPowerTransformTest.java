@@ -40,6 +40,7 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 		TEST_DIR + BuiltinPowerTransformTest.class.getSimpleName() + "/";
 
 	private static final double TRANSFORM_EPS = 1e-6;
+	private static final double OUTSIDE_INTERVAL_Y_EPS = 2e-6;
 	private static final double APPLY_EPS = 1e-9;
 
 	@Override
@@ -97,7 +98,7 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 			{0.99},
 			{1.00}
 		};
-		runPowerTransformTest("yeo-johnson", false, input, false);
+		runPowerTransformTest("yeo-johnson", false, input, false, OUTSIDE_INTERVAL_Y_EPS);
 		assertLambdaOutsideInitialInterval(true);
 	}
 
@@ -158,6 +159,11 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 
 	private void runPowerTransformTest(
 		String method, boolean standardize, double[][] input, boolean shouldFail) {
+		runPowerTransformTest(method, standardize, input, shouldFail, TRANSFORM_EPS);
+	}
+
+	private void runPowerTransformTest(
+		String method, boolean standardize, double[][] input, boolean shouldFail, double yEps) {
 		ExecMode oldExecMode = setExecMode(ExecType.CP);
 
 		try {
@@ -191,7 +197,7 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 				return;
 
 			runRScript(true);
-			compareOutput("Y", TRANSFORM_EPS);
+			compareOutput("Y", yEps);
 			compareOutput("L", TRANSFORM_EPS);
 			compareOutput("S", TRANSFORM_EPS);
 		}

@@ -78,7 +78,7 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		numCols = NCOLS;
 
 		/// generate random matrix
-		double[][] data = getRandomMatrix(numRows, numCols, -30, 30, 1.0, SEED);
+		double[][] data = super.getRandomMatrix(numRows, numCols, -30, 30, 1.0, SEED);
 		originalMB = DataConverter.convertToMatrixBlock(data);
 		originalMB.allocateDenseBlock();
 
@@ -322,16 +322,6 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 
 		assertTrue("disk size should be positive", colGroupPLC.getExactSizeOnDisk() > 0);
 		assertTrue("num values should be positive", colGroupPLC.getNumValues() > 0);
-	}
-
-	@Override
-	public double[][] getRandomMatrix(int rows, int cols, double min, double max, double sparsity, long seed) {
-		Random rng = new Random(seed);
-		double[][] data = new double[rows][cols];
-		for(int r = 0; r < rows; r++)
-			for(int c = 0; c < cols; c++)
-				data[r][c] = min + rng.nextDouble() * (max - min);
-		return data;
 	}
 
 	@Test

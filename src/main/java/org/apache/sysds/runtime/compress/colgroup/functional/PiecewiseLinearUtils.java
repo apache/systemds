@@ -93,91 +93,6 @@ public class PiecewiseLinearUtils {
 	}
 
 	/**
-	 * Computes breakpoints for a column using segmented least squares with dynamic programming Iteratively reduces
-	 * lambda to increase the number of segments until the target MSE is met.
-	 *
-	 * @param cs     compression settings containing the target loss
-	 * @param column the column values to segment
-	 * @return list of breakpoint indices, starting with 0
-	 */
-	public static List<Integer> computeBreakpoints(CompressionSettings cs, double[] column) {
-		final int numElements = column.length;
-		final double targetMSE = cs.getPiecewiseTargetLoss();
-		final double sseMax = numElements * targetMSE; // max allowed total SSE
-
-		// start with high lambda an reduce iteratively
-		double lambda = Math.max(10.0, sseMax * 2.0);
-		List<Integer> bestBreaks = Arrays.asList(0, numElements);
-		double bestSSE = computeTotalSSE(column, bestBreaks);
-
-		for(int iter = 0; iter < 50; iter++) {
-			List<Integer> breaks = computeBreakpointsLambda(column, lambda);
-			double totalSSE = computeTotalSSE(column, breaks);
-			int numSegs = breaks.size() - 1;
-
-			if(totalSSE < bestSSE) {
-				bestSSE = totalSSE;
-				bestBreaks = new ArrayList<>(breaks);
-			}
-			// target loss reached
-			if(bestSSE <= sseMax) {
-				return bestBreaks;
-			}
-
-			// only one segment left, break condition
-			if(numSegs <= 1) {
-				break;
-			}
-			// reducing lambda to allow more segments in next iteration
-			lambda *= 0.8;
-		}
-
-		return bestBreaks;
-	}
-
-	/**
-	 * Computes optimal breakpoints, each segment has a SEE plus a
-	 */
-
-	public static List<Integer> computeBreakpointsLambda(double[] column, double lambda) {
-		final int n = column.length;
-		final double[] costs = new double[n + 1]; // min cost to reach i
-		final int[] prev = new int[n + 1];
-
-		Arrays.fill(costs, Double.POSITIVE_INFINITY);
-		costs[0] = 0.0;
-		// precompute all segment costs to avoid recomputation in dynamic programming
-		double[][] segCosts = new double[n + 1][n + 1];
-		for(int i = 0; i < n; i++) {
-			for(int j = i + 1; j <= n; j++) {
-				segCosts[i][j] = computeSegmentCost(column, i, j);
-			}
-		}
-		// for each point j, find the cheapest previous breakpoint i
-		for(int j = 1; j <= n; j++) {
-			for(int i = 0; i < j; i++) {
-				// cost equals the SSE of segment [i,j] plus penalty plus best costs
-				double cost = costs[i] + segCosts[i][j] + lambda;
-				if(cost < costs[j]) {
-					costs[j] = cost;
-					prev[j] = i;
-				}
-			}
-		}
-
-		// Backtrack to previous points to recover the breakpoints
-		List<Integer> breaks = new ArrayList<>();
-		int j = n;
-		while(j > 0) {
-			breaks.add(j);
-			j = prev[j];
-		}
-		breaks.add(0);
-		Collections.reverse(breaks);
-		return breaks;
-	}
-
-	/**
 	 * computes the segment cost
 	 *
 	 * @param column column values
@@ -200,23 +115,6 @@ public class PiecewiseLinearUtils {
 			sse += err * err;
 		}
 		return sse;
-	}
-
-	/**
-	 * computes the total SSE over all segments defined by the given breakpoints
-	 *
-	 * @param column
-	 * @param breaks
-	 * @return sum of the total SSE
-	 */
-	public static double computeTotalSSE(double[] column, List<Integer> breaks) {
-		double total = 0.0;
-		for(int s = 0; s < breaks.size() - 1; s++) {
-			final int start = breaks.get(s);
-			final int end = breaks.get(s + 1);
-			total += computeSegmentCost(column, start, end);
-		}
-		return total;
 	}
 
 	public static double[] regressSegment(double[] column, int start, int end) {

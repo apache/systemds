@@ -34,6 +34,9 @@ import org.apache.sysds.utils.stats.Timing;
 import org.apache.sysds.runtime.compress.colgroup.functional.PiecewiseLinearUtils;
 import java.util.Random;
 import java.util.List;
+import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+
 
 /**
  * Performance benchmark for piecewise linear compression. Successive is benchmarked across large matrices to show
@@ -47,36 +50,6 @@ public class PiecewiseLinearCompressionPerformanceTest {
 	// how often compressed
 	private static final int REPS = 3;
 
-	/**
-	 * generate of a time series matrix to have a realistic test set up
-	 *
-	 * @param nr number of rows
-	 * @param nc number of columns
-	 * @return matrix with random generated data
-	 */
-	private static MatrixBlock generateTestMatrix(int nr, int nc) {
-		MatrixBlock mb = new MatrixBlock(nr, nc, true);
-		mb.allocateDenseBlock();
-		Random rng = new Random(42);
-		for(int c = 0; c < nc; c++) {
-			double trend = 0.001 * c;
-			double level = rng.nextDouble() * 5.0;
-			double volatility = 0.1 + 0.01 * c;
-			double residual = 0.0;
-
-			for(int row = 0; row < nr; row++) {
-				// random level shift every 75-150 rows
-				if(row % (75 + (int) (75 * rng.nextDouble())) == 0) {
-					level += (rng.nextDouble() - 0.5) * 2.0;
-					trend += (rng.nextDouble() - 0.5) * 0.0005;
-				}
-				// noise: residual = 0.7 * prev + random
-				residual = 0.7 * residual + rng.nextGaussian() * volatility;
-				mb.set(row, c, Math.max(0, trend * row + level + residual));
-			}
-		}
-		return mb;
-	}
 
 	/**
 	 * generate of a perfectly linear matrix to have a realistic test set up
@@ -86,7 +59,7 @@ public class PiecewiseLinearCompressionPerformanceTest {
 	 * @return matrix with random generated data
 	 */
 	private static MatrixBlock generateLinearMatrix(int nr, int nc) {
-		MatrixBlock mb = new MatrixBlock(nr, nc, true);
+		MatrixBlock mb = new MatrixBlock(nr, nc, false);
 		mb.allocateDenseBlock();
 		for(int c = 0; c < nc; c++) {
 			double slope = 0.5 * (c + 1);
@@ -160,37 +133,6 @@ public class PiecewiseLinearCompressionPerformanceTest {
 	}
 
 	/**
-	 * Comparing the runtime speeds between the old Piece-wise linear compression and new successive Piece-wise linear
-	 * compression algorithms
-	 *
-	 * @param mb   original matrix to compress
-	 * @param loss target loss param
-	 */
-	private static void compareDPvsSuccessive(MatrixBlock mb, double loss) {
-		System.out.println("\n--- Strategy Head-to-Head: DP vs Successive ---");
-		CompressionSettings cs = new CompressionSettingsBuilder().create();
-		cs.setPiecewiseTargetLoss(loss);
-
-		double[] colData = PiecewiseLinearUtils.getColumn(mb, 0);
-
-		// Benchmark DP
-		Timing tDP = new Timing();
-		tDP.start();
-		List<Integer> dpBreaks = PiecewiseLinearUtils.computeBreakpoints(cs, colData);
-		double timeDP = tDP.stop();
-
-		// Benchmark Successive
-		Timing tSucc = new Timing();
-		tSucc.start();
-		List<Integer> succBreaks = PiecewiseLinearUtils.computeBreakpointSuccessive(colData, cs);
-		double timeSucc = tSucc.stop();
-
-		System.out.printf(" DP: %5.1f ms (%2d segs) | Successive: %5.1f ms (%2d segs)%n", timeDP, dpBreaks.size() - 1,
-			timeSucc, succBreaks.size() - 1);
-
-	}
-
-	/**
 	 * Verifying whether new successive algorithm follow an O(N) time complexity irrespective to the distribution of a
 	 * matrix
 	 *
@@ -256,11 +198,10 @@ public class PiecewiseLinearCompressionPerformanceTest {
 
 		for(int[] cfg : configs) {
 			int nr = cfg[0], nc = cfg[1];
-			MatrixBlock mb = generateTestMatrix(nr, nc);
+			MatrixBlock mb = TestUtils.generateTestMatrixBlock(nr, nc, -10.0, 10.0, 1.0, 42L);
 			System.out.printf("%nnrows=%d  ncols=%d  original=%.2f MB%n\n", nr, nc, mb.getInMemorySize() / 1e6);
 			for(double loss : LOSSES) {
-				testDistributions(mb, nr, nc, loss);
-				compareDPvsSuccessive(mb, loss);
+				testDistributions(mb, nr, nc, loss);		
 				benchmarkOperations(mb, nr, nc, loss);
 			}
 		}

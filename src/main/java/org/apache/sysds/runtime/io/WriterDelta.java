@@ -62,7 +62,11 @@ public class WriterDelta extends MatrixWriter {
 		//from the backing double[] (avoids per-cell MatrixBlock.get dispatch).
 		double[] dense = (!src.isInSparseFormat() && src.getDenseBlock() != null
 			&& src.getDenseBlock().isContiguous()) ? src.getDenseBlockValues() : null;
-		Engine engine = DeltaKernelUtils.createEngine();
+		//size data files adaptively (toward one file per parallel reader) for faster parallel reads.
+		//Delta writes every cell as a double, so size by the dense footprint rather than the (possibly
+		//sparse) in-memory size, which would understate the on-disk table for sparse inputs.
+		long estimatedBytes = (long) nrow * ncol * 8L;
+		Engine engine = DeltaKernelUtils.createWriteEngine(estimatedBytes);
 		DeltaKernelUtils.commit(engine, DeltaKernelUtils.qualify(fname),
 			buildSchema(ncol), new MatrixBatchIterator(src, dense, nrow, ncol, batchRows));
 	}

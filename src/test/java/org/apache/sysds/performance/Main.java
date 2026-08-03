@@ -24,6 +24,7 @@ import org.apache.sysds.performance.compression.SchemaTest;
 import org.apache.sysds.performance.compression.Serialize;
 import org.apache.sysds.performance.compression.StreamCompress;
 import org.apache.sysds.performance.compression.TransformPerf;
+import org.apache.sysds.performance.frame.DeltaFrameRead;
 import org.apache.sysds.performance.frame.Transform;
 import org.apache.sysds.performance.generators.ConstMatrix;
 import org.apache.sysds.performance.generators.FrameFile;
@@ -112,6 +113,9 @@ public class Main {
 				break;
 			case 17: 
 				run17(args);
+				break;
+			case 18:
+				run18(args);
 				break;
 			case 1000:
 				run1000(args);
@@ -236,6 +240,21 @@ public class Main {
 		MatrixBlock mb = TestUtils.ceil(TestUtils.generateTestMatrixBlock(rows, cols, 0, 100, spar, rows + 1));
 		IGenerate<MatrixBlock> g = new ConstMatrix(mb);
 		new MatrixReplacePerf(100, g, k).run();
+	}
+
+	/**
+	 * Repeatedly read the same on-disk Delta frame table (written once as setup).
+	 * Args: {@code 18 <rows> <k> <n> [mode] [targetFileSizeMB]}
+	 * where mode is one of serial|parallel|both (default parallel) and an omitted
+	 * target file size uses the adaptive default sizing.
+	 */
+	private static void run18(String[] args) throws Exception {
+		int rows = Integer.parseInt(args[1]);
+		int k = Integer.parseInt(args[2]);
+		int n = Integer.parseInt(args[3]);
+		String mode = (args.length > 4) ? args[4] : "parallel";
+		long targetFileSize = (args.length > 5) ? Long.parseLong(args[5]) * 1024 * 1024 : -1;
+		new DeltaFrameRead(n, DeltaFrameRead.mixedFrame(rows, 7), k, mode, targetFileSize).run();
 	}
 
 	private static void run1000(String[] args) {

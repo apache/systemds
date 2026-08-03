@@ -1,0 +1,3 @@
+# Local, user-specific configuration and state — never commit these.
+.env
+.cluster_id

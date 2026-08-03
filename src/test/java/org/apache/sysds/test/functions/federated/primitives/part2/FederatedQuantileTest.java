@@ -30,7 +30,6 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -56,9 +55,7 @@ public class FederatedQuantileTest extends AutomatedTestBase {
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		return Arrays.asList(new Object[][] {
-			// {1000, 1, false},
-			{128, 1, true}});
+		return Arrays.asList(new Object[][] {{1000, 1, false}, {128, 1, true}});
 	}
 
 	@Override
@@ -71,19 +68,16 @@ public class FederatedQuantileTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
 	public void federatedQuantile1CP() {
 		federatedQuartile(Types.ExecMode.SINGLE_NODE, TEST_NAME1, 0.25);
 	}
 
 	@Test
-	@Ignore
 	public void federatedQuantile2CP() {
 		federatedQuartile(Types.ExecMode.SINGLE_NODE, TEST_NAME1, 0.5);
 	}
 
 	@Test
-	@Ignore
 	public void federatedQuantile3CP() {
 		federatedQuartile(Types.ExecMode.SINGLE_NODE, TEST_NAME1, 0.75);
 	}
@@ -104,19 +98,16 @@ public class FederatedQuantileTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
 	public void federatedQuantile1SP() {
 		federatedQuartile(Types.ExecMode.SPARK, TEST_NAME1, 0.25);
 	}
 
 	@Test
-	@Ignore
 	public void federatedQuantile2SP() {
 		federatedQuartile(Types.ExecMode.SPARK, TEST_NAME1, 0.5);
 	}
 
 	@Test
-	@Ignore
 	public void federatedQuantile3SP() {
 		federatedQuartile(Types.ExecMode.SPARK, TEST_NAME1, 0.75);
 	}

@@ -63,7 +63,6 @@ public enum InstructionType {
 	MMChain,
 	Union,
 	EINSUM,
-	DPBuiltin,
 
 	//SP Types
 	MAPMM,

@@ -25,6 +25,7 @@ import org.apache.sysds.performance.compression.Serialize;
 import org.apache.sysds.performance.compression.StreamCompress;
 import org.apache.sysds.performance.compression.TransformPerf;
 import org.apache.sysds.performance.frame.Transform;
+import org.apache.sysds.performance.frame.ParquetIOBenchmark;
 import org.apache.sysds.performance.generators.ConstMatrix;
 import org.apache.sysds.performance.generators.FrameFile;
 import org.apache.sysds.performance.generators.FrameTransformFile;
@@ -32,6 +33,7 @@ import org.apache.sysds.performance.generators.GenMatrices;
 import org.apache.sysds.performance.generators.IGenerate;
 import org.apache.sysds.performance.generators.MatrixFile;
 import org.apache.sysds.performance.io.HDF5IOBenchmark;
+import org.apache.sysds.performance.frame.ParquetIOBenchmark;
 import org.apache.sysds.performance.matrix.MatrixAppend;
 import org.apache.sysds.performance.matrix.MatrixBinaryCellPerf;
 import org.apache.sysds.performance.matrix.MatrixMultiplicationPerf;
@@ -145,6 +147,7 @@ public class Main {
 				MatrixMultiplicationPerf.main(args);
 				break;
 			case 1010:
+				System.out.println("Starting ParquetIOBenchmark!");
 				ParquetIOBenchmark.main(args);
 				break;
 			case 1011:

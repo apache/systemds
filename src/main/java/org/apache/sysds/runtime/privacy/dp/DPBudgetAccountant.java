@@ -20,7 +20,7 @@
 package org.apache.sysds.runtime.privacy.dp;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.instructions.cp.DPBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.DPBuiltinOps;
 
 /**
  * Session-scoped differential privacy budget accountant.
@@ -60,7 +60,7 @@ import org.apache.sysds.runtime.instructions.cp.DPBuiltinCPInstruction;
  * Not thread-safe. A single DML script executes instructions sequentially on one thread, so no synchronisation is
  * needed.
  *
- * @see DPBuiltinCPInstruction
+ * @see DPBuiltinOps
  */
 public class DPBudgetAccountant {
 
@@ -178,7 +178,7 @@ public class DPBudgetAccountant {
 			// Gaussian: accumulate Renyi divergence at each order, then convert.
 			_hasGaussianReleases = true;
 			for(int i = 0; i < ORDERS.length; i++) {
-				double sigma = DPBuiltinCPInstruction.computeGaussianSigma(sensitivity, epsilon, delta);
+				double sigma = DPBuiltinOps.computeGaussianSigma(sensitivity, epsilon, delta);
 				_rdpSum[i] += rdpGaussian(ORDERS[i], sensitivity, sigma);
 			}
 		}

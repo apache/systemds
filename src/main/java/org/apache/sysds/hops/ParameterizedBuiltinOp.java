@@ -954,7 +954,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 			return false;
 
 		// NOTE: dp_gaussian, dp_laplace draw fresh random noise on every call and record a
-		// privacy-budget charge as a side effect (see DPBuiltinCPInstruction), so two
+		// privacy-budget charge as a side effect (see DPBuiltinOps.release), so two
 		// syntactically identical calls must never be merged into one execution.
 		if( _op == ParamBuiltinOp.DP_GAUSSIAN || _op == ParamBuiltinOp.DP_LAPLACE )
 			return false;

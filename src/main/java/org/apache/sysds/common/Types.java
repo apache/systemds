@@ -806,11 +806,7 @@ public interface Types {
 	
 	/** Parameterized operations that require named variable arguments */
 	public enum ParamBuiltinOp {
-		AUTODIFF, CDF, CONTAINS,
-		// DP_GAUSSIAN and DP_LAPLACE reuse this Hop/Lop family (ParameterizedBuiltinOp, ParameterizedBuiltin Lop)
-		// but route to a distinct CPType.DPBuiltin/DPBuiltinCPInstruction at the CP-instruction layer instead
-		// of ParameterizedBuiltinCPInstruction (see Opcodes.DP_GAUSSIAN, Opcodes.DP_LAPLACE).
-		DP_GAUSSIAN, DP_LAPLACE,
+		AUTODIFF, CDF, CONTAINS, DP_GAUSSIAN, DP_LAPLACE,
 		INVALID, INVCDF, GROUPEDAGG, RMEMPTY, REPLACE, REXPAND,
 		LOWER_TRI, UPPER_TRI, TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMCOLMAP, TRANSFORMMETA, TOKENIZE, TOSTRING, LIST,
 		PARAMSERV

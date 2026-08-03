@@ -31,12 +31,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.utils.stats.Timing;
-import org.apache.sysds.runtime.compress.colgroup.functional.PiecewiseLinearUtils;
-import java.util.Random;
-import java.util.List;
 import org.apache.sysds.test.TestUtils;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-
 
 /**
  * Performance benchmark for piecewise linear compression. Successive is benchmarked across large matrices to show
@@ -49,7 +44,6 @@ public class PiecewiseLinearCompressionPerformanceTest {
 	private static final double[] LOSSES = {1e-1, 1e-2, 1e-4};
 	// how often compressed
 	private static final int REPS = 3;
-
 
 	/**
 	 * generate of a perfectly linear matrix to have a realistic test set up
@@ -201,7 +195,7 @@ public class PiecewiseLinearCompressionPerformanceTest {
 			MatrixBlock mb = TestUtils.generateTestMatrixBlock(nr, nc, -10.0, 10.0, 1.0, 42L);
 			System.out.printf("%nnrows=%d  ncols=%d  original=%.2f MB%n\n", nr, nc, mb.getInMemorySize() / 1e6);
 			for(double loss : LOSSES) {
-				testDistributions(mb, nr, nc, loss);		
+				testDistributions(mb, nr, nc, loss);
 				benchmarkOperations(mb, nr, nc, loss);
 			}
 		}

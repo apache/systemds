@@ -51,8 +51,17 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 
 	@Test
 	public void testPowerTransformYeoJohnsonDefaultDenseCP() {
+		runPowerTransformYeoJohnsonDefaultDenseTest(ExecType.CP);
+	}
+
+	@Test
+	public void testPowerTransformYeoJohnsonDefaultDenseSpark() {
+		runPowerTransformYeoJohnsonDefaultDenseTest(ExecType.SPARK);
+	}
+
+	private void runPowerTransformYeoJohnsonDefaultDenseTest(ExecType execType) {
 		double[][] input = {{-2, 1, 5}, {-1, 1, 5}, {0, 2, 5}, {1, 3, 5}, {2, 6, 5}, {4, 12, 5}};
-		runPowerTransformTest("default", true, input, false);
+		runPowerTransformTest(execType, "default", true, input, false);
 	}
 
 	@Test
@@ -100,10 +109,19 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 
 	@Test
 	public void testPowerTransformApplyYeoJohnsonDenseCP() {
+		runPowerTransformApplyYeoJohnsonDenseTest(ExecType.CP);
+	}
+
+	@Test
+	public void testPowerTransformApplyYeoJohnsonDenseSpark() {
+		runPowerTransformApplyYeoJohnsonDenseTest(ExecType.SPARK);
+	}
+
+	private void runPowerTransformApplyYeoJohnsonDenseTest(ExecType execType) {
 		double[][] input = {{-2, -2, -2}, {-1, -1, -1}, {0, 0, 0}, {1, 1, 1}, {2, 2, 2}};
 		double[][] expected = {{-3, -1.5, -1.03944491546724}, {-1.33333333333333, -1, -0.877258872223978},
 			{-0.333333333333333, -0.5, -0.6}, {0.128764787039964, 0, 0}, {0.399074859112073, 0.5, 1}};
-		runPowerTransformApplyTest(ExecType.CP, "yeo-johnson", true, input, expected, false);
+		runPowerTransformApplyTest(execType, "yeo-johnson", true, input, expected, false);
 	}
 
 	@Test
@@ -129,17 +147,28 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 	}
 
 	private void runPowerTransformTest(String method, boolean standardize, double[][] input, boolean shouldFail) {
-		runPowerTransformTest(method, standardize, input, shouldFail, true);
+		runPowerTransformTest(ExecType.CP, method, standardize, input, shouldFail, true, true);
+	}
+
+	private void runPowerTransformTest(ExecType execType, String method, boolean standardize, double[][] input,
+		boolean shouldFail) {
+		runPowerTransformTest(execType, method, standardize, input, shouldFail, true, true);
 	}
 
 	private void runPowerTransformTest(String method, boolean standardize, double[][] input, boolean shouldFail,
 		boolean compareReference) {
-		runPowerTransformTest(method, standardize, input, shouldFail, compareReference, true);
+		runPowerTransformTest(ExecType.CP, method, standardize, input, shouldFail, compareReference, true);
 	}
 
 	private void runPowerTransformTest(String method, boolean standardize, double[][] input, boolean shouldFail,
 		boolean compareReference, boolean compareTransformed) {
-		ExecMode oldExecMode = setExecMode(ExecType.CP);
+		runPowerTransformTest(ExecType.CP, method, standardize, input, shouldFail, compareReference,
+			compareTransformed);
+	}
+
+	private void runPowerTransformTest(ExecType execType, String method, boolean standardize, double[][] input,
+		boolean shouldFail, boolean compareReference, boolean compareTransformed) {
+		ExecMode oldExecMode = setExecMode(execType);
 
 		try {
 			loadTestConfiguration(getTestConfiguration(TRANSFORM_TEST_NAME));

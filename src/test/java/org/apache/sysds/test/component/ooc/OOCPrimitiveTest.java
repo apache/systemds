@@ -110,7 +110,8 @@ public class OOCPrimitiveTest {
 			sink.start();
 
 			Assert.assertEquals(1, sink.getChildren().size());
-			Assert.assertTrue(sink.getChildPrimitiveAt(0) instanceof MaterializeOOCPrimitive);
+			Assert.assertTrue(sink.getInputDependency(0) instanceof MaterializeOOCPrimitive);
+			Assert.assertSame(sink.getInputDependency(0), sink.getInputDependency(1));
 			Assert.assertEquals(1, sink._executions);
 		}
 		finally {

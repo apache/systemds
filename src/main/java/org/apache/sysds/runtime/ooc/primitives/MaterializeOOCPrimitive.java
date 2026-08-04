@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.ooc.primitives;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.ToIntFunction;
@@ -55,7 +54,7 @@ public final class MaterializeOOCPrimitive extends OOCPrimitive {
 
 	private MaterializeOOCPrimitive(OOCStreamable<IndexedMatrixValue> source, OOCStoreLayout layout,
 		StreamContext context, boolean reusable) {
-		super(context, source.getPrimitive() == null ? List.of() : List.of(source.getPrimitive()));
+		super(context, source);
 		_source = source;
 		_layout = layout;
 		_store = new OOCFuture<>();
@@ -100,7 +99,7 @@ public final class MaterializeOOCPrimitive extends OOCPrimitive {
 	@Override
 	protected void startExecution() {
 		try {
-			OOCStream<IndexedMatrixValue> source = _source.getReservedReadStream();
+			OOCStream<IndexedMatrixValue> source = getInputReadStream(0);
 			MaterializedStore<IndexedMatrixValue> store = _reusable ? new MaterializedStore<>(
 				OOCCacheManager.getGlobalCache(),
 				CachingStream._streamSeq.getNextID()) : new MaterializedStore<>(OOCCacheManager.getGlobalCache(),

@@ -208,8 +208,8 @@ public final class MaterializedStoreStreamable implements OOCStreamable<IndexedM
 
 	@Override
 	public synchronized void reserveLazyHandle() {
-		if(_deleteScheduled)
-			throw new DMLRuntimeException("Cannot reserve a reader on a materialized stream scheduled for deletion.");
+		if(_closed || (_deleteScheduled && _reservedReaders == 0))
+			throw new DMLRuntimeException("Cannot reserve a reader on a closed materialized stream.");
 		_reservedReaders++;
 	}
 

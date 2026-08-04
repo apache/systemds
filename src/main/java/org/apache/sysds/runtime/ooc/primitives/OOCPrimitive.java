@@ -64,7 +64,7 @@ public abstract class OOCPrimitive {
 		rebuildInputChildren();
 	}
 
-	private OOCPrimitive(StreamContext context) {
+	protected OOCPrimitive(StreamContext context) {
 		_context = context;
 		_children = new HashSet<>();
 		_parents = new HashSet<>();
@@ -108,19 +108,19 @@ public abstract class OOCPrimitive {
 		return _inputs.get(index)._source;
 	}
 
-	public final OOCPrimitive getChildPrimitiveAt(int index) {
-		return _inputs.get(index)._primitive;
+	public final OOCPrimitive getInputDependency(int index) {
+		return _inputs.get(index)._dependency;
 	}
 
 	public final void installMaterializedInput(int index, MaterializeOOCPrimitive boundary) {
 		if(hasStartedExecution())
 			throw new IllegalStateException("Cannot replace an input after primitive execution started.");
 		InputSlot input = _inputs.get(index);
-		input._primitive = boundary;
+		input._dependency = boundary;
 		rebuildInputChildren();
 	}
 
-	public final synchronized void transferInputHandle(int index) {
+	private synchronized void consumeInputHandle(int index) {
 		InputSlot input = _inputs.get(index);
 		if(!input._handleReserved)
 			throw new IllegalStateException("Input " + index + " no longer owns a lazy handle.");
@@ -141,13 +141,13 @@ public abstract class OOCPrimitive {
 
 	@SuppressWarnings("unchecked")
 	protected final <T> OOCStream<T> getInputReadStream(int index) {
-		transferInputHandle(index);
+		consumeInputHandle(index);
 		return (OOCStream<T>) _inputs.get(index)._source.getReservedReadStream();
 	}
 
 	protected final OOCFuture<MaterializedStore<IndexedMatrixValue>> getMaterializedInput(int index) {
 		OOCFuture<MaterializedStore<IndexedMatrixValue>> materialized = ((MaterializeOOCPrimitive) _inputs
-			.get(index)._primitive).store();
+			.get(index)._dependency).store();
 		if(materialized == null)
 			throw new IllegalStateException("Input " + index + " was not materialized by the planner.");
 		return materialized;
@@ -184,8 +184,8 @@ public abstract class OOCPrimitive {
 	private void rebuildInputChildren() {
 		List<OOCPrimitive> next = new ArrayList<>();
 		for(InputSlot input : _inputs)
-			if(input._primitive != null)
-				next.add(input._primitive);
+			if(input._dependency != null)
+				next.add(input._dependency);
 		for(OOCPrimitive child : _children)
 			if(!next.contains(child))
 				child._parents.remove(this);
@@ -203,12 +203,12 @@ public abstract class OOCPrimitive {
 
 	private static final class InputSlot {
 		private final OOCStreamable<?> _source;
-		private OOCPrimitive _primitive;
+		private OOCPrimitive _dependency;
 		private boolean _handleReserved;
 
 		private InputSlot(OOCStreamable<?> source) {
 			_source = source;
-			_primitive = source.getPrimitive();
+			_dependency = source.getPrimitive();
 			_handleReserved = true;
 			source.reserveLazyHandle();
 		}

@@ -21,12 +21,16 @@ package org.apache.sysds.runtime.ooc.primitives;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.ToIntFunction;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.ooc.CachingStream;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.ooc.OOCStreamable;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.ooc.cache.OOCCacheManager;
 import org.apache.sysds.runtime.ooc.cache.OOCFuture;
 import org.apache.sysds.runtime.ooc.planning.OOCAccessPattern;
@@ -40,19 +44,32 @@ public final class MaterializeOOCPrimitive extends OOCPrimitive {
 	private final OOCStoreLayout _layout;
 	private final OOCFuture<MaterializedStore<IndexedMatrixValue>> _store;
 	private final AtomicBoolean _finished;
+	private final boolean _reusable;
 	private int _expectedReaders;
 	private int _consumers;
 
 	public MaterializeOOCPrimitive(OOCStreamable<IndexedMatrixValue> source, OOCStoreLayout layout,
 		StreamContext context) {
+		this(source, layout, context, false);
+	}
+
+	private MaterializeOOCPrimitive(OOCStreamable<IndexedMatrixValue> source, OOCStoreLayout layout,
+		StreamContext context, boolean reusable) {
 		super(context, source.getPrimitive() == null ? List.of() : List.of(source.getPrimitive()));
 		_source = source;
 		_layout = layout;
 		_store = new OOCFuture<>();
 		_finished = new AtomicBoolean();
+		_reusable = reusable;
+	}
+
+	public static MaterializeOOCPrimitive reusable(OOCStreamable<IndexedMatrixValue> source) {
+		return new MaterializeOOCPrimitive(source, OOCStoreLayout.ROW_MAJOR, null, true);
 	}
 
 	public synchronized void registerRequest(int expectedReaders) {
+		if(_reusable)
+			throw new IllegalStateException("Reusable materialization registers readers dynamically.");
 		if(expectedReaders <= 0)
 			throw new IllegalArgumentException("Materialization request requires at least one reader.");
 		if(hasStartedExecution())
@@ -84,10 +101,19 @@ public final class MaterializeOOCPrimitive extends OOCPrimitive {
 	protected void startExecution() {
 		try {
 			OOCStream<IndexedMatrixValue> source = _source.getReservedReadStream();
-			MaterializedStore<IndexedMatrixValue> store = new MaterializedStore<>(OOCCacheManager.getGlobalCache(),
-				CachingStream._streamSeq.getNextID(), _expectedReaders, _consumers);
-			OOCStreamMaterializer materializer = new OOCStreamMaterializer(store,
-				indexes -> _layout.linearize(indexes, _source.getDataCharacteristics()), _allowance);
+			MaterializedStore<IndexedMatrixValue> store = _reusable ? new MaterializedStore<>(
+				OOCCacheManager.getGlobalCache(),
+				CachingStream._streamSeq.getNextID()) : new MaterializedStore<>(OOCCacheManager.getGlobalCache(),
+					CachingStream._streamSeq.getNextID(), _expectedReaders, _consumers);
+			DataCharacteristics characteristics = _source.getDataCharacteristics();
+			AtomicInteger nextIndex = new AtomicInteger();
+			ToIntFunction<MatrixIndexes> linearize;
+			if(_reusable &&
+				(characteristics == null || !characteristics.dimsKnown() || characteristics.getBlocksize() <= 0))
+				linearize = ignored -> nextIndex.getAndIncrement();
+			else
+				linearize = indexes -> _layout.linearize(indexes, characteristics);
+			OOCStreamMaterializer materializer = new OOCStreamMaterializer(store, linearize, _allowance);
 			materializer.completion().whenComplete((ignored, error) -> {
 				if(error != null)
 					fail(error);

@@ -91,6 +91,7 @@ import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.StringObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.instructions.ooc.TeeOOCInstruction;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageItem;
@@ -730,6 +731,7 @@ public class ParForProgramBlock extends ForProgramBlock {
 		final LocalTaskQueue<Task> queue = new LocalTaskQueue<>();
 		final Thread[] threads         = new Thread[_numThreads];
 		final LocalParWorker[] workers = new LocalParWorker[_numThreads];
+		final Set<String> resultVarNames = _resultVars.stream().map(v -> v._name).collect(Collectors.toSet());
 		@SuppressWarnings("unchecked")
 		final HashMap<String, Data>[] workerBaselines = DMLScript.USE_OOC ? new HashMap[_numThreads] : null;
 		try
@@ -740,8 +742,11 @@ public class ParForProgramBlock extends ForProgramBlock {
 				workers[i] = createParallelWorker( _pwIDs[i], queue, ec, i);
 				if(DMLScript.USE_OOC) {
 					workerBaselines[i] = new HashMap<>();
-					for(Map.Entry<String, Data> e : workers[i].getVariables().entrySet())
+					for(Map.Entry<String, Data> e : workers[i].getVariables().entrySet()) {
 						workerBaselines[i].put(e.getKey(), e.getValue());
+						if(!resultVarNames.contains(e.getKey()) && e.getValue() instanceof MatrixObject matrix)
+							TeeOOCInstruction.incrRef(matrix.getStreamable(), 1);
+					}
 				}
 				threads[i] = new Thread( workers[i] , "PARFOR");
 				threads[i].setPriority(Thread.MAX_PRIORITY);
@@ -785,8 +790,6 @@ public class ParForProgramBlock extends ForProgramBlock {
 			
 			// Step 4) collecting results from each parallel worker
 			//obtain results and cleanup other intermediates before result merge
-			Set<String> resultVarNames = _resultVars.stream()
-				.map(v -> v._name).collect(Collectors.toSet());
 			LocalVariableMap [] localVariables = new LocalVariableMap [_numThreads];
 			for( int i=0; i<_numThreads; i++ ) {
 				localVariables[i] = workers[i].getVariables();
@@ -796,6 +799,8 @@ public class ParForProgramBlock extends ForProgramBlock {
 							Data current = localVariables[i].get(var);
 							if(current != null && current != workerBaselines[i].get(var))
 								VariableCPInstruction.processRmvarInstruction(workers[i].getExecutionContext(), var);
+							else if(current instanceof MatrixObject matrix)
+								TeeOOCInstruction.incrRef(matrix.getStreamable(), -1);
 						}
 					}
 				}

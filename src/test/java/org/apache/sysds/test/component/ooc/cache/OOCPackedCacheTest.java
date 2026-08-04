@@ -179,8 +179,8 @@ public class OOCPackedCacheTest {
 		try {
 			producer.reserveBlocking(BYTES);
 			BlockEntry pending = cache.putPinned(STREAM_ID, 0, value(13.0), BYTES, producer);
-			Assert.assertEquals(2, cache.reference(pending));
-			Assert.assertEquals(1, cache.dereference(pending));
+			Assert.assertEquals(3, cache.reference(pending));
+			Assert.assertEquals(2, cache.dereference(pending));
 
 			unpinAndFlush(cache, producer, new BlockEntry[] {pending});
 			awaitUsedMemory(producer, 0, WAIT_TIMEOUT_SEC);
@@ -188,9 +188,11 @@ public class OOCPackedCacheTest {
 			BlockEntry pinned = cache.pin(STREAM_ID, 0, reader).get(WAIT_TIMEOUT_SEC, TimeUnit.SECONDS);
 			Assert.assertNotNull(pinned);
 			Assert.assertEquals(13.0, scalar(pinned), 0.0);
+			Assert.assertEquals(3, cache.reference(pinned));
+			Assert.assertEquals(2, cache.dereference(pinned));
+			Assert.assertEquals(1, cache.dereference(new BlockKey(STREAM_ID, 0)));
 			Assert.assertEquals(2, cache.reference(pinned));
 			Assert.assertEquals(1, cache.dereference(pinned));
-			Assert.assertEquals(0, cache.dereference(new BlockKey(STREAM_ID, 0)));
 
 			await(cache.unpin(pinned, reader), WAIT_TIMEOUT_SEC);
 			awaitUsedMemory(reader, 0, WAIT_TIMEOUT_SEC);

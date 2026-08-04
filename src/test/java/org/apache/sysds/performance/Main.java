@@ -25,7 +25,6 @@ import org.apache.sysds.performance.compression.Serialize;
 import org.apache.sysds.performance.compression.StreamCompress;
 import org.apache.sysds.performance.compression.TransformPerf;
 import org.apache.sysds.performance.frame.Transform;
-import org.apache.sysds.performance.frame.ParquetIOBenchmark;
 import org.apache.sysds.performance.generators.ConstMatrix;
 import org.apache.sysds.performance.generators.FrameFile;
 import org.apache.sysds.performance.generators.FrameTransformFile;

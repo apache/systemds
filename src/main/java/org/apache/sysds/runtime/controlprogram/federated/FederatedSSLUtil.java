@@ -134,7 +134,7 @@ public class FederatedSSLUtil {
 					+ "worker certificates, configure them in " + DMLConfig.FEDERATED_SSL_TRUST + ".");
 
 			try {
-				LOG.info("Federated SSL trusting certificates in: " + trustPath);
+				LOG.debug("Federated SSL trusting certificates in: " + trustPath);
 				context = SslContextBuilder.forClient()
 					.trustManager(readableFile(trustPath, DMLConfig.FEDERATED_SSL_TRUST)).build();
 			}

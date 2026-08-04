@@ -1846,6 +1846,7 @@ X = rand(rows = 50, cols = 10)
 
 The `powerTransform`-function estimates one power parameter per column and transforms the input matrix. It uses
 Yeo-Johnson by default and can optionally use Box-Cox for strictly positive data.
+NaN entries are preserved, while parameter estimation and standardization use the non-NaN entries in each column.
 
 ### Usage
 
@@ -1880,6 +1881,7 @@ X = matrix("-2 -1 0 1 2 4", rows=6, cols=1)
 ## `powerTransformApply`-Function
 
 The `powerTransformApply`-function transforms a matrix using parameters previously returned by `powerTransform`.
+NaN entries are preserved in the transformed matrix.
 
 ### Usage
 

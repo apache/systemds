@@ -54,10 +54,12 @@ lambdas[1, match(estimates$terms, colnames(X))] <- estimates$value
 Y <- as.matrix(bake(fitted, new_data = data))
 
 if (standardize) {
-    means <- colMeans(Y)
+    observed <- colSums(!is.na(Y))
+    means <- colMeans(Y, na.rm = TRUE)
+    means[is.nan(means)] <- 0
     centered <- sweep(Y, 2, means)
-    scales <- sqrt(colSums(centered^2) / nrow(Y))
-    scales[scales == 0 | is.nan(scales)] <- 1
+    scales <- sqrt(colSums(centered^2, na.rm = TRUE) / observed)
+    scales[observed == 0 | scales == 0 | is.nan(scales)] <- 1
     Y <- sweep(centered, 2, scales, "/")
     state <- rbind(means, scales)
 } else {

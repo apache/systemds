@@ -70,10 +70,26 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 	}
 
 	@Test
+	public void testPowerTransformYeoJohnsonPreservesNaNCP() {
+		double[][] input = {{-2, 1}, {-1, Double.NaN}, {Double.NaN, 2}, {1, 4}, {2, 8}};
+		runPowerTransformTest("yeo-johnson", true, input, false, true, false);
+		assertNaNPositions(input);
+	}
+
+	@Test
 	public void testPowerTransformBoxCoxLambdaBelowInitialInterval() {
 		double[][] input = {{1.00}, {1.01}, {1.02}, {1.03}, {10.0}};
 		runPowerTransformTest("box-cox", false, input, false, false);
 		assertLambdaOutsideInitialInterval(false);
+	}
+
+	@Test
+	public void testPowerTransformBoxCoxFallsBackToFiniteLambdaCP() {
+		double[][] input = {{1e-100}, {1e-50}, {1.0}, {1e50}, {1e100}};
+		runPowerTransformTest("box-cox", false, input, false, false);
+		double lambda = readDMLMatrixFromOutputDir("L").get(new CellIndex(1, 1));
+		Assert.assertTrue(Double.isFinite(lambda));
+		assertNaNPositions(input);
 	}
 
 	@Test
@@ -99,6 +115,14 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 	}
 
 	@Test
+	public void testPowerTransformApplyBoxCoxPreservesNaNCP() {
+		double[][] input = {{0.5, Double.NaN, 0.5}, {Double.NaN, 1.0, 1.0}, {2.0, 2.0, Double.NaN}};
+		double[][] expected = {{-0.693147180559945, Double.NaN, -0.375}, {Double.NaN, 0, 0},
+			{0.693147180559945, 1, Double.NaN}};
+		runPowerTransformApplyTest(ExecType.CP, "box-cox", false, input, expected, false);
+	}
+
+	@Test
 	public void testPowerTransformApplyBoxCoxRejectsNonPositiveInput() {
 		double[][] input = {{0, 1, 2}, {1, 2, 3}};
 		runPowerTransformApplyTest(ExecType.CP, "box-cox", false, input, null, true);
@@ -110,6 +134,11 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 
 	private void runPowerTransformTest(String method, boolean standardize, double[][] input, boolean shouldFail,
 		boolean compareReference) {
+		runPowerTransformTest(method, standardize, input, shouldFail, compareReference, true);
+	}
+
+	private void runPowerTransformTest(String method, boolean standardize, double[][] input, boolean shouldFail,
+		boolean compareReference, boolean compareTransformed) {
 		ExecMode oldExecMode = setExecMode(ExecType.CP);
 
 		try {
@@ -133,7 +162,8 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 
 			if(compareReference) {
 				runRScript(true);
-				compareOutput("Y", REFERENCE_EPS);
+				if(compareTransformed)
+					compareOutput("Y", REFERENCE_EPS);
 				compareOutput("L", REFERENCE_EPS);
 				compareOutput("S", REFERENCE_EPS);
 			}
@@ -193,5 +223,15 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 		double lambda = readDMLMatrixFromOutputDir("L").get(new CellIndex(1, 1));
 		Assert.assertTrue("Expected lambda outside the initial interval, but was " + lambda,
 			above ? lambda > 2.0 : lambda < -2.0);
+	}
+
+	private void assertNaNPositions(double[][] input) {
+		HashMap<CellIndex, Double> output = readDMLMatrixFromOutputDir("Y");
+		for(int i = 0; i < input.length; i++) {
+			for(int j = 0; j < input[i].length; j++) {
+				double value = output.getOrDefault(new CellIndex(i + 1, j + 1), 0.0);
+				Assert.assertEquals(Double.isNaN(input[i][j]), Double.isNaN(value));
+			}
+		}
 	}
 }

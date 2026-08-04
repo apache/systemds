@@ -53,7 +53,8 @@ m_powerTransformApply = function(
             "'; expected 'yeo-johnson' or 'box-cox'")
     }
 
-    if (method == "box-cox" & min(X) <= 0.0) {
+    validatedX = replace(target=X, pattern=NaN, replacement=1.0)
+    if (method == "box-cox" & min(validatedX) <= 0.0) {
         stop("powerTransformApply: Box-Cox requires strictly positive input")
     }
 
@@ -81,17 +82,20 @@ m_powerTransformApply = function(
     # Loop over columns for transformation
     for (j in 1:m){
         x = X[,j]
+        nanMask = is.na(x)
         lambda_j = as.scalar(lambdas[1,j])
 
         if (method == "box-cox") {
+            x = replace(target=x, pattern=NaN, replacement=1.0)
             if (abs(lambda_j) < eps) {
-                Y[,j] = log(x)
+                y = log(x)
             }
             else {
-                Y[,j] = (x^lambda_j - 1.0) / lambda_j
+                y = (x^lambda_j - 1.0) / lambda_j
             }
         }
         else {
+            x = replace(target=x, pattern=NaN, replacement=0.0)
             nonnegative = x >= 0
 
             # Use intermediate inputs to avoid invalid domains in scoring or fractional powers
@@ -115,8 +119,10 @@ m_powerTransformApply = function(
             }
 
             # Combine the two branches
-            Y[,j] = ifelse(nonnegative, y_pos, y_neg)
+            y = ifelse(nonnegative, y_pos, y_neg)
         }
+
+        Y[,j] = ifelse(nanMask, NaN, y)
     }
 
     if (hasMeans) {

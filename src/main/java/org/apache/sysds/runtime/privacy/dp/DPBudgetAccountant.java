@@ -46,8 +46,8 @@ import org.apache.sysds.runtime.instructions.cp.DPBuiltinOps;
  * Renyi orders tracked (Gaussian path) alpha in {2, 4, 8, 16, 32, 64, 128, 256, 512, 1024}. At query time the minimum
  * converted epsilon across all orders is taken as the tightest available bound.
  *
- * Gaussian RDP divergence For the Gaussian mechanism with noise scale sigma and L2 sensitivity delta_f:
- * D_alpha = alpha * delta_f^2 / (2*sigma^2) sigma
+ * Gaussian RDP divergence For the Gaussian mechanism with noise scale sigma and L2 sensitivity:
+ * D_alpha = alpha * sensitivity^2 / (2*sigma^2)
  * is back-derived from the caller's (epsilon, delta) via the standard calibration formula (see {@link #gaussianSigma}). Note that
  * sensitivity cancels in the final expression, so the RDP cost depends only on the (epsilon, delta) parameters.
  *
@@ -233,7 +233,7 @@ public class DPBudgetAccountant {
 
 	/**
 	 * Renyi divergence of order alpha for the Gaussian mechanism (Mironov 2017, Proposition 3, example 2):
-	 * D_alpha = alpha * delta_f^2 / (2 * sigma^2)
+	 * D_alpha = alpha * sensitivity^2 / (2 * sigma^2)
 	 */
 	private static double rdpGaussian(double alpha, double sensitivity, double sigma) {
 		return alpha * (sensitivity * sensitivity) / (2.0 * sigma * sigma);

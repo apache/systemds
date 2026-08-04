@@ -186,8 +186,10 @@ public class DPBuiltinOpsTest {
 
 	@Test
 	public void testGaussianSensitivityCancelsInRDP() {
-		// For the Gaussian mechanism: sigma = delta_f*sqrt(2*ln(1.25/delta))/epsilon, so
-		// D_alpha = alpha*delta_f^2/(2*sigma^2) = alpha*epsilon^2/(4*ln(1.25/delta)).
+		// For the Gaussian mechanism, since sigma is calibrated from (epsilon, delta, sensitivity):
+		// sigma = sensitivity*sqrt(2*ln(1.25/delta))/epsilon, so
+		// the Renyi divergence of order alpha, i.e. the cost of this release is:
+		// D_alpha = alpha*sensitivity^2/(2*sigma^2) = alpha*epsilon^2/(4*ln(1.25/delta)).
 		// Sensitivity cancels. Two accountants with the same (epsilon,delta) but
 		// different sensitivity must report identical totalEpsilonSpent().
 		DPBudgetAccountant acc1 = new DPBudgetAccountant(100.0, 1e-5);

@@ -136,13 +136,13 @@ m_autoencoder_2layer = function(Matrix[Double] X, Integer num_hidden1, Integer n
     #update
     local_step = step / nrow(X_batch)
     upd_W1 = mu * upd_W1 - local_step * W1_grad
-    upd_b1 = mu * upd_b1 - local_step * b1
+    upd_b1 = mu * upd_b1 - local_step * b1_grad
     upd_W2 = mu * upd_W2 - local_step * W2_grad
-    upd_b2 = mu * upd_b2 - local_step * b2
+    upd_b2 = mu * upd_b2 - local_step * b2_grad
     upd_W3 = mu * upd_W3 - local_step * W3_grad
-    upd_b3 = mu * upd_b3 - local_step * b3
+    upd_b3 = mu * upd_b3 - local_step * b3_grad
     upd_W4 = mu * upd_W4 - local_step * W4_grad
-    upd_b4 = mu * upd_b4 - local_step * b4
+    upd_b4 = mu * upd_b4 - local_step * b4_grad
     W1 = W1 + upd_W1
     b1 = b1 + upd_b1
     W2 = W2 + upd_W2

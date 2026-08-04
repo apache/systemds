@@ -52,6 +52,7 @@ custom_install("boot");
 custom_install("matrixStats");
 custom_install("outliers");
 custom_install("caret");
+custom_install("recipes");
 custom_install("sigmoid");
 custom_install("DescTools");
 custom_install("mice");

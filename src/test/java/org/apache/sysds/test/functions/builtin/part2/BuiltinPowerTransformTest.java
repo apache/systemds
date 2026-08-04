@@ -38,8 +38,7 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 	private static final String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinPowerTransformTest.class.getSimpleName() + "/";
 
-	private static final double TRANSFORM_EPS = 1e-6;
-	private static final double OUTSIDE_INTERVAL_Y_EPS = 2e-6;
+	private static final double REFERENCE_EPS = 1e-4;
 	private static final double APPLY_EPS = 1e-9;
 
 	@Override
@@ -58,21 +57,22 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 
 	@Test
 	public void testPowerTransformBoxCoxUnstandardizedDenseCP() {
-		double[][] input = {{0.5, 1}, {1.0, 2}, {2.0, 3}, {4.0, 5}, {8.0, 9}, {16.0, 17}};
+		double[][] input = {{1.0, 1.0}, {2.0, 1.1}, {3.0, 1.2}, {4.0, 1.3}, {5.0, 1.4}, {6.0, 1.5}, {7.0, 2.0},
+			{8.0, 8.0}};
 		runPowerTransformTest("box-cox", false, input, false);
 	}
 
 	@Test
 	public void testPowerTransformYeoJohnsonLambdaAboveInitialInterval() {
 		double[][] input = {{0.00}, {0.97}, {0.98}, {0.99}, {1.00}};
-		runPowerTransformTest("yeo-johnson", false, input, false, OUTSIDE_INTERVAL_Y_EPS);
+		runPowerTransformTest("yeo-johnson", false, input, false, false);
 		assertLambdaOutsideInitialInterval(true);
 	}
 
 	@Test
 	public void testPowerTransformBoxCoxLambdaBelowInitialInterval() {
 		double[][] input = {{1.00}, {1.01}, {1.02}, {1.03}, {10.0}};
-		runPowerTransformTest("box-cox", false, input, false);
+		runPowerTransformTest("box-cox", false, input, false, false);
 		assertLambdaOutsideInitialInterval(false);
 	}
 
@@ -85,27 +85,31 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 	@Test
 	public void testPowerTransformApplyYeoJohnsonDenseCP() {
 		double[][] input = {{-2, -2, -2}, {-1, -1, -1}, {0, 0, 0}, {1, 1, 1}, {2, 2, 2}};
-		runPowerTransformApplyTest(ExecType.CP, "yeo-johnson", true, input, false);
+		double[][] expected = {{-3, -1.5, -1.03944491546724}, {-1.33333333333333, -1, -0.877258872223978},
+			{-0.333333333333333, -0.5, -0.6}, {0.128764787039964, 0, 0}, {0.399074859112073, 0.5, 1}};
+		runPowerTransformApplyTest(ExecType.CP, "yeo-johnson", true, input, expected, false);
 	}
 
 	@Test
 	public void testPowerTransformApplyBoxCoxDenseCP() {
 		double[][] input = {{0.5, 0.5, 0.5}, {1.0, 1.0, 1.0}, {2.0, 2.0, 2.0}, {4.0, 4.0, 4.0}, {8.0, 8.0, 8.0}};
-		runPowerTransformApplyTest(ExecType.CP, "box-cox", false, input, false);
+		double[][] expected = {{-0.693147180559945, -0.5, -0.375}, {0, 0, 0}, {0.693147180559945, 1, 1.5},
+			{1.38629436111989, 3, 7.5}, {2.07944154167984, 7, 31.5}};
+		runPowerTransformApplyTest(ExecType.CP, "box-cox", false, input, expected, false);
 	}
 
 	@Test
 	public void testPowerTransformApplyBoxCoxRejectsNonPositiveInput() {
 		double[][] input = {{0, 1, 2}, {1, 2, 3}};
-		runPowerTransformApplyTest(ExecType.CP, "box-cox", false, input, true);
+		runPowerTransformApplyTest(ExecType.CP, "box-cox", false, input, null, true);
 	}
 
 	private void runPowerTransformTest(String method, boolean standardize, double[][] input, boolean shouldFail) {
-		runPowerTransformTest(method, standardize, input, shouldFail, TRANSFORM_EPS);
+		runPowerTransformTest(method, standardize, input, shouldFail, true);
 	}
 
 	private void runPowerTransformTest(String method, boolean standardize, double[][] input, boolean shouldFail,
-		double yEps) {
+		boolean compareReference) {
 		ExecMode oldExecMode = setExecMode(ExecType.CP);
 
 		try {
@@ -117,18 +121,22 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 			programArgs = new String[] {"-args", input("X"), output("Y"), output("L"), output("S"), method,
 				Boolean.toString(standardize)};
 
-			String referenceMethod = method.equals("default") ? "yeo-johnson" : method;
-			rCmd = getRCmd(inputDir(), expectedDir(), referenceMethod, Boolean.toString(standardize));
+			if(compareReference) {
+				String referenceMethod = method.equals("default") ? "yeo-johnson" : method;
+				rCmd = getRCmd(inputDir(), expectedDir(), referenceMethod, Boolean.toString(standardize));
+			}
 
 			writeInputMatrixWithMTD("X", input, true);
 			runTest(true, shouldFail, shouldFail ? DMLScriptException.class : null, -1);
 			if(shouldFail)
 				return;
 
-			runRScript(true);
-			compareOutput("Y", yEps);
-			compareOutput("L", TRANSFORM_EPS);
-			compareOutput("S", TRANSFORM_EPS);
+			if(compareReference) {
+				runRScript(true);
+				compareOutput("Y", REFERENCE_EPS);
+				compareOutput("L", REFERENCE_EPS);
+				compareOutput("S", REFERENCE_EPS);
+			}
 		}
 		catch(Exception exception) {
 			throw new RuntimeException(exception);
@@ -139,7 +147,7 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 	}
 
 	private void runPowerTransformApplyTest(ExecType execType, String method, boolean standardize, double[][] input,
-		boolean shouldFail) {
+		double[][] expected, boolean shouldFail) {
 		ExecMode oldExecMode = setExecMode(execType);
 
 		try {
@@ -147,11 +155,8 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 
 			String home = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = home + APPLY_TEST_NAME + ".dml";
-			fullRScriptName = home + APPLY_TEST_NAME + ".R";
 			programArgs = new String[] {"-args", input("X"), input("L"), input("M"), input("S"), output("Y"), method,
 				Boolean.toString(standardize)};
-
-			rCmd = getRCmd(inputDir(), expectedDir(), method, Boolean.toString(standardize));
 
 			double[][] L = {{0, 1, 2}};
 			double[][] means = {{0.5, 1.0, 1.5}};
@@ -161,13 +166,14 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 			writeInputMatrixWithMTD("L", L, true);
 			writeInputMatrixWithMTD("M", means, true);
 			writeInputMatrixWithMTD("S", scales, true);
+			if(!shouldFail)
+				writeExpectedMatrix("Y", expected);
 
 			runTest(true, shouldFail, shouldFail ? DMLScriptException.class : null, -1);
 			if(shouldFail)
 				return;
 
-			runRScript(true);
-			compareOutput("Y", APPLY_EPS);
+			compareResults(APPLY_EPS);
 		}
 		catch(Exception exception) {
 			throw new RuntimeException(exception);

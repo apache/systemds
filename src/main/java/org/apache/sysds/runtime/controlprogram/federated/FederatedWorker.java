@@ -115,12 +115,16 @@ public class FederatedWorker {
 			LOG.info("Started Federated Worker at port: " + _port);
 			f.channel().closeFuture().sync();
 		} 
-		catch(Exception e) {
+		catch(InterruptedException e) {
 			LOG.info("Federated worker interrupted");
-			if(_debug) {
-				LOG.error(e.getMessage());
+			if(_debug)
 				e.printStackTrace();
-			}
+		}
+		catch(Exception e) {
+			// report why the worker stops, e.g., a missing certificate with ssl enabled, otherwise it exits silently
+			LOG.error("Federated worker stopped: " + e.getMessage());
+			if(_debug)
+				e.printStackTrace();
 		}
 		finally {
 			LOG.info("Federated Worker Shutting down.");

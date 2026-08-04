@@ -20,11 +20,10 @@
     <sysds.federated.ssl>true</sysds.federated.ssl>
 
     <!-- Required with SSL: the workers need a certificate issued for the host the coordinator contacts them on
-         and signed by an authority the coordinator trusts, fill in the paths below before using this
-         configuration. An encrypted private key takes its password from the environment variable
-         SYSTEMDS_FEDERATED_SSL_KEY_PASSWORD.
+         and signed by an authority the coordinator trusts. The paths below are placeholders, replace them with
+         your own certificates before using this configuration. An encrypted private key takes its password from
+         the environment variable SYSTEMDS_FEDERATED_SSL_KEY_PASSWORD. -->
     <sysds.federated.ssl.cert>/path/to/worker-cert.pem</sysds.federated.ssl.cert>
     <sysds.federated.ssl.key>/path/to/worker-key.pem</sysds.federated.ssl.key>
     <sysds.federated.ssl.trust>/path/to/ca-cert.pem</sysds.federated.ssl.trust>
-    -->
 </root>

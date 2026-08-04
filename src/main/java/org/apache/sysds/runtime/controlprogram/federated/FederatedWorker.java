@@ -59,9 +59,8 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.serialization.ClassResolvers;
-import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
+import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
@@ -219,14 +218,13 @@ public class FederatedWorker {
 					cp.addLast("CompressionDecodingStartStatistics", new CompressionDecoderStartStatisticsHandler());
 					compressionStrategy.ifPresent(strategy -> cp.addLast("CompressionDecoder", strategy.left));
 					cp.addLast("CompressionDecoderEndStatistics", new CompressionDecoderEndStatisticsHandler());
-					cp.addLast("ObjectDecoder",
-						new ObjectDecoder(Integer.MAX_VALUE,
-							ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())));
+					cp.addLast("FederatedFormatDecoder", new FederatedFormatDecoder());
 					cp.addLast("CompressionEncodingEndStatistics", new CompressionEncoderEndStatisticsHandler());
 					compressionStrategy.ifPresent(strategy -> cp.addLast("CompressionEncoder", strategy.right));
 					cp.addLast("CompressionEncodingStartStatistics", new CompressionEncoderStartStatisticsHandler());
-					cp.addLast("ObjectEncoder", new ObjectEncoder());
-					cp.addLast(FederationUtils.decoder(), new FederatedResponseEncoder());
+					cp.addLast("ChunkedWriteHandler", new ChunkedWriteHandler());
+					cp.addLast("FederatedResponseEncoder", new FederatedResponseEncoder());
+					cp.addLast("FederatedFormatEncoder", new FederatedFormatEncoder());
 					cp.addLast(new FederatedWorkerHandler(_flt, _frc, _fan, networkTimer));
 				}
 			};

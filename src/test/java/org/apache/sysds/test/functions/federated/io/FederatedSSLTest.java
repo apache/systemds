@@ -45,7 +45,6 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.functions.federated.FederatedTestObjectConstructor;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 @net.jcip.annotations.NotThreadSafe
@@ -77,10 +76,6 @@ public class FederatedSSLTest extends AutomatedTestBase {
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME));
-	}
-
-	@Before
-	public void clearSSLState() {
 		// The SSL context of the coordinator is cached for the JVM, so it should be cleared in between the tests
 		FederatedSSLUtil.resetClientContext();
 		FederatedData.resetFederatedSites();

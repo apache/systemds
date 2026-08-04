@@ -429,105 +429,207 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 
 	@Test
 	public void testread2DIntegerArray(){}
+//public static int[][] read2DIntegerArray(DataInput in, int numRows) throws IOException
+
 	@Test
 	public void testread2DDoubleArray(){}
+//public static double[][] read2DDoubleArray(DataInput in, int numRows) throws IOException
+
 	@Test
-	public void read(){}
+	public void testread(){}
+//public static ColGroupPiecewiseLinearCompressed read(DataInput in) throws IOException
+
 	@Test
 	public void testwrite(){}
+//public void write(DataOutput out) throws IOException
+
 	@Test
 	public void testcomputeMxx(){}
+//protected double computeMxx(double c, Builtin builtin)
+
 	@Test
 	public void testcomputeColMxx(){}
+//protected void computeColMxx(double[] c, Builtin builtin)
+
 	@Test
 	public void testcomputeSumSq(){}
+//protected void computeSumSq(double[] c, int nRows)
+
 	@Test
 	public void testcomputeColSumsSq(){}
+//protected void computeColSumsSq(double[] c, int nRows)
+
 	@Test
 	public void testsegmentSumSq(){}
+//private double segmentSumSq(int col)
+
 	@Test
 	public void testsumOfSquares(){}
+//private static double sumOfSquares(int start, int end)
+
 	@Test
 	public void testcomputeRowSums(){}
+//protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg)
+
 	@Test
 	public void testcomputeRowMxx(){}
+//protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg)
+
 	@Test
 	public void testcomputeProduct(){}
+//protected void computeProduct(double[] c, int nRows)
+
 	@Test
 	public void testcomputeRowProduct(){}
+//protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg)
+
 	@Test
 	public void testcomputeColProduct(){}
+//protected void computeColProduct(double[] c, int nRows)
+
 	@Test
 	public void testpreAggSumRows(){}
+//protected double[] preAggSumRows()
+
 	@Test
 	public void testpreAggSumSqRows(){}
+//protected double[] preAggSumSqRows()
+
 	@Test
 	public void testpreAggProductRows(){}
+//protected double[] preAggProductRows()
+
 	@Test
 	public void testpreAggBuiltinRows(){}
+//protected double[] preAggBuiltinRows(Builtin builtin)
+
 	@Test
 	public void testsameIndexStructure(){}
+//public boolean sameIndexStructure(AColGroupCompressed that)
+
 	@Test
 	public void testtsmm(){}
+//protected void tsmm(double[] result, int numColumns, int nRows)
+
 	@Test
 	public void testcrossColDotProduct(){}
+//private double crossColDotProduct(int i, int j)
+
 	@Test
 	public void testcopyAndSet(){}
+//public AColGroup copyAndSet(IColIndex colIndexes)
+
 	@Test
 	public void testdecompressToDenseBlockTransposed(){}
+//public void decompressToDenseBlockTransposed(DenseBlock db, int rl, int ru)
+
 	@Test
 	public void testdecompressToSparseBlockTransposed(){}
+//public void decompressToSparseBlockTransposed(SparseBlockMCSR sb, int nColOut)
+
 	@Test
 	public void testdecompressToSparseBlock(){}
+//public void decompressToSparseBlock(SparseBlock sb, int rl, int ru, int offR, int offC)
+
 	@Test
 	public void testrightMultByMatrix(){}
+//public AColGroup rightMultByMatrix(MatrixBlock right, IColIndex allCols, int k)
+
 	@Test
 	public void testleftMultByMatrixNoPreAgg(){}
+//public void leftMultByMatrixNoPreAgg(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl, int cu)
+
 	@Test
 	public void testleftMultByAColGroup(){}
+//public void leftMultByAColGroup(AColGroup lhs, MatrixBlock result, int nRows)
+
 	@Test
 	public void testtsmmAColGroup(){}
+//public void tsmmAColGroup(AColGroup other, MatrixBlock result)
+
 	@Test
 	public void testsliceSingleColumn(){}
+//protected AColGroup sliceSingleColumn(int idx)
+
 	@Test
 	public void testsliceMultiColumns(){}
+//protected AColGroup sliceMultiColumns(int idStart, int idEnd, IColIndex outputCols)
+
 	@Test
 	public void testsliceRows(){}
+//public AColGroup sliceRows(int rl, int ru)
+
 	@Test
 	public void testgetNumberNonZeros(){}
+//public long getNumberNonZeros(int nRows)
+
 	@Test
 	public void testcentralMoment(){}
+//public CmCovObject centralMoment(CMOperator op, int nRows)
+
 	@Test
 	public void testrexpandCols(){}
+//public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows)
+
 	@Test
 	public void testgetCost(){}
+//public double getCost(ComputationCostEstimator e, int nRows)
+
 	@Test
 	public void testappend(){}
+//public AColGroup append(AColGroup g)
+
 	@Test
 	public void testappendNInternal(){}
+//protected AColGroup appendNInternal(AColGroup[] groups, int blen, int rlen)
+
 	@Test
 	public void testgetCompressionScheme(){}
+//public ICLAScheme getCompressionScheme()
+
 	@Test
-	public void recompress(){}
+	public void testrecompress(){}
+//public AColGroup recompress()
+
 	@Test
 	public void testgetCompressionInfo(){}
+//public CompressedSizeInfoColGroup getCompressionInfo(int nRow)
+
 	@Test
 	public void testfixColIndexes(){}
+//protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering)
+
 	@Test
 	public void testremoveEmptyColsSubset(){}
+//public AColGroup removeEmptyColsSubset(IColIndex indexes, IntArrayList emptyCols)
+
 	@Test
 	public void testremoveEmptyRows(){}
+//public AColGroup removeEmptyRows(boolean[] emptyRows, int newNumRows)
+
 	@Test
 	public void testsort(){}
+//public AColGroup sort()
+
 	@Test
 	public void testreduceCols(){}
+//public AColGroup reduceCols()
+
 	@Test
 	public void testgetSparsity(){}
+//public double getSparsity()
+
 	@Test
 	public void testsparseSelection(){}
+//protected void sparseSelection(MatrixBlock selection, ColGroupUtils.P[] points, MatrixBlock ret, int rl, int ru)
+
 	@Test
 	public void testdenseSelection(){}
+//protected void denseSelection(MatrixBlock selection, ColGroupUtils.P[] points, MatrixBlock ret, int rl, int ru)
+
 	@Test
 	public void testsplitReshape(){}
+//public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg)
+
 
 }

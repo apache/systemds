@@ -74,7 +74,7 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 	@Test
 	public void testPowerTransformYeoJohnsonLambdaAboveInitialInterval() {
 		double[][] input = {{0.00}, {0.97}, {0.98}, {0.99}, {1.00}};
-		runPowerTransformTest("yeo-johnson", false, input, false, false);
+		runPowerTransformTest("yeo-johnson", false, input, false);
 		assertLambdaOutsideInitialInterval(true);
 	}
 
@@ -88,7 +88,7 @@ public class BuiltinPowerTransformTest extends AutomatedTestBase {
 	@Test
 	public void testPowerTransformBoxCoxLambdaBelowInitialInterval() {
 		double[][] input = {{1.00}, {1.01}, {1.02}, {1.03}, {10.0}};
-		runPowerTransformTest("box-cox", false, input, false, false);
+		runPowerTransformTest("box-cox", false, input, false);
 		assertLambdaOutsideInitialInterval(false);
 	}
 

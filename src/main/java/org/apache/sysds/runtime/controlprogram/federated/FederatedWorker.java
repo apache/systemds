@@ -20,20 +20,16 @@
 package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.io.Serializable;
-import java.security.cert.CertificateException;
 import java.util.Optional;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import javax.net.ssl.SSLException;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionDecoderEndStatisticsHandler;
 import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionDecoderStartStatisticsHandler;
@@ -63,8 +59,6 @@ import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
-import io.netty.handler.ssl.util.SelfSignedCertificate;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
 @SuppressWarnings("deprecation")
@@ -121,12 +115,16 @@ public class FederatedWorker {
 			LOG.info("Started Federated Worker at port: " + _port);
 			f.channel().closeFuture().sync();
 		} 
-		catch(Exception e) {
+		catch(InterruptedException e) {
 			LOG.info("Federated worker interrupted");
-			if(_debug) {
-				LOG.error(e.getMessage());
+			if(_debug)
 				e.printStackTrace();
-			}
+		}
+		catch(Exception e) {
+			// report why the worker stops, e.g., a missing certificate with ssl enabled, otherwise it exits silently
+			LOG.error("Federated worker stopped: " + e.getMessage());
+			if(_debug)
+				e.printStackTrace();
 		}
 		finally {
 			LOG.info("Federated Worker Shutting down.");
@@ -192,47 +190,30 @@ public class FederatedWorker {
 	}
 
 	private ChannelInitializer<SocketChannel> createChannel(boolean ssl) {
-		try {
-			// TODO add ability to use real ssl files, not self signed certificates.
-			final SelfSignedCertificate cert;
-			final SslContext cont2;
-			final boolean sslEnabled = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.USE_SSL_FEDERATED_COMMUNICATION) || ssl;
+		final SslContext sslContext = ssl ? FederatedSSLUtil.createServerContext() : null;
 
-			if(ssl) {
-				cert = new SelfSignedCertificate();
-				cont2 = SslContextBuilder.forServer(cert.certificate(), cert.privateKey()).build();
-			}
-			else {
-				cert = null;
-				cont2 = null;
-			}
+		return new ChannelInitializer<>() {
+			@Override
+			public void initChannel(SocketChannel ch) {
+				final ChannelPipeline cp = ch.pipeline();
+				if(sslContext != null)
+					cp.addLast(sslContext.newHandler(ch.alloc()));
 
-			return new ChannelInitializer<>() {
-				@Override
-				public void initChannel(SocketChannel ch) {
-					final ChannelPipeline cp = ch.pipeline();
-					if(sslEnabled)
-						cp.addLast(cont2.newHandler(ch.alloc()));
-					
-					final Optional<ImmutablePair<ChannelInboundHandlerAdapter, ChannelOutboundHandlerAdapter>> compressionStrategy = FederationUtils.compressionStrategy();
-					cp.addLast("NetworkTrafficCounter", new NetworkTrafficCounter(FederatedStatistics::logWorkerTraffic));
-					cp.addLast("CompressionDecodingStartStatistics", new CompressionDecoderStartStatisticsHandler());
-					compressionStrategy.ifPresent(strategy -> cp.addLast("CompressionDecoder", strategy.left));
-					cp.addLast("CompressionDecoderEndStatistics", new CompressionDecoderEndStatisticsHandler());
-					cp.addLast("ObjectDecoder",
-						new ObjectDecoder(Integer.MAX_VALUE,
-							ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())));
-					cp.addLast("CompressionEncodingEndStatistics", new CompressionEncoderEndStatisticsHandler());
-					compressionStrategy.ifPresent(strategy -> cp.addLast("CompressionEncoder", strategy.right));
-					cp.addLast("CompressionEncodingStartStatistics", new CompressionEncoderStartStatisticsHandler());
-					cp.addLast("ObjectEncoder", new ObjectEncoder());
-					cp.addLast(FederationUtils.decoder(), new FederatedResponseEncoder());
-					cp.addLast(new FederatedWorkerHandler(_flt, _frc, _fan, networkTimer));
-				}
-			};
-		}
-		catch(CertificateException | SSLException e) {
-			throw new DMLRuntimeException("Failed creating channel SSL", e);
-		}
+				final Optional<ImmutablePair<ChannelInboundHandlerAdapter, ChannelOutboundHandlerAdapter>> compressionStrategy = FederationUtils
+					.compressionStrategy();
+				cp.addLast("NetworkTrafficCounter", new NetworkTrafficCounter(FederatedStatistics::logWorkerTraffic));
+				cp.addLast("CompressionDecodingStartStatistics", new CompressionDecoderStartStatisticsHandler());
+				compressionStrategy.ifPresent(strategy -> cp.addLast("CompressionDecoder", strategy.left));
+				cp.addLast("CompressionDecoderEndStatistics", new CompressionDecoderEndStatisticsHandler());
+				cp.addLast("ObjectDecoder", new ObjectDecoder(Integer.MAX_VALUE,
+					ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())));
+				cp.addLast("CompressionEncodingEndStatistics", new CompressionEncoderEndStatisticsHandler());
+				compressionStrategy.ifPresent(strategy -> cp.addLast("CompressionEncoder", strategy.right));
+				cp.addLast("CompressionEncodingStartStatistics", new CompressionEncoderStartStatisticsHandler());
+				cp.addLast("ObjectEncoder", new ObjectEncoder());
+				cp.addLast(FederationUtils.decoder(), new FederatedResponseEncoder());
+				cp.addLast(new FederatedWorkerHandler(_flt, _frc, _fan, networkTimer));
+			}
+		};
 	}
 }

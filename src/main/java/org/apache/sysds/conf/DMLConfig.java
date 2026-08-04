@@ -125,6 +125,9 @@ public class DMLConfig
 	public static final String EVICTION_SHADOW_BUFFERSIZE = "sysds.gpu.eviction.shadow.bufferSize";
 
 	public static final String USE_SSL_FEDERATED_COMMUNICATION = "sysds.federated.ssl"; // boolean
+	public static final String FEDERATED_SSL_CERT = "sysds.federated.ssl.cert"; // Path to the worker X.509 certificate chain in PEM format, required if federated SSL is enabled
+	public static final String FEDERATED_SSL_KEY = "sysds.federated.ssl.key"; // Path to the worker private key in PKCS#8 PEM format, required if federated SSL is enabled
+	public static final String FEDERATED_SSL_TRUST = "sysds.federated.ssl.trust"; // Path to the trusted (CA) certificates in PEM format, required if federated SSL is enabled
 	public static final String DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT = "sysds.federated.initialization.timeout"; // int seconds
 	public static final String FEDERATED_TIMEOUT = "sysds.federated.timeout"; // single request timeout default -1 to indicate infinite.
 	public static final String FEDERATED_PLANNER = "sysds.federated.planner";
@@ -211,6 +214,9 @@ public class DMLConfig
 		_defaultVals.put(GPU_RULE_BASED_PLACEMENT, "false");
 		_defaultVals.put(FLOATING_POINT_PRECISION, "double" );
 		_defaultVals.put(USE_SSL_FEDERATED_COMMUNICATION, "false");
+		_defaultVals.put(FEDERATED_SSL_CERT,     null);
+		_defaultVals.put(FEDERATED_SSL_KEY,      null);
+		_defaultVals.put(FEDERATED_SSL_TRUST,    null);
 		_defaultVals.put(DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT, "10");
 		_defaultVals.put(FEDERATED_TIMEOUT,      "86400"); // default 1 day compute timeout.
 		_defaultVals.put(FEDERATED_PLANNER,      FederatedPlanner.RUNTIME.name());
@@ -475,6 +481,7 @@ public class DMLConfig
 			PRINT_GPU_MEMORY_INFO, AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, GPU_RULE_BASED_PLACEMENT,
 			FLOATING_POINT_PRECISION, GPU_EVICTION_POLICY, LOCAL_SPARK_NUM_THREADS, EVICTION_SHADOW_BUFFERSIZE,
 			GPU_MEMORY_ALLOCATOR, GPU_MEMORY_UTILIZATION_FACTOR, USE_SSL_FEDERATED_COMMUNICATION,
+			FEDERATED_SSL_CERT, FEDERATED_SSL_KEY, FEDERATED_SSL_TRUST,
 			DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT, FEDERATED_TIMEOUT, FEDERATED_MONITOR_FREQUENCY, FEDERATED_COMPRESSION,
 			ASYNC_PREFETCH, ASYNC_SPARK_BROADCAST, ASYNC_SPARK_CHECKPOINT, IO_COMPRESSION_CODEC
 		}; 

@@ -734,6 +734,8 @@
 								<exclude>**/*.mtx</exclude>
 								<exclude>**/*.mtd</exclude>
 								<exclude>**/*.out</exclude>
+								<!-- Test certificates, PEM carries no comments -->
+								<exclude>src/test/resources/cert/*.pem</exclude>
 								<exclude>**/__pycache__/**</exclude>
 								<exclude>**/part-*</exclude>
 								<exclude>**/*.keep</exclude>

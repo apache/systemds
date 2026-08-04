@@ -16,14 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
 -->
-<root>
-    <sysds.federated.ssl>true</sysds.federated.ssl>
 
-    <!-- Required with SSL: the workers need a certificate issued for the host the coordinator contacts them on
-         and signed by an authority the coordinator trusts. The paths below are placeholders, replace them with
-         your own certificates before using this configuration. An encrypted private key takes its password from
-         the environment variable SYSTEMDS_FEDERATED_SSL_KEY_PASSWORD. -->
-    <sysds.federated.ssl.cert>/path/to/worker-cert.pem</sysds.federated.ssl.cert>
-    <sysds.federated.ssl.key>/path/to/worker-key.pem</sysds.federated.ssl.key>
-    <sysds.federated.ssl.trust>/path/to/ca-cert.pem</sysds.federated.ssl.trust>
+<root>
+    <!-- The worker presents a certificate signed by the trusted authority, but issued for
+         other.example.com instead of the contacted localhost, therefore it has to be rejected. -->
+    <sysds.local.spark.number.threads>2</sysds.local.spark.number.threads>
+    <sysds.federated.ssl>true</sysds.federated.ssl>
+    <sysds.federated.ssl.cert>src/test/resources/cert/otherhost-cert.pem</sysds.federated.ssl.cert>
+    <sysds.federated.ssl.key>src/test/resources/cert/otherhost-key.pem</sysds.federated.ssl.key>
+    <sysds.federated.ssl.trust>src/test/resources/cert/ca-cert.pem</sysds.federated.ssl.trust>
+    <sysds.federated.timeout>128</sysds.federated.timeout>
 </root>

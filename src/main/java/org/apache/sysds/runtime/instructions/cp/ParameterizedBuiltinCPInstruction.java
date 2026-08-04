@@ -162,16 +162,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			return new ParamservBuiltinCPInstruction(null, paramsMap, out, opcode, str);
 		}
 		else if(opcode.equalsIgnoreCase(Opcodes.DP_GAUSSIAN.toString()) || opcode.equalsIgnoreCase(Opcodes.DP_LAPLACE.toString())) {
-			InstructionUtils.checkNumFields(parts, 5, 6); // laplace=5, gaussian=6
-			if(!paramsMap.containsKey("query"))
-				throw new DMLRuntimeException(opcode + ": missing 'query'");
-			if(!paramsMap.containsKey("sensitivity"))
-				throw new DMLRuntimeException(opcode + ": missing 'sensitivity'");
-			if(!paramsMap.containsKey("epsilon"))
-				throw new DMLRuntimeException(opcode + ": missing 'epsilon'");
-			if(opcode.equalsIgnoreCase(Opcodes.DP_GAUSSIAN.toString()) && !paramsMap.containsKey("delta"))
-				throw new DMLRuntimeException(opcode + ": missing 'delta'");
-			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
+			return DPBuiltinCPInstruction.parse(parts, paramsMap, out, opcode, str);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode (" + opcode + ") for ParameterizedBuiltin Instruction.");
@@ -471,13 +462,6 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 
 			ec.setVariable(output.getName(), list);
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.DP_GAUSSIAN.toString()) || opcode.equalsIgnoreCase(Opcodes.DP_LAPLACE.toString())) {
-			String target = params.get("target");
-			MatrixBlock X = ec.getMatrixInput(target);
-			MatrixBlock outBlock = DPBuiltinOps.release(X, opcode, params, ec.getDPBudgetAccountant());
-			ec.releaseMatrixInput(target);
-			ec.setMatrixOutput(output.getName(), outBlock);
-		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);
 		}
@@ -575,12 +559,6 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 					: getStringLiteral(n)).toArray(CPOperand[]::new);
 			return Pair.of(output.getName(),
 				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, listOperands)));
-		}
-		else if(opcode.equalsIgnoreCase(Opcodes.DP_GAUSSIAN.toString()) || opcode.equalsIgnoreCase(Opcodes.DP_LAPLACE.toString())) {
-			// dp_laplace/dp_gaussian draw fresh randomness and charge a privacy-budget side effect on every
-			// call, so a cached lineage-based reuse of a prior release would be unsound.
-			throw new DMLRuntimeException(opcode + ": lineage tracing not supported (draws fresh randomness "
-				+ "and charges a privacy budget on every call)");
 		}
 		else {
 			// NOTE: for now, we cannot have a generic fall through path, because the

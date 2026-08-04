@@ -313,7 +313,6 @@ public class FederatedData {
 		// The promise is assigned by the requesting thread, while the channel events below are handled on the
 		// event loop, and the two orders are not guaranteed: a rejected SSL handshake already fails the channel
 		// while the requesting thread is still connecting.
-		private final Object _promLock = new Object();
 		private Promise<FederatedResponse> _prom;
 		// A failure observed before the promise was assigned, e.g., a rejected SSL handshake
 		private Throwable _failure;
@@ -322,7 +321,7 @@ public class FederatedData {
 		}
 
 		public void setPromise(Promise<FederatedResponse> prom) {
-			synchronized(_promLock) {
+			synchronized(this) {
 				_prom = prom;
 				if(_failure != null)
 					_prom.tryFailure(_failure);
@@ -331,7 +330,7 @@ public class FederatedData {
 
 		@Override
 		public void channelRead(ChannelHandlerContext ctx, Object msg) {
-			synchronized(_promLock) {
+			synchronized(this) {
 				_prom.setSuccess((FederatedResponse) msg);
 			}
 			ctx.close();
@@ -341,7 +340,7 @@ public class FederatedData {
 		public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
 			// fail the request instead of waiting for a response that never arrives
 			// covers a failed SSL handshake, e.g., if the worker certificate is not signed by a trusted authority.
-			synchronized(_promLock) {
+			synchronized(this) {
 				if(_prom != null)
 					_prom.tryFailure(cause);
 				else

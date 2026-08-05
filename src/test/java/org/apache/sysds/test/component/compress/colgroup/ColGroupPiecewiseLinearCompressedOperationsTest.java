@@ -46,8 +46,10 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.*;
 import java.util.Random;
 
+import static org.junit.Assert.*;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -437,6 +439,9 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		assertTrue(result instanceof ColGroupUncompressed);
 	}
 
+
+	//  ~~ purely coverage
+
 	@Test
 	public void testread2DIntegerArray(){}
 //public static int[][] read2DIntegerArray(DataInput in, int numRows) throws IOException
@@ -486,7 +491,8 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 //protected void computeColSumsSq(double[] c, int nRows)
 
 	@Test
-	public void testsegmentSumSq(){}
+	public void testsegmentSumSq(){
+			}
 //private double segmentSumSq(int col)
 
 	@Test
@@ -498,7 +504,9 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 //protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg)
 
 	@Test
-	public void testcomputeRowMxx(){}
+	public void testcomputeRowMxx(){
+
+	}
 //protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg)
 
 	@Test
@@ -509,68 +517,207 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 	public void testcomputeRowProduct(){}
 //protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg)
 
+
+
 	@Test
 	public void testcomputeColProduct(){}
 //protected void computeColProduct(double[] c, int nRows)
 
 	@Test
-	public void testpreAggSumRows(){}
+	public void testpreAggSumRows() {
+		double[] agg = piecewiseLinearColGroup.preAggRows(Plus.getPlusFnObject());
+		assertEquals(numRows, agg.length);
+		for(int r = 0; r < numRows; r++) {
+			double expected = 0;
+			for(int c = 0; c < numCols; c++)
+				expected += decompressedMB.get(r, c);
+			assertEquals("row " + r, expected, agg[r], DELTA);
+		}
+	}
 //protected double[] preAggSumRows()
 
 	@Test
-	public void testpreAggSumSqRows(){}
+	public void testpreAggSumSqRows() {
+		double[] agg = piecewiseLinearColGroup.preAggRows(KahanPlusSq.getKahanPlusSqFnObject());
+		assertEquals(numRows, agg.length);
+		for(int r = 0; r < numRows; r++) {
+			double expected = 0;
+			for(int c = 0; c < numCols; c++) {
+				double v = decompressedMB.get(r, c);
+				expected += v * v;
+			}
+			assertEquals("row " + r, expected, agg[r], DELTA);
+		}
+	}
 //protected double[] preAggSumSqRows()
 
 	@Test
-	public void testpreAggProductRows(){}
+	public void testpreAggProductRows() {
+		double[] agg = piecewiseLinearColGroup.preAggRows(Multiply.getMultiplyFnObject());
+		assertEquals(numRows, agg.length);
+		for(int r = 0; r < numRows; r++) {
+			double expected = 1.0;
+			for(int c = 0; c < numCols; c++)
+				expected *= decompressedMB.get(r, c);
+			assertEquals("row " + r, expected, agg[r], DELTA);
+		}
+	}
 //protected double[] preAggProductRows()
 
 	@Test
-	public void testpreAggBuiltinRows(){}
+	public void testpreAggBuiltinRows() {
+		Builtin maxBuiltin = Builtin.getBuiltinFnObject(Builtin.BuiltinCode.MAX);
+		double[] agg = piecewiseLinearColGroup.preAggRows(maxBuiltin);
+		assertEquals(numRows, agg.length);
+		for(int r = 0; r < numRows; r++) {
+			double expected = Double.NEGATIVE_INFINITY;
+			for(int c = 0; c < numCols; c++)
+				expected = Math.max(expected, decompressedMB.get(r, c));
+			assertEquals("row " + r, expected, agg[r], DELTA);
+		}
+	}
 //protected double[] preAggBuiltinRows(Builtin builtin)
 
 	@Test
-	public void testsameIndexStructure(){}
+	public void testsameIndexStructure() {
+		assertTrue(piecewiseLinearColGroup.sameIndexStructure(piecewiseLinearColGroup));
+		ColGroupPiecewiseLinearCompressed other = (ColGroupPiecewiseLinearCompressed) ColGroupPiecewiseLinearCompressed
+			.create(ColIndexFactory.create(new int[] {0}), new int[][] {{0, numRows}}, new double[][] {{0.5}},
+				new double[][] {{1.0}}, numRows);
+		assertTrue(piecewiseLinearColGroup.sameIndexStructure(other));
+	}
 //public boolean sameIndexStructure(AColGroupCompressed that)
 
 	@Test
-	public void testtsmm(){}
+	public void testtsmm() {
+		MatrixBlock result = new MatrixBlock(numCols, numCols, false);
+		result.allocateDenseBlock();
+		piecewiseLinearColGroup.tsmm(result, numRows);
+
+		double[] expected = new double[numCols * numCols];
+		for(int r = 0; r < numRows; r++)
+			for(int i = 0; i < numCols; i++)
+				for(int j = i; j < numCols; j++)
+					expected[i * numCols + j] += decompressedMB.get(r, i) * decompressedMB.get(r, j);
+
+		for(int i = 0; i < numCols; i++)
+			for(int j = i; j < numCols; j++)
+				assertEquals("[" + i + "," + j + "]", expected[i * numCols + j], result.get(i, j), 1e-6);
+	}
 //protected void tsmm(double[] result, int numColumns, int nRows)
 
 	@Test
-	public void testcrossColDotProduct(){}
+	public void testcrossColDotProduct() {
+		// crossColDotProduct is private — exercise it via tsmm with a single-column group
+		ColGroupPiecewiseLinearCompressed single = (ColGroupPiecewiseLinearCompressed) ColGroupPiecewiseLinearCompressed
+			.create(ColIndexFactory.create(new int[] {0}), new int[][] {piecewiseLinearColGroup.getBreakpointsPerCol()[0]},
+				new double[][] {piecewiseLinearColGroup.getSlopesPerCol()[0]},
+				new double[][] {piecewiseLinearColGroup.getInterceptsPerCol()[0]}, numRows);
+		MatrixBlock result = new MatrixBlock(1, 1, false);
+		result.allocateDenseBlock();
+		single.tsmm(result, numRows);
+		double expected = 0;
+		for(int r = 0; r < numRows; r++) {
+			double v = decompressedMB.get(r, 0);
+			expected += v * v;
+		}
+		assertEquals(expected, result.get(0, 0), 1e-6);
+	}
 //private double crossColDotProduct(int i, int j)
 
 	@Test
-	public void testcopyAndSet(){}
+	public void testcopyAndSet() {
+		IColIndex newCols = ColIndexFactory.create(new int[] {5, 6, 7});
+		AColGroup copy = piecewiseLinearColGroup.copyAndSet(newCols);
+		assertTrue(copy instanceof ColGroupPiecewiseLinearCompressed);
+		assertEquals(newCols, copy.getColIndices());
+		ColGroupPiecewiseLinearCompressed plcCopy = (ColGroupPiecewiseLinearCompressed) copy;
+		assertArrayEquals(piecewiseLinearColGroup.getBreakpointsPerCol(), plcCopy.getBreakpointsPerCol());
+		assertArrayEquals(piecewiseLinearColGroup.getSlopesPerCol(), plcCopy.getSlopesPerCol());
+	}
 //public AColGroup copyAndSet(IColIndex colIndexes)
 
 	@Test
-	public void testdecompressToDenseBlockTransposed(){}
+	public void testdecompressToDenseBlockTransposed() {
+		MatrixBlock transposed = new MatrixBlock(numCols, numRows, false);
+		transposed.allocateDenseBlock();
+		piecewiseLinearColGroup.decompressToDenseBlockTransposed(transposed.getDenseBlock(), 0, numRows);
+		for(int r = 0; r < numRows; r++)
+			for(int c = 0; c < numCols; c++)
+				assertEquals("[" + r + "," + c + "]", decompressedMB.get(r, c), transposed.get(c, r), DELTA);
+	}
 //public void decompressToDenseBlockTransposed(DenseBlock db, int rl, int ru)
 
-	@Test
-	public void testdecompressToSparseBlockTransposed(){}
+	@Test(expected = NotImplementedException.class)
+	public void testdecompressToSparseBlockTransposed() {
+		SparseBlockMCSR sb = new SparseBlockMCSR(numCols);
+		piecewiseLinearColGroup.decompressToSparseBlockTransposed(sb, numCols);
+	}
 //public void decompressToSparseBlockTransposed(SparseBlockMCSR sb, int nColOut)
 
 	@Test
-	public void testdecompressToSparseBlock(){}
+	public void testdecompressToSparseBlock() {
+		MatrixBlock sparse = new MatrixBlock(numRows, numCols, true);
+		sparse.allocateSparseRowsBlock();
+		piecewiseLinearColGroup.decompressToSparseBlock(sparse.getSparseBlock(), 0, numRows, 0, 0);
+		for(int r = 0; r < numRows; r++)
+			for(int c = 0; c < numCols; c++)
+				assertEquals("[" + r + "," + c + "]", decompressedMB.get(r, c), sparse.get(r, c), DELTA);
+	}
 //public void decompressToSparseBlock(SparseBlock sb, int rl, int ru, int offR, int offC)
 
 	@Test
-	public void testrightMultByMatrix(){}
+	public void testrightMultByMatrix() {
+		MatrixBlock identity = new MatrixBlock(numCols, numCols, false);
+		identity.allocateDenseBlock();
+		for(int i = 0; i < numCols; i++)
+			identity.set(i, i, 1.0);
+		AColGroup result = piecewiseLinearColGroup.rightMultByMatrix(identity, null, 1);
+		assertTrue(result instanceof ColGroupUncompressed);
+		MatrixBlock resultMB = ((ColGroupUncompressed) result).getData();
+		for(int r = 0; r < numRows; r++)
+			for(int c = 0; c < numCols; c++)
+				assertEquals("[" + r + "," + c + "]", decompressedMB.get(r, c), resultMB.get(r, c), DELTA);
+	}
 //public AColGroup rightMultByMatrix(MatrixBlock right, IColIndex allCols, int k)
 
 	@Test
-	public void testleftMultByMatrixNoPreAgg(){}
+	public void testleftMultByMatrixNoPreAgg() {
+		MatrixBlock identity = new MatrixBlock(numRows, numRows, false);
+		identity.allocateDenseBlock();
+		for(int i = 0; i < numRows; i++)
+			identity.set(i, i, 1.0);
+		MatrixBlock result = new MatrixBlock(numRows, numCols, false);
+		result.allocateDenseBlock();
+		piecewiseLinearColGroup.leftMultByMatrixNoPreAgg(identity, result, 0, numRows, 0, numRows);
+		for(int r = 0; r < numRows; r++)
+			for(int c = 0; c < numCols; c++)
+				assertEquals("[" + r + "," + c + "]", decompressedMB.get(r, c), result.get(r, c), DELTA);
+	}
 //public void leftMultByMatrixNoPreAgg(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl, int cu)
 
 	@Test
-	public void testleftMultByAColGroup(){}
+	public void testleftMultByAColGroup() {
+		MatrixBlock result = new MatrixBlock(numCols, numCols, false);
+		result.allocateDenseBlock();
+		piecewiseLinearColGroup.leftMultByAColGroup(piecewiseLinearColGroup, result, numRows);
+		double[] expected = new double[numCols * numCols];
+		for(int r = 0; r < numRows; r++)
+			for(int i = 0; i < numCols; i++)
+				for(int j = 0; j < numCols; j++)
+					expected[i * numCols + j] += decompressedMB.get(r, i) * decompressedMB.get(r, j);
+		for(int i = 0; i < numCols; i++)
+			for(int j = 0; j < numCols; j++)
+				assertEquals("[" + i + "," + j + "]", expected[i * numCols + j], result.get(i, j), 1e-6);
+	}
 //public void leftMultByAColGroup(AColGroup lhs, MatrixBlock result, int nRows)
 
-	@Test
-	public void testtsmmAColGroup(){}
+	@Test(expected = DMLCompressionException.class)
+	public void testtsmmAColGroup() {
+		MatrixBlock result = new MatrixBlock(numCols, numCols, false);
+		result.allocateDenseBlock();
+		piecewiseLinearColGroup.tsmmAColGroup(piecewiseLinearColGroup, result);
+	}
 //public void tsmmAColGroup(AColGroup other, MatrixBlock result)
 
 	@Test

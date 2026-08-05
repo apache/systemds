@@ -491,6 +491,7 @@ public class ColGroupPiecewiseLinearCompressed extends AColGroupCompressed {
 		int[][] twoDimArray = new int[numRows][];
 		for (int i = 0; i < numRows; i++) {
 			int twoDimArray_lenght = in.readInt();
+			twoDimArray[i] = new int[twoDimArray_lenght];
 			for (int j = 0; j < twoDimArray_lenght; j++) {
 				twoDimArray[i][j] = in.readInt();
 			}
@@ -502,6 +503,7 @@ public class ColGroupPiecewiseLinearCompressed extends AColGroupCompressed {
 		double[][] twoDimArray = new double[numRows][];
 		for (int i = 0; i < numRows; i++) {
 			int twoDimArray_lenght = in.readInt();
+			twoDimArray[i] = new double[twoDimArray_lenght];
 			for (int j = 0; j < twoDimArray_lenght; j++) {
 				twoDimArray[i][j] = in.readDouble();
 			}

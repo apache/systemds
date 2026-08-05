@@ -1,5 +1,6 @@
 package org.apache.sysds.test.component.compress.colgroup;
 
+import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
@@ -21,7 +22,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
+import java.io.*;
 import java.util.Random;
 
 import static org.junit.Assert.*;
@@ -413,6 +414,9 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		assertTrue(result instanceof ColGroupUncompressed);
 	}
 
+
+	//  ~~ purely coverage
+
 	@Test
 	public void testread2DIntegerArray(){}
 //public static int[][] read2DIntegerArray(DataInput in, int numRows) throws IOException
@@ -422,11 +426,23 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 //public static double[][] read2DDoubleArray(DataInput in, int numRows) throws IOException
 
 	@Test
-	public void testread(){}
+	public void testread() throws IOException{
+
+	}
 //public static ColGroupPiecewiseLinearCompressed read(DataInput in) throws IOException
 
 	@Test
-	public void testwrite(){}
+	public void testWrite() throws IOException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		DataOutputStream out = new DataOutputStream(baos);
+
+		piecewiseLinearColGroup.write(out);
+		out.flush();
+
+		byte[] bytes = baos.toByteArray();
+
+		assertTrue(bytes.length > 0);
+	}
 //public void write(DataOutput out) throws IOException
 
 	@Test
@@ -438,15 +454,20 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 //protected void computeColMxx(double[] c, Builtin builtin)
 
 	@Test
-	public void testcomputeSumSq(){}
+	public void testcomputeSumSq(){
+		piecewiseLinearColGroup.computeSum(new double[]{1, 2, 3, 4}, 2);
+	}
 //protected void computeSumSq(double[] c, int nRows)
 
 	@Test
-	public void testcomputeColSumsSq(){}
+	public void testcomputeColSumsSq(){
+		piecewiseLinearColGroup.computeColSums(new double[]{1, 2, 3, 4}, 2);
+	}
 //protected void computeColSumsSq(double[] c, int nRows)
 
 	@Test
-	public void testsegmentSumSq(){}
+	public void testsegmentSumSq(){
+			}
 //private double segmentSumSq(int col)
 
 	@Test
@@ -458,7 +479,9 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 //protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg)
 
 	@Test
-	public void testcomputeRowMxx(){}
+	public void testcomputeRowMxx(){
+
+	}
 //protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg)
 
 	@Test
@@ -468,6 +491,8 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 	@Test
 	public void testcomputeRowProduct(){}
 //protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg)
+
+
 
 	@Test
 	public void testcomputeColProduct(){}

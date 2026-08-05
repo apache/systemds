@@ -42,7 +42,7 @@ import org.junit.Assert;
  * Gaussian mechanisms have statistically correct means and variances
  * (Kolmogorov-Smirnov style sanity checks).
  * 3. DPBuiltinCPInstruction structural tests - exercise parse validation, the
- * ParameterizedBuiltinCPInstruction.parseInstruction() -&gt; DPBuiltinCPInstruction dispatch, and the
+ * ParameterizedBuiltinCPInstruction.parseInstruction() -> DPBuiltinCPInstruction dispatch, and the
  * lineage-tracing refusal.
  * A fourth level, DML integration tests that run complete scripts end-to-end via the existing
  * AutomatedTestBase machinery, requires a built SystemDS jar and lives in a companion class,
@@ -101,8 +101,8 @@ public class DPBuiltinOpsTest {
 	public void testGaussianTighterThanLaplaceForSameEpsilon() {
 		// For the same nominal (epsilon, delta), Gaussian uses RDP composition which
 		// is tighter than Laplace with basic composition. After 5 releases:
-		// Laplace (basic, worst-case): 5epsilon
-		// Gaussian (RDP) : something < 5epsilon
+		// Laplace (basic, worst-case): 5*epsilon
+		// Gaussian (RDP) : something < 5*epsilon
 		double eps = 0.5;
 		double delta = 1e-5;
 

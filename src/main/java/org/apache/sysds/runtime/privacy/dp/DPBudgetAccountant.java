@@ -113,9 +113,8 @@ public class DPBudgetAccountant {
 	/**
 	 * Creates an accountant with the given global budget.
 	 *
-	 * Typical usage: the DML script sets the budget once at the top (future work: a
-	 * dp_set_budget(epsilon, delta) built-in), or the accountant is created with defaults and the budget is
-	 * checked after each release.
+	 * Typical usage: the DML script sets the budget once at the top (the dp_set_budget(epsilon, delta) built-in),
+	 * or the accountant is created with defaults and the budget is checked after each release.
 	 *
 	 * @param epsilonBudget total epsilon budget for the script execution (must be > 0)
 	 * @param delta         delta used for the Gaussian RDP-to-(epsilon,delta) conversion (must be in (0,1))

@@ -31,9 +31,9 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
 /**
- * CP instruction for the {@code dp_laplace}/{@code dp_gaussian} opcodes. Subclasses
- * {@link ParameterizedBuiltinCPInstruction} the same way {@link ParamservBuiltinCPInstruction} does for
- * {@code paramserv}: parse-time validation, execution, and lineage handling are owned here rather than as
+ * CP instruction for the dp_laplace/dp_gaussian opcodes. Subclasses
+ * {@link ParameterizedBuiltinCPInstruction}:
+ * parse-time validation, execution, and lineage handling are owned here rather than as
  * inline opcode branches in the shared class, since the DP release charges a privacy budget and draws fresh
  * randomness on every call - side effects that don't fit the shared class's other (pure, replayable) opcodes.
  *

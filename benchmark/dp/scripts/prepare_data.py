@@ -38,6 +38,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
+from benchmark_utilities import DATA_DIR
+
 ADULT_TRAIN_URL = (
     "https://archive.ics.uci.edu/ml/machine-learning-databases"
     "/adult/adult.data"
@@ -55,7 +57,6 @@ COLS = [
 NUMERIC = ["age","fnlwgt","education_num","capital_gain",
            "capital_loss","hours_per_week"]
 
-DATA_DIR = pathlib.Path("benchmark/data")
 N_WORKERS = 4
 
 def download(url, dest):

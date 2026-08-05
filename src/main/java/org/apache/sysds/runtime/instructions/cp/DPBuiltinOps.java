@@ -36,7 +36,7 @@ import java.util.Map;
 
 /**
  * Differential-privacy release of a linear query over the original matrix, invoked from
- * {@link ParameterizedBuiltinCPInstruction} for the {@code dp_laplace}/{@code dp_gaussian} opcodes.
+ * {@link ParameterizedBuiltinCPInstruction} for the dp_laplace/dp_gaussian opcodes.
  *
  * DML syntax (raw-matrix form):
  * result = dp_laplace(X, query="colMeans", sensitivity=1.0, epsilon=0.5)

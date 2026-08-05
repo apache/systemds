@@ -30,32 +30,85 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 public abstract class EstimationUtils 
 {
-	public static SparsityEstimator getSparsityEstimator(String identifier) {
-		switch (identifier) {
-			case "Avg":
-				return new EstimatorBasicAvg();
-			case "BitsetMM":
-				return new EstimatorBitsetMM();
-			case "DM":
-				return new EstimatorDensityMap();
-			case "LG":
-				return new EstimatorLayeredGraph();
-			case "MNC":
-				return new EstimatorMatrixHistogram();
-			case "MNC_lim":
-				return new EstimatorMatrixHistogram(false);
-			case "MNC_ext":
-				return new EstimatorMatrixHistogram(true);
-			case "RS":
-				return new EstimatorRowWise();
-			case "Sample":
-				return new EstimatorSample();
-			case "SampleRa":
-				return new EstimatorSampleRa();
-			case "Worst":
-				return new EstimatorBasicWorst();
-			default:
-				throw new DMLRuntimeException("Unknown sparsity estimator identifier " + identifier);
+	/**
+	 * Enumeration for the sparsity estimators supported
+	 */
+	public enum EstimatorType {
+		BASIC_AVG,
+		BASIC_WORST,
+		BITSET_MM,
+		DM,
+		LG,
+		MNC,
+		MNC_LIM,
+		MNC_EXT,
+		RS,
+		SAMPLE,
+		SAMPLE_RA;
+
+		/**
+		 * @param identifier the string identifier for a sparsity estimator
+		 * @return the estimator type enumeration item
+		 */
+		public static EstimatorType get(String identifier) {
+			switch(identifier) {
+				case "Avg":
+					return BASIC_AVG;
+				case "Worst":
+					return BASIC_WORST;
+				case "BitsetMM":
+					return BITSET_MM;
+				case "DM":
+					return DM;
+				case "LG":
+					return LG;
+				case "MNC":
+					return MNC;
+				case "MNC_lim":
+					return MNC_LIM;
+				case "MNC_ext":
+					return MNC_EXT;
+				case "RS":
+					return RS;
+				case "Sample":
+					return SAMPLE;
+				case "SampleRa":
+					return SAMPLE_RA;
+				default:
+					throw new DMLRuntimeException("Unknown sparsity estimator identifier: " + identifier);
+			}
+		}
+
+		/**
+		 * @return a sparsity estimator object corresponding to this estimator type
+		 */
+		public SparsityEstimator getEstimator() {
+			switch(this) {
+				case BASIC_AVG:
+					return new EstimatorBasicAvg();
+				case BASIC_WORST:
+					return new EstimatorBasicWorst();
+				case BITSET_MM:
+					return new EstimatorBitsetMM();
+				case DM:
+					return new EstimatorDensityMap();
+				case LG:
+					return new EstimatorLayeredGraph();
+				case MNC:
+					return new EstimatorMatrixHistogram();
+				case MNC_LIM:
+					return new EstimatorMatrixHistogram(false);
+				case MNC_EXT:
+					return new EstimatorMatrixHistogram(true);
+				case RS:
+					return new EstimatorRowWise();
+				case SAMPLE:
+					return new EstimatorSample();
+				case SAMPLE_RA:
+					return new EstimatorSampleRa();
+				default:
+					throw new DMLRuntimeException("Unknown sparsity estimator " + this.toString());
+			}
 		}
 	}
 

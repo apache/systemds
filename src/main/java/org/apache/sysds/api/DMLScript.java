@@ -50,6 +50,7 @@ import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
+import org.apache.sysds.hops.estim.EstimationUtils.EstimatorType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DMLTranslator;
@@ -117,8 +118,10 @@ public class DMLScript
 	public static boolean     FED_WORKER                 = DMLOptions.defaultOptions.fedWorker;
 	// Set explain type
 	public static ExplainType EXPLAIN                    = DMLOptions.defaultOptions.explainType;
-	// Enable sparsity rewrites and set sparsity estimator
-	public static String      SPARSITY_ESTIMATOR         = DMLOptions.defaultOptions.sparsityEstimator;
+	// Enable sparsity rewrites
+	public static boolean     SPARSITY_REWRITE           = DMLOptions.defaultOptions.sparsityRewrite;
+	// Set sparsity estimator
+	public static EstimatorType SPARSITY_ESTIMATOR       = DMLOptions.defaultOptions.sparsityEstimator;
 	// Set filename of dml script
 	public static String      DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath;
 	// Set data type to use internally
@@ -286,6 +289,7 @@ public class DMLScript
 			OOC_LOG_EVENTS        = dmlOptions.oocLogEvents;
 			OOC_LOG_PATH          = dmlOptions.oocLogPath;
 			EXPLAIN               = dmlOptions.explainType;
+			SPARSITY_REWRITE      = dmlOptions.sparsityRewrite;
 			SPARSITY_ESTIMATOR    = dmlOptions.sparsityEstimator;
 			EXEC_MODE             = dmlOptions.execMode;
 			LINEAGE               = dmlOptions.lineage;

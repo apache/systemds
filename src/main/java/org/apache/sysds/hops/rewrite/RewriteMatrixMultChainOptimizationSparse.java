@@ -28,7 +28,6 @@ import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.estim.MMNode;
 import org.apache.sysds.hops.estim.SparsityEstimator;
-import org.apache.sysds.hops.estim.EstimationUtils;
 import org.apache.sysds.hops.estim.SparsityEstimator.OpCode;
 
 /**
@@ -37,7 +36,7 @@ import org.apache.sysds.hops.estim.SparsityEstimator.OpCode;
  * 
  * Solution: Classic Dynamic Programming
  * Approach: Currently, the approach based only on matrix dimensions
- * and sparsity estimates using the MNC sketch
+ * and sparsity estimates using the basic average estimator
  * Goal: To reduce the number of computations in the run-time
  * (map-reduce) layer
  */
@@ -87,7 +86,7 @@ public class RewriteMatrixMultChainOptimizationSparse extends RewriteMatrixMultC
 		}
 
 		//compute cost-optimal chains for increasing chain sizes 
-		SparsityEstimator estim = EstimationUtils.getSparsityEstimator(DMLScript.SPARSITY_ESTIMATOR);
+		SparsityEstimator estim = DMLScript.SPARSITY_ESTIMATOR.getEstimator();
 		for( int l = 2; l <= size; l++ ) { // chain length
 			for( int i = 0; i < size - l + 1; i++ ) {
 				int j = i + l - 1;

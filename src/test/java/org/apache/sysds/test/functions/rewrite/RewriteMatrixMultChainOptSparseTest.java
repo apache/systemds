@@ -112,9 +112,13 @@ public class RewriteMatrixMultChainOptSparseTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-explain", "hops", "-stats",
-				"-sparsityEstimator", rewrites ? "Avg" : "None",
-				"-args", input("X"), input("Y"), output("R")};
+			if(rewrites)
+				programArgs = new String[] {"-explain", "hops", "-stats",
+					"-sparsityRewrite", "-sparsityEstimator", "Avg",
+					"-args", input("X"), input("Y"), output("R")};
+			else
+				programArgs = new String[] {"-explain", "hops", "-stats",
+					"-args", input("X"), input("Y"), output("R")};
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());
 

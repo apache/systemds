@@ -142,7 +142,7 @@ public class ProgramRewriter{
 			if(OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES){
 				_dagRuleSet.add( new RewriteMatrixMultChainOptimizationTranspose()      ); //dependency: cse
 			}
-			if(DMLScript.SPARSITY_ESTIMATOR != null && DMLScript.SPARSITY_ESTIMATOR != "None") {
+			if(DMLScript.SPARSITY_REWRITE) {
 				_dagRuleSet.add( new RewriteMatrixMultChainOptimizationSparse()         );
 			}
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION ) {

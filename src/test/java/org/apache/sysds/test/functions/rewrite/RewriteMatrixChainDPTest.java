@@ -124,13 +124,13 @@ public class RewriteMatrixChainDPTest extends AutomatedTestBase {
 	private void runTestMatrixChainDP(String testName) {
 		ExecMode platformOld = rtplatform;
 		boolean rewritesOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		boolean newMMchain1 = OptimizerUtils.ALLOW_ADVANCED_MMCHAIN_REWRITES;
+		boolean newMMchain1 = OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES;
 		boolean newMMchain2 = OptimizerUtils.ALLOW_NEW_MMCHAIN_REWRITE;
 
 		try {
 			rtplatform = ExecMode.SINGLE_NODE;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = true;
-			OptimizerUtils.ALLOW_ADVANCED_MMCHAIN_REWRITES = true;
+			OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES = true;
 			OptimizerUtils.ALLOW_NEW_MMCHAIN_REWRITE = true;
 
 			TestConfiguration config = getTestConfiguration(testName);
@@ -301,7 +301,7 @@ public class RewriteMatrixChainDPTest extends AutomatedTestBase {
 			}
 		} finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewritesOld;
-			OptimizerUtils.ALLOW_ADVANCED_MMCHAIN_REWRITES = newMMchain1;
+			OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES = newMMchain1;
 			OptimizerUtils.ALLOW_NEW_MMCHAIN_REWRITE = newMMchain2;
 			rtplatform = platformOld;
 			Recompiler.reinitRecompiler();

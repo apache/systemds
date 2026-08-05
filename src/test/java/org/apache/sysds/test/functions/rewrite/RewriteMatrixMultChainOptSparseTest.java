@@ -103,7 +103,7 @@ public class RewriteMatrixMultChainOptSparseTest extends AutomatedTestBase {
 	}
 
 	private void testRewriteMatrixMultChainOpSparse(boolean rewrites) {
-		boolean oldFlag1 = OptimizerUtils.ALLOW_ADVANCED_MMCHAIN_REWRITES;
+		boolean oldFlag1 = OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES;
 		boolean oldFlag2 = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 
 		try {
@@ -112,11 +112,13 @@ public class RewriteMatrixMultChainOptSparseTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-explain", "hops", "-stats", "-args", input("X"), input("Y"), output("R")};
+			programArgs = new String[] {"-explain", "hops", "-stats",
+				"-sparsityEstimator", rewrites ? "Avg" : "None",
+				"-args", input("X"), input("Y"), output("R")};
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());
 
-			OptimizerUtils.ALLOW_ADVANCED_MMCHAIN_REWRITES = rewrites;
+			OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES = rewrites;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = rewrites;
 			double[][] X = getRandomMatrix(rows, cols, -1, 1, sparsities[0], 7);
 			double[][] Y = getRandomMatrix(cols, 1, -1, 1, sparsities[1], 3);
@@ -164,7 +166,7 @@ public class RewriteMatrixMultChainOptSparseTest extends AutomatedTestBase {
 			}
 		}
 		finally {
-			OptimizerUtils.ALLOW_ADVANCED_MMCHAIN_REWRITES = oldFlag1;
+			OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES = oldFlag1;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = oldFlag2;
 			Recompiler.reinitRecompiler();
 		}

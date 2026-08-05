@@ -30,6 +30,35 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 public abstract class EstimationUtils 
 {
+	public static SparsityEstimator getSparsityEstimator(String identifier) {
+		switch (identifier) {
+			case "Avg":
+				return new EstimatorBasicAvg();
+			case "BitsetMM":
+				return new EstimatorBitsetMM();
+			case "DM":
+				return new EstimatorDensityMap();
+			case "LG":
+				return new EstimatorLayeredGraph();
+			case "MNC":
+				return new EstimatorMatrixHistogram();
+			case "MNC_lim":
+				return new EstimatorMatrixHistogram(false);
+			case "MNC_ext":
+				return new EstimatorMatrixHistogram(true);
+			case "RS":
+				return new EstimatorRowWise();
+			case "Sample":
+				return new EstimatorSample();
+			case "SampleRa":
+				return new EstimatorSampleRa();
+			case "Worst":
+				return new EstimatorBasicWorst();
+			default:
+				throw new DMLRuntimeException("Unknown sparsity estimator identifier " + identifier);
+		}
+	}
+
 	/**
 	 * This utility function computes the exact output nnz
 	 * of a self matrix product without need to materialize

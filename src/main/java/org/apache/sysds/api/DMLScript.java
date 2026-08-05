@@ -117,6 +117,8 @@ public class DMLScript
 	public static boolean     FED_WORKER                 = DMLOptions.defaultOptions.fedWorker;
 	// Set explain type
 	public static ExplainType EXPLAIN                    = DMLOptions.defaultOptions.explainType;
+	// Enable sparsity rewrites and set sparsity estimator
+	public static String      SPARSITY_ESTIMATOR         = DMLOptions.defaultOptions.sparsityEstimator;
 	// Set filename of dml script
 	public static String      DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath;
 	// Set data type to use internally
@@ -284,6 +286,7 @@ public class DMLScript
 			OOC_LOG_EVENTS        = dmlOptions.oocLogEvents;
 			OOC_LOG_PATH          = dmlOptions.oocLogPath;
 			EXPLAIN               = dmlOptions.explainType;
+			SPARSITY_ESTIMATOR    = dmlOptions.sparsityEstimator;
 			EXEC_MODE             = dmlOptions.execMode;
 			LINEAGE               = dmlOptions.lineage;
 			LINEAGE_DEDUP         = dmlOptions.lineage_dedup;

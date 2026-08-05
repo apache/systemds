@@ -139,9 +139,11 @@ public class ProgramRewriter{
 			if( OptimizerUtils.ALLOW_NEW_MMCHAIN_REWRITE ) {
 				_dagRuleSet.add( new RewriteMatrixMultChainWithTransOptimization()		);
 			}
-			if(OptimizerUtils.ALLOW_ADVANCED_MMCHAIN_REWRITES){
+			if(OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES){
 				_dagRuleSet.add( new RewriteMatrixMultChainOptimizationTranspose()      ); //dependency: cse
-				_dagRuleSet.add( new RewriteMatrixMultChainOptimizationSparse()         ); //dependency: cse
+			}
+			if(DMLScript.SPARSITY_ESTIMATOR != null && DMLScript.SPARSITY_ESTIMATOR != "None") {
+				_dagRuleSet.add( new RewriteMatrixMultChainOptimizationSparse()         );
 			}
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION ) {
 				_dagRuleSet.add( new RewriteAlgebraicSimplificationDynamic()      ); //dependencies: cse

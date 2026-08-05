@@ -29,18 +29,17 @@ Read results.csv and produce two figures:
 2. privacy_cost.png
    Bar chart showing accuracy loss relative to baseline (utility cost of DP).
 """
-import pathlib
 import csv
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
-RESULTS = pathlib.Path("benchmark/results")
+from benchmark_utilities import RESULTS_DIR
 
 # ── Load ──────────────────────────────────────────────────────────────────
 rows = []
-with open(RESULTS / "results.csv") as f:
+with open(RESULTS_DIR / "results.csv") as f:
     for r in csv.DictReader(f):
         rows.append({
             "label":    r["label"],
@@ -83,7 +82,7 @@ ax.set_ylim(max(0, min(acc_vals) - 0.05), min(1.0, baseline_acc + 0.05))
 ax.grid(True, which="both", linestyle=":", alpha=0.5)
 
 plt.tight_layout()
-out1 = RESULTS / "accuracy_vs_epsilon.png"
+out1 = RESULTS_DIR / "accuracy_vs_epsilon.png"
 fig.savefig(out1, dpi=150)
 print(f"Saved {out1}")
 plt.close()
@@ -119,7 +118,7 @@ ax.set_title("Utility Cost of Differential Privacy - DP-FedAvg on Adult",
 ax.grid(True, axis="y", linestyle=":", alpha=0.5)
 
 plt.tight_layout()
-out2 = RESULTS / "privacy_cost.png"
+out2 = RESULTS_DIR / "privacy_cost.png"
 fig.savefig(out2, dpi=150)
 print(f"Saved {out2}")
 plt.close()

@@ -18,19 +18,20 @@
 # under the License.
 #
 #-------------------------------------------------------------
+BENCHMARK_DIR=benchmark/dp
 
 # 1. Prepare data (once).
-python benchmark/scripts/prepare_data.py
+python ${BENCHMARK_DIR}/scripts/prepare_data.py
 
 # 2. Run the sweep (starts workers, trains, evaluates, stops workers).
-bash benchmark/scripts/run_sweep.sh
+bash ${BENCHMARK_DIR}/scripts/run_sweep.sh
 
 # 3. Collect results into CSV.
-python benchmark/scripts/collect_results.py
+python ${BENCHMARK_DIR}/scripts/collect_results.py
 
 # 4. Generate plots.
-python benchmark/scripts/plot.py
+python ${BENCHMARK_DIR}/scripts/plot.py
 
 # 5. Confirm outputs exist.
-ls -lh benchmark/results/accuracy_vs_epsilon.png benchmark/results/privacy_cost.png
+ls -lh ${BENCHMARK_DIR}/results/accuracy_vs_epsilon.png ${BENCHMARK_DIR}/results/privacy_cost.png
 

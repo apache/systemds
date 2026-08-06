@@ -22,6 +22,7 @@ package org.apache.sysds.test.component.io;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -33,7 +34,9 @@ import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.io.DeltaKernelUtils;
 import org.apache.sysds.runtime.io.FrameReaderDelta;
 import org.apache.sysds.runtime.io.FrameReaderDeltaParallel;
 import org.apache.spark.sql.Dataset;
@@ -50,7 +53,7 @@ import org.junit.Test;
 /**
  * Regression tests pinning the Delta table layouts that the direct column-API decode path (and its kernel-engine
  * fallback for deletion vectors and partitioned tables) must honor beyond plain flat reads. Each case is a table layout
- * the SystemDS writer never produces itself, so it must be created by the reference engine (Spark/Delta).
+ * or schema the SystemDS writer never produces itself, so it must be created by the reference engine (Spark/Delta).
  *
  * dvFeatureEnabledNoDeleteRead covers a table whose protocol carries the {@code deletionVectors} reader feature but has
  * no deleted rows - a distinct case from {@link DeltaFrameSparkInteropTest#sparkDeletionVectorsSystemdsRead}, which
@@ -62,6 +65,11 @@ import org.junit.Test;
  * handler must surface it as nulls rather than fail. partitionedTableRead covers partition values, which are not stored
  * in the data files and must be spliced back in. idColumnMappingRead covers a table using
  * {@code delta.columnMapping.mode = id}, where columns must be resolvable by parquet field id rather than logical name.
+ *
+ * checkpointBackedHistoryRead covers a table whose log has rolled into a parquet checkpoint, with a remove action after
+ * it, so the snapshot comes from a checkpoint plus trailing commits rather than plain per-commit JSON.
+ * unsupportedColumnTypeRead covers Delta types with no SystemDS value type. Parquet stores them as types the direct
+ * decode reads fine, so the rejection has to come from the Delta type before any decoding starts.
  */
 @net.jcip.annotations.NotThreadSafe
 public class DeltaFrameSparkContractTest {
@@ -106,7 +114,7 @@ public class DeltaFrameSparkContractTest {
 		String tablePath = new File(dir.toFile(), "table").getAbsolutePath();
 		try {
 			spark.conf().set(DV_DEFAULT, "true");
-			indexedDataFrame(rows).write().format("delta").save(tablePath);
+			indexedDataFrame(0, rows).write().format("delta").save(tablePath);
 
 			assertFrameMatchesIds(new FrameReaderDelta().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1),
 				rows, "serial-dvfeat");
@@ -129,7 +137,7 @@ public class DeltaFrameSparkContractTest {
 		Path dir = Files.createTempDirectory("sysds_delta_frame_evo_");
 		String tablePath = new File(dir.toFile(), "table").getAbsolutePath();
 		try {
-			indexedDataFrame(oldRows).write().format("delta").save(tablePath);
+			indexedDataFrame(0, oldRows).write().format("delta").save(tablePath);
 			evolvedDataFrame(oldRows, allRows).write().format("delta").mode("append").option("mergeSchema", "true")
 				.save(tablePath);
 
@@ -168,7 +176,7 @@ public class DeltaFrameSparkContractTest {
 		Path dir = Files.createTempDirectory("sysds_delta_frame_part_");
 		String tablePath = new File(dir.toFile(), "table").getAbsolutePath();
 		try {
-			indexedDataFrame(rows).write().format("delta").partitionBy("c3").save(tablePath);
+			indexedDataFrame(0, rows).write().format("delta").partitionBy("c3").save(tablePath);
 
 			assertFrameMatchesIds(new FrameReaderDelta().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1),
 				rows, "serial-part");
@@ -192,13 +200,77 @@ public class DeltaFrameSparkContractTest {
 		try {
 			spark.sql("CREATE TABLE delta.`" + tablePath + "` (c0 BIGINT, c1 DOUBLE, c2 STRING, c3 BOOLEAN) "
 				+ "USING delta TBLPROPERTIES ('delta.columnMapping.mode'='id')");
-			indexedDataFrame(rows).write().format("delta").mode("append").save(tablePath);
+			indexedDataFrame(0, rows).write().format("delta").mode("append").save(tablePath);
 
 			assertFrameMatchesIds(new FrameReaderDelta().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1),
 				rows, "serial-idmap");
 			assertFrameMatchesIds(
 				new FrameReaderDeltaParallel().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1), rows,
 				"parallel-idmap");
+		}
+		finally {
+			spark.sql("DROP TABLE IF EXISTS delta.`" + tablePath + "`");
+			FileUtils.deleteQuietly(dir.toFile());
+		}
+	}
+
+	@Test
+	public void checkpointBackedHistoryRead() throws Exception {
+		// two appends past delta.checkpointInterval=2 put a parquet checkpoint in
+		// _delta_log; the delete after it adds a remove action the replay must apply on
+		// top of the checkpoint
+		int perCommit = 50, deleteBelow = 30, rows = 2 * perCommit;
+		Path dir = Files.createTempDirectory("sysds_delta_frame_ckpt_");
+		String tablePath = new File(dir.toFile(), "table").getAbsolutePath();
+		try {
+			spark.sql("CREATE TABLE delta.`" + tablePath + "` (c0 BIGINT, c1 DOUBLE, c2 STRING, c3 BOOLEAN) "
+				+ "USING delta TBLPROPERTIES ('delta.checkpointInterval' = '2')");
+			indexedDataFrame(0, perCommit).write().format("delta").mode("append").save(tablePath);
+			indexedDataFrame(perCommit, rows).write().format("delta").mode("append").save(tablePath);
+			spark.sql("DELETE FROM delta.`" + tablePath + "` WHERE c0 < " + deleteBelow);
+			assertTrue("expected a checkpoint in _delta_log", DeltaFrameTestUtils.countCheckpoints(tablePath) > 0);
+
+			// add actions replayed out of a checkpoint must still carry the numRecords
+			// statistic, otherwise the read silently drops to the buffered path
+			DeltaKernelUtils.ScanHandle handle = DeltaKernelUtils.openScan(DeltaKernelUtils.createEngine(),
+				DeltaKernelUtils.qualify(tablePath));
+			assertTrue("checkpointed log should still expose per-file row counts", handle.hasExactRowCounts());
+
+			assertFrameMatchesIds(new FrameReaderDelta().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1),
+				deleteBelow, rows, "serial-ckpt");
+			assertFrameMatchesIds(
+				new FrameReaderDeltaParallel().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1), deleteBelow,
+				rows, "parallel-ckpt");
+		}
+		finally {
+			spark.sql("DROP TABLE IF EXISTS delta.`" + tablePath + "`");
+			FileUtils.deleteQuietly(dir.toFile());
+		}
+	}
+
+	@Test
+	public void unsupportedColumnTypeRead() throws Exception {
+		// parquet stores these as int32/int64/fixed_len_byte_array, which the direct
+		// decode would read, so the rejection has to come from the Delta type.
+		assertUnsupportedColumnRejected("c1 DATE");
+		assertUnsupportedColumnRejected("c1 TIMESTAMP");
+		assertUnsupportedColumnRejected("c1 DECIMAL(10,2)");
+	}
+
+	private void assertUnsupportedColumnRejected(String columnDdl) throws Exception {
+		Path dir = Files.createTempDirectory("sysds_delta_frame_unsupported_");
+		String tablePath = new File(dir.toFile(), "table").getAbsolutePath();
+		try {
+			// the schema alone drives the rejection, so no data has to be written
+			spark.sql("CREATE TABLE delta.`" + tablePath + "` (c0 BIGINT, " + columnDdl + ") USING delta");
+			try {
+				new FrameReaderDelta().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1);
+				fail("expected read of unsupported column type to fail: " + columnDdl);
+			}
+			catch(DMLRuntimeException e) {
+				assertTrue("message should name the offending column: " + e.getMessage(),
+					e.getMessage().contains("c1"));
+			}
 		}
 		finally {
 			spark.sql("DROP TABLE IF EXISTS delta.`" + tablePath + "`");
@@ -223,15 +295,15 @@ public class DeltaFrameSparkContractTest {
 		return "v" + id;
 	}
 
-	/** Spark DataFrame with columns c0..c3 (long/double/string/boolean) keyed by the row id in c0. */
-	private Dataset<Row> indexedDataFrame(int rows) {
+	/** Spark DataFrame with columns c0..c3 (long/double/string/boolean) keyed by the row id in c0, ids [from,to). */
+	private Dataset<Row> indexedDataFrame(int from, int to) {
 		StructType schema = DataTypes
 			.createStructType(new StructField[] {DataTypes.createStructField("c0", DataTypes.LongType, false),
 				DataTypes.createStructField("c1", DataTypes.DoubleType, false),
 				DataTypes.createStructField("c2", DataTypes.StringType, false),
 				DataTypes.createStructField("c3", DataTypes.BooleanType, false)});
-		List<Row> data = new ArrayList<>(rows);
-		for(int r = 0; r < rows; r++)
+		List<Row> data = new ArrayList<>(to - from);
+		for(int r = from; r < to; r++)
 			data.add(RowFactory.create((long) r, dval(r), sval(r), bval(r)));
 		return spark.createDataFrame(data, schema);
 	}
@@ -252,16 +324,21 @@ public class DeltaFrameSparkContractTest {
 
 	/** Asserts {@code out} holds exactly ids [0,rows) with the exact per-id values in c1..c3. */
 	private static void assertFrameMatchesIds(FrameBlock out, int rows, String tag) {
-		assertEquals(tag + " rows", rows, out.getNumRows());
+		assertFrameMatchesIds(out, 0, rows, tag);
+	}
+
+	/** Asserts {@code out} holds exactly ids [fromId,toId) with the exact per-id values in c1..c3. */
+	private static void assertFrameMatchesIds(FrameBlock out, int fromId, int toId, String tag) {
+		assertEquals(tag + " rows", toId - fromId, out.getNumRows());
 		assertEquals(tag + " cols", 4, out.getNumColumns());
 		assertEquals(tag + " c0 type", ValueType.INT64, out.getSchema()[0]);
 		assertEquals(tag + " c1 type", ValueType.FP64, out.getSchema()[1]);
 		assertEquals(tag + " c2 type", ValueType.STRING, out.getSchema()[2]);
 		assertEquals(tag + " c3 type", ValueType.BOOLEAN, out.getSchema()[3]);
-		boolean[] seen = new boolean[rows];
-		for(int r = 0; r < rows; r++) {
+		boolean[] seen = new boolean[toId];
+		for(int r = 0; r < out.getNumRows(); r++) {
 			int id = ((Number) out.get(r, 0)).intValue();
-			assertTrue(tag + ": unexpected/duplicate id " + id, id >= 0 && id < rows && !seen[id]);
+			assertTrue(tag + ": unexpected/duplicate id " + id, id >= fromId && id < toId && !seen[id]);
 			seen[id] = true;
 			assertEquals(tag + " id" + id + " c1", dval(id), ((Number) out.get(r, 1)).doubleValue(), 1e-9);
 			assertEquals(tag + " id" + id + " c2", sval(id), out.get(r, 2).toString());

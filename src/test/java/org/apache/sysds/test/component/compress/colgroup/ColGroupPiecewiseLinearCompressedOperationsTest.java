@@ -37,16 +37,14 @@ import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.Power2;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
-import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
-import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.*;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.Random;
 
 import static org.junit.Assert.*;
@@ -440,22 +438,6 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 	}
 
 
-	//  ~~ purely coverage
-
-	@Test
-	public void testread2DIntegerArray(){}
-//public static int[][] read2DIntegerArray(DataInput in, int numRows) throws IOException
-
-	@Test
-	public void testread2DDoubleArray(){}
-//public static double[][] read2DDoubleArray(DataInput in, int numRows) throws IOException
-
-	@Test
-	public void testread() throws IOException{
-
-	}
-//public static ColGroupPiecewiseLinearCompressed read(DataInput in) throws IOException
-
 	@Test
 	public void testWrite() throws IOException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -469,58 +451,230 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		assertTrue(bytes.length > 0);
 	}
 //public void write(DataOutput out) throws IOException
+@Test
+public void testWriteRead() throws IOException {
+	ByteArrayOutputStream bos = new ByteArrayOutputStream();
+	DataOutputStream dos = new DataOutputStream(bos);
+
+	piecewiseLinearColGroup.write(dos);
+	dos.flush();
+
+	ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+	DataInputStream dis = new DataInputStream(bis);
+
+	ColGroupPiecewiseLinearCompressed copy =
+			ColGroupPiecewiseLinearCompressed.read(dis);
+
+
+	for(int i = 0; i < piecewiseLinearColGroup.getBreakpointsPerCol().length; i++)
+		assertArrayEquals(
+				piecewiseLinearColGroup.getBreakpointsPerCol()[i],
+				copy.getBreakpointsPerCol()[i]);
+
+	for(int i = 0; i < piecewiseLinearColGroup.getSlopesPerCol().length; i++)
+		assertArrayEquals(
+				piecewiseLinearColGroup.getSlopesPerCol()[i],
+				copy.getSlopesPerCol()[i],
+				DELTA);
+
+	for(int i = 0; i < piecewiseLinearColGroup.getInterceptsPerCol().length; i++)
+		assertArrayEquals(
+				piecewiseLinearColGroup.getInterceptsPerCol()[i],
+				copy.getInterceptsPerCol()[i],
+				DELTA);
+}
 
 	@Test
-	public void testcomputeMxx(){}
+	public void testcomputeMxx(){
+
+		Builtin maxBuiltin = Builtin.getBuiltinFnObject(Builtin.BuiltinCode.MAX);
+
+		AggregateUnaryOperator op = new AggregateUnaryOperator(
+				new AggregateOperator(1, maxBuiltin),
+				ReduceAll.getReduceAllFnObject());
+
+		double[] c = new double[1];
+		c[0] = Double.NEGATIVE_INFINITY;
+
+		piecewiseLinearColGroup.unaryAggregateOperations(op, c, numRows, 0, numRows, null);
+
+		double expected = Double.NEGATIVE_INFINITY;
+		for(int r = 0; r < numRows; r++)
+			for(int col = 0; col < numCols; col++)
+				expected = Math.max(expected, decompressedMB.get(r, col));
+
+		assertEquals(expected, c[0], DELTA);
+	}
 //protected double computeMxx(double c, Builtin builtin)
 
 	@Test
-	public void testcomputeColMxx(){}
+	public void testcomputeColMxx(){
+		Builtin maxBuiltin = Builtin.getBuiltinFnObject(Builtin.BuiltinCode.MAX);
+
+		AggregateUnaryOperator op = new AggregateUnaryOperator(
+				new AggregateOperator(1, maxBuiltin),
+				ReduceRow.getReduceRowFnObject());
+
+		double[] c = new double[numCols];
+		Arrays.fill(c, Double.NEGATIVE_INFINITY);
+
+		piecewiseLinearColGroup.unaryAggregateOperations(op, c, numRows, 0, numRows, null);
+
+		for(int col = 0; col < numCols; col++) {
+			double expected = Double.NEGATIVE_INFINITY;
+			for(int r = 0; r < numRows; r++)
+				expected = Math.max(expected, decompressedMB.get(r, col));
+
+			assertEquals("column " + col, expected, c[col], DELTA);
+		}
+	}
 //protected void computeColMxx(double[] c, Builtin builtin)
 
 	@Test
 	public void testcomputeSumSq(){
-		piecewiseLinearColGroup.computeSum(new double[]{1, 2, 3, 4}, 2);
+		AggregateUnaryOperator op = new AggregateUnaryOperator(
+				new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject()),
+				ReduceAll.getReduceAllFnObject());
+
+		double[] c = new double[1];
+
+		piecewiseLinearColGroup.unaryAggregateOperations(op, c, numRows, 0, numRows, null);
+
+		double expected = 0.0;
+		for(int r = 0; r < numRows; r++)
+			for(int col = 0; col < numCols; col++) {
+				double v = decompressedMB.get(r, col);
+				expected += v * v;
+			}
+
+		assertEquals(expected, c[0], DELTA *10);
 	}
 //protected void computeSumSq(double[] c, int nRows)
 
 	@Test
 	public void testcomputeColSumsSq(){
-		piecewiseLinearColGroup.computeColSums(new double[]{1, 2, 3, 4}, 2);
+		AggregateUnaryOperator op = new AggregateUnaryOperator(
+				new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject()),
+				ReduceAll.getReduceAllFnObject());
+
+		double[] c = new double[1];
+
+		piecewiseLinearColGroup.unaryAggregateOperations(op, c, numRows, 0, numRows, null);
+
+		double expected = 0.0;
+		for(int r = 0; r < numRows; r++)
+			for(int col = 0; col < numCols; col++) {
+				double v = decompressedMB.get(r, col);
+				expected += v * v;
+			}
+
+		assertEquals(expected, c[0], DELTA * 10);
 	}
 //protected void computeColSumsSq(double[] c, int nRows)
 
 	@Test
-	public void testsegmentSumSq(){
-			}
-//private double segmentSumSq(int col)
+	public void testcomputeRowSums(){
+		double[] preAgg = piecewiseLinearColGroup.preAggRows(Plus.getPlusFnObject());
 
-	@Test
-	public void testsumOfSquares(){}
-//private static double sumOfSquares(int start, int end)
+		AggregateUnaryOperator op = new AggregateUnaryOperator(
+				new AggregateOperator(0, Plus.getPlusFnObject()),
+				ReduceCol.getReduceColFnObject());
 
-	@Test
-	public void testcomputeRowSums(){}
+		double[] c = new double[numRows];
+
+		piecewiseLinearColGroup.unaryAggregateOperations(op, c, numRows, 0, numRows, preAgg);
+
+		for(int r = 0; r < numRows; r++)
+			assertEquals("row " + r, preAgg[r], c[r], DELTA);
+	}
 //protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg)
 
 	@Test
 	public void testcomputeRowMxx(){
+		Builtin maxBuiltin = Builtin.getBuiltinFnObject(Builtin.BuiltinCode.MAX);
 
+		double[] preAgg = piecewiseLinearColGroup.preAggRows(maxBuiltin);
+
+		AggregateUnaryOperator op = new AggregateUnaryOperator(
+				new AggregateOperator(1, maxBuiltin),
+				ReduceCol.getReduceColFnObject());
+
+		double[] c = new double[numRows];
+		Arrays.fill(c, Double.NEGATIVE_INFINITY);
+
+		piecewiseLinearColGroup.unaryAggregateOperations(op, c, numRows, 0, numRows, preAgg);
+
+		for(int r = 0; r < numRows; r++)
+			assertEquals("row " + r, preAgg[r], c[r], DELTA);
 	}
 //protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg)
 
 	@Test
-	public void testcomputeProduct(){}
+	public void testcomputeProduct(){
+		AggregateUnaryOperator op = new AggregateUnaryOperator(
+				new AggregateOperator(1, Multiply.getMultiplyFnObject()),
+				ReduceRow.getReduceRowFnObject());
+
+		double[] c = new double[numCols];
+		Arrays.fill(c, 1.0);
+
+		piecewiseLinearColGroup.unaryAggregateOperations(op, c, numRows, 0, numRows, null);
+
+		for(int col = 0; col < numCols; col++) {
+			double expected = 1.0;
+			for(int r = 0; r < numRows; r++) {
+				double v = decompressedMB.get(r, col);
+				if(v == 0) {
+					expected = 0;
+					break;
+				}
+				expected *= v;
+			}
+			assertEquals("column " + col, expected, c[col], DELTA);
+		}
+
+	}
 //protected void computeProduct(double[] c, int nRows)
 
 	@Test
-	public void testcomputeRowProduct(){}
+	public void testcomputeRowProduct(){
+		double[] preAgg = piecewiseLinearColGroup.preAggRows(Multiply.getMultiplyFnObject());
+
+		AggregateUnaryOperator op = new AggregateUnaryOperator(
+				new AggregateOperator(1, Multiply.getMultiplyFnObject()),
+				ReduceCol.getReduceColFnObject());
+
+		double[] c = new double[numRows];
+		Arrays.fill(c, 1.0);
+
+		piecewiseLinearColGroup.unaryAggregateOperations(op, c, numRows, 0, numRows, preAgg);
+
+		for(int r = 0; r < numRows; r++)
+			assertEquals("row " + r, preAgg[r], c[r], DELTA);
+	}
 //protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg)
 
 
 
 	@Test
-	public void testcomputeColProduct(){}
+	public void testcomputeColProduct(){
+		AggregateUnaryOperator op = new AggregateUnaryOperator(
+				new AggregateOperator(1, Multiply.getMultiplyFnObject()),
+				ReduceRow.getReduceRowFnObject());
+
+		double[] c = new double[numCols];
+		Arrays.fill(c, 1.0);
+
+		piecewiseLinearColGroup.unaryAggregateOperations(op, c, numRows, 0, numRows, null);
+
+		for(int col = 0; col < numCols; col++) {
+			double expected = 1.0;
+			for(int r = 0; r < numRows; r++)
+				expected *= decompressedMB.get(r, col);
+
+			assertEquals("column " + col, expected, c[col], DELTA);
+		}
+	}
 //protected void computeColProduct(double[] c, int nRows)
 
 	@Test

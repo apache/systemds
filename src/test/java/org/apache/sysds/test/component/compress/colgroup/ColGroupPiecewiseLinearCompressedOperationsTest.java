@@ -18,45 +18,70 @@
  */
 package org.apache.sysds.test.component.compress.colgroup;
 
-
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupPiecewiseLinearCompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory;
+import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Divide;
+import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Multiply2;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.Power2;
+import org.apache.sysds.runtime.functionobjects.ReduceAll;
+import org.apache.sysds.runtime.functionobjects.ReduceCol;
+import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
+import org.apache.sysds.runtime.functionobjects.CM;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.operators.*;
+import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.CMOperator;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Random;
 
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * Tests for ColGroupPiecewiseLinearCompressed operations containing: scalarOperation, binaryRowOps, computeSum,
- * containsValue, getIdx, getExactSizeOnDisk.
+ * Tests for ColGroupPiecewiseLinearCompressed operations.
  */
 public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTestBase {
 
@@ -78,7 +103,7 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		numRows = NROWS;
 		numCols = NCOLS;
 
-		///  generate random matrix
+		/// generate random matrix
 		double[][] data = getRandomMatrix(numRows, numCols, -30, 30, 1.0, SEED);
 		originalMB = DataConverter.convertToMatrixBlock(data);
 		originalMB.allocateDenseBlock();
@@ -88,7 +113,7 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		CompressionSettings cs = new CompressionSettingsBuilder().create();
 		cs.setPiecewiseTargetLoss(TARGET_LOSS);
 
-		///  create ColGroupPiecewiseLinearCompressed instance
+		/// create ColGroupPiecewiseLinearCompressed instance
 		AColGroup result = ColGroupFactory.compressPiecewiseLinearFunctional(colIndexes, originalMB, cs);
 		assertTrue(result instanceof ColGroupPiecewiseLinearCompressed);
 		piecewiseLinearColGroup = (ColGroupPiecewiseLinearCompressed) result;
@@ -106,18 +131,18 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 
 	/// check elementwise to compare results from compressed and decompressed matrixblock
 	private void checkMatrixEquals(String msg, MatrixBlock mb1, MatrixBlock mb2) {
-		if (mb1.getNumRows() != mb2.getNumRows() || mb1.getNumColumns() != mb2.getNumColumns())
+		if(mb1.getNumRows() != mb2.getNumRows() || mb1.getNumColumns() != mb2.getNumColumns())
 			fail(msg + " dimension mismatch");
-		for (int r = 0; r < numRows; r++)
-			for (int c = 0; c < numCols; c++)
+		for(int r = 0; r < numRows; r++)
+			for(int c = 0; c < numCols; c++)
 				assertEquals(msg + "[" + r + "," + c + "]", mb1.get(r, c), mb2.get(r, c), DELTA);
 	}
 
 	/// compute column sum to validate
 	private double[] computeSums(MatrixBlock mb) {
 		double[] sums = new double[numCols];
-		for (int c = 0; c < numCols; c++)
-			for (int r = 0; r < numRows; r++)
+		for(int c = 0; c < numCols; c++)
+			for(int r = 0; r < numRows; r++)
 				sums[c] += mb.get(r, c);
 		return sums;
 	}
@@ -125,14 +150,14 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 	/// create row vector
 	private double[] buildRowVector() {
 		double[] v = new double[numCols];
-		for (int i = 0; i < numCols; i++)
+		for(int i = 0; i < numCols; i++)
 			v[i] = 0.5 * (i + 1);
 		return v;
 	}
 
 	private int[] buildColArray(int n) {
 		int[] cols = new int[n];
-		for (int i = 0; i < n; i++)
+		for(int i = 0; i < n; i++)
 			cols[i] = i;
 		return cols;
 	}
@@ -140,8 +165,8 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 	private MatrixBlock applyBinaryRowOpLeft(MatrixBlock mb, BinaryOperator op, double[] v) {
 		MatrixBlock result = new MatrixBlock(numRows, numCols, false);
 		result.allocateDenseBlock();
-		for (int r = 0; r < numRows; r++)
-			for (int c = 0; c < numCols; c++)
+		for(int r = 0; r < numRows; r++)
+			for(int c = 0; c < numCols; c++)
 				result.getDenseBlock().set(r, c, op.fn.execute(v[c], mb.get(r, c)));
 		return result;
 	}
@@ -149,8 +174,8 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 	private MatrixBlock applyBinaryRowOpRight(MatrixBlock mb, BinaryOperator op, double[] v) {
 		MatrixBlock result = new MatrixBlock(numRows, numCols, false);
 		result.allocateDenseBlock();
-		for (int r = 0; r < numRows; r++)
-			for (int c = 0; c < numCols; c++)
+		for(int r = 0; r < numRows; r++)
+			for(int c = 0; c < numCols; c++)
 				result.getDenseBlock().set(r, c, op.fn.execute(mb.get(r, c), v[c]));
 		return result;
 	}
@@ -160,7 +185,7 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		double[] sumsComp = new double[1];
 		piecewiseLinearColGroup.computeSum(sumsComp, numRows);
 		double expectedTotal = 0;
-		for (double s : computeSums(decompressedMB))
+		for(double s : computeSums(decompressedMB))
 			expectedTotal += s;
 		assertEquals(expectedTotal, sumsComp[0], DELTA);
 	}
@@ -172,15 +197,20 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		assertArrayEquals(sumsComp, computeSums(decompressedMB), DELTA);
 	}
 
+	@Test
+	public void testGetCompType() {
+		assertEquals(AColGroup.CompressionType.PiecewiseLinearCompressed, piecewiseLinearColGroup.getCompType());
+	}
+
 	private void testScalarOp(ScalarOperator op, double scalar) {
 		MatrixBlock expected = new MatrixBlock(numRows, numCols, false);
 		expected.allocateDenseBlock();
-		for (int r = 0; r < numRows; r++)
-			for (int c = 0; c < numCols; c++)
+		for(int r = 0; r < numRows; r++)
+			for(int c = 0; c < numCols; c++)
 				expected.getDenseBlock().set(r, c, op.fn.execute(decompressedMB.get(r, c), scalar));
 
 		checkMatrixEquals("scalarOp " + op.fn.getClass().getSimpleName(), expected,
-				decompress(piecewiseLinearColGroup.scalarOperation(op)));
+			decompress(piecewiseLinearColGroup.scalarOperation(op)));
 	}
 
 	@Test
@@ -208,7 +238,7 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		BinaryOperator op = new BinaryOperator(Plus.getPlusFnObject());
 		double[] v = buildRowVector();
 		checkMatrixEquals("binaryRowOpLeft Plus", applyBinaryRowOpLeft(decompressedMB, op, v),
-				decompress(piecewiseLinearColGroup.binaryRowOpLeft(op, v, false)));
+			decompress(piecewiseLinearColGroup.binaryRowOpLeft(op, v, false)));
 	}
 
 	@Test
@@ -216,7 +246,7 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		BinaryOperator op = new BinaryOperator(Multiply.getMultiplyFnObject());
 		double[] v = buildRowVector();
 		checkMatrixEquals("binaryRowOpLeft Multiply", applyBinaryRowOpLeft(decompressedMB, op, v),
-				decompress(piecewiseLinearColGroup.binaryRowOpLeft(op, v, false)));
+			decompress(piecewiseLinearColGroup.binaryRowOpLeft(op, v, false)));
 	}
 
 	@Test
@@ -224,7 +254,7 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		BinaryOperator op = new BinaryOperator(Minus.getMinusFnObject());
 		double[] v = buildRowVector();
 		checkMatrixEquals("binaryRowOpRight Minus", applyBinaryRowOpRight(decompressedMB, op, v),
-				decompress(piecewiseLinearColGroup.binaryRowOpRight(op, v, false)));
+			decompress(piecewiseLinearColGroup.binaryRowOpRight(op, v, false)));
 	}
 
 	@Test
@@ -232,7 +262,7 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		BinaryOperator op = new BinaryOperator(Divide.getDivideFnObject());
 		double[] v = buildRowVector();
 		checkMatrixEquals("binaryRowOpRight Divide", applyBinaryRowOpRight(decompressedMB, op, v),
-				decompress(piecewiseLinearColGroup.binaryRowOpRight(op, v, false)));
+			decompress(piecewiseLinearColGroup.binaryRowOpRight(op, v, false)));
 	}
 
 	@Test
@@ -246,7 +276,7 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		int[] breakpoints = piecewiseLinearColGroup.getBreakpointsPerCol()[0];
 		double[] intercepts = piecewiseLinearColGroup.getInterceptsPerCol()[0];
 		double[] slopes = piecewiseLinearColGroup.getSlopesPerCol()[0];
-		if (breakpoints.length > 1) {
+		if(breakpoints.length > 1) {
 			double pattern = intercepts[0] + slopes[0] * (breakpoints[1] - breakpoints[0] - 1);
 			assertTrue("endpoint of col 0 seg 0 should exist", piecewiseLinearColGroup.containsValue(pattern));
 		}
@@ -254,9 +284,9 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 
 	@Test
 	public void testContainsValueConstantSegment() {
-		ColGroupPiecewiseLinearCompressed cg = (ColGroupPiecewiseLinearCompressed) ColGroupPiecewiseLinearCompressed.create(
-				ColIndexFactory.create(new int[]{0}), new int[][]{{0, numRows}}, new double[][]{{0.0}},
-				new double[][]{{1.23}}, numRows);
+		ColGroupPiecewiseLinearCompressed cg = (ColGroupPiecewiseLinearCompressed) ColGroupPiecewiseLinearCompressed
+			.create(ColIndexFactory.create(new int[] {0}), new int[][] {{0, numRows}}, new double[][] {{0.0}},
+				new double[][] {{1.23}}, numRows);
 
 		assertTrue("constant value 1.23 should exist", cg.containsValue(1.23));
 		assertFalse("value 2.0 should not exist", cg.containsValue(2.0));
@@ -270,10 +300,10 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 
 	@Test
 	public void testGetIdxMatchesDecompress() {
-		for (int c = 0; c < numCols; c++)
-			for (int r = 0; r < numRows; r++)
+		for(int c = 0; c < numCols; c++)
+			for(int r = 0; r < numRows; r++)
 				assertEquals("getIdx(" + r + "," + c + ")", decompressedMB.get(r, c),
-						piecewiseLinearColGroup.getIdx(r, c), 1e-10);
+					piecewiseLinearColGroup.getIdx(r, c), 1e-10);
 	}
 
 	@Test
@@ -287,7 +317,7 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 	@Test
 	public void testGetNumValues() {
 		int expected = 0;
-		for (int c = 0; c < numCols; c++) {
+		for(int c = 0; c < numCols; c++) {
 			int breakpointsLen = piecewiseLinearColGroup.getBreakpointsPerCol()[c].length;
 			int slopesLen = piecewiseLinearColGroup.getSlopesPerCol()[c].length;
 			int interceptsLen = piecewiseLinearColGroup.getInterceptsPerCol()[c].length;
@@ -307,19 +337,19 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		int[] breakpoints = new int[numSegs + 1];
 		breakpoints[0] = 0;
 		breakpoints[numSegs] = rows;
-		for (int s = 1; s < numSegs; s++)
+		for(int s = 1; s < numSegs; s++)
 			breakpoints[s] = rng.nextInt(rows * 2 / 3) + rows / 10;
 
 		double[] slopes = new double[numSegs];
 		double[] intercepts = new double[numSegs];
-		for (int s = 0; s < numSegs; s++) {
+		for(int s = 0; s < numSegs; s++) {
 			slopes[s] = rng.nextDouble() * 4 - 2;
 			intercepts[s] = rng.nextDouble() * 4 - 2;
 		}
-		///  PLC Piecewise Linear Compressed
+		/// PLC Piecewise Linear Compressed
 		AColGroup colGroupPLC = ColGroupPiecewiseLinearCompressed.create(
-				ColIndexFactory.create(new int[]{rng.nextInt(20)}), new int[][]{breakpoints}, new double[][]{slopes},
-				new double[][]{intercepts}, rows);
+			ColIndexFactory.create(new int[] {rng.nextInt(20)}), new int[][] {breakpoints}, new double[][] {slopes},
+			new double[][] {intercepts}, rows);
 
 		assertTrue("disk size should be positive", colGroupPLC.getExactSizeOnDisk() > 0);
 		assertTrue("num values should be positive", colGroupPLC.getNumValues() > 0);
@@ -329,24 +359,25 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 	public double[][] getRandomMatrix(int rows, int cols, double min, double max, double sparsity, long seed) {
 		Random rng = new Random(seed);
 		double[][] data = new double[rows][cols];
-		for (int r = 0; r < rows; r++)
-			for (int c = 0; c < cols; c++)
+		for(int r = 0; r < rows; r++)
+			for(int c = 0; c < cols; c++)
 				data[r][c] = min + rng.nextDouble() * (max - min);
 		return data;
 	}
 
-
 	@Test
 	public void testCreate() {
-		ColGroupPiecewiseLinearCompressed plc = (ColGroupPiecewiseLinearCompressed) piecewiseLinearColGroup;
+		ColGroupPiecewiseLinearCompressed plc = piecewiseLinearColGroup;
 
-		AColGroup result = ColGroupPiecewiseLinearCompressed.create(plc.getColIndices(), plc.getBreakpointsPerCol(), plc.getSlopesPerCol(), plc.getInterceptsPerCol(), NROWS);
+		AColGroup result = ColGroupPiecewiseLinearCompressed.create(plc.getColIndices(), plc.getBreakpointsPerCol(),
+			plc.getSlopesPerCol(), plc.getInterceptsPerCol(), NROWS);
 		assertTrue(result instanceof ColGroupPiecewiseLinearCompressed);
 
-		// equal to piecewiseLinearColGroup instance
-		assertArrayEquals(((ColGroupPiecewiseLinearCompressed) result).getBreakpointsPerCol(), plc.getBreakpointsPerCol());
+		assertArrayEquals(((ColGroupPiecewiseLinearCompressed) result).getBreakpointsPerCol(),
+			plc.getBreakpointsPerCol());
 		assertArrayEquals(((ColGroupPiecewiseLinearCompressed) result).getSlopesPerCol(), plc.getSlopesPerCol());
-		assertArrayEquals(((ColGroupPiecewiseLinearCompressed) result).getInterceptsPerCol(), plc.getInterceptsPerCol());
+		assertArrayEquals(((ColGroupPiecewiseLinearCompressed) result).getInterceptsPerCol(),
+			plc.getInterceptsPerCol());
 	}
 
 	@Test
@@ -361,8 +392,6 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		piecewiseLinearColGroup.decompressToDenseBlock(mb_result.getDenseBlock(), 0, 3, 0, 0);
 		DenseBlock db_result = mb_result.getDenseBlock();
 
-
-		// DenseBlockFP64 is just one large 1 dim array
 		assertTrue(db_result instanceof DenseBlockFP64);
 		assertTrue(db_compare instanceof DenseBlockFP64);
 
@@ -370,27 +399,21 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 	}
 
 	private double highest_loss(MatrixBlock result, MatrixBlock compare) {
-		// recompute non zeros
 		result.recomputeNonZeros();
 		compare.recomputeNonZeros();
 
-		// asserEquals size correct
 		assertEquals(result.getNumRows(), compare.getNumRows());
 		assertEquals(result.getNumColumns(), compare.getNumColumns());
 
-		// MatrixBlock diff
 		MatrixBlock diff = new MatrixBlock(NCOLS, NROWS, false);
 
-		// binary Operation Minus
 		ValueFunction fn = Minus.getMinusFnObject();
 		BinaryOperator op = new BinaryOperator(fn);
 		result.binaryOperations(op, compare, diff);
 
-		// get max and min
 		double max = diff.max();
 		double min = diff.min();
 
-		// choose max absolute value
 		return Math.max(Math.abs(max), Math.abs(min));
 	}
 
@@ -404,10 +427,6 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		MatrixBlock resultMB = ((ColGroupUncompressed) result).getData();
 		MatrixBlock compareMB = compare;
 
-		// do unaryOperation on compare
-		MatrixBlock compare_final = compare.unaryOperations(new UnaryOperator(fn));
-
-		// check if highest_loss smaller than worst case expected loss
 		double biggest_loss = highest_loss(resultMB, compareMB);
 		assertEquals(TARGET_LOSS * 2, Math.max(biggest_loss, TARGET_LOSS * 2), 0.0);
 	}
@@ -422,21 +441,15 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		MatrixBlock resultMB = ((ColGroupUncompressed) result).getData();
 		MatrixBlock compareMB = compare;
 
-		// do unaryOperation on compare
-		MatrixBlock compare_final = compare.unaryOperations(new UnaryOperator(fn));
-
-		// check if highest_loss smaller than worst case expected loss
 		double biggest_loss = highest_loss(resultMB, compareMB);
 		assertEquals(TARGET_LOSS * TARGET_LOSS, Math.max(biggest_loss, TARGET_LOSS * TARGET_LOSS), 0.0);
 	}
 
 	@Test
 	public void testReplace() {
-		// correct Data Type
 		AColGroup result = piecewiseLinearColGroup.replace(5.0, 1.0);
 		assertTrue(result instanceof ColGroupUncompressed);
 	}
-
 
 	@Test
 	public void testWrite() throws IOException {
@@ -447,51 +460,38 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		out.flush();
 
 		byte[] bytes = baos.toByteArray();
-
 		assertTrue(bytes.length > 0);
 	}
-//public void write(DataOutput out) throws IOException
-@Test
-public void testWriteRead() throws IOException {
-	ByteArrayOutputStream bos = new ByteArrayOutputStream();
-	DataOutputStream dos = new DataOutputStream(bos);
-
-	piecewiseLinearColGroup.write(dos);
-	dos.flush();
-
-	ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
-	DataInputStream dis = new DataInputStream(bis);
-
-	ColGroupPiecewiseLinearCompressed copy =
-			ColGroupPiecewiseLinearCompressed.read(dis);
-
-
-	for(int i = 0; i < piecewiseLinearColGroup.getBreakpointsPerCol().length; i++)
-		assertArrayEquals(
-				piecewiseLinearColGroup.getBreakpointsPerCol()[i],
-				copy.getBreakpointsPerCol()[i]);
-
-	for(int i = 0; i < piecewiseLinearColGroup.getSlopesPerCol().length; i++)
-		assertArrayEquals(
-				piecewiseLinearColGroup.getSlopesPerCol()[i],
-				copy.getSlopesPerCol()[i],
-				DELTA);
-
-	for(int i = 0; i < piecewiseLinearColGroup.getInterceptsPerCol().length; i++)
-		assertArrayEquals(
-				piecewiseLinearColGroup.getInterceptsPerCol()[i],
-				copy.getInterceptsPerCol()[i],
-				DELTA);
-}
 
 	@Test
-	public void testcomputeMxx(){
+	public void testWriteRead() throws IOException {
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		DataOutputStream dos = new DataOutputStream(bos);
 
+		piecewiseLinearColGroup.write(dos);
+		dos.flush();
+
+		ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+		DataInputStream dis = new DataInputStream(bis);
+
+		ColGroupPiecewiseLinearCompressed copy = ColGroupPiecewiseLinearCompressed.read(dis);
+
+		for(int i = 0; i < piecewiseLinearColGroup.getBreakpointsPerCol().length; i++)
+			assertArrayEquals(piecewiseLinearColGroup.getBreakpointsPerCol()[i], copy.getBreakpointsPerCol()[i]);
+
+		for(int i = 0; i < piecewiseLinearColGroup.getSlopesPerCol().length; i++)
+			assertArrayEquals(piecewiseLinearColGroup.getSlopesPerCol()[i], copy.getSlopesPerCol()[i], DELTA);
+
+		for(int i = 0; i < piecewiseLinearColGroup.getInterceptsPerCol().length; i++)
+			assertArrayEquals(piecewiseLinearColGroup.getInterceptsPerCol()[i], copy.getInterceptsPerCol()[i], DELTA);
+	}
+
+	@Test
+	public void testcomputeMxx() {
 		Builtin maxBuiltin = Builtin.getBuiltinFnObject(Builtin.BuiltinCode.MAX);
 
-		AggregateUnaryOperator op = new AggregateUnaryOperator(
-				new AggregateOperator(1, maxBuiltin),
-				ReduceAll.getReduceAllFnObject());
+		AggregateUnaryOperator op = new AggregateUnaryOperator(new AggregateOperator(1, maxBuiltin),
+			ReduceAll.getReduceAllFnObject());
 
 		double[] c = new double[1];
 		c[0] = Double.NEGATIVE_INFINITY;
@@ -505,15 +505,13 @@ public void testWriteRead() throws IOException {
 
 		assertEquals(expected, c[0], DELTA);
 	}
-//protected double computeMxx(double c, Builtin builtin)
 
 	@Test
-	public void testcomputeColMxx(){
+	public void testcomputeColMxx() {
 		Builtin maxBuiltin = Builtin.getBuiltinFnObject(Builtin.BuiltinCode.MAX);
 
-		AggregateUnaryOperator op = new AggregateUnaryOperator(
-				new AggregateOperator(1, maxBuiltin),
-				ReduceRow.getReduceRowFnObject());
+		AggregateUnaryOperator op = new AggregateUnaryOperator(new AggregateOperator(1, maxBuiltin),
+			ReduceRow.getReduceRowFnObject());
 
 		double[] c = new double[numCols];
 		Arrays.fill(c, Double.NEGATIVE_INFINITY);
@@ -528,34 +526,11 @@ public void testWriteRead() throws IOException {
 			assertEquals("column " + col, expected, c[col], DELTA);
 		}
 	}
-//protected void computeColMxx(double[] c, Builtin builtin)
 
 	@Test
-	public void testcomputeSumSq(){
+	public void testcomputeSumSq() {
 		AggregateUnaryOperator op = new AggregateUnaryOperator(
-				new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject()),
-				ReduceAll.getReduceAllFnObject());
-
-		double[] c = new double[1];
-
-		piecewiseLinearColGroup.unaryAggregateOperations(op, c, numRows, 0, numRows, null);
-
-		double expected = 0.0;
-		for(int r = 0; r < numRows; r++)
-			for(int col = 0; col < numCols; col++) {
-				double v = decompressedMB.get(r, col);
-				expected += v * v;
-			}
-
-		assertEquals(expected, c[0], DELTA *10);
-	}
-//protected void computeSumSq(double[] c, int nRows)
-
-	@Test
-	public void testcomputeColSumsSq(){
-		AggregateUnaryOperator op = new AggregateUnaryOperator(
-				new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject()),
-				ReduceAll.getReduceAllFnObject());
+			new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject()), ReduceAll.getReduceAllFnObject());
 
 		double[] c = new double[1];
 
@@ -570,15 +545,32 @@ public void testWriteRead() throws IOException {
 
 		assertEquals(expected, c[0], DELTA * 10);
 	}
-//protected void computeColSumsSq(double[] c, int nRows)
 
 	@Test
-	public void testcomputeRowSums(){
+	public void testcomputeColSumsSq() {
+		AggregateUnaryOperator op = new AggregateUnaryOperator(
+			new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject()), ReduceRow.getReduceRowFnObject());
+
+		double[] sumsSqComp = new double[numCols];
+		piecewiseLinearColGroup.unaryAggregateOperations(op, sumsSqComp, numRows, 0, numRows, null);
+
+		double[] expectedSumsSq = new double[numCols];
+		for(int c = 0; c < numCols; c++) {
+			for(int r = 0; r < numRows; r++) {
+				double v = decompressedMB.get(r, c);
+				expectedSumsSq[c] += v * v;
+			}
+		}
+
+		assertArrayEquals(expectedSumsSq, sumsSqComp, DELTA * 10);
+	}
+
+	@Test
+	public void testcomputeRowSums() {
 		double[] preAgg = piecewiseLinearColGroup.preAggRows(Plus.getPlusFnObject());
 
-		AggregateUnaryOperator op = new AggregateUnaryOperator(
-				new AggregateOperator(0, Plus.getPlusFnObject()),
-				ReduceCol.getReduceColFnObject());
+		AggregateUnaryOperator op = new AggregateUnaryOperator(new AggregateOperator(0, Plus.getPlusFnObject()),
+			ReduceCol.getReduceColFnObject());
 
 		double[] c = new double[numRows];
 
@@ -587,17 +579,15 @@ public void testWriteRead() throws IOException {
 		for(int r = 0; r < numRows; r++)
 			assertEquals("row " + r, preAgg[r], c[r], DELTA);
 	}
-//protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg)
 
 	@Test
-	public void testcomputeRowMxx(){
+	public void testcomputeRowMxx() {
 		Builtin maxBuiltin = Builtin.getBuiltinFnObject(Builtin.BuiltinCode.MAX);
 
 		double[] preAgg = piecewiseLinearColGroup.preAggRows(maxBuiltin);
 
-		AggregateUnaryOperator op = new AggregateUnaryOperator(
-				new AggregateOperator(1, maxBuiltin),
-				ReduceCol.getReduceColFnObject());
+		AggregateUnaryOperator op = new AggregateUnaryOperator(new AggregateOperator(1, maxBuiltin),
+			ReduceCol.getReduceColFnObject());
 
 		double[] c = new double[numRows];
 		Arrays.fill(c, Double.NEGATIVE_INFINITY);
@@ -607,42 +597,38 @@ public void testWriteRead() throws IOException {
 		for(int r = 0; r < numRows; r++)
 			assertEquals("row " + r, preAgg[r], c[r], DELTA);
 	}
-//protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg)
 
 	@Test
-	public void testcomputeProduct(){
-		AggregateUnaryOperator op = new AggregateUnaryOperator(
-				new AggregateOperator(1, Multiply.getMultiplyFnObject()),
-				ReduceRow.getReduceRowFnObject());
+	public void testcomputeProduct() {
+		AggregateUnaryOperator op = new AggregateUnaryOperator(new AggregateOperator(1, Multiply.getMultiplyFnObject()),
+			ReduceAll.getReduceAllFnObject());
 
-		double[] c = new double[numCols];
-		Arrays.fill(c, 1.0);
+		double[] result = new double[] {1.0};
+		piecewiseLinearColGroup.unaryAggregateOperations(op, result, numRows, 0, numRows, null);
 
-		piecewiseLinearColGroup.unaryAggregateOperations(op, c, numRows, 0, numRows, null);
-
-		for(int col = 0; col < numCols; col++) {
-			double expected = 1.0;
+		double expectedProd = 1.0;
+		for(int c = 0; c < numCols; c++) {
 			for(int r = 0; r < numRows; r++) {
-				double v = decompressedMB.get(r, col);
-				if(v == 0) {
-					expected = 0;
+				double v = decompressedMB.get(r, c);
+				if(v == 0.0) {
+					expectedProd = 0.0;
 					break;
 				}
-				expected *= v;
+				expectedProd *= v;
 			}
-			assertEquals("column " + col, expected, c[col], DELTA);
+			if(expectedProd == 0.0)
+				break;
 		}
 
+		assertEquals(expectedProd, result[0], DELTA);
 	}
-//protected void computeProduct(double[] c, int nRows)
 
 	@Test
-	public void testcomputeRowProduct(){
+	public void testcomputeRowProduct() {
 		double[] preAgg = piecewiseLinearColGroup.preAggRows(Multiply.getMultiplyFnObject());
 
-		AggregateUnaryOperator op = new AggregateUnaryOperator(
-				new AggregateOperator(1, Multiply.getMultiplyFnObject()),
-				ReduceCol.getReduceColFnObject());
+		AggregateUnaryOperator op = new AggregateUnaryOperator(new AggregateOperator(1, Multiply.getMultiplyFnObject()),
+			ReduceCol.getReduceColFnObject());
 
 		double[] c = new double[numRows];
 		Arrays.fill(c, 1.0);
@@ -652,15 +638,11 @@ public void testWriteRead() throws IOException {
 		for(int r = 0; r < numRows; r++)
 			assertEquals("row " + r, preAgg[r], c[r], DELTA);
 	}
-//protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg)
-
-
 
 	@Test
-	public void testcomputeColProduct(){
-		AggregateUnaryOperator op = new AggregateUnaryOperator(
-				new AggregateOperator(1, Multiply.getMultiplyFnObject()),
-				ReduceRow.getReduceRowFnObject());
+	public void testcomputeColProduct() {
+		AggregateUnaryOperator op = new AggregateUnaryOperator(new AggregateOperator(1, Multiply.getMultiplyFnObject()),
+			ReduceRow.getReduceRowFnObject());
 
 		double[] c = new double[numCols];
 		Arrays.fill(c, 1.0);
@@ -675,7 +657,6 @@ public void testWriteRead() throws IOException {
 			assertEquals("column " + col, expected, c[col], DELTA);
 		}
 	}
-//protected void computeColProduct(double[] c, int nRows)
 
 	@Test
 	public void testpreAggSumRows() {
@@ -688,7 +669,6 @@ public void testWriteRead() throws IOException {
 			assertEquals("row " + r, expected, agg[r], DELTA);
 		}
 	}
-//protected double[] preAggSumRows()
 
 	@Test
 	public void testpreAggSumSqRows() {
@@ -703,7 +683,6 @@ public void testWriteRead() throws IOException {
 			assertEquals("row " + r, expected, agg[r], DELTA);
 		}
 	}
-//protected double[] preAggSumSqRows()
 
 	@Test
 	public void testpreAggProductRows() {
@@ -716,7 +695,6 @@ public void testWriteRead() throws IOException {
 			assertEquals("row " + r, expected, agg[r], DELTA);
 		}
 	}
-//protected double[] preAggProductRows()
 
 	@Test
 	public void testpreAggBuiltinRows() {
@@ -730,7 +708,6 @@ public void testWriteRead() throws IOException {
 			assertEquals("row " + r, expected, agg[r], DELTA);
 		}
 	}
-//protected double[] preAggBuiltinRows(Builtin builtin)
 
 	@Test
 	public void testsameIndexStructure() {
@@ -740,7 +717,6 @@ public void testWriteRead() throws IOException {
 				new double[][] {{1.0}}, numRows);
 		assertTrue(piecewiseLinearColGroup.sameIndexStructure(other));
 	}
-//public boolean sameIndexStructure(AColGroupCompressed that)
 
 	@Test
 	public void testtsmm() {
@@ -758,13 +734,12 @@ public void testWriteRead() throws IOException {
 			for(int j = i; j < numCols; j++)
 				assertEquals("[" + i + "," + j + "]", expected[i * numCols + j], result.get(i, j), 1e-6);
 	}
-//protected void tsmm(double[] result, int numColumns, int nRows)
 
 	@Test
 	public void testcrossColDotProduct() {
-		// crossColDotProduct is private — exercise it via tsmm with a single-column group
 		ColGroupPiecewiseLinearCompressed single = (ColGroupPiecewiseLinearCompressed) ColGroupPiecewiseLinearCompressed
-			.create(ColIndexFactory.create(new int[] {0}), new int[][] {piecewiseLinearColGroup.getBreakpointsPerCol()[0]},
+			.create(ColIndexFactory.create(new int[] {0}),
+				new int[][] {piecewiseLinearColGroup.getBreakpointsPerCol()[0]},
 				new double[][] {piecewiseLinearColGroup.getSlopesPerCol()[0]},
 				new double[][] {piecewiseLinearColGroup.getInterceptsPerCol()[0]}, numRows);
 		MatrixBlock result = new MatrixBlock(1, 1, false);
@@ -777,7 +752,6 @@ public void testWriteRead() throws IOException {
 		}
 		assertEquals(expected, result.get(0, 0), 1e-6);
 	}
-//private double crossColDotProduct(int i, int j)
 
 	@Test
 	public void testcopyAndSet() {
@@ -789,7 +763,6 @@ public void testWriteRead() throws IOException {
 		assertArrayEquals(piecewiseLinearColGroup.getBreakpointsPerCol(), plcCopy.getBreakpointsPerCol());
 		assertArrayEquals(piecewiseLinearColGroup.getSlopesPerCol(), plcCopy.getSlopesPerCol());
 	}
-//public AColGroup copyAndSet(IColIndex colIndexes)
 
 	@Test
 	public void testdecompressToDenseBlockTransposed() {
@@ -800,14 +773,12 @@ public void testWriteRead() throws IOException {
 			for(int c = 0; c < numCols; c++)
 				assertEquals("[" + r + "," + c + "]", decompressedMB.get(r, c), transposed.get(c, r), DELTA);
 	}
-//public void decompressToDenseBlockTransposed(DenseBlock db, int rl, int ru)
 
 	@Test(expected = NotImplementedException.class)
 	public void testdecompressToSparseBlockTransposed() {
 		SparseBlockMCSR sb = new SparseBlockMCSR(numCols);
 		piecewiseLinearColGroup.decompressToSparseBlockTransposed(sb, numCols);
 	}
-//public void decompressToSparseBlockTransposed(SparseBlockMCSR sb, int nColOut)
 
 	@Test
 	public void testdecompressToSparseBlock() {
@@ -818,7 +789,6 @@ public void testWriteRead() throws IOException {
 			for(int c = 0; c < numCols; c++)
 				assertEquals("[" + r + "," + c + "]", decompressedMB.get(r, c), sparse.get(r, c), DELTA);
 	}
-//public void decompressToSparseBlock(SparseBlock sb, int rl, int ru, int offR, int offC)
 
 	@Test
 	public void testrightMultByMatrix() {
@@ -833,7 +803,6 @@ public void testWriteRead() throws IOException {
 			for(int c = 0; c < numCols; c++)
 				assertEquals("[" + r + "," + c + "]", decompressedMB.get(r, c), resultMB.get(r, c), DELTA);
 	}
-//public AColGroup rightMultByMatrix(MatrixBlock right, IColIndex allCols, int k)
 
 	@Test
 	public void testleftMultByMatrixNoPreAgg() {
@@ -848,7 +817,6 @@ public void testWriteRead() throws IOException {
 			for(int c = 0; c < numCols; c++)
 				assertEquals("[" + r + "," + c + "]", decompressedMB.get(r, c), result.get(r, c), DELTA);
 	}
-//public void leftMultByMatrixNoPreAgg(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl, int cu)
 
 	@Test
 	public void testleftMultByAColGroup() {
@@ -864,7 +832,6 @@ public void testWriteRead() throws IOException {
 			for(int j = 0; j < numCols; j++)
 				assertEquals("[" + i + "," + j + "]", expected[i * numCols + j], result.get(i, j), 1e-6);
 	}
-//public void leftMultByAColGroup(AColGroup lhs, MatrixBlock result, int nRows)
 
 	@Test(expected = DMLCompressionException.class)
 	public void testtsmmAColGroup() {
@@ -872,91 +839,266 @@ public void testWriteRead() throws IOException {
 		result.allocateDenseBlock();
 		piecewiseLinearColGroup.tsmmAColGroup(piecewiseLinearColGroup, result);
 	}
-//public void tsmmAColGroup(AColGroup other, MatrixBlock result)
 
 	@Test
-	public void testsliceSingleColumn(){}
-//protected AColGroup sliceSingleColumn(int idx)
+	public void testsliceSingleColumn() throws Exception {
+		int colToSlice = 0;
+
+		Method method = ColGroupPiecewiseLinearCompressed.class.getDeclaredMethod("sliceSingleColumn", int.class);
+		method.setAccessible(true);
+
+		AColGroup slice = (AColGroup) method.invoke(piecewiseLinearColGroup, colToSlice);
+
+		assertNotNull(slice);
+		assertTrue(slice instanceof ColGroupPiecewiseLinearCompressed);
+		assertEquals(1, slice.getNumCols());
+
+		for(int r = 0; r < numRows; r++) {
+			assertEquals("Mismatch at row " + r, decompressedMB.get(r, colToSlice), slice.getIdx(r, 0), DELTA);
+		}
+	}
 
 	@Test
-	public void testsliceMultiColumns(){}
-//protected AColGroup sliceMultiColumns(int idStart, int idEnd, IColIndex outputCols)
+	public void testsliceMultiColumns() throws Exception {
+		int startCol = 0;
+		int stopCol = 2;
+		IColIndex outputCols = ColIndexFactory.create(stopCol - startCol);
+
+		Method method = ColGroupPiecewiseLinearCompressed.class.getDeclaredMethod("sliceMultiColumns", int.class,
+			int.class, IColIndex.class);
+		method.setAccessible(true);
+
+		AColGroup slice = (AColGroup) method.invoke(piecewiseLinearColGroup, startCol, stopCol, outputCols);
+
+		assertNotNull(slice);
+		assertTrue(slice instanceof ColGroupPiecewiseLinearCompressed);
+		assertEquals(stopCol - startCol, slice.getNumCols());
+
+		for(int r = 0; r < numRows; r++) {
+			for(int c = 0; c < (stopCol - startCol); c++) {
+				assertEquals("Mismatch at row " + r + " col " + c, decompressedMB.get(r, startCol + c),
+					slice.getIdx(r, c), DELTA);
+			}
+		}
+	}
 
 	@Test
-	public void testsliceRows(){}
-//public AColGroup sliceRows(int rl, int ru)
+	public void testsliceRows() {
+		AColGroup slice = piecewiseLinearColGroup.sliceRows(0, numRows);
+		assertTrue(slice instanceof ColGroupPiecewiseLinearCompressed);
+		for(int r = 0; r < numRows; r++)
+			for(int c = 0; c < numCols; c++)
+				assertEquals("row " + r + ", col " + c, decompressedMB.get(r, c), slice.getIdx(r, c), DELTA);
+	}
 
 	@Test
-	public void testgetNumberNonZeros(){}
-//public long getNumberNonZeros(int nRows)
+	public void testgetNumberNonZeros() {
+		decompressedMB.recomputeNonZeros();
+		long numNonZeros = piecewiseLinearColGroup.getNumberNonZeros(numRows);
+		assertEquals("Number of non-zeros", decompressedMB.getNonZeros(), numNonZeros);
+	}
 
 	@Test
-	public void testcentralMoment(){}
-//public CmCovObject centralMoment(CMOperator op, int nRows)
+	public void testcentralMoment() {
+		CMOperator op = new CMOperator(CM.getCMFnObject(CMOperator.AggregateOperationTypes.VARIANCE),
+			CMOperator.AggregateOperationTypes.VARIANCE);
+		CmCovObject result = piecewiseLinearColGroup.centralMoment(op, numRows);
+		assertNotNull(result);
+	}
 
 	@Test
-	public void testrexpandCols(){}
-//public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows)
+	public void testrexpandCols() {
+		assertThrows(NotImplementedException.class, () -> {
+			piecewiseLinearColGroup.rexpandCols(10, true, false, numRows);
+		});
+	}
 
 	@Test
-	public void testgetCost(){}
-//public double getCost(ComputationCostEstimator e, int nRows)
+	public void testgetCost() {
+		ComputationCostEstimator costEstimator = new ComputationCostEstimator(1, 1, 1, 1, 1, 1, 1, 1, false);
+		double cost = piecewiseLinearColGroup.getCost(costEstimator, numRows);
+		assertTrue("Cost should be non-negative", cost >= 0.0);
+		assertFalse("Cost should not be infinite or NaN", Double.isInfinite(cost) || Double.isNaN(cost));
+	}
 
 	@Test
-	public void testappend(){}
-//public AColGroup append(AColGroup g)
+	public void testappend() {
+		assertNull(piecewiseLinearColGroup.append(null));
+	}
 
 	@Test
-	public void testappendNInternal(){}
-//protected AColGroup appendNInternal(AColGroup[] groups, int blen, int rlen)
+	public void testappendNInternal() {
+		ColGroupPiecewiseLinearCompressed g1 = piecewiseLinearColGroup;
+		ColGroupPiecewiseLinearCompressed g2 = piecewiseLinearColGroup;
+		AColGroup[] groups = new AColGroup[] {g1, g2};
+		int totalRows = numRows * 2;
+		AColGroup merged = g1.appendN(groups, totalRows, totalRows);
+		assertTrue(merged instanceof ColGroupPiecewiseLinearCompressed);
+
+		for(int r = 0; r < totalRows; r++) {
+			double expected = (r < numRows) ? g1.getIdx(r, 0) : g2.getIdx(r - numRows, 0);
+			assertEquals(expected, merged.getIdx(r, 0), DELTA);
+		}
+	}
 
 	@Test
-	public void testgetCompressionScheme(){}
-//public ICLAScheme getCompressionScheme()
+	public void testAppendNInternalIncompatibleGroup() {
+		AColGroup dummyGroup = new ColGroupEmpty(colIndexes);
+		AColGroup[] groups = new AColGroup[] {piecewiseLinearColGroup, dummyGroup};
+		int totalRows = numRows * 2;
+
+		assertThrows(NotImplementedException.class, () -> {
+			piecewiseLinearColGroup.appendN(groups, totalRows, totalRows);
+		});
+	}
 
 	@Test
-	public void testrecompress(){}
-//public AColGroup recompress()
+	public void testgetCompressionScheme() {
+		assertNull(piecewiseLinearColGroup.getCompressionScheme());
+	}
 
 	@Test
-	public void testgetCompressionInfo(){}
-//public CompressedSizeInfoColGroup getCompressionInfo(int nRow)
+	public void testrecompress() {
+		assertEquals(piecewiseLinearColGroup, piecewiseLinearColGroup.recompress());
+	}
 
 	@Test
-	public void testfixColIndexes(){}
-//protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering)
+	public void testgetCompressionInfo() {
+		assertThrows(NotImplementedException.class, () -> {
+			piecewiseLinearColGroup.getCompressionInfo(numRows);
+		});
+	}
 
 	@Test
-	public void testremoveEmptyColsSubset(){}
-//public AColGroup removeEmptyColsSubset(IColIndex indexes, IntArrayList emptyCols)
+	public void testfixColIndexes() throws Exception {
+		IColIndex newColIndexes = ColIndexFactory.create(new int[] {0, 1, 2});
+		int[] reordering = new int[] {2, 1, 0};
+
+		Method method = ColGroupPiecewiseLinearCompressed.class.getDeclaredMethod("fixColIndexes", IColIndex.class,
+			int[].class);
+		method.setAccessible(true);
+
+		AColGroup reorderedGroup = (AColGroup) method.invoke(piecewiseLinearColGroup, newColIndexes, reordering);
+
+		assertNotNull(reorderedGroup);
+		assertTrue(reorderedGroup instanceof ColGroupPiecewiseLinearCompressed);
+
+		for(int r = 0; r < numRows; r++) {
+			for(int i = 0; i < numCols; i++) {
+				int originalColIdx = reordering[i];
+				assertEquals("Mismatch at row " + r + " col " + i, decompressedMB.get(r, originalColIdx),
+					reorderedGroup.getIdx(r, i), DELTA);
+			}
+		}
+	}
 
 	@Test
-	public void testremoveEmptyRows(){}
-//public AColGroup removeEmptyRows(boolean[] emptyRows, int newNumRows)
+	public void testremoveEmptyColsSubset() {
+		assertNull(piecewiseLinearColGroup.removeEmptyColsSubset(null, null));
+	}
 
 	@Test
-	public void testsort(){}
-//public AColGroup sort()
+	public void testremoveEmptyRows() {
+		assertNull(piecewiseLinearColGroup.removeEmptyRows(null, 0));
+	}
 
 	@Test
-	public void testreduceCols(){}
-//public AColGroup reduceCols()
+	public void testsort() {
+		assertEquals(piecewiseLinearColGroup, piecewiseLinearColGroup.sort());
+	}
 
 	@Test
-	public void testgetSparsity(){}
-//public double getSparsity()
+	public void testreduceCols() {
+		assertNull(piecewiseLinearColGroup.reduceCols());
+	}
 
 	@Test
-	public void testsparseSelection(){}
-//protected void sparseSelection(MatrixBlock selection, ColGroupUtils.P[] points, MatrixBlock ret, int rl, int ru)
+	public void testgetSparsity() {
+		assertEquals(1.0, piecewiseLinearColGroup.getSparsity(), DELTA);
+	}
 
 	@Test
-	public void testdenseSelection(){}
-//protected void denseSelection(MatrixBlock selection, ColGroupUtils.P[] points, MatrixBlock ret, int rl, int ru)
+	public void testsparseSelection() throws Exception {
+		int rl = 0;
+		int ru = 5;
+
+		MatrixBlock selection = new MatrixBlock(ru, numRows, true);
+		for(int r = rl; r < ru; r++) {
+			selection.appendValue(r, r, 1.0);
+		}
+		selection.recomputeNonZeros();
+
+		MatrixBlock ret = new MatrixBlock(ru, numCols, true);
+		ret.allocateSparseRowsBlock();
+
+		Method method = ColGroupPiecewiseLinearCompressed.class.getDeclaredMethod("sparseSelection", MatrixBlock.class,
+			ColGroupUtils.P[].class, MatrixBlock.class, int.class, int.class);
+		method.setAccessible(true);
+
+		method.invoke(piecewiseLinearColGroup, selection, null, ret, rl, ru);
+
+		for(int r = rl; r < ru; r++) {
+			for(int c = 0; c < numCols; c++) {
+				assertEquals("Mismatch at row " + r + " col " + c, decompressedMB.get(r, c), ret.get(r, c), DELTA);
+			}
+		}
+	}
 
 	@Test
-	public void testsplitReshape(){}
-//public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg)
+	public void testdenseSelection() throws Exception {
+		int rl = 0;
+		int ru = 5;
 
+		MatrixBlock selection = new MatrixBlock(ru, numRows, true);
+		for(int r = rl; r < ru; r++) {
+			selection.appendValue(r, r, 1.0);
+		}
+		selection.recomputeNonZeros();
 
+		MatrixBlock ret = new MatrixBlock(ru, numCols, false);
+		ret.allocateDenseBlock();
+
+		Method method = ColGroupPiecewiseLinearCompressed.class.getDeclaredMethod("denseSelection", MatrixBlock.class,
+			ColGroupUtils.P[].class, MatrixBlock.class, int.class, int.class);
+		method.setAccessible(true);
+
+		method.invoke(piecewiseLinearColGroup, selection, null, ret, rl, ru);
+
+		for(int r = rl; r < ru; r++) {
+			for(int c = 0; c < numCols; c++) {
+				assertEquals("Mismatch at row " + r + " col " + c, decompressedMB.get(r, c), ret.get(r, c), DELTA);
+			}
+		}
+	}
+
+	@Test
+	public void testsplitReshape() {
+		int multiplier = 2;
+		int nRow = numRows;
+		int nColOrg = numCols;
+
+		AColGroup[] resultGroups = piecewiseLinearColGroup.splitReshape(multiplier, nRow, nColOrg);
+
+		assertNotNull(resultGroups);
+		assertEquals(1, resultGroups.length);
+
+		AColGroup reshaped = resultGroups[0];
+		assertTrue(reshaped instanceof ColGroupPiecewiseLinearCompressed);
+
+		int expectedNewNRow = nRow / multiplier;
+		int expectedTotalNewCols = numCols * multiplier;
+		assertEquals(expectedTotalNewCols, reshaped.getNumCols());
+
+		for(int i = 0; i < multiplier; i++) {
+			int rowOffset = i * expectedNewNRow;
+			for(int r = 0; r < expectedNewNRow; r++) {
+				for(int c = 0; c < numCols; c++) {
+					double expected = decompressedMB.get(rowOffset + r, c);
+					int reshapedColIndex = i * numCols + c;
+					double actual = reshaped.getIdx(r, reshapedColIndex);
+					assertEquals(expected, actual, DELTA);
+				}
+			}
+		}
+	}
 }

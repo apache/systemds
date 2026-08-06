@@ -123,7 +123,8 @@ public class RewriteMatrixMultChainOptSparseTest extends AutomatedTestBase {
 				overwriteCurrentConfig(dmlConfig);
 			}
 			catch(FileNotFoundException fnfe) {
-				Assert.fail("Could not find DML config file: " + getCurConfigFile().getPath() + " . " + fnfe.getMessage());
+				Assert.fail("Could not find DML config file: " +
+					getCurConfigFile().getPath() + " . " + fnfe.getMessage());
 			}
 			catch(IOException ioe) {
 				Assert.fail("Could not overwrite the DML configuration file. " + ioe.getMessage());

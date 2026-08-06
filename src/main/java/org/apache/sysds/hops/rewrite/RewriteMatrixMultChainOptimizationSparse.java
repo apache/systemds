@@ -90,8 +90,8 @@ public class RewriteMatrixMultChainOptimizationSparse extends RewriteMatrixMultC
 		//compute cost-optimal chains for increasing chain sizes 
 		SparsityEstimator estim = EstimatorType.valueOf(ConfigurationManager.getDMLConfig()
 			.getTextValue(DMLConfig.SPARSITY_ESTIMATOR)).getEstimator();
-		for( int l = 2; l <= size; l++ ) { // chain length
-			for( int i = 0; i < size - l + 1; i++ ) {
+		for(int l = 2; l <= size; l++) { // chain length
+			for(int i = 0; i < size - l + 1; i++) {
 				int j = i + l - 1;
 				// find cost of (i,j)
 				dpMatrix[i][j] = Double.MAX_VALUE;

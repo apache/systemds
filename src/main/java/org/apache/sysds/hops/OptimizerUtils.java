@@ -200,8 +200,7 @@ public class OptimizerUtils
 	public static boolean ALLOW_SUM_PRODUCT_REWRITES2 = true;
 
 	/**
-	 * Enables transpose mmchain optimizations. In the future, this might be merged with
-	 * ALLOW_SUM_PRODUCT_REWRITES.
+	 * Enables transpose mmchain optimizations. In the future, this might be merged with ALLOW_SUM_PRODUCT_REWRITES.
 	 */
 	public static boolean ALLOW_TRANSPOSE_MMCHAIN_REWRITES = false;
 

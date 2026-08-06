@@ -1058,6 +1058,7 @@ public class DMLTranslator
 						case LIBSVM:
 						case HDF5:
 						case DELTA:
+						case PARQUET:
 							// columnar/text formats: no block layout (blocksize -1)
 							ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), -1);
 							break;

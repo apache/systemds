@@ -20,26 +20,41 @@ package org.apache.sysds.runtime.io;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Comparator;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.parquet.example.data.Group;
+import org.apache.parquet.column.ColumnDescriptor;
+import org.apache.parquet.column.ColumnReader;
+import org.apache.parquet.column.impl.ColumnReadStoreImpl;
+import org.apache.parquet.column.page.PageReadStore;
 import org.apache.parquet.hadoop.ParquetFileReader;
-import org.apache.parquet.hadoop.ParquetReader;
-import org.apache.parquet.hadoop.example.GroupReadSupport;
-import org.apache.parquet.hadoop.metadata.ParquetMetadata;
+import org.apache.parquet.hadoop.metadata.FileMetaData;
 import org.apache.parquet.hadoop.util.HadoopInputFile;
+import org.apache.parquet.io.api.Converter;
+import org.apache.parquet.io.api.GroupConverter;
+import org.apache.parquet.io.api.PrimitiveConverter;
 import org.apache.parquet.schema.MessageType;
-import org.apache.parquet.schema.PrimitiveType;
+import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
+import org.apache.parquet.schema.Type;
+import org.apache.parquet.schema.Type.Repetition;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.Array;
+import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
  * Single-threaded frame parquet reader.
- * 
+ *
+ * Decodes through parquet-mr's column API ({@link ColumnReadStoreImpl}/{@link ColumnReader}) directly into
+ * pre-allocated typed column arrays. The output frame is constructed from the filled arrays without copying. Columns
+ * whose parquet physical type does not match the requested frame value type are converted per cell instead.
  */
 public class FrameReaderParquet extends FrameReader {
 
@@ -54,98 +69,306 @@ public class FrameReaderParquet extends FrameReader {
 	 * @return A FrameBlock containing the data read from the Parquet file.
 	 */
 	@Override
-	public FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, String[] names, long rlen, long clen) throws IOException, DMLRuntimeException {
-		// Prepare file access
+	public FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, String[] names, long rlen, long clen)
+		throws IOException, DMLRuntimeException {
 		Configuration conf = ConfigurationManager.getCachedJobConf();
 		Path path = new Path(fname);
-
-		// Check existence and non-empty file
-		if (!HDFSTool.existsFileOnHDFS(path.toString())) {
+		if(!HDFSTool.existsFileOnHDFS(path.toString()))
 			throw new IOException("File does not exist on HDFS: " + fname);
-		}
 
-		// Allocate output frame block
 		ValueType[] lschema = createOutputSchema(schema, clen);
 		String[] lnames = createOutputNames(names, clen);
-		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
 
-		// Read Parquet file
-		readParquetFrameFromHDFS(path, conf, ret, lschema, rlen, clen);
+		Object[] dest = new Object[(int) clen];
+		for(int c = 0; c < clen; c++)
+			dest[c] = ArrayFactory.allocateBacking(lschema[c], (int) rlen);
 
-		return ret;
+		readParquetFrameFromHDFS(path, conf, dest, lschema, lnames, rlen);
+
+		// zero-row output stays a schema-only frame (no zero-length column arrays)
+		if(rlen == 0)
+			return new FrameBlock(lschema, lnames, 0);
+
+		Array<?>[] columns = new Array<?>[(int) clen];
+		for(int c = 0; c < clen; c++)
+			columns[c] = ArrayFactory.create(lschema[c], dest[c]);
+		return new FrameBlock(columns, lnames);
 	}
 
 	/**
-	 * Reads data from a Parquet file on HDFS and fills the provided FrameBlock.
-	 * The method retrieves the Parquet schema from the file footer, maps the required column names
-	 * to their corresponding indices, and then uses a ParquetReader to iterate over each row.
-	 * Data is extracted based on the column type and set into the output FrameBlock.
+	 * Reads an entire Parquet file (or directory of part files) into the pre-allocated column backing arrays. Part
+	 * files, if any, are read sequentially in name order.
 	 *
-	 * @param path   The HDFS path to the Parquet file.
+	 * @param path   The HDFS path to the Parquet file or directory.
 	 * @param conf   The Hadoop configuration.
-	 * @param dest   The FrameBlock to populate with data.
-	 * @param schema The expected value types for the output columns.
+	 * @param dest   The per-column backing arrays to populate.
+	 * @param schema The value types of the output columns.
+	 * @param names  The names of the output columns.
 	 * @param rlen   The expected number of rows.
-	 * @param clen   The expected number of columns.
 	 */
-	protected void readParquetFrameFromHDFS(Path path, Configuration conf, FrameBlock dest, ValueType[] schema, long rlen, long clen) throws IOException {
-		// Retrieve schema from Parquet footer
-		ParquetMetadata metadata = ParquetFileReader.open(HadoopInputFile.fromPath(path, conf)).getFooter();
-		MessageType parquetSchema = metadata.getFileMetaData().getSchema();
+	protected void readParquetFrameFromHDFS(Path path, Configuration conf, Object[] dest, ValueType[] schema,
+		String[] names, long rlen) throws IOException {
+		FileSystem fs = IOUtilFunctions.getFileSystem(path);
+		Path[] files = IOUtilFunctions.getSequenceFilePaths(fs, path);
+		Arrays.sort(files, Comparator.comparing(Path::getName));
 
-		// Map column names to Parquet schema indices
-		String[] columnNames = dest.getColumnNames();
-		int[] columnIndices = new int[columnNames.length];
-		for (int i = 0; i < columnNames.length; i++) {
-			columnIndices[i] = parquetSchema.getFieldIndex(columnNames[i]);
-		}
+		long off = 0;
+		for(Path file : files)
+			off += readSingleParquetFile(file, conf, dest, schema, names, rlen, (int) off);
+		if(off != rlen)
+			throw new IOException("Mismatch in row count: expected " + rlen + ", but got " + off);
+	}
 
-		// Read data usind ParquetReader
-		try (ParquetReader<Group> rowReader = ParquetReader.builder(new GroupReadSupport(), path)
-				.withConf(conf)
-				.build()) {
+	/**
+	 * Decodes a single Parquet file into the column backing arrays at the given row offset, one row group at a time and
+	 * column-at-a-time within each row group. Thread-safe for distinct row ranges, so the parallel reader assigns each
+	 * file its own offset and shares the output arrays.
+	 *
+	 * @param path      The HDFS path to the Parquet file.
+	 * @param conf      The Hadoop configuration.
+	 * @param dest      The per-column backing arrays to populate.
+	 * @param schema    The value types of the output columns.
+	 * @param names     The names of the output columns.
+	 * @param rlen      The total number of output rows (exclusive upper bound of this file's rows).
+	 * @param rowOffset The row offset of this file's first row.
+	 * @return The number of rows read.
+	 */
+	protected int readSingleParquetFile(Path path, Configuration conf, Object[] dest, ValueType[] schema,
+		String[] names, long rlen, int rowOffset) throws IOException {
+		final int ncol = schema.length;
+		try(ParquetFileReader reader = ParquetFileReader.open(HadoopInputFile.fromPath(path, conf))) {
+			FileMetaData meta = reader.getFooter().getFileMetaData();
+			MessageType parquetSchema = meta.getSchema();
+			String createdBy = meta.getCreatedBy();
 
-			Group group;
-			int row = 0;
-			while ((group = rowReader.read()) != null) {
-				for (int col = 0; col < clen; col++) {
-					int colIndex = columnIndices[col];
-					if (group.getFieldRepetitionCount(colIndex) > 0) {
-						PrimitiveType.PrimitiveTypeName type = parquetSchema.getType(columnNames[col]).asPrimitiveType().getPrimitiveTypeName();
-						switch (type) {
-							case INT32:
-								dest.set(row, col, group.getInteger(colIndex, 0));
-								break;
-							case INT64:
-								dest.set(row, col, group.getLong(colIndex, 0));
-								break;
-							case FLOAT:
-								dest.set(row, col, group.getFloat(colIndex, 0));
-								break;
-							case DOUBLE:
-								dest.set(row, col, group.getDouble(colIndex, 0));
-								break;
-							case BOOLEAN:
-								dest.set(row, col, group.getBoolean(colIndex, 0));
-								break;
-							case BINARY:
-								dest.set(row, col, group.getBinary(colIndex, 0).toStringUsingUTF8());
-								break;
-							default:
-								throw new IOException("Unsupported data type: " + type);
-						}
-					} else {
-						dest.set(row, col, null);
-					}
+			// map each requested frame column (by name) to its parquet column descriptor
+			final ColumnDescriptor[] descs = new ColumnDescriptor[ncol];
+			for(int c = 0; c < ncol; c++)
+				descs[c] = validateDecodable(parquetSchema, names[c]);
+
+			GroupConverter root = dummyConverter(parquetSchema.getFieldCount());
+			int off = rowOffset;
+			PageReadStore pages;
+			while((pages = reader.readNextRowGroup()) != null) {
+				int nrow = (int) pages.getRowCount();
+				if(off + nrow > rlen)
+					throw new IOException(
+						"Mismatch in row count: expected " + rlen + ", but got at least " + (off + nrow));
+				ColumnReadStoreImpl store = new ColumnReadStoreImpl(pages, root, parquetSchema, createdBy);
+				for(int c = 0; c < ncol; c++) {
+					ColumnReader creader = store.getColumnReader(descs[c]);
+					int maxDef = descs[c].getMaxDefinitionLevel();
+					PrimitiveTypeName ptype = descs[c].getPrimitiveType().getPrimitiveTypeName();
+					if(directDecodable(ptype, schema[c]))
+						decodeColumnInto(creader, maxDef, nrow, ptype, dest[c], off);
+					else
+						decodeColumnConvert(creader, maxDef, nrow, ptype, schema[c], dest[c], off);
 				}
-				row++;
+				off += nrow;
 			}
+			return off - rowOffset;
+		}
+	}
 
-			// Check frame dimensions
-			if (row != rlen) {
-				throw new IOException("Mismatch in row count: expected " + rlen + ", but got " + row);
+	/**
+	 * Resolve the descriptor of one parquet column and verify it is decodable: a non-nested primitive of a physical
+	 * type the reader supports (INT96 timestamps and nested/repeated groups are not).
+	 */
+	private static ColumnDescriptor validateDecodable(MessageType parquetSchema, String name) throws IOException {
+		if(!parquetSchema.containsField(name))
+			throw new IOException("Column not found in Parquet schema: " + name);
+		Type t = parquetSchema.getType(name);
+		if(!t.isPrimitive() || t.isRepetition(Repetition.REPEATED))
+			throw new IOException("Nested Parquet columns are not supported: " + name);
+		PrimitiveTypeName ptype = t.asPrimitiveType().getPrimitiveTypeName();
+		switch(ptype) {
+			case INT32:
+			case INT64:
+			case FLOAT:
+			case DOUBLE:
+			case BOOLEAN:
+			case BINARY:
+				return parquetSchema.getColumnDescription(new String[] {name});
+			default:
+				throw new IOException("Unsupported Parquet type " + ptype + " for column: " + name
+					+ (ptype == PrimitiveTypeName.INT96 ? " (deprecated INT96 timestamps; re-encode as INT64)" : ""));
+		}
+	}
+
+	/**
+	 * Whether the parquet physical type is the one the frame value type's backing array stores, i.e. the column can be
+	 * decoded through the typed direct path without per-value conversion.
+	 */
+	private static boolean directDecodable(PrimitiveTypeName ptype, ValueType vt) {
+		switch(ptype) {
+			case INT32:
+				return vt == ValueType.INT32;
+			case INT64:
+				return vt == ValueType.INT64;
+			case FLOAT:
+				return vt == ValueType.FP32;
+			case DOUBLE:
+				return vt == ValueType.FP64;
+			case BOOLEAN:
+				return vt == ValueType.BOOLEAN;
+			default:
+				return vt == ValueType.STRING; // BINARY
+		}
+	}
+
+	/**
+	 * Decode one parquet column of the current row group into a pre-allocated typed array at the given offset. Null
+	 * cells (definition level below max) keep the array default (0 for numerics, null for strings).
+	 */
+	private static void decodeColumnInto(ColumnReader creader, int maxDef, int nrow, PrimitiveTypeName ptype,
+		Object dest, int off) {
+		final int end = off + nrow;
+		switch(ptype) {
+			case INT32: {
+				int[] a = (int[]) dest;
+				for(int r = off; r < end; r++) {
+					if(creader.getCurrentDefinitionLevel() == maxDef)
+						a[r] = creader.getInteger();
+					creader.consume();
+				}
+				break;
+			}
+			case INT64: {
+				long[] a = (long[]) dest;
+				for(int r = off; r < end; r++) {
+					if(creader.getCurrentDefinitionLevel() == maxDef)
+						a[r] = creader.getLong();
+					creader.consume();
+				}
+				break;
+			}
+			case FLOAT: {
+				float[] a = (float[]) dest;
+				for(int r = off; r < end; r++) {
+					if(creader.getCurrentDefinitionLevel() == maxDef)
+						a[r] = creader.getFloat();
+					creader.consume();
+				}
+				break;
+			}
+			case DOUBLE: {
+				double[] a = (double[]) dest;
+				for(int r = off; r < end; r++) {
+					if(creader.getCurrentDefinitionLevel() == maxDef)
+						a[r] = creader.getDouble();
+					creader.consume();
+				}
+				break;
+			}
+			case BOOLEAN: {
+				boolean[] a = (boolean[]) dest;
+				for(int r = off; r < end; r++) {
+					if(creader.getCurrentDefinitionLevel() == maxDef)
+						a[r] = creader.getBoolean();
+					creader.consume();
+				}
+				break;
+			}
+			default: { // BINARY
+				String[] a = (String[]) dest;
+				for(int r = off; r < end; r++) {
+					if(creader.getCurrentDefinitionLevel() == maxDef)
+						a[r] = creader.getBinary().toStringUsingUTF8();
+					creader.consume();
+				}
+				break;
 			}
 		}
+	}
+
+	/**
+	 * Decode one parquet column whose physical type does not match the frame value type, converting each value per cell
+	 * (same semantics as {@link FrameBlock#set(int, int, Object)}, e.g. a DOUBLE file column read into a STRING frame
+	 * column).
+	 */
+	private static void decodeColumnConvert(ColumnReader creader, int maxDef, int nrow, PrimitiveTypeName ptype,
+		ValueType vt, Object dest, int off) {
+		final int end = off + nrow;
+		for(int r = off; r < end; r++) {
+			if(creader.getCurrentDefinitionLevel() == maxDef)
+				setConverted(dest, vt, r, readValue(creader, ptype));
+			creader.consume();
+		}
+	}
+
+	private static Object readValue(ColumnReader creader, PrimitiveTypeName ptype) {
+		switch(ptype) {
+			case INT32:
+				return creader.getInteger();
+			case INT64:
+				return creader.getLong();
+			case FLOAT:
+				return creader.getFloat();
+			case DOUBLE:
+				return creader.getDouble();
+			case BOOLEAN:
+				return creader.getBoolean();
+			default:
+				return creader.getBinary().toStringUsingUTF8(); // BINARY
+		}
+	}
+
+	/**
+	 * Store one converted value into the backing array of the given value type.
+	 */
+	private static void setConverted(Object dest, ValueType vt, int r, Object val) {
+		Object converted = UtilFunctions.objectToObject(vt, val);
+		if(converted == null)
+			return;
+		switch(vt) {
+			case FP64:
+				((double[]) dest)[r] = (Double) converted;
+				break;
+			case FP32:
+				((float[]) dest)[r] = (Float) converted;
+				break;
+			case INT64:
+			case HASH64:
+				((long[]) dest)[r] = (Long) converted;
+				break;
+			case UINT4:
+			case UINT8:
+			case INT32:
+			case HASH32:
+				((int[]) dest)[r] = (Integer) converted;
+				break;
+			case BOOLEAN:
+				((boolean[]) dest)[r] = (Boolean) converted;
+				break;
+			case CHARACTER:
+				((char[]) dest)[r] = (Character) converted;
+				break;
+			default:
+				((String[]) dest)[r] = (String) converted;
+				break;
+		}
+	}
+
+	/** No-op converter tree; the column API requires one, but values are pulled via the typed getters. */
+	private static GroupConverter dummyConverter(int nFields) {
+		final PrimitiveConverter[] leaves = new PrimitiveConverter[nFields];
+		for(int i = 0; i < nFields; i++)
+			leaves[i] = new PrimitiveConverter() {
+			};
+		return new GroupConverter() {
+			@Override
+			public Converter getConverter(int fieldIndex) {
+				return leaves[fieldIndex];
+			}
+
+			@Override
+			public void start() {
+			}
+
+			@Override
+			public void end() {
+			}
+		};
 	}
 
 	//not implemented

@@ -50,6 +50,8 @@ public class FrameWriterFactory {
 				return binaryParallel ? new FrameWriterBinaryBlockParallel() : new FrameWriterBinaryBlock();
 			case PROTO:
 				return new FrameWriterProto();
+			case PARQUET:
+				return binaryParallel ? new FrameWriterParquetParallel() : new FrameWriterParquet();
 			case DELTA:
 				return new FrameWriterDelta();
 			default:

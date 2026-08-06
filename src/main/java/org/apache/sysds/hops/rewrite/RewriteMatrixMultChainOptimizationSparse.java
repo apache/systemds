@@ -23,11 +23,13 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.estim.MMNode;
 import org.apache.sysds.hops.estim.SparsityEstimator;
+import org.apache.sysds.hops.estim.EstimationUtils.EstimatorType;
 import org.apache.sysds.hops.estim.SparsityEstimator.OpCode;
 
 /**
@@ -86,7 +88,8 @@ public class RewriteMatrixMultChainOptimizationSparse extends RewriteMatrixMultC
 		}
 
 		//compute cost-optimal chains for increasing chain sizes 
-		SparsityEstimator estim = DMLScript.SPARSITY_ESTIMATOR.getEstimator();
+		SparsityEstimator estim = EstimatorType.valueOf(ConfigurationManager.getDMLConfig()
+			.getTextValue(DMLConfig.SPARSITY_ESTIMATOR)).getEstimator();
 		for( int l = 2; l <= size; l++ ) { // chain length
 			for( int i = 0; i < size - l + 1; i++ ) {
 				int j = i + l - 1;

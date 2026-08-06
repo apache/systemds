@@ -35,7 +35,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.hops.estim.EstimationUtils.EstimatorType;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstructionUtils;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCachePolicy;
@@ -67,8 +66,6 @@ public class DMLOptions {
 	public int                  fedStatsCount = 10;               // Default federated statistics count
 	public boolean              memStats      = false;            // max memory statistics
 	public Explain.ExplainType  explainType   = Explain.ExplainType.NONE;  // Whether to print the "Explain" and if so, what type
-	public boolean              sparsityRewrite = false;          // Whether to rewrite operation DAGs based on sparsity information.
-	public EstimatorType        sparsityEstimator = EstimatorType.BASIC_AVG; // Sparsity estimator to use for rewrites.
 	public ExecMode             execMode      = OptimizerUtils.getDefaultExecutionMode();  // Execution mode standalone, MR, Spark or a hybrid
 	public boolean              gpu           = false;            // Whether to use the GPU
 	public boolean              forceGPU      = false;            // Whether to ignore memory & estimates and always use the GPU
@@ -97,7 +94,7 @@ public class DMLOptions {
 	public boolean              federatedCompilation = false;     // Compile federated instructions based on input federation state and privacy constraints.
 	public boolean              noFedRuntimeConversion = false;   // If activated, no runtime conversion of CP instructions to FED instructions will be performed.
 	public int                  seed          = -1;               // The general seed for the execution, if -1 random (system time).
-	public boolean              sparseIntermediate = false;       // whether SparseRowIntermediates should be used for rowwise operations
+	public boolean				sparseIntermediate = false;       // whether SparseRowIntermediates should be used for rowwise operations
 
 	public final static DMLOptions defaultOptions = new DMLOptions(null);
 
@@ -123,8 +120,6 @@ public class DMLOptions {
 			", oocLogPath=" + oocLogPath +
 			", memStats=" + memStats +
 			", explainType=" + explainType +
-			", sparsityRewrite=" + sparsityRewrite +
-			", sparsityEstimator=" + sparsityEstimator +
 			", execMode=" + execMode +
 			", gpu=" + gpu +
 			", forceGPU=" + forceGPU +
@@ -223,12 +218,6 @@ public class DMLOptions {
 				else if (explainType.equalsIgnoreCase("codegen_recompile")) dmlOptions.explainType = ExplainType.CODEGEN_RECOMPILE;
 				else throw new org.apache.commons.cli.ParseException("Invalid argument specified for -hops option, must be one of [hops, runtime, recompile_hops, recompile_runtime, codegen, codegen_recompile]");
 			}
-		}
-		if(line.hasOption("sparsityRewrite")) {
-			dmlOptions.sparsityRewrite = true;
-		}
-		if(line.hasOption("sparsityEstimator")) {
-			dmlOptions.sparsityEstimator = EstimatorType.get(line.getOptionValue("sparsityEstimator"));
 		}
 
 		dmlOptions.stats = line.hasOption("stats");
@@ -448,12 +437,6 @@ public class DMLOptions {
 		Option explainOpt = OptionBuilder.withArgName("level")
 			.withDescription("explains plan levels; can be 'hops' / 'runtime'[default] / 'recompile_hops' / 'recompile_runtime' / 'codegen' / 'codegen_recompile'")
 			.hasOptionalArg().create("explain");
-		Option sparsityRewriteOpt = OptionBuilder
-			.withDescription("enables rewrites of operation DAGs based on sparsity estimates of intermediates.")
-			.create("sparsityRewrite");
-		Option sparsityEstimatorOpt = OptionBuilder.withArgName("identifier")
-			.withDescription("specifies the sparsity estimator; can be 'Avg'[default] / 'BitsetMM' / 'DM' / 'LG' / 'MNC' / 'MNC_lim' / 'MNC_ext' / 'RS' / 'Sample' / 'SampleRa' / 'Worst'")
-			.hasOptionalArg().create("sparsityEstimator");
 		Option execOpt = OptionBuilder.withArgName("mode")
 			.withDescription("sets execution mode; can be 'hadoop' / 'singlenode' / 'hybrid'[default] / 'HYBRID' / 'spark'")
 			.hasArg().create("exec");
@@ -518,8 +501,6 @@ public class DMLOptions {
 		options.addOption(oocLogEventsOpt);
 		options.addOption(memOpt);
 		options.addOption(explainOpt);
-		options.addOption(sparsityRewriteOpt);
-		options.addOption(sparsityEstimatorOpt);
 		options.addOption(execOpt);
 		options.addOption(gpuOpt);
 		options.addOption(oocOpt);

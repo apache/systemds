@@ -47,39 +47,6 @@ public abstract class EstimationUtils
 		SAMPLE_RA;
 
 		/**
-		 * @param identifier the string identifier for a sparsity estimator
-		 * @return the estimator type enumeration item
-		 */
-		public static EstimatorType get(String identifier) {
-			switch(identifier) {
-				case "Avg":
-					return BASIC_AVG;
-				case "Worst":
-					return BASIC_WORST;
-				case "BitsetMM":
-					return BITSET_MM;
-				case "DM":
-					return DM;
-				case "LG":
-					return LG;
-				case "MNC":
-					return MNC;
-				case "MNC_lim":
-					return MNC_LIM;
-				case "MNC_ext":
-					return MNC_EXT;
-				case "RS":
-					return RS;
-				case "Sample":
-					return SAMPLE;
-				case "SampleRa":
-					return SAMPLE_RA;
-				default:
-					throw new DMLRuntimeException("Unknown sparsity estimator identifier: " + identifier);
-			}
-		}
-
-		/**
 		 * @return a sparsity estimator object corresponding to this estimator type
 		 */
 		public SparsityEstimator getEstimator() {

@@ -507,7 +507,7 @@ class HyperparameterTuner:
                 return score.average_scores[self.scoring_metric]
             elif isinstance(score, list):
                 score = score[1]
-            
+
             if isinstance(score, list):
                 score = np.mean(score)
             return score
@@ -519,7 +519,7 @@ class HyperparameterTuner:
                 best_params, best_score = params, candidate_score
 
         if hyperparams and best_params != baseline_params:
-            baseline_folds = self._score_value_list(baseline_raw_scores[1])  
+            baseline_folds = self._score_value_list(baseline_raw_scores[1])
             candidate_folds = next(s for p, s in all_results if p == best_params)[1]
 
             if baseline_folds is not None and candidate_folds is not None:
@@ -896,7 +896,9 @@ class HyperparameterTuner:
                 [train_score, self._score_value_list(scores[1]), test_score],
             )
 
-            trial_results.append((params, [train_score, self._score_value_list(scores[1]), test_score]))
+            trial_results.append(
+                (params, [train_score, self._score_value_list(scores[1]), test_score])
+            )
             val_folds = self._score_value_list(scores[1])
             if val_folds is not None and len(val_folds) > 1:
                 lam = 0.5

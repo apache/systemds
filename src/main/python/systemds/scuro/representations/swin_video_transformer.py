@@ -59,6 +59,8 @@ class SwinVideoTransformer(UnimodalRepresentation):
         }
         self.data_type = torch.float32
         super().__init__("SwinVideoTransformer", ModalityType.EMBEDDING, parameters)
+        if params is not None:
+            layer_name = params.get("layer_name", layer_name)
         self.layer_name = layer_name
         self.model = swin3d_t(weights=models.video.Swin3D_T_Weights.KINETICS400_V1)
         self.device = get_device_for_model(self.model, memory_factor=1.5)

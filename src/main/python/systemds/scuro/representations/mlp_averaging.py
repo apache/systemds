@@ -54,6 +54,9 @@ class MLPAveraging(DimensionalityReduction):
             "batch_size": [8, 16, 32, 64, 128],
         }
         super().__init__("MLPAveraging", parameters)
+        if params is not None:
+            output_dim = params.get("output_dim", output_dim)
+            batch_size = params.get("batch_size", batch_size)
         self.output_dim = output_dim
         self.batch_size = batch_size
         self.device = None

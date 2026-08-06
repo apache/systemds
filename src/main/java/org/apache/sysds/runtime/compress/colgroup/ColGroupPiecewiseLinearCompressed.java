@@ -487,7 +487,7 @@ public class ColGroupPiecewiseLinearCompressed extends AColGroupCompressed {
 	}
 
 
-	public static int[][] read2DIntegerArray(DataInput in, int numRows) throws IOException {
+	private static int[][] read2DIntegerArray(DataInput in, int numRows) throws IOException {
 		int[][] twoDimArray = new int[numRows][];
 		for (int i = 0; i < numRows; i++) {
 			int twoDimArray_lenght = in.readInt();
@@ -499,7 +499,7 @@ public class ColGroupPiecewiseLinearCompressed extends AColGroupCompressed {
 		return twoDimArray;
 	}
 
-	public static double[][] read2DDoubleArray(DataInput in, int numRows) throws IOException {
+	private static double[][] read2DDoubleArray(DataInput in, int numRows) throws IOException {
 		double[][] twoDimArray = new double[numRows][];
 		for (int i = 0; i < numRows; i++) {
 			int twoDimArray_lenght = in.readInt();
@@ -512,16 +512,22 @@ public class ColGroupPiecewiseLinearCompressed extends AColGroupCompressed {
 	}
 
 	public static ColGroupPiecewiseLinearCompressed read(DataInput in) throws IOException {
+		// read ColGroupType written by AColGroup.write()
+		in.readByte();
+
 		IColIndex colIndices = ColIndexFactory.read(in);
+
 		int numRows = in.readInt();
-		int[][] breakpointsPerCol = read2DIntegerArray(in, numRows);
-		double[][] slopesPerCol = read2DDoubleArray(in, numRows);
-		double[][] interceptsPerCol = read2DDoubleArray(in, numRows);
+		int numCols = colIndices.size();
+
+		int[][] breakpointsPerCol = read2DIntegerArray(in, numCols);
+		double[][] slopesPerCol = read2DDoubleArray(in, numCols);
+		double[][] interceptsPerCol = read2DDoubleArray(in, numCols);
 
 		return new ColGroupPiecewiseLinearCompressed(colIndices, breakpointsPerCol, slopesPerCol, interceptsPerCol, numRows);
 	}
 
-	@Override
+		@Override
 	public void write(DataOutput out) throws IOException {
 		super.write(out);
 		out.writeInt(numRows);

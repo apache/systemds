@@ -50,11 +50,11 @@ public class FrameReaderParquetParallel extends FrameReaderParquet {
 	private Path[] getParquetDataFilePaths(FileSystem fs, Path path) throws IOException {
 		FileStatus status = fs.getFileStatus(path);
 
-		if (status.isFile())
+		if(status.isFile())
 			return new Path[] {path};
 
 		List<Path> files = new ArrayList<>();
-		for (FileStatus child : fs.listStatus(path)) {
+		for(FileStatus child : fs.listStatus(path)) {
 			if(child.isFile() && isParquetDataFile(child.getPath()))
 				files.add(child.getPath());
 		}
@@ -65,51 +65,50 @@ public class FrameReaderParquetParallel extends FrameReaderParquet {
 	private boolean isParquetDataFile(Path path) {
 		String name = path.getName();
 
-		return !name.startsWith("_")
-			&& !name.startsWith(".")
-			&& !name.endsWith(".crc");
+		return !name.startsWith("_") && !name.startsWith(".") && !name.endsWith(".crc");
 	}
 
 	private long getParquetRowCount(Path path, Configuration conf) throws IOException {
 		long rowCount = 0;
-		try (ParquetFileReader fileReader = ParquetFileReader.open(HadoopInputFile.fromPath(path, conf))) {
-			for (BlockMetaData block : fileReader.getFooter().getBlocks()) {
+		try(ParquetFileReader fileReader = ParquetFileReader.open(HadoopInputFile.fromPath(path, conf))) {
+			for(BlockMetaData block : fileReader.getFooter().getBlocks()) {
 				rowCount += block.getRowCount();
 			}
 		}
 		return rowCount;
 	}
-	
+
 	/**
-	 * Reads a Parquet frame in parallel and populates the provided FrameBlock with the data.
-	 * The method retrieves all Parquet data file paths at the given location, it then determines 
-	 * the number of threads to use based on the available files and a configured parallelism setting.
-	 * A thread pool is created to run a reading task for each file concurrently.
+	 * Reads a Parquet frame in parallel and populates the provided FrameBlock with the data. The method retrieves all
+	 * Parquet data file paths at the given location, it then determines the number of threads to use based on the
+	 * available files and a configured parallelism setting. A thread pool is created to run a reading task for each
+	 * file concurrently.
 	 *
-	 * @param path   The HDFS path to the Parquet file or the directory containing part files.
-	 * @param conf   The Hadoop configuration.
-	 * @param dest   The FrameBlock to be updated with the data read from the files.
-	 * @param rlen   The expected number of rows.
-	 * @param clen   The expected number of columns.
+	 * @param path The HDFS path to the Parquet file or the directory containing part files.
+	 * @param conf The Hadoop configuration.
+	 * @param dest The FrameBlock to be updated with the data read from the files.
+	 * @param rlen The expected number of rows.
+	 * @param clen The expected number of columns.
 	 */
 	@Override
-	protected void readParquetFrameFromHDFS(Path path, Configuration conf, FrameBlock dest, long rlen, long clen) throws IOException, DMLRuntimeException {
+	protected void readParquetFrameFromHDFS(Path path, Configuration conf, FrameBlock dest, long rlen, long clen)
+		throws IOException, DMLRuntimeException {
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
 		Path[] files = getParquetDataFilePaths(fs, path);
-		
-		if (files.length == 0)
+
+		if(files.length == 0)
 			throw new IOException("No Parquet data files found at path: " + path);
 
 		Arrays.sort(files);
 		long[] rowCounts = new long[files.length];
 		long totalRows = 0;
 
-		for (int i = 0; i < files.length; i++) {
+		for(int i = 0; i < files.length; i++) {
 			rowCounts[i] = getParquetRowCount(files[i], conf);
 			totalRows += rowCounts[i];
 		}
 
-		if (rlen >= 0 && totalRows != rlen)
+		if(rlen >= 0 && totalRows != rlen)
 			throw new IOException("Mismatch in row count: expected " + rlen + ", but got " + totalRows);
 
 		int numThreads = Math.min(OptimizerUtils.getParallelBinaryReadParallelism(), files.length);
@@ -119,7 +118,7 @@ public class FrameReaderParquetParallel extends FrameReaderParquet {
 			List<ReadFileTask> tasks = new ArrayList<>();
 			long rowOffset = 0;
 
-			for (int i = 0; i < files.length; i++) {
+			for(int i = 0; i < files.length; i++) {
 				tasks.add(new ReadFileTask(files[i], conf, dest, clen, rowOffset, rowCounts[i]));
 				rowOffset += rowCounts[i];
 			}
@@ -143,7 +142,8 @@ public class FrameReaderParquetParallel extends FrameReaderParquet {
 		private long rowOffset;
 		private long expectedRows;
 
-		public ReadFileTask(Path path, Configuration conf, FrameBlock dest, long clen, long rowOffset, long expectedRows) {
+		public ReadFileTask(Path path, Configuration conf, FrameBlock dest, long clen, long rowOffset,
+			long expectedRows) {
 			this.path = path;
 			this.conf = conf;
 			this.dest = dest;
@@ -155,29 +155,32 @@ public class FrameReaderParquetParallel extends FrameReaderParquet {
 		@Override
 		public Object call() throws Exception {
 			MessageType parquetSchema;
-			try (ParquetFileReader fileReader = ParquetFileReader.open(HadoopInputFile.fromPath(path, conf))) {
+			try(ParquetFileReader fileReader = ParquetFileReader.open(HadoopInputFile.fromPath(path, conf))) {
 				parquetSchema = fileReader.getFooter().getFileMetaData().getSchema();
 			}
 			String[] columnNames = dest.getColumnNames();
 			int[] columnIndices = getParquetColumnIndices(parquetSchema, columnNames);
 			PrimitiveType.PrimitiveTypeName[] columnTypes = getParquetColumnTypes(parquetSchema, columnIndices);
-			try (ParquetReader<Group> reader = ParquetReader.builder(new GroupReadSupport(), path).withConf(conf).build()) {
+			try(ParquetReader<Group> reader = ParquetReader.builder(new GroupReadSupport(), path).withConf(conf)
+				.build()) {
 				Group group;
 				long localRow = 0;
 
-				while ((group = reader.read()) != null) {
+				while((group = reader.read()) != null) {
 					if(localRow >= expectedRows)
-						throw new IOException("Mismatch in row count for file " + path + ": expected " + expectedRows + ", but got more rows.");
+						throw new IOException("Mismatch in row count for file " + path + ": expected " + expectedRows
+							+ ", but got more rows.");
 					int outRow = Math.toIntExact(rowOffset + localRow);
-					for (int col = 0; col < clen; col++) {
+					for(int col = 0; col < clen; col++) {
 						int colIndex = columnIndices[col];
 						dest.set(outRow, col, readTypedParquetValue(group, columnTypes[col], colIndex));
 					}
 					localRow++;
 				}
 
-				if (localRow != expectedRows)
-					throw new IOException("Mismatch in row count for file " + path + ": expected " + expectedRows + ", but got " + localRow);
+				if(localRow != expectedRows)
+					throw new IOException("Mismatch in row count for file " + path + ": expected " + expectedRows
+						+ ", but got " + localRow);
 			}
 			return null;
 		}

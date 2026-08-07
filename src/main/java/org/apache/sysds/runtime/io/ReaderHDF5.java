@@ -81,8 +81,7 @@ public class ReaderHDF5 extends MatrixReader {
 	protected static final int HDF5_READ_PARALLEL_MIN_BYTES =
 		getHdf5ReadInt("sysds.hdf5.read.parallel.min.bytes", DEFAULT_HDF5_READ_PARALLEL_MIN_BYTES);
 
-	private static final String HDF5_READ_SPARSE_LAYOUT =
-		System.getProperty("sysds.hdf5.read.sparse.layout", "dense");
+	private static final String HDF5_READ_SPARSE_LAYOUT = System.getProperty("sysds.hdf5.read.sparse.layout", "dense");
 
 	public ReaderHDF5(FileFormatPropertiesHDF5 props) {
 		_props = props;
@@ -234,9 +233,9 @@ public class ReaderHDF5 extends MatrixReader {
 				return readSparseCOOFromHDF5(contiguousDataset, dest, clen);
 
 			int ncol = (int) rootObject.getCol();
-			LOG.trace("[HDF5] readMatrix dataset=" + datasetName + " dims=" + rootObject.getRow() + "x"
-				+ rootObject.getCol() + " loop=[" + rl + "," + ru + ") dest=" + dest.getNumRows() + "x"
-				+ dest.getNumColumns());
+			LOG.trace(
+				"[HDF5] readMatrix dataset=" + datasetName + " dims=" + rootObject.getRow() + "x" + rootObject.getCol()
+					+ " loop=[" + rl + "," + ru + ") dest=" + dest.getNumRows() + "x" + dest.getNumColumns());
 
 			double[] row = null;
 			double[] blockBuffer = null;
@@ -380,13 +379,12 @@ public class ReaderHDF5 extends MatrixReader {
 		long nnz = (long) meta[2];
 
 		if(originalRows != dest.getNumRows() || originalCols != dest.getNumColumns())
-			throw new DMLRuntimeException("Sparse COO HDF5 metadata mismatch: "
-				+ originalRows + "x" + originalCols + " vs "
-				+ dest.getNumRows() + "x" + dest.getNumColumns() + ".");
+			throw new DMLRuntimeException("Sparse COO HDF5 metadata mismatch: " + originalRows + "x" + originalCols
+				+ " vs " + dest.getNumRows() + "x" + dest.getNumColumns() + ".");
 
 		if(expectedClen >= 0 && originalCols != expectedClen)
-			throw new DMLRuntimeException("Sparse COO HDF5 column metadata mismatch: "
-				+ originalCols + " vs " + expectedClen + ".");
+			throw new DMLRuntimeException(
+				"Sparse COO HDF5 column metadata mismatch: " + originalCols + " vs " + expectedClen + ".");
 
 		if(nnz > Integer.MAX_VALUE)
 			throw new DMLRuntimeException("Sparse COO HDF5 nnz exceeds supported row index range: " + nnz);

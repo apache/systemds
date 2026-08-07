@@ -42,14 +42,14 @@ public class WriterHDF5 extends MatrixWriter {
 	private static final int DEFAULT_HDF5_WRITE_BATCH_ROWS = 1024;
 	private static final int DEFAULT_HDF5_WRITE_BATCH_BYTES = 1024 * 1024;
 
-	private static final int HDF5_WRITE_BATCH_ROWS =
-		getHdf5WriteInt("sysds.hdf5.write.batch.rows", DEFAULT_HDF5_WRITE_BATCH_ROWS);
+	private static final int HDF5_WRITE_BATCH_ROWS = getHdf5WriteInt("sysds.hdf5.write.batch.rows",
+		DEFAULT_HDF5_WRITE_BATCH_ROWS);
 
-	private static final int HDF5_WRITE_BATCH_BYTES =
-		getHdf5WriteInt("sysds.hdf5.write.batch.bytes", DEFAULT_HDF5_WRITE_BATCH_BYTES);
+	private static final int HDF5_WRITE_BATCH_BYTES = getHdf5WriteInt("sysds.hdf5.write.batch.bytes",
+		DEFAULT_HDF5_WRITE_BATCH_BYTES);
 
-	private static final String HDF5_WRITE_SPARSE_LAYOUT =
-		System.getProperty("sysds.hdf5.write.sparse.layout", "dense");
+	private static final String HDF5_WRITE_SPARSE_LAYOUT = System.getProperty("sysds.hdf5.write.sparse.layout",
+		"dense");
 
 	private static int getHdf5WriteInt(String key, int defaultValue) {
 		String value = System.getProperty(key);
@@ -72,8 +72,7 @@ public class WriterHDF5 extends MatrixWriter {
 	}
 
 	private static boolean useSparseCOO(MatrixBlock src) {
-		return src.isInSparseFormat()
-			&& "coo".equalsIgnoreCase(HDF5_WRITE_SPARSE_LAYOUT);
+		return src.isInSparseFormat() && "coo".equalsIgnoreCase(HDF5_WRITE_SPARSE_LAYOUT);
 	}
 
 	@Override
@@ -122,7 +121,7 @@ public class WriterHDF5 extends MatrixWriter {
 	{
 		int clen = src.getNumColumns();
 		String datasetName = _props.getDatasetName();
-		
+
 		try(BufferedOutputStream bos = new BufferedOutputStream(fs.create(path, true))) {
 			H5RootObject rootObject = H5.H5Screate(bos, src.getNumRows(), src.getNumColumns());
 			H5.H5Dcreate(rootObject, src.getNumRows(), src.getNumColumns(), datasetName);
@@ -160,7 +159,8 @@ public class WriterHDF5 extends MatrixWriter {
 		return ret;
 	}
 
-	private static void writeDenseBatched(H5RootObject rootObject, MatrixBlock src, int rl, int ru, int clen, int batchRows) {
+	private static void writeDenseBatched(H5RootObject rootObject, MatrixBlock src, int rl, int ru, int clen,
+		int batchRows) {
 
 		DenseBlock db = src.getDenseBlock();
 		double[] batch = new double[batchRows * clen];
@@ -183,7 +183,8 @@ public class WriterHDF5 extends MatrixWriter {
 		}
 	}
 
-	private static void writeSparseBatched(H5RootObject rootObject, MatrixBlock src, int rl, int ru, int clen, int batchRows) {
+	private static void writeSparseBatched(H5RootObject rootObject, MatrixBlock src, int rl, int ru, int clen,
+		int batchRows) {
 		SparseBlock sb = src.getSparseBlock();
 		double[] batch = new double[batchRows * clen];
 
@@ -214,7 +215,8 @@ public class WriterHDF5 extends MatrixWriter {
 		}
 	}
 
-	private static void writeSparseCOOMatrixToFile(Path path, FileSystem fs, MatrixBlock src, long rlen, long clen, long nnz) throws IOException {
+	private static void writeSparseCOOMatrixToFile(Path path, FileSystem fs, MatrixBlock src, long rlen, long clen,
+		long nnz) throws IOException {
 		String datasetName = _props.getDatasetName();
 
 		long cooRows = nnz + 1;
@@ -225,11 +227,7 @@ public class WriterHDF5 extends MatrixWriter {
 			H5.H5Dcreate(rootObject, cooRows, cooCols, datasetName);
 			H5.H5WriteHeaders(rootObject);
 
-			H5.H5Dwrite(rootObject, new double[] {
-				(double) rlen,
-				(double) clen,
-				(double) nnz
-			});
+			H5.H5Dwrite(rootObject, new double[] {(double) rlen, (double) clen, (double) nnz});
 
 			writeSparseCOOEntries(rootObject, src);
 		}

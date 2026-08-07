@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -49,7 +49,6 @@ import org.apache.sysds.runtime.io.FrameWriterParquet;
 import org.apache.sysds.runtime.io.FrameWriterParquetParallel;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
-
 public class ParquetIOBenchmark {
 	private static final String PROFILE_DENSE_FP64 = "dense_fp64_only";
 	private static final String PROFILE_MIXED_SCHEMA = "mixed_schema";
@@ -75,11 +74,12 @@ public class ParquetIOBenchmark {
 		final int warmup = getIntProperty("sysds.performance.parquet.warmup", "sysds.test.parquet.warmup", 1);
 		final int reps = getIntProperty("sysds.performance.parquet.reps", "sysds.test.parquet.reps", 3);
 
-		final String[] profiles = parseProfileList(getStringProperty("sysds.performance.parquet.profiles",
-			"sysds.test.parquet.profiles", PROFILE_DENSE_FP64 + "," + PROFILE_MIXED_SCHEMA + "," + PROFILE_SPARSE_LIKE_FP64));
+		final String[] profiles = parseProfileList(
+			getStringProperty("sysds.performance.parquet.profiles", "sysds.test.parquet.profiles",
+				PROFILE_DENSE_FP64 + "," + PROFILE_MIXED_SCHEMA + "," + PROFILE_SPARSE_LIKE_FP64));
 
-		final int[] manualParts = parsePositiveIntList(getStringProperty("sysds.performance.parquet.manual.parts",
-			"sysds.test.parquet.manual.parts", ""));
+		final int[] manualParts = parsePositiveIntList(
+			getStringProperty("sysds.performance.parquet.manual.parts", "sysds.test.parquet.manual.parts", ""));
 
 		if(rows <= 0 || cols <= 0)
 			throw new IllegalArgumentException("Rows and columns must be positive.");
@@ -134,10 +134,14 @@ public class ParquetIOBenchmark {
 		String parallelInput = output("parquet_" + profileName + "_parallel_input");
 		new FrameWriterParquetParallel().writeFrameToHDFS(frameBlock, parallelInput, rows, cols);
 
-		benchmarkWrite(csv, json, jsonState, dataProfile, "seq", new FrameWriterParquet(), frameBlock, warmup, reps, "");
-		benchmarkRawIORead(csv, json, jsonState, dataProfile, "seq", seqInput, frameBlock, warmup, reps, "raw_bytes_only");
-		benchmarkFooterRead(csv, json, jsonState, dataProfile, "seq", seqInput, frameBlock, warmup, reps, "parquet_footer_only");
-		benchmarkRead(csv, json, jsonState, dataProfile, "seq", new FrameReaderParquet(), seqInput, frameBlock, warmup, reps, "");
+		benchmarkWrite(csv, json, jsonState, dataProfile, "seq", new FrameWriterParquet(), frameBlock, warmup, reps,
+			"");
+		benchmarkRawIORead(csv, json, jsonState, dataProfile, "seq", seqInput, frameBlock, warmup, reps,
+			"raw_bytes_only");
+		benchmarkFooterRead(csv, json, jsonState, dataProfile, "seq", seqInput, frameBlock, warmup, reps,
+			"parquet_footer_only");
+		benchmarkRead(csv, json, jsonState, dataProfile, "seq", new FrameReaderParquet(), seqInput, frameBlock, warmup,
+			reps, "");
 
 		benchmarkWrite(csv, json, jsonState, dataProfile, "parallel", new FrameWriterParquetParallel(), frameBlock,
 			warmup, reps, "current_parallel_write_path");
@@ -176,10 +180,8 @@ public class ParquetIOBenchmark {
 			+ "configured_parallel_read_parallelism,configured_parallel_write_parallelism,"
 			+ "estimated_parallel_read_tasks,"
 			+ "dense_fp64_reference_size_bytes,actual_file_to_dense_fp64_reference_ratio,"
-			+ "expected_nonzero_fraction,"
-			+ "reader_value_extraction_mode,frame_materialization,"
-			+ "heap_before_bytes,heap_after_bytes,heap_delta_bytes,"
-			+ "gc_count_delta,gc_time_delta_ms,notes");
+			+ "expected_nonzero_fraction," + "reader_value_extraction_mode,frame_materialization,"
+			+ "heap_before_bytes,heap_after_bytes,heap_delta_bytes," + "gc_count_delta,gc_time_delta_ms,notes");
 	}
 
 	private void benchmarkWrite(PrintWriter csv, PrintWriter json, JsonState jsonState, String dataProfile, String impl,
@@ -337,10 +339,10 @@ public class ParquetIOBenchmark {
 			wallMs, fileSizeBytes, numPartFiles, diag.avgPartFileSizeBytes, diag.hdfsBlockSizeBytes,
 			diag.currentWriterEstimatedNumPartFiles, diag.currentWriterEstimatedNumThreads,
 			diag.configuredParallelReadParallelism, diag.configuredParallelWriteParallelism,
-			diag.estimatedParallelReadTasks, diag.denseFp64ReferenceSizeBytes,
-			diag.actualFileToDenseFp64ReferenceRatio, diag.expectedNonZeroFraction,
-			escapeCsv(diag.readerValueExtractionMode), escapeCsv(diag.frameMaterialization), heapBefore, heapAfter,
-			heapAfter - heapBefore, gcCountDelta, gcTimeDeltaMs, escapeCsv(notes));
+			diag.estimatedParallelReadTasks, diag.denseFp64ReferenceSizeBytes, diag.actualFileToDenseFp64ReferenceRatio,
+			diag.expectedNonZeroFraction, escapeCsv(diag.readerValueExtractionMode),
+			escapeCsv(diag.frameMaterialization), heapBefore, heapAfter, heapAfter - heapBefore, gcCountDelta,
+			gcTimeDeltaMs, escapeCsv(notes));
 		csv.flush();
 
 		if(jsonState.hasEntries)
@@ -349,34 +351,24 @@ public class ParquetIOBenchmark {
 			jsonState.hasEntries = true;
 
 		json.printf(Locale.US,
-			"  {\"data_profile\":\"%s\",\"impl\":\"%s\",\"operation\":\"%s\"," +
-				"\"rows\":%d,\"cols\":%d,\"cells\":%d," +
-				"\"rep\":%d,\"is_warmup\":%s,\"wall_ms\":%.3f," +
-				"\"file_size_bytes\":%d,\"num_part_files\":%d," +
-				"\"avg_part_file_size_bytes\":%.3f," +
-				"\"hdfs_block_size_bytes\":%d," +
-				"\"legacy_cell_based_estimated_num_part_files\":%d," +
-				"\"legacy_cell_based_estimated_num_threads\":%d," +
-				"\"configured_parallel_read_parallelism\":%d," +
-				"\"configured_parallel_write_parallelism\":%d," +
-				"\"estimated_parallel_read_tasks\":%d," +
-				"\"dense_fp64_reference_size_bytes\":%d," +
-				"\"actual_file_to_dense_fp64_reference_ratio\":%.6f," +
-				"\"expected_nonzero_fraction\":%.6f," +
-				"\"reader_value_extraction_mode\":\"%s\"," +
-				"\"frame_materialization\":\"%s\"," +
-				"\"heap_before_bytes\":%d,\"heap_after_bytes\":%d," +
-				"\"heap_delta_bytes\":%d," +
-				"\"gc_count_delta\":%d,\"gc_time_delta_ms\":%d," +
-				"\"notes\":\"%s\"}",
+			"  {\"data_profile\":\"%s\",\"impl\":\"%s\",\"operation\":\"%s\"," + "\"rows\":%d,\"cols\":%d,\"cells\":%d,"
+				+ "\"rep\":%d,\"is_warmup\":%s,\"wall_ms\":%.3f," + "\"file_size_bytes\":%d,\"num_part_files\":%d,"
+				+ "\"avg_part_file_size_bytes\":%.3f," + "\"hdfs_block_size_bytes\":%d,"
+				+ "\"legacy_cell_based_estimated_num_part_files\":%d,"
+				+ "\"legacy_cell_based_estimated_num_threads\":%d," + "\"configured_parallel_read_parallelism\":%d,"
+				+ "\"configured_parallel_write_parallelism\":%d," + "\"estimated_parallel_read_tasks\":%d,"
+				+ "\"dense_fp64_reference_size_bytes\":%d," + "\"actual_file_to_dense_fp64_reference_ratio\":%.6f,"
+				+ "\"expected_nonzero_fraction\":%.6f," + "\"reader_value_extraction_mode\":\"%s\","
+				+ "\"frame_materialization\":\"%s\"," + "\"heap_before_bytes\":%d,\"heap_after_bytes\":%d,"
+				+ "\"heap_delta_bytes\":%d," + "\"gc_count_delta\":%d,\"gc_time_delta_ms\":%d," + "\"notes\":\"%s\"}",
 			escapeJson(dataProfile), escapeJson(impl), escapeJson(operation), rows, cols, diag.cells, rep, isWarmup,
 			wallMs, fileSizeBytes, numPartFiles, diag.avgPartFileSizeBytes, diag.hdfsBlockSizeBytes,
 			diag.currentWriterEstimatedNumPartFiles, diag.currentWriterEstimatedNumThreads,
 			diag.configuredParallelReadParallelism, diag.configuredParallelWriteParallelism,
-			diag.estimatedParallelReadTasks, diag.denseFp64ReferenceSizeBytes,
-			diag.actualFileToDenseFp64ReferenceRatio, diag.expectedNonZeroFraction,
-			escapeJson(diag.readerValueExtractionMode), escapeJson(diag.frameMaterialization), heapBefore, heapAfter,
-			heapAfter - heapBefore, gcCountDelta, gcTimeDeltaMs, escapeJson(notes));
+			diag.estimatedParallelReadTasks, diag.denseFp64ReferenceSizeBytes, diag.actualFileToDenseFp64ReferenceRatio,
+			diag.expectedNonZeroFraction, escapeJson(diag.readerValueExtractionMode),
+			escapeJson(diag.frameMaterialization), heapBefore, heapAfter, heapAfter - heapBefore, gcCountDelta,
+			gcTimeDeltaMs, escapeJson(notes));
 		json.flush();
 	}
 
@@ -396,8 +388,8 @@ public class ParquetIOBenchmark {
 
 		long denseFp64ReferenceSizeBytes = cells * 8;
 		double avgPartFileSizeBytes = numPartFiles > 0 ? ((double) fileSizeBytes / numPartFiles) : -1.0;
-		double actualFileToDenseFp64ReferenceRatio =
-			denseFp64ReferenceSizeBytes > 0 ? ((double) fileSizeBytes / denseFp64ReferenceSizeBytes) : -1.0;
+		double actualFileToDenseFp64ReferenceRatio = denseFp64ReferenceSizeBytes > 0 ? ((double) fileSizeBytes /
+			denseFp64ReferenceSizeBytes) : -1.0;
 		String readerValueExtractionMode = getReaderValueExtractionMode(impl, operation);
 		String frameMaterialization = "FrameBlock";
 		double expectedNonZeroFraction = getExpectedNonZeroFraction(dataProfile);
@@ -405,7 +397,8 @@ public class ParquetIOBenchmark {
 		return new BenchmarkDiagnostics(cells, hdfsBlockSize, currentWriterEstimatedNumPartFiles,
 			currentWriterEstimatedNumThreads, configuredParallelReadParallelism, configuredParallelWriteParallelism,
 			estimatedParallelReadTasks, denseFp64ReferenceSizeBytes, avgPartFileSizeBytes,
-			actualFileToDenseFp64ReferenceRatio, expectedNonZeroFraction, readerValueExtractionMode, frameMaterialization);
+			actualFileToDenseFp64ReferenceRatio, expectedNonZeroFraction, readerValueExtractionMode,
+			frameMaterialization);
 	}
 
 	private int estimateParallelReadTasks(String impl, String operation, int numPartFiles,
@@ -732,7 +725,8 @@ public class ParquetIOBenchmark {
 	private String escapeCsv(String s) {
 		if(s == null)
 			return "";
-		boolean needsQuotes = s.indexOf(',') >= 0 || s.indexOf('"') >= 0 || s.indexOf('\n') >= 0 || s.indexOf('\r') >= 0;
+		boolean needsQuotes = s.indexOf(',') >= 0 || s.indexOf('"') >= 0 || s.indexOf('\n') >= 0 ||
+			s.indexOf('\r') >= 0;
 		if(!needsQuotes)
 			return s;
 		return "\"" + s.replace("\"", "\"\"") + "\"";

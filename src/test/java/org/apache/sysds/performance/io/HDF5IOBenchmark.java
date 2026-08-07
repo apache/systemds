@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -53,8 +53,7 @@ public class HDF5IOBenchmark {
 	private static final int BLOCK = Integer.getInteger("sysds.test.hdf5.block.size", 1024);
 	private static final int WARMUP = Integer.getInteger("sysds.test.hdf5.warmup.reps", 2);
 	private static final int REPS = Integer.getInteger("sysds.test.hdf5.measure.reps", 3);
-	private static final int SPARSE_NNZ_PER_ROW =
-		Integer.getInteger("sysds.test.hdf5.sparse.nnz.per.row", 1);
+	private static final int SPARSE_NNZ_PER_ROW = Integer.getInteger("sysds.test.hdf5.sparse.nnz.per.row", 1);
 
 	public static void main(String[] args) throws Exception {
 		checkProperties();
@@ -72,8 +71,8 @@ public class HDF5IOBenchmark {
 				benchmarkSparse();
 				break;
 			default:
-				throw new IllegalArgumentException("Unsupported HDF5 benchmark profile: " + profile
-					+ ". Use dense, sparse, or all.");
+				throw new IllegalArgumentException(
+					"Unsupported HDF5 benchmark profile: " + profile + ". Use dense, sparse, or all.");
 		}
 	}
 
@@ -198,8 +197,8 @@ public class HDF5IOBenchmark {
 		return res;
 	}
 
-	private static Result skip(Profile p, String writer, String reader, String op, boolean warmup, int rep,
-		Path path, long logicalDenseBytes) throws IOException {
+	private static Result skip(Profile p, String writer, String reader, String op, boolean warmup, int rep, Path path,
+		long logicalDenseBytes) throws IOException {
 		Result res = baseResult(p, writer, reader, op, warmup, rep, path, logicalDenseBytes);
 		res.status = "SKIP";
 		res.errorMessage = "writer failed";
@@ -278,8 +277,7 @@ public class HDF5IOBenchmark {
 				"Unexpected sparse value at last nonzero column.");
 
 			if(SPARSE_NNZ_PER_ROW < COLS)
-				checkEquals(0, value(mb, ROWS - 1, SPARSE_NNZ_PER_ROW),
-					"Expected zero after sparse nonzero range.");
+				checkEquals(0, value(mb, ROWS - 1, SPARSE_NNZ_PER_ROW), "Expected zero after sparse nonzero range.");
 		}
 		else {
 			check(!mb.isInSparseFormat(), "Expected dense output.");
@@ -417,34 +415,17 @@ public class HDF5IOBenchmark {
 			.append("gc_count,gc_ms,read_parallelism,write_parallelism,path,error_class,error_message\n");
 
 		for(Result r : results)
-			sb.append(csv(r.label)).append(',')
-				.append(csv(r.sparseLayout)).append(',')
-				.append(csv(r.profile)).append(',')
-				.append(csv(r.writer)).append(',')
-				.append(csv(r.reader)).append(',')
-				.append(csv(r.operation)).append(',')
-				.append(csv(r.status)).append(',')
-				.append(r.rep).append(',')
-				.append(r.warmup).append(',')
-				.append(r.rows).append(',')
-				.append(r.cols).append(',')
-				.append(r.cells).append(',')
-				.append(r.nnz).append(',')
-				.append(String.format(Locale.US, "%.8f", r.sparsity)).append(',')
-				.append(String.format(Locale.US, "%.3f", r.wallMs)).append(',')
-				.append(r.fileSize).append(',')
-				.append(r.numFiles).append(',')
-				.append(r.logicalDenseBytes).append(',')
-				.append(r.heapBefore).append(',')
-				.append(r.heapAfter).append(',')
-				.append(r.heapDelta).append(',')
-				.append(r.gcCount).append(',')
-				.append(r.gcMs).append(',')
-				.append(r.readParallelism).append(',')
-				.append(r.writeParallelism).append(',')
-				.append(csv(r.path)).append(',')
-				.append(csv(r.errorClass)).append(',')
-				.append(csv(r.errorMessage)).append('\n');
+			sb.append(csv(r.label)).append(',').append(csv(r.sparseLayout)).append(',').append(csv(r.profile))
+				.append(',').append(csv(r.writer)).append(',').append(csv(r.reader)).append(',')
+				.append(csv(r.operation)).append(',').append(csv(r.status)).append(',').append(r.rep).append(',')
+				.append(r.warmup).append(',').append(r.rows).append(',').append(r.cols).append(',').append(r.cells)
+				.append(',').append(r.nnz).append(',').append(String.format(Locale.US, "%.8f", r.sparsity)).append(',')
+				.append(String.format(Locale.US, "%.3f", r.wallMs)).append(',').append(r.fileSize).append(',')
+				.append(r.numFiles).append(',').append(r.logicalDenseBytes).append(',').append(r.heapBefore).append(',')
+				.append(r.heapAfter).append(',').append(r.heapDelta).append(',').append(r.gcCount).append(',')
+				.append(r.gcMs).append(',').append(r.readParallelism).append(',').append(r.writeParallelism).append(',')
+				.append(csv(r.path)).append(',').append(csv(r.errorClass)).append(',').append(csv(r.errorMessage))
+				.append('\n');
 
 		Files.write(out, sb.toString().getBytes(StandardCharsets.UTF_8));
 	}
@@ -514,36 +495,18 @@ public class HDF5IOBenchmark {
 		}
 
 		String json() {
-			return "{"
-				+ "\"label\":" + HDF5IOBenchmark.json(label)
-				+ ",\"sparse_layout\":" + HDF5IOBenchmark.json(sparseLayout)
-				+ ",\"profile\":" + HDF5IOBenchmark.json(profile)
-				+ ",\"writer\":" + HDF5IOBenchmark.json(writer)
-				+ ",\"reader\":" + HDF5IOBenchmark.json(reader)
-				+ ",\"operation\":" + HDF5IOBenchmark.json(operation)
-				+ ",\"status\":" + HDF5IOBenchmark.json(status)
-				+ ",\"rep\":" + rep
-				+ ",\"warmup\":" + warmup
-				+ ",\"rows\":" + rows
-				+ ",\"cols\":" + cols
-				+ ",\"cells\":" + cells
-				+ ",\"nnz\":" + nnz
-				+ ",\"sparsity\":" + String.format(Locale.US, "%.8f", sparsity)
-				+ ",\"wall_ms\":" + String.format(Locale.US, "%.3f", wallMs)
-				+ ",\"file_size\":" + fileSize
-				+ ",\"num_files\":" + numFiles
-				+ ",\"logical_dense_bytes\":" + logicalDenseBytes
-				+ ",\"heap_before\":" + heapBefore
-				+ ",\"heap_after\":" + heapAfter
-				+ ",\"heap_delta\":" + heapDelta
-				+ ",\"gc_count\":" + gcCount
-				+ ",\"gc_ms\":" + gcMs
-				+ ",\"read_parallelism\":" + readParallelism
-				+ ",\"write_parallelism\":" + writeParallelism
-				+ ",\"path\":" + HDF5IOBenchmark.json(path)
-				+ ",\"error_class\":" + HDF5IOBenchmark.json(errorClass)
-				+ ",\"error_message\":" + HDF5IOBenchmark.json(errorMessage)
-				+ "}";
+			return "{" + "\"label\":" + HDF5IOBenchmark.json(label) + ",\"sparse_layout\":"
+				+ HDF5IOBenchmark.json(sparseLayout) + ",\"profile\":" + HDF5IOBenchmark.json(profile) + ",\"writer\":"
+				+ HDF5IOBenchmark.json(writer) + ",\"reader\":" + HDF5IOBenchmark.json(reader) + ",\"operation\":"
+				+ HDF5IOBenchmark.json(operation) + ",\"status\":" + HDF5IOBenchmark.json(status) + ",\"rep\":" + rep
+				+ ",\"warmup\":" + warmup + ",\"rows\":" + rows + ",\"cols\":" + cols + ",\"cells\":" + cells
+				+ ",\"nnz\":" + nnz + ",\"sparsity\":" + String.format(Locale.US, "%.8f", sparsity) + ",\"wall_ms\":"
+				+ String.format(Locale.US, "%.3f", wallMs) + ",\"file_size\":" + fileSize + ",\"num_files\":" + numFiles
+				+ ",\"logical_dense_bytes\":" + logicalDenseBytes + ",\"heap_before\":" + heapBefore
+				+ ",\"heap_after\":" + heapAfter + ",\"heap_delta\":" + heapDelta + ",\"gc_count\":" + gcCount
+				+ ",\"gc_ms\":" + gcMs + ",\"read_parallelism\":" + readParallelism + ",\"write_parallelism\":"
+				+ writeParallelism + ",\"path\":" + HDF5IOBenchmark.json(path) + ",\"error_class\":"
+				+ HDF5IOBenchmark.json(errorClass) + ",\"error_message\":" + HDF5IOBenchmark.json(errorMessage) + "}";
 		}
 	}
 }

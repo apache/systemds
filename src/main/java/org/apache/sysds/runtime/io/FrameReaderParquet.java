@@ -69,18 +69,19 @@ public class FrameReaderParquet extends FrameReader {
 
 	protected int[] getParquetColumnIndices(MessageType parquetSchema, String[] columnNames) {
 		int[] columnIndices = new int[columnNames.length];
-		for (int i = 0; i < columnNames.length; i++) {
+		for(int i = 0; i < columnNames.length; i++) {
 			columnIndices[i] = parquetSchema.getFieldIndex(columnNames[i]);
 		}
 		return columnIndices;
 	}
 
-	protected Object readTypedParquetValue(Group group, PrimitiveType.PrimitiveTypeName type, int columnIndex) throws IOException {
-		if (group.getFieldRepetitionCount(columnIndex) == 0) {
+	protected Object readTypedParquetValue(Group group, PrimitiveType.PrimitiveTypeName type, int columnIndex)
+		throws IOException {
+		if(group.getFieldRepetitionCount(columnIndex) == 0) {
 			return null;
 		}
 
-		switch (type) {
+		switch(type) {
 			case INT32:
 				return group.getInteger(columnIndex, 0);
 			case INT64:
@@ -132,21 +133,22 @@ public class FrameReaderParquet extends FrameReader {
 	}
 
 	/**
-	 * Reads data from a Parquet file on HDFS and fills the provided FrameBlock.
-	 * The method retrieves the Parquet schema from the file footer, maps the required column names
-	 * to their corresponding indices, and then uses a ParquetReader to iterate over each row.
-	 * Data is extracted based on the column type and set into the output FrameBlock.
+	 * Reads data from a Parquet file on HDFS and fills the provided FrameBlock. The method retrieves the Parquet schema
+	 * from the file footer, maps the required column names to their corresponding indices, and then uses a
+	 * ParquetReader to iterate over each row. Data is extracted based on the column type and set into the output
+	 * FrameBlock.
 	 *
-	 * @param path   The HDFS path to the Parquet file or directory.
-	 * @param conf   The Hadoop configuration.
-	 * @param dest   The FrameBlock to populate with data.
-	 * @param rlen   The expected number of rows.
-	 * @param clen   The expected number of columns.
+	 * @param path The HDFS path to the Parquet file or directory.
+	 * @param conf The Hadoop configuration.
+	 * @param dest The FrameBlock to populate with data.
+	 * @param rlen The expected number of rows.
+	 * @param clen The expected number of columns.
 	 */
-	protected void readParquetFrameFromHDFS(Path path, Configuration conf, FrameBlock dest, long rlen, long clen) throws IOException {
+	protected void readParquetFrameFromHDFS(Path path, Configuration conf, FrameBlock dest, long rlen, long clen)
+		throws IOException {
 		// Retrieve schema from Parquet footer
 		MessageType parquetSchema;
-		try (ParquetFileReader fileReader = ParquetFileReader.open(HadoopInputFile.fromPath(path, conf))) {
+		try(ParquetFileReader fileReader = ParquetFileReader.open(HadoopInputFile.fromPath(path, conf))) {
 			parquetSchema = fileReader.getFooter().getFileMetaData().getSchema();
 		}
 
@@ -156,17 +158,16 @@ public class FrameReaderParquet extends FrameReader {
 		PrimitiveType.PrimitiveTypeName[] columnTypes = getParquetColumnTypes(parquetSchema, columnIndices);
 
 		// Read data using ParquetReader
-		try (ParquetReader<Group> rowReader = ParquetReader.builder(new GroupReadSupport(), path)
-				.withConf(conf)
-				.build()) {
+		try(ParquetReader<Group> rowReader = ParquetReader.builder(new GroupReadSupport(), path).withConf(conf)
+			.build()) {
 
 			Group group;
 			int row = 0;
-			while ((group = rowReader.read()) != null) {
+			while((group = rowReader.read()) != null) {
 				if(row >= rlen)
 					throw new IOException("Mismatch in row count: expected " + rlen + ", but got more rows.");
-				
-				for (int col = 0; col < clen; col++) {
+
+				for(int col = 0; col < clen; col++) {
 					int colIndex = columnIndices[col];
 					dest.set(row, col, readTypedParquetValue(group, columnTypes[col], colIndex));
 				}
@@ -174,7 +175,7 @@ public class FrameReaderParquet extends FrameReader {
 			}
 
 			// Check frame dimensions
-			if (row != rlen) {
+			if(row != rlen) {
 				throw new IOException("Mismatch in row count: expected " + rlen + ", but got " + row);
 			}
 		}

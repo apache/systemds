@@ -36,9 +36,8 @@ import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 /**
- * Multi-threaded frame parquet writer.
- * Multi-threaded frame parquet writer.
- * 
+ * Multi-threaded frame parquet writer. Multi-threaded frame parquet writer.
+ *
  */
 public class FrameWriterParquetParallel extends FrameWriterParquet {
 
@@ -54,12 +53,13 @@ public class FrameWriterParquetParallel extends FrameWriterParquet {
 		if(value != null && !value.trim().isEmpty()) {
 			try {
 				long mb = Long.parseLong(value.trim());
-				if (mb <= 0)
+				if(mb <= 0)
 					throw new IOException("Invalid Parquet writer target part size: " + value);
 				if(mb > Long.MAX_VALUE / (1024L * 1024L))
 					throw new IOException("Parquet writer target part size is too large: " + value);
 				return mb * 1024L * 1024L;
-			} catch (NumberFormatException e) {
+			}
+			catch(NumberFormatException e) {
 				throw new IOException("Invalid value for " + PARQUET_WRITER_TARGET_PART_SIZE_MB + ": " + value, e);
 			}
 		}
@@ -72,14 +72,15 @@ public class FrameWriterParquetParallel extends FrameWriterParquet {
 		int configuredParallelism = OptimizerUtils.getParallelBinaryWriteParallelism();
 		String value = System.getProperty(PARQUET_WRITER_THREADS);
 
-		if (value != null && !value.trim().isEmpty()) {
+		if(value != null && !value.trim().isEmpty()) {
 			try {
 				int requestedThreads = Integer.parseInt(value.trim());
-				if (requestedThreads <= 0)
+				if(requestedThreads <= 0)
 					throw new IOException("Invalid Parquet writer thread count: " + value);
 
 				return Math.min(requestedThreads, configuredParallelism);
-			} catch (NumberFormatException e) {
+			}
+			catch(NumberFormatException e) {
 				throw new IOException("Invalid value for " + PARQUET_WRITER_THREADS + ": " + value, e);
 			}
 		}
@@ -115,19 +116,16 @@ public class FrameWriterParquetParallel extends FrameWriterParquet {
 	}
 
 	/**
-	 * Writes the FrameBlock data to HDFS in parallel. 
-	 * The number of output part files is derived from an estimated byte size
-	 * and a target part size. The number of active writer threads is limited
-	 * independently from the number of part files.
+	 * Writes the FrameBlock data to HDFS in parallel. The number of output part files is derived from an estimated byte
+	 * size and a target part size. The number of active writer threads is limited independently from the number of part
+	 * files.
 	 *
 	 * @param path The HDFS path where the Parquet files will be written.
 	 * @param conf The Hadoop configuration.
 	 * @param src  The FrameBlock containing the data to write.
 	 */
 	@Override
-	protected void writeParquetFrameToHDFS(Path path, Configuration conf, FrameBlock src) 
-		throws IOException 
-	{
+	protected void writeParquetFrameToHDFS(Path path, Configuration conf, FrameBlock src) throws IOException {
 		// Estimate number of output partitions
 		long estimatedSizeBytes = estimateFrameSizeBytes(src);
 		long targetPartSizeBytes = getTargetPartSizeBytes();
@@ -146,7 +144,7 @@ public class FrameWriterParquetParallel extends FrameWriterParquet {
 
 		// Create directory for concurrent tasks
 		HDFSTool.createDirIfNotExistOnHDFS(path, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
-		
+
 		// Materialize default column names before parallel tasks to avoid lazy initialization in workers.
 		src.getColumnNames();
 		// Create and execute write tasks
@@ -155,7 +153,7 @@ public class FrameWriterParquetParallel extends FrameWriterParquet {
 			List<WriteFileTask> tasks = new ArrayList<>();
 			int chunkSize = (int) Math.ceil((double) src.getNumRows() / numPartFiles);
 
-			for (int i = 0; i < numPartFiles; i++) {
+			for(int i = 0; i < numPartFiles; i++) {
 				int startRow = i * chunkSize;
 				int endRow = Math.min((i + 1) * chunkSize, (int) src.getNumRows());
 				if (startRow < endRow) {
@@ -174,8 +172,7 @@ public class FrameWriterParquetParallel extends FrameWriterParquet {
 	}
 	
 	protected void writeSingleParquetFile(Path path, Configuration conf, FrameBlock src, int startRow, int endRow)
-		throws IOException
-	{
+		throws IOException {
 		super.writeParquetFrameToHDFS(path, conf, src, startRow, endRow);
 	}
 	

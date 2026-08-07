@@ -23,6 +23,8 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
 import org.apache.sysds.common.Opcodes;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
@@ -37,6 +39,10 @@ import org.junit.runners.Parameterized;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -103,21 +109,37 @@ public class RewriteMatrixMultChainOptSparseTest extends AutomatedTestBase {
 	}
 
 	private void testRewriteMatrixMultChainOpSparse(boolean rewrites) {
-		boolean oldFlag1 = OptimizerUtils.ALLOW_ADVANCED_MMCHAIN_REWRITES;
+		boolean oldFlag1 = OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES;
 		boolean oldFlag2 = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
+		DMLConfig oldDMLConfig = ConfigurationManager.getDMLConfig();
 
 		try {
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 
+			try {
+				DMLConfig dmlConfig = new DMLConfig(getCurConfigFile().getPath());
+				dmlConfig.setTextValue(DMLConfig.SPARSITY_REWRITES, String.valueOf(rewrites));
+				overwriteCurrentConfig(dmlConfig);
+			}
+			catch(FileNotFoundException fnfe) {
+				Assert.fail("Could not find DML config file: " +
+					getCurConfigFile().getPath() + " . " + fnfe.getMessage());
+			}
+			catch(IOException ioe) {
+				Assert.fail("Could not overwrite the DML configuration file. " + ioe.getMessage());
+			}
+
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-explain", "hops", "-stats", "-args", input("X"), input("Y"), output("R")};
+			programArgs = new String[] {"-explain", "hops", "-stats",
+				"-args", input("X"), input("Y"), output("R")};
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());
 
-			OptimizerUtils.ALLOW_ADVANCED_MMCHAIN_REWRITES = rewrites;
+			OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES = rewrites;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = rewrites;
+
 			double[][] X = getRandomMatrix(rows, cols, -1, 1, sparsities[0], 7);
 			double[][] Y = getRandomMatrix(cols, 1, -1, 1, sparsities[1], 3);
 			long X_nnz = Stream.of(X).mapToLong(row -> DoubleStream.of(row).filter(val -> val != 0).count()).sum();
@@ -164,9 +186,19 @@ public class RewriteMatrixMultChainOptSparseTest extends AutomatedTestBase {
 			}
 		}
 		finally {
-			OptimizerUtils.ALLOW_ADVANCED_MMCHAIN_REWRITES = oldFlag1;
+			OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES = oldFlag1;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = oldFlag2;
+			try {
+				overwriteCurrentConfig(oldDMLConfig);
+			}
+			catch(IOException ioe) {
+				Assert.fail("Unable to restore the previous DML configuration. " + ioe.getMessage());
+			}
 			Recompiler.reinitRecompiler();
 		}
+	}
+
+	private void overwriteCurrentConfig(DMLConfig config) throws IOException {
+		Files.write(getCurConfigFile().toPath(), config.serializeDMLConfig().getBytes(StandardCharsets.UTF_8));
 	}
 }

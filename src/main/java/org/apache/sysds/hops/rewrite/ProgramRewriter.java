@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -139,9 +140,11 @@ public class ProgramRewriter{
 			if( OptimizerUtils.ALLOW_NEW_MMCHAIN_REWRITE ) {
 				_dagRuleSet.add( new RewriteMatrixMultChainWithTransOptimization()		);
 			}
-			if(OptimizerUtils.ALLOW_ADVANCED_MMCHAIN_REWRITES){
+			if(OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES){
 				_dagRuleSet.add( new RewriteMatrixMultChainOptimizationTranspose()      ); //dependency: cse
-				_dagRuleSet.add( new RewriteMatrixMultChainOptimizationSparse()         ); //dependency: cse
+			}
+			if(ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.SPARSITY_REWRITES)) {
+				_dagRuleSet.add( new RewriteMatrixMultChainOptimizationSparse()         );
 			}
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION ) {
 				_dagRuleSet.add( new RewriteAlgebraicSimplificationDynamic()      ); //dependencies: cse

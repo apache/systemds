@@ -27,6 +27,10 @@ import java.io.ObjectInputStream;
 import java.util.Arrays;
 import java.util.Collection;
 
+import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -44,7 +48,7 @@ public class SerializationTest {
 
 	@Parameterized.Parameters
 	public static Collection<?> named() {
-		return Arrays.asList(new Object[][] {{ 0 }, { 1 }});
+		return Arrays.asList(new Object[][]{{0}, {1}});
 	}
 
 	public SerializationTest(Integer named) {
@@ -60,7 +64,7 @@ public class SerializationTest {
 		ListObject lo;
 
 		if (_named == 1)
-			 lo = new ListObject(Arrays.asList(mo1, lot, io), Arrays.asList("e1", "e2", "e3"));
+			lo = new ListObject(Arrays.asList(mo1, lot, io), Arrays.asList("e1", "e2", "e3"));
 		else
 			lo = new ListObject(Arrays.asList(mo1, lot, io));
 
@@ -77,10 +81,9 @@ public class SerializationTest {
 			ByteArrayInputStream bis = new ByteArrayInputStream(loBytes);
 			ObjectInput in = new ObjectInputStream(bis);
 			loDeserialized = (ListObject) in.readObject();
-		}
-		catch(Exception e){
+		} catch (Exception e) {
 			System.out.println("Error while serializing and deserializing to bytes: " + e);
-			assert(false);
+			assert (false);
 		}
 
 		MatrixObject mo1Deserialized = (MatrixObject) loDeserialized.getData(0);
@@ -120,6 +123,17 @@ public class SerializationTest {
 		Assert.assertArrayEquals(mo1.acquireRead().getDenseBlockValues(), actualMO1.acquireRead().getDenseBlockValues(), 0);
 		Assert.assertArrayEquals(mo2.acquireRead().getDenseBlockValues(), actualMO2.acquireRead().getDenseBlockValues(), 0);
 		Assert.assertEquals(io.getLongValue(), actualIO.getLongValue());
+	}
+
+	@Test
+	public void serializeFrameObjectProgramConverter() {
+		FrameObject fo = new FrameObject("test");
+		fo.setMetaData(new MetaDataFormat(new MatrixCharacteristics(10, 2), Types.FileFormat.BINARY));
+		fo.setColumnNames(new String[]{"A", "B"});
+		String serialized =	ProgramConverter.serializeDataObject("X", fo);
+		Object[] parsed = ProgramConverter.parseDataObject(serialized);
+		FrameObject restored =(FrameObject) parsed[1];
+		Assert.assertArrayEquals(new String[]{"A", "B"}, restored.getColumnNames());
 	}
 
 	public static MatrixObject generateDummyMatrix(int size) {

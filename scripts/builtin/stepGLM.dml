@@ -1,0 +1,272 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+#  
+# THIS SCRIPT CHOOSES A GLM REGRESSION MODEL IN A STEPWISE ALGIRITHM USING AIC
+# EACH GLM REGRESSION IS SOLVED USING NEWTON/FISHER SCORING WITH TRUST REGIONS
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME  TYPE     DEFAULT   MEANING
+# ---------------------------------------------------------------------------------------------
+# X     Matrix    ---      Matrix X of feature vectors
+# Y     Matrix    ---      Response Matrix Y with 1 column
+# link  Int       2        Link function code: 1 = log, 2 = Logit, 3 = Probit, 4 = Cloglog
+# yneg  Double    0.0      Response value for Bernoulli "No" label, usually 0.0 or -1.0
+# icpt  Int       0        Intercept presence, X columns shifting and rescaling:
+#                          0 = no intercept, no shifting, no rescaling;
+#                          1 = add intercept, but neither shift nor rescale X;
+#                          2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
+# tol   Double    0.000001 Tolerance (epsilon)
+# disp  Double    0.0      (Over-)dispersion value, or 0.0 to estimate it from data
+# moi   Int       200      Maximum number of outer (Newton / Fisher Scoring) iterations
+# mii   Int       0        Maximum number of inner (Conjugate Gradient) iterations, 0 = no maximum
+# thr   Double    0.01     Threshold to stop the algorithm: if the decrease in the value of AIC falls below thr
+#                          no further features are being checked and the algorithm stops 
+# ---------------------------------------------------------------------------------------------
+# OUTPUT: Matrix beta, whose size depends on icpt:
+#     icpt=0: ncol(X) x 1;  icpt=1: (ncol(X) + 1) x 1;  icpt=2: (ncol(X) + 1) x 2
+#
+# AIC   Double    ---      AIC value
+# B     Matrix    ---      Estimated regression parameters (betas)
+# S     Matrix    ---      The selected features ordered as computed by the algorithm
+# ---------------------------------------------------------------------------------------------
+
+# THE StepGLM SCRIPT CURRENTLY SUPPORTS BERNOULLI DISTRIBUTION FAMILY AND THE FOLLOWING LINK FUNCTIONS ONLY!
+# - LOG
+#	- LOGIT
+#	- PROBIT
+#	- CLOGLOG
+
+source("./scripts/builtin/glm.dml") as glm;
+
+m_stepGLM = function (
+                    Matrix[Double] X, 
+                    Matrix[Double] Y, 
+                    Int link = 2,
+                    Double yneg = 0.0,
+                    Int icpt = 0,
+                    Double tol = 0.000001,
+                    Double disp = 0.0,
+                    Int moi = 200,
+                    Int mii = 0,
+                    Double thr = 0.01
+) return (
+          Double AIC,
+          Matrix[Double] B, 
+          Matrix[Double] S
+        )
+    {
+        intercept_status = icpt;
+        bernoulli_No_label = yneg;
+        distribution_type = 2;
+
+
+        if (distribution_type == 2 & ncol(Y) == 1) {
+            is_Y_negative = (Y == bernoulli_No_label);
+            Y = cbind (1 - is_Y_negative, is_Y_negative);
+            count_Y_negative = sum (is_Y_negative);
+            if (count_Y_negative == 0) {
+                stop ("StepGLM Input Error: all Y-values encode Bernoulli YES-label, none encode NO-label");
+            }
+            if (count_Y_negative == nrow(Y)) {
+                stop ("StepGLM Input Error: all Y-values encode Bernoulli NO-label, none encode YES-label");
+            }
+        }
+
+        X_orig = X;
+        num_records = nrow (X_orig);
+        num_features = ncol (X_orig);
+
+        # BEGIN STEPWISE GENERALIZED LINEAR MODELS 
+
+        continue = TRUE;
+        columns_fixed = matrix (0, rows = 1, cols = num_features);
+        columns_fixed_ordered = matrix (0, rows = 1, cols = 1);
+
+        # X_global stores the best model found at each step 
+        X_global = matrix (0, rows = num_records, cols = 1);
+
+        if (intercept_status == 0) {
+            # Compute AIC of an empty model with no features and no intercept (all Ys are zero)
+            [AIC_best, ignore_B1, ignore_S1] = internal_glm(X=X_global, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
+        } else {
+            # compute AIC of an empty model with only intercept (all Ys are constant)
+            all_ones = matrix (1, rows = num_records, cols = 1);
+            [AIC_best, ignore_beta2, ignore_S2] = internal_glm(X=all_ones, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
+        }
+        #print ("Best AIC without any features: " + AIC_best);
+
+        # First pass to examine single features
+        AICs = matrix (AIC_best, rows = 1, cols = num_features);
+        parfor (i in 1:num_features) { 	
+            [AIC_1, ignore_beta3, ignore_S3] = internal_glm(X=X_orig[,i], Y=Y, intercept_status=intercept_status, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
+            AICs[1,i] = AIC_1;
+        }
+
+        # Determine the best AIC 
+        column_best = 0;	
+        for (k in 1:num_features) {
+            AIC_cur = as.scalar (AICs[1,k]);
+            if ( (AIC_cur < AIC_best) & ((AIC_best - AIC_cur) > abs (thr * AIC_best)) ) {
+                column_best = k;
+                AIC_best = as.scalar(AICs[1,k]);
+            }
+        }
+
+        if (column_best == 0) {
+            #print ("AIC of an empty model is " + AIC_best + " and adding no feature achieves more than " + (thr * 100) + "% decrease in AIC!");
+            if (intercept_status == 0) {
+                # Compute AIC of an empty model with no features and no intercept (all Ys are zero)
+                [AIC_best, ignore_beta4, ignore_S4] = internal_glm(X=X_global, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
+            } else {
+                # compute AIC of an empty model with only intercept (all Ys are constant)
+                ###all_ones = matrix (1, rows = num_records, cols = 1);
+                [AIC_best, ignore_beta5, ignore_S5] = internal_glm(X=all_ones, Y=Y, intercept_status=0, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
+            }
+        };
+
+        # print ("Best AIC " + AIC_best + " achieved with feature: " + column_best);	
+        columns_fixed[1,column_best] = 1;
+        columns_fixed_ordered[1,1] = column_best;
+        X_global = X_orig[,column_best];		
+
+        while (continue) {
+            # Subsequent passes over the features
+            parfor (i in 1:num_features) { 
+                if (as.scalar(columns_fixed[1,i]) == 0) {	
+
+                    # Construct the feature matrix
+                    X_loop = cbind (X_global, X_orig[,i]);
+
+                    [AIC_2, ignore_beta6, ignore_S6] = internal_glm(X=X_loop, Y=Y, intercept_status=intercept_status, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
+                    AICs[1,i] = AIC_2;
+                }		
+            }
+
+            # Determine the best AIC
+            for (k in 1:num_features) {
+                AIC_cur = as.scalar (AICs[1,k]);
+                if ( (AIC_cur < AIC_best) & ((AIC_best - AIC_cur) > abs (thr * AIC_best)) & (as.scalar(columns_fixed[1,k]) == 0) ) {
+                    column_best = k;
+                    AIC_best = as.scalar(AICs[1,k]);
+                }
+            }
+
+            # cbind best found features (i.e., columns) to X_global
+            if (as.scalar(columns_fixed[1,column_best]) == 0) { # new best feature found
+                #print ("Best AIC " + AIC_best + " achieved with feature: " + column_best);
+                columns_fixed[1,column_best] = 1;
+                columns_fixed_ordered = cbind (columns_fixed_ordered, as.matrix(column_best));
+                if (ncol(columns_fixed_ordered) == num_features) { # all features examined
+                    X_global = cbind (X_global, X_orig[,column_best]);
+                    continue = FALSE;
+                } else {
+                    X_global = cbind (X_global, X_orig[,column_best]);
+                }
+            } else {
+                continue = FALSE;
+            }
+        }
+
+        # run GLM with selected set of features
+        print ("Running GLM with selected features...");
+        [AIC, B, S] = internal_glm(X=X_global, Y=Y, intercept_status=intercept_status, num_features_orig=num_features, Selected=columns_fixed_ordered, link=link, disp=disp, tol=tol, moi=moi, mii=mii);
+    }
+
+compute_AIC = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] B, Int link, Int icpt)
+    return (Double aic)
+{
+    # Isolate unscaled parameters; accounts for m_glm returning 2 columns when icpt=2
+    beta = B[, 1];
+
+    if (icpt > 0) {
+        ones = matrix(1, rows=nrow(X), cols=1);
+        X_design = cbind(X, ones);
+    } else {
+        X_design = X;
+    }
+
+    eta = X_design %*% beta;
+
+    # Map inverse link functions 
+    if (link == 1) {
+        # log, see https://en.wikipedia.org/wiki/Generalized_linear_model#Link_function
+        mu = exp(eta); 
+    } else if (link == 2) { 
+        # logit, see https://en.wikipedia.org/wiki/Generalized_linear_model#Link_function
+        mu = 1 / (1 + exp(-eta)); 
+    } else if (link == 3) { 
+        # probit approximation, page 1487 in "Qualitative Response Models: A Survey (1981)" by Takeshi Amemiya
+        mu = 1 / (1 + exp(-1.6 * eta));
+    } else if (link == 4) { 
+        # cloglog, see https://search.r-project.org/CRAN/refmans/VGAM/html/clogloglink.html
+        mu = 1 - exp(-exp(eta)); 
+    } else {
+        stop("Unsupported link function code: " + link);
+        mu = eta; 
+    }
+
+    # Constrain to prevent numerical discontinuity in log(0)
+    mu = max(mu, 1e-15);
+    mu = min(mu, 1 - 1e-15);
+
+    Y_yes = Y[, 1];
+    Y_neg = Y[, 2];
+
+    LL = sum(Y_yes * log(mu) + Y_neg * log(1 - mu));
+    k = nrow(beta);
+    
+    aic = 2 * k - 2 * LL;
+}
+
+internal_glm = function (
+    Matrix[Double] X, 
+    Matrix[Double] Y, 
+    Int intercept_status, 
+    Double num_features_orig, 
+    Matrix[Double] Selected, 
+    Int link, 
+    Double disp, 
+    Double tol, 
+    Int moi, 
+    Int mii
+) return (
+    Double AIC, 
+    Matrix[Double] B, 
+    Matrix[Double] S
+) {
+    # bernoulli family parameters, see table in ./scripts/builtin/m_glm.dml for details. 
+    new_link = link;
+    new_lpow = 1.0;
+    
+    if (link == 1) {
+        new_link = 1; 
+        new_lpow = 0.0; 
+    }
+    B = glm::m_glm(X=X, Y=Y, dfam=2, vpow=0.0, link=new_link, lpow=new_lpow, yneg=0.0, 
+              icpt=intercept_status, disp=disp, reg=0.0, tol=tol, 
+              moi=moi, mii=mii, verbose=FALSE);
+
+    AIC = compute_AIC(X, Y, B, link, intercept_status);
+    
+    S = Selected;
+}

@@ -47,7 +47,7 @@ import org.apache.sysds.common.Types.ValueType;
  */
 public class FrameWriterParquet extends FrameWriter {
 
-	protected void writeParquetFrameToHDFS(Path path, Configuration conf, FrameBlock src) throws IOException{
+	protected void writeParquetFrameToHDFS(Path path, Configuration conf, FrameBlock src) throws IOException {
 		writeParquetFrameToHDFS(path, conf, src, 0, src.getNumRows());
 	}
 
@@ -86,46 +86,42 @@ public class FrameWriterParquet extends FrameWriter {
 	 * @param conf The Hadoop configuration.
 	 * @param src  The FrameBlock containing the data to write.
 	 * @param startRow The starting row index for the write operation.
-	 * @param endRow The ending row index for the write operation.
+	 * @param endRow   The ending row index for the write operation.
 	 */
-	protected void writeParquetFrameToHDFS(Path path, Configuration conf, FrameBlock src, int startRow, int endRow) throws IOException {
+	protected void writeParquetFrameToHDFS(Path path, Configuration conf, FrameBlock src, int startRow, int endRow)
+		throws IOException {
 		if(startRow < 0 || endRow < startRow || endRow > src.getNumRows())
 			throw new IOException("Invalid row range for Parquet write: " + startRow + " to " + endRow);
-		
+
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
 
 		// Create schema based on frame block metadata
 		MessageType schema = createParquetSchema(src);
 
 		// TODO:Experiment with different batch sizes?
-		//int batchSize = 1000;  
-		//int rowCount = 0;
+		// int batchSize = 1000;
+		// int rowCount = 0;
 
-		// Write data using ParquetWriter //FIXME replace example writer? 
-		try (ParquetWriter<Group> writer = ExampleParquetWriter.builder(path)
-				.withConf(conf)
-				.withType(schema)
-				.withCompressionCodec(ParquetWriter.DEFAULT_COMPRESSION_CODEC_NAME)
-				.withRowGroupSize((long) ParquetWriter.DEFAULT_BLOCK_SIZE)
-				.withPageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
-				.withDictionaryEncoding(true)
-				.build()) 
-		{
+		// Write data using ParquetWriter //FIXME replace example writer?
+		try(ParquetWriter<Group> writer = ExampleParquetWriter.builder(path).withConf(conf).withType(schema)
+			.withCompressionCodec(ParquetWriter.DEFAULT_COMPRESSION_CODEC_NAME)
+			.withRowGroupSize((long) ParquetWriter.DEFAULT_BLOCK_SIZE).withPageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
+			.withDictionaryEncoding(true).build()) {
 			final int numCols = src.getNumColumns();
 			final String[] columnNames = src.getColumnNames();
 			final ValueType[] schemaTypes = src.getSchema();
 
 			SimpleGroupFactory groupFactory = new SimpleGroupFactory(schema);
-			
-			//List<Group> rowBuffer = new ArrayList<>(batchSize);
-			
-			for (int i = startRow; i < endRow; i++) {
+
+			// List<Group> rowBuffer = new ArrayList<>(batchSize);
+
+			for(int i = startRow; i < endRow; i++) {
 				Group group = groupFactory.newGroup();
-				for (int j = 0; j < numCols; j++) {
+				for(int j = 0; j < numCols; j++) {
 					Object value = src.get(i, j);
-					if (value != null) {
+					if(value != null) {
 						ValueType type = schemaTypes[j];
-						switch (type) {
+						switch(type) {
 							case STRING:
 								group.add(columnNames[j], value.toString());
 								break;

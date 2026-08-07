@@ -49,6 +49,11 @@ class ColorHistogram(UnimodalRepresentation):
         super().__init__(
             "ColorHistogram", ModalityType.EMBEDDING, self._get_parameters()
         )
+        if params is not None:
+            color_space = params.get("color_space", color_space)
+            bins = params.get("bins", bins)
+            normalize = params.get("normalize", normalize)
+            aggregation = params.get("aggregation", aggregation)
         self.color_space = color_space
         self.bins = bins
         self.normalize = normalize

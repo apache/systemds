@@ -51,11 +51,19 @@ class LSTM(Fusion):
             "depth": [1, 2, 3],
             "dropout_rate": [0.1, 0.2, 0.3, 0.4, 0.5],
             "learning_rate": [0.001, 0.0001, 0.01, 0.1],
-            "epochs": [10, 2050, 100, 200],
+            "epochs": [10, 20, 50, 100, 200],
             "batch_size": [8, 16, 32, 64, 128],
         }
 
         super().__init__("LSTM", parameters)
+
+        if params is not None:
+            width = params.get("width", width)
+            depth = params.get("depth", depth)
+            dropout_rate = params.get("dropout_rate", dropout_rate)
+            learning_rate = params.get("learning_rate", learning_rate)
+            epochs = params.get("epochs", epochs)
+            batch_size = params.get("batch_size", batch_size)
 
         self.width = int(width)
         self.depth = int(depth)
@@ -63,7 +71,7 @@ class LSTM(Fusion):
         self.learning_rate = float(learning_rate)
         self.epochs = int(epochs)
         self.batch_size = int(batch_size)
-
+        self.device = get_device()
         self.needs_training = True
         self.needs_alignment = True
         self.model = None
@@ -180,7 +188,6 @@ class LSTM(Fusion):
         self.input_dim = X.shape[2]
 
         self.model = self._build_model(self.input_dim, self.num_classes)
-        self.device = get_device_for_model(self.model, memory_factor=1.5)
         self.model = self.model.to(self.device)
 
         if self.is_multilabel:
@@ -245,7 +252,6 @@ class LSTM(Fusion):
 
         X = self._prepare_data(modalities)
 
-        self.device = get_device_for_model(self.model, memory_factor=1.5)
         self.model = self.model.to(self.device)
 
         X_tensor = torch.FloatTensor(X)

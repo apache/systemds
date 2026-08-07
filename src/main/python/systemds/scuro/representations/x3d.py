@@ -50,6 +50,9 @@ class X3D(UnimodalRepresentation):
         self, layer="classifier.1", model_name="s3d", output_file=None, params=None
     ):
         self.data_type = torch.float32
+        if params is not None:
+            model_name = params.get("model_name", model_name)
+            layer = params.get("layer_name", layer)
         self.model_name = model_name
         parameters = self._get_parameters()
         super().__init__("X3D", ModalityType.EMBEDDING, parameters)
@@ -127,7 +130,7 @@ class X3D(UnimodalRepresentation):
 
     def _get_parameters(self, high_level=True):
         parameters = {"model_name": [], "layer_name": []}
-        for m in ["c3d", "s3d"]:
+        for m in ["r3d", "s3d"]:
             parameters["model_name"].append(m)
 
         # TODO: add embedding dimensions for each layer

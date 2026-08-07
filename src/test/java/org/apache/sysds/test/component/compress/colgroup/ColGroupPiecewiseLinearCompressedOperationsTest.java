@@ -30,7 +30,6 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupPiecewiseLinearCompres
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
-import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
@@ -398,7 +397,7 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		assertArrayEquals(db_result.values(NCOLS), db_compare.values(NCOLS), TARGET_LOSS);
 	}
 
-	private double highest_loss(MatrixBlock result, MatrixBlock compare) {
+	private double highestLoss(MatrixBlock result, MatrixBlock compare) {
 		result.recomputeNonZeros();
 		compare.recomputeNonZeros();
 
@@ -427,7 +426,7 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		MatrixBlock resultMB = ((ColGroupUncompressed) result).getData();
 		MatrixBlock compareMB = compare;
 
-		double biggest_loss = highest_loss(resultMB, compareMB);
+		double biggest_loss = highestLoss(resultMB, compareMB);
 		assertEquals(TARGET_LOSS * 2, Math.max(biggest_loss, TARGET_LOSS * 2), 0.0);
 	}
 
@@ -441,7 +440,7 @@ public class ColGroupPiecewiseLinearCompressedOperationsTest extends AutomatedTe
 		MatrixBlock resultMB = ((ColGroupUncompressed) result).getData();
 		MatrixBlock compareMB = compare;
 
-		double biggest_loss = highest_loss(resultMB, compareMB);
+		double biggest_loss = highestLoss(resultMB, compareMB);
 		assertEquals(TARGET_LOSS * TARGET_LOSS, Math.max(biggest_loss, TARGET_LOSS * TARGET_LOSS), 0.0);
 	}
 

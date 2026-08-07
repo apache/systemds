@@ -19,7 +19,7 @@
 #
 # -------------------------------------------------------------
 from typing import Union, List
-
+import math
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations.representation import Representation
 
@@ -56,6 +56,24 @@ class Registry:
             self._representations[modality_type] = representations
         else:
             self._representations[modality_type] = [representations]
+
+    def set_context_operators(self, modality_type, context_operators):
+        if isinstance(context_operators, list):
+            self._context_operators[modality_type] = context_operators
+        else:
+            self._context_operators[modality_type] = [context_operators]
+
+    def set_context_representation_operators(
+        self, modality_type, context_representation_operators
+    ):
+        if isinstance(context_representation_operators, list):
+            self._context_representation_operators[modality_type] = (
+                context_representation_operators
+            )
+        else:
+            self._context_representation_operators[modality_type] = [
+                context_representation_operators
+            ]
 
     def add_representation(
         self, representation: Representation, modality: ModalityType
@@ -138,6 +156,64 @@ class Registry:
 
     def get_context_representations(self, modality_type):
         return self._context_representation_operators[modality_type]
+
+    def get_context_lenghts_for_modality(self, modality_type, statistics):
+        if modality_type == ModalityType.AUDIO:
+            window_lengths = [
+                0.010,
+                0.020,
+                0.050,
+                0.075,
+                0.100,
+                0.5,
+                1,
+                2,
+                5,
+                10,
+            ]  # seconds
+
+        if (
+            modality_type == ModalityType.TIMESERIES
+            or modality_type == ModalityType.PHYSIOLOGICAL
+        ):
+            window_lengths = [0.05, 0.1, 0.5, 0.75, 1, 2, 5, 10, 30, 60]  # seconds
+
+        if modality_type == ModalityType.VIDEO:
+            window_lengths = [0.5, 1, 2, 5, 10]  # seconds
+
+        if (
+            modality_type == ModalityType.AUDIO
+            or modality_type == ModalityType.TIMESERIES
+            or modality_type == ModalityType.PHYSIOLOGICAL
+        ):
+            max_length_in_seconds = statistics.max_length / statistics.sampling_rate
+            window_lengths = [
+                length for length in window_lengths if length <= max_length_in_seconds
+            ]
+
+            effective_window_lenghts = [
+                statistics.sampling_rate * length for length in window_lengths
+            ]
+            num_windows = [
+                math.ceil(statistics.avg_length / length)
+                for length in effective_window_lenghts
+            ]
+            return effective_window_lenghts, num_windows
+
+        if modality_type == ModalityType.VIDEO:
+            max_length_in_seconds = statistics.max_length / statistics.fps
+            window_lengths = [
+                length for length in window_lengths if length <= max_length_in_seconds
+            ]
+
+            effective_window_lenghts = [
+                statistics.fps * length for length in window_lengths
+            ]
+            num_windows = [
+                math.ceil(statistics.avg_length / length)
+                for length in effective_window_lenghts
+            ]
+            return effective_window_lenghts, num_windows
 
 
 def register_representation(modalities: Union[ModalityType, List[ModalityType]]):

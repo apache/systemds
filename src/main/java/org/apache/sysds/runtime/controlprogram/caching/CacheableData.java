@@ -491,7 +491,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 		}
 		
 		OOCStream<IndexedMatrixValue> stream = _streamHandle.getReadStream();
-		if(!stream.hasStreamCache())
+		if(!_streamHandle.hasStreamCache() && !_streamHandle.hasMaterializedStore())
 			_streamHandle = null; // To ensure read once
 		return stream;
 	}
@@ -635,7 +635,9 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 					_requiresLocalWrite = false;
 				}
 				else if( hasStreamHandle() ) {
-					_data = readBlobFromStream( getStreamHandle() );
+					OOCStream<IndexedMatrixValue> stream = getStreamHandle();
+					stream.start();
+					_data = readBlobFromStream(stream);
 				}
 				else if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() ) {
 					if( DMLScript.STATISTICS )

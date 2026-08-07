@@ -75,6 +75,7 @@ class TestDataLoader(BaseLoader):
             self.stats = VideoStats(
                 30,
                 max(d.shape[0] for d in data),
+                sum(d.shape[0] for d in data) / len(data),
                 max(d.shape[1] for d in data),
                 max(d.shape[2] for d in data),
                 max(d.shape[3] for d in data),
@@ -88,6 +89,8 @@ class TestDataLoader(BaseLoader):
                 sum(len(d) for d in data) / len(data),
                 (max(len(d) for d in data),),
                 True,
+                sum(len(d) for d in data) / len(data),
+                16000,
             )
         elif modality_type == ModalityType.IMAGE:
             self.stats = ImageStats(

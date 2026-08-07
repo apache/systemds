@@ -2261,6 +2261,8 @@ public abstract class AutomatedTestBase {
 	}
 
 	public boolean bufferContainsString(ByteArrayOutputStream buffer, String str) {
+		if(buffer == null)
+			return false;
 		return Arrays.stream(buffer.toString().split("\n")).anyMatch(x -> x.contains(str));
 	}
 

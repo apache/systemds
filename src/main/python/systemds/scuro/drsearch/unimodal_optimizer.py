@@ -20,6 +20,8 @@
 # -------------------------------------------------------------
 import copy
 import pickle
+import csv
+from pathlib import Path
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
@@ -39,6 +41,7 @@ from systemds.scuro.representations.aggregated_representation import (
 )
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.drsearch.operator_registry import Registry
+from systemds.scuro.representations.window_aggregation import WindowAggregation
 from systemds.scuro.utils.checkpointing import CheckpointManager
 from systemds.scuro.drsearch.representation_dag import (
     RepresentationDag,
@@ -63,6 +66,8 @@ class UnimodalOptimizer:
         resume: bool = False,
         max_num_workers: int = -1,
         enable_checkpointing: bool = True,
+        enable_execution_profile: bool = False,
+        execution_profile_path: Optional[str] = None,
     ):
         self.enable_checkpointing = enable_checkpointing
         self.modalities = modalities
@@ -92,7 +97,8 @@ class UnimodalOptimizer:
         self.operator_performance = UnimodalResults(
             modalities, tasks, debug, True, k, self.metric_name
         )
-
+        self.enable_execution_profile = enable_execution_profile
+        self.execution_profile_path = execution_profile_path
         self._tasks_require_same_dims = True
         self.expected_dimensions = tasks[0].expected_dim
 
@@ -242,7 +248,7 @@ class UnimodalOptimizer:
 
         for modality in self.modalities:
             try:
-                local_result = self._process_modality(
+                local_result, execution_time = self._process_modality(
                     modality,
                     (
                         int(
@@ -274,6 +280,7 @@ class UnimodalOptimizer:
                     self.operator_performance.results, {}
                 )
                 raise
+        return execution_time
 
     def _expand_dags_with_task_roots(
         self, dags: List[RepresentationDag]
@@ -281,7 +288,16 @@ class UnimodalOptimizer:
         expanded_dags: List[RepresentationDag] = []
 
         for dag in dags:
-            root_id = dag.root_node_id
+            dag = copy.deepcopy(dag)
+            root_node = dag.get_node_by_id(dag.root_node_id)
+            if root_node and root_node.operation == AggregatedRepresentation:
+                aggregation = root_node
+                dag.nodes = [n for n in dag.nodes if n.node_id != root_node.node_id]
+                root_id = aggregation.inputs[0]
+                dag.root_node_id = root_id
+            else:
+                aggregation = None
+                root_id = dag.root_node_id
             for task_idx, _ in enumerate(self.tasks):
                 task_node_id = f"task_{root_id}_{task_idx}"
 
@@ -294,6 +310,7 @@ class UnimodalOptimizer:
                         "_task_idx": task_idx,
                         "_dag_root_id": root_id,
                     },
+                    aggregation=aggregation,
                 )
 
                 task_root_dag = RepresentationDag(
@@ -326,12 +343,18 @@ class UnimodalOptimizer:
             self.result_path,
             enable_checkpointing=self.enable_checkpointing,
         )
-
+        start_time = time.perf_counter()
         exec_out = node_executor.run()
+        end_time = time.perf_counter()
         task_results = exec_out["task_results"]
 
         for task_result in task_results:
             local_results.add_task_result(task_result, dags)
+        statistics = exec_out["statistics"]
+        for worker_stat in statistics["worker_stats"]:
+            local_results.add_worker_stat(worker_stat, modality.modality_id)
+        for node_stat in statistics["node_stats"]:
+            local_results.add_node_stat(node_stat, modality.modality_id)
 
         if self.save_all_results:
             timestr = time.strftime("%Y%m%d-%H%M%S")
@@ -339,7 +362,7 @@ class UnimodalOptimizer:
             with open(file_name, "wb") as f:
                 pickle.dump(local_results.results, f)
 
-        return local_results
+        return local_results, end_time - start_time
 
     def _build_execution_dags_for_modality(
         self, modality: Modality, skip_remaining: int = 0
@@ -354,6 +377,7 @@ class UnimodalOptimizer:
         if (
             modality.modality_type == ModalityType.TIMESERIES
             or modality.modality_type == ModalityType.AUDIO
+            or modality.modality_type == ModalityType.PHYSIOLOGICAL
         ):
             dags.extend(
                 self.temporal_context_operators(
@@ -509,7 +533,6 @@ class UnimodalOptimizer:
 
     def _aggregation_needed(self, dag: RepresentationDag) -> bool:
         input_stats = {}
-        # TODO: adapt this to the fusion of multiple modalities, list of input stats needed
         for modality in self.modalities:
             if modality.modality_id == dag.nodes[0].modality_id:
                 input_stats[dag.nodes[0].node_id] = modality.stats
@@ -584,16 +607,26 @@ class UnimodalOptimizer:
             modality.modality_type
         )
         context_operators = self._get_context_operators(modality.modality_type)
-
+        window_lengths, num_windows = (
+            self.operator_registry.get_context_lenghts_for_modality(
+                modality.modality_type, modality.stats
+            )
+        )
         dags = []
         for agg in aggregators:
             for context_operator in context_operators:
-                context_node_id = builder.create_operation_node(
-                    context_operator,
-                    [leaf_id],
-                    context_operator(agg()).get_current_parameters(),
-                )
-                dags.append(builder.build(context_node_id))
+                for window_size, num_window in zip(window_lengths, num_windows):
+                    context_operator_instance = context_operator(agg())
+                    if hasattr(context_operator, "num_windows"):
+                        context_operator_instance.num_windows = num_window
+                    elif hasattr(context_operator_instance, "window_size"):
+                        context_operator_instance.window_size = window_size
+                    context_node_id = builder.create_operation_node(
+                        context_operator,
+                        [leaf_id],
+                        context_operator_instance.get_current_parameters(),
+                    )
+                    dags.append(builder.build(context_node_id))
 
         return dags
 
@@ -619,6 +652,8 @@ class UnimodalResults:
         for modality in self.modality_ids:
             self.results[modality] = {task_name: [] for task_name in self.task_names}
             self.cache[modality] = {task_name: [] for task_name in self.task_names}
+        self.worker_stats = {}
+        self.node_stats = {}
 
     def add_task_result(self, task_result: ResultEntry, dags: List[RepresentationDag]):
         dag_id = task_result.dag.dag_id
@@ -749,6 +784,12 @@ class UnimodalResults:
                 ] = cache
 
         return results, cache
+
+    def add_worker_stat(self, worker_stats, modality_id):
+        self.worker_stats[modality_id] = worker_stats
+
+    def add_node_stat(self, node_stats, modality_id):
+        self.node_stats[modality_id] = node_stats
 
 
 def get_dag_by_id(dags: List[RepresentationDag], dag_id: int) -> RepresentationDag:

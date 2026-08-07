@@ -23,17 +23,17 @@
 import unittest
 
 import numpy as np
-from systemds.scuro.representations.clip import CLIPText, CLIPVisual
 from systemds.scuro.representations.color_histogram import ColorHistogram
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.drsearch.unimodal_optimizer import UnimodalOptimizer
-from systemds.scuro.representations.mfcc import MFCC
+from systemds.scuro.representations.covarep_audio_features import ZeroCrossing
+
+from systemds.scuro.representations.resnet import ResNet
 from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
-from systemds.scuro.representations.word2vec import W2V
+from systemds.scuro.representations.tfidf import TfIdf
 from systemds.scuro.representations.bow import BoW
 from systemds.scuro.representations.bert import Bert
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
-from systemds.scuro.representations.resnet import ResNet
 from tests.scuro.data_generator import (
     ModalityRandomDataGenerator,
     TestDataLoader,
@@ -52,6 +52,15 @@ from systemds.scuro.representations.aggregated_representation import (
 from systemds.scuro.modality.type import ModalityType
 
 from unittest.mock import patch
+
+LIGHTWEIGHT_REGISTRY = {
+    ModalityType.TEXT: [BoW, TfIdf],
+    ModalityType.AUDIO: [MelSpectrogram, ZeroCrossing],
+    ModalityType.VIDEO: [ResNet],
+    ModalityType.IMAGE: [ColorHistogram],
+    ModalityType.TIMESERIES: [],
+    ModalityType.EMBEDDING: [],
+}
 
 
 class TestUnimodalRepresentationOptimizer(unittest.TestCase):
@@ -198,24 +207,7 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
         with patch.object(
             Registry,
             "_representations",
-            {
-                ModalityType.TEXT: [
-                    W2V,
-                    BoW,
-                    Bert,
-                    CLIPText,
-                ],
-                ModalityType.AUDIO: [
-                    MFCC,
-                    MelSpectrogram,
-                ],
-                ModalityType.VIDEO: [
-                    ResNet,
-                    CLIPVisual,
-                ],
-                ModalityType.IMAGE: [ColorHistogram, CLIPVisual],
-                ModalityType.EMBEDDING: [],
-            },
+            LIGHTWEIGHT_REGISTRY,
         ):
             registry = Registry()
 

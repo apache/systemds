@@ -51,6 +51,10 @@ public class FrameReaderFactory {
 			case PROTO:
 				// TODO performance improvement: add parallel reader
 				return new FrameReaderProto();
+			case PARQUET:
+				return binaryParallel ? new FrameReaderParquetParallel() : new FrameReaderParquet();
+			case DELTA:
+				return textParallel ? new FrameReaderDeltaParallel() : new FrameReaderDelta();
 			default:
 				throw new DMLRuntimeException("Failed to create frame reader for unknown format: " + fmt.toString());
 		}

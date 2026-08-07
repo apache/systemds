@@ -23,6 +23,7 @@ package org.apache.sysds.runtime.controlprogram.caching;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
@@ -203,13 +204,19 @@ public class FrameObject extends CacheableData<FrameBlock>
 			.createFrameReader(iimd.getFileFormat(), getFileFormatProperties())
 			.readFrameFromHDFS(fname, lschema, dc.getRows(), dc.getCols());
 
-		if(iimd.getFileFormat() == FileFormat.CSV)
-			_metaData = _metaData instanceof MetaDataFormat ? new MetaDataFormat(data.getDataCharacteristics(),
-				iimd.getFileFormat()) : new MetaData(data.getDataCharacteristics());
-
-		// sanity check correct output
+		// sanity check correct output (before dereferencing data below)
 		if(data == null)
 			throw new IOException("Unable to load frame from file: " + fname);
+
+		//Delta and CSV discover dimensions (and Delta also schema) at read time, so
+		//refresh the cached metadata to reflect the materialized frame block.
+		if(iimd.getFileFormat() == FileFormat.CSV || iimd.getFileFormat() == FileFormat.DELTA) {
+			_metaData = _metaData instanceof MetaDataFormat ? new MetaDataFormat(data.getDataCharacteristics(),
+				iimd.getFileFormat()) : new MetaData(data.getDataCharacteristics());
+			if(iimd.getFileFormat() == FileFormat.DELTA)
+				_schema = data.getSchema();
+		}
+
 		return data;
 	}
 
@@ -293,6 +300,9 @@ public class FrameObject extends CacheableData<FrameBlock>
 		
 		FrameWriter writer = FrameWriterFactory.createFrameWriter(fmt, fprop);
 		writer.writeFrameToHDFS(_data, fname, getNumRows(), getNumColumns());
+
+		if(DMLScript.STATISTICS)
+			CacheStatistics.incrementHDFSWrites();
 	}
 
 	@Override

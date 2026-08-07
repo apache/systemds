@@ -60,6 +60,13 @@ class AttentionFusion(Fusion):
         self.batch_size = int(batch_size)
         self.num_epochs = int(num_epochs)
         self.learning_rate = float(learning_rate)
+        if params is not None:
+            self.hidden_dim = int(params.get("hidden_dim", self.hidden_dim))
+            self.num_heads = int(params.get("num_heads", self.num_heads))
+            self.dropout = float(params.get("dropout", self.dropout))
+            self.batch_size = int(params.get("batch_size", self.batch_size))
+            self.num_epochs = int(params.get("num_epochs", self.num_epochs))
+            self.learning_rate = float(params.get("learning_rate", self.learning_rate))
 
         self.needs_training = True
         self.needs_alignment = True

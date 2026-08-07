@@ -19,33 +19,83 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.log4j.spi.LoggingEvent;
 import org.apache.sysds.common.Opcodes;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.test.LoggingUtils;
+import org.apache.sysds.test.LoggingUtils.TestAppender;
+
 import org.junit.Assert;
+import org.junit.runners.Parameterized;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
+import java.util.stream.DoubleStream;
+import java.util.stream.Stream;
 
+@RunWith(value = Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 public class RewriteMatrixMultChainOptSparseTest extends AutomatedTestBase {
 
 	private static final String TEST_NAME = "RewriteMatrixMultChainOpSparse";
 	private static final String TEST_DIR = "functions/rewrite/";
 	private static final String TEST_CLASS_DIR =
 		TEST_DIR + RewriteMatrixMultChainOptSparseTest.class.getSimpleName() + "/";
+	private static final String PACKAGE = "org.apache.sysds.hops.rewrite.HopRewriteRule";
+	private static Level _oldLevel;
 
-	private static final int rows = 1000;
-	private static final int cols = 300;
-	private static final double eps = Math.pow(10, -10);
+	@Parameterized.Parameter(0)
+	public int rows;
+
+	@Parameterized.Parameter(1)
+	public int cols;
+
+	@Parameterized.Parameter(2)
+	public double[] sparsities;
+
+	@Parameterized.Parameter(3)
+	public double eps;
+
+	@Parameterized.Parameter(4)
+	public boolean tsmm;
+
+	@Parameterized.Parameters
+	public static Collection<Object[]> data() {
+		return Arrays.asList(new Object[][] {
+			// {rows, cols, sparsities, eps, tsmm},
+			{1000, 300, new double[] {0.10d, 0.10d}, Math.pow(10, -10), false},
+			{5, 3, new double[] {0.1, 1}, Math.pow(10, -10), true},});
+	}
 
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"R"}));
+		_oldLevel = Logger.getLogger(PACKAGE).getLevel();
+		Logger.getLogger(PACKAGE).setLevel(Level.TRACE);
+	}
+
+	@Override
+	public void tearDown() {
+		super.tearDown();
+		Logger.getLogger(PACKAGE).setLevel(_oldLevel);
 	}
 
 	@Test
@@ -59,28 +109,50 @@ public class RewriteMatrixMultChainOptSparseTest extends AutomatedTestBase {
 	}
 
 	private void testRewriteMatrixMultChainOpSparse(boolean rewrites) {
-		boolean oldFlag1 = OptimizerUtils.ALLOW_ADVANCED_MMCHAIN_REWRITES;
+		boolean oldFlag1 = OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES;
 		boolean oldFlag2 = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
+		DMLConfig oldDMLConfig = ConfigurationManager.getDMLConfig();
 
 		try {
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 
+			try {
+				DMLConfig dmlConfig = new DMLConfig(getCurConfigFile().getPath());
+				dmlConfig.setTextValue(DMLConfig.SPARSITY_REWRITES, String.valueOf(rewrites));
+				overwriteCurrentConfig(dmlConfig);
+			}
+			catch(FileNotFoundException fnfe) {
+				Assert.fail("Could not find DML config file: " +
+					getCurConfigFile().getPath() + " . " + fnfe.getMessage());
+			}
+			catch(IOException ioe) {
+				Assert.fail("Could not overwrite the DML configuration file. " + ioe.getMessage());
+			}
+
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-explain", "hops", "-stats", "-args", input("X"), input("Y"), output("R")};
+			programArgs = new String[] {"-explain", "hops", "-stats",
+				"-args", input("X"), input("Y"), output("R")};
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());
 
-			OptimizerUtils.ALLOW_ADVANCED_MMCHAIN_REWRITES = rewrites;
+			OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES = rewrites;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = rewrites;
-			double[][] X = getRandomMatrix(rows, cols, -1, 1, 0.10d, 7);
-			double[][] Y = getRandomMatrix(cols, 1, -1, 1, 0.10d, 3);
-			writeInputMatrixWithMTD("X", X, true);
-			writeInputMatrixWithMTD("Y", Y, true);
+
+			double[][] X = getRandomMatrix(rows, cols, -1, 1, sparsities[0], 7);
+			double[][] Y = getRandomMatrix(cols, 1, -1, 1, sparsities[1], 3);
+			long X_nnz = Stream.of(X).mapToLong(row -> DoubleStream.of(row).filter(val -> val != 0).count()).sum();
+			long Y_nnz = Stream.of(Y).mapToLong(row -> DoubleStream.of(row).filter(val -> val != 0).count()).sum();
+			writeInputMatrixWithMTD("X", X, X_nnz, true);
+			writeInputMatrixWithMTD("Y", Y, Y_nnz, true);
+
 
 			//execute tests
+			TestAppender appender = LoggingUtils.overwrite(); // capture log output
 			runTest(true, false, null, -1);
+			List<LoggingEvent> log_out = LoggingUtils.reinsert(appender); // revert the logger to print to stdout
+
 			runRScript(true);
 
 			//compare matrices
@@ -89,18 +161,44 @@ public class RewriteMatrixMultChainOptSparseTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			if(rewrites) {
-				Assert.assertTrue(heavyHittersContainsSubString(Opcodes.MMCHAIN.toString()) ||
-					heavyHittersContainsSubString("sp_mapmmchain"));
+				String delimiter = ";";
+				String log_out_string = String.join(delimiter,
+					log_out.stream().map(l -> l.getMessage().toString()).toArray(String[]::new));
+				Assert.assertTrue(log_out_string.contains("mmchainoptsparse"));
+				if(tsmm) {
+					Assert.assertTrue(log_out_string.contains("Optimal Sparse MM Chain:" + delimiter + "--(" + delimiter
+						+ "----(" + delimiter + "------Hop parsertemp"));
+					Assert.assertTrue(heavyHittersContainsSubString(Opcodes.TSMM.toString()) ||
+						heavyHittersContainsSubString("sp_tsmm"));
+				}
+				else {
+					Assert.assertTrue(log_out_string
+						.contains("Optimal Sparse MM Chain:" + delimiter + "--(" + delimiter + "----Hop parsertemp"));
+					Assert.assertTrue(heavyHittersContainsSubString(Opcodes.MMCHAIN.toString()) ||
+						heavyHittersContainsSubString("sp_mapmmchain"));
+				}
 			}
 			else {
+				Assert.assertFalse(
+					log_out.stream().anyMatch(l -> l.getMessage().toString().contains("mmchainoptsparse")));
 				Assert.assertFalse(heavyHittersContainsSubString(Opcodes.MMCHAIN.toString()) ||
-						heavyHittersContainsSubString("sp_mapmmchain"));
+					heavyHittersContainsSubString("sp_mapmmchain"));
 			}
 		}
 		finally {
-			OptimizerUtils.ALLOW_ADVANCED_MMCHAIN_REWRITES = oldFlag1;
+			OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES = oldFlag1;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = oldFlag2;
+			try {
+				overwriteCurrentConfig(oldDMLConfig);
+			}
+			catch(IOException ioe) {
+				Assert.fail("Unable to restore the previous DML configuration. " + ioe.getMessage());
+			}
 			Recompiler.reinitRecompiler();
 		}
+	}
+
+	private void overwriteCurrentConfig(DMLConfig config) throws IOException {
+		Files.write(getCurConfigFile().toPath(), config.serializeDMLConfig().getBytes(StandardCharsets.UTF_8));
 	}
 }

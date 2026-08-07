@@ -26,6 +26,11 @@ import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.ooc.TeeOOCInstruction;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.ooc.cache.io.OOCIOHandler;
+import org.apache.sysds.runtime.ooc.cache.io.OOCMatrixIOHandler;
+import org.apache.sysds.runtime.ooc.cache.legacy.OOCCacheScheduler;
+import org.apache.sysds.runtime.ooc.cache.legacy.OOCLRUCacheScheduler;
+import org.apache.sysds.runtime.ooc.cache.packed.OOCPackedCache;
 import org.apache.sysds.runtime.ooc.memory.InMemoryQueueCallback;
 import org.apache.sysds.runtime.ooc.stats.OOCEventLog;
 import org.apache.sysds.utils.Statistics;
@@ -48,22 +53,27 @@ public class OOCCacheManager {
 
 	private static final AtomicReference<OOCIOHandler> _ioHandler;
 	private static final AtomicReference<OOCCacheScheduler> _scheduler;
+	private static final AtomicReference<OOCPackedCache> _globalCache;
 
 	static {
 		_evictionLimit = (long)(Runtime.getRuntime().maxMemory() * OOC_BUFFER_PERCENTAGE);
 		_hardLimit = (long)(Runtime.getRuntime().maxMemory() * OOC_BUFFER_PERCENTAGE_HARD);
 		_ioHandler = new AtomicReference<>();
 		_scheduler = new AtomicReference<>();
+		_globalCache = new AtomicReference<>();
 	}
 
 	public static void reset() {
 		TeeOOCInstruction.reset();
 		OOCIOHandler ioHandler = _ioHandler.getAndSet(null);
 		OOCCacheScheduler cacheScheduler = _scheduler.getAndSet(null);
+		OOCPackedCache globalCache = _globalCache.getAndSet(null);
 		if (ioHandler != null)
 			ioHandler.shutdown();
 		if (cacheScheduler != null)
 			cacheScheduler.shutdown();
+		if(globalCache != null)
+			globalCache.shutdown();
 
 		if (DMLScript.OOC_STATISTICS)
 			Statistics.resetOOCEvictionStats();
@@ -112,6 +122,18 @@ public class OOCCacheManager {
 	 */
 	public static OOCCacheScheduler getCacheIfInitialized() {
 		return _scheduler.get();
+	}
+
+	public static OOCPackedCache getGlobalCache() {
+		while(true) {
+			OOCPackedCache cache = _globalCache.get();
+			if(cache != null)
+				return cache;
+			cache = new OOCPackedCache(new OOCMatrixIOHandler(), _hardLimit, _evictionLimit);
+			if(_globalCache.compareAndSet(null, cache))
+				return cache;
+			cache.shutdown();
+		}
 	}
 
 	public static OOCIOHandler getIOHandler() {
@@ -282,8 +304,12 @@ public class OOCCacheManager {
 
 		@SuppressWarnings("unchecked")
 		CachedQueueCallback(BlockEntry result, DMLRuntimeException failure) {
+			this(result, (T) result.getData(), failure);
+		}
+
+		private CachedQueueCallback(BlockEntry result, T data, DMLRuntimeException failure) {
 			this._result = result;
-			this._data = (T)result.getData();
+			this._data = data;
 			this._failure = failure;
 			this._pinned = new AtomicBoolean(true);
 		}
@@ -301,8 +327,11 @@ public class OOCCacheManager {
 		public OOCStream.QueueCallback<T> keepOpen() {
 			if(!_pinned.get())
 				throw new IllegalStateException("Cannot keep open an already closed callback");
+			T data = _data;
+			if(data == null)
+				throw new IllegalStateException("Cannot keep open an empty callback");
 			pin(_result);
-			return new CachedQueueCallback<>(_result, _failure);
+			return new CachedQueueCallback<>(_result, data, _failure);
 		}
 
 		@Override

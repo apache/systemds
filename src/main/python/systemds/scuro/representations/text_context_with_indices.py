@@ -296,6 +296,11 @@ class OverlappingSplitIndices(Context):
             "stride": [10, 15, 20, 30],
         }
         super().__init__("OverlappingSplit", parameters)
+        if params is not None:
+            max_words = params.get("max_words", max_words)
+            overlap = params.get("overlap", overlap)
+            overlap_words = int(max_words * overlap)
+            stride = params.get("stride", max_words - overlap_words)
         self.max_words = max_words
         self.overlap = overlap
         self.stride = stride

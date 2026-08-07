@@ -35,43 +35,54 @@ from systemds.scuro.utils.static_variables import (
     PY_LIST_HEADER_BYTES,
     PY_LIST_SLOT_BYTES,
 )
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    message=r"n_fft=\d+ is too (?:small|large) for input signal",
+    module=r"librosa",
+)
 
 
 @register_representation(ModalityType.AUDIO)
 @register_context_representation_operator(ModalityType.AUDIO)
 class MFCC(UnimodalRepresentation):
-    def __init__(self, n_mfcc=12, dct_type=2, n_mels=128, hop_length=512, params=None):
+    def __init__(
+        self, n_mfcc=12, dct_type=2, n_mels=128, hop_length=512, n_fft=2048, params=None
+    ):
         parameters = {
             "n_mfcc": [x for x in range(10, 26)],
             "dct_type": [1, 2, 3],
             "hop_length": [256, 512, 1024, 2048],
             "n_mels": [20, 32, 64, 128],
-        }  # TODO
+            "n_fft": [1024, 2048, 4096],
+        }
+
         super().__init__("MFCC", ModalityType.TIMESERIES, parameters, False)
 
-        # Allow construction from a parameter dict (used by optimizer)
         if params is not None:
             n_mfcc = params.get("n_mfcc", n_mfcc)
             dct_type = params.get("dct_type", dct_type)
             n_mels = params.get("n_mels", n_mels)
             hop_length = params.get("hop_length", hop_length)
+            n_fft = params.get("n_fft", n_fft)
 
         self.n_mfcc = int(n_mfcc)
         self.dct_type = int(dct_type)
         self.n_mels = int(n_mels)
         self.hop_length = int(hop_length)
+        self.n_fft = int(n_fft)
+        self.window_size = self.n_fft
 
     def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )
         result = []
-
-        for i, sample in enumerate(modality.data):
-            sr = modality.metadata[i]["frequency"]
-            computed_feature = self.compute_feature(sample, sr)
+        sr = modality.metadata[0]["frequency"] if modality.metadata else 22050
+        for sample in modality.data:
+            computed_feature = self.compute_feature(sample, sr=sr)
             result.append(computed_feature)
-
         transformed_modality.data = result
         return transformed_modality
 
@@ -79,20 +90,22 @@ class MFCC(UnimodalRepresentation):
         if sr is None:
             sr = 22050
         mfcc = librosa.feature.mfcc(
-            y=np.array(instance),
+            y=np.asarray(instance, dtype=np.float32),
             sr=sr,
             n_mfcc=self.n_mfcc,
             dct_type=self.dct_type,
             hop_length=self.hop_length,
             n_mels=self.n_mels,
+            n_fft=self.n_fft,
         )
         if mfcc.ndim == 2:
-            mean = np.mean(mfcc, keepdims=True)
-            std = np.std(mfcc, keepdims=True)
+            mean = mfcc.mean(keepdims=True)
+            std = mfcc.std(keepdims=True)
         else:
-            mean = np.mean(mfcc, axis=(1, 2), keepdims=True)
-            std = np.std(mfcc, axis=(1, 2), keepdims=True)
-        mfcc = (mfcc - mean) / np.maximum(std, 1e-8)
+            mean = mfcc.mean(axis=(1, 2), keepdims=True)
+            std = mfcc.std(axis=(1, 2), keepdims=True)
+        mfcc -= mean
+        mfcc /= np.maximum(std, 1e-8)
 
         if instance.ndim == 1:
             return mfcc.T

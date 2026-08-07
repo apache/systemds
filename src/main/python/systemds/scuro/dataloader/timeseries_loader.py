@@ -36,6 +36,8 @@ class TimeseriesStats:
     num_signals: int
     output_shape: tuple
     output_shape_is_known: bool
+    avg_length: float
+    sampling_rate: int
 
 
 class TimeseriesLoader(BaseLoader):
@@ -49,15 +51,14 @@ class TimeseriesLoader(BaseLoader):
         sampling_rate: Optional[int] = None,
         normalize: bool = True,
         file_format: str = "npy",
+        modality_type: Optional[ModalityType] = ModalityType.TIMESERIES,
     ):
-        super().__init__(
-            source_path, indices, data_type, chunk_size, ModalityType.TIMESERIES
-        )
+        super().__init__(source_path, indices, data_type, chunk_size, modality_type)
         self.signal_names = signal_names
         self.sampling_rate = sampling_rate
         self.normalize = normalize
         self.file_format = file_format.lower()
-        self.stats = self.get_stats(source_path)
+        self.stats = self.get_stats(source_path, sampling_rate)
         if self.file_format not in ["npy", "mat", "hdf5", "txt"]:
             raise ValueError(f"Unsupported file format: {self.file_format}")
 
@@ -148,17 +149,25 @@ class TimeseriesLoader(BaseLoader):
         data = df[selected].to_numpy(dtype=self._data_type)
         return data
 
-    def get_stats(self, source_path: str):
+    def get_stats(self, source_path: str, sampling_rate: int):
         self.file_sanity_check(source_path)
         max_length = 0
         num_instances = 0
         num_signals = 0
+        avg_length = 0
         for file_name in self.indices:
             file = source_path + file_name + "." + self.file_format
             data = self._load_data(file)
             max_length = max(max_length, data.shape[0])
+            avg_length += data.shape[0]
             num_instances += 1
             num_signals = max(num_signals, data.shape[1])
         return TimeseriesStats(
-            max_length, num_instances, num_signals, (max_length,), True
+            max_length,
+            num_instances,
+            num_signals,
+            (max_length,),
+            True,
+            avg_length / num_instances,
+            sampling_rate,
         )

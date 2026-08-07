@@ -146,6 +146,19 @@
     <!-- sets the federated compression strategy (none, zlib, snappy, fastlz, lz4, lzf) -->
     <sysds.federated.compression>none</sysds.federated.compression>
 
+    <!-- enables SSL encrypted federated communication, the certificates below are required with it -->
+    <!-- <sysds.federated.ssl>true</sysds.federated.ssl> -->
+
+    <!-- worker side: the X.509 certificate chain (PEM) and matching PKCS#8 private key (PEM). The certificate has to
+         be issued for the host the coordinator connects to, the coordinator always verifies this. -->
+    <!-- <sysds.federated.ssl.cert>/path/to/worker-cert.pem</sysds.federated.ssl.cert> -->
+    <!-- <sysds.federated.ssl.key>/path/to/worker-key.pem</sysds.federated.ssl.key> -->
+    <!-- if the private key is encrypted, its password is read from the SYSTEMDS_FEDERATED_SSL_KEY_PASSWORD
+         environment variable, do not put it into this file. -->
+
+    <!-- coordinator side: the certificates (PEM) trusted to sign worker certificates, typically the CA certificate. -->
+    <!-- <sysds.federated.ssl.trust>/path/to/ca-cert.pem</sysds.federated.ssl.trust> -->
+
     <!-- set buffer pool threshold (max size) in % of total heap -->
     <sysds.caching.bufferpoollimit>15</sysds.caching.bufferpoollimit>
 

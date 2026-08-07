@@ -39,13 +39,11 @@ import org.apache.parquet.hadoop.util.HadoopInputFile;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 /**
- * Multi-threaded frame parquet reader.
- * 
+ * Multi-threaded frame parquet reader: reads one file per task, each decoding into its own row range of the shared
+ * column backing arrays. Per-file row offsets are derived from the row counts in the file footers.
  */
 public class FrameReaderParquetParallel extends FrameReaderParquet {
 
@@ -126,12 +124,13 @@ public class FrameReaderParquetParallel extends FrameReaderParquet {
 				rowOffset += rowCounts[i];
 			}
 
-			for (Future<Object> task : pool.invokeAll(tasks)) {
+			for(Future<Object> task : pool.invokeAll(tasks))
 				task.get();
-			}
-		} catch (Exception e) {
+		}
+		catch(Exception e) {
 			throw new IOException("Failed parallel read of Parquet frame.", e);
-		} finally {
+		}
+		finally {
 			pool.shutdown();
 		}
 	}
@@ -153,7 +152,6 @@ public class FrameReaderParquetParallel extends FrameReaderParquet {
 			this.expectedRows = expectedRows;
 		}
 
-		// When executed, a ParquetReader for the assigned file opens and iterates over each row processing every column.
 		@Override
 		public Object call() throws Exception {
 			MessageType parquetSchema;

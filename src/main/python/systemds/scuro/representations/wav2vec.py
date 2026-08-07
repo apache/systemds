@@ -28,10 +28,11 @@ from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.drsearch.operator_registry import register_representation
+from systemds.scuro.utils.memory_utility import get_device
 
-import warnings
+from transformers.utils import logging as transformers_logging
 
-warnings.filterwarnings("ignore", message="Some weights of")
+transformers_logging.set_verbosity_error()
 
 
 @register_representation(ModalityType.AUDIO)

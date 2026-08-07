@@ -33,6 +33,7 @@ from systemds.scuro.modality.type import ModalityType
 class VideoStats:
     fps: int
     max_length: int
+    avg_length: float
     max_width: int
     max_height: int
     max_channels: int
@@ -117,6 +118,7 @@ class VideoLoader(BaseLoader):
         max_height = 0
         max_num_channels = 0
         num_instances = 0
+        avg_length = 0
         for file in os.listdir(source_path):
             file_name = file.split(".")[0]
             if file_name not in self.indices:
@@ -129,6 +131,7 @@ class VideoLoader(BaseLoader):
             height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             num_channels = 3
             max_length = max(max_length, length)
+            avg_length += length
             max_width = max(max_width, width)
             max_height = max(max_height, height)
             max_num_channels = max(max_num_channels, num_channels)
@@ -142,6 +145,7 @@ class VideoLoader(BaseLoader):
         return VideoStats(
             fps,
             max_length,
+            avg_length / num_instances,
             max_width,
             max_height,
             max_num_channels,

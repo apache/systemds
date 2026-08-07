@@ -76,6 +76,10 @@ public class OffsetEmpty extends AOffset {
 	public long getInMemorySize() {
 		return estimateInMemorySize();
 	}
+	@Override
+	public boolean equals(AOffset b) {
+		return b instanceof OffsetEmpty;
+	}
 
 	public static long estimateInMemorySize() {
 		return 16; // object header
@@ -93,7 +97,7 @@ public class OffsetEmpty extends AOffset {
 
 	@Override
 	public OffsetSliceInfo slice(int l, int u) {
-		return EMPTY_SLICE;
+		return emptySlice();
 	}
 
 	@Override

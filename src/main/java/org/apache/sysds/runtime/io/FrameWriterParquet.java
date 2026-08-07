@@ -25,12 +25,16 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.parquet.example.data.Group;
-import org.apache.parquet.example.data.simple.SimpleGroupFactory;
+import org.apache.parquet.hadoop.ParquetOutputFormat;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.apache.parquet.hadoop.example.ExampleParquetWriter;
+import org.apache.parquet.hadoop.api.WriteSupport;
+import org.apache.parquet.hadoop.metadata.CompressionCodecName;
+import org.apache.parquet.io.api.Binary;
+import org.apache.parquet.io.api.RecordConsumer;
+import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
-import org.apache.parquet.schema.MessageTypeParser;
+import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
+import org.apache.parquet.schema.Types;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -74,9 +78,9 @@ public class FrameWriterParquet extends FrameWriter {
 	}
 
 	/**
-	 * Writes the FrameBlock data to a Parquet file using a ParquetWriter.
-	 * The method generates a Parquet schema based on the metadata of the FrameBlock, initializes a ParquetWriter with specified configurations, 
-	 * iterates over each row and column, adding values (in batches for improved performance) using type-specific conversions.
+	 * Writes the FrameBlock data to a Parquet file using a ParquetWriter. The method generates a Parquet schema based
+	 * on the metadata of the FrameBlock, initializes a ParquetWriter with specified configurations, iterates over each
+	 * row and column, writing directly to the RecordConsumer, using type-specific conversions.
 	 *
 	 * @param path The HDFS path where the Parquet file will be written.
 	 * @param conf The Hadoop configuration.
@@ -161,30 +165,30 @@ public class FrameWriterParquet extends FrameWriter {
 	 * @return The generated Parquet MessageType schema.
 	 */
 	protected MessageType createParquetSchema(FrameBlock src) {
-		StringBuilder schemaBuilder = new StringBuilder("message FrameSchema {");
 		String[] columnNames = src.getColumnNames();
 		ValueType[] columnTypes = src.getSchema();
+		Types.MessageTypeBuilder builder = Types.buildMessage();
 
 		for (int i = 0; i < src.getNumColumns(); i++) {
-			schemaBuilder.append("optional ");
 			switch (columnTypes[i]) {
 				case STRING:
-					schemaBuilder.append("binary ").append(columnNames[i]).append(" (UTF8);");
+					builder.optional(PrimitiveTypeName.BINARY).as(LogicalTypeAnnotation.stringType())
+						.named(columnNames[i]);
 					break;
 				case INT32:
-					schemaBuilder.append("int32 ").append(columnNames[i]).append(";");
+					builder.optional(PrimitiveTypeName.INT32).named(columnNames[i]);
 					break;
 				case INT64:
-					schemaBuilder.append("int64 ").append(columnNames[i]).append(";");
+					builder.optional(PrimitiveTypeName.INT64).named(columnNames[i]);
 					break;
 				case FP32:
-					schemaBuilder.append("float ").append(columnNames[i]).append(";");
+					builder.optional(PrimitiveTypeName.FLOAT).named(columnNames[i]);
 					break;
 				case FP64:
-					schemaBuilder.append("double ").append(columnNames[i]).append(";");
+					builder.optional(PrimitiveTypeName.DOUBLE).named(columnNames[i]);
 					break;
 				case BOOLEAN:
-					schemaBuilder.append("boolean ").append(columnNames[i]).append(";");
+					builder.optional(PrimitiveTypeName.BOOLEAN).named(columnNames[i]);
 					break;
 				default:
 					throw new IllegalArgumentException("Unsupported data type: " + columnTypes[i]);

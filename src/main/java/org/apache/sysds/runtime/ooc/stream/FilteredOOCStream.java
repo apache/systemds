@@ -24,10 +24,8 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.instructions.ooc.CachingStream;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.ooc.stream.message.OOCStreamMessage;
-import org.apache.sysds.runtime.util.IndexRange;
+import org.apache.sysds.runtime.ooc.primitives.OOCPrimitive;
 
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -35,6 +33,7 @@ public class FilteredOOCStream<T> implements OOCStream<T> {
 	private final OOCStream<T> _sourceStream;
 	private final Function<T, Boolean> _predicate;
 	private CacheableData<?> _data;
+	private QueueCallback<T> _last;
 
 	public FilteredOOCStream(OOCStream<T> sourceStream, Function<T, Boolean> predicate) {
 		_sourceStream = sourceStream;
@@ -47,11 +46,25 @@ public class FilteredOOCStream<T> implements OOCStream<T> {
 	}
 
 	@Override
+	public void enqueue(QueueCallback<T> callback) {
+		_sourceStream.enqueue(callback);
+	}
+
+	@Override
 	public synchronized T dequeue() {
-		T next;
-		while((next = _sourceStream.dequeue()) != null) {
-			if(_predicate.apply(next))
-				return next;
+		QueueCallback<T> cb = dequeueCB();
+		return cb == null ? null : cb.get();
+	}
+
+	@Override
+	public synchronized QueueCallback<T> dequeueCB() {
+		if(_last != null)
+			_last.close();
+		while((_last = _sourceStream.dequeueCB()) != null) {
+			if(_predicate.apply(_last.get()))
+				return _last;
+			_last.close();
+			_last = null;
 		}
 		return null;
 	}
@@ -74,6 +87,11 @@ public class FilteredOOCStream<T> implements OOCStream<T> {
 	@Override
 	public CachingStream getStreamCache() {
 		return _sourceStream.getStreamCache();
+	}
+
+	@Override
+	public OOCPrimitive getPrimitive() {
+		return _sourceStream.getPrimitive();
 	}
 
 	@Override
@@ -101,6 +119,8 @@ public class FilteredOOCStream<T> implements OOCStream<T> {
 
 			if(_predicate.apply(cb.get()))
 				subscriber.accept(cb);
+			else
+				cb.close();
 		});
 	}
 
@@ -132,50 +152,5 @@ public class FilteredOOCStream<T> implements OOCStream<T> {
 	@Override
 	public void setData(CacheableData<?> data) {
 		_data = data;
-	}
-
-	@Override
-	public void messageUpstream(OOCStreamMessage msg) {
-		_sourceStream.messageUpstream(msg);
-	}
-
-	@Override
-	public void messageDownstream(OOCStreamMessage msg) {
-		_sourceStream.messageDownstream(msg);
-	}
-
-	@Override
-	public void setUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		_sourceStream.setUpstreamMessageRelay(relay);
-	}
-
-	@Override
-	public void setDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		_sourceStream.setDownstreamMessageRelay(relay);
-	}
-
-	@Override
-	public void addUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		_sourceStream.addUpstreamMessageRelay(relay);
-	}
-
-	@Override
-	public void addDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		_sourceStream.addDownstreamMessageRelay(relay);
-	}
-
-	@Override
-	public void clearUpstreamMessageRelays() {
-		_sourceStream.clearUpstreamMessageRelays();
-	}
-
-	@Override
-	public void clearDownstreamMessageRelays() {
-		_sourceStream.clearDownstreamMessageRelays();
-	}
-
-	@Override
-	public void setIXTransform(BiFunction<Boolean, IndexRange, IndexRange> transform) {
-		_sourceStream.setIXTransform(transform);
 	}
 }

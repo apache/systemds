@@ -21,25 +21,42 @@ package org.apache.sysds.runtime.io;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Comparator;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.parquet.example.data.Group;
+import org.apache.parquet.column.ColumnDescriptor;
+import org.apache.parquet.column.ColumnReader;
+import org.apache.parquet.column.impl.ColumnReadStoreImpl;
+import org.apache.parquet.column.page.PageReadStore;
 import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.example.GroupReadSupport;
 import org.apache.parquet.hadoop.util.HadoopInputFile;
+import org.apache.parquet.io.api.Converter;
+import org.apache.parquet.io.api.GroupConverter;
+import org.apache.parquet.io.api.PrimitiveConverter;
 import org.apache.parquet.schema.MessageType;
-import org.apache.parquet.schema.PrimitiveType;
+import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
+import org.apache.parquet.schema.Type;
+import org.apache.parquet.schema.Type.Repetition;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.Array;
+import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
  * Single-threaded frame parquet reader.
- * 
+ *
+ * Decodes through parquet-mr's column API ({@link ColumnReadStoreImpl}/{@link ColumnReader}) directly into
+ * pre-allocated typed column arrays. The output frame is constructed from the filled arrays without copying. Columns
+ * whose parquet physical type does not match the requested frame value type are converted per cell instead.
  */
 public class FrameReaderParquet extends FrameReader {
 
@@ -92,20 +109,21 @@ public class FrameReaderParquet extends FrameReader {
 	 * @return A FrameBlock containing the data read from the Parquet file.
 	 */
 	@Override
-	public FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, String[] names, long rlen, long clen) throws IOException, DMLRuntimeException {
-		// Prepare file access
+	public FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, String[] names, long rlen, long clen)
+		throws IOException, DMLRuntimeException {
 		Configuration conf = ConfigurationManager.getCachedJobConf();
 		Path path = new Path(fname);
 
 		// Check existence
 		if (!HDFSTool.existsFileOnHDFS(path.toString())) {
 			throw new IOException("File does not exist on HDFS: " + fname);
-		}
 
-		// Allocate output frame block
 		ValueType[] lschema = createOutputSchema(schema, clen);
 		String[] lnames = createOutputNames(names, clen);
-		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
+
+		Object[] dest = new Object[(int) clen];
+		for(int c = 0; c < clen; c++)
+			dest[c] = ArrayFactory.allocateBacking(lschema[c], (int) rlen);
 
 		// Read Parquet file
 		readParquetFrameFromHDFS(path, conf, ret, rlen, clen);
@@ -119,7 +137,7 @@ public class FrameReaderParquet extends FrameReader {
 	 * to their corresponding indices, and then uses a ParquetReader to iterate over each row.
 	 * Data is extracted based on the column type and set into the output FrameBlock.
 	 *
-	 * @param path   The HDFS path to the Parquet file.
+	 * @param path   The HDFS path to the Parquet file or directory.
 	 * @param conf   The Hadoop configuration.
 	 * @param dest   The FrameBlock to populate with data.
 	 * @param rlen   The expected number of rows.

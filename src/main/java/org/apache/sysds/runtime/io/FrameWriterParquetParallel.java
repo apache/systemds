@@ -37,6 +37,7 @@ import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 /**
  * Multi-threaded frame parquet writer.
+ * Multi-threaded frame parquet writer.
  * 
  */
 public class FrameWriterParquetParallel extends FrameWriterParquet {
@@ -138,8 +139,7 @@ public class FrameWriterParquetParallel extends FrameWriterParquet {
 		int maxWriterThreads = getMaxWriterThreads();
 		int numThreads = Math.min(maxWriterThreads, numPartFiles);
 
-		// Fall back to sequential write if numThreads <= 1
-		if (numThreads <= 1) {
+		if(!_forcedParallel && numThreads <= 1) {
 			super.writeParquetFrameToHDFS(path, conf, src);
 			return;
 		}

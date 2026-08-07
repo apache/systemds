@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.ooc;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.ooc.primitives.OOCPrimitive;
 
 import java.util.function.Consumer;
 
@@ -30,7 +31,11 @@ public interface OOCStream<T> extends OOCStreamable<T> {
 
 	void enqueue(T t);
 
+	void enqueue(QueueCallback<T> callback);
+
 	T dequeue();
+
+	QueueCallback<T> dequeueCB();
 
 	void closeInput();
 
@@ -43,6 +48,12 @@ public interface OOCStream<T> extends OOCStreamable<T> {
 	 * callback can be used to free dependent resources and close output streams.
 	 */
 	void setSubscriber(Consumer<QueueCallback<T>> subscriber);
+
+	default void start() {
+		OOCPrimitive primitive = getPrimitive();
+		if(primitive != null && !primitive.hasStartedExecution())
+			primitive.start();
+	}
 
 	interface QueueCallback<T> extends AutoCloseable {
 		T get();

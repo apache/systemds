@@ -878,6 +878,7 @@ public interface Types {
 		HDF5,   // Hierarchical Data Format (HDF)
 		COG,   // Cloud-optimized GeoTIFF
 		PARQUET, // parquet format for columnar data storage
+		DELTA, // Delta Lake table (transaction log + parquet), read/written via Delta Kernel
 		UNKNOWN;
 		
 		public boolean isIJV() {
@@ -885,7 +886,7 @@ public interface Types {
 		}
 		
 		public boolean isTextFormat() {
-			return this != BINARY && this != COMPRESSED;
+			return this != BINARY && this != COMPRESSED && this != DELTA;
 		}
 		
 		public static boolean isTextFormat(String fmt) {

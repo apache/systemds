@@ -203,6 +203,22 @@ public abstract class ASDCZero extends APreAgg implements AOffsetsGroup, IContai
 	 */
 	protected abstract void multiplyScalar(double v, double[] resV, int offRet, AIterator it);
 
+	public void decompressToSparseBlock(SparseBlock sb, int rl, int ru, int offR, int offC, AIterator it) {
+		if(_dict instanceof MatrixBlockDictionary) {
+			final MatrixBlockDictionary md = (MatrixBlockDictionary) _dict;
+			final MatrixBlock mb = md.getMatrixBlock();
+			// The dictionary is never empty.
+			if(mb.isInSparseFormat())
+				// TODO make sparse decompression where the iterator is known in argument
+				decompressToSparseBlockSparseDictionary(sb, rl, ru, offR, offC, mb.getSparseBlock());
+			else
+				decompressToSparseBlockDenseDictionaryWithProvidedIterator(sb, rl, ru, offR, offC, mb.getDenseBlockValues(),
+					it);
+		}
+		else
+			decompressToSparseBlockDenseDictionaryWithProvidedIterator(sb, rl, ru, offR, offC, _dict.getValues(), it);
+	}
+
 	public void decompressToDenseBlock(DenseBlock db, int rl, int ru, int offR, int offC, AIterator it) {
 		if(_dict instanceof MatrixBlockDictionary) {
 			final MatrixBlockDictionary md = (MatrixBlockDictionary) _dict;
@@ -222,6 +238,9 @@ public abstract class ASDCZero extends APreAgg implements AOffsetsGroup, IContai
 	public void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC, AIterator it) {
 		decompressToDenseBlockDenseDictionaryWithProvidedIterator(db, rl, ru, offR, offC, _dict.getValues(), it);
 	}
+
+	public abstract void decompressToSparseBlockDenseDictionaryWithProvidedIterator(SparseBlock db, int rl, int ru,
+	int offR, int offC, double[] values, AIterator it);
 
 	public abstract void decompressToDenseBlockDenseDictionaryWithProvidedIterator(DenseBlock db, int rl, int ru,
 		int offR, int offC, double[] values, AIterator it);

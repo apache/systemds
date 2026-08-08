@@ -50,6 +50,10 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressedMatrix;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionConfig;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionFactory;
+import org.apache.sysds.runtime.controlprogram.federated.compression.MatrixCompressor;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.DataObjectModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventModel;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.EventStageModel;
@@ -70,6 +74,7 @@ import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.MultiThreadedOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -488,7 +493,21 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		// wrap transferred cache block into cacheable data
 		Data data;
 		long size = 0;
-		if(v instanceof CacheBlock) {
+		if(v instanceof CompressedMatrix) {
+			try {
+				CompressedMatrix cm = (CompressedMatrix) v;
+				org.apache.sysds.runtime.controlprogram.federated.compression.MatrixCompressor compressor = CompressionFactory
+					.createForDecompression(cm.getType());
+				org.apache.sysds.runtime.matrix.data.MatrixBlock decompressed = compressor.decompress(cm);
+				var block = ExecutionContext.createCacheableData(decompressed);
+				size = block.getDataSize();
+				data = block;
+			}
+			catch(Exception e) {
+				throw new FederatedWorkerHandlerException("Failed to decompress matrix: " + e.getMessage());
+			}
+		}
+		else if(v instanceof CacheBlock) {
 			var block = ExecutionContext.createCacheableData((CacheBlock<?>) v);
 			size = block.getDataSize();
 			data = block;
@@ -557,9 +576,27 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			switch(dataObject.getDataType()) {
 				case TENSOR:
 				case MATRIX:
-				case FRAME:
-					return new FederatedResponse(ResponseType.SUCCESS, ((CacheableData<?>) dataObject).acquireReadAndRelease(),
+				case FRAME: {
+					CacheBlock<?> block = ((CacheableData<?>) dataObject).acquireReadAndRelease();
+					Object payload = block;
+					// Compress matrix results before sending back to the coordinator
+					if(DMLScript.FEDERATED_COMPRESSION && block instanceof MatrixBlock) {
+						try {
+							CompressionConfig config = CompressionConfig.builder().enable(true)
+								.withType(DMLScript.FEDERATED_COMPRESSION_TYPE)
+								.withSparsity(DMLScript.FEDERATED_COMPRESSION_SPARSITY)
+								.withBits(DMLScript.FEDERATED_COMPRESSION_BITS).build();
+							MatrixCompressor compressor = CompressionFactory.create(config);
+							payload = compressor.compress((MatrixBlock) block);
+						}
+						catch(Exception ex) {
+							// Fall back to uncompressed on any error
+							payload = block;
+						}
+					}
+					return new FederatedResponse(ResponseType.SUCCESS, payload,
 						ReuseCacheType.isNone() ? null : ec.getLineage().get(String.valueOf(request.getID())));
+				}
 				case LIST:
 					return new FederatedResponse(ResponseType.SUCCESS, ((ListObject) dataObject).getData());
 				case SCALAR:

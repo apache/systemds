@@ -67,6 +67,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedWorker;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionType;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.FederatedMonitoringServer;
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
@@ -131,6 +132,11 @@ public class DMLScript
 	public static double      GPU_MEMORY_UTILIZATION_FACTOR = 0.9;
 	// Set GPU memory allocator to use
 	public static String      GPU_MEMORY_ALLOCATOR       = "cuda";
+	// Enable/disable federated compression
+	public static boolean FEDERATED_COMPRESSION = false;
+	public static CompressionType FEDERATED_COMPRESSION_TYPE = CompressionType.TOPK;
+	public static double FEDERATED_COMPRESSION_SPARSITY = 0.01;
+	public static int FEDERATED_COMPRESSION_BITS = 4;
 	// Enable/disable lineage tracing
 	public static boolean     LINEAGE                    = DMLOptions.defaultOptions.lineage;
 	// Enable/disable deduplicate lineage items

@@ -28,6 +28,7 @@ limitations under the License.
     * [`tensor`-Function](#tensor-function)
   * [DML-Bodied Built-In functions](#dml-bodied-built-in-functions)
     * [`confusionMatrix`-Function](#confusionmatrix-function)
+    * [`coresetDT`-Function](#coresetdt-function)
     * [`correctTypos`-Function](#correcttypos-function)
     * [`cspline`-Function](#cspline-function)
     * [`csplineCG`-Function](#csplineCG-function)
@@ -207,6 +208,63 @@ y = toOneHot(X, numClasses)
 [ConfusionSum, ConfusionAvg] = confusionMatrix(P=z, Y=y)
 ```
 
+## `coresetDT`-Function
+
+Coreset selection for Classification via a depth-bounded decision tree.
+
+The method is adapted from the datamap-driven coreset approach of Hadar et al.,
+"Datamap-Driven Tabular Coreset Selection for Classifier Training"
+(https://www.vldb.org/pvldb/vol18/p876-razmadze.pdf).
+
+A decision tree is trained on (X, y) and each leaf defines a region which 
+is classified by its majority fraction and size.
+
+majority_fraction <  psi           -> hard      (mixed labels, keep whole) <br>
+majority_fraction >= psi, n <= tau -> ambiguous (pure but small, keep whole) <br>
+majority_fraction >= psi, n > tau  -> easy      (large + pure, sample down)
+
+Hard and ambiguous regions are kept in full. Easy regions are sampled down
+to samp_ratio, processed largest-first, until the target size is reached,
+keeping any unvisited regions whole once they fit. The result cannot
+shrink below: <br>
+    n_min ~ |hard rows| + |ambiguous rows| + samp_ratio * |easy rows| <br>
+and requests below this floor return roughly the floor (with a warning).
+
+### Usage
+
+```r
+[Xc, yc] = coresetDT(X, y, fraction, samp_ratio, psi, tau, max_depth, min_leaf, seed, verbose)
+```
+
+### Arguments
+
+| Name       | Type           | Default | Description |
+| :--------- | :------------- | :------ | :---------- |
+| X          | Matrix[Double] | ---     | Feature matrix in recoded/binned representation (as required by decisionTree)|
+| y          | Matrix[Double] | ---     | Continuous label vector (as required by decisionTree)|
+| fraction   | Double         | 0.3     | Target coreset size |
+| samp_ratio | Double         | 0.03    | Thinning ratio applied to easy regions |
+| psi        | Double         | 0.90    | Homogeneity threshold separating hard regions |
+| tau        | Int            | 10      | Absolute size threshold separating easy from ambiguous regions |
+| max_depth  | Int            | 12      | Tree depth for the datamap |
+| min_leaf   | Int            | 5       | Minimum samples per leaf |
+| seed       | Int            | -1      | Seed for thinning|
+| verbose    | Boolean        | FALSE   | Print information and summary |
+
+### Returns
+
+| Name | Type           | Description |
+| :--- | :------------- | :---------- |
+| Xc   | Matrix[Double] | Coreset feature matrix |
+| yc   | Matrix[Double] | Coreset label vector |
+
+### Example
+
+```r
+X = read($X)
+y = read($y)
+[Xc, yc] = coresetDT(X = X, y = y, fraction = 0.1, verbose = TRUE)
+```
 
 ## `correctTypos`-Function
 

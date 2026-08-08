@@ -1,0 +1,79 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+F = read($1, data_type="frame", format="csv", header=FALSE);
+tfspec = read($2, data_type="scalar", value_type="string");
+
+# as needed for decision tree
+[D, meta] = transformencode(target=F, spec=tfspec);
+
+X = D[, 1:ncol(D)-1];
+y = D[, ncol(D)];
+
+[XTrain, XTest, yTrain, yTest] = split(X=X, Y=y, f=0.8, cont=FALSE, seed=42);
+ctypes = cbind(matrix(1, 1, ncol(X)), matrix(2, 1, 1));
+
+[Xc, yc] = coresetDT(X=XTrain, y=yTrain, fraction=$3, seed=42, verbose=TRUE);
+
+t0 = time();
+Bf = multiLogReg(X=XTrain, Y=yTrain, verbose=FALSE); 
+tLrFull = (time() - t0) / 1e9;
+
+t0 = time();
+Bc = multiLogReg(X=Xc,  Y=yc,  verbose=FALSE); 
+tLrCore = (time() - t0) / 1e9;
+
+[Mf, pf, accLrFull] = multiLogRegPredict(X=XTest, B=Bf, Y=yTest);
+[Mc, pc, accLrCore] = multiLogRegPredict(X=XTest, B=Bc, Y=yTest);
+
+# decision tree: fit on full vs coreset, evaluate on the test set
+t0 = time();
+Tf = decisionTree(X=XTrain, y=yTrain, ctypes=ctypes, max_depth=12, min_leaf=5, min_split=10, max_features=1.0, seed=42);
+tDtFull = (time() - t0) / 1e9;
+
+t0 = time();
+Tc = decisionTree(X=Xc,  y=yc,  ctypes=ctypes, max_depth=12, min_leaf=5, min_split=10, max_features=1.0, seed=42);
+tDtCore = (time()-t0)/1e9;
+
+accDtFull = mean(decisionTreePredict(X=XTest, ctypes=ctypes, M=Tf) == yTest) * 100;
+accDtCore = mean(decisionTreePredict(X=XTest, ctypes=ctypes, M=Tc) == yTest) * 100;
+
+realisedFrac = round(1000 * nrow(Xc) / nrow(XTrain)) / 1000;
+tFullLr = round(100 * tLrFull) / 100;
+dtimeLr = round(100 * (tLrCore - tLrFull)) / 100;
+accFullLr = round(100 * accLrFull) / 100;
+daccLr = round(100 * (accLrCore - accLrFull)) / 100;
+tFullDt = round(100 * tDtFull) / 100;
+dtimeDt = round(100 * (tDtCore - tDtFull)) / 100;
+accFullDt = round(100 * accDtFull) / 100;
+daccDt = round(100 * (accDtCore - accDtFull)) / 100;
+
+print("coresetDT-test: realised fraction = " + realisedFrac + "%");
+print("coresetDT-test: logreg full = " + tFullLr + "s | delta Core time = " + dtimeLr + "s | full acc = "  + accFullLr + "% | delta acc = " + daccLr + "%");
+print("coresetDT-test: dtree  full = " + tFullDt + "s | delta Core time = " + dtimeDt + "s | full acc = " + accFullDt + "% | delta acc = " + daccDt + "%");
+
+acc = matrix(0, 2, 2);
+acc[1,1] = accLrFull;
+acc[1,2] = accLrCore;
+
+acc[2,1] = accDtFull;
+acc[2,2] = accDtCore;
+write(acc, $4);

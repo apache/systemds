@@ -2051,7 +2051,7 @@ public class LibMatrixMult
 				int blen = b.size(aix[k]);
 				int[] bix = b.indexes(aix[k]);
 				double[] bvals = b.values(aix[k]);
-				vectMultiplyAdd(avals[k], bvals, cvals, bix, bpos, 0, blen);
+				vectMultiplyAddScatter(avals[k], bvals, cvals, bix, bpos, 0, blen);
 			}
 	}
 	
@@ -2069,7 +2069,7 @@ public class LibMatrixMult
 			for(int k = apos; k < apos+alen; k++) {
 				int aixk = aix[k];
 				if( b.isEmpty(aixk) ) continue;
-				vectMultiplyAdd(avals[k], b.values(aixk), tmp,
+				vectMultiplyAddScatter(avals[k], b.values(aixk), tmp,
 					b.indexes(aixk), b.pos(aixk), 0, b.size(aixk));
 				hitNonEmpty = true;
 			}
@@ -2100,7 +2100,7 @@ public class LibMatrixMult
 			for(int k = apos; k < apos+alen; k++) {
 				int aixk = aix[k];
 				if( b.isEmpty(aixk) ) continue;
-				vectMultiplyAdd(avals[k], b.values(aixk), cvals,
+				vectMultiplyAddScatter(avals[k], b.values(aixk), cvals,
 					b.indexes(aixk), b.pos(aixk), cix, b.size(aixk));
 			}
 		}
@@ -2132,7 +2132,7 @@ public class LibMatrixMult
 					int k = curk[i-bi] + apos;
 					for(; k < apos+alen && aix[k]<bkmin; k++) {
 						if( b.isEmpty(aix[k]) ) continue;
-						vectMultiplyAdd(avals[k], b.values(aix[k]), cvals,
+						vectMultiplyAddScatter(avals[k], b.values(aix[k]), cvals,
 							b.indexes(aix[k]), b.pos(aix[k]), cix, b.size(aix[k]));
 					}
 					curk[i-bi] = k - apos;

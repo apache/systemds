@@ -1,0 +1,25 @@
+# Generated model weights (regenerate with tools/convert_gpt2.py)
+weights/
+
+# HuggingFace cache (when set to a local path)
+.hf_cache/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Pytest
+.pytest_cache/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store

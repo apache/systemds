@@ -25,8 +25,9 @@ source("nn/layers/dropout.dml") as dropout
 source("scripts/nn/util.dml") as util
 
 
-forward = function(matrix[double] Q, matrix[double] K,
-      matrix[double] V, int H, int T, int D, double dropout_p)
+forward_internal = function(matrix[double] Q, matrix[double] K,
+      matrix[double] V, int H, int T, int D, double dropout_p,
+      boolean causal)
     return (matrix[double] context, matrix[double] attention, matrix[double] dropout_mask) {
   /*
    * Computes the forward pass for a multi-head attention layer.
@@ -39,6 +40,7 @@ forward = function(matrix[double] Q, matrix[double] K,
    * - T: Sequence length.
    * - D: Embedding length of single query, value, key,
    * - dropout_p: Dropout probability.
+   * - causal: If TRUE, apply causal mask to prevent attending to future tokens.
    *
    * Outputs:
    * - context: Token context embeddings, of shape (B, T*H*D)
@@ -56,6 +58,12 @@ forward = function(matrix[double] Q, matrix[double] K,
   dropout_mask = matrix(0, rows=B, cols=H*T*T)
   context = matrix(0, rows=B, cols=H*T*D)
   K_norm = K / sqrt(D)
+  causal_mask = matrix(0, rows=T, cols=T)
+  if (causal) {
+    # Mask future positions (j > i) before softmax.
+    causal_mask = upper.tri(target=matrix(1, rows=T, cols=T), diag=FALSE, values=TRUE)
+    causal_mask = log(1 - causal_mask)
+  }
 
   # For loops for tensor operations
   for (batch in 1:B) {
@@ -74,9 +82,12 @@ forward = function(matrix[double] Q, matrix[double] K,
       V_h = matrix(V_b[head], rows=T, cols=D)
 
       attention_scores = Q_h %*% t(K_norm_h)  # Shape (T, T)
-      
-      # TODO: Add support for attention mask here
-      
+
+      # Causal mask: set future positions (j > i) to -inf so softmax zeros them out.
+      if (causal) {
+        attention_scores = attention_scores + causal_mask
+      }
+
       # Column-wise softmax
       attention_probs_h = softmax::forward(attention_scores)
 
@@ -104,10 +115,22 @@ forward = function(matrix[double] Q, matrix[double] K,
   context = util::transpose_ABCD_to_ACBD(context, H, T)
 }
 
+forward = function(matrix[double] Q, matrix[double] K,
+      matrix[double] V, int H, int T, int D, double dropout_p)
+    return (matrix[double] context, matrix[double] attention, matrix[double] dropout_mask) {
+  [context, attention, dropout_mask] = forward_internal(Q, K, V, H, T, D, dropout_p, FALSE)
+}
 
-backward = function(matrix[double] dcontext, 
-      matrix[double] dropout_mask, matrix[double] attention, matrix[double] Q, 
-      matrix[double] K, matrix[double] V, int H, int T, 
+forward_causal = function(matrix[double] Q, matrix[double] K,
+      matrix[double] V, int H, int T, int D, double dropout_p)
+    return (matrix[double] context, matrix[double] attention, matrix[double] dropout_mask) {
+  [context, attention, dropout_mask] = forward_internal(Q, K, V, H, T, D, dropout_p, TRUE)
+}
+
+
+backward = function(matrix[double] dcontext,
+      matrix[double] dropout_mask, matrix[double] attention, matrix[double] Q,
+      matrix[double] K, matrix[double] V, int H, int T,
       int D, double dropout_p)
     return (matrix[double] dQ, matrix[double] dK, matrix[double] dV) {
   /*
@@ -124,6 +147,7 @@ backward = function(matrix[double] dcontext,
    * - T: Sequence length.
    * - D: Embedding length of single query, value, key,
    * - dropout_p: Dropout probability.
+   * - causal: If TRUE, apply causal mask (must match forward pass setting).
    *
    * Outputs:
    * - dQ: Gradient w.r.t. input querys, of shape (B,T*H*D).

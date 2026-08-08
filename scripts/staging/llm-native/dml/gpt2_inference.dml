@@ -1,0 +1,192 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# DML inference driver for GPT-2 small (124M).
+#
+# Reads stacked CSV+MTD weights produced by tools/convert_gpt2.py followed
+# by tools/pack_weights.py, runs a single forward pass over a token-id
+# sequence, and writes the logits (and optionally per-block hidden-state
+# dumps) to disk.  The dumps line up byte-for-byte with the keys produced
+# by tools/np_oracle_gpt2.py, so the comparison harness can localize any
+# divergence to a specific transformer block.
+#
+# Why stacked weights?  SystemDS' DML parser requires ``read()`` filenames
+# to be const-string-traceable, which excludes loop-variable concatenation.
+# pack_weights.py therefore vstacks the per-layer matrices into one
+# ``all_<param>.csv`` per parameter type; the loop body row-slices them.
+#
+# Usage:
+#   python tools/pack_weights.py --weights weights/gpt2
+#   systemds scripts/staging/llm-native/dml/gpt2_inference.dml \
+#     -nvargs weights=scripts/staging/llm-native/weights/gpt2 \
+#             tokens=scripts/staging/llm-native/weights/gpt2/_tokens.csv \
+#             out=scripts/staging/llm-native/weights/gpt2/_dml_dumps \
+#             dump=TRUE
+#
+# Hardcoded for gpt2-small.  Larger variants only need n_layer / n_head /
+# D / I changed; the loop and reads are otherwise shape-agnostic.
+
+source("nn/layers/gpt2_layer.dml") as gpt2_layer
+
+# ---------------------------------------------------------------------------
+# Args (literal-default ifdefs only -- DML's read() requires const paths)
+# ---------------------------------------------------------------------------
+
+weights = ifdef($weights, "scripts/staging/llm-native/weights/gpt2")
+tokens_path = ifdef($tokens,  "scripts/staging/llm-native/weights/gpt2/_tokens.csv")
+out_dir = ifdef($out,     "scripts/staging/llm-native/weights/gpt2/_dml_dumps")
+dump = ifdef($dump,    TRUE)
+
+# ---------------------------------------------------------------------------
+# Model config (gpt2-small)
+# ---------------------------------------------------------------------------
+
+n_layer = 12
+n_head = 12
+D = 768
+d = 64                        # D / n_head
+I = 4 * D                     # 3072
+V = 50257
+n_ctx = 1024
+eps = 1.0e-5
+
+# ---------------------------------------------------------------------------
+# Inputs
+# ---------------------------------------------------------------------------
+
+# tokens: column vector of HF (0-indexed) token ids, shape (T, 1)
+tokens = read(tokens_path, format="csv")
+T = nrow(tokens)
+if (T > n_ctx) {
+  print("ERROR: sequence length " + T + " exceeds n_ctx " + n_ctx)
+  stop("sequence too long")
+}
+
+print("[gpt2_inference] T=" + T + " D=" + D + " n_layer=" + n_layer
+      + " weights=" + weights)
+
+# ---------------------------------------------------------------------------
+# Embedding lookup: wte[ids] + wpe[0:T]
+# ---------------------------------------------------------------------------
+
+wte = read(weights + "/wte.csv", format="csv")              # (V, D)
+wpe = read(weights + "/wpe.csv", format="csv")              # (n_ctx, D)
+
+# DML is 1-indexed; HF token ids are 0-indexed -> shift by 1.
+ids_1based = tokens + 1
+row_ids = seq(1, T, 1)
+onehot = table(row_ids, ids_1based, T, V)                   # (T, V)
+tok_emb = onehot %*% wte                                    # (T, D)
+pos_emb = wpe[1:T,]                                         # (T, D)
+embed = tok_emb + pos_emb                                   # (T, D)
+
+if (dump) { write(embed, out_dir + "/embed.csv", format="csv") }
+
+# Carry hidden states in (B=1, T*D) layout to match the block's signature.
+states = matrix(embed, rows=1, cols=T*D)
+
+# ---------------------------------------------------------------------------
+# Stacked weights (vstack of n_layer per-layer tensors, written by pack_weights.py)
+# ---------------------------------------------------------------------------
+
+all_ln1_gamma = read(weights + "/all_ln1_gamma.csv",      format="csv")  # (n_layer, D)
+all_ln1_beta = read(weights + "/all_ln1_beta.csv",       format="csv")  # (n_layer, D)
+all_W_Q = read(weights + "/all_W_Q.csv",            format="csv")  # (n_layer*D, D)
+all_b_Q = read(weights + "/all_b_Q.csv",            format="csv")  # (n_layer, D)
+all_W_K = read(weights + "/all_W_K.csv",            format="csv")  # (n_layer*D, D)
+all_b_K = read(weights + "/all_b_K.csv",            format="csv")  # (n_layer, D)
+all_W_V = read(weights + "/all_W_V.csv",            format="csv")  # (n_layer*D, D)
+all_b_V = read(weights + "/all_b_V.csv",            format="csv")  # (n_layer, D)
+all_W_context = read(weights + "/all_W_context.csv",      format="csv")  # (n_layer*D, D)
+all_b_context = read(weights + "/all_b_context.csv",      format="csv")  # (n_layer, D)
+all_ln2_gamma = read(weights + "/all_ln2_gamma.csv",      format="csv")  # (n_layer, D)
+all_ln2_beta = read(weights + "/all_ln2_beta.csv",       format="csv")  # (n_layer, D)
+all_W_intermediate = read(weights + "/all_W_intermediate.csv", format="csv")  # (n_layer*D, I)
+all_b_intermediate = read(weights + "/all_b_intermediate.csv", format="csv")  # (n_layer, I)
+all_W_out = read(weights + "/all_W_out.csv",          format="csv")  # (n_layer*I, D)
+all_b_out = read(weights + "/all_b_out.csv",          format="csv")  # (n_layer, D)
+
+# ---------------------------------------------------------------------------
+# Transformer blocks
+# ---------------------------------------------------------------------------
+
+for (i in 0:n_layer-1) {
+  # Row slices into the stacked tensors for layer i (DML is 1-indexed).
+  rD0 = i * D + 1
+  rD1 = (i + 1) * D
+  rI0 = i * I + 1
+  rI1 = (i + 1) * I
+  rB = i + 1
+
+  W_Q = all_W_Q[rD0:rD1,]                                # (D, D)
+  W_K = all_W_K[rD0:rD1,]                                # (D, D)
+  W_V = all_W_V[rD0:rD1,]                                # (D, D)
+  W_context = all_W_context[rD0:rD1,]                          # (D, D)
+  W_intermediate = all_W_intermediate[rD0:rD1,]                     # (D, I)
+  W_out = all_W_out[rI0:rI1,]                                # (I, D)
+
+  b_Q = all_b_Q[rB:rB,]                                  # (1, D)
+  b_K = all_b_K[rB:rB,]                                  # (1, D)
+  b_V = all_b_V[rB:rB,]                                  # (1, D)
+  b_context = all_b_context[rB:rB,]                            # (1, D)
+  b_intermediate = all_b_intermediate[rB:rB,]                       # (1, I)
+  b_out = all_b_out[rB:rB,]                                  # (1, D)
+  ln1_g = all_ln1_gamma[rB:rB,]                            # (1, D)
+  ln1_b = all_ln1_beta[rB:rB,]                             # (1, D)
+  ln2_g = all_ln2_gamma[rB:rB,]                            # (1, D)
+  ln2_b = all_ln2_beta[rB:rB,]                             # (1, D)
+
+  states = gpt2_layer::forward(states,
+      n_head, T, d, I,
+      W_Q, b_Q, W_K, b_K, W_V, b_V,
+      W_context, b_context,
+      W_intermediate, b_intermediate,
+      W_out, b_out,
+      eps,
+      ln1_g, ln1_b,
+      ln2_g, ln2_b)
+
+  if (dump) {
+    block_out = matrix(states, rows=T, cols=D)
+    write(block_out, out_dir + "/h" + i + "_out.csv", format="csv")
+  }
+}
+
+# ---------------------------------------------------------------------------
+# Final LayerNorm + tied LM head
+# ---------------------------------------------------------------------------
+
+lnf_gamma = read(weights + "/lnf_gamma.csv", format="csv")  # (1, D)
+lnf_beta = read(weights + "/lnf_beta.csv",  format="csv")  # (1, D)
+
+# layer_norm_forward expects (A, B*C) with A=batch, B=T, C=D; states is (1, T*D).
+[lnf_flat, cm, cv, cn] = gpt2_layer::layer_norm_forward(
+    states, lnf_gamma, lnf_beta, eps, T, D)
+lnf_out = matrix(lnf_flat, rows=T, cols=D)                  # (T, D)
+
+if (dump) { write(lnf_out, out_dir + "/lnf.csv", format="csv") }
+
+# Tied LM head: logits = lnf_out %*% t(wte), shape (T, V).
+logits = lnf_out %*% t(wte)
+write(logits, out_dir + "/logits.csv", format="csv")
+
+print("[gpt2_inference] wrote logits (" + nrow(logits) + ", " + ncol(logits) + ") to "
+      + out_dir + "/logits.csv")

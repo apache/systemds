@@ -1,0 +1,446 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# This script runs latin hypercube sampling.
+#
+# INPUT:
+# -------------------------------------------------------------------------------------------------
+# N      The number of samples to be taken
+# d      The number of dimension
+# method The method to be used for sampling, possible values are:
+#           - "random" - random sampling
+#           - "build" - build the sample iteratively
+#           - "cp_sweep" - iterative columnwise pairwise swapping
+#           - "genetic" - genetic algorithm
+# reps   The number of repetitions for each method:
+#          - for "random" method, the best sample is chosen from reps random samples
+#          - for "build" method, reps candidates are generated for each point and the best candidate is chosen
+#          - for "cp_sweep" method, reps sweeps are performed for each column
+#          - for "genetic" method, reps candidates are generated in the initial design
+# goal   The goal to be minimized during the sampling procedure, possible values are:
+#           - "maximin" - maximize the minimum distance between points (in practice the negative minimum distance is minimized)
+#           - "opt" - minimize the difference between the minimum distance and the optimal distance N/(N^(1/d))
+#           - "sum_inv" - minimize the sum of the inverse squared distances between points
+#           - "avg_dist" - maximize avg euclidean distance between points (in practice the negative is minimized)
+# eps    The threshold for stopping the cp_sweep method
+# genetic_generations       Number of generations ("genetic" method)
+# genetic_population_size   Size of the population ("genetic" method)
+# genetic_mutation_rate     Mutation rate, between 0 and 1 ("genetic" method)
+# return_type               How should the matrix be returned:
+#                            - "buckets": return the matrix with bucket ids
+#                            - "numerical": return the matrix as vectors sampled from the d-dimensional uniform distribution in range 0-1
+# seed   The seed for making results reproducible. Defaults to -1, which creates random seeds.
+# -------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ------------------------------------------------------------------------------------------------------
+# M          A N x d matrix M
+# G          Value of the given objective
+# ------------------------------------------------------------------------------------------------------
+
+lhs = function(
+  Integer N = 10,
+  Integer d = 2,
+  String method = "random",
+  Integer reps = 1,
+  String goal = "maximin",
+  Double eps = 0.001,
+  Integer genetic_generations = 5,
+  Integer genetic_population_size = 10,
+  Double genetic_mutation_rate = 0.25,
+  String return_type = "buckets",
+  Integer seed = -1
+)
+return (Matrix[Double] M, Double G) {
+  if (goal != "maximin" & goal != "opt" & goal != "sum_inv" & goal != "avg_dist") {
+    stop("Goal should be one of: maximin, opt, sum_inv, avg_dist")
+  }
+  if (return_type != "buckets" & return_type != "numerical") {
+    stop("Return type should be one of: buckets, numerical")
+  }
+  if (N < 2) {
+    stop("N should be a positive integer larger than 1")
+  }
+
+  if (d < 1) {
+    stop("d should be a positive integer")
+  }
+
+  if (reps < 1) {
+    stop("reps should be a positive integer")
+  }
+
+  if (method == "genetic" & genetic_generations < 1) {
+    stop("genetic_generations should be >= 1")
+  }
+
+  if (method == "genetic" & genetic_population_size < 2) {
+    stop("genetic_population_size should be >= 2")
+  }
+
+  if (method == "genetic" & (genetic_mutation_rate < 0 | genetic_mutation_rate > 1)) {
+    stop("genetic_mutation_rate should be between 0 and 1")
+  }
+
+  if (method == "random") {
+    M = randomLHS(N, d, reps, goal, seed)
+  }
+  else if (method == "build") {
+    M = buildLHS(N, d, reps, goal, seed)
+  }
+  else if (method == "cp_sweep") {
+    M = cpSweepLHS(N, d, reps, goal, eps, seed)
+  }
+  # Reference: https://bertcarnell.github.io/lhs/reference/geneticLHS.html
+  else if (method == "genetic") {
+    M = geneticLHS(N, d, reps, goal, genetic_generations, genetic_population_size, genetic_mutation_rate, seed)
+  }
+  else {
+    stop("Method should be one of: random, build, cp_sweep, genetic")
+  }
+
+  G = evaluateGoalFullMatrix(M,goal)
+  if (return_type == "numerical") {
+    r = rand(rows = N, cols = d, min = 0, max = 1 / N, seed = seed)
+    M = M / N - r
+  }
+
+}
+
+randomLHS = function(Integer N, Integer d, Integer reps, String goal, Integer seed)
+return (Matrix[Double] M) {
+  G = 1 / 0
+  M = matrix(0, rows = N, cols = d)
+  for (i in 1:reps) {
+    newM = matrix(0, rows = N, cols = d)
+    for (j in 1:d) {
+      newM[, j] = sample(N, N, deriveSeed(seed, (i - 1) * d + j))
+    }
+
+    newG = evaluateGoalFullMatrix(newM, goal)
+    if (newG < G) {
+      M = newM
+      G = newG
+    }
+  }
+}
+
+buildLHS = function(Integer N, Integer d, Integer reps, String goal, Integer seed)
+return (Matrix[Double] M) {
+  # available buckets per column
+  free_buckets = seq(1, N) %*% matrix(1, rows = 1, cols = d)
+
+  # generate first point at random
+  first_sample = sample(N, d, TRUE, deriveSeed(seed, 1))
+  M = t(first_sample)
+
+  # replace used ints for each column, with last sample
+  # in subsequent runs we only look at the first N-1,N-2,... rows
+  replacement_mask = table(first_sample, seq(1, d), N, d)
+  free_buckets = (1 - replacement_mask) * free_buckets + (matrix(1, rows = N, cols = 1) %*% (free_buckets[N, ])) * replacement_mask
+
+  # for the next N - 2 points:
+  # generate reps candidates
+  # choose the candidate with the lowest G
+  # and update the free_buckets matrix
+  if (N>2){
+    for (i in 2:(N - 1)) {
+      # number of buckets left to choose from
+      num_free_buckets = N - i + 1
+      # initialize G to infinity
+      G = 1 / 0
+
+      # initialize row vector and replacement mask for free buckets
+      row = matrix(0, rows = 1, cols = d)
+      replacement_mask = matrix(0, rows = num_free_buckets, cols = d)
+
+      for (j in 1:reps) {
+        # random mask for bucket generation
+        rand = table(sample(num_free_buckets, d, TRUE, deriveSeed(seed, i * reps + j)), seq(1, d), N, d)
+        # get buckets and flatten to row vector
+        vals_matrix = rand * free_buckets
+        row_candidate = matrix(1, rows = 1, cols = N) %*% vals_matrix
+
+        # check if the candidate is better then the current best
+        # according to the goal and update the row vector and replacement mask accordingly
+        newG = evaluateGoalNewRow(M, row_candidate, goal, N)
+        if (newG < G) {
+          row = row_candidate
+          G = newG
+          replacement_mask = rand
+        }
+      }
+    # add the best candidate to the matrix of chosen points
+    M = rbind(M, row)
+    # replace chosen buckets with last, not yet picked buckets
+    free_buckets = (1 - replacement_mask) * free_buckets + (matrix(1, rows = N, cols = 1) %*% (free_buckets[num_free_buckets, ])) * replacement_mask
+    }
+  }
+
+  # for the last point there is only one bucket left
+  M = rbind(M, free_buckets[1, ])
+}
+
+cpSweepLHS = function(Integer N, Integer d, Integer reps, String goal, Double eps, Integer seed)
+return (Matrix[Double] M) {
+
+  # generate initial random latin hypercube
+  M = matrix(0, rows = N, cols = d)
+  for (i in 1:d) {
+    M[, i] = sample(N, N, deriveSeed(seed, i))
+  }
+
+  G = evaluateGoalFullMatrix(M, goal)
+  pred = TRUE
+  iter = 0
+  while (pred) {
+    iter = iter + 1
+    if (iter >= reps) {
+      pred = FALSE
+    }
+    oldG = G
+    # iterate over all columns and swap all pairs of rows in each column
+    for (j in 1:d) {
+
+      # initialize new goal vector, for easier calculation we flatten the 2D matrix to a 1D vector
+      # where the index of the new goal vector corresponds to the row pair (k,l) with k < l
+      # so the 1D vector index = l + (k-1)*N
+      new_goal_vector = matrix(1/0, rows = 1, cols = N * (N - 1))
+      for (k in 1:(N - 1)) {
+        for (l in (k + 1):(N)) {
+          # add new goal to the goal vector according to the goal
+          newM = swap(M, j, k, l)
+          new_goal_vector[1, l + (k - 1) * N] = evaluateGoalFullMatrix(newM, goal)
+        }
+      }
+
+      # if there was an improvement, swap the rows with the best improvement
+      if (min(new_goal_vector) < G) {
+        # calculate k and l from the index of the goal vector
+        idx = as.scalar(rowIndexMin(new_goal_vector))
+        row1 = ((idx - 1) %/% N) + 1
+        row2 = ((idx - 1) %% N) + 1
+        M = swap(M, j, row1, row2)
+        G = min(new_goal_vector)
+      }
+    }
+
+    # stop if no significant improvement was made, otherwise update G
+    if (abs(oldG - G) < eps) {
+      pred = FALSE
+    }
+  }
+}
+
+geneticLHS = function(Integer N, Integer d, Integer reps, String goal, Integer genetic_generations, Integer genetic_population_size, Double genetic_mutation_rate, Integer seed)
+return (Matrix[Double] M) {
+  population = matrix(0, rows = genetic_population_size * N, cols = d)
+  scores = matrix(0, rows = genetic_population_size, cols = 1)
+
+  population_seed_offsets = genetic_population_size * reps * d
+
+  # 1. Generate initial random Latin Hypercube designs and store them all in the population matrix
+  for (p in 1:genetic_population_size) {
+    design = lhs(N = N, d = d, method = "random", reps = reps, goal = goal, seed = deriveSeed(seed, (p - 1) * reps * d))
+    population_start = designStart(p, N)
+    population_end = designEnd(p, N)
+    population[population_start:population_end, ] = design
+
+    # 2. Calculate the score for each design according to the goal
+    scores[p, 1] = evaluateGoalFullMatrix(design, goal)
+  }
+
+  for (generation in 1:genetic_generations) {
+    # 3. Put the best design in the first position of survivors and throw away the worst half of the remaining population
+    survivors_cutoff = floor(genetic_population_size / 2) + 1
+    survivors = matrix(0, rows = survivors_cutoff * N, cols = d)
+    for (survivor in 1:survivors_cutoff) {
+      current_best_index = as.scalar(rowIndexMin(t(scores)))
+      current_best_design = getDesignByIndex(population, current_best_index, N)
+
+      # Put the current best design in the survivors matrix, then set its score to +inf (worst) so that it is not selected again
+      survivors_start = designStart(survivor, N)
+      survivors_end = designEnd(survivor, N)
+      survivors[survivors_start:survivors_end, ] = current_best_design
+      scores[current_best_index, 1] = 1 / 0
+    }
+
+    # 4. Create new designs from the survivors
+    new_population = matrix(0, rows = genetic_population_size * N, cols = d)
+    best_design = survivors[1:N, ]
+    new_population[1:N, ] = best_design
+    next_free_slot = 2
+
+    # 4.1: use each other survivor as base and transplant a column from the best design
+    for (survivor_index in 2:survivors_cutoff) {
+      child_base = population_seed_offsets + ((generation - 1) * genetic_population_size + next_free_slot) * 5
+      survivor_design = getDesignByIndex(survivors, survivor_index, N)
+      new_design = makeGeneticChild(survivor_design, best_design, genetic_mutation_rate, deriveSeed(seed, child_base))
+
+      # Store the generated child design in the new population
+      new_population_start = designStart(next_free_slot, N)
+      new_population_end = designEnd(next_free_slot, N)
+      new_population[new_population_start:new_population_end, ] = new_design
+      next_free_slot = next_free_slot + 1
+    }
+
+    # 4.2: for the empty positions, use the best design as base and transplant a column from a survivor
+    for (survivor_index in 2:survivors_cutoff) {
+      if (next_free_slot <= genetic_population_size) {
+        child_base = population_seed_offsets + ((generation - 1) * genetic_population_size + next_free_slot) * 5
+        survivor_design = getDesignByIndex(survivors, survivor_index, N)
+        new_design = makeGeneticChild(best_design, survivor_design, genetic_mutation_rate, deriveSeed(seed, child_base))
+
+        # Store the generated child design in the new population
+        new_population_start = designStart(next_free_slot, N)
+        new_population_end = designEnd(next_free_slot, N)
+        new_population[new_population_start:new_population_end, ] = new_design
+        next_free_slot = next_free_slot + 1
+      }
+    }
+
+    population = new_population
+
+    # Score the new population according to the goal
+    for (p in 1:genetic_population_size) {
+      design = getDesignByIndex(population, p, N)
+      scores[p, 1] = evaluateGoalFullMatrix(design, goal)
+    }
+  }
+
+  # Return the best design from the final population
+  best_index = as.scalar(rowIndexMin(t(scores)))
+  M = getDesignByIndex(population, best_index, N)
+}
+
+minLhsDistance = function(Matrix[Double] M)
+return (Double min_dist) {
+  D = dist(M) + diag(matrix(1 / 0, rows = nrow(M), cols = 1))
+  min_dist = min(D)
+}
+
+swap = function(Matrix[Double] M, Integer col, Integer row1, Integer row2)
+return (Matrix[Double] M) {
+  temp = M[row1, col]
+  M[row1, col] = M[row2, col]
+  M[row2, col] = temp
+}
+
+avgDistance = function(Matrix[Double] M)
+return (Double score) {
+  D = dist(M)
+  score = sum(D) / (nrow(M) * (nrow(M) - 1))
+}
+
+# Returns seed base + offset, but keeps the -1 (random) seed unchanged.
+deriveSeed = function(Integer seed, Integer offset)
+return (Integer s) {
+  s = ifelse(seed == -1, -1, seed + offset)
+}
+
+designStart = function(Integer index, Integer N)
+return (Integer start) {
+  start = (index - 1) * N + 1
+}
+
+designEnd = function(Integer index, Integer N)
+return (Integer end) {
+  end = index * N
+}
+
+getDesignByIndex = function(Matrix[Double] population, Integer index, Integer N)
+return (Matrix[Double] design) {
+  start = designStart(index, N)
+  end = designEnd(index, N)
+  design = population[start:end, ]
+}
+
+# Creates a child design by transplanting a random column from a donor design
+# into the base design and attempting a mutation.
+makeGeneticChild = function(Matrix[Double] base, Matrix[Double] donor, Double mutation_rate, Integer child_seed)
+return (Matrix[Double] child) {
+  source_col = as.scalar(sample(ncol(base), 1, deriveSeed(child_seed, 1)))
+  target_col = as.scalar(sample(ncol(base), 1, deriveSeed(child_seed, 2)))
+  child = base
+  child[, target_col] = donor[, source_col]
+  # Attempt to mutate the child design by switching two elements in a random column.
+  child = attemptGeneticMutation(child, mutation_rate, deriveSeed(child_seed, 3))
+}
+
+attemptGeneticMutation = function(Matrix[Double] design, Double mutation_rate, Integer seed)
+return (Matrix[Double] design) {
+  if (as.scalar(rand(rows = 1, cols = 1, min = 0, max = 1, seed = seed)) < mutation_rate) {
+    column_to_mutate = as.scalar(sample(ncol(design), 1, deriveSeed(seed, 1)))
+    rows_to_mutate = sample(nrow(design), 2, deriveSeed(seed, 2))
+    row1 = as.scalar(rows_to_mutate[1, 1])
+    row2 = as.scalar(rows_to_mutate[2, 1])
+    design = swap(design, column_to_mutate, row1, row2)
+  }
+}
+
+sumInvDistance = function(Matrix[Double] M)
+return (Double sum_inv) {
+  row_sq = rowSums(M ^ 2)
+  ones = matrix(1, rows=nrow(M), cols=1)
+  squared_dist = (row_sq %*% t(ones)) + (ones %*% t(row_sq)) - (2 * M %*% t(M))
+  inv_dist = 1 / lower.tri(target = squared_dist, diag = FALSE, values = TRUE)
+  inv_dist = replace(target = inv_dist, pattern = 1 / 0, replacement = 0)
+  sum_inv = sum(inv_dist)
+}
+
+evaluateGoalFullMatrix = function(Matrix[Double] M, String goal)
+return (Double G) {
+  if (goal == "maximin") {
+    G = -minLhsDistance(M)
+  }
+  else if (goal == "opt") {
+    N = nrow(M)
+    d = ncol(M)
+    opt = N / (N^(1 / d))
+    G = abs(opt - minLhsDistance(M))
+  }
+  else if (goal == "sum_inv") {
+    G = sumInvDistance(M)
+  }
+  else if (goal == "avg_dist") {
+    G = -avgDistance(M)
+  }
+}
+
+evaluateGoalNewRow = function (Matrix[Double] M, Matrix[Double] row, String goal, Integer N)
+  return(Double G){
+    if(goal == "maximin"){
+      # sqrt not needed
+      G = -min(rowSums((M - (matrix(1, rows = nrow(M), cols = 1) %*% row))^2))
+    }
+    else if(goal == "opt"){
+      d = ncol(row)
+      opt = (N/(N^(1/d)))
+      # sqrt is necessary here
+      G = abs(opt - sqrt(min(rowSums((M - (matrix(1, rows = nrow(M), cols = 1) %*% row))^2))))
+    }
+    else if(goal == "sum_inv"){
+      G = sumInvDistance(rbind(M,row))
+    }
+    else if(goal == "avg_dist"){
+      G = -avgDistance(rbind(M,row))
+    }
+}

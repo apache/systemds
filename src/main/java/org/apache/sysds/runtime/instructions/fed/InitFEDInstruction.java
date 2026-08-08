@@ -35,8 +35,6 @@ import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -64,10 +62,11 @@ import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.utils.ParameterizedLogger;
 
 public class InitFEDInstruction extends FEDInstruction implements LineageTraceable {
 
-	private static final Log LOG = LogFactory.getLog(InitFEDInstruction.class.getName());
+	private static final ParameterizedLogger LOG = ParameterizedLogger.getLogger(InitFEDInstruction.class);
 
 	public static final String FED_MATRIX_IDENTIFIER = "matrix";
 	public static final String FED_FRAME_IDENTIFIER = "frame";
@@ -139,7 +138,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 			if( dat instanceof StringObject ) {
 				String address = ((StringObject) dat).getStringValue();
 				if(addCheck.contains(address))
-					LOG.warn("Federated data contains address duplicates: " + addresses);
+					LOG.warn("Federated data contains address duplicates: {}", addresses);
 				addCheck.add(address);
 			}
 
@@ -235,7 +234,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 			if(dat instanceof StringObject) {
 				String address = ((StringObject) dat).getStringValue();
 				if(addCheck.contains(address))
-					LOG.warn("Federated data contains address duplicates: " + addresses);
+					LOG.warn("Federated data contains address duplicates: {}", addresses);
 				addCheck.add(address);
 			}
 
@@ -423,8 +422,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 		try {
 			int timeout = ConfigurationManager.getDMLConfig()
 				.getIntValue(DMLConfig.DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT);
-			if( LOG.isDebugEnabled() )
-				LOG.debug("Federated Initialization with timeout: " + timeout);
+			LOG.debug("Federated Initialization with timeout: {}", timeout);
 			for(Pair<FederatedData, Future<FederatedResponse>> idResponse : idResponses) {
 				// wait for initialization and check dimensions
 				FederatedResponse re = idResponse.getRight().get(timeout, TimeUnit.SECONDS);
@@ -447,8 +445,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 		output.getFedMapping().setType(rowPartitioned &&
 			colPartitioned ? FType.FULL : rowPartitioned ? FType.ROW : colPartitioned ? FType.COL : FType.OTHER);
 
-		if(LOG.isDebugEnabled())
-			LOG.debug("Fed map Inited:" + output.getFedMapping());
+		LOG.debug("Fed map Inited:{}", output.getFedMapping());
 	}
 
 	public static void federateFrame(FrameObject output, List<Pair<FederatedRange, FederatedData>> workers) {
@@ -511,8 +508,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 		output.getFedMapping().setType(rowPartitioned &&
 			colPartitioned ? FType.FULL : rowPartitioned ? FType.ROW : colPartitioned ? FType.COL : FType.OTHER);
 
-		if(LOG.isDebugEnabled())
-			LOG.debug("Fed map Inited: " + output.getFedMapping());
+		LOG.debug("Fed map Inited: {}", output.getFedMapping());
 	}
 
 	private static void handleFedFrameResponse(Types.ValueType[] schema, FederatedData federatedData,

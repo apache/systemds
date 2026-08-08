@@ -268,6 +268,11 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			validateUnique(output, conditional);
 			break;
 
+		case DP_GAUSSIAN:
+		case DP_LAPLACE:
+			validateDpMechanism(output, conditional);
+			break;
+
 		default: //always unconditional (because unsupported operation)
 			//handle common issue of transformencode
 			if( getOpCode()==Builtins.TRANSFORMENCODE )
@@ -770,6 +775,54 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDimensions(target.getOutput().getDim1(), target.getOutput().getDim2());
 	}
 	
+	private void validateDpMechanism(DataIdentifier output, boolean conditional) {
+		// support X as the sole positional (unnamed) parameter, like lowerTri(X, ...)
+		HashMap<String, Expression> varParams = getVarParams();
+		if( varParams.containsKey(null) )
+			varParams.put("target", varParams.remove(null));
+
+		boolean gaussian = getOpCode() == Builtins.DP_GAUSSIAN;
+		Set<String> valid = gaussian ?
+			CollectionUtils.asSet("target", "query", "sensitivity", "epsilon", "delta") :
+			CollectionUtils.asSet("target", "query", "sensitivity", "epsilon");
+		checkInvalidParameters(getOpCode(), varParams, valid);
+
+		Expression target = getVarParam("target");
+		checkTargetParam(target, conditional);
+		for( String param : valid )
+			if( !param.equals("target") )
+				checkScalarParam(getOpCode().getName(), param, conditional);
+
+		long[] dims = getDPOutputDims(getVarParam("query"),
+			target.getOutput().getDim1(), target.getOutput().getDim2());
+		output.setDataType(DataType.MATRIX);
+		output.setValueType(ValueType.FP64);
+		output.setDimensions(dims[0], dims[1]);
+	}
+
+	/** Output dimensions of T %*% X for the given named query, X being n x d. */
+	private long[] getDPOutputDims(Expression queryExpr, long n, long d) {
+		// dp_gaussian/dp_laplace require the "query" parameter to be a compile-time string literal so that the output shape
+		// (and thus the transformation matrix T built at runtime) is known during validation.
+		if(!(queryExpr instanceof StringIdentifier))
+			raiseValidateError(getOpCode() + ": 'query' must be a string literal", false,
+				LanguageErrorCodes.INVALID_PARAMETERS);
+		String query = ((StringIdentifier) queryExpr).getValue();
+
+		switch(query) {
+			case "colMeans":
+			case "colSums":
+				return new long[] {1, d};
+			case "identity":
+				return new long[] {n, d};
+			default:
+				raiseValidateError(
+					getOpCode() + ": unknown query type '" + query + "' (expected colMeans, colSums, or identity)",
+					false, LanguageErrorCodes.INVALID_PARAMETERS);
+				return null; // unreachable
+		}
+	}
+
 	private void checkScalarParam(String group, String param, boolean conditional) {
 		Expression eparam = getVarParam(param);
 		if( eparam==null ) {

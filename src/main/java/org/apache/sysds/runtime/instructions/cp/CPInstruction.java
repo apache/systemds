@@ -45,10 +45,7 @@ public abstract class CPInstruction extends Instruction {
 		Builtin, Reorg, Variable, FCall, Append, Rand, QSort, QPick, Local,
 		MatrixIndexing, MMTSJ, PMMJ, MMChain, Reshape, Partition, Compression, DeCompression, SpoofFused,
 		StringInit, CentralMoment, Covariance, UaggOuterChain, Dnn, Sql, Prefetch, Broadcast, TrigRemote,
-		EvictLineageCache, EINSUM,
-		NoOp,
-		Union,
-		QuantizeCompression
+		EvictLineageCache, EINSUM, NoOp, Union, QuantizeCompression
 	 }
 
 	protected final CPType _cptype;

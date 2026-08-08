@@ -161,6 +161,9 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		else if(Opcodes.PARAMSERV.toString().equals(opcode)) {
 			return new ParamservBuiltinCPInstruction(null, paramsMap, out, opcode, str);
 		}
+		else if(opcode.equalsIgnoreCase(Opcodes.DP_GAUSSIAN.toString()) || opcode.equalsIgnoreCase(Opcodes.DP_LAPLACE.toString())) {
+			return DPBuiltinCPInstruction.parse(parts, paramsMap, out, opcode, str);
+		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode (" + opcode + ") for ParameterizedBuiltin Instruction.");
 		}
@@ -554,7 +557,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			CPOperand[] listOperands = names.stream().map(n -> ec.containsVariable(params.get(n)) 
 					? new CPOperand(n, ec.getVariable(params.get(n))) 
 					: getStringLiteral(n)).toArray(CPOperand[]::new);
-			return Pair.of(output.getName(), 
+			return Pair.of(output.getName(),
 				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, listOperands)));
 		}
 		else {

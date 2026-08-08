@@ -37,13 +37,18 @@ public class FullIfElseTest extends AutomatedTestBase
 	
 	private final static String TEST_DIR = "functions/ternary/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FullIfElseTest.class.getSimpleName() + "/";
+	private final static double eps = 1e-10;
 	
 	private final static int rows = 2111;
-	private final static int cols = 30;
+	private final static int cols = 300;
 	
 	private final static double sparsity1 = 0.6;
 	private final static double sparsity2 = 0.1;
 	
+	private enum MatType {
+		MATRIX, COL, ROW, SCALAR
+	}
+
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
@@ -51,168 +56,729 @@ public class FullIfElseTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testScalarScalarScalarDenseCP() {
-		runIfElseTest(false, false, false, false, ExecType.CP);
-	}
-	
-	@Test
-	public void testMatrixScalarScalarDenseCP() {
-		runIfElseTest(true, false, false, false, ExecType.CP);
-	}
-	
-	@Test
-	public void testScalarMatrixScalarDenseCP() {
-		runIfElseTest(false, true, false, false, ExecType.CP);
-	}
-	
-	@Test
-	public void testMatrixMatrixScalarDenseCP() {
-		runIfElseTest(true, true, false, false, ExecType.CP);
-	}
-	
-	@Test
-	public void testScalarScalarMatrixDenseCP() {
-		runIfElseTest(false, false, true, false, ExecType.CP);
-	}
-	
-	@Test
-	public void testMatrixScalarMatrixDenseCP() {
-		runIfElseTest(true, false, true, false, ExecType.CP);
-	}
-	
-	@Test
-	public void testScalarMatrixMatrixDenseCP() {
-		runIfElseTest(false, true, true, false, ExecType.CP);
-	}
-	
-	@Test
-	public void testMatrixMatrixMatrixDenseCP() {
-		runIfElseTest(true, true, true, false, ExecType.CP);
+	public void testScalarScalarScalarSparseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.SCALAR, MatType.SCALAR, true, ExecType.CP);
 	}
 
 	@Test
-	public void testScalarScalarScalarSparseCP() {
-		runIfElseTest(false, false, false, true, ExecType.CP);
+	public void testScalarScalarColSparseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.SCALAR, MatType.COL, true, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testMatrixScalarScalarSparseCP() {
-		runIfElseTest(true, false, false, true, ExecType.CP);
+	public void testScalarScalarRowSparseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.SCALAR, MatType.ROW, true, ExecType.CP);
 	}
-	
-	@Test
-	public void testScalarMatrixScalarSparseCP() {
-		runIfElseTest(false, true, false, true, ExecType.CP);
-	}
-	
-	@Test
-	public void testMatrixMatrixScalarSparseCP() {
-		runIfElseTest(true, true, false, true, ExecType.CP);
-	}
-	
+
 	@Test
 	public void testScalarScalarMatrixSparseCP() {
-		runIfElseTest(false, false, true, true, ExecType.CP);
+		runIfElseTest(MatType.SCALAR, MatType.SCALAR, MatType.MATRIX, true, ExecType.CP);
 	}
-	
+
 	@Test
-	public void testMatrixScalarMatrixSparseCP() {
-		runIfElseTest(true, false, true, true, ExecType.CP);
+	public void testScalarColScalarSparseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.COL, MatType.SCALAR, true, ExecType.CP);
 	}
-	
+
+	@Test
+	public void testScalarColColSparseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.COL, MatType.COL, true, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarColRowSparseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.COL, MatType.ROW, true, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarColMatrixSparseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.COL, MatType.MATRIX, true, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarRowScalarSparseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.ROW, MatType.SCALAR, true, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarRowColSparseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.ROW, MatType.COL, true, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarRowRowSparseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.ROW, MatType.ROW, true, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarRowMatrixSparseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.ROW, MatType.MATRIX, true, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarMatrixScalarSparseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.MATRIX, MatType.SCALAR, true, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarMatrixColSparseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.MATRIX, MatType.COL, true, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarMatrixRowSparseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.MATRIX, MatType.ROW, true, ExecType.CP);
+	}
+
 	@Test
 	public void testScalarMatrixMatrixSparseCP() {
-		runIfElseTest(false, true, true, true, ExecType.CP);
+		runIfElseTest(MatType.SCALAR, MatType.MATRIX, MatType.MATRIX, true, ExecType.CP);
 	}
-	
+
+	@Test
+	public void testColScalarScalarSparseCP() {
+		runIfElseTest(MatType.COL, MatType.SCALAR, MatType.SCALAR, true, ExecType.CP);
+	}
+
+	@Test
+	public void testColScalarColSparseCP() {
+		runIfElseTest(MatType.COL, MatType.SCALAR, MatType.COL, true, ExecType.CP);
+	}
+
+	@Test
+	public void testColScalarRowSparseCP() {
+		runIfElseTest(MatType.COL, MatType.SCALAR, MatType.ROW, true, ExecType.CP);
+	}
+
+	@Test
+	public void testColScalarMatrixSparseCP() {
+		runIfElseTest(MatType.COL, MatType.SCALAR, MatType.MATRIX, true, ExecType.CP);
+	}
+
+	@Test
+	public void testColColScalarSparseCP() {
+		runIfElseTest(MatType.COL, MatType.COL, MatType.SCALAR, true, ExecType.CP);
+	}
+
+	@Test
+	public void testColColColSparseCP() {
+		runIfElseTest(MatType.COL, MatType.COL, MatType.COL, true, ExecType.CP);
+	}
+
+	@Test
+	public void testColColRowSparseCP() {
+		runIfElseTest(MatType.COL, MatType.COL, MatType.ROW, true, ExecType.CP);
+	}
+
+	@Test
+	public void testColColMatrixSparseCP() {
+		runIfElseTest(MatType.COL, MatType.COL, MatType.MATRIX, true, ExecType.CP);
+	}
+
+	@Test
+	public void testColRowScalarSparseCP() {
+		runIfElseTest(MatType.COL, MatType.ROW, MatType.SCALAR, true, ExecType.CP);
+	}
+
+	@Test
+	public void testColRowColSparseCP() {
+		runIfElseTest(MatType.COL, MatType.ROW, MatType.COL, true, ExecType.CP);
+	}
+
+	@Test
+	public void testColRowRowSparseCP() {
+		runIfElseTest(MatType.COL, MatType.ROW, MatType.ROW, true, ExecType.CP);
+	}
+
+	@Test
+	public void testColRowMatrixSparseCP() {
+		runIfElseTest(MatType.COL, MatType.ROW, MatType.MATRIX, true, ExecType.CP);
+	}
+
+	@Test
+	public void testColMatrixScalarSparseCP() {
+		runIfElseTest(MatType.COL, MatType.MATRIX, MatType.SCALAR, true, ExecType.CP);
+	}
+
+	@Test
+	public void testColMatrixColSparseCP() {
+		runIfElseTest(MatType.COL, MatType.MATRIX, MatType.COL, true, ExecType.CP);
+	}
+
+	@Test
+	public void testColMatrixRowSparseCP() {
+		runIfElseTest(MatType.COL, MatType.MATRIX, MatType.ROW, true, ExecType.CP);
+	}
+
+	@Test
+	public void testColMatrixMatrixSparseCP() {
+		runIfElseTest(MatType.COL, MatType.MATRIX, MatType.MATRIX, true, ExecType.CP);
+	}
+
+	@Test
+	public void testRowScalarScalarSparseCP() {
+		runIfElseTest(MatType.ROW, MatType.SCALAR, MatType.SCALAR, true, ExecType.CP);
+	}
+
+	@Test
+	public void testRowScalarColSparseCP() {
+		runIfElseTest(MatType.ROW, MatType.SCALAR, MatType.COL, true, ExecType.CP);
+	}
+
+	@Test
+	public void testRowScalarRowSparseCP() {
+		runIfElseTest(MatType.ROW, MatType.SCALAR, MatType.ROW, true, ExecType.CP);
+	}
+
+	@Test
+	public void testRowScalarMatrixSparseCP() {
+		runIfElseTest(MatType.ROW, MatType.SCALAR, MatType.MATRIX, true, ExecType.CP);
+	}
+
+	@Test
+	public void testRowColScalarSparseCP() {
+		runIfElseTest(MatType.ROW, MatType.COL, MatType.SCALAR, true, ExecType.CP);
+	}
+
+	@Test
+	public void testRowColColSparseCP() {
+		runIfElseTest(MatType.ROW, MatType.COL, MatType.COL, true, ExecType.CP);
+	}
+
+	@Test
+	public void testRowColRowSparseCP() {
+		runIfElseTest(MatType.ROW, MatType.COL, MatType.ROW, true, ExecType.CP);
+	}
+
+	@Test
+	public void testRowColMatrixSparseCP() {
+		runIfElseTest(MatType.ROW, MatType.COL, MatType.MATRIX, true, ExecType.CP);
+	}
+
+	@Test
+	public void testRowRowScalarSparseCP() {
+		runIfElseTest(MatType.ROW, MatType.ROW, MatType.SCALAR, true, ExecType.CP);
+	}
+
+	@Test
+	public void testRowRowColSparseCP() {
+		runIfElseTest(MatType.ROW, MatType.ROW, MatType.COL, true, ExecType.CP);
+	}
+
+	@Test
+	public void testRowRowRowSparseCP() {
+		runIfElseTest(MatType.ROW, MatType.ROW, MatType.ROW, true, ExecType.CP);
+	}
+
+	@Test
+	public void testRowRowMatrixSparseCP() {
+		runIfElseTest(MatType.ROW, MatType.ROW, MatType.MATRIX, true, ExecType.CP);
+	}
+
+	@Test
+	public void testRowMatrixScalarSparseCP() {
+		runIfElseTest(MatType.ROW, MatType.MATRIX, MatType.SCALAR, true, ExecType.CP);
+	}
+
+	@Test
+	public void testRowMatrixColSparseCP() {
+		runIfElseTest(MatType.ROW, MatType.MATRIX, MatType.COL, true, ExecType.CP);
+	}
+
+	@Test
+	public void testRowMatrixRowSparseCP() {
+		runIfElseTest(MatType.ROW, MatType.MATRIX, MatType.ROW, true, ExecType.CP);
+	}
+
+	@Test
+	public void testRowMatrixMatrixSparseCP() {
+		runIfElseTest(MatType.ROW, MatType.MATRIX, MatType.MATRIX, true, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixScalarScalarSparseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.SCALAR, MatType.SCALAR, true, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixScalarColSparseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.SCALAR, MatType.COL, true, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixScalarRowSparseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.SCALAR, MatType.ROW, true, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixScalarMatrixSparseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.SCALAR, MatType.MATRIX, true, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixColScalarSparseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.COL, MatType.SCALAR, true, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixColColSparseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.COL, MatType.COL, true, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixColRowSparseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.COL, MatType.ROW, true, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixColMatrixSparseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.COL, MatType.MATRIX, true, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixRowScalarSparseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.ROW, MatType.SCALAR, true, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixRowColSparseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.ROW, MatType.COL, true, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixRowRowSparseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.ROW, MatType.ROW, true, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixRowMatrixSparseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.ROW, MatType.MATRIX, true, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixMatrixScalarSparseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.MATRIX, MatType.SCALAR, true, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixMatrixColSparseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.MATRIX, MatType.COL, true, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixMatrixRowSparseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.MATRIX, MatType.ROW, true, ExecType.CP);
+	}
+
 	@Test
 	public void testMatrixMatrixMatrixSparseCP() {
-		runIfElseTest(true, true, true, true, ExecType.CP);
+		runIfElseTest(MatType.MATRIX, MatType.MATRIX, MatType.MATRIX, true, ExecType.CP);
 	}
+
+	@Test
+	public void testScalarScalarScalarDenseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.SCALAR, MatType.SCALAR, false, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarScalarColDenseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.SCALAR, MatType.COL, false, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarScalarRowDenseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.SCALAR, MatType.ROW, false, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarScalarMatrixDenseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.SCALAR, MatType.MATRIX, false, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarColScalarDenseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.COL, MatType.SCALAR, false, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarColColDenseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.COL, MatType.COL, false, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarColRowDenseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.COL, MatType.ROW, false, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarColMatrixDenseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.COL, MatType.MATRIX, false, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarRowScalarDenseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.ROW, MatType.SCALAR, false, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarRowColDenseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.ROW, MatType.COL, false, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarRowRowDenseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.ROW, MatType.ROW, false, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarRowMatrixDenseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.ROW, MatType.MATRIX, false, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarMatrixScalarDenseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.MATRIX, MatType.SCALAR, false, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarMatrixColDenseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.MATRIX, MatType.COL, false, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarMatrixRowDenseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.MATRIX, MatType.ROW, false, ExecType.CP);
+	}
+
+	@Test
+	public void testScalarMatrixMatrixDenseCP() {
+		runIfElseTest(MatType.SCALAR, MatType.MATRIX, MatType.MATRIX, false, ExecType.CP);
+	}
+
+	@Test
+	public void testColScalarScalarDenseCP() {
+		runIfElseTest(MatType.COL, MatType.SCALAR, MatType.SCALAR, false, ExecType.CP);
+	}
+
+	@Test
+	public void testColScalarColDenseCP() {
+		runIfElseTest(MatType.COL, MatType.SCALAR, MatType.COL, false, ExecType.CP);
+	}
+
+	@Test
+	public void testColScalarRowDenseCP() {
+		runIfElseTest(MatType.COL, MatType.SCALAR, MatType.ROW, false, ExecType.CP);
+	}
+
+	@Test
+	public void testColScalarMatrixDenseCP() {
+		runIfElseTest(MatType.COL, MatType.SCALAR, MatType.MATRIX, false, ExecType.CP);
+	}
+
+	@Test
+	public void testColColScalarDenseCP() {
+		runIfElseTest(MatType.COL, MatType.COL, MatType.SCALAR, false, ExecType.CP);
+	}
+
+	@Test
+	public void testColColColDenseCP() {
+		runIfElseTest(MatType.COL, MatType.COL, MatType.COL, false, ExecType.CP);
+	}
+
+	@Test
+	public void testColColRowDenseCP() {
+		runIfElseTest(MatType.COL, MatType.COL, MatType.ROW, false, ExecType.CP);
+	}
+
+	@Test
+	public void testColColMatrixDenseCP() {
+		runIfElseTest(MatType.COL, MatType.COL, MatType.MATRIX, false, ExecType.CP);
+	}
+
+	@Test
+	public void testColRowScalarDenseCP() {
+		runIfElseTest(MatType.COL, MatType.ROW, MatType.SCALAR, false, ExecType.CP);
+	}
+
+	@Test
+	public void testColRowColDenseCP() {
+		runIfElseTest(MatType.COL, MatType.ROW, MatType.COL, false, ExecType.CP);
+	}
+
+	@Test
+	public void testColRowRowDenseCP() {
+		runIfElseTest(MatType.COL, MatType.ROW, MatType.ROW, false, ExecType.CP);
+	}
+
+	@Test
+	public void testColRowMatrixDenseCP() {
+		runIfElseTest(MatType.COL, MatType.ROW, MatType.MATRIX, false, ExecType.CP);
+	}
+
+	@Test
+	public void testColMatrixScalarDenseCP() {
+		runIfElseTest(MatType.COL, MatType.MATRIX, MatType.SCALAR, false, ExecType.CP);
+	}
+
+	@Test
+	public void testColMatrixColDenseCP() {
+		runIfElseTest(MatType.COL, MatType.MATRIX, MatType.COL, false, ExecType.CP);
+	}
+
+	@Test
+	public void testColMatrixRowDenseCP() {
+		runIfElseTest(MatType.COL, MatType.MATRIX, MatType.ROW, false, ExecType.CP);
+	}
+
+	@Test
+	public void testColMatrixMatrixDenseCP() {
+		runIfElseTest(MatType.COL, MatType.MATRIX, MatType.MATRIX, false, ExecType.CP);
+	}
+
+	@Test
+	public void testRowScalarScalarDenseCP() {
+		runIfElseTest(MatType.ROW, MatType.SCALAR, MatType.SCALAR, false, ExecType.CP);
+	}
+
+	@Test
+	public void testRowScalarColDenseCP() {
+		runIfElseTest(MatType.ROW, MatType.SCALAR, MatType.COL, false, ExecType.CP);
+	}
+
+	@Test
+	public void testRowScalarRowDenseCP() {
+		runIfElseTest(MatType.ROW, MatType.SCALAR, MatType.ROW, false, ExecType.CP);
+	}
+
+	@Test
+	public void testRowScalarMatrixDenseCP() {
+		runIfElseTest(MatType.ROW, MatType.SCALAR, MatType.MATRIX, false, ExecType.CP);
+	}
+
+	@Test
+	public void testRowColScalarDenseCP() {
+		runIfElseTest(MatType.ROW, MatType.COL, MatType.SCALAR, false, ExecType.CP);
+	}
+
+	@Test
+	public void testRowColColDenseCP() {
+		runIfElseTest(MatType.ROW, MatType.COL, MatType.COL, false, ExecType.CP);
+	}
+
+	@Test
+	public void testRowColRowDenseCP() {
+		runIfElseTest(MatType.ROW, MatType.COL, MatType.ROW, false, ExecType.CP);
+	}
+
+	@Test
+	public void testRowColMatrixDenseCP() {
+		runIfElseTest(MatType.ROW, MatType.COL, MatType.MATRIX, false, ExecType.CP);
+	}
+
+	@Test
+	public void testRowRowScalarDenseCP() {
+		runIfElseTest(MatType.ROW, MatType.ROW, MatType.SCALAR, false, ExecType.CP);
+	}
+
+	@Test
+	public void testRowRowColDenseCP() {
+		runIfElseTest(MatType.ROW, MatType.ROW, MatType.COL, false, ExecType.CP);
+	}
+
+	@Test
+	public void testRowRowRowDenseCP() {
+		runIfElseTest(MatType.ROW, MatType.ROW, MatType.ROW, false, ExecType.CP);
+	}
+
+	@Test
+	public void testRowRowMatrixDenseCP() {
+		runIfElseTest(MatType.ROW, MatType.ROW, MatType.MATRIX, false, ExecType.CP);
+	}
+
+	@Test
+	public void testRowMatrixScalarDenseCP() {
+		runIfElseTest(MatType.ROW, MatType.MATRIX, MatType.SCALAR, false, ExecType.CP);
+	}
+
+	@Test
+	public void testRowMatrixColDenseCP() {
+		runIfElseTest(MatType.ROW, MatType.MATRIX, MatType.COL, false, ExecType.CP);
+	}
+
+	@Test
+	public void testRowMatrixRowDenseCP() {
+		runIfElseTest(MatType.ROW, MatType.MATRIX, MatType.ROW, false, ExecType.CP);
+	}
+
+	@Test
+	public void testRowMatrixMatrixDenseCP() {
+		runIfElseTest(MatType.ROW, MatType.MATRIX, MatType.MATRIX, false, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixScalarScalarDenseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.SCALAR, MatType.SCALAR, false, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixScalarColDenseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.SCALAR, MatType.COL, false, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixScalarRowDenseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.SCALAR, MatType.ROW, false, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixScalarMatrixDenseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.SCALAR, MatType.MATRIX, false, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixColScalarDenseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.COL, MatType.SCALAR, false, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixColColDenseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.COL, MatType.COL, false, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixColRowDenseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.COL, MatType.ROW, false, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixColMatrixDenseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.COL, MatType.MATRIX, false, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixRowScalarDenseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.ROW, MatType.SCALAR, false, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixRowColDenseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.ROW, MatType.COL, false, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixRowRowDenseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.ROW, MatType.ROW, false, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixRowMatrixDenseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.ROW, MatType.MATRIX, false, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixMatrixScalarDenseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.MATRIX, MatType.SCALAR, false, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixMatrixColDenseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.MATRIX, MatType.COL, false, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixMatrixRowDenseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.MATRIX, MatType.ROW, false, ExecType.CP);
+	}
+
+	@Test
+	public void testMatrixMatrixMatrixDenseCP() {
+		runIfElseTest(MatType.MATRIX, MatType.MATRIX, MatType.MATRIX, false, ExecType.CP);
+	}
+
 
 	//SPARK
 	
 	@Test
 	public void testScalarScalarScalarDenseSP() {
-		runIfElseTest(false, false, false, false, ExecType.SPARK);
+		runIfElseTest(MatType.SCALAR, MatType.SCALAR, MatType.SCALAR, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testMatrixScalarScalarDenseSP() {
-		runIfElseTest(true, false, false, false, ExecType.SPARK);
+		runIfElseTest(MatType.MATRIX, MatType.SCALAR, MatType.SCALAR, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testScalarMatrixScalarDenseSP() {
-		runIfElseTest(false, true, false, false, ExecType.SPARK);
+		runIfElseTest(MatType.SCALAR, MatType.MATRIX, MatType.SCALAR, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testMatrixMatrixScalarDenseSP() {
-		runIfElseTest(true, true, false, false, ExecType.SPARK);
+		runIfElseTest(MatType.MATRIX, MatType.MATRIX, MatType.SCALAR, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testScalarScalarMatrixDenseSP() {
-		runIfElseTest(false, false, true, false, ExecType.SPARK);
+		runIfElseTest(MatType.SCALAR, MatType.SCALAR, MatType.MATRIX, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testMatrixScalarMatrixDenseSP() {
-		runIfElseTest(true, false, true, false, ExecType.SPARK);
+		runIfElseTest(MatType.MATRIX, MatType.SCALAR, MatType.MATRIX, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testScalarMatrixMatrixDenseSP() {
-		runIfElseTest(false, true, true, false, ExecType.SPARK);
+		runIfElseTest(MatType.SCALAR, MatType.MATRIX, MatType.MATRIX, false, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testMatrixMatrixMatrixDenseSP() {
-		runIfElseTest(true, true, true, false, ExecType.SPARK);
+		runIfElseTest(MatType.MATRIX, MatType.MATRIX, MatType.MATRIX, false, ExecType.SPARK);
 	}
 
 	@Test
 	public void testScalarScalarScalarSparseSP() {
-		runIfElseTest(false, false, false, true, ExecType.SPARK);
+		runIfElseTest(MatType.SCALAR, MatType.SCALAR, MatType.SCALAR, true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testMatrixScalarScalarSparseSP() {
-		runIfElseTest(true, false, false, true, ExecType.SPARK);
+		runIfElseTest(MatType.MATRIX, MatType.SCALAR, MatType.SCALAR, true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testScalarMatrixScalarSparseSP() {
-		runIfElseTest(false, true, false, true, ExecType.SPARK);
+		runIfElseTest(MatType.SCALAR, MatType.MATRIX, MatType.SCALAR, true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testMatrixMatrixScalarSparseSP() {
-		runIfElseTest(true, true, false, true, ExecType.SPARK);
+		runIfElseTest(MatType.MATRIX, MatType.MATRIX, MatType.SCALAR, true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testScalarScalarMatrixSparseSP() {
-		runIfElseTest(false, false, true, true, ExecType.SPARK);
+		runIfElseTest(MatType.SCALAR, MatType.SCALAR, MatType.MATRIX, true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testMatrixScalarMatrixSparseSP() {
-		runIfElseTest(true, false, true, true, ExecType.SPARK);
+		runIfElseTest(MatType.MATRIX, MatType.SCALAR, MatType.MATRIX, true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testScalarMatrixMatrixSparseSP() {
-		runIfElseTest(false, true, true, true, ExecType.SPARK);
+		runIfElseTest(MatType.SCALAR, MatType.MATRIX, MatType.MATRIX, true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testMatrixMatrixMatrixSparseSP() {
-		runIfElseTest(true, true, true, true, ExecType.SPARK);
+		runIfElseTest(MatType.MATRIX, MatType.MATRIX, MatType.MATRIX, true, ExecType.SPARK);
 	}
 
-	private void runIfElseTest(boolean matrix1, boolean matrix2, boolean matrix3, boolean sparse, ExecType et){
+	private void runIfElseTest(MatType mtype1, MatType mtype2, MatType mtype3, boolean sparse, ExecType et){
 		setOutputBuffering(true);
 		//rtplatform for MR
 		ExecMode platformOld = rtplatform;
@@ -234,17 +800,16 @@ public class FullIfElseTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-			programArgs = new String[]{"-explain","-args", input("A"), input("B"), input("C"), output("R")};
+			programArgs = new String[]{"-explain", "-stats", "-args", input("A"), input("B"), input("C"), output("R")};
 			fullRScriptName = HOME + TEST_NAME1 + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			//generate actual datasets (matrices and scalars)
-			double sparsity = sparse ? sparsity2 : sparsity1;
-			double[][] A = matrix1 ? getRandomMatrix(rows, cols, 0, 1, sparsity, 1) : getScalar(1);
+			double[][] A = getMatrixOfType(mtype1, sparse, 1);
 			writeInputMatrixWithMTD("A", A, true);
-			double[][] B = matrix2 ? getRandomMatrix(rows, cols, 0, 1, sparsity, 2) : getScalar(2);
+			double[][] B = getMatrixOfType(mtype2, sparse, 2);
 			writeInputMatrixWithMTD("B", B, true);
-			double[][] C = matrix3 ? getRandomMatrix(rows, cols, 0, 1, sparsity, 3) : getScalar(3);
+			double[][] C = getMatrixOfType(mtype3, sparse, 3);
 			writeInputMatrixWithMTD("C", C, true);
 			
 			//run test cases
@@ -254,7 +819,7 @@ public class FullIfElseTest extends AutomatedTestBase
 			//compare output matrices 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
-			TestUtils.compareMatrices(dmlfile, rfile, 0, "Stat-DML", "Stat-R");
+			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
 		finally {
 			rtplatform = platformOld;
@@ -263,7 +828,24 @@ public class FullIfElseTest extends AutomatedTestBase
 		}
 	}
 	
-	private static double[][] getScalar(int input) {
-		return new double[][]{{7d*input}};
+	private double[][] getMatrixOfType(MatType mtype, boolean sparse, long seed) {
+		double[][] ret = null;
+		double sparsity = sparse ? sparsity2 : sparsity1;
+		switch(mtype) {
+			case SCALAR:
+				ret = getRandomMatrix(1, 1, 0, 1, sparsity, seed);
+				break;
+			case MATRIX:
+				ret = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
+				break;
+			case COL:
+				ret = getRandomMatrix(rows, 1, 0, 1, sparsity, seed);
+				break;
+			case ROW:
+				ret = getRandomMatrix(1, cols, 0, 1, sparsity, seed);
+				break;
+			default:
+		}
+		return ret;
 	}
 }

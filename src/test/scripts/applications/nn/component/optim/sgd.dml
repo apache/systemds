@@ -1,0 +1,57 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/optim/sgd.dml") as sgd
+source("src/test/scripts/applications/nn/util.dml") as test_util
+source("src/test/scripts/applications/nn/component/optim/optim_check.dml") as ch
+
+test_sgd = function() {
+  lr = 0.1
+
+  # a single step just moves X against the gradient by lr
+  X  = matrix("1 2 3  4 5 6", rows=2, cols=3)
+  dX = matrix("0.5 0.5 0.5  1 1 1", rows=2, cols=3)
+  X1 = sgd::update(X, dX, lr)
+  test_util::check_all_close(X1, X - lr*dX, 1e-12)
+  ch::check_finite(X1, "sgd/finite")
+
+  # nothing moves without a gradient, and a zero learning rate is a no-op too
+  test_util::check_all_close(sgd::update(X, matrix(0, rows=2, cols=3), lr), X, 1e-12)
+  test_util::check_all_close(sgd::update(X, dX, 0.0), X, 1e-12)
+
+  # a single value works the same way: 5 - 0.1*2 = 4.8
+  small = sgd::update(matrix(5.0, rows=1, cols=1), matrix(2.0, rows=1, cols=1), lr)
+  test_util::check_all_close(small, matrix(4.8, rows=1, cols=1), 1e-12)
+
+  # minimizing 0.5*||W||^2 (its gradient is just W) should drive the loss to ~0
+  W = matrix("3 -4 5  -6 7 -8", rows=2, cols=3)
+  losses = matrix(0, rows=100, cols=1)
+  for (i in 1:100) {
+    W = sgd::update(W, W, lr)
+    losses[i,] = 0.5 * sum(W^2)
+  }
+  ch::check_decreasing(losses, "sgd/descent")
+  if (as.scalar(losses[100,]) >= 1e-6) {
+    test_util::fail("sgd/converged: final loss " + as.scalar(losses[100,]) + " not below 1e-6")
+  }
+}
+
+test_sgd()

@@ -204,6 +204,7 @@ public enum Opcodes {
 	GROUPEDAGG("groupedagg", InstructionType.ParameterizedBuiltin),
 	RMEMPTY("rmempty", InstructionType.ParameterizedBuiltin),
 	REPLACE("replace", InstructionType.ParameterizedBuiltin),
+	LLMPREDICT("llmpredict", InstructionType.ParameterizedBuiltin),
 	LOWERTRI("lowertri", InstructionType.ParameterizedBuiltin),
 	UPPERTRI("uppertri", InstructionType.ParameterizedBuiltin),
 	REXPAND("rexpand", InstructionType.ParameterizedBuiltin),

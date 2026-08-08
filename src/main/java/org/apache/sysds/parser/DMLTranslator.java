@@ -2009,6 +2009,7 @@ public class DMLTranslator
 			case LOWER_TRI:
 			case UPPER_TRI:
 			case TOKENIZE:
+			case LLMPREDICT:
 			case TRANSFORMAPPLY:
 			case TRANSFORMDECODE:
 			case TRANSFORMCOLMAP:

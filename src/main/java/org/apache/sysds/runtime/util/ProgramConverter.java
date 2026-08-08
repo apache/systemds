@@ -371,43 +371,95 @@ public class ProgramConverter
 	 * @param fnCreated ?
 	 * @param plain ?
 	 */
-	public static void createDeepCopyFunctionProgramBlock(String namespace, String oldName, long pid, int IDPrefix, Program prog, Set<String> fnStack, Set<String> fnCreated, boolean plain) 
+//	public static void createDeepCopyFunctionProgramBlock(String namespace, String oldName, long pid, int IDPrefix, Program prog, Set<String> fnStack, Set<String> fnCreated, boolean plain)
+//	{
+//		//fpb guaranteed to be non-null (checked inside getFunctionProgramBlock)
+//		FunctionProgramBlock fpb1 = prog.getFunctionProgramBlock(namespace, oldName, true);
+//		FunctionProgramBlock fpb2 = prog.containsFunctionProgramBlock(namespace, oldName, false) ?
+//			prog.getFunctionProgramBlock(namespace, oldName, false) : null;
+//		String fnameNew = (plain)? oldName :(oldName+Lop.CP_CHILD_THREAD+pid);
+//		String fnameNewKey = DMLProgram.constructFunctionKey(namespace,fnameNew);
+//
+//		if( prog.getFunctionProgramBlocks().containsKey(fnameNewKey) )
+//			return; //prevent redundant deep copy if already existent
+//
+//		//create deep copy
+//		FunctionProgramBlock copy1 = null;
+//		if( !fnStack.contains(fnameNewKey) ) {
+//			fnStack.add(fnameNewKey);
+//			copy1 = createDeepCopyFunctionProgramBlock(fpb1, fnStack, fnCreated, pid, IDPrefix, plain);
+//			fnStack.remove(fnameNewKey);
+//		}
+//		else //stop deep copy for recursive function calls
+//			copy1 = fpb1;
+//
+//		//copy.setVariables( (LocalVariableMap) fpb.getVariables() ); //implicit cloning
+//		//note: instructions not used by function program block
+//
+//		//put if not existing (recursive processing might have added it)
+//		if( !prog.getFunctionProgramBlocks().containsKey(fnameNewKey) ) {
+//			prog.addFunctionProgramBlock(namespace, fnameNew, copy1, true);
+//			if( fpb2 != null ) {
+//				FunctionProgramBlock copy2 = createDeepCopyFunctionProgramBlock(
+//					fpb2, fnStack, fnCreated, pid, IDPrefix, plain);
+//				prog.addFunctionProgramBlock(namespace, fnameNew, copy2, false);
+//			}
+//			fnCreated.add(DMLProgram.constructFunctionKey(namespace, fnameNew));
+//		}
+//	}
+
+	public static void createDeepCopyFunctionProgramBlock(String namespace, String oldName, long pid, int IDPrefix, Program prog, Set<String> fnStack, Set<String> fnCreated, boolean plain)
 	{
-		//fpb guaranteed to be non-null (checked inside getFunctionProgramBlock)
-		FunctionProgramBlock fpb1 = prog.getFunctionProgramBlock(namespace, oldName, true);
-		FunctionProgramBlock fpb2 = prog.containsFunctionProgramBlock(namespace, oldName, false) ?
-			prog.getFunctionProgramBlock(namespace, oldName, false) : null;
-		String fnameNew = (plain)? oldName :(oldName+Lop.CP_CHILD_THREAD+pid); 
+		// Try to get both opt=true and opt=false versions
+		// Some functions may only exist in one map
+		FunctionProgramBlock fpb1 = null;
+		FunctionProgramBlock fpb2 = null;
+
+		if (prog.containsFunctionProgramBlock(namespace, oldName, true)) {
+			fpb1 = prog.getFunctionProgramBlock(namespace, oldName, true);
+		}
+		if (prog.containsFunctionProgramBlock(namespace, oldName, false)) {
+			fpb2 = prog.getFunctionProgramBlock(namespace, oldName, false);
+		}
+
+		// If neither exists, that's an error
+		if (fpb1 == null && fpb2 == null) {
+			throw new DMLRuntimeException("function " + oldName + " is undefined in namespace " + namespace);
+		}
+
+		// Continue with whichever ones we found
+		String fnameNew = (plain)? oldName :(oldName+Lop.CP_CHILD_THREAD+pid);
 		String fnameNewKey = DMLProgram.constructFunctionKey(namespace,fnameNew);
 
-		if( prog.getFunctionProgramBlocks().containsKey(fnameNewKey) )
-			return; //prevent redundant deep copy if already existent
-		
+		if (prog.containsFunctionProgramBlock(namespace, fnameNew, true)
+				|| prog.containsFunctionProgramBlock(namespace, fnameNew, false)) {
+			return;
+		}
+
 		//create deep copy
 		FunctionProgramBlock copy1 = null;
-		if( !fnStack.contains(fnameNewKey) ) {
+		FunctionProgramBlock copy2 = null;
+
+		if (fpb1 != null && !fnStack.contains(fnameNewKey)) {
 			fnStack.add(fnameNewKey);
 			copy1 = createDeepCopyFunctionProgramBlock(fpb1, fnStack, fnCreated, pid, IDPrefix, plain);
 			fnStack.remove(fnameNewKey);
 		}
-		else //stop deep copy for recursive function calls
+		else if (fpb1 != null) //stop deep copy for recursive function calls
 			copy1 = fpb1;
-		
-		//copy.setVariables( (LocalVariableMap) fpb.getVariables() ); //implicit cloning
-		//note: instructions not used by function program block
-		
-		//put if not existing (recursive processing might have added it)
+
+		//put if not existing recursive processing might have added it
 		if( !prog.getFunctionProgramBlocks().containsKey(fnameNewKey) ) {
-			prog.addFunctionProgramBlock(namespace, fnameNew, copy1, true);
-			if( fpb2 != null ) {
-				FunctionProgramBlock copy2 = createDeepCopyFunctionProgramBlock(
-					fpb2, fnStack, fnCreated, pid, IDPrefix, plain);
+			if (copy1 != null) {
+				prog.addFunctionProgramBlock(namespace, fnameNew, copy1, true);
+			}
+			if (fpb2 != null) {
+				copy2 = createDeepCopyFunctionProgramBlock(fpb2, fnStack, fnCreated, pid, IDPrefix, plain);
 				prog.addFunctionProgramBlock(namespace, fnameNew, copy2, false);
 			}
 			fnCreated.add(DMLProgram.constructFunctionKey(namespace, fnameNew));
 		}
 	}
-
 	public static FunctionProgramBlock createDeepCopyFunctionProgramBlock(FunctionProgramBlock fpb, Set<String> fnStack, Set<String> fnCreated) {
 		return createDeepCopyFunctionProgramBlock(fpb, fnStack, fnCreated, 0, -1, true);
 	}

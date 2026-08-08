@@ -1,0 +1,131 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Applies a fitted power transformation and optional standardization.
+# Transforms each feature using its previously estimated lambda and scaling parameters.
+#
+# INPUT:
+# -------------------------------------------------------------------------------------
+#   X        Input feature matrix of shape n-by-m
+#   lambdas  Precomputed lambda parameters of shape 1-by-m, one per column
+#   means    Transformed column means of shape 1-by-m; empty to skip standardization
+#   scales   Transformed column scales of shape 1-by-m; empty to skip standardization
+#   method   Power transformation method: "yeo-johnson" (default) or "box-cox"
+# -------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -------------------------------------------------------------------------------------
+#   Y    Power-transformed matrix of shape n-by-m
+# -------------------------------------------------------------------------------------
+
+
+m_powerTransformApply = function(
+    Matrix[Double] X,
+    Matrix[Double] lambdas,
+    Matrix[Double] means,
+    Matrix[Double] scales,
+    String method="yeo-johnson")
+    return (Matrix[Double] Y)
+{
+    n = nrow(X)
+    m = ncol(X)
+
+    if (method != "yeo-johnson" & method != "box-cox") {
+        stop("powerTransformApply: unsupported method '" + method +
+            "'; expected 'yeo-johnson' or 'box-cox'")
+    }
+
+    validatedX = replace(target=X, pattern=NaN, replacement=1.0)
+    if (method == "box-cox" & min(validatedX) <= 0.0) {
+        stop("powerTransformApply: Box-Cox requires strictly positive input")
+    }
+
+    if (nrow(lambdas) != 1 | ncol(lambdas) != m) {
+        stop("powerTransformApply: lambdas must have shape 1-by-ncol(X)")
+    }
+
+    hasMeans = nrow(means) > 0 | ncol(means) > 0
+    hasScales = nrow(scales) > 0 | ncol(scales) > 0
+
+    if (hasMeans != hasScales) {
+        stop("powerTransformApply: means and scales must either both be provided or both be empty")
+    }
+
+    if (hasMeans & (nrow(means) != 1 | ncol(means) != m |
+        nrow(scales) != 1 | ncol(scales) != m)) {
+        stop("powerTransformApply: means and scales must have shape 1-by-ncol(X)")
+    }
+
+    Y = matrix(0.0, rows=n, cols=m)
+
+    # Handle boundary points (0 and 2)
+    eps = 1e-12
+
+    # Loop over columns for transformation
+    for (j in 1:m){
+        x = X[,j]
+        nanMask = is.na(x)
+        lambda_j = as.scalar(lambdas[1,j])
+
+        if (method == "box-cox") {
+            x = replace(target=x, pattern=NaN, replacement=1.0)
+            if (abs(lambda_j) < eps) {
+                y = log(x)
+            }
+            else {
+                y = (x^lambda_j - 1.0) / lambda_j
+            }
+        }
+        else {
+            x = replace(target=x, pattern=NaN, replacement=0.0)
+            nonnegative = x >= 0
+
+            # Use intermediate inputs to avoid invalid domains in scoring or fractional powers
+            x_pos = ifelse(nonnegative, x, 0.0)
+            x_neg = ifelse(nonnegative, 0.0, x)
+
+            # Transform nonnegative values (x>=0)
+            if (abs(lambda_j) < eps) {
+                y_pos = log(x_pos + 1)
+            }
+            else {
+                y_pos = ((x_pos + 1)^lambda_j - 1) / lambda_j
+            }
+
+            # Transform negative values (x<0)
+            if (abs(lambda_j - 2) < eps) {
+                y_neg = -log(1 - x_neg)
+            }
+            else {
+                y_neg = -((1 - x_neg)^(2 - lambda_j) - 1) / (2 - lambda_j)
+            }
+
+            # Combine the two branches
+            y = ifelse(nonnegative, y_pos, y_neg)
+        }
+
+        Y[,j] = ifelse(nanMask, NaN, y)
+    }
+
+    if (hasMeans) {
+        Y = (Y - means) / scales
+    }
+}

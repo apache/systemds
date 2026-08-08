@@ -72,6 +72,8 @@ limitations under the License.
     * [`outlier`-Function](#outlier-function)
     * [`outlierByDB`-Function](#outlierByDB-function)
     * [`pnmf`-Function](#pnmf-function)
+    * [`powerTransform`-Function](#powerTransform-function)
+    * [`powerTransformApply`-Function](#powerTransformApply-function)
     * [`scale`-Function](#scale-function)
     * [`setdiff`-Function](#setdiff-function)
     * [`sherlock`-Function](#sherlock-function)
@@ -1838,6 +1840,78 @@ pnmf(X, rnk, eps = 10^-8, maxi = 10, verbose = TRUE)
 ```r
 X = rand(rows = 50, cols = 10)
 [W, H] = pnmf(X = X, rnk = 2, eps = 10^-8, maxi = 10, verbose = TRUE)
+```
+
+## `powerTransform`-Function
+
+The `powerTransform`-function estimates one power parameter per column and transforms the input matrix. It uses
+Yeo-Johnson by default and can optionally use Box-Cox for strictly positive data.
+NaN entries are preserved, while parameter estimation and standardization use the non-NaN entries in each column.
+
+### Usage
+
+```r
+powerTransform(X, method="yeo-johnson", standardize=TRUE)
+```
+
+### Arguments
+
+| Name        | Type           | Default         | Description |
+| :---------- | :------------- | :-------------- | :---------- |
+| X           | Matrix[Double] | required        | Matrix of feature vectors. |
+| method      | String         | `"yeo-johnson"` | Transformation method: `"yeo-johnson"` or `"box-cox"`. |
+| standardize | Boolean        | TRUE            | Whether to center and scale the transformed columns. |
+
+### Returns
+
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | Transformed matrix. |
+| Matrix[Double] | Row vector of estimated power parameters. |
+| Matrix[Double] | Row vector of transformed column means, or an empty matrix when standardization is disabled. |
+| Matrix[Double] | Row vector of transformed column scales, or an empty matrix when standardization is disabled. |
+
+### Example
+
+```r
+X = matrix("-2 -1 0 1 2 4", rows=6, cols=1)
+[Y, lambdas, means, scales] = powerTransform(X=X)
+```
+
+## `powerTransformApply`-Function
+
+The `powerTransformApply`-function transforms a matrix using parameters previously returned by `powerTransform`.
+NaN entries are preserved in the transformed matrix.
+
+### Usage
+
+```r
+powerTransformApply(X, lambdas, means, scales, method="yeo-johnson")
+```
+
+### Arguments
+
+| Name    | Type           | Default          | Description |
+| :------ | :------------- | :--------------- | :---------- |
+| X       | Matrix[Double] | required         | Matrix of feature vectors. |
+| lambdas | Matrix[Double] | required         | Row vector of fitted power parameters. |
+| means   | Matrix[Double] | required         | Row vector of fitted means, or an empty matrix to skip standardization. |
+| scales  | Matrix[Double] | required         | Row vector of fitted scales, or an empty matrix to skip standardization. |
+| method  | String         | `"yeo-johnson"` | Transformation method used during fitting. |
+
+### Returns
+
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | Transformed matrix. |
+
+### Example
+
+```r
+X = matrix("-2 -1 0 1 2 4", rows=6, cols=1)
+[Y, lambdas, means, scales] = powerTransform(X=X)
+Xnew = matrix("-3 0 3", rows=3, cols=1)
+Ynew = powerTransformApply(X=Xnew, lambdas=lambdas, means=means, scales=scales)
 ```
 
 

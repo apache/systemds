@@ -1,0 +1,383 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Power transformation using the selected method.
+# Reduces feature skewness by estimating and applying an optimal transformation parameter for each column.
+#
+# INPUT:
+# -------------------------------------------------------------------------------------
+#   X            Input feature matrix of shape n-by-m
+#   method       Power transformation method: "yeo-johnson" (default) or "box-cox"
+#   standardize  Whether to normalize transformed columns to zero mean and unit variance
+# -------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -------------------------------------------------------------------------------------
+#   Y        Power-transformed matrix of shape n-by-m
+#   lambdas  Estimated lambda parameters of shape 1-by-m, one per column
+#   means    Transformed column means of shape 1-by-m, or an empty matrix when not standardized
+#   scales   Transformed column scales of shape 1-by-m, or an empty matrix when not standardized
+# -------------------------------------------------------------------------------------
+
+m_powerTransform = function(
+    Matrix[Double] X,
+    String method="yeo-johnson",
+    Boolean standardize=TRUE)
+  return (
+    Matrix[Double] Y,
+    Matrix[Double] lambdas,
+    Matrix[Double] means,
+    Matrix[Double] scales)
+{
+  if (method != "yeo-johnson" & method != "box-cox") {
+    stop("powerTransform: unsupported method '" + method +
+      "'; expected 'yeo-johnson' or 'box-cox'")
+  }
+
+  validatedX = replace(target=X, pattern=NaN, replacement=1.0)
+  if (method == "box-cox" & min(validatedX) <= 0.0) {
+    stop("powerTransform: Box-Cox requires strictly positive input")
+  }
+
+  m = ncol(X)
+  lambdas = matrix(1.0, rows=1, cols=m) # Initialize first, then replace each column with the best lambdas
+
+  # Estimate lambda for each column separately
+  for (j in 1:m){
+    x = X[,j]
+    xObserved = removeEmpty(target=x, margin="rows", select=(is.na(x) == 0))
+    observedN = nrow(xObserved)
+
+    # Yeo-Johnson leaves constant columns unchanged; Box-Cox rejects them
+    if (observedN == 0) {
+      lambdas[1,j] = 1.0
+    }
+    else if (max(xObserved) == min(xObserved)) {
+      if (method == "yeo-johnson") {
+        lambdas[1,j] = 1.0;
+      }
+      else {
+        stop("powerTransform: Box-Cox does not support constant columns")
+      }
+    }
+    else{
+      lambdas[1,j] = ptEstimateLambda(xObserved, method);
+    }
+  }
+
+  # Apply the fitted transformation before optional standardization
+  emptyStats = matrix(0.0, rows=0, cols=0)
+  Y = powerTransformApply(X, lambdas, emptyStats, emptyStats, method);
+
+  means = matrix(0.0, rows=0, cols=0)
+  scales = matrix(0.0, rows=0, cols=0)
+
+  if (standardize) {
+    means = matrix(0.0, rows=1, cols=m)
+    scales = matrix(1.0, rows=1, cols=m)
+
+    for (j in 1:m) {
+      y = Y[,j]
+      yObserved = removeEmpty(target=y, margin="rows", select=(is.na(y) == 0))
+      observedN = nrow(yObserved)
+
+      if (observedN > 0) {
+        means[1,j] = mean(yObserved)
+        scale = sqrt(sum((yObserved - means[1,j])^2) / observedN)
+        if (!is.na(scale) & !is.infinite(scale) & scale != 0.0) {
+          scales[1,j] = scale
+        }
+      }
+
+      Y[,j] = ifelse(is.na(y), NaN, (y - means[1,j]) / scales[1,j])
+    }
+  }
+}
+ptEstimateLambda = function(Matrix[Double] x, String method)
+    return (Double lambda)
+{
+    lower = -2.0;
+    upper = 2.0;
+
+    if (method == "box-cox") {
+      jacTerm = sum(log(x))
+    }
+    else {
+      jacTerm = sum(sign(x) * log(abs(x) + 1.0))
+    }
+
+    lambda = ptBrentSearch(x, lower, upper, method, jacTerm);
+}
+
+# Compute negative log likelihood; lower lambda score is better
+
+ptNegLogLikelihood = function(
+    Matrix[Double] x,
+    Double lambda,
+    String method,
+    Double jacTerm)
+  return (Double negLogLikelihood)
+{
+    eps = 1e-12
+    if (method == "box-cox") {
+      if (abs(lambda) < eps) {
+        y = log(x)
+      }
+      else {
+        y = (x^lambda - 1.0) / lambda
+      }
+    }
+    else {
+      nonnegative = x >= 0
+      xPos = ifelse(nonnegative, x, 0.0)
+      xNeg = ifelse(nonnegative, 0.0, x)
+
+      if (abs(lambda) < eps) {
+        yPos = log(xPos + 1.0)
+      }
+      else {
+        yPos = ((xPos + 1.0)^lambda - 1.0) / lambda
+      }
+
+      if (abs(lambda - 2.0) < eps) {
+        yNeg = -log(1.0 - xNeg)
+      }
+      else {
+        yNeg = -((1.0 - xNeg)^(2.0 - lambda) - 1.0) / (2.0 - lambda)
+      }
+
+      y = ifelse(nonnegative, yPos, yNeg)
+    }
+
+    n = nrow(x);
+    yMean = mean(y);
+    yVariance = sum((y - yMean)^2) / n;
+
+    if (sum(is.na(y)) > 0 | sum(is.infinite(y)) > 0 |
+        is.na(yVariance) | is.infinite(yVariance) | yVariance <= 0.0) {
+        negLogLikelihood = 1e300
+    }
+    else {
+        logLikelihood = -n / 2.0 * log(yVariance) + (lambda - 1.0) * jacTerm;
+        negLogLikelihood = -logLikelihood;
+        if (is.na(negLogLikelihood) | is.infinite(negLogLikelihood)) {
+          negLogLikelihood = 1e300
+        }
+    }
+}
+
+# Minimize the negative log likelihood with Brent optimization
+ptBrentSearch = function(
+    Matrix[Double] x,
+    Double lower,
+    Double upper,
+    String method,
+    Double jacTerm)
+  return (Double lambdaOptimal)
+{
+  # Expand the initial interval until it brackets a minimum
+  goldenRatio = 1.618034;
+  maxBracketIterations = 1000;
+  lowerScore = ptNegLogLikelihood(x, lower, method, jacTerm);
+  upperScore = ptNegLogLikelihood(x, upper, method, jacTerm);
+
+  lambdaOptimal = 1.0
+  bestScore = ptNegLogLikelihood(x, lambdaOptimal, method, jacTerm)
+  if (lowerScore < bestScore) {
+    lambdaOptimal = lower
+    bestScore = lowerScore
+  }
+  if (upperScore < bestScore) {
+    lambdaOptimal = upper
+    bestScore = upperScore
+  }
+
+  if (lowerScore < upperScore) {
+    xa = upper;
+    fa = upperScore;
+    xb = lower;
+    fb = lowerScore;
+  }
+  else {
+    xa = lower;
+    fa = lowerScore;
+    xb = upper;
+    fb = upperScore;
+  }
+
+  initialXc = xb + goldenRatio * (xb - xa);
+  initialFc = ptNegLogLikelihood(x, initialXc, method, jacTerm);
+  xc = initialXc;
+  fc = initialFc;
+  if (fc < bestScore) {
+    lambdaOptimal = xc
+    bestScore = fc
+  }
+  bracketIteration = 0;
+  while ((fc < fb) & (bracketIteration < maxBracketIterations)) {
+    nextXc = xc + goldenRatio * (xc - xb);
+    nextFc = ptNegLogLikelihood(x, nextXc, method, jacTerm);
+    xa = xb;
+    fa = fb;
+    xb = xc;
+    fb = fc;
+    xc = nextXc;
+    fc = nextFc;
+    if (fc < bestScore) {
+      lambdaOptimal = xc
+      bestScore = fc
+    }
+    bracketIteration = bracketIteration + 1;
+  }
+
+  validBracket = bracketIteration < maxBracketIterations &
+    (((fb < fa) & (fb <= fc)) | ((fb <= fa) & (fb < fc)))
+
+  if (validBracket) {
+    a = min(xa, xc);
+    b = max(xa, xc);
+
+    goldenMean = 0.3819660112501051;
+    sqrtEpsilon = sqrt(2.2e-16);
+    tolerance = 1.48e-8;
+    maxIterations = 500;
+
+    xf = a + goldenMean * (b - a);
+    nfc = xf;
+    fulc = xf;
+    fx = ptNegLogLikelihood(x, xf, method, jacTerm);
+    fnfc = fx;
+    ffulc = fx;
+    if (fx < bestScore) {
+      lambdaOptimal = xf
+      bestScore = fx
+    }
+
+    rat = 0.0;
+    e = 0.0;
+    midpoint = 0.5 * (a + b);
+    tol1 = sqrtEpsilon * abs(xf) + tolerance / 3.0;
+    tol2 = 2.0 * tol1;
+
+    iteration = 0;
+    while ((abs(xf - midpoint) > (tol2 - 0.5 * (b - a))) &
+        (iteration < maxIterations)) {
+      goldenStep = TRUE;
+
+      if (abs(e) > tol1) {
+        goldenStep = FALSE;
+        r = (xf - nfc) * (fx - ffulc);
+        q = (xf - fulc) * (fx - fnfc);
+        p = (xf - fulc) * q - (xf - nfc) * r;
+        q = 2.0 * (q - r);
+
+        if (q > 0.0) {
+          p = -p;
+        }
+
+        q = abs(q);
+        previousE = e;
+        e = rat;
+
+        if ((q > 0.0) & (abs(p) < abs(0.5 * q * previousE)) &
+            (p > q * (a - xf)) & (p < q * (b - xf))) {
+          rat = p / q;
+          candidate = xf + rat;
+
+          if (((candidate - a) < tol2) | ((b - candidate) < tol2)) {
+            if (midpoint >= xf) {
+              rat = tol1;
+            }
+            else {
+              rat = -tol1;
+            }
+          }
+        }
+        else {
+          goldenStep = TRUE;
+        }
+      }
+
+      if (goldenStep) {
+        if (xf >= midpoint) {
+          e = a - xf;
+        }
+        else {
+          e = b - xf;
+        }
+        rat = goldenMean * e;
+      }
+
+      if (rat >= 0.0) {
+        candidate = xf + max(abs(rat), tol1);
+      }
+      else {
+        candidate = xf - max(abs(rat), tol1);
+      }
+
+      fCandidate = ptNegLogLikelihood(x, candidate, method, jacTerm);
+      if (fCandidate < bestScore) {
+        lambdaOptimal = candidate
+        bestScore = fCandidate
+      }
+
+      if (fCandidate <= fx) {
+        if (candidate >= xf) {
+          a = xf;
+        }
+        else {
+          b = xf;
+        }
+
+        fulc = nfc;
+        ffulc = fnfc;
+        nfc = xf;
+        fnfc = fx;
+        xf = candidate;
+        fx = fCandidate;
+      }
+      else {
+        if (candidate < xf) {
+          a = candidate;
+        }
+        else {
+          b = candidate;
+        }
+
+        if ((fCandidate <= fnfc) | (nfc == xf)) {
+          fulc = nfc;
+          ffulc = fnfc;
+          nfc = candidate;
+          fnfc = fCandidate;
+        }
+        else if ((fCandidate <= ffulc) | (fulc == xf) | (fulc == nfc)) {
+          fulc = candidate;
+          ffulc = fCandidate;
+        }
+      }
+
+      midpoint = 0.5 * (a + b);
+      tol1 = sqrtEpsilon * abs(xf) + tolerance / 3.0;
+      tol2 = 2.0 * tol1;
+      iteration = iteration + 1;
+    }
+  }
+}

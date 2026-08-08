@@ -1,0 +1,48 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements. See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership. The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License. You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+X = read($1);
+
+if ($5 == "default") {
+    [Y, lambdas, means, scales] = powerTransform(X=X);
+    standardize = TRUE;
+}
+else {
+    standardize = as.boolean($6);
+    [Y, lambdas, means, scales] = powerTransform(
+        X=X,
+        method=$5,
+        standardize=standardize
+    );
+}
+
+if (standardize) {
+    state = rbind(means, scales);
+}
+else {
+    assert(nrow(means) == 0 & ncol(means) == 0);
+    assert(nrow(scales) == 0 & ncol(scales) == 0);
+    state = matrix(0.0, rows=2, cols=ncol(X));
+}
+
+write(Y, $2);
+write(lambdas, $3);
+write(state, $4);

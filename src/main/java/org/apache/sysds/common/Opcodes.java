@@ -352,6 +352,7 @@ public enum Opcodes {
 	MAPPM("map+*", InstructionType.Binary),
 	MAPMINUSMULT("map-*", InstructionType.Binary),
 	MAPDROPINVALIDLENGTH("mapdropInvalidLength", InstructionType.Binary),
+	SET_COLNAMES("set_colnames", InstructionType.Binary),
 
 	MAPGT("map>", InstructionType.Binary),
 	MAPGE("map>=", InstructionType.Binary),

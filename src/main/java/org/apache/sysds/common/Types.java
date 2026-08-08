@@ -641,7 +641,8 @@ public interface Types {
 		MINUS1_MULT(false), //1-X*Y
 		GET_CATEGORICAL_MASK(false), // get transformation mask
 		QUANTIZE_COMPRESS(false), //quantization-fused compression
-		UNION_DISTINCT(false);
+		UNION_DISTINCT(false),
+		SET_COLNAMES(false);
 
 		private final boolean _validOuter;
 		

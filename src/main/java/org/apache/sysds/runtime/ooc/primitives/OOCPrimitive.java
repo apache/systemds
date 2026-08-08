@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.ooc.OOCStreamable;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
@@ -46,6 +47,7 @@ public abstract class OOCPrimitive {
 	private final List<InputSlot> _inputs;
 	private final AtomicBoolean _started;
 	private final AtomicBoolean _executionStarted;
+	private final AtomicBoolean _failed;
 	protected OOCAccessPattern _pattern;
 	protected MemoryAllowance _allowance;
 
@@ -71,6 +73,7 @@ public abstract class OOCPrimitive {
 		_inputs = new ArrayList<>();
 		_started = new AtomicBoolean();
 		_executionStarted = new AtomicBoolean();
+		_failed = new AtomicBoolean();
 		_pattern = OOCAccessPattern.UNSET;
 	}
 
@@ -163,6 +166,18 @@ public abstract class OOCPrimitive {
 			_allowance = new SyncMemoryAllowance(GlobalMemoryBroker.get());
 			startExecution();
 		}
+	}
+
+	protected final boolean fail(Throwable error) {
+		if(!_failed.compareAndSet(false, true))
+			return false;
+		if(_context != null)
+			_context.failAll(DMLRuntimeException.of(error));
+		return true;
+	}
+
+	protected final boolean hasFailed() {
+		return _failed.get();
 	}
 
 	public final void onComplete() {

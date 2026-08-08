@@ -51,7 +51,6 @@ public final class BroadcastOOCPrimitive extends OOCPrimitive {
 	private final Supplier<MaterializedStore.Liveness> _liveness;
 	private final BiFunction<IndexedMatrixValue, IndexedMatrixValue, IndexedMatrixValue> _operation;
 	private final AtomicBoolean _cleaned;
-	private final AtomicBoolean _failed;
 	private final AtomicBoolean _sourceComplete;
 	private final AtomicInteger _active;
 	private MaterializedStore<IndexedMatrixValue> _store;
@@ -70,7 +69,6 @@ public final class BroadcastOOCPrimitive extends OOCPrimitive {
 		_liveness = liveness;
 		_operation = operation;
 		_cleaned = new AtomicBoolean();
-		_failed = new AtomicBoolean();
 		_sourceComplete = new AtomicBoolean();
 		_active = new AtomicInteger(1);
 	}
@@ -100,7 +98,7 @@ public final class BroadcastOOCPrimitive extends OOCPrimitive {
 		_outputStream = _output.getWriteStream();
 		_ready = new SubscribableTaskQueue<>();
 		getContext().addOutStream(_outputStream, _ready);
-		OOCInstructionUtils.submitOOCTasks(_ready, callback -> process(callback.get()), getContext())
+		OOCInstructionUtils.submitCloseableOOCTasks(_ready, this::process, getContext())
 			.whenComplete((ignored, error) -> {
 				try {
 					if(error != null)
@@ -232,7 +230,6 @@ public final class BroadcastOOCPrimitive extends OOCPrimitive {
 			fail(failure);
 		}
 		finally {
-			work.close();
 			if(budget != null)
 				budget.close();
 			completeOne();
@@ -253,14 +250,6 @@ public final class BroadcastOOCPrimitive extends OOCPrimitive {
 		catch(IllegalStateException ignored) {
 			// Failure propagation may already have closed the ready stream.
 		}
-	}
-
-	private void fail(Throwable error) {
-		if(!_failed.compareAndSet(false, true))
-			return;
-		DMLRuntimeException failure = DMLRuntimeException.of(error);
-		_outputStream.propagateFailure(failure);
-		getContext().failAll(failure);
 	}
 
 	private void cleanup() {

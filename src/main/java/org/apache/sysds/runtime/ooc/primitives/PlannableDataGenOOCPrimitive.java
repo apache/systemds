@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.ooc.primitives;
 
 import java.util.function.Function;
 
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.ooc.OOCStreamable;
 import org.apache.sysds.runtime.instructions.ooc.SubscribableTaskQueue;
@@ -77,7 +76,7 @@ public class PlannableDataGenOOCPrimitive extends OOCPrimitive {
 					budget.close();
 			}
 		}, getContext()).thenRun(output::closeInput).exceptionally(error -> {
-			output.propagateFailure(DMLRuntimeException.of(error));
+			fail(error);
 			return null;
 		}).thenRun(this::onComplete);
 

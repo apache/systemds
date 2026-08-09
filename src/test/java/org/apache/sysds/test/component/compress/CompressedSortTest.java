@@ -232,8 +232,7 @@ public class CompressedSortTest {
 		MatrixBlock sortedU = mb.reorgOperations(ASC, new MatrixBlock(), 0, 0, 0);
 
 		for(double q : new double[] {0.0, 0.25, 0.5, 0.75, 0.9, 1.0}) {
-			assertEquals("pick q=" + q + " " + ct, sortedU.pickValue(q, false), sortedC.pickValue(q, false), 0.0);
-			assertEquals("pick avg q=" + q + " " + ct, sortedU.pickValue(q, true), sortedC.pickValue(q, true), 0.0);
+			assertEquals("pick q=" + q + " " + ct, sortedU.pickValue(q), sortedC.pickValue(q), 0.0);
 		}
 	}
 

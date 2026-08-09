@@ -118,13 +118,13 @@ public class FrameReaderParquet extends FrameReader {
 		// Check existence
 		if (!HDFSTool.existsFileOnHDFS(path.toString())) {
 			throw new IOException("File does not exist on HDFS: " + fname);
+		}
 
 		ValueType[] lschema = createOutputSchema(schema, clen);
 		String[] lnames = createOutputNames(names, clen);
 
-		Object[] dest = new Object[(int) clen];
-		for(int c = 0; c < clen; c++)
-			dest[c] = ArrayFactory.allocateBacking(lschema[c], (int) rlen);
+		// allocate output frame block
+		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
 
 		// Read Parquet file
 		readParquetFrameFromHDFS(path, conf, ret, rlen, clen);

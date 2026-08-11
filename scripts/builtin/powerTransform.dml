@@ -24,17 +24,17 @@
 #
 # INPUT:
 # -------------------------------------------------------------------------------------
-#   X            Input feature matrix of shape n-by-m
-#   method       Power transformation method: "yeo-johnson" (default) or "box-cox"
-#   standardize  Whether to normalize transformed columns to zero mean and unit variance
+# X            Input feature matrix of shape n-by-m
+# method       Power transformation method: "yeo-johnson" (default) or "box-cox"
+# standardize  Whether to normalize transformed columns to zero mean and unit variance
 # -------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # -------------------------------------------------------------------------------------
-#   Y        Power-transformed matrix of shape n-by-m
-#   lambdas  Estimated lambda parameters of shape 1-by-m, one per column
-#   means    Transformed column means of shape 1-by-m, or an empty matrix when not standardized
-#   scales   Transformed column scales of shape 1-by-m, or an empty matrix when not standardized
+# Y        Power-transformed matrix of shape n-by-m
+# lambdas  Estimated lambda parameters of shape 1-by-m, one per column
+# means    Transformed column means of shape 1-by-m, or an empty matrix when not standardized
+# scales   Transformed column scales of shape 1-by-m, or an empty matrix when not standardized
 # -------------------------------------------------------------------------------------
 
 m_powerTransform = function(
@@ -171,8 +171,7 @@ ptNegLogLikelihood = function(
     yMean = mean(y);
     yVariance = sum((y - yMean)^2) / n;
 
-    if (sum(is.na(y)) > 0 | sum(is.infinite(y)) > 0 |
-        is.na(yVariance) | is.infinite(yVariance) | yVariance <= 0.0) {
+    if (is.na(yVariance) | is.infinite(yVariance) | yVariance <= 0.0) {
         negLogLikelihood = 1e300
     }
     else {

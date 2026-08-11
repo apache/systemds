@@ -24,16 +24,16 @@
 #
 # INPUT:
 # -------------------------------------------------------------------------------------
-#   X        Input feature matrix of shape n-by-m
-#   lambdas  Precomputed lambda parameters of shape 1-by-m, one per column
-#   means    Transformed column means of shape 1-by-m; empty to skip standardization
-#   scales   Transformed column scales of shape 1-by-m; empty to skip standardization
-#   method   Power transformation method: "yeo-johnson" (default) or "box-cox"
+# X        Input feature matrix of shape n-by-m
+# lambdas  Precomputed lambda parameters of shape 1-by-m, one per column
+# means    Transformed column means of shape 1-by-m; empty to skip standardization
+# scales   Transformed column scales of shape 1-by-m; empty to skip standardization
+# method   Power transformation method: "yeo-johnson" (default) or "box-cox"
 # -------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # -------------------------------------------------------------------------------------
-#   Y    Power-transformed matrix of shape n-by-m
+# Y    Power-transformed matrix of shape n-by-m
 # -------------------------------------------------------------------------------------
 
 

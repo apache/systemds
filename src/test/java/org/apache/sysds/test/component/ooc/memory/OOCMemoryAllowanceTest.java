@@ -138,6 +138,15 @@ public class OOCMemoryAllowanceTest {
 			budget.close();
 			Assert.assertEquals(0, allowance.getUsedMemory());
 
+			allowance.reserveBlocking(60);
+			ReservationBudget reusable = new ReservationBudget(allowance, 60).enableReuse();
+			reusable.reserveBlocking(40);
+			reusable.release(40);
+			reusable.reserveBlocking(40);
+			reusable.release(40);
+			reusable.close();
+			Assert.assertEquals(0, allowance.getUsedMemory());
+
 			source.enqueue(2);
 			OOCStream.QueueCallback<Integer> second = allocated.dequeueCB();
 			OOCStream.QueueCallback<Integer> retained = second.keepOpen();

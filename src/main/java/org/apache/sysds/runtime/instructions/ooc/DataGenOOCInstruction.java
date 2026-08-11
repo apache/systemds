@@ -34,10 +34,8 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.LibMatrixDatagen;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
-import org.apache.sysds.runtime.ooc.stream.StreamContext;
 import org.apache.sysds.runtime.ooc.util.OOCInstructionUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -251,34 +249,22 @@ public class DataGenOOCInstruction extends UnaryOOCInstruction {
 
 			final int maxK = (int) UtilFunctions.getSeqLength(lfrom, lto, lincr);
 			final double finalLincr = lincr;
+			ec.getDataCharacteristics(output.getName()).set(maxK, 1, blen, -1);
 
-			OOCInstructionUtils.submitOOCTask(() -> {
-				int k = 0;
-				double curFrom = lfrom;
-				double curTo;
-				MatrixBlock mb;
+			OOCInstructionUtils.dataGen(qOut, idx -> {
+				long offset = (idx.getRowIndex() - 1) * blen;
+				long desiredLen = Math.min(blen, maxK - offset);
+				double curFrom = lfrom + offset * finalLincr;
+				double curTo = curFrom + (desiredLen - 1) * finalLincr;
+				long actualLen = UtilFunctions.getSeqLength(curFrom, curTo, finalLincr);
 
-				while (k < maxK) {
-					long desiredLen = Math.min(blen, maxK - k);
-					curTo = curFrom + (desiredLen - 1) * finalLincr;
-					long actualLen = UtilFunctions.getSeqLength(curFrom, curTo, finalLincr);
-
-					if (actualLen != desiredLen) {
-						// Then we add / subtract a small correction term
-						curTo += (actualLen < desiredLen) ? finalLincr / 2 : -finalLincr / 2;
-
-						if (UtilFunctions.getSeqLength(curFrom, curTo, finalLincr) != desiredLen)
-							throw new DMLRuntimeException("OOC seq could not construct the right number of elements.");
-					}
-
-					mb = MatrixBlock.seqOperations(curFrom, curTo, finalLincr);
-					qOut.enqueue(new IndexedMatrixValue(new MatrixIndexes(1 + k / blen, 1), mb));
-					curFrom = mb.get(mb.getNumRows() - 1, 0) + finalLincr;
-					k += blen;
+				if(actualLen != desiredLen) {
+					curTo += actualLen < desiredLen ? finalLincr / 2 : -finalLincr / 2;
+					if(UtilFunctions.getSeqLength(curFrom, curTo, finalLincr) != desiredLen)
+						throw new DMLRuntimeException("OOC seq could not construct the right number of elements.");
 				}
-
-				qOut.closeInput();
-			}, new StreamContext(_callerId, getExtendedOpcode()).addOutStream(qOut));
+				return MatrixBlock.seqOperations(curFrom, curTo, finalLincr);
+			}, getContext());
 		}
 		else
 			throw new NotImplementedException();

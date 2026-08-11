@@ -93,7 +93,7 @@ public class RewriteMatrixMultChainOptTransposeTest extends AutomatedTestBase {
 
 	private void testMMChainWithTransposeOperator(String testname, int numOptTranspositions,
 		int numOriginalTranspositions, boolean rewrites) {
-		boolean oldFlag = OptimizerUtils.ALLOW_ADVANCED_MMCHAIN_REWRITES;
+		boolean oldFlag = OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES;
 		try {
 			TestConfiguration config = getTestConfiguration(testname);
 			loadTestConfiguration(config);
@@ -104,7 +104,7 @@ public class RewriteMatrixMultChainOptTransposeTest extends AutomatedTestBase {
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());
 
-			OptimizerUtils.ALLOW_ADVANCED_MMCHAIN_REWRITES = rewrites;
+			OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES = rewrites;
 
 			//execute tests
 			runTest(true, false, null, -1);
@@ -124,7 +124,7 @@ public class RewriteMatrixMultChainOptTransposeTest extends AutomatedTestBase {
 
 		}
 		finally {
-			OptimizerUtils.ALLOW_ADVANCED_MMCHAIN_REWRITES = oldFlag;
+			OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES = oldFlag;
 			Recompiler.reinitRecompiler();
 		}
 	}

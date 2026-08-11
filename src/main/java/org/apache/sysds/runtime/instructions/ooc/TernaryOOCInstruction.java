@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
+import org.apache.sysds.runtime.ooc.util.OOCInstructionUtils;
 
 public class TernaryOOCInstruction extends ComputationOOCInstruction {
 
@@ -106,27 +107,20 @@ public class TernaryOOCInstruction extends ComputationOOCInstruction {
 		MatrixBlock s2 = input2.isMatrix() ? null : getScalarInputBlock(ec, input2);
 		MatrixBlock s3 = input3.isMatrix() ? null : getScalarInputBlock(ec, input3);
 
-		OOCStream<IndexedMatrixValue> qIn = mo.getStreamHandle();
 		OOCStream<IndexedMatrixValue> qOut = createWritableStream();
 		ec.getMatrixObject(output).setStreamHandle(qOut);
 
-		mapOOC(qIn, qOut, tmp -> {
-			IndexedMatrixValue outVal = new IndexedMatrixValue();
-			MatrixBlock op1 = resolveOperandBlock(1, tmp, null, matrixPos, -1, s1, s2, s3);
-			MatrixBlock op2 = resolveOperandBlock(2, tmp, null, matrixPos, -1, s1, s2, s3);
-			MatrixBlock op3 = resolveOperandBlock(3, tmp, null, matrixPos, -1, s1, s2, s3);
-			outVal.set(tmp.getIndexes(),
-				op1.ternaryOperations((TernaryOperator)_optr, op2, op3, new MatrixBlock()));
-			return outVal;
-		});
+		OOCInstructionUtils.equiMapBlock(mo.getStreamable(), qOut, block -> {
+			MatrixBlock op1 = resolveOperandBlock(1, block, null, matrixPos, -1, s1, s2, s3);
+			MatrixBlock op2 = resolveOperandBlock(2, block, null, matrixPos, -1, s1, s2, s3);
+			MatrixBlock op3 = resolveOperandBlock(3, block, null, matrixPos, -1, s1, s2, s3);
+			return op1.ternaryOperations((TernaryOperator) _optr, op2, op3, new MatrixBlock());
+		}, getContext());
 	}
 
 	private void processTwoMatrixInstruction(ExecutionContext ec, int leftPos, int rightPos) {
 		MatrixObject left = getMatrixObject(ec, leftPos);
 		MatrixObject right = getMatrixObject(ec, rightPos);
-		OOCStream<IndexedMatrixValue> leftStream = left.getStreamHandle();
-		OOCStream<IndexedMatrixValue> rightStream = right.getStreamHandle();
-
 		MatrixBlock s1 = input1.isMatrix() ? null : getScalarInputBlock(ec, input1);
 		MatrixBlock s2 = input2.isMatrix() ? null : getScalarInputBlock(ec, input2);
 		MatrixBlock s3 = input3.isMatrix() ? null : getScalarInputBlock(ec, input3);
@@ -134,15 +128,26 @@ public class TernaryOOCInstruction extends ComputationOOCInstruction {
 		OOCStream<IndexedMatrixValue> qOut = createWritableStream();
 		ec.getMatrixObject(output).setStreamHandle(qOut);
 
-		joinOOC(leftStream, rightStream, qOut, (l, r) -> {
-			IndexedMatrixValue outVal = new IndexedMatrixValue();
-			MatrixBlock op1 = resolveOperandBlock(1, l, r, leftPos, rightPos, s1, s2, s3);
-			MatrixBlock op2 = resolveOperandBlock(2, l, r, leftPos, rightPos, s1, s2, s3);
-			MatrixBlock op3 = resolveOperandBlock(3, l, r, leftPos, rightPos, s1, s2, s3);
-			outVal.set(l.getIndexes(),
-				op1.ternaryOperations((TernaryOperator)_optr, op2, op3, new MatrixBlock()));
-			return outVal;
-		}, IndexedMatrixValue::getIndexes);
+		if(left.getDataCharacteristics().dimsKnown() && right.getDataCharacteristics().dimsKnown()) {
+			OOCInstructionUtils.equiJoin(left.getStreamable(), right.getStreamable(), qOut, (l, r) -> {
+				MatrixBlock op1 = resolveOperandBlock(1, l, r, leftPos, rightPos, s1, s2, s3);
+				MatrixBlock op2 = resolveOperandBlock(2, l, r, leftPos, rightPos, s1, s2, s3);
+				MatrixBlock op3 = resolveOperandBlock(3, l, r, leftPos, rightPos, s1, s2, s3);
+				return op1.ternaryOperations((TernaryOperator) _optr, op2, op3, new MatrixBlock());
+			}, getContext());
+		}
+		else {
+			OOCStream<IndexedMatrixValue> leftStream = left.getStreamHandle();
+			OOCStream<IndexedMatrixValue> rightStream = right.getStreamHandle();
+			joinOOC(leftStream, rightStream, qOut, (l, r) -> {
+				IndexedMatrixValue outVal = new IndexedMatrixValue();
+				MatrixBlock op1 = resolveOperandBlock(1, l, r, leftPos, rightPos, s1, s2, s3);
+				MatrixBlock op2 = resolveOperandBlock(2, l, r, leftPos, rightPos, s1, s2, s3);
+				MatrixBlock op3 = resolveOperandBlock(3, l, r, leftPos, rightPos, s1, s2, s3);
+				outVal.set(l.getIndexes(), op1.ternaryOperations((TernaryOperator) _optr, op2, op3, new MatrixBlock()));
+				return outVal;
+			}, IndexedMatrixValue::getIndexes);
+		}
 	}
 
 	private void processThreeMatrixInstruction(ExecutionContext ec) {
@@ -185,10 +190,16 @@ public class TernaryOOCInstruction extends ComputationOOCInstruction {
 
 	private MatrixBlock resolveOperandBlock(int operandPos, IndexedMatrixValue left, IndexedMatrixValue right,
 		int leftPos, int rightPos, MatrixBlock s1, MatrixBlock s2, MatrixBlock s3) {
+		return resolveOperandBlock(operandPos, left == null ? null : (MatrixBlock) left.getValue(),
+			right == null ? null : (MatrixBlock) right.getValue(), leftPos, rightPos, s1, s2, s3);
+	}
+
+	private MatrixBlock resolveOperandBlock(int operandPos, MatrixBlock left, MatrixBlock right, int leftPos,
+		int rightPos, MatrixBlock s1, MatrixBlock s2, MatrixBlock s3) {
 		if(operandPos == leftPos && left != null)
-			return (MatrixBlock) left.getValue();
+			return left;
 		if(operandPos == rightPos && right != null)
-			return (MatrixBlock) right.getValue();
+			return right;
 
 		if(operandPos == 1)
 			return s1;

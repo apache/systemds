@@ -29,6 +29,8 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.function.ToIntFunction;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -40,11 +42,14 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.ooc.cache.OOCFuture;
 import org.apache.sysds.runtime.ooc.memory.MemoryAllowance;
 import org.apache.sysds.runtime.ooc.memory.ReservationBudget;
+import org.apache.sysds.runtime.ooc.primitives.BroadcastOOCPrimitive;
+import org.apache.sysds.runtime.ooc.primitives.GroupedReduceOOCPrimitive;
 import org.apache.sysds.runtime.ooc.primitives.JoinOOCPrimitive;
 import org.apache.sysds.runtime.ooc.primitives.MappingOOCPrimitive;
 import org.apache.sysds.runtime.ooc.primitives.PlannableDataGenOOCPrimitive;
 import org.apache.sysds.runtime.ooc.primitives.TransposeOOCPrimitive;
 import org.apache.sysds.runtime.ooc.stats.OOCEventLog;
+import org.apache.sysds.runtime.ooc.store.MaterializedStore;
 import org.apache.sysds.runtime.ooc.stream.AllocatedOOCStream;
 import org.apache.sysds.runtime.ooc.stream.StreamContext;
 import org.apache.sysds.runtime.ooc.stream.TaskContext;
@@ -88,6 +93,19 @@ public final class OOCInstructionUtils {
 		output.assignPrimitive(new JoinOOCPrimitive(left, right, output, operation, context));
 	}
 
+	public static void indexedBroadcastMap(OOCStreamable<IndexedMatrixValue> streamed,
+		OOCStreamable<IndexedMatrixValue> broadcast, OOCStream<IndexedMatrixValue> output,
+		ToIntFunction<IndexedMatrixValue> lookup, Supplier<MaterializedStore.Liveness> liveness,
+		BiFunction<IndexedMatrixValue, IndexedMatrixValue, IndexedMatrixValue> operation, StreamContext context) {
+		output.assignPrimitive(
+			new BroadcastOOCPrimitive(streamed, broadcast, output, lookup, liveness, operation, context));
+	}
+
+	public static void rowGroupedReduce(OOCStreamable<IndexedMatrixValue> input, OOCStream<IndexedMatrixValue> output,
+		BiFunction<MatrixBlock, MatrixBlock, MatrixBlock> merge, StreamContext context) {
+		output.assignPrimitive(new GroupedReduceOOCPrimitive(input, output, merge, context));
+	}
+
 	public static int getComputeInFlight() {
 		return COMPUTE_IN_FLIGHT.get();
 	}
@@ -99,6 +117,25 @@ public final class OOCInstructionUtils {
 	public static <T> CompletableFuture<Void> submitOOCTasks(OOCStream<T> queue,
 		Consumer<OOCStream.QueueCallback<T>> consumer, StreamContext context) {
 		return submitOOCTasks(List.of(queue), (i, callback) -> consumer.accept(callback), null, null, context);
+	}
+
+	public static <T extends AutoCloseable> CompletableFuture<Void> submitCloseableOOCTasks(OOCStream<T> queue,
+		Consumer<T> consumer, StreamContext context) {
+		return submitOOCTasks(List.of(queue), (index, callback) -> {
+			try(T value = callback.get()) {
+				consumer.accept(value);
+			}
+			catch(Exception error) {
+				throw DMLRuntimeException.of(error);
+			}
+		}, null, (index, callback) -> {
+			try {
+				callback.get().close();
+			}
+			catch(Exception error) {
+				throw DMLRuntimeException.of(error);
+			}
+		}, context);
 	}
 
 	public static CompletableFuture<Void> submitAdmittedOOCTasks(OOCStream<IndexedMatrixValue> in,

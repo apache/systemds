@@ -32,6 +32,13 @@ public interface OOCStreamable<T> {
 
 	CachingStream getStreamCache();
 
+	default boolean hasMaterializedStore() {
+		return false;
+	}
+
+	default void scheduleMaterializedStoreDeletion() {
+	}
+
 	boolean isProcessed();
 
 	DataCharacteristics getDataCharacteristics();

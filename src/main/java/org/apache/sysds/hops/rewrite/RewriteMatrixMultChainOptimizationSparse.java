@@ -23,10 +23,13 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.estim.MMNode;
-import org.apache.sysds.hops.estim.EstimatorBasicAvg;
+import org.apache.sysds.hops.estim.SparsityEstimator;
+import org.apache.sysds.hops.estim.EstimationUtils.EstimatorType;
 import org.apache.sysds.hops.estim.SparsityEstimator.OpCode;
 
 /**
@@ -35,7 +38,7 @@ import org.apache.sysds.hops.estim.SparsityEstimator.OpCode;
  * 
  * Solution: Classic Dynamic Programming
  * Approach: Currently, the approach based only on matrix dimensions
- * and sparsity estimates using the MNC sketch
+ * and sparsity estimates using the basic average estimator
  * Goal: To reduce the number of computations in the run-time
  * (map-reduce) layer
  */
@@ -85,9 +88,10 @@ public class RewriteMatrixMultChainOptimizationSparse extends RewriteMatrixMultC
 		}
 
 		//compute cost-optimal chains for increasing chain sizes 
-		EstimatorBasicAvg estim = new EstimatorBasicAvg();
-		for( int l = 2; l <= size; l++ ) { // chain length
-			for( int i = 0; i < size - l + 1; i++ ) {
+		SparsityEstimator estim = EstimatorType.valueOf(ConfigurationManager.getDMLConfig()
+			.getTextValue(DMLConfig.SPARSITY_ESTIMATOR)).getEstimator();
+		for(int l = 2; l <= size; l++) { // chain length
+			for(int i = 0; i < size - l + 1; i++) {
 				int j = i + l - 1;
 				// find cost of (i,j)
 				dpMatrix[i][j] = Double.MAX_VALUE;

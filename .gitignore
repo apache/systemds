@@ -153,6 +153,8 @@ venv/*
 # resource optimization
 scripts/resource/output
 *.pem
+# except the certificates of the federated SSL tests, which are checked in
+!src/test/resources/cert/*.pem
 
 # docker tests
 docker/mountFolder/*.bin

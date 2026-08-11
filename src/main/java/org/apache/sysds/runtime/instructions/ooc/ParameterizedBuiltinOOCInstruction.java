@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
+import org.apache.sysds.runtime.ooc.util.OOCInstructionUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 import java.util.ArrayList;
@@ -92,13 +93,13 @@ public class ParameterizedBuiltinOOCInstruction extends ComputationOOCInstructio
 				throw new NotImplementedException();
 			} else{
 				MatrixObject targetObj = ec.getMatrixObject(params.get("target"));
-				OOCStream<IndexedMatrixValue> qIn = targetObj.getStreamHandle();
 				OOCStream<IndexedMatrixValue> qOut = createWritableStream();
 
 				double pattern = Double.parseDouble(params.get("pattern"));
 				double replacement = Double.parseDouble(params.get("replacement"));
 
-				mapOOC(qIn, qOut, tmp -> new IndexedMatrixValue(tmp.getIndexes(), tmp.getValue().replaceOperations(new MatrixBlock(), pattern, replacement)));
+				OOCInstructionUtils.equiMapBlock(targetObj.getStreamable(), qOut,
+					block -> block.replaceOperations(new MatrixBlock(), pattern, replacement), getContext());
 
 				ec.getMatrixObject(output).setStreamHandle(qOut);
 			}

@@ -199,6 +199,8 @@ class ZeroCrossingRate(TimeSeriesRepresentation):
 class ACF(TimeSeriesRepresentation):
     def __init__(self, k=1, params=None):
         super().__init__("ACF", {"k": [1, 2, 5, 10, 20, 25, 50, 100, 200, 500]})
+        if params is not None:
+            k = params.get("k", k)
         self.k = k
 
     def compute_feature(self, signal, axis=-1):
@@ -246,6 +248,8 @@ class FrequencyMagnitude(TimeSeriesRepresentation):
 class SpectralCentroid(TimeSeriesRepresentation):
     def __init__(self, fs=1.0, params=None):
         super().__init__("SpectralCentroid", parameters={"fs": [0.5, 1.0, 2.0]})
+        if params is not None:
+            fs = params.get("fs", fs)
         self.fs = fs
 
     def compute_feature(self, signal, axis=-1):
@@ -271,6 +275,10 @@ class BandpowerFFT(TimeSeriesRepresentation):
             "BandpowerFFT",
             parameters={"fs": [0.5, 1.0], "f1": [0.0, 1.0], "f2": [0.5, 1.0]},
         )
+        if params is not None:
+            fs = params.get("fs", fs)
+            f1 = params.get("f1", f1)
+            f2 = params.get("f2", f2)
         self.fs = fs
         self.f1 = f1
         self.f2 = f2

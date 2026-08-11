@@ -49,6 +49,9 @@ class W2V(UnimodalRepresentation):
             "min_count": [1, 2, 4, 8],
         }
         super().__init__("Word2Vec", ModalityType.EMBEDDING, parameters)
+        if params is not None:
+            vector_size = params.get("vector_size", vector_size)
+            min_count = params.get("min_count", min_count)
         self.vector_size = vector_size
         self.min_count = min_count
         self.output_file = output_file

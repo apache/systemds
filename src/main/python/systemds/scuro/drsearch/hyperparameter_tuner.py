@@ -40,6 +40,10 @@ import pickle
 from systemds.scuro.utils.checkpointing import CheckpointManager
 
 
+def _wandb_safe_tag(s: str, max_len: int = 64) -> str:
+    return s if len(s) <= max_len else s[: max_len - 3] + "..."
+
+
 def _get_params_for_node(node_id, params):
     return {
         k.split("-")[-1]: v for k, v in params.items() if k.startswith(node_id + "-")
@@ -53,6 +57,7 @@ def _param_values_to_spec(
         return {"name": full_name, "type": "categorical", "domain": list(param_values)}
     if isinstance(param_values, tuple) and len(param_values) == 2:
         lo, hi = param_values
+        lo, hi = min(lo, hi), max(lo, hi)
         if isinstance(lo, int) and isinstance(hi, int):
             return {"name": full_name, "type": "integer", "domain": (lo, hi)}
         return {"name": full_name, "type": "real", "domain": (float(lo), float(hi))}
@@ -456,16 +461,25 @@ class HyperparameterTuner:
         modalities_override = (
             self._get_cached_modalities_for_task(task, modality_ids) if mm_opt else None
         )
+
+        baseline_params, baseline_raw_scores = self.evaluate_dag_config(
+            dag,
+            {},
+            node_order,
+            modality_ids,
+            task,
+            modalities_override=modalities_override,
+        )
+        baseline = (
+            baseline_params,
+            [
+                self._score_value(baseline_raw_scores[0]),
+                self._score_value_list(baseline_raw_scores[1]),
+                self._score_value(baseline_raw_scores[2]),
+            ],
+        )
+
         if not hyperparams:
-            # TODO: extract the information from the unimodal optimization results
-            baseline = self.evaluate_dag_config(
-                dag,
-                {},
-                node_order,
-                modality_ids,
-                task,
-                modalities_override=modalities_override,
-            )
             all_results = [baseline]
         else:
             param_specs = self._build_param_specs(hyperparams)
@@ -482,6 +496,7 @@ class HyperparameterTuner:
                 initial_config=None,
                 rep_name=rep_name,
             )
+            all_results.append(baseline)
 
         if not all_results:
             return None
@@ -491,14 +506,37 @@ class HyperparameterTuner:
             if isinstance(score, PerformanceMeasure):
                 return score.average_scores[self.scoring_metric]
             elif isinstance(score, list):
-                return score[1]
+                score = score[1]
+
+            if isinstance(score, list):
+                score = np.mean(score)
             return score
 
-        if self.maximize_metric:
-            best_params, best_score = max(all_results, key=get_score)
-        else:
-            best_params, best_score = min(all_results, key=get_score)
+        best_params, best_score = all_results[0][0], get_score(all_results[0])
+        for params, score in all_results[1:]:
+            candidate_score = get_score((params, score))
+            if self._is_better(candidate_score, best_score):
+                best_params, best_score = params, candidate_score
 
+        if hyperparams and best_params != baseline_params:
+            baseline_folds = self._score_value_list(baseline_raw_scores[1])
+            candidate_folds = next(s for p, s in all_results if p == best_params)[1]
+
+            if baseline_folds is not None and candidate_folds is not None:
+                accept, candidate_range, baseline_range = self._should_accept_optimized(
+                    baseline_folds, candidate_folds
+                )
+                if not accept:
+                    self.logger.info(
+                        f"{rep_name}: optimized config too variable across folds "
+                        f"(range={candidate_range:.4f} vs baseline={baseline_range:.4f}) "
+                        "— keeping baseline"
+                    )
+                    best_params, best_score = baseline_params, get_score(baseline)
+            else:
+                self.logger.warning(
+                    f"{rep_name}: fold-level scores unavailable, skipping variance gate"
+                )
         tuning_time = time.time() - start_time
 
         best_result = HyperparamResult(
@@ -571,6 +609,23 @@ class HyperparameterTuner:
         if isinstance(score, PerformanceMeasure):
             return score.average_scores.get(self.scoring_metric, np.nan)
         return score
+
+    def _score_value_list(self, score: Any) -> List[float]:
+        if isinstance(score, PerformanceMeasure):
+            return score.scores.get(self.scoring_metric, [])
+        return [score]
+
+    def _should_accept_optimized(
+        self,
+        baseline_folds: List[float],
+        candidate_folds: List[float],
+        range_threshold: float = 0.03,
+    ) -> Tuple[bool, float, float]:
+        baseline_range = max(baseline_folds) - min(baseline_folds)
+        candidate_range = max(candidate_folds) - min(candidate_folds)
+        if candidate_range > baseline_range * (1 + range_threshold):
+            return False, candidate_range, baseline_range
+        return True, candidate_range, baseline_range
 
     def _is_better(self, candidate_score: float, best_score: float) -> bool:
         if np.isnan(candidate_score):
@@ -789,7 +844,10 @@ class HyperparameterTuner:
                     "project": self.wandb_project,
                     "entity": self.wandb_entity,
                     "group": self.wandb_group or task.model.name,
-                    "tags": self.wandb_tags + [rep_name, task.model.name],
+                    "tags": [
+                        _wandb_safe_tag(t)
+                        for t in (self.wandb_tags + [rep_name, task.model.name])
+                    ],
                     "name": f"{task.model.name}-{rep_name}-{int(time.time())}",
                     "config": {
                         "task": task.model.name,
@@ -835,10 +893,18 @@ class HyperparameterTuner:
 
             seen[self._config_key(params)] = (
                 params,
-                [train_score, val_score, test_score],
+                [train_score, self._score_value_list(scores[1]), test_score],
             )
 
-            trial_results.append((params, [train_score, val_score, test_score]))
+            trial_results.append(
+                (params, [train_score, self._score_value_list(scores[1]), test_score])
+            )
+            val_folds = self._score_value_list(scores[1])
+            if val_folds is not None and len(val_folds) > 1:
+                lam = 0.5
+                robust_val = np.mean(val_folds) - lam * np.std(val_folds, ddof=1)
+                return robust_val
+
             return val_score
 
         callbacks = [c for c in [wandb_cb] if c is not None]

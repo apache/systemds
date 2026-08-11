@@ -31,10 +31,17 @@ public class DeltaFrameTestUtils {
 		// utility class
 	}
 
-	/** Count the parquet data files under a Delta table directory. */
+	/** Count the parquet data files under a Delta table directory, ignoring checkpoints in the log. */
 	public static long countParquet(String tablePath) throws Exception {
 		try(Stream<Path> s = Files.walk(new File(tablePath).toPath())) {
-			return s.filter(p -> p.toString().endsWith(".parquet")).count();
+			return s.filter(p -> p.toString().endsWith(".parquet") && !p.toString().contains("_delta_log")).count();
+		}
+	}
+
+	/** Count the checkpoint files under a Delta table's {@code _delta_log}. */
+	public static long countCheckpoints(String tablePath) throws Exception {
+		try(Stream<Path> s = Files.walk(new File(tablePath, "_delta_log").toPath())) {
+			return s.filter(p -> p.toString().endsWith(".checkpoint.parquet")).count();
 		}
 	}
 }

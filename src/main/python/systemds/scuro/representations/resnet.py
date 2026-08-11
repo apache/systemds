@@ -56,6 +56,7 @@ class ResNet(UnimodalRepresentation):
         if params is not None:
             self.batch_size = int(params.get("batch_size", batch_size))
             self.layer_name = params.get("layer_name", layer_name)
+            model_name = params.get("model_name", model_name)
         else:
             self.batch_size = batch_size
             self.layer_name = layer_name

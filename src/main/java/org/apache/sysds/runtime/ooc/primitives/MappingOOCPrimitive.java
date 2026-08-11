@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.ooc.primitives;
 
-import java.util.List;
 import java.util.function.Function;
 
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
@@ -31,27 +30,20 @@ import org.apache.sysds.runtime.ooc.stream.StreamContext;
 import org.apache.sysds.runtime.ooc.util.OOCInstructionUtils;
 
 public class MappingOOCPrimitive extends OOCPrimitive {
-	private final OOCStream<IndexedMatrixValue> _input;
 	private final OOCStreamable<IndexedMatrixValue> _output;
 	private final Function<IndexedMatrixValue, MatrixBlock> _operation;
 
 	public MappingOOCPrimitive(OOCStreamable<IndexedMatrixValue> input, OOCStreamable<IndexedMatrixValue> output,
 		Function<IndexedMatrixValue, MatrixBlock> operation, StreamContext context) {
-		this(input.getReadStream(), output, operation, context);
-	}
-
-	private MappingOOCPrimitive(OOCStream<IndexedMatrixValue> input, OOCStreamable<IndexedMatrixValue> output,
-		Function<IndexedMatrixValue, MatrixBlock> operation, StreamContext context) {
-		super(context, input.getPrimitive() == null ? List.of() : List.of(input.getPrimitive()));
-		_input = input;
+		super(context, input);
 		_output = output;
 		_operation = operation;
 	}
 
 	@Override
 	protected void inferPatternsInternal() {
-		OOCAccessPattern inputPattern = getChildren().isEmpty() ? OOCAccessPattern.ANY : getChildren().stream()
-			.findFirst().get().getAccessPattern();
+		OOCPrimitive dependency = getInputDependency(0);
+		OOCAccessPattern inputPattern = dependency == null ? OOCAccessPattern.ANY : dependency.getAccessPattern();
 		_pattern = _pattern.preferred(inputPattern);
 		inferParentPatterns();
 	}
@@ -59,15 +51,17 @@ public class MappingOOCPrimitive extends OOCPrimitive {
 	@Override
 	protected void requestPatternInternal(OOCAccessPattern accessPattern) {
 		_pattern = _pattern.preferred(accessPattern);
-		if(!getChildren().isEmpty())
-			getChildren().forEach(c -> c.requestPattern(accessPattern));
+		OOCPrimitive dependency = getInputDependency(0);
+		if(dependency != null)
+			dependency.requestPattern(accessPattern);
 	}
 
 	@Override
 	protected void startExecution() {
+		OOCStream<IndexedMatrixValue> input = getInputReadStream(0);
 		OOCStream<IndexedMatrixValue> output = _output.getWriteStream();
 		OOCInstructionUtils
-			.submitAdmittedOOCTasks(_input, output,
+			.submitAdmittedOOCTasks(input, output,
 				value -> new IndexedMatrixValue(value.getIndexes(), _operation.apply(value)), _allowance, getContext())
 			.thenRun(this::onComplete);
 	}

@@ -59,9 +59,11 @@ import org.junit.Test;
  * cannot catch a table that SystemDS writes in a way other Delta engines reject (or vice versa). These tests close that
  * gap by routing a mixed-type (long/double/string/boolean) frame through two independent engines:
  * <ul>
- * <li>SystemDS writes -&gt; Spark/Delta reads (our output is spec-compliant), and</li>
+ * <li>SystemDS writes -&gt; Spark/Delta reads (our output is spec-compliant),</li>
  * <li>Spark/Delta writes -&gt; SystemDS reads, including a multi-file layout and a table with deletion vectors / a
- * second commit that the SystemDS writer never produces itself.</li>
+ * second commit that the SystemDS writer never produces itself, and</li>
+ * <li>SystemDS creates the table and Spark/Delta appends to it, so a table with a mixed-engine commit history must
+ * still read back as one table.</li>
  * </ul>
  *
  * <p>
@@ -144,7 +146,7 @@ public class DeltaFrameSparkInteropTest {
 		// the reference Delta engine writes a multi-file mixed-type table; both the
 		// serial and parallel SystemDS frame readers must reconstruct it cell-for-cell.
 		int rows = 600;
-		Dataset<Row> df = indexedDataFrame(rows).repartition(3); // -> multiple data files
+		Dataset<Row> df = indexedDataFrame(0, rows).repartition(3); // -> multiple data files
 		Path dir = Files.createTempDirectory("sysds_delta_frame_p2s_");
 		String tablePath = new File(dir.toFile(), "table").getAbsolutePath();
 		try {
@@ -176,7 +178,7 @@ public class DeltaFrameSparkInteropTest {
 			// enable deletion vectors for tables created in this block, then delete a
 			// row range so Delta records a DV rather than rewriting the data files.
 			spark.conf().set(DV_DEFAULT, "true");
-			indexedDataFrame(rows).write().format("delta").save(tablePath);
+			indexedDataFrame(0, rows).write().format("delta").save(tablePath);
 			spark.sql("DELETE FROM delta.`" + tablePath + "` WHERE c0 < " + deleteBelow);
 
 			Set<Integer> expected = idRange(deleteBelow, rows);
@@ -193,6 +195,30 @@ public class DeltaFrameSparkInteropTest {
 		finally {
 			// fresh fork per test class, so simply clearing the override is enough
 			spark.conf().unset(DV_DEFAULT);
+			FileUtils.deleteQuietly(dir.toFile());
+		}
+	}
+
+	@Test
+	public void systemdsCreateSparkAppendRead() throws Exception {
+		// the SystemDS writer always creates from scratch, so Spark has to do the
+		// appending. both commits have to come back in a single read.
+		int firstRows = 300, appendRows = 250;
+		Path dir = Files.createTempDirectory("sysds_delta_frame_s2p_");
+		String tablePath = new File(dir.toFile(), "table").getAbsolutePath();
+		try {
+			FrameBlock in = indexedFrame(firstRows);
+			new FrameWriterDelta().writeFrameToHDFS(in, tablePath, firstRows, in.getNumColumns());
+			indexedDataFrame(firstRows, firstRows + appendRows).write().format("delta").mode("append").save(tablePath);
+
+			Set<Integer> expected = idRange(0, firstRows + appendRows);
+			assertFrameMatchesIds(new FrameReaderDelta().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1),
+				expected, "serial-mixed");
+			assertFrameMatchesIds(
+				new FrameReaderDeltaParallel().readFrameFromHDFS(tablePath, NO_SCHEMA, NO_NAMES, -1, -1), expected,
+				"parallel-mixed");
+		}
+		finally {
 			FileUtils.deleteQuietly(dir.toFile());
 		}
 	}
@@ -227,16 +253,18 @@ public class DeltaFrameSparkInteropTest {
 		return fb;
 	}
 
-	/** Spark DataFrame mirroring {@link #indexedFrame} with columns c0..c3 (long/double/string/boolean). */
-	private Dataset<Row> indexedDataFrame(int rows) {
+	/**
+	 * Spark DataFrame mirroring {@link #indexedFrame} with columns c0..c3 (long/double/string/boolean), ids [from,to).
+	 */
+	private Dataset<Row> indexedDataFrame(int from, int to) {
 		StructType schema = DataTypes
 			.createStructType(new StructField[] {DataTypes.createStructField("c0", DataTypes.LongType, false),
 				DataTypes.createStructField("c1", DataTypes.DoubleType, false),
 				DataTypes.createStructField("c2", DataTypes.StringType, false),
 				DataTypes.createStructField("c3", DataTypes.BooleanType, false)});
 
-		List<Row> data = new ArrayList<>(rows);
-		for(int r = 0; r < rows; r++)
+		List<Row> data = new ArrayList<>(to - from);
+		for(int r = from; r < to; r++)
 			data.add(RowFactory.create((long) r, dval(r), sval(r), bval(r)));
 		return spark.createDataFrame(data, schema);
 	}

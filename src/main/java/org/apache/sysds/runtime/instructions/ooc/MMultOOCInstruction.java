@@ -33,6 +33,9 @@ import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.ooc.store.CountingLiveness;
+import org.apache.sysds.runtime.ooc.util.OOCInstructionUtils;
 
 public class MMultOOCInstruction extends ComputationOOCInstruction {
 
@@ -60,6 +63,33 @@ public class MMultOOCInstruction extends ComputationOOCInstruction {
 		// 1. Identify the inputs
 		MatrixObject min = ec.getMatrixObject(input1); // big matrix
 		MatrixObject vin = ec.getMatrixObject(input2); // streamed vector
+		DataCharacteristics mdc = min.getDataCharacteristics();
+		DataCharacteristics vdc = vin.getDataCharacteristics();
+
+		if(min != vin && mdc.getRows() > 0 && mdc.getCols() > 0 && vdc.getCols() > 0 &&
+			mdc.getCols() == vdc.getRows() && vdc.getNumColBlocks() == 1) {
+			OOCStream<IndexedMatrixValue> partials = createWritableStream();
+			OOCStream<IndexedMatrixValue> out = createWritableStream();
+			partials.setData(min);
+			ec.getMatrixObject(output).setStreamHandle(out);
+			OOCInstructionUtils.indexedBroadcastMap(min.getStreamable(), vin.getStreamable(), partials,
+				left -> Math.toIntExact(left.getIndexes().getColumnIndex() - 1),
+				() -> new CountingLiveness(Math.toIntExact(vin.getDataCharacteristics().getNumRowBlocks()),
+					Math.toIntExact(min.getDataCharacteristics().getNumRowBlocks())),
+				(left, right) -> {
+					MatrixBlock leftBlock = (MatrixBlock) left.getValue();
+					MatrixBlock rightBlock = (MatrixBlock) right.getValue();
+					MatrixBlock partial = leftBlock.aggregateBinaryOperations(leftBlock, rightBlock, new MatrixBlock(),
+						(AggregateBinaryOperator) _optr);
+					MatrixIndexes indexes = left.getIndexes();
+					return new IndexedMatrixValue(new MatrixIndexes(indexes.getRowIndex(), indexes.getColumnIndex()),
+						partial);
+				}, getContext());
+			BinaryOperator plus = InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString());
+			OOCInstructionUtils.rowGroupedReduce(partials, out,
+				(left, right) -> left.binaryOperations(plus, right, new MatrixBlock()), getContext());
+			return;
+		}
 
 		int emitLeftThreshold = (int)vin.getDataCharacteristics().getNumColBlocks();
 		int emitRightThreshold = (int)min.getDataCharacteristics().getNumRowBlocks();

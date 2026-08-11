@@ -491,7 +491,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 		}
 		
 		OOCStream<IndexedMatrixValue> stream = _streamHandle.getReadStream();
-		if(!stream.hasStreamCache())
+		if(!_streamHandle.hasStreamCache() && !_streamHandle.hasMaterializedStore())
 			_streamHandle = null; // To ensure read once
 		return stream;
 	}

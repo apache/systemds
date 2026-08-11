@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.ooc.primitives;
 
-import java.util.List;
 import java.util.function.Function;
 
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
@@ -32,41 +31,36 @@ import org.apache.sysds.runtime.ooc.stream.StreamContext;
 import org.apache.sysds.runtime.ooc.util.OOCInstructionUtils;
 
 public class TransposeOOCPrimitive extends OOCPrimitive {
-	private final OOCStream<IndexedMatrixValue> _input;
 	private final OOCStreamable<IndexedMatrixValue> _output;
 	private final Function<MatrixBlock, MatrixBlock> _operation;
 
 	public TransposeOOCPrimitive(OOCStreamable<IndexedMatrixValue> input, OOCStreamable<IndexedMatrixValue> output,
 		Function<MatrixBlock, MatrixBlock> operation, StreamContext context) {
-		this(input.getReadStream(), output, operation, context);
-	}
-
-	private TransposeOOCPrimitive(OOCStream<IndexedMatrixValue> input, OOCStreamable<IndexedMatrixValue> output,
-		Function<MatrixBlock, MatrixBlock> operation, StreamContext context) {
-		super(context, input.getPrimitive() == null ? List.of() : List.of(input.getPrimitive()));
-		_input = input;
+		super(context, input);
 		_output = output;
 		_operation = operation;
 	}
 
 	@Override
 	protected void inferPatternsInternal() {
-		_pattern = (getChildren().isEmpty() ? OOCAccessPattern.ANY : getChildren().iterator().next().getAccessPattern())
-			.transposed();
+		OOCPrimitive dependency = getInputDependency(0);
+		_pattern = (dependency == null ? OOCAccessPattern.ANY : dependency.getAccessPattern()).transposed();
 		inferParentPatterns();
 	}
 
 	@Override
 	protected void requestPatternInternal(OOCAccessPattern accessPattern) {
 		_pattern = accessPattern;
-		for(OOCPrimitive child : getChildren())
-			child.requestPattern(accessPattern.transposed());
+		OOCPrimitive dependency = getInputDependency(0);
+		if(dependency != null)
+			dependency.requestPattern(accessPattern.transposed());
 	}
 
 	@Override
 	protected void startExecution() {
+		OOCStream<IndexedMatrixValue> input = getInputReadStream(0);
 		OOCStream<IndexedMatrixValue> output = _output.getWriteStream();
-		OOCInstructionUtils.submitAdmittedOOCTasks(_input, output, value -> {
+		OOCInstructionUtils.submitAdmittedOOCTasks(input, output, value -> {
 			MatrixIndexes indexes = value.getIndexes();
 			return new IndexedMatrixValue(new MatrixIndexes(indexes.getColumnIndex(), indexes.getRowIndex()),
 				_operation.apply((MatrixBlock) value.getValue()));

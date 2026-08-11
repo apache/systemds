@@ -59,7 +59,7 @@ final class PackBuilder {
 		tileIds[slot] = tileId;
 		values[slot] = value;
 		sizes[slot] = size;
-		refCounts[slot] = 1;
+		refCounts[slot] = 2;
 		bytes += size;
 		activePins++;
 		return slot;

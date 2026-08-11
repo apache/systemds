@@ -43,6 +43,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.codegen.SpoofCompiler.CompilerType;
 import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 import org.apache.sysds.hops.codegen.SpoofCompiler.PlanSelector;
+import org.apache.sysds.hops.estim.EstimationUtils.EstimatorType;
 import org.apache.sysds.hops.fedplanner.FTypes.FederatedPlanner;
 import org.apache.sysds.lops.Compression;
 import org.apache.sysds.lops.compile.linearization.IDagLinearizerFactory.DagLinearizer;
@@ -97,6 +98,8 @@ public class DMLConfig
 	public static final String NATIVE_BLAS          = "sysds.native.blas";
 	public static final String NATIVE_BLAS_DIR      = "sysds.native.blas.directory";
 	public static final String DAG_LINEARIZATION    = "sysds.compile.linearization";
+	public static final String SPARSITY_REWRITES    = "sysds.rewrites.sparsity.enabled"; // boolean
+	public static final String SPARSITY_ESTIMATOR   = "sysds.rewrites.sparsity.estimator"; // see EstiamtionUtils.EstimatorType
 	public static final String CODEGEN              = "sysds.codegen.enabled"; //boolean
 	public static final String CODEGEN_API          = "sysds.codegen.api"; // see SpoofCompiler.API
 	public static final String CODEGEN_COMPILER     = "sysds.codegen.compiler"; //see SpoofCompiler.CompilerType
@@ -125,6 +128,9 @@ public class DMLConfig
 	public static final String EVICTION_SHADOW_BUFFERSIZE = "sysds.gpu.eviction.shadow.bufferSize";
 
 	public static final String USE_SSL_FEDERATED_COMMUNICATION = "sysds.federated.ssl"; // boolean
+	public static final String FEDERATED_SSL_CERT = "sysds.federated.ssl.cert"; // Path to the worker X.509 certificate chain in PEM format, required if federated SSL is enabled
+	public static final String FEDERATED_SSL_KEY = "sysds.federated.ssl.key"; // Path to the worker private key in PKCS#8 PEM format, required if federated SSL is enabled
+	public static final String FEDERATED_SSL_TRUST = "sysds.federated.ssl.trust"; // Path to the trusted (CA) certificates in PEM format, required if federated SSL is enabled
 	public static final String DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT = "sysds.federated.initialization.timeout"; // int seconds
 	public static final String FEDERATED_TIMEOUT = "sysds.federated.timeout"; // single request timeout default -1 to indicate infinite.
 	public static final String FEDERATED_PLANNER = "sysds.federated.planner";
@@ -185,6 +191,8 @@ public class DMLConfig
 		_defaultVals.put(COMPRESSED_TRANSPOSE,   "auto");
 		_defaultVals.put(COMPRESSED_TRANSFORMENCODE, "false");
 		_defaultVals.put(DAG_LINEARIZATION,      DagLinearizer.DEPTH_FIRST.name());
+		_defaultVals.put(SPARSITY_REWRITES,      "false");
+		_defaultVals.put(SPARSITY_ESTIMATOR,     EstimatorType.BASIC_AVG.name());
 		_defaultVals.put(CODEGEN,                "false" );
 		_defaultVals.put(CODEGEN_API,            GeneratorAPI.JAVA.name() );
 		_defaultVals.put(CODEGEN_COMPILER,       CompilerType.AUTO.name() );
@@ -211,6 +219,9 @@ public class DMLConfig
 		_defaultVals.put(GPU_RULE_BASED_PLACEMENT, "false");
 		_defaultVals.put(FLOATING_POINT_PRECISION, "double" );
 		_defaultVals.put(USE_SSL_FEDERATED_COMMUNICATION, "false");
+		_defaultVals.put(FEDERATED_SSL_CERT,     null);
+		_defaultVals.put(FEDERATED_SSL_KEY,      null);
+		_defaultVals.put(FEDERATED_SSL_TRUST,    null);
 		_defaultVals.put(DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT, "10");
 		_defaultVals.put(FEDERATED_TIMEOUT,      "86400"); // default 1 day compute timeout.
 		_defaultVals.put(FEDERATED_PLANNER,      FederatedPlanner.RUNTIME.name());
@@ -470,11 +481,13 @@ public class DMLConfig
 			COMPRESSED_LINALG, COMPRESSED_LOSSY, COMPRESSED_VALID_COMPRESSIONS, COMPRESSED_OVERLAPPING,
 			COMPRESSED_SAMPLING_RATIO, COMPRESSED_SOFT_REFERENCE_COUNT,
 			COMPRESSED_COCODE, COMPRESSED_TRANSPOSE, COMPRESSED_TRANSFORMENCODE, DAG_LINEARIZATION,
+			SPARSITY_REWRITES, SPARSITY_ESTIMATOR,
 			CODEGEN, CODEGEN_API, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
 			STATS_MAX_WRAP_LEN, LINEAGECACHESPILL, COMPILERASSISTED_RW, BUFFERPOOL_LIMIT, MEMORY_MANAGER,
 			PRINT_GPU_MEMORY_INFO, AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, GPU_RULE_BASED_PLACEMENT,
 			FLOATING_POINT_PRECISION, GPU_EVICTION_POLICY, LOCAL_SPARK_NUM_THREADS, EVICTION_SHADOW_BUFFERSIZE,
 			GPU_MEMORY_ALLOCATOR, GPU_MEMORY_UTILIZATION_FACTOR, USE_SSL_FEDERATED_COMMUNICATION,
+			FEDERATED_SSL_CERT, FEDERATED_SSL_KEY, FEDERATED_SSL_TRUST,
 			DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT, FEDERATED_TIMEOUT, FEDERATED_MONITOR_FREQUENCY, FEDERATED_COMPRESSION,
 			ASYNC_PREFETCH, ASYNC_SPARK_BROADCAST, ASYNC_SPARK_CHECKPOINT, IO_COMPRESSION_CODEC
 		}; 

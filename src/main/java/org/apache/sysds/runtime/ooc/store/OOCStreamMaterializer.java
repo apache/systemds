@@ -91,7 +91,17 @@ public final class OOCStreamMaterializer implements Consumer<OOCStream.QueueCall
 				finish();
 				return;
 			}
-			publish(callback);
+			if(callback instanceof OOCStream.GroupQueueCallback<?> grouped) {
+				@SuppressWarnings("unchecked")
+				OOCStream.GroupQueueCallback<IndexedMatrixValue> group = (OOCStream.GroupQueueCallback<IndexedMatrixValue>) grouped;
+				for(int i = 0; i < group.size(); i++) {
+					try(OOCStream.QueueCallback<IndexedMatrixValue> item = group.getCallback(i)) {
+						publish(item);
+					}
+				}
+			}
+			else
+				publish(callback);
 		}
 		catch(RuntimeException ex) {
 			fail(DMLRuntimeException.of(ex));

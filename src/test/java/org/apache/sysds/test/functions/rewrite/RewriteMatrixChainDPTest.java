@@ -21,7 +21,15 @@ package org.apache.sysds.test.functions.rewrite;
 
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -123,18 +131,32 @@ public class RewriteMatrixChainDPTest extends AutomatedTestBase {
 
 	private void runTestMatrixChainDP(String testName) {
 		ExecMode platformOld = rtplatform;
-		boolean rewritesOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		boolean newMMchain1 = OptimizerUtils.ALLOW_ADVANCED_MMCHAIN_REWRITES;
-		boolean newMMchain2 = OptimizerUtils.ALLOW_NEW_MMCHAIN_REWRITE;
+		boolean oldFlag1 = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
+		boolean oldFlag2 = OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES;
+		boolean oldFlag3 = OptimizerUtils.ALLOW_NEW_MMCHAIN_REWRITE;
+		DMLConfig oldDMLConfig = ConfigurationManager.getDMLConfig();
 
 		try {
 			rtplatform = ExecMode.SINGLE_NODE;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = true;
-			OptimizerUtils.ALLOW_ADVANCED_MMCHAIN_REWRITES = true;
+			OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES = true;
 			OptimizerUtils.ALLOW_NEW_MMCHAIN_REWRITE = true;
 
 			TestConfiguration config = getTestConfiguration(testName);
 			loadTestConfiguration(config);
+
+			try {
+				DMLConfig dmlConfig = new DMLConfig(getCurConfigFile().getPath());
+				dmlConfig.setTextValue(DMLConfig.SPARSITY_REWRITES, "true");
+				overwriteCurrentConfig(dmlConfig);
+			}
+			catch(FileNotFoundException fnfe) {
+				Assert.fail("Could not find DML config file: " +
+					getCurConfigFile().getPath() + " . " + fnfe.getMessage());
+			}
+			catch(IOException ioe) {
+				Assert.fail("Could not overwrite the DML configuration file. " + ioe.getMessage());
+			}
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testName + ".dml";
@@ -300,11 +322,21 @@ public class RewriteMatrixChainDPTest extends AutomatedTestBase {
 				}
 			}
 		} finally {
-			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewritesOld;
-			OptimizerUtils.ALLOW_ADVANCED_MMCHAIN_REWRITES = newMMchain1;
-			OptimizerUtils.ALLOW_NEW_MMCHAIN_REWRITE = newMMchain2;
+			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag1;
+			OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES = oldFlag2;
+			OptimizerUtils.ALLOW_NEW_MMCHAIN_REWRITE = oldFlag3;
+			try {
+				overwriteCurrentConfig(oldDMLConfig);
+			}
+			catch(IOException ioe) {
+				Assert.fail("Unable to restore the previous DML configuration. " + ioe.getMessage());
+			}
 			rtplatform = platformOld;
 			Recompiler.reinitRecompiler();
 		}
+	}
+
+	private void overwriteCurrentConfig(DMLConfig config) throws IOException {
+		Files.write(getCurConfigFile().toPath(), config.serializeDMLConfig().getBytes(StandardCharsets.UTF_8));
 	}
 }

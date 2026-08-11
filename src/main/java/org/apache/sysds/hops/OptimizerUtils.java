@@ -200,10 +200,9 @@ public class OptimizerUtils
 	public static boolean ALLOW_SUM_PRODUCT_REWRITES2 = true;
 
 	/**
-	 * Enables additional mmchain optimizations. In the future, this might be merged with
-	 * ALLOW_SUM_PRODUCT_REWRITES.
+	 * Enables transpose mmchain optimizations. In the future, this might be merged with ALLOW_SUM_PRODUCT_REWRITES.
 	 */
-	public static boolean ALLOW_ADVANCED_MMCHAIN_REWRITES = false;
+	public static boolean ALLOW_TRANSPOSE_MMCHAIN_REWRITES = false;
 
 	/**
 	 * Enables a DPSize inspired algorithm rewrite for MMChain with transposes

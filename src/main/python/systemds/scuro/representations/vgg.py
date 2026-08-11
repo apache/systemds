@@ -56,6 +56,8 @@ class VGG19(UnimodalRepresentation):
         self.model = self.model.to(self.device)
         parameters = self._get_parameters()
         super().__init__("VGG19", ModalityType.EMBEDDING, parameters)
+        if params is not None:
+            layer = params.get("layer_name", layer)
         self.output_file = output_file
         self.layer_name = layer
         self.model.eval()

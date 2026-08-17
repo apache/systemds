@@ -565,12 +565,13 @@ class CSEAwareDAGBuilder:
         self.node_to_signature: Dict[str, Hashable] = {}
         self.node_counter = 0
         self.dag_counter = 0
+        self._dag_by_root: Dict[str, RepresentationDag] = {}
 
     def _compute_node_signature(
         self, operation: Any, inputs: List[str], parameters: Dict[str, Any] = None
     ) -> Hashable:
         ip = [self.node_to_signature[inp] for inp in inputs]
-        input_sigs = tuple(sorted(ip)) if inputs else ()
+        input_sigs = tuple(sorted(ip, key=repr)) if inputs else ()
         op_cls = operation().name
         params_items = tuple(sorted((parameters or {}).items()))
         return ("op", op_cls, params_items, input_sigs)
@@ -644,6 +645,11 @@ class CSEAwareDAGBuilder:
         )
 
     def build(self, root_node_id: str, dag_id: int = None) -> RepresentationDag:
+        if dag_id is None:
+            memoized = self._dag_by_root.get(root_node_id)
+            if memoized is not None:
+                return memoized
+
         dag = RepresentationDag(
             nodes=self.global_nodes,
             root_node_id=root_node_id,
@@ -652,6 +658,9 @@ class CSEAwareDAGBuilder:
         self.dag_counter += 1
         if not dag.validate():
             raise ValueError("Invalid DAG construction")
+
+        if dag_id is None:
+            self._dag_by_root[root_node_id] = dag
         return dag
 
     def get_node(self, node_id: str) -> Optional[RepresentationNode]:

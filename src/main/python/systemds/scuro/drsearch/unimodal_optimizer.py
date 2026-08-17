@@ -65,10 +65,12 @@ class UnimodalOptimizer:
         checkpoint_every: Optional[int] = 1,
         resume: bool = False,
         max_num_workers: int = -1,
-        enable_checkpointing: bool = True,
+        enable_checkpointing: bool = False,
         enable_execution_profile: bool = False,
         execution_profile_path: Optional[str] = None,
+        window_combination_chains: int = 1,
     ):
+        self.window_combination_chains = window_combination_chains
         self.enable_checkpointing = enable_checkpointing
         self.modalities = modalities
         self.tasks = tasks
@@ -348,10 +350,9 @@ class UnimodalOptimizer:
         for task_result in task_results:
             local_results.add_task_result(task_result, dags)
         statistics = exec_out["statistics"]
-        for worker_stat in statistics["worker_stats"]:
-            local_results.add_worker_stat(worker_stat, modality.modality_id)
-        for node_stat in statistics["node_stats"]:
-            local_results.add_node_stat(node_stat, modality.modality_id)
+
+        local_results.add_worker_stat(statistics["worker_stats"], modality.modality_id)
+        local_results.add_node_stat(statistics["node_stats"], modality.modality_id)
 
         if self.save_all_results:
             timestr = time.strftime("%Y%m%d-%H%M%S")
@@ -400,6 +401,12 @@ class UnimodalOptimizer:
             for task_name in local_results.results[modality_id]:
                 self.operator_performance.results[modality_id][task_name].extend(
                     local_results.results[modality_id][task_name]
+                )
+                self.operator_performance.add_worker_stat(
+                    local_results.worker_stats[modality_id], modality_id
+                )
+                self.operator_performance.add_node_stat(
+                    local_results.node_stats[modality_id], modality_id
                 )
 
     def add_dimensionality_reduction_operators(self, builder, current_node_id):
@@ -483,7 +490,10 @@ class UnimodalOptimizer:
             not_self_contained_reps = [
                 rep for rep in not_self_contained_reps if rep != operator.__class__
             ]
-            rep_id = current_node_id
+            chain_tips = {
+                combination.__class__: current_node_id
+                for combination in self._combination_operators
+            }
 
             for rep in not_self_contained_reps:
                 other_rep_id = builder.create_operation_node(
@@ -492,9 +502,10 @@ class UnimodalOptimizer:
                 for combination in self._combination_operators:
                     combine_id = builder.create_operation_node(
                         combination.__class__,
-                        [rep_id, other_rep_id],
+                        [chain_tips[combination.__class__], other_rep_id],
                         combination.get_current_parameters(),
                     )
+                    chain_tips[combination.__class__] = combine_id
                     rep_dag = builder.build(combine_id)
                     dags.append(rep_dag)
                     if modality.modality_type in [
@@ -507,15 +518,6 @@ class UnimodalOptimizer:
                                 modality, builder, leaf_id, rep_dag, False
                             )
                         )
-                    elif modality.modality_type == ModalityType.TIMESERIES:
-                        dags.extend(
-                            self.temporal_context_operators(
-                                modality,
-                                builder,
-                                leaf_id,
-                            )
-                        )
-                rep_id = combine_id
 
         if rep_dag.nodes[-1].operation().output_modality_type in [
             ModalityType.EMBEDDING
@@ -586,18 +588,26 @@ class UnimodalOptimizer:
                     )
                     dags.append(builder.build(context_node_id))
 
-        context_operators = self._get_context_operators(
-            rep_dag.nodes[-1].operation().output_modality_type
-        )
-        for context_op in context_operators:
-            context_node_id = builder.create_operation_node(
-                context_op,
-                [rep_dag.nodes[-1].node_id],
-                context_op().get_current_parameters(),
+        if self._representations_keep_time_axis(modality.modality_type):
+            context_operators = self._get_context_operators(
+                rep_dag.nodes[-1].operation().output_modality_type
             )
-            dags.append(builder.build(context_node_id))
+            for context_op in context_operators:
+                context_node_id = builder.create_operation_node(
+                    context_op,
+                    [rep_dag.nodes[-1].node_id],
+                    context_op().get_current_parameters(),
+                )
+                dags.append(builder.build(context_node_id))
 
         return dags
+
+    @staticmethod
+    def _representations_keep_time_axis(modality_type) -> bool:
+        return modality_type not in (
+            ModalityType.TIMESERIES,
+            ModalityType.PHYSIOLOGICAL,
+        )
 
     def temporal_context_operators(self, modality, builder, leaf_id):
         aggregators = self.operator_registry.get_context_representations(
@@ -610,22 +620,80 @@ class UnimodalOptimizer:
             )
         )
         dags = []
-        for agg in aggregators:
-            for context_operator in context_operators:
-                for window_size, num_window in zip(window_lengths, num_windows):
+        for context_operator in context_operators:
+            for window_size, num_window in zip(window_lengths, num_windows):
+                window_node_ids = []
+                for agg in aggregators:
                     context_operator_instance = context_operator(agg())
-                    if hasattr(context_operator_instance, "num_windows"):
-                        context_operator_instance.num_windows = num_window
-                    elif hasattr(context_operator_instance, "window_size"):
-                        context_operator_instance.window_size = window_size
+                    self._apply_granularity(
+                        context_operator_instance, window_size, num_window
+                    )
                     context_node_id = builder.create_operation_node(
                         context_operator,
                         [leaf_id],
                         context_operator_instance.get_current_parameters(),
                     )
+                    window_node_ids.append(context_node_id)
                     dags.append(builder.build(context_node_id))
 
+                dags.extend(
+                    self.combine_windowed_representations(builder, window_node_ids)
+                )
+
         return dags
+
+    @staticmethod
+    def _apply_granularity(context_operator_instance, window_size, num_window):
+        parameter = getattr(context_operator_instance, "granularity_parameter", None)
+        kind = getattr(context_operator_instance, "granularity_kind", None)
+        if parameter is None or kind not in ("length", "count"):
+            raise ValueError(
+                f"{type(context_operator_instance).__name__} is registered as a "
+                "context operator but does not declare granularity_parameter / "
+                "granularity_kind, so the window-length search cannot vary it."
+            )
+        value = window_size if kind == "length" else num_window
+        setattr(context_operator_instance, parameter, int(value))
+
+    def combine_windowed_representations(self, builder, window_node_ids):
+        dags = []
+        num_chains = min(self.window_combination_chains, len(window_node_ids))
+        if len(window_node_ids) < 2 or num_chains < 1:
+            return dags
+
+        for start in range(num_chains):
+            ordered = window_node_ids[start:] + window_node_ids[:start]
+            for combination in self._combination_operators:
+                parameters = combination.get_current_parameters()
+                if "preserve_leading_axis" not in parameters:
+                    continue
+                parameters["preserve_leading_axis"] = True
+
+                chain_tip = ordered[0]
+                for next_node_id in ordered[1:]:
+                    chain_tip = builder.create_operation_node(
+                        combination.__class__,
+                        [chain_tip, next_node_id],
+                        parameters,
+                    )
+                    summary_id = self._summarize_windows(builder, chain_tip)
+                    dags.append(
+                        builder.build(chain_tip if summary_id is None else summary_id)
+                    )
+        return dags
+
+    def _summarize_windows(self, builder, node_id):
+        if not (self._tasks_require_same_dims and self.expected_dimensions == 1):
+            return None
+
+        agg_operator = AggregatedRepresentation(
+            target_dimensions=self.expected_dimensions, aggregate_leading=True
+        )
+        return builder.create_operation_node(
+            agg_operator.__class__,
+            [node_id],
+            agg_operator.get_current_parameters(),
+        )
 
 
 class UnimodalResults:
@@ -651,13 +719,18 @@ class UnimodalResults:
             self.cache[modality] = {task_name: [] for task_name in self.task_names}
         self.worker_stats = {}
         self.node_stats = {}
+        self._dag_index = None
+        self._dag_index_source = None
 
     def add_task_result(self, task_result: ResultEntry, dags: List[RepresentationDag]):
         dag_id = task_result.dag.dag_id
         task_name = self.task_names[
             task_result.dag.nodes[-1].parameters.get("_task_idx", 0)
         ]
-        task_result.dag = get_dag_by_id(dags, dag_id)
+        if self._dag_index_source is not dags:
+            self._dag_index = {dag.dag_id: dag for dag in dags}
+            self._dag_index_source = dags
+        task_result.dag = self._dag_index.get(dag_id)
         self.results[task_result.dag.nodes[0].modality_id][task_name].append(
             task_result
         )

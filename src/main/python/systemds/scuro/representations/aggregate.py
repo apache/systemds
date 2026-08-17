@@ -41,11 +41,38 @@ class Aggregation:
     def _sum_agg(data, aggregate_dim=0):
         return np.sum(data, axis=aggregate_dim)
 
+    @staticmethod
+    def _median_agg(data, aggregate_dim=0):
+        return np.median(data, axis=Aggregation._normalize_axis(aggregate_dim))
+
+    @staticmethod
+    def _mode_agg(data, aggregate_dim=0):
+        axis = Aggregation._normalize_axis(aggregate_dim)
+        arr = np.asarray(data)
+        if arr.ndim == 1:
+            values, counts = np.unique(arr, return_counts=True)
+            return values[np.argmax(counts)]
+        moved = np.moveaxis(arr, axis, -1)
+        flat = moved.reshape(-1, moved.shape[-1])
+        modes = np.empty(flat.shape[0], dtype=arr.dtype)
+        for i in range(flat.shape[0]):
+            values, counts = np.unique(flat[i], return_counts=True)
+            modes[i] = values[np.argmax(counts)]
+        return modes.reshape(moved.shape[:-1])
+
+    @staticmethod
+    def _normalize_axis(aggregate_dim):
+        if isinstance(aggregate_dim, tuple):
+            return aggregate_dim[0] if aggregate_dim else 0
+        return aggregate_dim
+
     _aggregation_function = {
         "mean": _mean_agg.__func__,
         "max": _max_agg.__func__,
         "min": _min_agg.__func__,
         "sum": _sum_agg.__func__,
+        "median": _median_agg.__func__,
+        "mode": _mode_agg.__func__,
     }
 
     def __init__(self, aggregation_function="mean", pad_modality=True, params=None):
@@ -71,7 +98,7 @@ class Aggregation:
             "pad_modality": self.pad_modality,
         }
 
-    def execute(self, modality, aggregate_dim=(0,)):
+    def execute(self, modality, aggregate_dim=(0,), squeeze_singleton=True):
         data = []
         max_len = 0
         for i, instance in enumerate(modality.data):
@@ -83,7 +110,8 @@ class Aggregation:
                 ) and instance.ndim > 2:
                     aggregated_data = instance.flatten()
                 elif (
-                    isinstance(instance, np.ndarray)
+                    squeeze_singleton
+                    and isinstance(instance, np.ndarray)
                     and instance.ndim == 2
                     and instance.shape[1] == 1
                 ):

@@ -30,7 +30,13 @@ import numpy as np
 
 
 class AggregatedRepresentation(Representation):
-    def __init__(self, aggregation="mean", target_dimensions=None, params=None):
+    def __init__(
+        self,
+        aggregation="mean",
+        target_dimensions=None,
+        params=None,
+        aggregate_leading=False,
+    ):
         if params is not None:
             if "aggregation_function_aggregation_function" in params:
                 aggregation = params["aggregation_function_aggregation_function"]
@@ -40,6 +46,7 @@ class AggregatedRepresentation(Representation):
                 aggregation = params["aggregation"]
             if "target_dimensions" in params:
                 target_dimensions = params["target_dimensions"]
+            aggregate_leading = params.get("aggregate_leading", aggregate_leading)
         parameters = {
             "aggregation": list(Aggregation().get_aggregation_functions()),
         }
@@ -48,13 +55,14 @@ class AggregatedRepresentation(Representation):
         self.aggregation = Aggregation(aggregation)
         self.self_contained = True
         self.target_dimensions = target_dimensions
+        self.aggregate_leading = bool(aggregate_leading)
         self.data_type = np.float32
 
     def get_output_stats(self, input_stats: RepresentationStats) -> RepresentationStats:
         input_shape = list(copy.deepcopy(input_stats.output_shape))
         if self.target_dimensions is not None:
             while len(input_shape) > self.target_dimensions:
-                input_shape.pop()
+                input_shape.pop(0 if self.aggregate_leading else -1)
         out_shape = tuple(input_shape)
         self.stats = RepresentationStats(
             input_stats.num_instances,
@@ -99,6 +107,10 @@ class AggregatedRepresentation(Representation):
 
             if len(input_dimensions) == self.target_dimensions:
                 return modality
+            elif self.aggregate_leading:
+                aggregate_dim = tuple(
+                    range(len(input_dimensions) - self.target_dimensions)
+                )
             else:
                 i = len(input_dimensions) - 1
                 aggregate_dim = ()
@@ -107,7 +119,9 @@ class AggregatedRepresentation(Representation):
                     i -= 1
                     input_dimensions = input_dimensions[:-1]
 
-        aggregated_data = self.aggregation.execute(modality, aggregate_dim)
+        aggregated_data = self.aggregation.execute(
+            modality, aggregate_dim, squeeze_singleton=not self.aggregate_leading
+        )
 
         aggregated_modality.data = aggregated_data
         end = time.perf_counter()
@@ -122,6 +136,7 @@ class AggregatedRepresentation(Representation):
             current_params[f"aggregation_function_{key}"] = value
         current_params["self_contained"] = self.self_contained
         current_params["target_dimensions"] = self.target_dimensions
+        current_params["aggregate_leading"] = self.aggregate_leading
         return current_params
 
     def assert_output_stats(self, aggregated_data):

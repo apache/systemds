@@ -155,7 +155,7 @@ class Registry:
         return None, False
 
     def get_context_representations(self, modality_type):
-        return self._context_representation_operators[modality_type]
+        return self._context_representation_operators.get(modality_type, [])
 
     def get_context_lenghts_for_modality(self, modality_type, statistics):
         if modality_type == ModalityType.AUDIO:
@@ -198,7 +198,9 @@ class Registry:
                 math.ceil(statistics.avg_length / length)
                 for length in effective_window_lenghts
             ]
-            return effective_window_lenghts, num_windows
+            return self._drop_windows_below_min_count(
+                effective_window_lenghts, num_windows
+            )
 
         if modality_type == ModalityType.VIDEO:
             max_length_in_seconds = statistics.max_length / statistics.fps
@@ -213,7 +215,22 @@ class Registry:
                 math.ceil(statistics.avg_length / length)
                 for length in effective_window_lenghts
             ]
+            return self._drop_windows_below_min_count(
+                effective_window_lenghts, num_windows
+            )
+
+    MIN_TUNABLE_NUM_WINDOWS = 5
+
+    def _drop_windows_below_min_count(self, effective_window_lenghts, num_windows):
+        filtered = [
+            (length, count)
+            for length, count in zip(effective_window_lenghts, num_windows)
+            if count >= self.MIN_TUNABLE_NUM_WINDOWS and length >= 1
+        ]
+        if not filtered:
             return effective_window_lenghts, num_windows
+        lengths, counts = zip(*filtered)
+        return list(lengths), list(counts)
 
 
 def register_representation(modalities: Union[ModalityType, List[ModalityType]]):

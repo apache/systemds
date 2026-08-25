@@ -91,7 +91,7 @@ public class DPBuiltinOpsTest {
 			int releaseCount = acc.releaseCount();
 			Assert.assertTrue("Epsilon spent must increase with each release", currentEpsilonSpent > prevEpsilonSpent);
 			Assert.assertTrue("Remaining budget must decrease", currentRemainingBudget < prevRemainingBudget);
-			Assert.assertEquals("Release count must match", i+1, releaseCount);
+			Assert.assertEquals("Release count must match", i + 1, releaseCount);
 			prevEpsilonSpent = currentEpsilonSpent;
 			prevRemainingBudget = currentRemainingBudget;
 		}
@@ -298,13 +298,15 @@ public class DPBuiltinOpsTest {
 		// (called from CPInstructionParser); confirm dp_laplace/dp_gaussian resolve to the
 		// DPBuiltinCPInstruction subclass rather than the base class, i.e. that
 		// ParameterizedBuiltinCPInstruction's DP_GAUSSIAN/DP_LAPLACE branch is wired correctly.
-		ParameterizedBuiltinCPInstruction laplace = ParameterizedBuiltinCPInstruction
-			.parseInstruction("CP°dp_laplace°target=mVar1°query=colMeans°sensitivity=1.0°epsilon=0.5°_mVar2·MATRIX·FP64");
-		Assert.assertTrue("dp_laplace must parse to a DPBuiltinCPInstruction", laplace instanceof DPBuiltinCPInstruction);
+		ParameterizedBuiltinCPInstruction laplace = ParameterizedBuiltinCPInstruction.parseInstruction(
+			"CP°dp_laplace°target=mVar1°query=colMeans°sensitivity=1.0°epsilon=0.5°_mVar2·MATRIX·FP64");
+		Assert.assertTrue("dp_laplace must parse to a DPBuiltinCPInstruction",
+			laplace instanceof DPBuiltinCPInstruction);
 
 		ParameterizedBuiltinCPInstruction gaussian = ParameterizedBuiltinCPInstruction.parseInstruction(
 			"CP°dp_gaussian°target=mVar1°query=colMeans°sensitivity=1.0°epsilon=0.5°delta=1e-5°_mVar2·MATRIX·FP64");
-		Assert.assertTrue("dp_gaussian must parse to a DPBuiltinCPInstruction", gaussian instanceof DPBuiltinCPInstruction);
+		Assert.assertTrue("dp_gaussian must parse to a DPBuiltinCPInstruction",
+			gaussian instanceof DPBuiltinCPInstruction);
 	}
 
 	@Test
@@ -312,8 +314,8 @@ public class DPBuiltinOpsTest {
 		// DPBuiltinCPInstruction.getLineageItem() must refuse to trace: dp_laplace/dp_gaussian draw
 		// fresh randomness and charge a privacy-budget side effect on every call, so a cached
 		// lineage-based reuse of a prior release would be unsound.
-		assertLineageTracingRejected(parseDP(
-			"CP°dp_laplace°target=mVar1°query=colMeans°sensitivity=1.0°epsilon=0.5°_mVar2·MATRIX·FP64"));
+		assertLineageTracingRejected(
+			parseDP("CP°dp_laplace°target=mVar1°query=colMeans°sensitivity=1.0°epsilon=0.5°_mVar2·MATRIX·FP64"));
 		assertLineageTracingRejected(parseDP(
 			"CP°dp_gaussian°target=mVar1°query=colMeans°sensitivity=1.0°epsilon=0.5°delta=1e-5°_mVar2·MATRIX·FP64"));
 	}
@@ -360,8 +362,7 @@ public class DPBuiltinOpsTest {
 
 	/** Sample n N(0, sigma^2) values via the production fillGaussianNoise method. */
 	private static double[] sampleGaussian(int n, double sigma) throws ReflectiveOperationException {
-		Method m = DPBuiltinOps.class.getDeclaredMethod("fillGaussianNoise", int.class, int.class,
-			double.class);
+		Method m = DPBuiltinOps.class.getDeclaredMethod("fillGaussianNoise", int.class, int.class, double.class);
 		m.setAccessible(true);
 		MatrixBlock block = (MatrixBlock) m.invoke(null, n, 1, sigma);
 

@@ -31,19 +31,18 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
 /**
- * CP instruction for the dp_laplace/dp_gaussian opcodes. Subclasses
- * {@link ParameterizedBuiltinCPInstruction}:
- * parse-time validation, execution, and lineage handling are owned here rather than as
- * inline opcode branches in the shared class, since the DP release charges a privacy budget and draws fresh
- * randomness on every call - side effects that don't fit the shared class's other (pure, replayable) opcodes.
+ * CP instruction for the dp_laplace/dp_gaussian opcodes. Subclasses {@link ParameterizedBuiltinCPInstruction}:
+ * parse-time validation, execution, and lineage handling are owned here rather than as inline opcode branches in the
+ * shared class, since the DP release charges a privacy budget and draws fresh randomness on every call - side effects
+ * that don't fit the shared class's other (pure, replayable) opcodes.
  *
- * The DP math itself (transform construction, noise generation, sigma calibration) lives in
- * {@link DPBuiltinOps}, which this class calls into.
+ * The DP math itself (transform construction, noise generation, sigma calibration) lives in {@link DPBuiltinOps}, which
+ * this class calls into.
  */
 public class DPBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
 
-	public DPBuiltinCPInstruction(Operator op, LinkedHashMap<String, String> paramsMap, CPOperand out,
-		String opcode, String istr) {
+	public DPBuiltinCPInstruction(Operator op, LinkedHashMap<String, String> paramsMap, CPOperand out, String opcode,
+		String istr) {
 		super(op, paramsMap, out, opcode, istr);
 	}
 

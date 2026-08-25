@@ -194,7 +194,7 @@ public enum Opcodes {
 	LIST("list", InstructionType.BuiltinNary),
 	EINSUM("einsum", InstructionType.BuiltinNary),
 
-	//DP built-in functions
+	// DP built-in functions
 	DP_GAUSSIAN("dp_gaussian", InstructionType.ParameterizedBuiltin),
 	DP_LAPLACE("dp_laplace", InstructionType.ParameterizedBuiltin),
 

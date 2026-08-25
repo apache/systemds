@@ -150,9 +150,8 @@ public class ExecutionContext {
 
 	/**
 	 * Returns the session-scoped {@link DPBudgetAccountant}, lazily initialised on first use. If the DML script called
-	 * dp_set_budget(epsilon, delta) with compile-time literal arguments, that value (resolved onto the
-	 * DMLProgram during HOP construction - see DMLTranslator's DP_SET_BUDGET case) is used
-	 * instead of the hardcoded defaults.
+	 * dp_set_budget(epsilon, delta) with compile-time literal arguments, that value (resolved onto the DMLProgram
+	 * during HOP construction - see DMLTranslator's DP_SET_BUDGET case) is used instead of the hardcoded defaults.
 	 */
 	public DPBudgetAccountant getDPBudgetAccountant() {
 		if(_dpBudgetAccountant == null) {

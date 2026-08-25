@@ -802,7 +802,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 	/** Output dimensions of T %*% X for the given named query, X being n x d. */
 	private long[] getDPOutputDims(Expression queryExpr, long n, long d) {
-		// dp_gaussian/dp_laplace require the "query" parameter to be a compile-time string literal so that the output shape
+		// dp_gaussian/dp_laplace require the "query" parameter to be a compile-time string literal so that the output
+		// shape
 		// (and thus the transformation matrix T built at runtime) is known during validation.
 		if(!(queryExpr instanceof StringIdentifier))
 			raiseValidateError(getOpCode() + ": 'query' must be a string literal", false,

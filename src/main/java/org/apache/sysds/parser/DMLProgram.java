@@ -38,12 +38,12 @@ public class DMLProgram
 	private boolean _containsRemoteParfor;
 
 	/**
-	 * Session-wide differential privacy budget resolved at compile time from a dp_set_budget(epsilon, delta)
-	 * call (its arguments must be numeric literals, see BuiltinFunctionExpression). Null until such a call is
-	 * encountered during HOP construction; consulted by ExecutionContext#getDPBudgetAccountant() in place of
-	 * its hardcoded default. This is deliberately a plain field (not a Hop/Lop/Instruction): since Program
-	 * holds a reference back to this DMLProgram (see Program#getDMLProg()), the value survives from
-	 * compile time through to runtime without needing a runtime instruction at all.
+	 * Session-wide differential privacy budget resolved at compile time from a dp_set_budget(epsilon, delta) call (its
+	 * arguments must be numeric literals, see BuiltinFunctionExpression). Null until such a call is encountered during
+	 * HOP construction; consulted by ExecutionContext#getDPBudgetAccountant() in place of its hardcoded default. This
+	 * is deliberately a plain field (not a Hop/Lop/Instruction): since Program holds a reference back to this
+	 * DMLProgram (see Program#getDMLProg()), the value survives from compile time through to runtime without needing a
+	 * runtime instruction at all.
 	 */
 	private Double _dpBudgetEpsilon;
 	private Double _dpBudgetDelta;

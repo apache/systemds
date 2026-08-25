@@ -161,7 +161,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		else if(Opcodes.PARAMSERV.toString().equals(opcode)) {
 			return new ParamservBuiltinCPInstruction(null, paramsMap, out, opcode, str);
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.DP_GAUSSIAN.toString()) || opcode.equalsIgnoreCase(Opcodes.DP_LAPLACE.toString())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.DP_GAUSSIAN.toString()) ||
+			opcode.equalsIgnoreCase(Opcodes.DP_LAPLACE.toString())) {
 			return DPBuiltinCPInstruction.parse(parts, paramsMap, out, opcode, str);
 		}
 		else {

@@ -381,6 +381,7 @@ class NodeExecutor:
         result_path: Optional[str] = None,
         enable_checkpointing: bool = False,
         worker_pool: Optional[PersistentWorkerPool] = None,
+        search_start: Optional[float] = None,
     ):
         self.enable_checkpointing = enable_checkpointing
         available_total_cpu = cpu_memory_budget_bytes()
@@ -411,6 +412,11 @@ class NodeExecutor:
         )
         self._memory_usage_data: Dict[str, Any] = {}
         self.statistics = {"worker_stats": {}, "node_stats": {}}
+        self._eval_counter = 0
+        self._nodes_executed = 0
+        self._search_start = (
+            search_start if search_start is not None else time.perf_counter()
+        )
 
         self._node_attempts: Dict[str, int] = {}
 

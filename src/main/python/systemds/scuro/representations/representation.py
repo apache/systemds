@@ -42,6 +42,7 @@ class RepresentationStats:
     dtype: Optional[Any] = None
     container: str = CONTAINER_ARRAY
     shape_variance: float = 0.0
+    sampling_rate: Optional[float] = None
 
 
 def stats_dtype(stats) -> np.dtype:
@@ -179,6 +180,15 @@ class Representation:
     def set_parameters(self, parameters):
         for parameter in parameters:
             setattr(self, parameter, parameters[parameter])
+
+    def check_preconditions(self, input_stats) -> Optional[str]:
+        return None
+
+    def configure_for_input(self, input_stats) -> None:
+        return None
+
+    def filter_parameter_domain(self, name, values, input_stats):
+        return values
 
     def estimate_memory_bytes(self, input_stats):
         output_memory_bytes = self.estimate_output_memory_bytes(input_stats)

@@ -32,7 +32,7 @@ from tests.test_utils import timeout
 class TestFrameConverterUnixPipe(unittest.TestCase):
 
     sds: SystemDSContext = None
-    temp_dir: str = "tests/iotests/temp_write_csv/"
+    temp_dir: str = "tests/iotests/temp_write_csv_frame/"
 
     @classmethod
     def setUpClass(cls):

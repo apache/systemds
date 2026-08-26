@@ -30,7 +30,7 @@ from functools import lru_cache
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.node_executor import NodeExecutor, ResultEntry
 from systemds.scuro.representations.representation import RepresentationStats
-from systemds.scuro.drsearch.ranking import rank_by_robustness, rank_by_tradeoff
+from systemds.scuro.drsearch.ranking import rank_by_tradeoff
 from systemds.scuro.drsearch.task import PerformanceMeasure
 from systemds.scuro.representations.concatenation import Concatenation
 from systemds.scuro.representations.hadamard import Hadamard

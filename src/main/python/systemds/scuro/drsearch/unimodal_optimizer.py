@@ -27,7 +27,7 @@ import multiprocessing as mp
 from typing import List, Any, Optional, Dict
 from functools import lru_cache
 
-from systemds.scuro import ModalityType
+from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.node_executor import NodeExecutor, ResultEntry
 from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.drsearch.ranking import rank_by_robustness, rank_by_tradeoff

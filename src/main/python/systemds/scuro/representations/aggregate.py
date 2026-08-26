@@ -89,7 +89,7 @@ class Aggregation:
         self.aggregation_function_name = aggregation_function
 
         self.parameters = {
-            "aggregation_function": self._aggregation_function.keys(),
+            "aggregation_function": list(self._aggregation_function.keys()),
         }
 
     def get_current_parameters(self):

@@ -41,7 +41,7 @@ class Sum(Fusion):
         self.needs_alignment = True
 
     def execute(self, modalities: List[Modality]):
-        data = np.asarray(
+        data = np.array(
             modalities[0].data,
             dtype=modalities[0].metadata[0]["data_layout"]["type"],
         )
@@ -54,31 +54,28 @@ class Sum(Fusion):
         return data
 
     def get_output_stats(self, input_stats_list) -> RepresentationStats:
-        if isinstance(input_stats_list, RepresentationStats):
-            return input_stats_list
-
-        stats_list = list(input_stats_list)
+        stats_list = self._fusion_input_stats(input_stats_list)
         if not stats_list:
             return RepresentationStats(0, (0,))
 
-        max_dim = max([stats.output_shape[-1] for stats in stats_list])
-        return RepresentationStats(stats_list[0].num_instances, (max_dim,))
+        num_instances = max(s.num_instances for s in stats_list)
+        rank = len(stats_list[0].output_shape)
+        if rank > 0 and all(len(s.output_shape) == rank for s in stats_list):
+            output_shape = tuple(
+                max(s.output_shape[d] for s in stats_list) for d in range(rank)
+            )
+        else:
+            output_shape = max(stats_list, key=self._stats_num_elements).output_shape
+        output_shape_is_known = all(s.output_shape_is_known for s in stats_list)
+        return RepresentationStats(num_instances, output_shape, output_shape_is_known)
 
-    def estimate_peak_memory_bytes(self, input_stats_list) -> dict:
-        elem_size = np.dtype(np.float64).itemsize
+    def estimate_peak_memory_bytes(self, input_stats) -> dict:
+        stats_list = self._as_stats_list(input_stats)
+        input_bytes = sum(self._stats_bytes(s) for s in stats_list)
+        output_bytes = self._stats_bytes(self.get_output_stats(input_stats))
 
-        def stats_payload_bytes(s: RepresentationStats) -> int:
-            numel = int(np.prod(s.output_shape)) if len(s.output_shape) > 0 else 1
-            return int(s.num_instances * numel * elem_size)
-
-        first_bytes = stats_payload_bytes(input_stats_list[0])
-        max_other_bytes = 0
-        if len(input_stats_list) > 1:
-            max_other_bytes = max(stats_payload_bytes(s) for s in input_stats_list[1:])
-
-        ufunc_workspace_bytes = int(0.1 * max(first_bytes, max_other_bytes))
-        cpu_peak = int(
-            (first_bytes + max_other_bytes + ufunc_workspace_bytes) * 1.15
-            + 8 * 1024 * 1024
+        raw_bytes = self._raw_input_bytes(input_stats)
+        cpu_peak = (
+            int((raw_bytes + input_bytes + output_bytes) * 1.15) + 8 * 1024 * 1024
         )
         return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}

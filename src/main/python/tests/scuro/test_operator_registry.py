@@ -62,6 +62,9 @@ from systemds.scuro.representations.timeseries_representations import (
     Quantile,
     ZeroCrossingRate,
     FrequencyMagnitude,
+    LastValue,
+    TransitionCount,
+    ObservationDensity,
 )
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations.average import Average
@@ -74,6 +77,10 @@ from systemds.scuro.representations.spectrogram import Spectrogram
 from systemds.scuro.representations.hadamard import Hadamard
 from systemds.scuro.representations.resnet import ResNet
 from systemds.scuro.representations.multimodal_attention_fusion import AttentionFusion
+from systemds.scuro.representations.physiological_window import (
+    AdaptiveWindow,
+    PhysiologicalEventWindow,
+)
 
 
 class TestOperatorRegistry(unittest.TestCase):
@@ -113,6 +120,9 @@ class TestOperatorRegistry(unittest.TestCase):
             Kurtosis,
             RMS,
             ZeroCrossingRate,
+            LastValue,
+            TransitionCount,
+            ObservationDensity,
             ACF,
             FrequencyMagnitude,
             SpectralCentroid,
@@ -132,6 +142,8 @@ class TestOperatorRegistry(unittest.TestCase):
             WindowAggregation,
             StaticWindow,
             DynamicWindow,
+            AdaptiveWindow,
+            PhysiologicalEventWindow,
         ]
         assert registry.get_context_operators(ModalityType.TEXT) == [
             SentenceBoundarySplitIndices,

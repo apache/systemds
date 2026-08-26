@@ -37,14 +37,34 @@ transformers_logging.set_verbosity_error()
 
 @register_representation(ModalityType.AUDIO)
 class Wav2Vec(UnimodalRepresentation):
+    cache_in_worker = True
+    instance_parallel = True
+
+    MODEL_NAME = "facebook/wav2vec2-base-960h"
+
     def __init__(self, params=None):
         super().__init__("Wav2Vec", ModalityType.TIMESERIES, {})
-        self.processor = Wav2Vec2Processor.from_pretrained(
-            "facebook/wav2vec2-base-960h"
-        )
-        self.model = Wav2Vec2Model.from_pretrained(
-            "facebook/wav2vec2-base-960h"
-        ).float()
+        self._processor = None
+        self._model = None
+
+    @staticmethod
+    def _from_pretrained(loader_cls, name):
+        try:
+            return loader_cls.from_pretrained(name, local_files_only=True)
+        except Exception:
+            return loader_cls.from_pretrained(name)
+
+    @property
+    def processor(self):
+        if self._processor is None:
+            self._processor = self._from_pretrained(Wav2Vec2Processor, self.MODEL_NAME)
+        return self._processor
+
+    @property
+    def model(self):
+        if self._model is None:
+            self._model = self._from_pretrained(Wav2Vec2Model, self.MODEL_NAME).float()
+        return self._model
 
     def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(

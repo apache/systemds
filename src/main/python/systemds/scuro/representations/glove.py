@@ -59,7 +59,9 @@ class GloVe(UnimodalRepresentation):
         self.embedding_dim = 100
 
     def get_output_stats(self, input_stats: TextStats) -> RepresentationStats:
-        return RepresentationStats(input_stats.num_instances, (self.embedding_dim,))
+        return RepresentationStats(
+            input_stats.num_instances, (self.embedding_dim,), dtype=self.data_type
+        )
 
     def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
         output_bytes = 1

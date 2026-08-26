@@ -109,13 +109,17 @@ class CLIPVisual(UnimodalRepresentation):
                     input_stats.max_length,
                     512,
                 ),
+                dtype=self.data_type,
             )
         elif not isinstance(input_stats, RepresentationStats):
-            return RepresentationStats(input_stats.num_instances, (512,))
+            return RepresentationStats(
+                input_stats.num_instances, (512,), dtype=self.data_type
+            )
         else:
             return RepresentationStats(
                 input_stats.num_instances,
                 (input_stats.output_shape[0], 512),
+                dtype=self.data_type,
             )
 
     def estimate_peak_memory_bytes(self, input_stats) -> dict:
@@ -394,7 +398,10 @@ class CLIPText(UnimodalRepresentation):
     def get_output_stats(self, input_stats) -> RepresentationStats:
         if not isinstance(input_stats, RepresentationStats):
             self.stats = RepresentationStats(
-                input_stats.num_instances, (512,), aggregate_dim=(0,)
+                input_stats.num_instances,
+                (512,),
+                aggregate_dim=(0,),
+                dtype=self.data_type,
             )
         else:
             self.stats = RepresentationStats(
@@ -404,6 +411,7 @@ class CLIPText(UnimodalRepresentation):
                     0,
                     1,
                 ),
+                dtype=self.data_type,
             )
         if self.params and "_pushdown_aggregation" in self.params:
             output_shape = (512,)

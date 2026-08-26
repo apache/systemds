@@ -24,6 +24,29 @@ import pickle
 import numpy as np
 
 
+def dense_instance_batch(data):
+    if isinstance(data, np.ndarray):
+        if data.ndim == 2 and np.issubdtype(data.dtype, np.number):
+            return data
+        return None
+
+    if not isinstance(data, (list, tuple)) or len(data) == 0:
+        return None
+
+    first = data[0]
+    if (
+        not isinstance(first, np.ndarray)
+        or first.ndim != 1
+        or not np.issubdtype(first.dtype, np.number)
+    ):
+        return None
+    for instance in data:
+        if not isinstance(instance, np.ndarray) or instance.shape != first.shape:
+            return None
+
+    return np.asarray(data)
+
+
 def pad_sequences(sequences, maxlen=None, dtype="float32", value=0):
     if maxlen is None:
         maxlen = max([len(seq) for seq in sequences])

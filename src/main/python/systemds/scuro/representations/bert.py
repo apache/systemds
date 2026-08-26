@@ -102,6 +102,7 @@ class BertFamily(UnimodalRepresentation):
                 input_stats.num_instances,
                 (self.max_seq_length, 768),
                 aggregate_dim=(0,),
+                dtype=self.data_type,
             )
         else:
             self.stats = RepresentationStats(
@@ -111,6 +112,7 @@ class BertFamily(UnimodalRepresentation):
                     0,
                     1,
                 ),
+                dtype=self.data_type,
             )
         if self.params and "_pushdown_aggregation" in self.params:
             output_shape = (768,)

@@ -177,6 +177,7 @@ class SentenceBoundarySplitIndices(Context):
                 ),
                 self.max_words,
             ),
+            dtype=self.data_type,
         )
 
     def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
@@ -318,6 +319,7 @@ class OverlappingSplitIndices(Context):
                 ),
                 self.max_words,
             ),
+            dtype=self.data_type,
         )
 
     def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:

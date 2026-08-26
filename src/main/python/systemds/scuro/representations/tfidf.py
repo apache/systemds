@@ -47,7 +47,10 @@ class TfIdf(UnimodalRepresentation):
             100_000, max(1000, input_stats.num_instances * input_stats.max_length)
         )
         return RepresentationStats(
-            input_stats.num_instances, (vocab_estimate,), output_shape_is_known=False
+            input_stats.num_instances,
+            (vocab_estimate,),
+            output_shape_is_known=False,
+            dtype=self.data_type,
         )
 
     def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:

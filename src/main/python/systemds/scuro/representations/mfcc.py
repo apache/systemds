@@ -58,7 +58,7 @@ class MFCC(UnimodalRepresentation):
             "n_fft": [1024, 2048, 4096],
         }
 
-        super().__init__("MFCC", ModalityType.TIMESERIES, parameters, False)
+        super().__init__("MFCC", ModalityType.TIMESERIES, parameters, True)
 
         if params is not None:
             n_mfcc = params.get("n_mfcc", n_mfcc)

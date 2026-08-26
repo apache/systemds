@@ -24,13 +24,11 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 import numpy as np
 
-import warnings
+import logging
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.utils.static_variables import (
-    compute_batch_size,
     get_device,
-    get_device_for_model,
 )
 from systemds.scuro.utils.utils import set_random_seeds
 from systemds.scuro.drsearch.operator_registry import (
@@ -39,6 +37,8 @@ from systemds.scuro.drsearch.operator_registry import (
 from systemds.scuro.representations.dimensionality_reduction import (
     DimensionalityReduction,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @register_dimensionality_reduction_operator(ModalityType.EMBEDDING)
@@ -144,8 +144,14 @@ class MLPAveraging(DimensionalityReduction):
 
         input_dim = data.shape[1]
         if input_dim <= self.output_dim:
-            warnings.warn(
-                f"Input dimension {input_dim} is smaller than output dimension {self.output_dim}. Returning original data."
+            # Expected outcome, not a defect: the search offers MLPAveraging
+            # every output_dim in its parameter grid, so a narrow input hits
+            # this on most of them. A warning per call buried the run log, so
+            # it is reported at debug level instead.
+            logger.debug(
+                "Input dimension %d is smaller than output dimension %d. Returning original data.",
+                input_dim,
+                self.output_dim,
             )  # TODO: this should be pruned as possible representation, could add output_dim as parameter to reps if possible
             return data
 

@@ -29,11 +29,25 @@ from systemds.scuro.drsearch.operator_registry import register_context_operator
 from systemds.scuro.representations.aggregate import Aggregation
 from systemds.scuro.representations.context import Context
 from systemds.scuro.representations.representation import (
+    CONTAINER_ARRAY,
+    CONTAINER_LIST,
     NDARRAY_OBJECT_OVERHEAD_BYTES,
     Representation,
     RepresentationStats,
     stats_itemsize,
 )
+from systemds.scuro.representations.utils import dense_instance_batch
+
+_ACCEPTS_AXIS_CACHE = {}
+
+
+def _accepts_axis(compute_feature):
+    func = getattr(compute_feature, "__func__", compute_feature)
+    accepts = _ACCEPTS_AXIS_CACHE.get(func)
+    if accepts is None:
+        accepts = "axis" in inspect.signature(compute_feature).parameters
+        _ACCEPTS_AXIS_CACHE[func] = accepts
+    return accepts
 
 
 def nested_aggregation_param_names(agg_cls):
@@ -95,6 +109,23 @@ def _append_tail_row(full_result, tail_result):
         )
         tail_row[slices] = tail_result[slices]
     return np.concatenate([full_result, tail_row[None, ...]])
+
+
+def _append_tail_rows(full_result, tail_result):
+    full_result = np.asarray(full_result)
+    tail_result = np.asarray(tail_result)
+    target_shape = full_result.shape[2:]
+    if tail_result.shape[1:] == target_shape:
+        tail_rows = tail_result
+    else:
+        tail_rows = np.zeros(
+            (full_result.shape[0], *target_shape), dtype=full_result.dtype
+        )
+        slices = tuple(
+            slice(0, min(d, s)) for d, s in zip(target_shape, tail_result.shape[1:])
+        )
+        tail_rows[(slice(None), *slices)] = tail_result[(slice(None), *slices)]
+    return np.concatenate([full_result, tail_rows[:, None, ...]], axis=1)
 
 
 def resolve_aggregation_function(aggregation_function, params):
@@ -300,10 +331,32 @@ class WindowAggregation(Window):
                 + padded_elems * stats_itemsize(input_stats)
             )
 
-        cpu_peak = int((input_bytes + list_bytes + pad_bytes) * 1.15 + 16 * 1024 * 1024)
+        batch_bytes = (
+            input_bytes
+            if getattr(input_stats, "container", CONTAINER_ARRAY) == CONTAINER_LIST
+            else 0
+        )
+
+        cpu_peak = int(
+            (input_bytes + batch_bytes + list_bytes + pad_bytes) * 1.15
+            + 16 * 1024 * 1024
+        )
         return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}
 
     def execute(self, modality):
+        batch = self._dense_batch(modality)
+        if batch is not None:
+            windowed_data = self.window_aggregate_single_level_batched(batch)
+            if windowed_data is not None:
+                if self.pad:
+                    data_type = modality.metadata[0]["data_layout"]["type"]
+                    if data_type != "str":
+                        windowed_data = windowed_data.astype(data_type)
+                else:
+                    windowed_data = list(windowed_data)
+                self.assert_output_stats(windowed_data)
+                return windowed_data
+
         windowed_data = []
         original_lengths = []
         for instance in modality.data:
@@ -352,6 +405,56 @@ class WindowAggregation(Window):
         self.assert_output_stats(windowed_data)
         return windowed_data
 
+    def _dense_batch(self, modality):
+        if modality.get_data_layout() != DataLayout.SINGLE_LEVEL:
+            return None
+        if not _accepts_axis(self.aggregation_function.compute_feature):
+            return None
+
+        batch = dense_instance_batch(modality.data)
+        if batch is None:
+            return None
+
+        batch = batch.view()
+        batch.setflags(write=False)
+        return batch
+
+    def window_aggregate_single_level_batched(self, data):
+        num_instances, length = data.shape
+        new_length = math.ceil(length / self.window_size)
+        cut_length = (new_length - 1) * self.window_size
+        tail = data[:, cut_length:]
+        compute_feature = self.aggregation_function.compute_feature
+
+        if new_length <= 1:
+            if not tail.shape[1]:
+                raise ValueError(
+                    "Cannot window-aggregate an empty instance "
+                    f"(window_size={self.window_size})."
+                )
+            if tail.shape[1] < self.window_size:
+                pad_len = self.window_size - tail.shape[1]
+                tail = np.pad(tail, ((0, 0), (0, pad_len)), mode="constant")
+            result = np.asarray(compute_feature(tail, axis=1))
+            if result.shape[0] != num_instances:
+                return None
+            return result[:, None, ...]
+
+        full_batches = data[:, :cut_length].reshape(
+            num_instances, new_length - 1, self.window_size
+        )
+        full_result = np.asarray(compute_feature(full_batches, axis=2))
+        if full_result.shape[:2] != (num_instances, new_length - 1):
+            return None
+
+        if tail.shape[1]:
+            tail_result = np.asarray(compute_feature(tail, axis=1))
+            if tail_result.shape[0] != num_instances:
+                return None
+            full_result = _append_tail_rows(full_result, tail_result)
+
+        return full_result
+
     def window_aggregate_single_level(self, instance, new_length):
         if isinstance(instance, str):
             return instance
@@ -359,7 +462,7 @@ class WindowAggregation(Window):
         arr = np.asarray(instance)
         cut_length = (new_length - 1) * self.window_size
         tail = arr[cut_length:]
-        sig = inspect.signature(self.aggregation_function.compute_feature)
+        takes_axis = _accepts_axis(self.aggregation_function.compute_feature)
         if new_length <= 1:
             if not tail.size:
                 raise ValueError(
@@ -374,7 +477,7 @@ class WindowAggregation(Window):
                     pad_width = [(0, 0)] * tail.ndim
                     pad_width[0] = (0, pad_len)
                     tail = np.pad(tail, pad_width=pad_width, mode="constant")
-            if "axis" in sig.parameters:
+            if takes_axis:
                 return np.array([self.aggregation_function.compute_feature(tail)])
             tail_result = self.aggregation_function.compute_feature(tail)
             return (
@@ -386,7 +489,7 @@ class WindowAggregation(Window):
             new_length - 1, self.window_size, *arr.shape[1:]
         )
 
-        if "axis" in sig.parameters:
+        if takes_axis:
             full_result = self.aggregation_function.compute_feature(
                 full_batches, axis=1
             )
@@ -495,8 +598,7 @@ class StaticWindow(Window):
                 self.num_windows, window_size, *instance.shape[1:]
             )
 
-            sig = inspect.signature(self.aggregation_function.compute_feature)
-            if "axis" in sig.parameters:
+            if _accepts_axis(self.aggregation_function.compute_feature):
                 f = self.aggregation_function.compute_feature(full_batches, axis=1)
             else:
                 f = np.stack(

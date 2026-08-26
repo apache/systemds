@@ -18,6 +18,8 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import os
+
 import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 
@@ -29,6 +31,8 @@ from systemds.scuro.representations.utils import save_embeddings
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.operator_registry import register_representation
 from systemds.scuro.dataloader.text_loader import TextStats
+
+_MAX_VOCAB_FEATURES = int(os.environ.get("SCURO_BOW_MAX_FEATURES", "100000"))
 
 
 @register_representation(ModalityType.TEXT)
@@ -43,14 +47,17 @@ class BoW(UnimodalRepresentation):
 
     def get_output_stats(self, input_stats: TextStats) -> RepresentationStats:
         vocab_estimate = min(
-            100000,
+            _MAX_VOCAB_FEATURES,
             max(
                 1000,
                 input_stats.num_instances * input_stats.max_length * self.ngram_range,
             ),
         )
         return RepresentationStats(
-            input_stats.num_instances, (vocab_estimate,), output_shape_is_known=False
+            input_stats.num_instances,
+            (vocab_estimate,),
+            output_shape_is_known=False,
+            dtype=self.data_type,
         )
 
     def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
@@ -73,7 +80,10 @@ class BoW(UnimodalRepresentation):
     def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(modality, self)
         vectorizer = CountVectorizer(
-            ngram_range=(1, self.ngram_range), min_df=self.min_df
+            ngram_range=(1, self.ngram_range),
+            min_df=self.min_df,
+            max_features=_MAX_VOCAB_FEATURES,
+            dtype=np.float32,
         )
 
         X = (

@@ -30,7 +30,14 @@ from systemds.scuro.representations.aggregated_representation import (
 from systemds.scuro.modality.transformed import TransformedModality
 
 from systemds.scuro.modality.modality import Modality
-from systemds.scuro.representations.representation import Representation
+from systemds.scuro.representations.representation import (
+    CONTAINER_ARRAY,
+    Representation,
+    RepresentationStats,
+    derive_stats,
+    stats_bytes,
+    stats_num_elements,
+)
 from systemds.scuro.utils.schema_helpers import get_shape
 
 
@@ -46,7 +53,42 @@ class Fusion(Representation):
         self.needs_alignment = False
         self.needs_training = False
         self.needs_instance_alignment = False
+        self.preserves_leading_axis = False
         self.output_modality_type = ModalityType.EMBEDDING
+        self.data_type = np.float32
+
+    @staticmethod
+    def _as_stats_list(input_stats) -> List[RepresentationStats]:
+        if isinstance(input_stats, RepresentationStats):
+            return [input_stats]
+        return list(input_stats)
+
+    def _pre_aggregated_stats(self, stats: RepresentationStats) -> RepresentationStats:
+        shape = tuple(stats.output_shape)
+        if len(shape) > 1 and not self.preserves_leading_axis:
+            shape = shape[1:]
+
+        return derive_stats(
+            stats,
+            output_shape=shape,
+            dtype=self.data_type,
+            container=CONTAINER_ARRAY,
+        )
+
+    def _fusion_input_stats(self, input_stats) -> List[RepresentationStats]:
+        return [self._pre_aggregated_stats(s) for s in self._as_stats_list(input_stats)]
+
+    def _raw_input_bytes(self, input_stats) -> int:
+        return sum(
+            stats_bytes(s, quantile=0.95) for s in self._as_stats_list(input_stats)
+        )
+
+    @staticmethod
+    def _stats_num_elements(stats: RepresentationStats) -> int:
+        return stats_num_elements(stats)
+
+    def _stats_bytes(self, stats: RepresentationStats) -> int:
+        return stats_bytes(stats)
 
     def transform(self, modalities: List[Modality]):
         """
@@ -58,12 +100,14 @@ class Fusion(Representation):
         mods = []
         for modality in modalities:
             agg_modality = None
-            if get_shape(modality.metadata) > 1:
+            if not self.preserves_leading_axis and get_shape(modality.metadata) > 1:
                 agg_operator = AggregatedRepresentation()
                 agg_modality = agg_operator.transform(modality)
             mods.append(agg_modality if agg_modality else modality)
 
         if self.needs_alignment:
+            for modality in mods:
+                self._normalize_for_fusion(modality)
             max_len = self.get_max_embedding_size(mods)
             for modality in mods:
                 modality.pad(max_len=max_len)
@@ -124,6 +168,20 @@ class Fusion(Representation):
         else:
             return self.execute(modalities)
 
+    @staticmethod
+    def _normalize_for_fusion(modality: Modality):
+        if not modality.has_data():
+            return
+
+        arr = np.asarray(modality.data)
+        if arr.dtype == object or arr.ndim != 1:
+            return
+
+        if modality.has_metadata() and len(modality.metadata) == 1:
+            modality.data = arr.reshape(1, -1).copy()
+        elif not modality.has_metadata() or len(modality.metadata) <= 1:
+            modality.data = arr.reshape(1, -1).copy()
+
     def get_max_embedding_size(self, modalities: List[Modality]):
         """
         Computes the maximum embedding size from a given list of modalities
@@ -137,9 +195,19 @@ class Fusion(Representation):
             if isinstance(data, memoryview):
                 data = np.array(data)
             arr = np.asarray(data)
-            if arr.ndim < 2:
+            if arr.dtype == object:
                 continue
-            emb_size = arr.shape[1]
+            if arr.ndim == 1:
+                if m.has_metadata() and len(m.metadata) == 1:
+                    emb_size = arr.shape[0]
+                elif not m.has_metadata() or len(m.metadata) <= 1:
+                    emb_size = arr.shape[0]
+                else:
+                    continue
+            elif arr.ndim >= 2:
+                emb_size = arr.shape[1]
+            else:
+                continue
             if emb_size > max_size:
                 max_size = emb_size
         return max_size

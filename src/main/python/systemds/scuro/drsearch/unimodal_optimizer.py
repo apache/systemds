@@ -19,23 +19,23 @@
 #
 # -------------------------------------------------------------
 import copy
+import math
 import pickle
-import csv
-from pathlib import Path
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from dataclasses import dataclass
 import multiprocessing as mp
 from typing import List, Any, Optional, Dict
 from functools import lru_cache
 
 from systemds.scuro import ModalityType
 from systemds.scuro.drsearch.node_executor import NodeExecutor, ResultEntry
-from systemds.scuro.drsearch.ranking import rank_by_tradeoff
+from systemds.scuro.representations.representation import RepresentationStats
+from systemds.scuro.drsearch.ranking import rank_by_robustness, rank_by_tradeoff
 from systemds.scuro.drsearch.task import PerformanceMeasure
 from systemds.scuro.representations.concatenation import Concatenation
 from systemds.scuro.representations.hadamard import Hadamard
 from systemds.scuro.representations.sum import Sum
+from systemds.scuro.representations.average import Average
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
@@ -66,10 +66,9 @@ class UnimodalOptimizer:
         resume: bool = False,
         max_num_workers: int = -1,
         enable_checkpointing: bool = False,
-        enable_execution_profile: bool = False,
-        execution_profile_path: Optional[str] = None,
         window_combination_chains: int = 1,
     ):
+        self._node_stats: Dict[str, Any] = {}
         self.window_combination_chains = window_combination_chains
         self.enable_checkpointing = enable_checkpointing
         self.modalities = modalities
@@ -94,13 +93,13 @@ class UnimodalOptimizer:
         }
 
         self.debug = debug
+        self._search_start = time.perf_counter()
+        self._search_start_unix = time.time()
 
         self.operator_registry = Registry()
         self.operator_performance = UnimodalResults(
             modalities, tasks, debug, True, k, self.metric_name
         )
-        self.enable_execution_profile = enable_execution_profile
-        self.execution_profile_path = execution_profile_path
         self._tasks_require_same_dims = True
         self.expected_dimensions = tasks[0].expected_dim
 
@@ -141,6 +140,22 @@ class UnimodalOptimizer:
         file_name = f"{self.result_path}/{file_name}"
         with open(file_name, "wb") as f:
             pickle.dump(self.operator_performance.results, f)
+
+        stats_file_name = file_name.replace(".pkl", "_exec_stats.pkl")
+        if stats_file_name == file_name:
+            stats_file_name = file_name + "_exec_stats.pkl"
+        with open(stats_file_name, "wb") as f:
+            pickle.dump(
+                {
+                    "worker_stats": self.operator_performance.worker_stats,
+                    "node_stats": self.operator_performance.node_stats,
+                    "reuse_stats": self.operator_performance.reuse_stats,
+                    "wall_clock_s": self.operator_performance.wall_clock_s,
+                    "search_start_unix": self._search_start_unix,
+                    "max_num_workers": self.max_num_workers,
+                },
+                f,
+            )
 
     def store_cache(self, file_name=None):
         if file_name is None:
@@ -341,6 +356,7 @@ class UnimodalOptimizer:
             max_num_workers=self.max_num_workers,
             result_path=self.result_path,
             enable_checkpointing=self.enable_checkpointing,
+            search_start=self._search_start,
         )
         start_time = time.perf_counter()
         exec_out = node_executor.run()
@@ -353,6 +369,8 @@ class UnimodalOptimizer:
 
         local_results.add_worker_stat(statistics["worker_stats"], modality.modality_id)
         local_results.add_node_stat(statistics["node_stats"], modality.modality_id)
+        local_results.add_reuse_stat(statistics.get("reuse", {}), modality.modality_id)
+        local_results.wall_clock_s[modality.modality_id] = end_time - start_time
 
         if self.save_all_results:
             timestr = time.strftime("%Y%m%d-%H%M%S")
@@ -362,12 +380,29 @@ class UnimodalOptimizer:
 
         return local_results, end_time - start_time
 
+    def _window_input_stats(self, modality: Modality, window_length: int):
+        modality_stats = modality.get_output_stats()
+        return RepresentationStats(
+            modality_stats.num_instances,
+            (int(window_length),),
+            output_shape_is_known=modality_stats.output_shape_is_known,
+            dtype=getattr(modality_stats, "dtype", None),
+            sampling_rate=getattr(modality_stats, "sampling_rate", None),
+        )
+
+    @staticmethod
+    def _effective_window_length(context_operator, window_size, num_window, signal_len):
+        if context_operator.granularity_kind == "count":
+            return max(1, int(math.ceil(signal_len / max(1, int(num_window)))))
+        return max(1, int(window_size))
+
     def _build_execution_dags_for_modality(
         self, modality: Modality, skip_remaining: int = 0
     ) -> tuple:
         modality_specific_operators = self._get_modality_operators(
             modality.modality_type
         )
+        self._node_stats = {}
         dags = []
         for operator in modality_specific_operators:
             dags.extend(self._build_modality_dag(modality, operator()))
@@ -407,6 +442,12 @@ class UnimodalOptimizer:
                 )
                 self.operator_performance.add_node_stat(
                     local_results.node_stats[modality_id], modality_id
+                )
+                self.operator_performance.add_reuse_stat(
+                    local_results.reuse_stats.get(modality_id, {}), modality_id
+                )
+                self.operator_performance.wall_clock_s[modality_id] = (
+                    local_results.wall_clock_s.get(modality_id, 0.0)
                 )
 
     def add_dimensionality_reduction_operators(self, builder, current_node_id):
@@ -530,22 +571,35 @@ class UnimodalOptimizer:
 
         return dags
 
-    def _aggregation_needed(self, dag: RepresentationDag) -> bool:
-        input_stats = {}
+    def _node_output_stats(self, dag: RepresentationDag) -> Dict[str, Any]:
+        stats = self._node_stats
         for modality in self.modalities:
             if modality.modality_id == dag.nodes[0].modality_id:
-                input_stats[dag.nodes[0].node_id] = modality.stats
+                stats.setdefault(dag.nodes[0].node_id, modality.stats)
                 break
         for node in dag.nodes[1:]:
+            if node.node_id in stats or node.operation is None:
+                continue
             previous_stats = [
-                input_stats.get(input_node_id, None) for input_node_id in node.inputs
+                stats.get(input_node_id, None) for input_node_id in node.inputs
             ]
-            current_stats = node.operation(params=node.parameters).get_output_stats(
+            stats[node.node_id] = node.operation(
+                params=node.parameters
+            ).get_output_stats(
                 previous_stats if len(previous_stats) > 1 else previous_stats[0]
             )
-            input_stats[node.node_id] = current_stats
 
-        return len(input_stats.get(dag.root_node_id, None).output_shape) > 1
+        return stats
+
+    def _dag_output_length(self, dag: RepresentationDag) -> Optional[int]:
+        stats = self._node_output_stats(dag).get(dag.root_node_id, None)
+        output_shape = getattr(stats, "output_shape", None)
+        if not output_shape:
+            return None
+        return int(output_shape[0])
+
+    def _aggregation_needed(self, dag: RepresentationDag) -> bool:
+        return len(self._node_output_stats(dag)[dag.root_node_id].output_shape) > 1
 
     def add_aggregation_operator(self, builder, dags):
         new_dags = []
@@ -589,18 +643,40 @@ class UnimodalOptimizer:
                     dags.append(builder.build(context_node_id))
 
         if self._representations_keep_time_axis(modality.modality_type):
+            rep_root = rep_dag.get_node_by_id(rep_dag.root_node_id)
             context_operators = self._get_context_operators(
-                rep_dag.nodes[-1].operation().output_modality_type
+                rep_root.operation().output_modality_type
             )
+            output_length = self._dag_output_length(rep_dag)
             for context_op in context_operators:
+                context_operator_instance = context_op()
+                if not self._size_context_operator(
+                    context_operator_instance, output_length
+                ):
+                    continue
                 context_node_id = builder.create_operation_node(
                     context_op,
-                    [rep_dag.nodes[-1].node_id],
-                    context_op().get_current_parameters(),
+                    [rep_root.node_id],
+                    context_operator_instance.get_current_parameters(),
                 )
                 dags.append(builder.build(context_node_id))
 
         return dags
+
+    def _size_context_operator(self, context_operator_instance, output_length) -> bool:
+        parameter = getattr(context_operator_instance, "granularity_parameter", None)
+        kind = getattr(context_operator_instance, "granularity_kind", None)
+        if parameter is None or kind not in ("length", "count"):
+            return True
+        if output_length is None or output_length < 4:
+            return False
+        current = int(getattr(context_operator_instance, parameter))
+        setattr(
+            context_operator_instance,
+            parameter,
+            max(2, min(current, output_length // 2)),
+        )
+        return True
 
     @staticmethod
     def _representations_keep_time_axis(modality_type) -> bool:
@@ -719,6 +795,10 @@ class UnimodalResults:
             self.cache[modality] = {task_name: [] for task_name in self.task_names}
         self.worker_stats = {}
         self.node_stats = {}
+        self.reuse_stats = {}
+        self.wall_clock_s = {}
+        self._eval_counter = 0
+        self._search_start = time.perf_counter()
         self._dag_index = None
         self._dag_index_source = None
 
@@ -765,10 +845,17 @@ class UnimodalResults:
             train_score=scores[0].average_scores,
             val_score=scores[1].average_scores,
             test_score=scores[2].average_scores,
+            train_fold_scores=scores[0].fold_scores(),
+            val_fold_scores=scores[1].fold_scores(),
+            test_fold_scores=scores[2].fold_scores(),
             representation_time=transform_time,
             task_time=task_time,
             dag=dag,
+            eval_index=self._eval_counter,
+            t_since_search_start_s=time.perf_counter() - self._search_start,
+            t_eval_end_unix=time.time(),
         )
+        self._eval_counter += 1
 
         scores = [
             -item.val_score[self.metric_name]
@@ -857,6 +944,9 @@ class UnimodalResults:
 
     def add_worker_stat(self, worker_stats, modality_id):
         self.worker_stats[modality_id] = worker_stats
+
+    def add_reuse_stat(self, reuse_stats, modality_id):
+        self.reuse_stats[modality_id] = reuse_stats
 
     def add_node_stat(self, node_stats, modality_id):
         self.node_stats[modality_id] = node_stats

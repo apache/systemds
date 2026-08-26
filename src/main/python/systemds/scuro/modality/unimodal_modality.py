@@ -27,7 +27,11 @@ from systemds.scuro.dataloader.base_loader import BaseLoader
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.transformed import TransformedModality
-from systemds.scuro.representations.representation import RepresentationStats
+from systemds.scuro.representations.representation import (
+    CONTAINER_ARRAY,
+    RepresentationStats,
+    stats_bytes,
+)
 from systemds.scuro.utils.identifier import Identifier
 
 
@@ -64,21 +68,36 @@ class UnimodalModality(Modality):
         return self.metadata[position]
 
     def get_stats(self):
+        if self.stats is not None and getattr(self.stats, "dtype", None) is None:
+            try:
+                self.stats.dtype = np.dtype(self.data_loader.data_type)
+            except (AttributeError, TypeError):
+                pass
         return self.stats
 
     def get_output_stats(self):
-        return RepresentationStats(self.stats.num_instances, self.stats.output_shape)
+        stats = self.get_stats()
+        return RepresentationStats(
+            stats.num_instances,
+            stats.output_shape,
+            output_shape_is_known=getattr(stats, "output_shape_is_known", True),
+            dtype=getattr(stats, "dtype", None),
+            container=getattr(stats, "container", CONTAINER_ARRAY),
+            shape_variance=getattr(stats, "shape_variance", 0.0),
+            sampling_rate=getattr(stats, "sampling_rate", None),
+        )
 
     def estimate_memory_bytes(self):
-        memory_bytes = 1
-        for i in self.stats.output_shape:
-            memory_bytes *= i
-
-        return (
-            self.stats.num_instances * memory_bytes * 4
-        )  # TODO: check how to meausure str size
+        return stats_bytes(self.get_stats())
 
     def estimate_peak_memory_bytes(self):
+        loader_estimate = getattr(self.data_loader, "estimate_peak_memory_bytes", None)
+        if callable(loader_estimate):
+            estimate = loader_estimate()
+            return {
+                "cpu_peak_bytes": float(estimate["cpu_peak_bytes"]),
+                "gpu_peak_bytes": float(estimate.get("gpu_peak_bytes", 0.0)),
+            }
         return {"cpu_peak_bytes": self.estimate_memory_bytes(), "gpu_peak_bytes": 0.0}
 
     def extract_raw_data(self):
@@ -149,6 +168,7 @@ class UnimodalModality(Modality):
         for representation in representations:
             transformed_modality = TransformedModality(self, representation.name)
             transformed_modality.data = []
+            transformed_modality.metadata = []
             transformed_modalities_per_representation[representation.name] = (
                 transformed_modality
             )

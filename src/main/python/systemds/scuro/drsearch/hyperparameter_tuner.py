@@ -75,7 +75,20 @@ def _param_values_to_spec(
     return None
 
 
-def _expand_aggregation_param_specs(op_id: str, agg_cls: Any) -> List[Dict[str, Any]]:
+def _window_input_stats(node_parameters: Optional[Dict[str, Any]]):
+    from systemds.scuro.representations.representation import RepresentationStats
+
+    if not node_parameters:
+        return None
+    window_length = node_parameters.get("window_size")
+    if window_length is None:
+        return None
+    return RepresentationStats(1, (int(window_length),))
+
+
+def _expand_aggregation_param_specs(
+    op_id: str, agg_cls: Any, input_stats=None
+) -> List[Dict[str, Any]]:
     if not inspect.isclass(agg_cls):
         return []
 
@@ -98,6 +111,10 @@ def _expand_aggregation_param_specs(op_id: str, agg_cls: Any) -> List[Dict[str, 
         nested_values = search_template.get(nested_name)
         if nested_values is None:
             continue
+        if input_stats is not None and isinstance(nested_values, list):
+            narrow = getattr(instance, "filter_parameter_domain", None)
+            if narrow is not None:
+                nested_values = narrow(nested_name, nested_values, input_stats)
         full_name = f"{op_id}-aggregation_function_{nested_name}"
         spec = _param_values_to_spec(full_name, nested_values)
         if spec is not None:
@@ -251,7 +268,7 @@ class HyperparamResults:
             for task in self.tasks:
                 self.results[task.model.name] = {"mm_results": []}
 
-    def get_k_best_results(self, modality, task, performance_metric_name):
+    def get_k_best_dags(self, modality, task):
         results = self.results[task.model.name][modality.modality_id]
         dags = []
         for result in results:
@@ -269,6 +286,10 @@ class HyperparamResults:
                     )
 
             dags.append(dag_with_best_params.build(prev_node_id))
+        return results, dags
+
+    def get_k_best_results(self, modality, task, performance_metric_name):
+        results, dags = self.get_k_best_dags(modality, task)
         representations = [list(dag.execute([modality]).values())[-1] for dag in dags]
         return results, representations
 
@@ -488,7 +509,11 @@ class HyperparameterTuner:
         if not hyperparams:
             all_results = [baseline]
         else:
-            param_specs = self._build_param_specs(hyperparams)
+            node_parameters = {
+                node_id: (dag.get_node_by_id(node_id).parameters or {})
+                for node_id in hyperparams
+            }
+            param_specs = self._build_param_specs(hyperparams, node_parameters)
             discrete_size = self._estimate_discrete_search_size(param_specs)
             n_calls = min(discrete_size, max_evals) if max_evals else discrete_size
             all_results = self._search_best_configs(
@@ -575,7 +600,12 @@ class HyperparameterTuner:
         if node.parameters:
             if inspect.isclass(node.parameters.get("aggregation_function")):
                 params["aggregation_function"] = node.parameters["aggregation_function"]
-            for fixed_key in ("target_dimensions", "self_contained"):
+            for fixed_key in (
+                "target_dimensions",
+                "self_contained",
+                "aggregate_leading",
+                "preserve_leading_axis",
+            ):
                 if fixed_key in node.parameters:
                     params[fixed_key] = node.parameters[fixed_key]
 
@@ -587,13 +617,19 @@ class HyperparameterTuner:
         return params
 
     def _build_param_specs(
-        self, hyperparams: Dict[str, Dict[str, Any]]
+        self,
+        hyperparams: Dict[str, Dict[str, Any]],
+        node_parameters: Optional[Dict[str, Dict[str, Any]]] = None,
     ) -> List[Dict[str, Any]]:
         param_specs = []
+        node_parameters = node_parameters or {}
         for op_id, op_params in hyperparams.items():
+            input_stats = _window_input_stats(node_parameters.get(op_id))
             for param_name, param_values in op_params.items():
                 if param_name == "aggregation_function":
-                    expanded = _expand_aggregation_param_specs(op_id, param_values)
+                    expanded = _expand_aggregation_param_specs(
+                        op_id, param_values, input_stats
+                    )
                     if expanded:
                         param_specs.extend(expanded)
                         continue

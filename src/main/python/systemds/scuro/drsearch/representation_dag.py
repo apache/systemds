@@ -19,6 +19,8 @@
 #
 # -------------------------------------------------------------
 import copy
+import hashlib
+import json
 from dataclasses import dataclass, field
 from typing import List, Dict, Set, Tuple, Union, Any, Hashable, Optional
 from systemds.scuro.modality.modality import Modality
@@ -111,6 +113,65 @@ class RepresentationDag:
                         stack.append(input_id)
 
         return [node for node in nodes if node.node_id in visited]
+
+    def to_spec(self) -> Dict[str, Any]:
+        order = self._topological_order()
+        relabel = {node_id: f"n{i}" for i, node_id in enumerate(order)}
+
+        nodes = []
+        for node_id in order:
+            node = self.get_node_by_id(node_id)
+            operation = getattr(node, "operation", None)
+            nodes.append(
+                {
+                    "id": relabel[node_id],
+                    "op": (
+                        getattr(operation, "__name__", None)
+                        if operation is not None
+                        else None
+                    ),
+                    "params": {
+                        k: _spec_safe(v)
+                        for k, v in sorted((node.parameters or {}).items())
+                    },
+                    "inputs": [relabel[i] for i in node.inputs if i in relabel],
+                    "modality_id": node.modality_id,
+                    "representation_index": node.representation_index,
+                    "aggregation": (
+                        type(node.aggregation).__name__
+                        if node.aggregation is not None
+                        else None
+                    ),
+                }
+            )
+
+        return {
+            "root": relabel.get(self.root_node_id),
+            "nodes": nodes,
+            "representation_names": self.get_represntation_names(),
+        }
+
+    def pipeline_id(self) -> str:
+        blob = json.dumps(self.to_spec(), sort_keys=True, separators=(",", ":"))
+        return hashlib.sha1(blob.encode()).hexdigest()[:16]
+
+    def _topological_order(self) -> List[str]:
+        node_map = {node.node_id: node for node in self.nodes}
+        visited = []
+        seen = set()
+
+        def visit(node_id):
+            if node_id in seen or node_id not in node_map:
+                return
+            seen.add(node_id)
+            for input_id in sorted(node_map[node_id].inputs or []):
+                visit(input_id)
+            visited.append(node_id)
+
+        visit(self.root_node_id)
+        for node_id in sorted(node_map):
+            visit(node_id)
+        return visited
 
     def get_leaf_nodes(self) -> List[str]:
         leaf_nodes = []
@@ -412,6 +473,26 @@ class RepresentationDag:
             if not node.inputs:
                 return node.node_id
         return None
+
+
+def _spec_safe(value):
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    if isinstance(value, (list, tuple)):
+        return [_spec_safe(v) for v in value]
+    if isinstance(value, dict):
+        return {
+            str(k): _spec_safe(v)
+            for k, v in sorted(value.items(), key=lambda kv: str(kv[0]))
+        }
+    if hasattr(value, "item") and hasattr(value, "dtype"):
+        try:
+            return value.item()
+        except Exception:
+            pass
+    if isinstance(value, type):
+        return value.__name__
+    return type(value).__name__
 
 
 def get_modality_by_id_and_instance_id(

@@ -47,7 +47,7 @@ class Registry:
 
     def set_fusion_operators(self, fusion_operators):
         if isinstance(fusion_operators, list):
-            self._context_operators = fusion_operators
+            self._fusion_operators = fusion_operators
         else:
             self._fusion_operators = [fusion_operators]
 
@@ -176,7 +176,7 @@ class Registry:
             modality_type == ModalityType.TIMESERIES
             or modality_type == ModalityType.PHYSIOLOGICAL
         ):
-            window_lengths = [0.05, 0.1, 0.5, 0.75, 1, 2, 5, 10, 30, 60]  # seconds
+            window_lengths = [0.5, 0.75, 1, 2, 5, 10, 30, 60]  # seconds
 
         if modality_type == ModalityType.VIDEO:
             window_lengths = [0.5, 1, 2, 5, 10]  # seconds

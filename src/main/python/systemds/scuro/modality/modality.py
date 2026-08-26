@@ -84,12 +84,18 @@ class Modality:
         """
         Updates the metadata of the modality (i.e.: updates timestamps)
         """
-        if (
-            not self.has_metadata()
-            or not self.has_data()
-            or len(self.data) < len(self.metadata)
-        ):
+        if not self.has_metadata() or not self.has_data():
             return
+
+        num_instances = len(self.data)
+        if num_instances < len(self.metadata):
+            return
+
+        while len(self.metadata) < num_instances:
+            template = (
+                selective_copy_metadata(self.metadata[0]) if self.metadata else {}
+            )
+            self.metadata.append(template)
 
         for i, md_v in enumerate(self.metadata):
             md_v = selective_copy_metadata(md_v)
@@ -132,88 +138,118 @@ class Modality:
         self.data = np.array(data)
         return self
 
-    def pad(self, value=0, max_len=None):
-        try:
-            if max_len is None:
-                result = np.array(self.data)
-            elif isinstance(self.data, np.ndarray) and self.data.shape[1] == max_len:
-                result = self.data
-            else:
-                raise "Needs padding to max_len"
-        except:
-            first = self.data[0]
-            if isinstance(first, np.ndarray) and first.ndim == 3:
-                maxlen = (
-                    max([seq.shape[0] for seq in self.data])
-                    if max_len is None
-                    else max_len
-                )
-                tail_shape = first.shape[1:]
-                result = np.full(
-                    (len(self.data), maxlen, *tail_shape),
-                    value,
-                    dtype=self.data_type or first.dtype,
-                )
-                for i, seq in enumerate(self.data):
-                    data = seq[:maxlen]
-                    result[i, : len(data), ...] = data
-                    if self.has_metadata():
-                        attention_mask = np.zeros(maxlen, dtype=np.int8)
-                        attention_mask[: len(data)] = 1
-                        if "attention_mask" in self.metadata[i]:
-                            self.metadata[i]["attention_mask"] = attention_mask
-                        else:
-                            self.metadata[i].update({"attention_mask": attention_mask})
-            elif (
-                isinstance(first, list)
-                and len(first) > 0
-                and isinstance(first[0], np.ndarray)
-                and first[0].ndim == 2
-            ):
-                maxlen = (
-                    max([len(seq) for seq in self.data]) if max_len is None else max_len
-                )
-                row_dim, col_dim = first[0].shape
-                result = np.full(
-                    (len(self.data), maxlen, row_dim, col_dim),
-                    value,
-                    dtype=self.data_type or first[0].dtype,
-                )
-                for i, seq in enumerate(self.data):
-                    data = seq[:maxlen]
-                    # stack list of 2D arrays into 3D then assign
-                    if len(data) > 0:
-                        result[i, : len(data), :, :] = np.stack(data, axis=0)
-                    if self.has_metadata():
-                        attention_mask = np.zeros(maxlen, dtype=np.int8)
-                        attention_mask[: len(data)] = 1
-                        if "attention_mask" in self.metadata[i]:
-                            self.metadata[i]["attention_mask"] = attention_mask
-                        else:
-                            self.metadata[i].update({"attention_mask": attention_mask})
-            else:
-                maxlen = (
-                    max([len(seq) for seq in self.data]) if max_len is None else max_len
-                )
-                result = np.full((len(self.data), maxlen), value, dtype=self.data_type)
-                for i, seq in enumerate(self.data):
-                    data = seq[:maxlen]
-                    try:
-                        result[i, : len(data)] = data
-                    except:
-                        print(f"Error padding data for modality {self.modality_id}")
-                        print(f"Data shape: {data.shape}")
-                        print(f"Result shape: {result.shape}")
-                        raise Exception("Error padding data")
-                    if self.has_metadata():
-                        attention_mask = np.zeros(result.shape[1], dtype=np.int8)
-                        attention_mask[: len(data)] = 1
-                        if "attention_mask" in self.metadata[i]:
-                            self.metadata[i]["attention_mask"] = attention_mask
-                        else:
-                            self.metadata[i].update({"attention_mask": attention_mask})
-        # TODO: this might need to be a new modality (otherwise we loose the original data)
+    def _set_attention_mask(self, index, attention_mask):
+        if not self.has_metadata() or index >= len(self.metadata):
+            return
+        if "attention_mask" in self.metadata[index]:
+            self.metadata[index]["attention_mask"] = attention_mask
+        else:
+            self.metadata[index].update({"attention_mask": attention_mask})
+
+    def _reshape_single_instance_embedding(self, arr):
+        if arr.ndim != 1:
+            return arr
+        if self.has_metadata() and len(self.metadata) == 1:
+            return arr.reshape(1, -1)
+        if not self.has_metadata() or len(self.metadata) <= 1:
+            return arr.reshape(1, -1)
+        return arr
+
+    def _pad_embedding_matrix(self, value, max_len):
+        arr = np.asarray(self.data)
+        if arr.dtype == object:
+            return False
+
+        arr = self._reshape_single_instance_embedding(arr)
+        if arr.ndim != 2:
+            return False
+
+        if arr.shape[1] == max_len:
+            self.data = arr.copy()
+            return True
+
+        result = np.full(
+            (arr.shape[0], max_len),
+            value,
+            dtype=self.data_type or arr.dtype,
+        )
+        copy_width = min(arr.shape[1], max_len)
+        result[:, :copy_width] = arr[:, :copy_width]
         self.data = result
+        return True
+
+    def _pad_variable_length_sequences(self, value, max_len):
+        first = self.data[0]
+        if isinstance(first, np.ndarray) and first.ndim == 3:
+            maxlen = (
+                max([seq.shape[0] for seq in self.data]) if max_len is None else max_len
+            )
+            tail_shape = first.shape[1:]
+            result = np.full(
+                (len(self.data), maxlen, *tail_shape),
+                value,
+                dtype=self.data_type or first.dtype,
+            )
+            for i, seq in enumerate(self.data):
+                data = seq[:maxlen]
+                result[i, : len(data), ...] = data
+                attention_mask = np.zeros(maxlen, dtype=np.int8)
+                attention_mask[: len(data)] = 1
+                self._set_attention_mask(i, attention_mask)
+        elif (
+            isinstance(first, list)
+            and len(first) > 0
+            and isinstance(first[0], np.ndarray)
+            and first[0].ndim == 2
+        ):
+            maxlen = (
+                max([len(seq) for seq in self.data]) if max_len is None else max_len
+            )
+            row_dim, col_dim = first[0].shape
+            result = np.full(
+                (len(self.data), maxlen, row_dim, col_dim),
+                value,
+                dtype=self.data_type or first[0].dtype,
+            )
+            for i, seq in enumerate(self.data):
+                data = seq[:maxlen]
+                if len(data) > 0:
+                    result[i, : len(data), :, :] = np.stack(data, axis=0)
+                attention_mask = np.zeros(maxlen, dtype=np.int8)
+                attention_mask[: len(data)] = 1
+                self._set_attention_mask(i, attention_mask)
+        else:
+            maxlen = (
+                max([len(seq) for seq in self.data]) if max_len is None else max_len
+            )
+            result = np.full((len(self.data), maxlen), value, dtype=self.data_type)
+            for i, seq in enumerate(self.data):
+                data = seq[:maxlen]
+                try:
+                    result[i, : len(data)] = data
+                except Exception as exc:
+                    raise ValueError(
+                        f"Error padding data for modality {self.modality_id}: "
+                        f"data shape {getattr(data, 'shape', None)}, "
+                        f"result shape {result.shape}"
+                    ) from exc
+                attention_mask = np.zeros(result.shape[1], dtype=np.int8)
+                attention_mask[: len(data)] = 1
+                self._set_attention_mask(i, attention_mask)
+        self.data = result
+
+    def pad(self, value=0, max_len=None):
+        if not self.has_data():
+            return
+
+        if max_len is None:
+            self.data = np.array(self.data)
+            return
+
+        if self._pad_embedding_matrix(value, max_len):
+            return
+
+        self._pad_variable_length_sequences(value, max_len)
 
     def get_data_layout(self):
         if self.has_metadata():

@@ -407,8 +407,18 @@ public abstract class Hop implements ParseInfo {
 
 	private void constructAndSetReblockLopIfRequired() 
 	{
-		//determine execution type
-		ExecType et = DMLScript.USE_OOC ? ExecType.OOC : ExecType.CP;
+		// ExecType et = DMLScript.USE_OOC ? ExecType.OOC : ExecType.CP;
+
+		// determine execution type while preserving global / forced exec type
+		ExecType et = (getForcedExecType() != null) ? getForcedExecType() : getExecType();
+
+		if( et == null ) {
+			if( DMLScript.USE_OOC )
+				et = ExecType.OOC;
+			else
+				et = ExecType.CP;
+		}
+
 		if( DMLScript.getGlobalExecMode() != ExecMode.SINGLE_NODE 
 			&& !(getDataType()==DataType.SCALAR) )
 		{
@@ -416,7 +426,7 @@ public abstract class Hop implements ParseInfo {
 		}
 
 		//add reblock lop to output if required
-		if( _requiresReblock && et != ExecType.CP )
+		if( _requiresReblock && (et == ExecType.OOC || et == ExecType.SPARK))
 		{
 			Lop input = getLops();
 

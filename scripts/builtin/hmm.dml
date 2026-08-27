@@ -1,0 +1,258 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# This script implements the hidden markov model method
+# INPUT:
+# --------------------------------------------------------------------------------------------
+# X         Output of hmm of last n timestep
+# OUTPUT:
+# --------------------------------------------------------------------------------------------
+# ip        Start probabilities
+# A         Transition probabilities
+# B         Emission probabilities
+# --------------------------------------------------------------------------------------------
+
+m_hmm = function(Matrix[Double] X) return (Matrix[Double] ip, Matrix[Double] A, Matrix[Double] B)
+{
+
+    #X should have the size of 1 * ncols
+    #should be transposed for the unique function
+    unique_X = matrix(X, rows=ncol(X), cols=1)
+    nr_outputs = unique_vals(unique_X)
+    
+    /*
+    Since nr of states if unknown, fit a hmm model for every total number of states
+    from 1 to some max_states or 1 to log(n_timesteps), depending on whichever is greater.
+
+    Also the break condition is: If the likelihood decreases with increase in number of total states, 
+    break and take the paremeters of the last iteration as the optimal one.
+    */
+    
+    max_states = 6
+    T = ncol(X)
+    
+    if (max_states < log(T)){
+        max_states = ceil(log(T))
+    }
+    
+    search = TRUE
+    nr_states = 2
+    seed = 42
+
+    while (search) {
+        [A_new, B_new, ip_new, curr_ll, seed] = baum_welch(X, nr_states, nr_outputs, 20, seed)
+        seed = seed+1
+        if (nr_states == 2) {
+            prev_ll = -1
+        }
+        if (curr_ll < prev_ll) {
+            search = FALSE
+        }
+        else {
+            A = A_new
+            B = B_new
+            ip = ip_new
+        }
+        prev_ll = curr_ll
+        nr_states = nr_states+1
+
+        if (nr_states > max_states) {
+            search = FALSE
+        }
+    }
+}
+
+col_normalize = function(Matrix[Double] m) return (Matrix[Double] m_norm) {
+	m_norm = m / rowSums(m)
+}
+
+unique_vals = function (Matrix[Double] X) return (Integer l) {
+    # group and count duplicates
+    I = aggregate (target = X, groups = X[,1], fn = "count")
+    # select groups
+    res = removeEmpty (target = seq (1, max (X[,1])), margin = "rows", select = (I != 0))
+    l = length(res)
+}
+
+baum_welch = function( Matrix[Double] X, Integer nr_states, Integer nr_outputs, Integer IT, Integer seed) return (Matrix[Double] A, Matrix[Double] B, Matrix[Double] ip, Double likelihood, Integer seed)
+{
+    #initialize state transition and emmission matrices uniformly
+    A = col_normalize(matrix(1/nr_states, rows=nr_states, cols=nr_states) + rand(rows=nr_states, cols=nr_states, seed=seed))
+    seed = seed+1
+    B = col_normalize(matrix(1/nr_outputs,rows=nr_states, cols=nr_outputs) + rand(rows=nr_states, cols=nr_outputs, seed=seed))
+    seed = seed+1
+    ip = matrix(1/nr_states, rows=nr_states, cols=1) + rand(rows=nr_states, cols=1, seed=seed)
+    seed = seed+1
+
+    likelihood = 0
+    T = ncol(X)
+    
+    for (i in 1:IT) {
+        alpha = forward(X, A, B, ip)
+        beta = backward(X, A, B)
+        
+        gamma = calculate_gamma(alpha, beta)
+        eta = calculate_eta(X, alpha, beta, A, B)
+
+        ip = gamma[, 1]
+        A = calculate_A(eta, gamma, nr_states)
+        B = calculate_B(gamma, X, nr_states, nr_outputs)
+        
+        #likelhood using forward method
+        likelihood = sum(gamma[, T] * alpha[, T])
+    }
+}
+
+calculate_A = function(Matrix[Double] eta, Matrix[Double] gamma, Integer nr_states) return (Matrix[Double] A) {
+    A = rand(rows=nr_states, cols=nr_states)
+    T = ncol(eta)
+
+    parfor (i in 1:nr_states) {
+        parfor (j in 1:nr_states) {
+            eta_id = (i-1) * nr_states + j
+            num_ij = sum(eta[eta_id, 1:T-1])
+            den_ij = sum(gamma[i,1:T-1])
+            A[i,j] = num_ij/den_ij
+        }
+    }
+}
+
+calculate_B = function(Matrix[Double] gamma, Matrix[Double] X, Integer nr_states, Integer nr_outputs) return (Matrix[Double] B) {
+    B = rand(rows=nr_states, cols=nr_outputs)
+
+    parfor (i in 1:nr_states){
+        parfor (j in 1:nr_outputs) {
+            B[i, j] = sum((X == j) * gamma[i, ]) / sum(gamma[i, ])
+        }
+    }
+}
+
+/*
+  To work with 3d matrices, the values in first two dimensions of eta matrix
+  must be rolled the first dimension. The following indexing function maps the
+  index of rolled matrix(eta) to "normal" 2d matrices like alpha, beta, etc
+*/
+index = function(Integer rolled_i, Integer nr_states) return(Double i, Double j) {
+    i = ceil(rolled_i / nr_states) #index starts at 1
+    j = rolled_i - (nr_states * (i-1)) #i-1) * 
+}
+
+calculate_eta =  function (Matrix[Double] X, Matrix[Double] alpha, Matrix[Double] beta, Matrix[Double] A, Matrix[Double] B) return (Matrix[Double] eta)
+{
+    nr_states = nrow(alpha)
+    T = ncol(alpha)    
+    
+    /*
+    eta a (nr_states * nr_states) * T matrix with cell (i, t) being probability of 
+    the state being at i at timestep j given the observed output
+    */
+    
+    tot_transitions = nr_states * nr_states
+    eta = rand(rows=tot_transitions, cols=T-1)
+    
+    /*
+    The transitions will be indiced as such:transition 1-N will represent
+    transition from state 1 to 1, 2 upto state N. transition N+1-2N will represent
+    transitions from 2 to 1, 2 upto state N  
+    */
+    
+    parfor (trans_id in 1:tot_transitions) {
+        [i, j] = index(trans_id, nr_states)
+        for (t in 1:(T-1)) {
+            #indices for alpha and beta
+            ot1 = output_t(X, t+1)
+            num_ij = alpha[i, t] * A[i, j] * beta[j, t+1] * B[j, ot1]
+            den = matrix(0, rows=nr_states, cols=1)
+            
+            parfor (k in 1:nr_states) {
+                den[k, 1] = sum(alpha[k, t] * t(A[k, ]) * beta[, t+1] * B[,ot1])
+            }
+            s = num_ij / sum(den)
+            eta[trans_id, t] = as.scalar(s[1,1])
+        }
+    }
+}
+
+calculate_gamma = function (Matrix[Double] alpha, Matrix[Double] beta) return (Matrix[Double] gamma)
+{ 
+    /*
+    gamma a nr_state * T matrix with cell (i, t) being probability of 
+    the state being at i at timestep j given the observed output 
+    */
+    nr_states = nrow(alpha)
+    T = ncol(alpha)
+    
+    gamma = rand(rows=nr_states, cols=T)
+    
+    parfor (i in 1:nrow(alpha)) {
+        parfor (t in 1:ncol(alpha)) {
+            num_it = alpha[i, t] * beta[i, t]
+            den_it = sum(alpha[,t] * beta[,t])
+            gamma[i, t] = num_it / den_it
+        }
+    }
+}
+
+output_t = function (Matrix[Double] X, Integer t) return (Integer o) {
+    o = as.integer(as.scalar(X[1, t]))
+}
+
+forward = function (Matrix[Double] X, Matrix[Double] A, Matrix[Double] B, Matrix[Double] ip) return (Matrix[Double] alpha)
+{   
+    /*
+    alpha a matrix of size nr_states * T with a cell i,t being probability of 
+    the state being at state i at timestep j and the outputs till timestep j
+    */
+    
+    T = ncol(X)
+    nr_states = nrow(A) 
+    alpha = matrix(0, rows=nr_states, cols=T)
+    o_1 = output_t(X, 1)
+    alpha[ ,1] = ip * B[ ,o_1]
+
+    for (t in 2:T) {
+        ot = output_t(X, t)
+        for (i in 1:nr_states) {    
+            alpha[i, t] = B[i, ot] * sum(alpha[,t-1]* A[ ,i]) 
+        }
+    }
+}
+
+backward = function (Matrix[Double] X, Matrix[Double] A, Matrix[Double] B) return (Matrix[Double] beta)
+{
+    /*
+    alpha a matrix of size nr_states * T with a cell i,t being probability of
+    the model producing outputs (o_t+1,..., o_T) given that the model is 
+    at state i at time t
+    */
+    
+    T = ncol(X)
+    nr_states = nrow(A)
+    beta = matrix(1/T, rows=nr_states, cols=T)
+    beta[,T] = matrix(1/T, rows=nr_states, cols=1)
+    
+    for (t in (T-1):1) {
+        ot = output_t(X, t)
+        for (i in 1:nr_states) {
+            beta[i, t] = sum(beta[, t+1] * t(A[i, ]) * B[ , ot])
+        }
+    }
+}

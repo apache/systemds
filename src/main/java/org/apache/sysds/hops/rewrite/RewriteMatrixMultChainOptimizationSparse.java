@@ -132,7 +132,7 @@ public class RewriteMatrixMultChainOptimizationSparse extends RewriteMatrixMultC
 			Hop currentHop = chain.get(counter);
 			inputMetaAvail &= currentHop.isMatrix();
 			inputMetaAvail &= !currentHop.isFederated();
-			inputMetaAvail &= (currentHop.getDataCharacteristics().getNonZeros() != -1);
+			inputMetaAvail &= (currentHop.getNnz() != -1);
 			if(inputMetaAvail) {
 				sketchArray[counter] = new MMNode(currentHop.getDataCharacteristics());
 			}

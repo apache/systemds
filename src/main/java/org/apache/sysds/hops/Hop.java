@@ -1081,7 +1081,11 @@ public abstract class Hop implements ParseInfo {
 	public boolean colsKnown() {
 		return _dataType.isScalar() || _dc.colsKnown();
 	}
-	
+
+	public boolean nnzKnown() {
+		return (getDataCharacteristics() != null) && getDataCharacteristics().nnzKnown();
+	}
+
 	public static void resetVisitStatus( List<Hop> hops ) {
 		if( hops != null )
 			for( Hop hopRoot : hops )

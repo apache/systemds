@@ -106,7 +106,7 @@ public class ProgramRewriter{
 				_sbRuleSet.add(      new RewriteCompressedReblock()              ); // Compression Rewrite
 			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS )
 				_sbRuleSet.add(  new RewriteSplitDagUnknownCSVRead()             ); //dependency: reblock, merge blocks
-			if(ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.SPARSITY_REWRITES))
+			if(ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.SPARSITY_RECOMPILE))
 				_sbRuleSet.add(new RewriteSplitDagUnknownNnzRead());
 			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS && 
 				ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS) )

@@ -73,20 +73,18 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * 
 	 * @param hop high-level operator
 	 */
-	private void ruleOptimizeMMChains(Hop hop, ProgramRewriteStatus state) 
-	{
-		if( hop.isVisited() )
+	private void ruleOptimizeMMChains(Hop hop, ProgramRewriteStatus state) {
+		if(hop.isVisited())
 			return;
 		
-		if( HopRewriteUtils.isMatrixMultiply(hop)
-			&& !((AggBinaryOp)hop).hasLeftPMInput() && !hop.isVisited() ) 
+		if(HopRewriteUtils.isMatrixMultiply(hop) && !((AggBinaryOp)hop).hasLeftPMInput())
 		{
 			// Try to find and optimize the chain in which current Hop is the
 			// last operator
 			prepAndOptimizeMMChain(hop, state);
 		}
 		
-		for( Hop hi : hop.getInput() )
+		for(Hop hi : hop.getInput())
 			ruleOptimizeMMChains(hi, state);
 
 		hop.setVisited();

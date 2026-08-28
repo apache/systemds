@@ -98,8 +98,9 @@ public class DMLConfig
 	public static final String NATIVE_BLAS          = "sysds.native.blas";
 	public static final String NATIVE_BLAS_DIR      = "sysds.native.blas.directory";
 	public static final String DAG_LINEARIZATION    = "sysds.compile.linearization";
-	public static final String SPARSITY_REWRITES    = "sysds.rewrites.sparsity.enabled"; // boolean
-	public static final String SPARSITY_ESTIMATOR   = "sysds.rewrites.sparsity.estimator"; // see EstiamtionUtils.EstimatorType
+	public static final String SPARSITY_REWRITES    = "sysds.sparsity.rewrites.enabled"; // boolean
+	public static final String SPARSITY_RECOMPILE   = "sysds.sparsity.recompile.enabled"; // boolean
+	public static final String SPARSITY_ESTIMATOR   = "sysds.sparsity.estimator"; // see EstiamtionUtils.EstimatorType
 	public static final String CODEGEN              = "sysds.codegen.enabled"; //boolean
 	public static final String CODEGEN_API          = "sysds.codegen.api"; // see SpoofCompiler.API
 	public static final String CODEGEN_COMPILER     = "sysds.codegen.compiler"; //see SpoofCompiler.CompilerType
@@ -192,6 +193,7 @@ public class DMLConfig
 		_defaultVals.put(COMPRESSED_TRANSFORMENCODE, "false");
 		_defaultVals.put(DAG_LINEARIZATION,      DagLinearizer.DEPTH_FIRST.name());
 		_defaultVals.put(SPARSITY_REWRITES,      "false");
+		_defaultVals.put(SPARSITY_RECOMPILE,     "false");
 		_defaultVals.put(SPARSITY_ESTIMATOR,     EstimatorType.BASIC_AVG.name());
 		_defaultVals.put(CODEGEN,                "false" );
 		_defaultVals.put(CODEGEN_API,            GeneratorAPI.JAVA.name() );
@@ -481,7 +483,7 @@ public class DMLConfig
 			COMPRESSED_LINALG, COMPRESSED_LOSSY, COMPRESSED_VALID_COMPRESSIONS, COMPRESSED_OVERLAPPING,
 			COMPRESSED_SAMPLING_RATIO, COMPRESSED_SOFT_REFERENCE_COUNT,
 			COMPRESSED_COCODE, COMPRESSED_TRANSPOSE, COMPRESSED_TRANSFORMENCODE, DAG_LINEARIZATION,
-			SPARSITY_REWRITES, SPARSITY_ESTIMATOR,
+			SPARSITY_REWRITES, SPARSITY_RECOMPILE, SPARSITY_ESTIMATOR,
 			CODEGEN, CODEGEN_API, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
 			STATS_MAX_WRAP_LEN, LINEAGECACHESPILL, COMPILERASSISTED_RW, BUFFERPOOL_LIMIT, MEMORY_MANAGER,
 			PRINT_GPU_MEMORY_INFO, AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, GPU_RULE_BASED_PLACEMENT,

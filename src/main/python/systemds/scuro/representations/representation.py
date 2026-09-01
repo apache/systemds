@@ -42,6 +42,24 @@ class FitRequirement(str, Enum):
     SUPERVISED = "supervised"
 
 
+@dataclass(frozen=True)
+class RepresentationFitState:
+    """State learned by a representation from a specific set of instances."""
+
+    fit_requirement: FitRequirement
+    fit_instance_ids: tuple = ()
+    payload: Any = None
+
+    def __post_init__(self):
+        fit_requirement = FitRequirement(self.fit_requirement)
+        fit_instance_ids = tuple(int(i) for i in self.fit_instance_ids)
+        if len(set(fit_instance_ids)) != len(fit_instance_ids):
+            raise ValueError("fit_instance_ids contains duplicate instance IDs")
+
+        object.__setattr__(self, "fit_requirement", fit_requirement)
+        object.__setattr__(self, "fit_instance_ids", fit_instance_ids)
+
+
 @dataclass
 class RepresentationStats:
     num_instances: int
@@ -191,6 +209,11 @@ class Representation:
     def set_parameters(self, parameters):
         for parameter in parameters:
             setattr(self, parameter, parameters[parameter])
+
+    def fit(self, inputs, labels=None) -> RepresentationFitState:
+        if self.fit_requirement is not FitRequirement.NONE:
+            raise NotImplementedError(f"fit is not implemented for {self.name}")
+        return RepresentationFitState(FitRequirement.NONE)
 
     def check_preconditions(self, input_stats) -> Optional[str]:
         return None

@@ -25,6 +25,7 @@ from typing import List
 from systemds.scuro.models.model import Model
 import numpy as np
 from sklearn.model_selection import train_test_split
+from systemds.scuro.drsearch.evaluation_split import EvaluationSplit
 from systemds.scuro.representations.representation import RepresentationStats
 
 _GPU_CONTEXT_FLOOR_BYTES = (
@@ -251,6 +252,12 @@ class Task:
         self.fusion_train_indices = [
             idx for idx in self.train_indices if idx not in all_val_indices
         ]
+        self.evaluation_splits = tuple(
+            EvaluationSplit(train_indices, val_indices, name=f"fold_{fold_idx}")
+            for fold_idx, (train_indices, val_indices) in enumerate(
+                zip(self.cv_train_indices, self.cv_val_indices)
+            )
+        )
 
     def create_model(self):
         """

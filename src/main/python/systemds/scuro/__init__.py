@@ -25,7 +25,11 @@ from systemds.scuro.dataloader.video_loader import VideoLoader
 from systemds.scuro.dataloader.text_loader import TextLoader
 from systemds.scuro.dataloader.json_loader import JSONLoader
 from systemds.scuro.dataloader.tabular_loader import TabularLoader
-from systemds.scuro.representations.representation import Representation
+from systemds.scuro.representations.representation import (
+    FitRequirement,
+    Representation,
+    RepresentationFitState,
+)
 from systemds.scuro.representations.aggregate import Aggregation
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
@@ -109,11 +113,13 @@ from systemds.scuro.models.discrete_model import DiscreteModel
 from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.joined_transformed import JoinedTransformedModality
 from systemds.scuro.modality.modality import Modality
+from systemds.scuro.modality.indexed import IndexedModality
 from systemds.scuro.utils.identifier import Identifier
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.drsearch.task import Task
+from systemds.scuro.drsearch.evaluation_split import EvaluationSplit
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.drsearch.optimization_data import OptimizationData
 from systemds.scuro.representations.covarep_audio_features import (

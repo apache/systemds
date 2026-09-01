@@ -33,10 +33,11 @@ import org.apache.sysds.runtime.instructions.cp.DPBuiltinOps;
  * - Laplace (delta == 0): pure epsilon-DP. The budget cost is tracked via basic composition: each release contributes
  * exactly its epsilon to a running sum. This is the tightest possible bound for pure DP and avoids the looser estimate
  * that results from routing Laplace through the RDP conversion path (which would introduce an unnecessary delta). Noise
- * scale is calibrated to L1 sensitivity (see {@link #compose}). - Gaussian (delta > 0): (epsilon, delta)-DP via Renyi
- * DP composition. Renyi divergences at a discrete set of orders alpha compose additively; the accumulated sum is
- * converted to (epsilon, delta) at query time using the formula from Mironov 2017. This is substantially tighter than
- * basic composition for repeated Gaussian releases, which is the common case in federated learning.
+ * scale is calibrated to L1 sensitivity (see {@link #compose}).
+ * - Gaussian (delta > 0): (epsilon, delta)-DP via Renyi DP composition. Renyi divergences at a discrete set of orders
+ * alpha compose additively; the accumulated sum is converted to (epsilon, delta) at query time using the formula from
+ * Mironov 2017. This is substantially tighter than basic composition for repeated Gaussian releases, which is the common
+ * case in federated learning.
  *
  * When both mechanisms are used in the same script the total cost is:
  * epsilon_total = epsilon_Laplace_sum + epsilon_Gaussian_RDP
@@ -47,8 +48,9 @@ import org.apache.sysds.runtime.instructions.cp.DPBuiltinOps;
  *
  * Gaussian RDP divergence For the Gaussian mechanism with noise scale sigma and L2 sensitivity:
  * D_alpha = alpha * sensitivity^2 / (2*sigma^2)
- * is back-derived from the caller's (epsilon, delta) via the standard calibration formula (see {@link #gaussianSigma}). Note that
- * sensitivity cancels in the final expression, so the RDP cost depends only on the (epsilon, delta) parameters.
+ * is back-derived from the caller's (epsilon, delta) via the standard calibration formula (see
+ * {@link DPBuiltinOps#computeGaussianSigma}). Note that sensitivity cancels in the final expression, so the RDP cost
+ * depends only on the (epsilon, delta) parameters.
  *
  * RDP => (epsilon, delta) conversion (Mironov 2017, Proposition 3):
  * epsilon(alpha) = R[alpha] + log(1/delta) / (alpha − 1)
@@ -119,9 +121,9 @@ public class DPBudgetAccountant {
 	 * @param delta         delta used for the Gaussian RDP-to-(epsilon,delta) conversion (must be in (0,1))
 	 */
 	public DPBudgetAccountant(double epsilonBudget, double delta) {
-		if(!(epsilonBudget > 0))
+		if(epsilonBudget <= 0)
 			throw new DMLRuntimeException("DPBudgetAccountant: epsilonBudget must be > 0, got " + epsilonBudget);
-		if(!(delta > 0 && delta < 1))
+		if((delta <= 0) || (delta >= 1))
 			throw new DMLRuntimeException("DPBudgetAccountant: delta must be in (0,1), got " + delta);
 		_epsilonBudget = epsilonBudget;
 		_delta = delta;

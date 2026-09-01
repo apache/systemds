@@ -234,7 +234,7 @@ public class DPBuiltinOps {
 	}
 
 	/**
-	 * Compute the optimal sigma for the Analytic Gaussian Mechanism (Balle & Wang 2018). Returns the smallest sigma
+	 * Compute the optimal sigma for the Analytic Gaussian Mechanism (Balle, Wang 2018). Returns the smallest sigma
 	 * such that the Gaussian mechanism is (epsilon, delta)-DP.
 	 *
 	 * @param sensitivity L2 sensitivity
@@ -322,11 +322,10 @@ public class DPBuiltinOps {
 		double v;
 		try {
 			v = Double.parseDouble(raw);
-		}
-		catch(NumberFormatException e) {
+		} catch(NumberFormatException e) {
 			throw new DMLRuntimeException(opcode + ": parameter '" + key + "' is not a valid number: " + raw);
 		}
-		if(!(v > 0.0))
+		if(v <= 0.0)
 			throw new DMLRuntimeException(opcode + ": parameter '" + key + "' must be strictly positive, got " + v);
 		return v;
 	}

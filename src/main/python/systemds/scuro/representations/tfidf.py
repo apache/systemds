@@ -23,7 +23,10 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from systemds.scuro.dataloader.text_loader import TextStats
 from systemds.scuro.modality.transformed import TransformedModality
-from systemds.scuro.representations.representation import RepresentationStats
+from systemds.scuro.representations.representation import (
+    FitRequirement,
+    RepresentationStats,
+)
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import save_embeddings
 
@@ -33,6 +36,8 @@ from systemds.scuro.drsearch.operator_registry import register_representation
 
 @register_representation(ModalityType.TEXT)
 class TfIdf(UnimodalRepresentation):
+    fit_requirement = FitRequirement.UNSUPERVISED
+
     def __init__(self, min_df=2, output_file=None, params=None):
         parameters = {"min_df": [min_df, 4, 8]}
         super().__init__("TF-IDF", ModalityType.EMBEDDING, parameters)

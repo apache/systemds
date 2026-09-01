@@ -20,6 +20,7 @@
 # -------------------------------------------------------------
 import abc
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any, Optional
 
 import numpy as np
@@ -31,6 +32,14 @@ CONTAINER_LIST = "list_of_ndarray"
 CONTAINER_RAGGED = "ragged"
 NDARRAY_OBJECT_OVERHEAD_BYTES = 112
 DEFAULT_DTYPE = np.dtype(np.float32)
+
+
+class FitRequirement(str, Enum):
+    """Data required to fit a representation before it can transform inputs."""
+
+    NONE = "none"
+    UNSUPERVISED = "unsupervised"
+    SUPERVISED = "supervised"
 
 
 @dataclass
@@ -154,6 +163,8 @@ def derive_stats(stats: RepresentationStats, **overrides) -> RepresentationStats
 
 
 class Representation:
+    fit_requirement = FitRequirement.NONE
+
     def __init__(self, name, parameters):
         self.name = name
         self._parameters = parameters

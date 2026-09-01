@@ -24,7 +24,10 @@ import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 
 from systemds.scuro.modality.transformed import TransformedModality
-from systemds.scuro.representations.representation import RepresentationStats
+from systemds.scuro.representations.representation import (
+    FitRequirement,
+    RepresentationStats,
+)
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import save_embeddings
 
@@ -37,6 +40,8 @@ _MAX_VOCAB_FEATURES = int(os.environ.get("SCURO_BOW_MAX_FEATURES", "100000"))
 
 @register_representation(ModalityType.TEXT)
 class BoW(UnimodalRepresentation):
+    fit_requirement = FitRequirement.UNSUPERVISED
+
     def __init__(self, ngram_range=2, min_df=2, output_file=None, params=None):
         parameters = {"ngram_range": [2, 3, 5, 10], "min_df": [1, 2, 4, 8]}
         super().__init__("BoW", ModalityType.EMBEDDING, parameters)

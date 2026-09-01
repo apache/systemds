@@ -29,11 +29,14 @@ import numpy as np
 from systemds.scuro.drsearch.operator_registry import register_fusion_operator
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.fusion import Fusion
+from systemds.scuro.representations.representation import FitRequirement
 from systemds.scuro.utils.static_variables import get_device
 
 
 @register_fusion_operator()
 class AttentionFusion(Fusion):
+    fit_requirement = FitRequirement.SUPERVISED
+
     def __init__(
         self,
         hidden_dim=256,

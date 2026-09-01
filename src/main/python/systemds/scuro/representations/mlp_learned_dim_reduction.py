@@ -34,6 +34,7 @@ from systemds.scuro.drsearch.operator_registry import (
 from systemds.scuro.representations.dimensionality_reduction import (
     DimensionalityReduction,
 )
+from systemds.scuro.representations.representation import FitRequirement
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.utils.utils import set_random_seeds
 
@@ -49,6 +50,8 @@ class MLPLearnedDimReduction(DimensionalityReduction):
     :param learning_rate: The learning rate to use for training
     :param epochs: The number of epochs to train for
     """
+
+    fit_requirement = FitRequirement.SUPERVISED
 
     def __init__(self, output_dim=256, batch_size=32, learning_rate=0.001, epochs=5):
         parameters = {

@@ -215,6 +215,11 @@ class Representation:
             raise NotImplementedError(f"fit is not implemented for {self.name}")
         return RepresentationFitState(FitRequirement.NONE)
 
+    def transform_fitted(self, inputs, fit_state, **kwargs):
+        raise NotImplementedError(
+            f"transform_fitted is not implemented for {self.name}"
+        )
+
     def check_preconditions(self, input_stats) -> Optional[str]:
         return None
 

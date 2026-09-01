@@ -23,9 +23,11 @@ import os
 import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 
+from systemds.scuro.modality.indexed import IndexedModality
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.representation import (
     FitRequirement,
+    RepresentationFitState,
     RepresentationStats,
 )
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
@@ -83,21 +85,29 @@ class BoW(UnimodalRepresentation):
             "gpu_peak_bytes": 0,
         }
 
-    def transform(self, modality, aggregation=None):
-        transformed_modality = TransformedModality(modality, self)
-        vectorizer = CountVectorizer(
+    def _create_vectorizer(self):
+        return CountVectorizer(
             ngram_range=(1, self.ngram_range),
             min_df=self.min_df,
             max_features=_MAX_VOCAB_FEATURES,
             dtype=np.float32,
         )
 
-        X = (
-            vectorizer.fit_transform(modality.data)
-            .toarray()
-            .astype(np.float32, copy=False)
+    def fit(self, inputs, labels=None) -> RepresentationFitState:
+        if not isinstance(inputs, IndexedModality):
+            raise TypeError("BoW.fit expects an IndexedModality")
+
+        vectorizer = self._create_vectorizer()
+        vectorizer.fit(inputs.modality.data)
+        return RepresentationFitState(
+            self.fit_requirement,
+            fit_instance_ids=inputs.instance_ids,
+            payload=vectorizer,
         )
 
+    def _to_modality(self, modality, matrix, aggregation=None):
+        transformed_modality = TransformedModality(modality, self)
+        X = matrix.toarray().astype(np.float32, copy=False)
         if self.output_file is not None:
             save_embeddings(X, self.output_file)
 
@@ -106,3 +116,28 @@ class BoW(UnimodalRepresentation):
         if aggregation is not None:
             transformed_modality.data = aggregation.execute(transformed_modality.data)
         return transformed_modality
+
+    def transform_fitted(self, inputs, fit_state, aggregation=None):
+        if not isinstance(inputs, IndexedModality):
+            raise TypeError("BoW.transform_fitted expects an IndexedModality")
+        if (
+            not isinstance(fit_state, RepresentationFitState)
+            or fit_state.fit_requirement is not self.fit_requirement
+            or type(fit_state.payload) is not CountVectorizer
+        ):
+            raise ValueError("BoW requires a compatible fitted state")
+
+        transformed = self._to_modality(
+            inputs.modality,
+            fit_state.payload.transform(inputs.modality.data),
+            aggregation,
+        )
+        return IndexedModality(transformed, inputs.instance_ids)
+
+    def transform(self, modality, aggregation=None):
+        vectorizer = self._create_vectorizer()
+        return self._to_modality(
+            modality,
+            vectorizer.fit_transform(modality.data),
+            aggregation,
+        )

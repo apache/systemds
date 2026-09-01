@@ -70,4 +70,5 @@ SystemDS provides advanced configuration options for performance tuning and spec
 - BLAS / Native Acceleration — [Native Backend (BLAS) Guide](native-backend)  
 - Federated Backend Deployment — [Federated Guide](federated-monitoring)  
 - Contributing to SystemDS — [Contributing Guide](https://github.com/apache/systemds/blob/main/CONTRIBUTING.md)
+- Security — [Security Model](security)
 

@@ -29,6 +29,10 @@ from functools import lru_cache
 
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.node_executor import NodeExecutor, ResultEntry
+from systemds.scuro.drsearch.split_aware_evaluator import (
+    SplitAwareDAGEvaluator,
+    dag_requires_fitting,
+)
 from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.drsearch.ranking import rank_by_tradeoff, rank_by_robustness
 from systemds.scuro.drsearch.task import PerformanceMeasure
@@ -109,7 +113,8 @@ class UnimodalOptimizer:
             if tasks[i - 1].expected_dim != tasks[i].expected_dim:
                 self._tasks_require_same_dims = False
 
-        self._combination_operators = [Concatenation(), Hadamard(), Sum()]
+        # self._combination_operators = [Concatenation(), Hadamard(), Sum(), Average()]
+        self._combination_operators = [Concatenation()]
 
     @lru_cache(maxsize=128)
     def _get_modality_operators(self, modality_type):
@@ -350,23 +355,66 @@ class UnimodalOptimizer:
             self._build_execution_dags_for_modality(modality, skip_remaining)
         )
 
-        node_executor = NodeExecutor(
-            expanded_dags_with_task_roots,
-            [modality],
-            self.tasks,
-            max_num_workers=self.max_num_workers,
-            result_path=self.result_path,
-            enable_checkpointing=self.enable_checkpointing,
-            search_start=self._search_start,
-        )
         start_time = time.perf_counter()
-        exec_out = node_executor.run()
+        fitted_dags = [
+            dag for dag in dags_with_pushdown if dag_requires_fitting(dag)
+        ]
+        stateless_dag_ids = {
+            dag.dag_id
+            for dag in dags_with_pushdown
+            if not dag_requires_fitting(dag)
+        }
+        stateless_task_dags = [
+            dag
+            for dag in expanded_dags_with_task_roots
+            if dag.dag_id in stateless_dag_ids
+        ]
+
+        task_results = []
+        statistics = {"worker_stats": {}, "node_stats": {}, "reuse": {}}
+        if fitted_dags:
+            SplitAwareDAGEvaluator.materialize(modality)
+
+        if stateless_task_dags:
+            node_executor = NodeExecutor(
+                stateless_task_dags,
+                [modality],
+                self.tasks,
+                max_num_workers=self.max_num_workers,
+                result_path=self.result_path,
+                enable_checkpointing=self.enable_checkpointing,
+                search_start=self._search_start,
+            )
+            exec_out = node_executor.run()
+            task_results.extend(exec_out["task_results"])
+            statistics = exec_out["statistics"]
+
+        if fitted_dags:
+            fitted_task_dags = self._expand_dags_with_task_roots(fitted_dags)
+            for dag in fitted_dags:
+                for task_idx, task in enumerate(self.tasks):
+                    evaluation = SplitAwareDAGEvaluator(dag, modality, task).evaluate()
+                    result_dag = next(
+                        task_dag
+                        for task_dag in fitted_task_dags
+                        if task_dag.dag_id == dag.dag_id
+                        and task_dag.nodes[-1].parameters.get("_task_idx") == task_idx
+                    )
+                    task_results.append(
+                        ResultEntry(
+                            train_score=evaluation.scores[0].average_scores,
+                            val_score=evaluation.scores[1].average_scores,
+                            test_score=evaluation.scores[2].average_scores,
+                            representation_time=evaluation.representation_time,
+                            task_time=evaluation.task_time,
+                            dag=result_dag,
+                        )
+                    )
+
         end_time = time.perf_counter()
-        task_results = exec_out["task_results"]
 
         for task_result in task_results:
             local_results.add_task_result(task_result, dags)
-        statistics = exec_out["statistics"]
 
         local_results.add_worker_stat(statistics["worker_stats"], modality.modality_id)
         local_results.add_node_stat(statistics["node_stats"], modality.modality_id)
@@ -967,7 +1015,16 @@ class UnimodalResults:
             if not task_cache:
                 cache = []
                 for result in results:
-                    cache.append(result.dag.execute([modality]))
+                    if dag_requires_fitting(result.dag):
+                        transformed = SplitAwareDAGEvaluator(
+                            result.dag, modality, task
+                        ).fit_transform(
+                            task.train_indices,
+                            range(len(modality.data)),
+                        )
+                        cache.append(transformed.modality)
+                    else:
+                        cache.append(result.dag.execute([modality]))
 
             elif isinstance(task_cache, list):
                 cache = task_cache

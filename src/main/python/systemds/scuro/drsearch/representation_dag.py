@@ -379,15 +379,11 @@ class RepresentationDag:
                     else:
                         # It's a fusion operation
                         fusion_op = node_operation
-                        if (
-                            hasattr(fusion_op, "needs_training")
-                            and fusion_op.needs_training
-                        ):
-                            result = input_mods[0].combine_with_training(
-                                input_mods[1:], fusion_op, task
+                        if getattr(fusion_op, "needs_training", False):
+                            raise RuntimeError(
+                                "Fitted representations require SplitAwareDAGEvaluator"
                             )
-                        else:
-                            result = input_mods[0].combine(input_mods[1:], fusion_op)
+                        result = input_mods[0].combine(input_mods[1:], fusion_op)
             else:
                 node_operation = node.operation(params=node.parameters)
                 if gpu_id is not None and hasattr(node_operation, "gpu_id"):
@@ -411,15 +407,11 @@ class RepresentationDag:
                 else:
                     # It's a fusion operation
                     fusion_op = node_operation
-                    if (
-                        hasattr(fusion_op, "needs_training")
-                        and fusion_op.needs_training
-                    ):
-                        result = input_mods[0].combine_with_training(
-                            input_mods[1:], fusion_op, task
+                    if getattr(fusion_op, "needs_training", False):
+                        raise RuntimeError(
+                            "Fitted representations require SplitAwareDAGEvaluator"
                         )
-                    else:
-                        result = input_mods[0].combine(input_mods[1:], fusion_op)
+                    result = input_mods[0].combine(input_mods[1:], fusion_op)
 
                 if (
                     enable_cache
@@ -473,6 +465,59 @@ class RepresentationDag:
             if not node.inputs:
                 return node.node_id
         return None
+
+
+def compose_dag_leaves(
+    dag: RepresentationDag, leaf_dags: Dict[Tuple[Any, Any], RepresentationDag]
+) -> RepresentationDag:
+    """Replace indexed leaves with their complete source representation DAGs."""
+    composed_nodes = []
+    replacement_roots = {}
+
+    for leaf_id in dag.get_leaf_nodes():
+        leaf = dag.get_node_by_id(leaf_id)
+        key = (leaf.modality_id, leaf.representation_index)
+        source_dag = leaf_dags.get(key)
+        if source_dag is None:
+            raise KeyError(
+                f"No source representation DAG found for multimodal leaf {key}"
+            )
+
+        id_map = {
+            node.node_id: f"{leaf.node_id}__{node.node_id}"
+            for node in source_dag.nodes
+        }
+        for source_node in source_dag.nodes:
+            cloned = copy.deepcopy(source_node)
+            cloned.node_id = id_map[source_node.node_id]
+            cloned.inputs = [id_map[input_id] for input_id in source_node.inputs]
+            composed_nodes.append(cloned)
+        replacement_roots[leaf.node_id] = id_map[source_dag.root_node_id]
+
+    internal_nodes = [node for node in dag.nodes if node.inputs]
+    internal_ids = {
+        node.node_id: f"fusion__{node.node_id}" for node in internal_nodes
+    }
+    for node in internal_nodes:
+        cloned = copy.deepcopy(node)
+        cloned.node_id = internal_ids[node.node_id]
+        cloned.inputs = [
+            replacement_roots[input_id]
+            if input_id in replacement_roots
+            else internal_ids[input_id]
+            for input_id in node.inputs
+        ]
+        composed_nodes.append(cloned)
+
+    root_node_id = (
+        replacement_roots[dag.root_node_id]
+        if dag.root_node_id in replacement_roots
+        else internal_ids[dag.root_node_id]
+    )
+    composed = RepresentationDag(composed_nodes, root_node_id, dag_id=dag.dag_id)
+    if not composed.validate():
+        raise ValueError("Composed representation DAG is invalid")
+    return composed
 
 
 def _spec_safe(value):

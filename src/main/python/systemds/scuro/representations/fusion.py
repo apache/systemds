@@ -23,6 +23,7 @@ from typing import List
 
 import numpy as np
 
+from systemds.scuro.modality.indexed import IndexedModality
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
@@ -32,7 +33,9 @@ from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.representation import (
     CONTAINER_ARRAY,
+    FitRequirement,
     Representation,
+    RepresentationFitState,
     RepresentationStats,
     derive_stats,
     stats_bytes,
@@ -97,10 +100,19 @@ class Fusion(Representation):
         :param modalities: List of modalities used in the fusion
         :return: fused data
         """
+        mods = self._prepare_modalities(modalities)
+
+        return self.execute(mods)
+
+    def _prepare_modalities(self, modalities: List[Modality]):
         mods = []
         for modality in modalities:
             agg_modality = None
-            if not self.preserves_leading_axis and get_shape(modality.metadata) > 1:
+            if (
+                not self.preserves_leading_axis
+                and modality.has_metadata()
+                and get_shape(modality.metadata) > 1
+            ):
                 agg_operator = AggregatedRepresentation()
                 agg_modality = agg_operator.transform(modality)
             mods.append(agg_modality if agg_modality else modality)
@@ -112,36 +124,58 @@ class Fusion(Representation):
             for modality in mods:
                 modality.pad(max_len=max_len)
 
-        return self.execute(mods)
+        return mods
 
-    def transform_with_training(self, modalities: List[Modality], task):
-        fusion_train_indices = task.fusion_train_indices
+    @staticmethod
+    def _validate_indexed_modalities(inputs):
+        if not isinstance(inputs, (list, tuple)) or not inputs:
+            raise TypeError(
+                "Fusion fitting expects a non-empty sequence of IndexedModality inputs"
+            )
+        if not all(isinstance(item, IndexedModality) for item in inputs):
+            raise TypeError("Fusion fitting expects IndexedModality inputs")
 
-        train_modalities = []
-        for modality in modalities:
-            train_data = [
-                d for i, d in enumerate(modality.data) if i in fusion_train_indices
-            ]
-            train_modality = TransformedModality(modality, self)
-            train_modality.data = list(train_data)
-            train_modalities.append(train_modality)
+        instance_ids = inputs[0].instance_ids
+        if any(item.instance_ids != instance_ids for item in inputs[1:]):
+            raise ValueError("Fusion inputs must have aligned instance IDs")
+        return instance_ids
 
-        transformed_train = self.execute(
-            train_modalities, task.labels[fusion_train_indices]
+    def fit(self, inputs, labels=None) -> RepresentationFitState:
+        if self.fit_requirement is not FitRequirement.SUPERVISED:
+            return super().fit(inputs, labels)
+        instance_ids = self._validate_indexed_modalities(inputs)
+        if labels is None:
+            raise ValueError(f"{self.name} requires labels for fitting")
+        if len(labels) != len(instance_ids):
+            raise ValueError(
+                f"Expected {len(instance_ids)} labels for {self.name}, got {len(labels)}"
+            )
+
+        modalities = self._prepare_modalities([item.modality for item in inputs])
+        self.execute(modalities, np.asarray(labels))
+        return RepresentationFitState(
+            self.fit_requirement,
+            fit_instance_ids=instance_ids,
+            payload=self,
         )
 
-        all_other_indices = [
-            i for i in range(len(modalities[0].data)) if i not in fusion_train_indices
-        ]
-        transformed_other = self.transform_data(modalities, all_other_indices)
+    def transform_fitted(self, inputs, fit_state, **kwargs):
+        instance_ids = self._validate_indexed_modalities(inputs)
+        if (
+            not isinstance(fit_state, RepresentationFitState)
+            or fit_state.fit_requirement is not self.fit_requirement
+            or not isinstance(fit_state.payload, type(self))
+        ):
+            raise ValueError(f"{self.name} requires a compatible fitted state")
 
-        transformed_data = np.zeros(
-            (len(modalities[0].data), transformed_train.shape[1])
+        modalities = fit_state.payload._prepare_modalities(
+            [item.modality for item in inputs]
         )
-        transformed_data[fusion_train_indices] = transformed_train
-        transformed_data[all_other_indices] = transformed_other
-
-        return transformed_data
+        transformed = TransformedModality(
+            modalities[0], fit_state.payload, ModalityType.EMBEDDING
+        )
+        transformed.data = fit_state.payload.apply_representation(modalities)
+        return IndexedModality(transformed, instance_ids)
 
     def transform_data(self, modalities: List[Modality], indices=None):
         val_modalities = []

@@ -31,10 +31,13 @@ import itertools
 import math
 import random
 from systemds.scuro.drsearch.representation_dag import (
-    RepresentationDAGBuilder,
     RepresentationNode,
 )
 from systemds.scuro.modality.modality import Modality
+from systemds.scuro.drsearch.split_aware_evaluator import (
+    SplitAwareDAGEvaluator,
+    dag_requires_fitting,
+)
 from systemds.scuro.drsearch.task import PerformanceMeasure
 import pickle
 from systemds.scuro.utils.checkpointing import CheckpointManager
@@ -229,12 +232,40 @@ def _apply_trial_params_to_node(
     return {**base_params, **trial_params}
 
 
+class HyperparamEvaluationScores(list):
+    """Backward-compatible score triple with complete CV details."""
+
+    def __init__(self, scores, metric):
+        split_names = ("train", "val", "test")
+        for split_name, score in zip(split_names, scores):
+            if isinstance(score, PerformanceMeasure):
+                averages = dict(score.average_scores or {})
+                fold_scores = score.fold_scores()
+                score_stds = score.score_stds()
+            else:
+                value = float(score)
+                averages = {metric: value}
+                fold_scores = {metric: [value]}
+                score_stds = {metric: 0.0}
+            setattr(self, f"all_{split_name}_scores", averages)
+            setattr(self, f"{split_name}_fold_scores", fold_scores)
+            setattr(self, f"{split_name}_score_stds", score_stds)
+
+        super().__init__(
+            [
+                self.all_train_scores.get(metric, np.nan),
+                self.val_fold_scores.get(metric, []),
+                self.all_test_scores.get(metric, np.nan),
+            ]
+        )
+
+
 @dataclass
 class HyperparamResult:
     representation_name: str
     best_params: Dict[str, Any]
     best_score: float
-    all_results: List[Tuple[Dict[str, Any], float]]
+    all_results: List[Tuple[Dict[str, Any], Any]]
     tuning_time: float
     modality_id: int
     task_name: str
@@ -272,25 +303,23 @@ class HyperparamResults:
         results = self.results[task.model.name][modality.modality_id]
         dags = []
         for result in results:
-            dag_with_best_params = RepresentationDAGBuilder()
-            prev_node_id = None
-            for node in result.dag.nodes:
-                if node.operation is not None and node.parameters:
-                    params = _apply_trial_params_to_node(node, result.best_params)
-                    prev_node_id = dag_with_best_params.create_operation_node(
-                        node.operation, [prev_node_id], params
+            dag_with_best_params = copy.deepcopy(result.dag)
+            for node in dag_with_best_params.nodes:
+                if node.operation is not None:
+                    node.parameters = _apply_trial_params_to_node(
+                        node, result.best_params
                     )
-                else:  # it is a leaf node
-                    prev_node_id = dag_with_best_params.create_leaf_node(
-                        node.modality_id
-                    )
-
-            dags.append(dag_with_best_params.build(prev_node_id))
+            dags.append(dag_with_best_params)
         return results, dags
 
     def get_k_best_results(self, modality, task, performance_metric_name):
         results, dags = self.get_k_best_dags(modality, task)
-        representations = [list(dag.execute([modality]).values())[-1] for dag in dags]
+        representations = []
+        for dag in dags:
+            representation = dag.execute([modality])
+            if isinstance(representation, dict):
+                representation = representation[list(representation.keys())[-1]]
+            representations.append(representation)
         return results, representations
 
 
@@ -499,11 +528,9 @@ class HyperparameterTuner:
         )
         baseline = (
             baseline_params,
-            [
-                self._score_value(baseline_raw_scores[0]),
-                self._score_value_list(baseline_raw_scores[1]),
-                self._score_value(baseline_raw_scores[2]),
-            ],
+            HyperparamEvaluationScores(
+                baseline_raw_scores, self.scoring_metric
+            ),
         )
 
         if not hyperparams:
@@ -927,21 +954,19 @@ class HyperparameterTuner:
                 task,
                 modalities_override=modalities_override,
             )
-            train_score = self._score_value(scores[0])
             val_score = self._score_value(scores[1])
-            test_score = self._score_value(scores[2])
             if np.isnan(val_score):
                 raise optuna.TrialPruned()
 
-            seen[self._config_key(params)] = (
-                params,
-                [train_score, self._score_value_list(scores[1]), test_score],
+            evaluation_scores = HyperparamEvaluationScores(
+                scores, self.scoring_metric
             )
+            seen[self._config_key(params)] = (params, evaluation_scores)
 
-            trial_results.append(
-                (params, [train_score, self._score_value_list(scores[1]), test_score])
+            trial_results.append((params, evaluation_scores))
+            val_folds = evaluation_scores.val_fold_scores.get(
+                self.scoring_metric, []
             )
-            val_folds = self._score_value_list(scores[1])
             if val_folds is not None and len(val_folds) > 1:
                 lam = 0.5
                 robust_val = np.mean(val_folds) - lam * np.std(val_folds, ddof=1)
@@ -1004,6 +1029,11 @@ class HyperparameterTuner:
                 if modalities_override is not None
                 else self.get_modalities_by_id(modality_ids)
             )
+            if dag_requires_fitting(dag_copy):
+                evaluation = SplitAwareDAGEvaluator(
+                    dag_copy, modalities, task
+                ).evaluate()
+                return params, evaluation.scores
             modified_modality = dag_copy.execute(modalities, task)
             score = task.run(modified_modality.data)
 

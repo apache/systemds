@@ -37,6 +37,7 @@ from systemds.scuro.representations.context import Context
 from systemds.scuro.representations.dimensionality_reduction import (
     DimensionalityReduction,
 )
+from systemds.scuro.representations.fusion import Fusion
 from systemds.scuro.representations.representation import (
     FitRequirement,
     Representation,
@@ -61,17 +62,23 @@ def dag_requires_fitting(dag: RepresentationDag) -> bool:
 
 
 class SplitAwareDAGEvaluator:
-    def __init__(self, dag: RepresentationDag, modality, task):
+    def __init__(self, dag: RepresentationDag, modalities, task):
         self.dag = dag
-        self.modality = modality
+        self.modalities = (
+            list(modalities) if isinstance(modalities, (list, tuple)) else [modalities]
+        )
         self.task = task
 
     @staticmethod
     def materialize(modality) -> None:
-        if modality.has_data():
-            return
-
         loader = getattr(modality, "data_loader", None)
+        if modality.has_data():
+            if loader is None:
+                return
+            expected_instances = len(getattr(loader, "indices", ()))
+            if not expected_instances or len(modality.data) == expected_instances:
+                return
+
         if loader is None:
             raise ValueError("Split-aware evaluation requires materialized data")
 
@@ -93,7 +100,13 @@ class SplitAwareDAGEvaluator:
     def _apply_stateless(self, operation, inputs, node):
         aggregation = pushdown_aggregation_for_node(node.parameters)
 
-        if isinstance(operation, Context):
+        if isinstance(operation, Fusion):
+            instance_ids = operation._validate_indexed_modalities(inputs)
+            transformed = inputs[0].modality.combine(
+                [item.modality for item in inputs[1:]], operation
+            )
+            return self._wrap(transformed, instance_ids)
+        elif isinstance(operation, Context):
             transformed = inputs.modality.context(operation)
         elif isinstance(operation, DimensionalityReduction):
             if getattr(operation, "needs_training", False):
@@ -112,9 +125,32 @@ class SplitAwareDAGEvaluator:
                 operation, aggregation=aggregation
             )
         else:
-            raise TypeError(f"Unsupported unimodal operation: {type(operation).__name__}")
+            raise TypeError(
+                f"Unsupported unimodal operation: {type(operation).__name__}"
+            )
 
         return self._wrap(transformed, inputs.instance_ids)
+
+    @staticmethod
+    def _leaf_input(partition, node):
+        if len(partition) == 1:
+            return partition[0]
+        modality_id = node.modality_id
+        try:
+            modality_id = int(modality_id)
+        except (TypeError, ValueError):
+            pass
+        matches = [
+            item for item in partition if item.modality.modality_id == modality_id
+        ]
+        if not matches:
+            raise KeyError(f"No modality found for leaf {node.node_id}")
+        if node.representation_index in (None, -1) or len(matches) == 1:
+            return matches[0]
+        index = int(node.representation_index)
+        if index >= len(matches):
+            raise IndexError(f"No representation {index} for leaf {node.node_id}")
+        return matches[index]
 
     def _execute_partitions(self, *partitions):
         cache = {}
@@ -125,27 +161,34 @@ class SplitAwareDAGEvaluator:
 
             node = self.dag.get_node_by_id(node_id)
             if not node.inputs:
-                result = partitions
+                result = tuple(
+                    self._leaf_input(partition, node) for partition in partitions
+                )
                 cache[node_id] = result
                 return result
-            if len(node.inputs) != 1:
-                raise NotImplementedError(
-                    "Multimodal split-aware execution is handled in step 4"
-                )
 
-            input_partitions = execute_node(node.inputs[0])
-            operation = node.operation(params=node.parameters)
-            requirement = getattr(
-                operation, "fit_requirement", FitRequirement.NONE
+            input_results = [execute_node(input_id) for input_id in node.inputs]
+            input_partitions = tuple(
+                tuple(result[i] for result in input_results)
+                for i in range(len(partitions))
             )
+            input_partitions = tuple(
+                items[0] if len(items) == 1 else items for items in input_partitions
+            )
+            operation = node.operation(params=node.parameters)
+            requirement = getattr(operation, "fit_requirement", FitRequirement.NONE)
 
             if requirement is not FitRequirement.NONE:
                 labels = None
+                fit_input = input_partitions[0]
+                fit_ids = (
+                    fit_input[0].instance_ids
+                    if isinstance(fit_input, tuple)
+                    else fit_input.instance_ids
+                )
                 if requirement is FitRequirement.SUPERVISED:
-                    labels = np.asarray(self.task.labels)[
-                        list(input_partitions[0].instance_ids)
-                    ]
-                fit_state = operation.fit(input_partitions[0], labels=labels)
+                    labels = np.asarray(self.task.labels)[list(fit_ids)]
+                fit_state = operation.fit(fit_input, labels=labels)
                 aggregation = pushdown_aggregation_for_node(node.parameters)
                 result = tuple(
                     operation.transform_fitted(
@@ -166,11 +209,17 @@ class SplitAwareDAGEvaluator:
 
         return execute_node(self.dag.root_node_id)
 
+    def _indexed_modalities(self):
+        full = []
+        for modality in self.modalities:
+            self.materialize(modality)
+            full.append(IndexedModality(modality, range(len(modality.data))))
+        return tuple(full)
+
     def fit_transform(self, fit_indices, transform_indices) -> IndexedModality:
-        self.materialize(self.modality)
-        full = IndexedModality(self.modality, range(len(self.modality.data)))
-        fit_partition = full.subset(fit_indices)
-        transform_partition = full.subset(transform_indices)
+        full = self._indexed_modalities()
+        fit_partition = tuple(item.subset(fit_indices) for item in full)
+        transform_partition = tuple(item.subset(transform_indices) for item in full)
         _, transformed = self._execute_partitions(
             fit_partition,
             transform_partition,
@@ -182,12 +231,9 @@ class SplitAwareDAGEvaluator:
         return list(partition.modality.data)
 
     def evaluate(self) -> SplitEvaluationResult:
-        self.materialize(self.modality)
-        full = IndexedModality(self.modality, range(len(self.modality.data)))
+        full = self._indexed_modalities()
 
-        train_scores = PerformanceMeasure(
-            "train", self.task.performance_measures
-        )
+        train_scores = PerformanceMeasure("train", self.task.performance_measures)
         val_scores = PerformanceMeasure("val", self.task.performance_measures)
         test_scores = PerformanceMeasure("test", self.task.performance_measures)
         self.task.training_time = []
@@ -196,9 +242,9 @@ class SplitAwareDAGEvaluator:
         representation_time = 0.0
         task_time = 0.0
         for split in self.task.evaluation_splits:
-            train = full.subset(split.fit_indices)
-            evaluation = full.subset(split.evaluation_indices)
-            test = full.subset(self.task.test_indices)
+            train = tuple(item.subset(split.fit_indices) for item in full)
+            evaluation = tuple(item.subset(split.evaluation_indices) for item in full)
+            test = tuple(item.subset(self.task.test_indices) for item in full)
 
             start = time.perf_counter()
             transformed_train, transformed_evaluation, transformed_test = (
@@ -211,9 +257,7 @@ class SplitAwareDAGEvaluator:
             evaluation_X = self._partition_data(transformed_evaluation)
             test_X = self._partition_data(transformed_test)
             train_y = np.asarray(self.task.labels)[list(split.fit_indices)]
-            evaluation_y = np.asarray(self.task.labels)[
-                list(split.evaluation_indices)
-            ]
+            evaluation_y = np.asarray(self.task.labels)[list(split.evaluation_indices)]
             test_y = np.asarray(self.task.labels)[list(self.task.test_indices)]
 
             start = time.perf_counter()

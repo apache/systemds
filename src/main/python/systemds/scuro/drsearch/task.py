@@ -87,7 +87,6 @@ class Task:
         kfold=5,
         measure_performance=True,
         performance_measures=["accuracy"],
-        fusion_train_split=0.8,
     ):
         """
         Parent class for the prediction task that is performed on top of the aligned representation
@@ -114,7 +113,6 @@ class Task:
         self.train_scores = PerformanceMeasure("train", performance_measures)
         self.val_scores = PerformanceMeasure("val", performance_measures)
         self.test_scores = PerformanceMeasure("test", performance_measures)
-        self.fusion_train_indices = None
         self._create_cv_splits()
 
     def get_output_stats(self, input_stats):
@@ -151,11 +149,6 @@ class Task:
             + n_test
             + sum(len(fold) for fold in self.cv_train_indices)
             + sum(len(fold) for fold in self.cv_val_indices)
-            + (
-                len(self.fusion_train_indices)
-                if self.fusion_train_indices is not None
-                else 0
-            )
         )
         index_bytes = total_index_entries * np.dtype(np.int64).itemsize
 
@@ -245,13 +238,6 @@ class Task:
                     f"Fold {fold_idx}: Overlap detected between train and val indices: {overlap}"
                 )
 
-        all_val_indices = set()
-        for val_indices in self.cv_val_indices:
-            all_val_indices.update(val_indices)
-
-        self.fusion_train_indices = [
-            idx for idx in self.train_indices if idx not in all_val_indices
-        ]
         self.evaluation_splits = tuple(
             EvaluationSplit(train_indices, val_indices, name=f"fold_{fold_idx}")
             for fold_idx, (train_indices, val_indices) in enumerate(

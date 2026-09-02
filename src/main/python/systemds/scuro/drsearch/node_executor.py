@@ -21,7 +21,7 @@
 import multiprocessing as mp
 import os
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 
 import torch
@@ -188,8 +188,8 @@ def _execute_node_worker(node, input_mods: List[Any], gpu_id: Optional[int]):
         else:
             fusion_op = node_operation
             if getattr(fusion_op, "needs_training", False):
-                return input_mods[0].combine_with_training(
-                    input_mods[1:], fusion_op, None
+                raise RuntimeError(
+                    "Fitted representations require SplitAwareDAGEvaluator"
                 )
             return input_mods[0].combine(input_mods[1:], fusion_op)
 
@@ -276,6 +276,7 @@ def _execute_task_worker(
     return {
         "scores": result[0],
         "task_time": result[1],
+        "task_timing": task.last_run_timing,
         "memory": measurement,
         "peak_bytes": measurement.increment_bytes if measurement else -1,
         "gpu_peak_bytes": gpu_peak_bytes,
@@ -406,6 +407,18 @@ class ResultEntry:
     task_time: float = 0.0
     dag: RepresentationDag = None
     tradeoff_score: float = 0.0
+    train_fold_scores: dict = field(default_factory=dict)
+    val_fold_scores: dict = field(default_factory=dict)
+    test_fold_scores: dict = field(default_factory=dict)
+    train_score_stds: dict = field(default_factory=dict)
+    val_score_stds: dict = field(default_factory=dict)
+    test_score_stds: dict = field(default_factory=dict)
+    task_timing: dict = field(default_factory=dict)
+    peak_cpu_bytes: int = -1
+    peak_gpu_bytes: int = -1
+    eval_index: int = -1
+    t_since_search_start_s: float = 0.0
+    t_eval_end_unix: float = 0.0
 
 
 class NodeExecutor:
@@ -460,6 +473,7 @@ class NodeExecutor:
         self._job_units: Dict[int, Union[_NodeUnit, _BatchUnit]] = {}
         self._job_retained_shm: Dict[int, List[str]] = {}
         self._leaf_shm_names: List[str] = []
+        self._leaf_shm_owners: Dict[str, Any] = {}
         self._task_results: Dict[str, ResultEntry] = {}
 
         self._owns_pool = worker_pool is None
@@ -543,6 +557,7 @@ class NodeExecutor:
             shm_name = jr.value.get("shm_name")
             if shm_name is not None:
                 self._leaf_shm_names.append(shm_name)
+                self._leaf_shm_owners[shm_name] = modality
 
     @staticmethod
     def _loads_in_chunks(modality: Any) -> bool:
@@ -551,8 +566,17 @@ class NodeExecutor:
 
     def _cleanup_leaf_shared_memory(self) -> None:
         for shm_name in self._leaf_shm_names:
+            modality = self._leaf_shm_owners.pop(shm_name, None)
+            if modality is not None and shm_name in collect_shm_names_from_payload(
+                getattr(modality, "_data", None)
+            ):
+                close = getattr(modality._data, "close", None)
+                if callable(close):
+                    close()
+                modality._data = None
             unlink_shm(shm_name)
         self._leaf_shm_names = []
+        self._leaf_shm_owners = {}
 
     def _submit_node(
         self, node_id: str, allow_gpu_worker_for_cpu: bool = False
@@ -702,6 +726,19 @@ class NodeExecutor:
             entry.train_score = value["scores"][0].average_scores
             entry.val_score = value["scores"][1].average_scores
             entry.test_score = value["scores"][2].average_scores
+            entry.train_fold_scores = value["scores"][0].fold_scores()
+            entry.val_fold_scores = value["scores"][1].fold_scores()
+            entry.test_fold_scores = value["scores"][2].fold_scores()
+            entry.train_score_stds = value["scores"][0].score_stds()
+            entry.val_score_stds = value["scores"][1].score_stds()
+            entry.test_score_stds = value["scores"][2].score_stds()
+            entry.task_timing = value.get("task_timing", {})
+            entry.peak_cpu_bytes = value.get("peak_bytes", -1)
+            entry.peak_gpu_bytes = value.get("gpu_peak_bytes", -1)
+            entry.eval_index = self._eval_counter
+            entry.t_since_search_start_s = time.perf_counter() - self._search_start
+            entry.t_eval_end_unix = time.time()
+            self._eval_counter += 1
             if self.enable_checkpointing:
                 self._checkpoint_manager.increment(node_id)
                 self._checkpoint_manager.checkpoint_if_due(

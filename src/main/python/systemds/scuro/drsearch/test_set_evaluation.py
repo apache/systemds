@@ -25,6 +25,10 @@ from typing import Any, Dict, List
 
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.drsearch.representation_dag import RepresentationDag
+from systemds.scuro.drsearch.split_aware_evaluator import (
+    SplitAwareDAGEvaluator,
+    dag_requires_fitting,
+)
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
@@ -60,9 +64,17 @@ def measure_representation_time_on_test_set(
     output = None
     for _ in range(max(1, repeats)):
         t0 = time.perf_counter()
-        output = _match_expected_dim(
-            _unwrap(dag.execute(subsets, task, enable_cache=False)), task
-        )
+        if dag_requires_fitting(dag):
+            if task is None:
+                raise ValueError("A task is required to fit the representation DAG")
+            transformed = SplitAwareDAGEvaluator(dag, modalities, task).fit_transform(
+                task.train_indices, test_indices
+            )
+            output = _match_expected_dim(transformed.modality, task)
+        else:
+            output = _match_expected_dim(
+                _unwrap(dag.execute(subsets, task, enable_cache=False)), task
+            )
         timings.append(time.perf_counter() - t0)
 
     timings.sort()
@@ -103,9 +115,15 @@ def measure_test_set_application(
 
     if full_data is None:
         t0 = time.perf_counter()
-        output = _match_expected_dim(
-            _unwrap(dag.execute(modalities, task, enable_cache=False)), task
-        )
+        if dag_requires_fitting(dag):
+            transformed = SplitAwareDAGEvaluator(dag, modalities, task).fit_transform(
+                task.train_indices, range(len(modalities[0].data))
+            )
+            output = _match_expected_dim(transformed.modality, task)
+        else:
+            output = _match_expected_dim(
+                _unwrap(dag.execute(modalities, task, enable_cache=False)), task
+            )
         record["full_representation_time_s"] = time.perf_counter() - t0
         full_data = None if output is None else output.data
 

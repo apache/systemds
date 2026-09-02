@@ -44,8 +44,13 @@ from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.drsearch.representation_dag import (
     RepresentationDAGBuilder,
     RepresentationDag,
+    compose_dag_leaves,
 )
 from systemds.scuro.drsearch.task import Task
+from systemds.scuro.drsearch.split_aware_evaluator import (
+    SplitAwareDAGEvaluator,
+    dag_requires_fitting,
+)
 from systemds.scuro.drsearch.worker_pool import PersistentWorkerPool, create_mp_context
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
@@ -140,6 +145,9 @@ class FusionSearchResult:
     val_fold_scores: dict = field(default_factory=dict)
     train_fold_scores: dict = field(default_factory=dict)
     test_fold_scores: dict = field(default_factory=dict)
+    train_score_stds: dict = field(default_factory=dict)
+    val_score_stds: dict = field(default_factory=dict)
+    test_score_stds: dict = field(default_factory=dict)
 
     task_timing: dict = field(default_factory=dict)
 
@@ -176,12 +184,6 @@ def _failure_fitness(objective_specs: List[ObjectiveSpec]) -> Tuple[float, ...]:
     )
 
 
-def _fold_scores(performance_measure) -> Dict[str, List[float]]:
-    return {
-        metric: [float(value) for value in values]
-        for metric, values in performance_measure.scores.items()
-    }
-
 
 def _evaluate_genome_body(
     dag: RepresentationDag,
@@ -190,6 +192,34 @@ def _evaluate_genome_body(
     objective_specs: List[ObjectiveSpec],
 ) -> Tuple[Optional[Tuple[float, ...]], Optional[Dict[str, Any]]]:
     start = time.time()
+    if dag_requires_fitting(dag):
+        evaluation = SplitAwareDAGEvaluator(dag, modalities, task).evaluate()
+        scores = evaluation.scores
+        total = evaluation.representation_time + evaluation.task_time
+        val_score = scores[1].average_scores
+        timing = {
+            "runtime": total,
+            "task_time": evaluation.task_time,
+            "representation_time": evaluation.representation_time,
+        }
+        fitness = tuple(
+            _objective_value(name, val_score, timing) for name, _ in objective_specs
+        )
+        payload = {
+            "train_score": scores[0].average_scores,
+            "val_score": val_score,
+            "test_score": scores[2].average_scores,
+            "train_fold_scores": scores[0].fold_scores(),
+            "val_fold_scores": scores[1].fold_scores(),
+            "test_fold_scores": scores[2].fold_scores(),
+            "train_score_stds": scores[0].score_stds(),
+            "val_score_stds": scores[1].score_stds(),
+            "test_score_stds": scores[2].score_stds(),
+            "task_timing": getattr(task, "last_run_timing", {}),
+            **timing,
+        }
+        return fitness, payload
+
     fused = dag.execute(modalities, task, enable_cache=False)
     if fused is None:
         return None, None
@@ -218,9 +248,12 @@ def _evaluate_genome_body(
         "train_score": scores[0].average_scores,
         "val_score": val_score,
         "test_score": scores[2].average_scores,
-        "train_fold_scores": _fold_scores(scores[0]),
-        "val_fold_scores": _fold_scores(scores[1]),
-        "test_fold_scores": _fold_scores(scores[2]),
+        "train_fold_scores": scores[0].fold_scores(),
+        "val_fold_scores": scores[1].fold_scores(),
+        "test_fold_scores": scores[2].fold_scores(),
+        "train_score_stds": scores[0].score_stds(),
+        "val_score_stds": scores[1].score_stds(),
+        "test_score_stds": scores[2].score_stds(),
         "task_timing": getattr(task, "last_run_timing", {}),
         **timing,
     }
@@ -324,6 +357,7 @@ class MultimodalDeapOptimizer:
                 "MultimodalDeapOptimizer requires at least one registered "
                 "fusion operator."
             )
+        self.k_best_dags = {}
         self.k_best_representations = self._extract_k_best(
             unimodal_optimization_results
         )
@@ -685,9 +719,8 @@ class MultimodalDeapOptimizer:
                 self.evaluation_errors.get(task_name, 0) + 1
             )
             if self.debug and error is not None:
-                last_line = error.strip().splitlines()[-1] if error.strip() else error
                 print(
-                    f"[GA] genome evaluation failed for task={task_name}: {last_line}"
+                    f"[GA] genome evaluation failed for task={task_name}:\n{error}"
                 )
             return
 
@@ -699,6 +732,9 @@ class MultimodalDeapOptimizer:
             train_fold_scores=payload.get("train_fold_scores", {}),
             val_fold_scores=payload.get("val_fold_scores", {}),
             test_fold_scores=payload.get("test_fold_scores", {}),
+            train_score_stds=payload.get("train_score_stds", {}),
+            val_score_stds=payload.get("val_score_stds", {}),
+            test_score_stds=payload.get("test_score_stds", {}),
             task_timing=payload.get("task_timing", {}),
             runtime=payload["runtime"],
             task_time=payload["task_time"],
@@ -764,12 +800,45 @@ class MultimodalDeapOptimizer:
         for task in self.tasks:
             name = task.model.name
             k_best[name] = {}
+            self.k_best_dags[name] = {}
             for modality in self.modalities:
-                _, cached_data = unimodal_results.get_k_best_results(
+                results, cached_data = unimodal_results.get_k_best_results(
                     modality, task, self.metric_name
                 )
+                if hasattr(unimodal_results, "get_k_best_dags"):
+                    _, source_dags = unimodal_results.get_k_best_dags(modality, task)
+                else:
+                    source_dags = [getattr(result, "dag", None) for result in results]
+                if len(source_dags) != len(cached_data):
+                    raise ValueError(
+                        "Unimodal result DAGs and cached representations are misaligned"
+                    )
                 k_best[name][modality.modality_id] = cached_data
+                self.k_best_dags[name][modality.modality_id] = source_dags
         return k_best
+
+    def compose_end_to_end_dag(self, dag, task):
+        """Expand fusion leaves into the selected unimodal representation DAGs."""
+        task_name = task.model.name if hasattr(task, "model") else str(task)
+        leaf_dags = {}
+        for leaf_id in dag.get_leaf_nodes():
+            leaf = dag.get_node_by_id(leaf_id)
+            representation_index = int(leaf.representation_index)
+            try:
+                source_dag = self.k_best_dags[task_name][leaf.modality_id][
+                    representation_index
+                ]
+            except (KeyError, IndexError, TypeError) as exc:
+                raise KeyError(
+                    "No selected unimodal DAG for multimodal leaf "
+                    f"({leaf.modality_id}, {leaf.representation_index})"
+                ) from exc
+            if source_dag is None:
+                raise ValueError(
+                    "The unimodal result source does not expose representation DAGs"
+                )
+            leaf_dags[(leaf.modality_id, leaf.representation_index)] = source_dag
+        return compose_dag_leaves(dag, leaf_dags)
 
     def _available_modality_ids(self, task_name: str) -> List[Any]:
         reps = self.k_best_representations[task_name]

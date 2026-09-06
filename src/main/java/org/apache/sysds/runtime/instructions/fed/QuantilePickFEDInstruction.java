@@ -216,9 +216,11 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 			globalMax = Math.max(globalMax, values[1]);
 		}
 
-		// Equi-height bin boundaries use plain ceil-based ranks (no R type 7 interpolation).
-		final double N = vectorLength;
-		int[] ranks = Arrays.stream(quantiles).mapToInt(q -> (int) Math.round(N * q)).toArray();
+		// Equi-height bin boundaries: the caller (MultiReturnParameterizedBuiltinFEDInstruction) already
+		// hands us raw 1-based ranks in [1..N] (numRows/numBin * (i+1)), not [0..1] probabilities, so use
+		// them as ranks directly. Clamp to [1..N] to absorb float-rounding on the last edge.
+		int[] ranks = Arrays.stream(quantiles).mapToInt(q -> Math.max(1, Math.min(vectorLength, (int) Math.round(q))))
+			.toArray();
 		Map<Integer, Double> rankToValue = pickMultipleRanks(in, ranks, vectorLength, varID, globalMin, globalMax);
 
 		ec.removeVariable(String.valueOf(varID));

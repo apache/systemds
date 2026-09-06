@@ -32,9 +32,21 @@ w2 = np.array([1, 1, 1, 1, 5])
 
 
 def weighted_quantiles(values, weights, quantiles=0.5):
+    # SYSTEMDS-3953: DML quantile default is now R type 7. Reference must interpolate the
+    # weighted-rank pair (lo, hi) with g = h - floor(h) instead of picking a single rank.
     i = np.argsort(values)
+    sv = values[i]
     c = np.cumsum(weights[i])
-    return values[i[np.searchsorted(c, np.array(quantiles) * c[-1])]]
+    n = float(c[-1])
+    q = np.atleast_1d(quantiles).astype(float)
+    h = (n - 1.0) * q + 1.0
+    lo = np.clip(np.floor(h).astype(int), 1, int(n))
+    hi = np.minimum(lo + 1, int(n))
+    g = h - lo
+    lo_val = sv[np.searchsorted(c, lo, side="left")]
+    hi_val = sv[np.searchsorted(c, hi, side="left")]
+    out = (1.0 - g) * lo_val + g * hi_val
+    return out if np.ndim(quantiles) else float(out[0])
 
 
 class TestQUANTILE(unittest.TestCase):

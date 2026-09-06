@@ -41,11 +41,17 @@ public class OrderStatisticsTest extends AutomatedTestBase
 			new TestConfiguration(TEST_CLASS_DIR, "IQMTest", new String[] { "iqm", "weighted_iqm" }));
 	}
 	
+	// SYSTEMDS-3953: switched from the old ceil-rank pick to R quantile type 7 so DML output
+	// (also type 7 now) matches this helper. Formula (1-based): h = (n-1)*p + 1, lo = floor(h)
+	// clamped to [1,n], hi = min(lo+1, n), g = h - lo, Q = (1-g)*x[lo] + g*x[hi].
 	public static double quantile(double[] vector, double p)
 	{
-		int i=(int)Math.ceil(p*vector.length);
-		//System.out.println("P = "+p+", i="+i+", value: "+vector[i-1]);
-		return vector[i-1];
+		int n = vector.length;
+		double h = (n - 1) * p + 1;
+		int lo = Math.max(1, Math.min(n, (int) Math.floor(h)));
+		int hi = Math.min(lo + 1, n);
+		double g = h - lo;
+		return (g == 0.0 || hi == lo) ? vector[lo - 1] : (1 - g) * vector[lo - 1] + g * vector[hi - 1];
 	}
 	
 	public static double IQM(double[] vector) {

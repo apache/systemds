@@ -76,9 +76,8 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	private void ruleOptimizeMMChains(Hop hop, ProgramRewriteStatus state) {
 		if(hop.isVisited())
 			return;
-		
-		if(HopRewriteUtils.isMatrixMultiply(hop) && !((AggBinaryOp)hop).hasLeftPMInput())
-		{
+
+		if(HopRewriteUtils.isMatrixMultiply(hop) && !((AggBinaryOp) hop).hasLeftPMInput()) {
 			// Try to find and optimize the chain in which current Hop is the
 			// last operator
 			prepAndOptimizeMMChain(hop, state);

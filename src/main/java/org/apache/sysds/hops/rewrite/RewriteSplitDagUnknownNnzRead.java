@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LiteralOp;
@@ -48,8 +50,8 @@ public class RewriteSplitDagUnknownNnzRead extends StatementBlockRewriteRule {
 		ArrayList<Hop> cand = new ArrayList<>();
 		collectReadHopsUnknownNnz(sb.getHops(), cand);
 
-		// split hop dag on demand
-		if(!cand.isEmpty()) {
+		// split hop dag on demand and if sparsity rewrites are enabled (splitting is pointless w/o rewrite)
+		if(!cand.isEmpty() && ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.SPARSITY_REWRITES)) {
 			// duplicate sb incl live variable sets
 			StatementBlock sb1 = new StatementBlock();
 			sb1.setDMLProg(sb.getDMLProg());

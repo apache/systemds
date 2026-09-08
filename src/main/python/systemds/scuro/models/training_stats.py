@@ -128,7 +128,7 @@ class TrainingStatsMixin:
         if stats is None:
             stats = TrainingStats(getattr(self, "device", None))
             self._training_stats = stats
-      
+
         stats.device = getattr(self, "device", None)
         return stats
 

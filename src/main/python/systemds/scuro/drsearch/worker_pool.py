@@ -41,7 +41,7 @@ _THREAD_ENV_VARS = (
 
 
 def _resolve_thread_count(num_threads: int) -> int:
-    explicit = os.environ.get("OMP_NUM_THREADS")
+    explicit = os.environ.get("SCURO_THREADS_PER_WORKER")
     if explicit:
         try:
             num_threads = int(explicit)
@@ -199,8 +199,11 @@ class PersistentWorkerPool:
         set_thread_env_before_spawn(self._threads_per_worker)
         job_q = self._ctx.Queue()
         previous_visible = os.environ.get("CUDA_VISIBLE_DEVICES")
+        visible_id = physical_gpu_id
+        if physical_gpu_id is not None and previous_visible:
+            visible_id = previous_visible.split(",")[physical_gpu_id].strip()
         os.environ["CUDA_VISIBLE_DEVICES"] = (
-            "" if physical_gpu_id is None else str(physical_gpu_id)
+            "" if visible_id is None else str(visible_id)
         )
         p = self._ctx.Process(
             target=_worker_main,
@@ -209,15 +212,17 @@ class PersistentWorkerPool:
                 self._result_q,
                 self._dispatch,
                 self._threads_per_worker,
-                physical_gpu_id,
+                visible_id,
             ),
             daemon=True,
         )
-        p.start()
-        if previous_visible is None:
-            os.environ.pop("CUDA_VISIBLE_DEVICES", None)
-        else:
-            os.environ["CUDA_VISIBLE_DEVICES"] = previous_visible
+        try:
+            p.start()
+        finally:
+            if previous_visible is None:
+                os.environ.pop("CUDA_VISIBLE_DEVICES", None)
+            else:
+                os.environ["CUDA_VISIBLE_DEVICES"] = previous_visible
         self._workers[p.pid] = {
             "process": p,
             "job_q": job_q,

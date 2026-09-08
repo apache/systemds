@@ -32,6 +32,22 @@ from systemds.scuro.representations.window_aggregation import (
 )
 
 
+def _event_peak_indices(normalized, threshold, min_distance):
+    x = np.asarray(normalized).reshape(len(normalized))
+    x = x.astype(np.result_type(x.dtype.type(0), threshold), copy=False)
+    candidates = (
+        np.flatnonzero((x[1:-1] > threshold) & (x[1:-1] > x[:-2]) & (x[1:-1] > x[2:]))
+        + 1
+    )
+    peaks = []
+    index = 0
+    while index < len(candidates):
+        peak = int(candidates[index])
+        peaks.append(peak)
+        index = int(np.searchsorted(candidates, peak + min_distance))
+    return peaks
+
+
 def _estimate_windowed_output_stats(
     window_obj, input_stats, estimated_num_windows, representative_window_length
 ):
@@ -229,17 +245,9 @@ class PhysiologicalEventWindow(Window):
         for signal in modality.data:
             normalized = (signal - np.mean(signal)) / (np.std(signal) + 1e-6)
 
-            peaks = []
-            last_peak = -self.min_distance
-            for i in range(1, len(normalized) - 1):
-                if (
-                    normalized[i] > self.event_threshold
-                    and normalized[i] > normalized[i - 1]
-                    and normalized[i] > normalized[i + 1]
-                    and i - last_peak >= self.min_distance
-                ):
-                    peaks.append(i)
-                    last_peak = i
+            peaks = _event_peak_indices(
+                normalized, self.event_threshold, self.min_distance
+            )
 
             windows = [signal[peaks[i] : peaks[i + 1]] for i in range(len(peaks) - 1)]
 

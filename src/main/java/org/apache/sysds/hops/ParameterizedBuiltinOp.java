@@ -959,16 +959,12 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 		if(_op == ParamBuiltinOp.DP_GAUSSIAN || _op == ParamBuiltinOp.DP_LAPLACE)
 			return false;
 
-		ParameterizedBuiltinOp that2 = (ParameterizedBuiltinOp)that;
-		boolean ret = (_op == that2._op
-					  && _paramIndexMap!=null && that2._paramIndexMap!=null
-					  && _paramIndexMap.size() == that2._paramIndexMap.size()
-					  && _outputEmptyBlocks == that2._outputEmptyBlocks
-					  && _outputPermutationMatrix == that2._outputPermutationMatrix );
-		if( ret )
-		{
-			for( Entry<String,Integer> e : _paramIndexMap.entrySet() )
-			{
+		ParameterizedBuiltinOp that2 = (ParameterizedBuiltinOp) that;
+		boolean ret = (_op == that2._op && _paramIndexMap != null && that2._paramIndexMap != null &&
+			_paramIndexMap.size() == that2._paramIndexMap.size() && _outputEmptyBlocks == that2._outputEmptyBlocks &&
+			_outputPermutationMatrix == that2._outputPermutationMatrix);
+		if(ret) {
+			for(Entry<String, Integer> e : _paramIndexMap.entrySet()) {
 				String key1 = e.getKey();
 				int pos1 = e.getValue();
 				int pos2 = that2._paramIndexMap.get(key1);

@@ -778,7 +778,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	private void validateDpMechanism(DataIdentifier output, boolean conditional) {
 		// support X as the sole positional (unnamed) parameter, like lowerTri(X, ...)
 		HashMap<String, Expression> varParams = getVarParams();
-		if( varParams.containsKey(null) )
+		if(varParams.containsKey(null))
 			varParams.put("target", varParams.remove(null));
 
 		boolean gaussian = getOpCode() == Builtins.DP_GAUSSIAN;
@@ -789,12 +789,11 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 		Expression target = getVarParam("target");
 		checkTargetParam(target, conditional);
-		for( String param : valid )
-			if( !param.equals("target") )
+		for(String param : valid)
+			if(!param.equals("target"))
 				checkScalarParam(getOpCode().getName(), param, conditional);
 
-		long[] dims = getDPOutputDims(getVarParam("query"),
-			target.getOutput().getDim1(), target.getOutput().getDim2());
+		long[] dims = getDPOutputDims(getVarParam("query"), target.getOutput().getDim1(), target.getOutput().getDim2());
 		output.setDataType(DataType.MATRIX);
 		output.setValueType(ValueType.FP64);
 		output.setDimensions(dims[0], dims[1]);

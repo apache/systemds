@@ -1995,7 +1995,7 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			}
 			break;
 		case LOCAL:
-			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_LOCAL_COMMAND){
+			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_LOCAL_COMMAND) {
 				checkNumParameters(1);
 				checkMatrixParam(getFirstExpr());
 				output.setDataType(DataType.MATRIX);
@@ -2003,8 +2003,9 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 				output.setBlocksize (id.getBlocksize());
 				output.setValueType(id.getValueType());
 			}
-			else
+			else {
 				raiseValidateError("Local instruction not allowed in dml script");
+			}
 			break;
 		case DP_SET_BUDGET: {
 			checkNumParameters(2);

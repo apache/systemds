@@ -322,7 +322,8 @@ public class DPBuiltinOps {
 		double v;
 		try {
 			v = Double.parseDouble(raw);
-		} catch(NumberFormatException e) {
+		}
+		catch(NumberFormatException e) {
 			throw new DMLRuntimeException(opcode + ": parameter '" + key + "' is not a valid number: " + raw);
 		}
 		if(v <= 0.0)

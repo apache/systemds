@@ -356,13 +356,9 @@ class UnimodalOptimizer:
         )
 
         start_time = time.perf_counter()
-        fitted_dags = [
-            dag for dag in dags_with_pushdown if dag_requires_fitting(dag)
-        ]
+        fitted_dags = [dag for dag in dags_with_pushdown if dag_requires_fitting(dag)]
         stateless_dag_ids = {
-            dag.dag_id
-            for dag in dags_with_pushdown
-            if not dag_requires_fitting(dag)
+            dag.dag_id for dag in dags_with_pushdown if not dag_requires_fitting(dag)
         }
         stateless_task_dags = [
             dag

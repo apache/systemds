@@ -24,6 +24,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from systemds.scuro.models.training_stats import TrainingWorkAccumulator
 from systemds.scuro.drsearch.representation_dag import (
     RepresentationDag,
     pushdown_aggregation_for_node,
@@ -238,6 +239,7 @@ class SplitAwareDAGEvaluator:
         test_scores = PerformanceMeasure("test", self.task.performance_measures)
         self.task.training_time = []
         self.task.inference_time = []
+        training_work = TrainingWorkAccumulator()
 
         representation_time = 0.0
         task_time = 0.0
@@ -256,6 +258,7 @@ class SplitAwareDAGEvaluator:
             train_X = self._partition_data(transformed_train)
             evaluation_X = self._partition_data(transformed_evaluation)
             test_X = self._partition_data(transformed_test)
+            self.task.validate_input_memory(train_X)
             train_y = np.asarray(self.task.labels)[list(split.fit_indices)]
             evaluation_y = np.asarray(self.task.labels)[list(split.evaluation_indices)]
             test_y = np.asarray(self.task.labels)[list(self.task.test_indices)]
@@ -279,9 +282,12 @@ class SplitAwareDAGEvaluator:
             val_scores.add_scores(val_score[0])
             test_scores.add_scores(test_score[0])
 
+            training_work.add(model)
+
             if hasattr(model, "clean_up"):
                 model.clean_up()
 
+        self.task.training_work = training_work
         self.task.last_run_timing = {
             "train_time_per_fold_s": list(self.task.training_time),
             "test_inference_time_per_fold_s": list(self.task.inference_time),
@@ -296,6 +302,7 @@ class SplitAwareDAGEvaluator:
                 else 0.0
             ),
             "n_test_instances": len(self.task.test_indices),
+            **training_work.as_dict(),
         }
 
         return SplitEvaluationResult(

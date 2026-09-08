@@ -79,9 +79,14 @@ def _place_on_device(obj: Any, gpu_id: Optional[int]) -> None:
             obj.device = device
         except (AttributeError, RuntimeError):
             pass
-    model = getattr(obj, "model", None)
+
+    model = obj.__dict__.get("model")
     if model is not None and hasattr(model, "to"):
-        obj.model = model.to(device)
+        try:
+            obj.model = model.to(device)
+        except (AttributeError, RuntimeError):
+            # A read-only "model" means the operator owns its own placement.
+            pass
 
 
 def _run_gpu_op(fn, gpu_id: Optional[int]):
@@ -461,7 +466,11 @@ class NodeExecutor:
             resume=False,
         )
         self._memory_usage_data: Dict[str, Any] = {}
-        self.statistics = {"worker_stats": {}, "node_stats": {}}
+        self.statistics = {"worker_stats": {}, "node_stats": {}, "reuse": {}}
+        self._cache_consumptions = 0
+        self._cache_misses = 0
+        self._nodes_executed = 0
+        self._peak_cache_bytes = 0
         self._eval_counter = 0
         self._nodes_executed = 0
         self._search_start = (
@@ -585,7 +594,7 @@ class NodeExecutor:
         gpu_id = node.gpu_id
         parent_ids = self.scheduler.get_valid_parents(node_id)
         parent_results = (
-            [self._result_cache.get(pid) for pid in parent_ids] if parent_ids else None
+            [self._get_cached_parent(pid) for pid in parent_ids] if parent_ids else None
         )
 
         if self._is_task_node(node):
@@ -668,7 +677,17 @@ class NodeExecutor:
                     allow_gpu_worker_for_cpu=allow_gpu_worker_for_cpu,
                 )
 
+    def _get_cached_parent(self, parent_id: str):
+        try:
+            result = self._result_cache.get(parent_id)
+        except KeyError:
+            self._cache_misses += 1
+            raise
+        self._cache_consumptions += 1
+        return result
+
     def _record_stats(self, node_id: str, pid: int, start_time: float, end_time: float):
+        self._nodes_executed += 1
         node_stats = self.statistics["node_stats"]
         worker_stats = self.statistics["worker_stats"]
         node_stats[node_id] = {"start_time": start_time, "end_time": end_time}
@@ -831,6 +850,7 @@ class NodeExecutor:
             shm_bytes=shm_bytes,
         )
         after_bytes = self._result_cache.get_memory_total_memory_usage()
+        self._peak_cache_bytes = max(self._peak_cache_bytes, after_bytes)
         self.scheduler.update_cpu_memory_in_use(after_bytes - before_bytes)
         self.scheduler.complete_node(node_id)
 
@@ -1034,7 +1054,31 @@ class NodeExecutor:
                 self._task_results, self._discard_report()
             )
 
+        self.statistics["reuse"] = self._reuse_report()
+
         return {
             "task_results": list(self._task_results.values()),
             "statistics": self.statistics,
         }
+
+    def _reuse_report(self) -> Dict[str, Any]:
+        report = dict(getattr(self.scheduler, "reuse_stats", {}) or {})
+        slots = report.get("dag_node_slots", 0)
+        saved = report.get("nodes_saved_by_merging", 0)
+        report.update(
+            {
+                "nodes_executed": self._nodes_executed,
+                "cache_consumptions": self._cache_consumptions,
+                "cache_misses": self._cache_misses,
+                "peak_cache_bytes": self._peak_cache_bytes,
+                "slot_reduction_ratio": (saved / slots) if slots else 0.0,
+                "failed_nodes": len(getattr(self.scheduler, "failed_nodes", []) or []),
+                "blocked_memory_nodes": len(
+                    getattr(self.scheduler, "blocked_memory_nodes_perm", []) or []
+                ),
+                "cpu_fallback_nodes": len(
+                    getattr(self.scheduler, "cpu_fallback_nodes", []) or []
+                ),
+            }
+        )
+        return report

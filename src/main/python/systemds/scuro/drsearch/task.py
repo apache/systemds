@@ -23,6 +23,7 @@ import os
 import time
 from typing import List
 from systemds.scuro.models.model import Model
+from systemds.scuro.models.training_stats import TrainingWorkAccumulator
 import numpy as np
 from sklearn.model_selection import train_test_split
 from systemds.scuro.drsearch.evaluation_split import EvaluationSplit
@@ -108,6 +109,7 @@ class Task:
         self.inference_time = []
         self.training_time = []
         self.last_run_timing = {}
+        self.training_work = TrainingWorkAccumulator()
         self.expected_dim = 1
         self.performance_measures = performance_measures
         self.train_scores = PerformanceMeasure("train", performance_measures)
@@ -208,6 +210,59 @@ class Task:
             max(1, self.kfold) * passes * max(1, n_fold_train) * max(1, feature_dim)
         )
 
+    def validate_input_memory(self, data, gpu_memory_fraction: float = 0.9) -> None:
+        if data is None or len(data) == 0:
+            return
+
+        if isinstance(data, np.ndarray):
+            num_instances = int(data.shape[0]) if data.ndim else 1
+            output_shape = tuple(data.shape[1:]) if data.ndim > 1 else (1,)
+            dtype = data.dtype
+        else:
+            sample = np.asarray(data[0])
+            num_instances = len(data)
+            output_shape = tuple(sample.shape) if sample.ndim else (1,)
+            dtype = sample.dtype
+
+        estimate = self.estimate_peak_memory_bytes(
+            RepresentationStats(
+                num_instances,
+                output_shape,
+                output_shape_is_known=True,
+                dtype=dtype,
+            )
+        )
+        required = int(estimate.get("gpu_peak_bytes", 0))
+        if required <= 0:
+            return
+
+        try:
+            import torch
+
+            if not torch.cuda.is_available():
+                return
+            device = getattr(self.model, "device", torch.device("cuda"))
+            device_index = (
+                device.index if getattr(device, "index", None) is not None else 0
+            )
+            free, total = torch.cuda.mem_get_info(device_index)
+            cached = torch.cuda.memory_reserved(
+                device_index
+            ) - torch.cuda.memory_allocated(device_index)
+        except (ImportError, RuntimeError):
+            return
+
+        available = int((free + max(cached, 0)) * gpu_memory_fraction)
+        if required > available:
+            feature_dim = int(np.prod(output_shape)) if output_shape else 0
+            raise MemoryError(
+                f"{self.model.name} estimated CUDA peak "
+                f"{required / 1024**3:.2f} GiB for input_dim={feature_dim:,}, but "
+                f"only {free / 1024**3:.2f} GiB is free "
+                f"({total / 1024**3:.2f} GiB total). Rejecting this candidate "
+                "before allocating CUDA tensors."
+            )
+
     def _create_cv_splits(self):
         train_labels = [self.labels[i] for i in self.train_indices]
         train_labels_array = np.array(train_labels)
@@ -273,6 +328,7 @@ class Task:
          :param data: The aligned data used in the prediction process
          :return: the validation accuracy
         """
+        self.validate_input_memory(data)
         self._reset_params()
         model = self.create_model()
 
@@ -303,6 +359,7 @@ class Task:
                 float(np.mean(self.inference_time)) if self.inference_time else 0.0
             ),
             "n_test_instances": len(self.test_indices) if self.test_indices else 0,
+            **self.training_work.as_dict(),
         }
         return [
             self.train_scores.compute_averages(),
@@ -398,6 +455,7 @@ class Task:
     def _reset_params(self):
         self.inference_time = []
         self.training_time = []
+        self.training_work = TrainingWorkAccumulator()
         self.train_scores = PerformanceMeasure("train", self.performance_measures)
         self.val_scores = PerformanceMeasure("val", self.performance_measures)
         self.test_scores = PerformanceMeasure("test", self.performance_measures)
@@ -415,6 +473,8 @@ class Task:
         self.inference_time.append(test_end - test_start)
         self.val_scores.add_scores(val_score[0])
         self.test_scores.add_scores(test_score[0])
+        # No-op for the non-neural models that share this machinery.
+        self.training_work.add(model)
 
     @staticmethod
     def _gather_by_indices(values, indices):

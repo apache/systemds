@@ -528,9 +528,7 @@ class HyperparameterTuner:
         )
         baseline = (
             baseline_params,
-            HyperparamEvaluationScores(
-                baseline_raw_scores, self.scoring_metric
-            ),
+            HyperparamEvaluationScores(baseline_raw_scores, self.scoring_metric),
         )
 
         if not hyperparams:
@@ -958,15 +956,11 @@ class HyperparameterTuner:
             if np.isnan(val_score):
                 raise optuna.TrialPruned()
 
-            evaluation_scores = HyperparamEvaluationScores(
-                scores, self.scoring_metric
-            )
+            evaluation_scores = HyperparamEvaluationScores(scores, self.scoring_metric)
             seen[self._config_key(params)] = (params, evaluation_scores)
 
             trial_results.append((params, evaluation_scores))
-            val_folds = evaluation_scores.val_fold_scores.get(
-                self.scoring_metric, []
-            )
+            val_folds = evaluation_scores.val_fold_scores.get(self.scoring_metric, [])
             if val_folds is not None and len(val_folds) > 1:
                 lam = 0.5
                 robust_val = np.mean(val_folds) - lam * np.std(val_folds, ddof=1)

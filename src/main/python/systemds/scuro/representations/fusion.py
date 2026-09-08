@@ -30,7 +30,7 @@ from systemds.scuro.representations.aggregated_representation import (
 )
 from systemds.scuro.modality.transformed import TransformedModality
 
-from systemds.scuro.modality.modality import Modality
+from systemds.scuro.modality.modality import Modality, selective_copy_metadata
 from systemds.scuro.representations.representation import (
     CONTAINER_ARRAY,
     FitRequirement,
@@ -42,6 +42,8 @@ from systemds.scuro.representations.representation import (
     stats_num_elements,
 )
 from systemds.scuro.utils.schema_helpers import get_shape
+
+DEFAULT_MAX_ALIGNMENT_PAD_RATIO = None
 
 
 class Fusion(Representation):
@@ -59,6 +61,7 @@ class Fusion(Representation):
         self.preserves_leading_axis = False
         self.output_modality_type = ModalityType.EMBEDDING
         self.data_type = np.float32
+        self.max_alignment_pad_ratio = DEFAULT_MAX_ALIGNMENT_PAD_RATIO
 
     @staticmethod
     def _as_stats_list(input_stats) -> List[RepresentationStats]:
@@ -113,18 +116,46 @@ class Fusion(Representation):
                 and modality.has_metadata()
                 and get_shape(modality.metadata) > 1
             ):
-                agg_operator = AggregatedRepresentation()
+                agg_operator = AggregatedRepresentation(
+                    target_dimensions=1, aggregate_leading=True
+                )
                 agg_modality = agg_operator.transform(modality)
             mods.append(agg_modality if agg_modality else modality)
 
         if self.needs_alignment:
+            mods = [self._detached_copy(modality) for modality in mods]
             for modality in mods:
                 self._normalize_for_fusion(modality)
             max_len = self.get_max_embedding_size(mods)
+            self._check_alignment_padding(mods, max_len)
             for modality in mods:
                 modality.pad(max_len=max_len)
 
         return mods
+
+    @staticmethod
+    def _detached_copy(modality: Modality) -> Modality:
+        detached = copy.copy(modality)
+        detached.metadata = selective_copy_metadata(modality.metadata)
+        return detached
+
+    def _check_alignment_padding(self, modalities: List[Modality], max_len: int):
+        if not self.max_alignment_pad_ratio or max_len <= 0:
+            return
+
+        for modality in modalities:
+            width = self._embedding_width(modality)
+            if width <= 0:
+                continue
+            if max_len > width * self.max_alignment_pad_ratio:
+                raise ValueError(
+                    f"{self.name} would have to zero-pad modality "
+                    f"{modality.modality_id} from {width:,} to {max_len:,} "
+                    f"features to align it, exceeding the maximum padding ratio "
+                    f"of {self.max_alignment_pad_ratio:g}x. Aggregate or reduce "
+                    "the operands to comparable widths before fusing them "
+                    "elementwise."
+                )
 
     @staticmethod
     def _validate_indexed_modalities(inputs):
@@ -216,6 +247,24 @@ class Fusion(Representation):
         elif not modality.has_metadata() or len(modality.metadata) <= 1:
             modality.data = arr.reshape(1, -1).copy()
 
+    @staticmethod
+    def _embedding_width(m: Modality) -> int:
+        data = m.data
+        if isinstance(data, memoryview):
+            data = np.array(data)
+        arr = np.asarray(data)
+        if arr.dtype == object:
+            return 0
+        if arr.ndim == 1:
+            if m.has_metadata() and len(m.metadata) == 1:
+                return arr.shape[0]
+            if not m.has_metadata() or len(m.metadata) <= 1:
+                return arr.shape[0]
+            return 0
+        if arr.ndim >= 2:
+            return arr.shape[1]
+        return 0
+
     def get_max_embedding_size(self, modalities: List[Modality]):
         """
         Computes the maximum embedding size from a given list of modalities
@@ -223,25 +272,4 @@ class Fusion(Representation):
         :return: maximum embedding size
         """
 
-        max_size = 0
-        for m in modalities:
-            data = m.data
-            if isinstance(data, memoryview):
-                data = np.array(data)
-            arr = np.asarray(data)
-            if arr.dtype == object:
-                continue
-            if arr.ndim == 1:
-                if m.has_metadata() and len(m.metadata) == 1:
-                    emb_size = arr.shape[0]
-                elif not m.has_metadata() or len(m.metadata) <= 1:
-                    emb_size = arr.shape[0]
-                else:
-                    continue
-            elif arr.ndim >= 2:
-                emb_size = arr.shape[1]
-            else:
-                continue
-            if emb_size > max_size:
-                max_size = emb_size
-        return max_size
+        return max((self._embedding_width(m) for m in modalities), default=0)

@@ -484,8 +484,7 @@ def compose_dag_leaves(
             )
 
         id_map = {
-            node.node_id: f"{leaf.node_id}__{node.node_id}"
-            for node in source_dag.nodes
+            node.node_id: f"{leaf.node_id}__{node.node_id}" for node in source_dag.nodes
         }
         for source_node in source_dag.nodes:
             cloned = copy.deepcopy(source_node)
@@ -495,16 +494,16 @@ def compose_dag_leaves(
         replacement_roots[leaf.node_id] = id_map[source_dag.root_node_id]
 
     internal_nodes = [node for node in dag.nodes if node.inputs]
-    internal_ids = {
-        node.node_id: f"fusion__{node.node_id}" for node in internal_nodes
-    }
+    internal_ids = {node.node_id: f"fusion__{node.node_id}" for node in internal_nodes}
     for node in internal_nodes:
         cloned = copy.deepcopy(node)
         cloned.node_id = internal_ids[node.node_id]
         cloned.inputs = [
-            replacement_roots[input_id]
-            if input_id in replacement_roots
-            else internal_ids[input_id]
+            (
+                replacement_roots[input_id]
+                if input_id in replacement_roots
+                else internal_ids[input_id]
+            )
             for input_id in node.inputs
         ]
         composed_nodes.append(cloned)

@@ -569,13 +569,40 @@ class MemoryAwareNodeScheduler:
                 0, self.memory_stats["cpu_in_flight"] - reserved
             )
 
+    @staticmethod
+    def _operation_label(node) -> str:
+        """A readable name for what a node computes.
+
+        `operation` is a class on representation nodes but an instance on some
+        others, and task roots carry their kind in `parameters` instead, so a
+        bare `.__name__` silently buckets both under "unknown" -- which hides
+        exactly the nodes whose sharing is worth reporting.
+        """
+        parameters = getattr(node, "parameters", None) or {}
+        kind = parameters.get("_node_kind")
+        if kind == "task":
+            return "task"
+        operation = getattr(node, "operation", None)
+        if operation is None:
+            return "leaf" if not getattr(node, "inputs", None) else "unknown"
+        name = getattr(operation, "__name__", None)
+        if name:
+            return name
+        return type(operation).__name__
+
     def _get_nodes_from_dags(
         self, dags: List[RepresentationDag]
     ) -> List[RepresentationNode]:
         nodes = []
+        dag_node_slots = 0
+        slot_counts = defaultdict(int)
+        node_operations = {}
         for dag in dags:
             self.roots.add(dag.root_node_id)
             for node in dag.nodes:
+                dag_node_slots += 1
+                slot_counts[node.node_id] += 1
+                node_operations[node.node_id] = self._operation_label(node)
                 self.mapping[node.node_id] = node
                 if not node.inputs:
                     self.leaves.add(node.node_id)
@@ -604,6 +631,27 @@ class MemoryAwareNodeScheduler:
 
         self.remaining_children = {
             node_id: len(self.children.get(node_id, set())) for node_id in self.mapping
+        }
+
+        saved_by_operation = defaultdict(int)
+        for node_id, count in slot_counts.items():
+            if count > 1:
+                saved_by_operation[node_operations.get(node_id, "unknown")] += count - 1
+        self.reuse_stats = {
+            "n_dags": len(dags),
+            "dag_node_slots": dag_node_slots,
+            "unique_nodes": len(self.mapping),
+            "nodes_saved_by_merging": dag_node_slots - len(self.mapping),
+            "shared_nodes": sum(
+                1
+                for node_id in self.mapping
+                if len(self.children.get(node_id, set())) > 1
+            ),
+            "max_fanout": max(
+                (len(children) for children in self.children.values()), default=0
+            ),
+            "saved_by_operation": dict(saved_by_operation),
+            "n_leaves": len(self.leaves),
         }
         return nodes
 

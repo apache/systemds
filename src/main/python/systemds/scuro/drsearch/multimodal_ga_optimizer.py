@@ -22,6 +22,7 @@
 from __future__ import annotations
 
 import copy
+import gc
 import os
 import pickle
 import random
@@ -33,6 +34,7 @@ from dataclasses import dataclass, field
 from itertools import chain
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+import numpy as np
 from deap import base, tools
 
 from systemds.scuro.drsearch.modality_shared_memory import (
@@ -55,9 +57,12 @@ from systemds.scuro.drsearch.worker_pool import PersistentWorkerPool, create_mp_
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
+from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.utils.schema_helpers import get_shape
 
 Tree = Union[int, Tuple["Tree", "Tree"]]
+
+DEFAULT_MAX_FUSED_FEATURE_DIM = 100_000
 
 
 def _collect_internal_paths(tree: Tree, path: str = "") -> List[str]:
@@ -184,6 +189,16 @@ def _failure_fitness(objective_specs: List[ObjectiveSpec]) -> Tuple[float, ...]:
     )
 
 
+def _release_cuda_memory() -> None:
+    gc.collect()
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    except (ImportError, RuntimeError):
+        pass
+
 
 def _evaluate_genome_body(
     dag: RepresentationDag,
@@ -262,10 +277,20 @@ def _evaluate_genome_body(
 
 def _dispatch_genome_evaluation(payload, _gpu_id):
     dag, task, modalities, objective_specs = payload
-    fitness, result = _evaluate_genome_body(dag, task, modalities, objective_specs)
-    if fitness is None:
-        fitness = _failure_fitness(objective_specs)
-    return fitness, result
+    try:
+        try:
+            fitness, result = _evaluate_genome_body(
+                dag, task, modalities, objective_specs
+            )
+            if fitness is None:
+                fitness = _failure_fitness(objective_specs)
+            return fitness, result
+        except Exception:
+            return _failure_fitness(objective_specs), {
+                "_evaluation_error": traceback.format_exc()
+            }
+    finally:
+        _release_cuda_memory()
 
 
 _WORKER_DISPATCH = {"genome": _dispatch_genome_evaluation}
@@ -303,11 +328,14 @@ class MultimodalDeapOptimizer:
         hall_of_fame_size: int = 5,
         allow_repeated_modalities: bool = False,
         threads_per_worker: Optional[int] = None,
+        max_feature_dim: Optional[int] = DEFAULT_MAX_FUSED_FEATURE_DIM,
     ):
         self.modalities = modalities
         self.tasks = tasks
         self.debug = debug
         self.allow_repeated_modalities = allow_repeated_modalities
+        self.max_feature_dim = None if max_feature_dim is None else int(max_feature_dim)
+        self.oversized_candidates: Dict[str, int] = {}
 
         self.min_modalities = max(1, min_modalities)
         requested_max = max_modalities or len(modalities)
@@ -426,6 +454,7 @@ class MultimodalDeapOptimizer:
             self._current_task_name = task_name
             self.optimization_results.setdefault(task_name, [])
             self.evaluation_errors.setdefault(task_name, 0)
+            self.oversized_candidates.setdefault(task_name, 0)
 
             self._eval_counter = 0
             self._search_start = time.perf_counter()
@@ -471,7 +500,8 @@ class MultimodalDeapOptimizer:
                     print(
                         f"[GA] task={task_name} gen={gen} {debug_msg} "
                         f"no_improve={no_improve} "
-                        f"errors={self.evaluation_errors.get(task_name, 0)}"
+                        f"errors={self.evaluation_errors.get(task_name, 0)} "
+                        f"oversized={self.oversized_candidates.get(task_name, 0)}"
                     )
 
                 stagnated = (
@@ -670,6 +700,10 @@ class MultimodalDeapOptimizer:
             if sig in pending_followers:
                 pending_followers[sig].append(ind)
                 continue
+            reason = self._oversized_reason(task_name, genome)
+            if reason is not None:
+                ind.fitness.values = self._reject_oversized(task_name, genome, reason)
+                continue
             dag = self._genome_to_dag(genome)
             pending_followers[sig] = []
             pending_work.append((ind, dag, sig))
@@ -692,7 +726,13 @@ class MultimodalDeapOptimizer:
                 ind, dag, sig = jobs.pop(jr.job_id)
                 if jr.ok:
                     fitness, payload = jr.value
-                    error = None
+                    error = (
+                        payload.get("_evaluation_error")
+                        if isinstance(payload, dict)
+                        else None
+                    )
+                    if error is not None:
+                        payload = None
                 else:
                     fitness = _failure_fitness(self.objective_specs)
                     payload = None
@@ -719,9 +759,7 @@ class MultimodalDeapOptimizer:
                 self.evaluation_errors.get(task_name, 0) + 1
             )
             if self.debug and error is not None:
-                print(
-                    f"[GA] genome evaluation failed for task={task_name}:\n{error}"
-                )
+                print(f"[GA] genome evaluation failed for task={task_name}:\n{error}")
             return
 
         result = FusionSearchResult(
@@ -936,12 +974,91 @@ class MultimodalDeapOptimizer:
             tuple(sorted((p, c.__name__) for p, c in g.fusion_ops.items())),
         )
 
+    def _leaf_stats(self, task_name: str, leaf: Tuple[Any, int]):
+        """Shape of one candidate leaf representation, or None if unknown."""
+        modality_id, representation_index = leaf
+        try:
+            modality = self.k_best_representations[task_name][modality_id][
+                representation_index
+            ]
+        except (KeyError, IndexError, TypeError):
+            return None
+
+        data = getattr(modality, "data", None)
+        if data is None or len(data) == 0:
+            return None
+        try:
+            sample = np.asarray(data[0])
+        except (TypeError, ValueError):
+            return None
+        if sample.dtype == object:
+            return None
+        shape = tuple(sample.shape) if sample.ndim else (1,)
+        return RepresentationStats(len(data), shape, output_shape_is_known=True)
+
+    def _predicted_feature_dim(
+        self, task_name: str, genome: DagGenome
+    ) -> Optional[int]:
+        if task_name is None:
+            return None
+
+        leaf_stats = [self._leaf_stats(task_name, leaf) for leaf in genome.leaves]
+        if any(stats is None for stats in leaf_stats):
+            return None
+
+        def walk(subtree: Tree, path: str):
+            if isinstance(subtree, int):
+                return leaf_stats[subtree]
+            left = walk(subtree[0], path + "L")
+            right = walk(subtree[1], path + "R")
+            if left is None or right is None:
+                return None
+            return genome.fusion_ops[path]().get_output_stats([left, right])
+
+        try:
+            root = walk(genome.tree, "")
+        except Exception:
+            return None
+        if root is None or not root.output_shape:
+            return None
+        return int(np.prod(root.output_shape))
+
+    def _oversized_reason(self, task_name: str, genome: DagGenome) -> Optional[str]:
+        if not self.max_feature_dim:
+            return None
+        predicted = self._predicted_feature_dim(task_name, genome)
+        if predicted is None or predicted <= self.max_feature_dim:
+            return None
+        return (
+            f"fused representation would have {predicted:,} features, above the "
+            f"configured maximum of {self.max_feature_dim:,}; candidate rejected "
+            "before execution"
+        )
+
+    def _reject_oversized(
+        self, task_name: str, genome: DagGenome, reason: str
+    ) -> Tuple[float, ...]:
+        self.oversized_candidates[task_name] = (
+            self.oversized_candidates.get(task_name, 0) + 1
+        )
+        if self.debug:
+            print(f"[GA] task={task_name} skipped candidate: {reason}")
+        fitness = _failure_fitness(self.objective_specs)
+        self._fitness_cache.setdefault(task_name, {})[
+            self._genome_signature(genome)
+        ] = fitness
+        return fitness
+
     def _evaluate_genome(self, genome: DagGenome, task: Task) -> Tuple[float, ...]:
         task_name = task.model.name
         sig = self._genome_signature(genome)
         cache = self._fitness_cache.setdefault(task_name, {})
         if sig in cache:
             return cache[sig]
+
+        reason = self._oversized_reason(task_name, genome)
+        if reason is not None:
+            return self._reject_oversized(task_name, genome, reason)
 
         dag = self._genome_to_dag(genome)
         modalities = list(
@@ -958,6 +1075,8 @@ class MultimodalDeapOptimizer:
         except Exception:
             fitness = _failure_fitness(self.objective_specs)
             payload, error = None, traceback.format_exc()
+        finally:
+            _release_cuda_memory()
 
         self._record_evaluation(task_name, dag, payload, error)
         cache[sig] = fitness

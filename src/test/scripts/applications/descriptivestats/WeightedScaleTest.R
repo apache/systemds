@@ -91,10 +91,10 @@ g2 = (n^2*(n+1)*m4-3*m2^2*n^2*(n-1))/((n-1)*(n-2)*(n-3)*var^2)
 se_g2= sqrt( (4*(n^2-1)*se_g1^2)/((n+5)*(n-3)) )
 
 # median
-md = median(V) #quantile(V, 0.5, type = 1)
+md = median(V)
 
-# quantile
-Q = t(quantile(V, P[,1], type = 1))
+# DML quantile corresponds to R quantile type 7 (matching R's own default and median()).
+Q = t(quantile(V, P[,1], type = 7))
 
 # inter-quartile mean
 S=c(sort(V))
@@ -107,8 +107,6 @@ q75i=ceiling(q75d)
 iqm = sum(S[(q25i+1):q75i])
 iqm = iqm + (q25i-q25d)*S[q25i] - (q75i-q75d)*S[q75i]
 iqm = iqm/(n*0.5)
-
-#print(paste("IQM ", iqm));
 
 out_minus = t(as.numeric(Temp < mu-5*std_dev)*Temp) 
 out_plus = t(as.numeric(Temp > mu+5*std_dev)*Temp)

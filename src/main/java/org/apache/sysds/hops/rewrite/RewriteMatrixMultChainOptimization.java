@@ -384,10 +384,10 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		return CollectionUtils.cardinality(h, p.getInput());
 	}
 	
-	private static void logTraceHop( Hop hop, int level ) {
-		if( LOG.isTraceEnabled() ) {
+	protected void logTraceHop(Hop hop, int level) {
+		if(LOG.isTraceEnabled()) {
 			String offset = Explain.getIdentation(level);
-			LOG.trace(offset+ "Hop " + hop.getName() + "(" + hop.getClass().getSimpleName() 
+			LOG.trace(offset+ "Hop " + hop.getName() + "(" + hop.getClass().getSimpleName()
 				+ ", " + hop.getHopID() + ")" + " " + hop.getDim1() + "x" + hop.getDim2());
 		}
 	}

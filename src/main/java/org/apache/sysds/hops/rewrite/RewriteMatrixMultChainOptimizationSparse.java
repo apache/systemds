@@ -31,6 +31,7 @@ import org.apache.sysds.hops.estim.MMNode;
 import org.apache.sysds.hops.estim.SparsityEstimator;
 import org.apache.sysds.hops.estim.EstimationUtils.EstimatorType;
 import org.apache.sysds.hops.estim.SparsityEstimator.OpCode;
+import org.apache.sysds.utils.Explain;
 
 /**
  * Rule: Determine the optimal order of execution for a chain of
@@ -141,5 +142,15 @@ public class RewriteMatrixMultChainOptimizationSparse extends RewriteMatrixMultC
 		}
 
 		return inputMetaAvail;
+	}
+
+	@Override
+	protected void logTraceHop(Hop hop, int level) {
+		if(LOG.isTraceEnabled()) {
+			String offset = Explain.getIdentation(level);
+			LOG.trace(offset+ "Hop " + hop.getName() + "(" + hop.getClass().getSimpleName()
+				+ ", " + hop.getHopID() + ")" + " " + hop.getDim1() + "x" + hop.getDim2()
+				+ " sparsity " + hop.getSparsity());
+		}
 	}
 }

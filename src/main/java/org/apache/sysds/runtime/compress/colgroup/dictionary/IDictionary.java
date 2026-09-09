@@ -1055,7 +1055,7 @@ public interface IDictionary {
 
 	/**
 	 * Slice out the selected columns given of this encoded group.
-	 *
+	 * 
 	 * @param selectedColumns The columns to slice out and return as a new matrix.
 	 * @param nCol            The number of columns in this dictionary.
 	 * @return The returned matrix
@@ -1064,9 +1064,9 @@ public interface IDictionary {
 
 	/**
 	 * Sort the values of this dictionary via an index of how the values mapped previously.
-	 *
+	 * 
 	 * In practice this design means we can reuse the previous dictionary for the resulting column group
-	 *
+	 * 
 	 * @return The sorted index.
 	 */
 	public int[] sort();

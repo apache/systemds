@@ -74,8 +74,8 @@ public class DecoderCompositeTest {
 		try {
 			FrameBlock data = categoricalFrame(ROWS, nCol, nCat, 17);
 
-			MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(),
-				null);
+			MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, data.getColumnNames(),
+				data.getNumColumns(), null);
 			MatrixBlock encoded = encoder.encode(data, 1);
 
 			Decoder decoder = buildDecoder(data, spec, encoder);
@@ -122,8 +122,8 @@ public class DecoderCompositeTest {
 	public void decoderIsComposite() {
 		FrameBlock data = categoricalFrame(100, 2, 3, 1);
 		String spec = "{recode:[C1], dummycode:[C2]}";
-		MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(),
-			null);
+		MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, data.getColumnNames(),
+			data.getNumColumns(), null);
 		encoder.encode(data, 1);
 		Decoder decoder = buildDecoder(data, spec, encoder);
 		if(!(decoder instanceof DecoderComposite))

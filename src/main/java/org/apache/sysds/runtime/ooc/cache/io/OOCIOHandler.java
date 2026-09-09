@@ -50,10 +50,10 @@ public interface OOCIOHandler {
 	void registerSourceLocation(BlockKey key, SourceBlockDescriptor descriptor);
 
 	/**
-	 * Schedule an asynchronous read from an external source into the provided target stream. The returned future
-	 * completes when either EOF is reached or the requested byte budget is exhausted. When the budget is reached and
-	 * keepOpenOnLimit is true, the target stream is kept open and a continuation token is provided so the caller can
-	 * resume.
+	 * Schedule an asynchronous read from an external source into the provided target stream.
+	 * The returned future completes when either EOF is reached or the requested byte budget
+	 * is exhausted. When the budget is reached and keepOpenOnLimit is true, the target stream
+	 * is kept open and a continuation token is provided so the caller can resume.
 	 */
 	CompletableFuture<SourceReadResult> scheduleSourceRead(SourceReadRequest request);
 
@@ -62,8 +62,7 @@ public interface OOCIOHandler {
 	 */
 	CompletableFuture<SourceReadResult> continueSourceRead(SourceReadContinuation continuation, long maxBytesInFlight);
 
-	interface SourceReadContinuation {
-	}
+	interface SourceReadContinuation {}
 
 	class SourceReadRequest {
 		public final String path;
@@ -76,8 +75,9 @@ public interface OOCIOHandler {
 		public final boolean keepOpenOnLimit;
 		public final OOCStream<IndexedMatrixValue> target;
 
-		public SourceReadRequest(String path, Types.FileFormat format, long rows, long cols, int blen, long estNnz,
-			long maxBytesInFlight, boolean keepOpenOnLimit, OOCStream<IndexedMatrixValue> target) {
+		public SourceReadRequest(String path, Types.FileFormat format, long rows, long cols,
+			int blen, long estNnz, long maxBytesInFlight, boolean keepOpenOnLimit,
+			OOCStream<IndexedMatrixValue> target) {
 			this.path = path;
 			this.format = format;
 			this.rows = rows;
@@ -113,8 +113,9 @@ public interface OOCIOHandler {
 		public final int recordLength;
 		public final long serializedSize;
 
-		public SourceBlockDescriptor(String path, Types.FileFormat format, MatrixIndexes indexes, long offset,
-			int recordLength, long serializedSize) {
+		public SourceBlockDescriptor(String path, Types.FileFormat format,
+			MatrixIndexes indexes, long offset, int recordLength,
+			long serializedSize) {
 			this.path = path;
 			this.format = format;
 			this.indexes = indexes;
@@ -128,8 +129,8 @@ public interface OOCIOHandler {
 		public final List<SourceBlockDescriptor> blocks;
 		public final int count;
 
-		public GroupSourceBlockDescriptor(String path, Types.FileFormat format, MatrixIndexes indexes, long offset,
-			int recordLength, long serializedSize, List<SourceBlockDescriptor> blocks) {
+		public GroupSourceBlockDescriptor(String path, Types.FileFormat format, MatrixIndexes indexes, long offset, int recordLength,
+			long serializedSize, List<SourceBlockDescriptor> blocks) {
 			super(path, format, indexes, offset, recordLength, serializedSize);
 			this.blocks = blocks;
 			this.count = blocks.size();

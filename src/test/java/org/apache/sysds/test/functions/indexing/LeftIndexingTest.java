@@ -72,26 +72,27 @@ public class LeftIndexingTest extends AutomatedTestBase
 			}
 			
 			if(et == ExecType.SPARK) {
-				rtplatform = ExecMode.SPARK;
+					rtplatform = ExecMode.SPARK;
 			}
 			else {
 				// rtplatform = (et==ExecType.MR)? ExecMode.HADOOP : ExecMode.SINGLE_NODE;
-				rtplatform = ExecMode.HYBRID;
+					rtplatform = ExecMode.HYBRID;
 			}
 			if( rtplatform == ExecMode.SPARK )
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			
 			config.addVariable("rows", rows);
-			config.addVariable("cols", cols);
+				config.addVariable("cols", cols);
 
-			long rowstart = 816, rowend = 1229, colstart = 967, colend = 1009;
-			// long rowstart=2, rowend=4, colstart=9, colend=10;
+			long rowstart=816, rowend=1229, colstart=967, colend=1009;
+			//  long rowstart=2, rowend=4, colstart=9, colend=10;
 			/*
-			 * Random rand=new Random(System.currentTimeMillis()); rowstart=(long)(rand.nextDouble()*((double)rows))+1;
-			 * rowend=(long)(rand.nextDouble()*((double)(rows-rowstart+1)))+rowstart;
-			 * colstart=(long)(rand.nextDouble()*((double)cols))+1;
-			 * colend=(long)(rand.nextDouble()*((double)(cols-colstart+1)))+colstart;
-			 */
+			Random rand=new Random(System.currentTimeMillis());
+			rowstart=(long)(rand.nextDouble()*((double)rows))+1;
+			rowend=(long)(rand.nextDouble()*((double)(rows-rowstart+1)))+rowstart;
+			colstart=(long)(rand.nextDouble()*((double)cols))+1;
+			colend=(long)(rand.nextDouble()*((double)(cols-colstart+1)))+colstart;
+			*/
 			config.addVariable("rowstart", rowstart);
 			config.addVariable("rowend", rowend);
 			config.addVariable("colstart", colstart);
@@ -118,20 +119,17 @@ public class LeftIndexingTest extends AutomatedTestBase
 			double sparsity=1.0;//rand.nextDouble(); 
 			double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, System.currentTimeMillis());
 			writeInputMatrix("A", A, true);
-
-			sparsity = 0.1;// rand.nextDouble();
-			double[][] B = getRandomMatrix((int) (rowend - rowstart + 1), (int) (colend - colstart + 1), min, max,
-				sparsity, System.currentTimeMillis());
+			
+			sparsity=0.1;//rand.nextDouble();
+			double[][] B = getRandomMatrix((int)(rowend-rowstart+1), (int)(colend-colstart+1), min, max, sparsity, System.currentTimeMillis());
 			writeInputMatrix("B", B, true);
-
-			sparsity = 0.5;// rand.nextDouble();
-			double[][] C = getRandomMatrix((int) (rowend), (int) (cols - colstart + 1), min, max, sparsity,
-				System.currentTimeMillis());
+			
+			sparsity=0.5;//rand.nextDouble();
+			double[][] C = getRandomMatrix((int)(rowend), (int)(cols-colstart+1), min, max, sparsity, System.currentTimeMillis());
 			writeInputMatrix("C", C, true);
-
-			sparsity = 0.01;// rand.nextDouble();
-			double[][] D = getRandomMatrix(rows, (int) (colend - colstart + 1), min, max, sparsity,
-				System.currentTimeMillis());
+			
+			sparsity=0.01;//rand.nextDouble();
+			double[][] D = getRandomMatrix(rows, (int)(colend-colstart+1), min, max, sparsity, System.currentTimeMillis());
 			writeInputMatrix("D", D, true);
 
 			/*
@@ -140,9 +138,9 @@ public class LeftIndexingTest extends AutomatedTestBase
 			 * While loop iteration - 10 jobs
 			 * Final output write - 1 job
 			 */
-			// boolean exceptionExpected = false;
-			// int expectedNumberOfJobs = 12;
-			// runTest(exceptionExpected, null, expectedNumberOfJobs);
+			//boolean exceptionExpected = false;
+			//int expectedNumberOfJobs = 12;
+			//runTest(exceptionExpected, null, expectedNumberOfJobs);
 			boolean exceptionExpected = false;
 			int expectedNumberOfJobs = -1;
 			runTest(true, exceptionExpected, null, expectedNumberOfJobs);

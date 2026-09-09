@@ -375,8 +375,9 @@ public class FederatedLogicalTest extends AutomatedTestBase {
 		int port2 = single_fed_worker ? 0 : getRandomAvailablePort();
 		int port3 = single_fed_worker ? 0 : getRandomAvailablePort();
 		int port4 = single_fed_worker ? 0 : getRandomAvailablePort();
-		Process[] workers = startLocalFedWorkers(
-			single_fed_worker ? new int[] {port1} : new int[] {port1, port2, port3, port4});
+		Process[] workers = startLocalFedWorkers(single_fed_worker
+			? new int[] {port1}
+			: new int[] {port1, port2, port3, port4});
 
 		try {
 			if(!isAlive(workers))

@@ -78,7 +78,7 @@ class OOCBufferedDataInputStream implements DataInput, MatrixBlockDataInput {
 	}
 
 	@Override
-	public void readFully(byte[] b, int off, int len) throws IOException {
+	public void readFully(byte [] b, int off, int len) throws IOException {
 		if(len < 0)
 			throw new IndexOutOfBoundsException();
 
@@ -127,12 +127,12 @@ class OOCBufferedDataInputStream implements DataInput, MatrixBlockDataInput {
 	@Override
 	public short readShort() throws IOException {
 		if(_count - _pos >= 2) {
-			short ret = (short) baToShort(_buff, _pos);
+			short ret = (short)baToShort(_buff, _pos);
 			_pos += 2;
 			return ret;
 		}
 		readFully(_tmp, 0, 2);
-		return (short) baToShort(_tmp, 0);
+		return (short)baToShort(_tmp, 0);
 	}
 
 	@Override
@@ -142,7 +142,7 @@ class OOCBufferedDataInputStream implements DataInput, MatrixBlockDataInput {
 
 	@Override
 	public char readChar() throws IOException {
-		return (char) readUnsignedShort();
+		return (char)readUnsignedShort();
 	}
 
 	@Override
@@ -222,7 +222,7 @@ class OOCBufferedDataInputStream implements DataInput, MatrixBlockDataInput {
 	@Override
 	public long readSparseRows(int rlen, long nnz, SparseBlock rows) throws IOException {
 		if(rows instanceof SparseBlockCSR) {
-			((SparseBlockCSR) rows).initSparse(rlen, (int) nnz, this);
+			((SparseBlockCSR)rows).initSparse(rlen, (int)nnz, this);
 			return nnz;
 		}
 
@@ -256,7 +256,7 @@ class OOCBufferedDataInputStream implements DataInput, MatrixBlockDataInput {
 	}
 
 	private int getRefillLength() {
-		int pageOffset = (int) (_filePos & PAGE_MASK);
+		int pageOffset = (int)(_filePos & PAGE_MASK);
 		if(pageOffset == 0)
 			return _bufflen;
 		return Math.min(_bufflen, PAGE_SIZE - pageOffset);

@@ -81,7 +81,7 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 	private final AtomicLong _readSeq = new AtomicLong(0);
 
 	// Spill related structures
-	private final ConcurrentHashMap<String, SpillLocation> _spillLocations = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, SpillLocation> _spillLocations =  new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<Integer, PartitionFile> _partitions = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<BlockKey, SourceBlockDescriptor> _sourceLocations = new ConcurrentHashMap<>();
 	private final AtomicInteger _partitionCounter = new AtomicInteger(0);
@@ -97,21 +97,38 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 	@SuppressWarnings("unchecked")
 	public OOCMatrixIOHandler() {
 		this._spillDir = LocalFileUtils.getUniqueWorkingDir("ooc_stream");
-		_writeExec = new ThreadPoolExecutor(WRITER_SIZE, WRITER_SIZE, 0L, TimeUnit.MILLISECONDS,
+		_writeExec = new ThreadPoolExecutor(
+			WRITER_SIZE,
+			WRITER_SIZE,
+			0L,
+			TimeUnit.MILLISECONDS,
 			new ArrayBlockingQueue<>(100000));
-		_readExec = new ThreadPoolExecutor(READER_SIZE, READER_SIZE, 0L, TimeUnit.MILLISECONDS,
+		_readExec = new ThreadPoolExecutor(
+			READER_SIZE,
+			READER_SIZE,
+			0L,
+			TimeUnit.MILLISECONDS,
 			new PriorityBlockingQueue<>());
-		_srcReadExec = new ThreadPoolExecutor(READER_SIZE, READER_SIZE, 0L, TimeUnit.MILLISECONDS,
+		_srcReadExec = new ThreadPoolExecutor(
+			READER_SIZE,
+			READER_SIZE,
+			0L,
+			TimeUnit.MILLISECONDS,
 			new ArrayBlockingQueue<>(100000));
-		_deleteExec = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(100000));
+		_deleteExec = new ThreadPoolExecutor(
+			1,
+			1,
+			0L,
+			TimeUnit.MILLISECONDS,
+			new ArrayBlockingQueue<>(100000));
 		_q = new CloseableQueue[WRITER_SIZE];
 		_wCtr = new AtomicLong(0);
-		_started = new AtomicBoolean(false);
+		_started = new  AtomicBoolean(false);
 	}
 
 	private synchronized void start() {
-		if(_started.compareAndSet(false, true)) {
-			for(int i = 0; i < WRITER_SIZE; i++) {
+		if (_started.compareAndSet(false, true)) {
+			for (int i = 0; i < WRITER_SIZE; i++) {
 				final int finalIdx = i;
 				_q[i] = new CloseableQueue<>();
 				_writeExec.submit(() -> evictTask(_q[finalIdx]));
@@ -122,7 +139,7 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 	@Override
 	public void shutdown() {
 		boolean started = _started.get();
-		if(started) {
+		if (started) {
 			try {
 				for(int i = 0; i < WRITER_SIZE; i++) {
 					if(_q[i] != null)
@@ -142,7 +159,7 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 		_deleteExec.shutdownNow();
 		_spillLocations.clear();
 		_partitions.clear();
-		if(started)
+		if (started)
 			LocalFileUtils.deleteFileIfExists(_spillDir);
 	}
 
@@ -152,7 +169,7 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 		CompletableFuture<Void> future = new CompletableFuture<>();
 		try {
 			long q = _wCtr.getAndAdd(block.getSize()) / OVERFLOW;
-			int i = (int) (q % WRITER_SIZE);
+			int i = (int)(q % WRITER_SIZE);
 			if(!_q[i].enqueueIfOpen(new Tuple2<>(block, future)))
 				future.completeExceptionally(new DMLRuntimeException("OOC writer queue is closed"));
 		}
@@ -172,8 +189,7 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 			ReadTask task = new ReadTask(block, future, _readSeq.getAndIncrement(), pinnedPartitionId);
 			_pendingReads.put(block.getKey(), task);
 			_readExec.execute(task);
-		}
-		catch(RejectedExecutionException e) {
+		} catch (RejectedExecutionException e) {
 			unpinPartitionForRead(pinnedPartitionId);
 			_pendingReads.remove(block.getKey());
 			future.completeExceptionally(e);
@@ -183,12 +199,12 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 
 	@Override
 	public void prioritizeRead(BlockKey key, double priority) {
-		if(priority == 0)
+		if (priority == 0)
 			return;
 		ReadTask task = _pendingReads.get(key);
-		if(task == null)
+		if (task == null)
 			return;
-		if(_readExec.getQueue().remove(task)) {
+		if (_readExec.getQueue().remove(task)) {
 			task.addPriority(priority);
 			_readExec.getQueue().offer(task);
 		}
@@ -212,9 +228,8 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 	}
 
 	@Override
-	public CompletableFuture<SourceReadResult> continueSourceRead(SourceReadContinuation continuation,
-		long maxBytesInFlight) {
-		if(!(continuation instanceof SourceReadState state)) {
+	public CompletableFuture<SourceReadResult> continueSourceRead(SourceReadContinuation continuation, long maxBytesInFlight) {
+		if (!(continuation instanceof SourceReadState state)) {
 			CompletableFuture<SourceReadResult> failed = new CompletableFuture<>();
 			failed.completeExceptionally(new DMLRuntimeException("Unsupported continuation type: " + continuation));
 			return failed;
@@ -225,8 +240,8 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 	private CompletableFuture<SourceReadResult> submitSourceRead(SourceReadRequest request, SourceReadState state,
 		long maxBytesInFlight) {
 		if(request.format != Types.FileFormat.BINARY)
-			return CompletableFuture
-				.failedFuture(new DMLRuntimeException("Unsupported format for source read: " + request.format));
+			return CompletableFuture.failedFuture(
+				new DMLRuntimeException("Unsupported format for source read: " + request.format));
 		return readBinarySourceParallel(request, state, maxBytesInFlight);
 	}
 
@@ -320,18 +335,17 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 		return result;
 	}
 
-	private void completeResult(CompletableFuture<SourceReadResult> future, AtomicLong bytesRead,
-		AtomicBoolean budgetHit, AtomicReference<Throwable> error, SourceReadRequest request, Path[] files,
-		AtomicLongArray filePositions, AtomicIntegerArray completed,
-		ConcurrentLinkedDeque<SourceBlockDescriptor> descriptors) {
+	private void completeResult(CompletableFuture<SourceReadResult> future, AtomicLong bytesRead, AtomicBoolean budgetHit,
+		AtomicReference<Throwable> error, SourceReadRequest request, Path[] files, AtomicLongArray filePositions,
+		AtomicIntegerArray completed, ConcurrentLinkedDeque<SourceBlockDescriptor> descriptors) {
 		Throwable err = error.get();
-		if(err != null) {
+		if (err != null) {
 			future.completeExceptionally(err instanceof Exception ? err : new Exception(err));
 			return;
 		}
 
 		try {
-			if(budgetHit.get()) {
+			if (budgetHit.get()) {
 				if(!request.keepOpenOnLimit) {
 					closeTarget(request.target, false);
 				}
@@ -351,29 +365,29 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 
 	private void readSequenceFile(JobConf job, Path path, SourceReadRequest request, int fileIdx,
 		AtomicLongArray filePositions, AtomicIntegerArray completed, AtomicBoolean stop, AtomicBoolean budgetHit,
-		AtomicLong bytesRead, long byteLimit, Object budgetLock,
-		ConcurrentLinkedDeque<SourceBlockDescriptor> descriptors) throws IOException {
+		AtomicLong bytesRead, long byteLimit, Object budgetLock, ConcurrentLinkedDeque<SourceBlockDescriptor> descriptors)
+		throws IOException {
 		MatrixIndexes key = new MatrixIndexes();
 
 		try(SequenceFile.Reader reader = new SequenceFile.Reader(job, SequenceFile.Reader.file(path))) {
 			long pos = filePositions.get(fileIdx);
-			if(pos > 0)
+			if (pos > 0)
 				reader.seek(pos);
 
 			long ioStart = DMLScript.OOC_LOG_EVENTS ? System.nanoTime() : 0;
 			while(!stop.get()) {
 				long recordStart = reader.getPosition();
 				MatrixBlock value = new MatrixBlock();
-				if(!reader.next(key, value))
+				if (!reader.next(key, value))
 					break;
 				long recordEnd = reader.getPosition();
 				long blockSize = value.getExactSerializedSize();
 				boolean shouldBreak = false;
 
 				synchronized(budgetLock) {
-					if(stop.get())
+					if (stop.get())
 						shouldBreak = true;
-					else if(bytesRead.get() + blockSize > byteLimit) {
+					else if (bytesRead.get() + blockSize > byteLimit) {
 						stop.set(true);
 						budgetHit.set(true);
 						shouldBreak = true;
@@ -384,7 +398,7 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 				MatrixIndexes outIdx = new MatrixIndexes(key);
 				IndexedMatrixValue imv = new IndexedMatrixValue(outIdx, value);
 				SourceBlockDescriptor descriptor = new SourceBlockDescriptor(path.toString(), request.format, outIdx,
-					recordStart, (int) (recordEnd - recordStart), blockSize);
+					recordStart, (int)(recordEnd - recordStart), blockSize);
 
 				if(request.target instanceof SourceOOCStream src)
 					src.enqueue(imv, descriptor);
@@ -393,23 +407,22 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 				descriptors.add(descriptor);
 				filePositions.set(fileIdx, reader.getPosition());
 
-				if(DMLScript.OOC_LOG_EVENTS) {
+				if (DMLScript.OOC_LOG_EVENTS) {
 					long currTime = System.nanoTime();
 					OOCEventLog.onDiskReadEvent(_srcReadCallerId, ioStart, currTime, blockSize);
 					ioStart = currTime;
 				}
 
-				if(shouldBreak)
+				if (shouldBreak)
 					break; // Note that we knowingly go over limit, which could result in READER_SIZE*8MB overshoot
 			}
 
-			if(!stop.get())
+			if (!stop.get())
 				completed.set(fileIdx, 1);
 		}
 	}
 
-	private void closeTarget(org.apache.sysds.runtime.instructions.ooc.OOCStream<IndexedMatrixValue> target,
-		boolean close) {
+	private void closeTarget(org.apache.sysds.runtime.instructions.ooc.OOCStream<IndexedMatrixValue> target, boolean close) {
 		if(close) {
 			try {
 				target.closeInput();
@@ -424,10 +437,10 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 		String key = block.getKey().toFileKey();
 
 		SourceBlockDescriptor src = _sourceLocations.get(block.getKey());
-		if(src != null) {
+		if (src != null) {
 			long ioStart = DMLScript.OOC_STATISTICS ? System.nanoTime() : 0;
 			loadFromSource(block, src);
-			if(DMLScript.OOC_STATISTICS) {
+			if (DMLScript.OOC_STATISTICS) {
 				Statistics.incrementOOCLoadFromDisk();
 				Statistics.accumulateOOCLoadFromDiskTime(System.nanoTime() - ioStart);
 				Statistics.accumulateOOCLoadFromDiskBytes(block.getSize());
@@ -438,36 +451,34 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 		long ioDuration = 0;
 		// 1. find the blocks address (spill location)
 		SpillLocation sloc = _spillLocations.get(key);
-		if(sloc == null)
+		if (sloc == null)
 			throw new DMLRuntimeException("Failed to load spill location for: " + key);
 
 		PartitionFile partFile = _partitions.get(sloc.partitionId);
-		if(partFile == null)
+		if (partFile == null)
 			throw new DMLRuntimeException("Failed to load partition for: " + sloc.partitionId);
 
 		String filename = partFile.filePath;
 
 		SpillableObject obj;
 
-		try(RandomAccessFile raf = new RandomAccessFile(filename, "r")) {
+		try (RandomAccessFile raf = new RandomAccessFile(filename, "r")) {
 			raf.seek(sloc.offset);
 
 			DataInput dis = new OOCBufferedDataInputStream(raf);
 			long ioStart = DMLScript.OOC_STATISTICS ? System.nanoTime() : 0;
 			obj = SpillableObjectRegistry.read(dis);
-			if(DMLScript.OOC_STATISTICS)
+			if (DMLScript.OOC_STATISTICS)
 				ioDuration = System.nanoTime() - ioStart;
-		}
-		catch(ClosedByInterruptException ignored) {
+		} catch (ClosedByInterruptException ignored) {
 			return;
-		}
-		catch(IOException e) {
+		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 
 		block.setDataUnsafe(obj);
 
-		if(DMLScript.OOC_STATISTICS) {
+		if (DMLScript.OOC_STATISTICS) {
 			Statistics.incrementOOCLoadFromDisk();
 			Statistics.accumulateOOCLoadFromDiskTime(ioDuration);
 			Statistics.accumulateOOCLoadFromDiskBytes(block.getSize());
@@ -475,23 +486,22 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 	}
 
 	private void loadFromSource(BlockEntry block, SourceBlockDescriptor src) {
-		if(src.format != Types.FileFormat.BINARY)
+		if (src.format != Types.FileFormat.BINARY)
 			throw new DMLRuntimeException("Unsupported format for source read: " + src.format);
 
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path(src.path);
 
-		if(src instanceof OOCIOHandler.GroupSourceBlockDescriptor gsrc) {
+		if (src instanceof OOCIOHandler.GroupSourceBlockDescriptor gsrc) {
 			List<IndexedMatrixValue> values = new ArrayList<>(gsrc.count);
 			try(SequenceFile.Reader reader = new SequenceFile.Reader(job, SequenceFile.Reader.file(path))) {
 				reader.seek(gsrc.offset);
-				for(int i = 0; i < gsrc.blocks.size(); i++) {
+				for (int i = 0; i < gsrc.blocks.size(); i++) {
 					SourceBlockDescriptor d = gsrc.blocks.get(i);
 					MatrixIndexes ix = new MatrixIndexes();
 					MatrixBlock mb = new MatrixBlock();
-					if(!reader.next(ix, mb))
-						throw new DMLRuntimeException(
-							"Failed to read source block at offset " + d.offset + " in " + d.path);
+					if (!reader.next(ix, mb))
+						throw new DMLRuntimeException("Failed to read source block at offset " + d.offset + " in " + d.path);
 					values.add(new IndexedMatrixValue(ix, mb));
 				}
 			}
@@ -506,9 +516,8 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 
 			try(SequenceFile.Reader reader = new SequenceFile.Reader(job, SequenceFile.Reader.file(path))) {
 				reader.seek(src.offset);
-				if(!reader.next(ix, mb))
-					throw new DMLRuntimeException(
-						"Failed to read source block at offset " + src.offset + " in " + src.path);
+				if (!reader.next(ix, mb))
+					throw new DMLRuntimeException("Failed to read source block at offset " + src.offset + " in " + src.path);
 			}
 			catch(IOException e) {
 				throw new DMLRuntimeException(e);
@@ -521,7 +530,7 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 	private void evictTask(CloseableQueue<Tuple2<BlockEntry, CompletableFuture<Void>>> q) {
 		long byteCtr = 0;
 
-		while(!q.isFinished()) {
+		while (!q.isFinished()) {
 			// --- 1. WRITE PHASE ---
 			int partitionId = _partitionCounter.getAndIncrement();
 
@@ -563,17 +572,17 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 					}
 
 					byteCtr += wrote;
-					if(byteCtr >= MAX_PARTITION_SIZE) {
+					if (byteCtr >= MAX_PARTITION_SIZE) {
 						closePartition = true;
 						byteCtr = 0;
 						break;
 					}
 
-					if(DMLScript.OOC_LOG_EVENTS)
+					if (DMLScript.OOC_LOG_EVENTS)
 						OOCEventLog.onDiskWriteEvent(_evictCallerId, ioStart, System.nanoTime(), wrote);
 				}
 
-				if(!closePartition && q.close()) {
+				if (!closePartition && q.close()) {
 					while((tpl = q.take()) != null) {
 						long ioStart = DMLScript.OOC_STATISTICS ? System.nanoTime() : 0;
 						BlockEntry entry = tpl._1();
@@ -586,7 +595,7 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 							Statistics.accumulateOOCEvictionWriteTime(System.nanoTime() - ioStart);
 						}
 
-						if(DMLScript.OOC_LOG_EVENTS)
+						if (DMLScript.OOC_LOG_EVENTS)
 							OOCEventLog.onDiskWriteEvent(_evictCallerId, ioStart, System.nanoTime(), wrote);
 					}
 				}
@@ -608,13 +617,13 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 	}
 
 	private long writeOut(int partitionId, BlockEntry entry, CompletableFuture<Void> future,
-		OOCBufferedDataOutputStream dos, ConcurrentLinkedDeque<Tuple3<Long, Long, CompletableFuture<Void>>> flushQueue)
-		throws IOException {
+		OOCBufferedDataOutputStream dos,
+		ConcurrentLinkedDeque<Tuple3<Long, Long, CompletableFuture<Void>>> flushQueue) throws IOException {
 
 		String key = entry.getKey().toFileKey();
 		boolean alreadySpilled = _spillLocations.containsKey(key);
 
-		if(!alreadySpilled) {
+		if (!alreadySpilled) {
 			long offsetBefore = dos.getPosition();
 
 			if(future.isCancelled())
@@ -647,10 +656,9 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 		return 0;
 	}
 
-	private void flushQueue(long offset,
-		ConcurrentLinkedDeque<Tuple3<Long, Long, CompletableFuture<Void>>> flushQueue) {
+	private void flushQueue(long offset, ConcurrentLinkedDeque<Tuple3<Long, Long, CompletableFuture<Void>>> flushQueue) {
 		Tuple3<Long, Long, CompletableFuture<Void>> tmp;
-		while((tmp = flushQueue.peek()) != null && tmp._2() <= offset) {
+		while ((tmp = flushQueue.peek()) != null && tmp._2() <= offset) {
 			flushQueue.poll();
 			tmp._3().complete(null);
 		}
@@ -769,14 +777,12 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 			try {
 				long ioStart = DMLScript.OOC_LOG_EVENTS ? System.nanoTime() : 0;
 				loadFromDisk(_block);
-				if(DMLScript.OOC_LOG_EVENTS)
+				if (DMLScript.OOC_LOG_EVENTS)
 					OOCEventLog.onDiskReadEvent(_readCallerId, ioStart, System.nanoTime(), _block.getSize());
 				_future.complete(_block);
-			}
-			catch(Throwable e) {
+			} catch (Throwable e) {
 				_future.completeExceptionally(e);
-			}
-			finally {
+			} finally {
 				unpinPartitionForRead(_pinnedPartitionId);
 			}
 		}
@@ -784,11 +790,14 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 		@Override
 		public int compareTo(ReadTask other) {
 			int byPriority = Double.compare(other._priority, _priority);
-			if(byPriority != 0)
+			if (byPriority != 0)
 				return byPriority;
 			return Long.compare(_sequence, other._sequence);
 		}
 	}
+
+
+
 
 	private static class SpillLocation {
 		// structure of spillLocation: file, offset

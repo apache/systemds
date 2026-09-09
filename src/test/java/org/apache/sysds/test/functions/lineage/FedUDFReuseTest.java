@@ -121,8 +121,9 @@ public class FedUDFReuseTest extends AutomatedTestBase {
 
 			// Run reference dml script with normal matrix
 			fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-			programArgs = new String[] {"-lineage", "reuse_full", "-stats", "100", "-args", input("X1"), input("X2"),
-				input("X3"), input("X4"), Boolean.toString(rowPartitioned).toUpperCase(), expected("S")};
+			programArgs = new String[] {"-lineage", "reuse_full", "-stats", "100", "-args", 
+				input("X1"), input("X2"), input("X3"), input("X4"),
+				Boolean.toString(rowPartitioned).toUpperCase(), expected("S")};
 			runTest(null);
 
 			// Run actual dml script with federated matrix

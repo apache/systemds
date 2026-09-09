@@ -825,7 +825,7 @@ public class BinaryOp extends MultiThreadedHop {
 			final boolean left = v1; // left side is the vector or scalar
 			final Hop sparkIn = getInput(left ? 1 : 0);
 			if((v1 ^ v2) // XOR only one side is allowed to be a vector or a scalar.
-				&& (supportsMatrixScalarOperations() || op == OpOp2.APPLY_SCHEMA) // supported operation
+				&& (supportsMatrixScalarOperations() || op == OpOp2.APPLY_SCHEMA)  // supported operation
 				&& sparkIn.getParent().size() == 1 // only one parent
 				&& !HopRewriteUtils.isSingleBlock(sparkIn) // single block triggered exec
 				&& sparkIn.hasSparkOutput() // input was spark op.
@@ -864,7 +864,7 @@ public class BinaryOp extends MultiThreadedHop {
 			_etype = ExecType.CP;
 		}
 
-		if(op == OpOp2.GET_CATEGORICAL_MASK)
+		if( op == OpOp2.GET_CATEGORICAL_MASK)
 			_etype = ExecType.CP;
 
 		//mark for recompile (forever)

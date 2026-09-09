@@ -67,10 +67,10 @@ public abstract class CompilerTestBase extends AutomatedTestBase {
 	/**
 	 * Compile a DML script string into a runtime {@link Program} without executing it.
 	 *
-	 * @param dmlScript   the DML source
-	 * @param args        named command-line arguments ($name -&gt; value), may be null
-	 * @param mode        the global execution mode (e.g. {@link ExecMode#HYBRID})
-	 * @param localMaxMem the local memory budget in bytes used for memory-based exec-type decisions
+	 * @param dmlScript    the DML source
+	 * @param args         named command-line arguments ($name -&gt; value), may be null
+	 * @param mode         the global execution mode (e.g. {@link ExecMode#HYBRID})
+	 * @param localMaxMem  the local memory budget in bytes used for memory-based exec-type decisions
 	 * @return the compiled runtime program
 	 */
 	protected Program compile(String dmlScript, Map<String, String> args, ExecMode mode, long localMaxMem) {
@@ -145,7 +145,8 @@ public abstract class CompilerTestBase extends AutomatedTestBase {
 
 	/** All instructions whose opcode equals {@code opcode} (exact match). */
 	protected List<Instruction> getByOpcode(Program prog, String opcode) {
-		return getInstructions(prog).stream().filter(i -> opcode.equals(i.getOpcode())).collect(Collectors.toList());
+		return getInstructions(prog).stream().filter(i -> opcode.equals(i.getOpcode()))
+			.collect(Collectors.toList());
 	}
 
 	protected static boolean isSpark(Instruction inst) {
@@ -168,13 +169,13 @@ public abstract class CompilerTestBase extends AutomatedTestBase {
 
 	private void assertExecType(Program prog, String opcode, boolean expectSpark) {
 		List<Instruction> matches = getByOpcode(prog, opcode);
-		Assert.assertFalse(
-			"Expected at least one '" + opcode + "' instruction but found none.\n" + Explain.explain(prog),
-			matches.isEmpty());
+		Assert.assertFalse("Expected at least one '" + opcode + "' instruction but found none.\n"
+			+ Explain.explain(prog), matches.isEmpty());
 		for(Instruction inst : matches) {
 			boolean spark = isSpark(inst);
-			Assert.assertEquals("Instruction '" + opcode + "' expected exec type " + (expectSpark ? "SPARK" : "CP")
-				+ " but was " + (spark ? "SPARK" : "CP") + ".\n" + Explain.explain(prog), expectSpark, spark);
+			Assert.assertEquals("Instruction '" + opcode + "' expected exec type "
+				+ (expectSpark ? "SPARK" : "CP") + " but was " + (spark ? "SPARK" : "CP") + ".\n"
+				+ Explain.explain(prog), expectSpark, spark);
 		}
 	}
 

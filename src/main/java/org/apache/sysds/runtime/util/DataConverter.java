@@ -885,17 +885,16 @@ public class DataConverter {
 	}
 
 	/**
-	 * Creates a non-grouping {@link DecimalFormat} for printing values. When {@code decimal >= 0} both the minimum and
-	 * maximum fraction digits are pinned to {@code decimal}, so values are printed with exactly that many decimals;
-	 * otherwise the {@link DecimalFormat} defaults apply.
-	 *
+	 * Creates a non-grouping {@link DecimalFormat} for printing values. When {@code decimal >= 0}
+	 * both the minimum and maximum fraction digits are pinned to {@code decimal}, so values are
+	 * printed with exactly that many decimals; otherwise the {@link DecimalFormat} defaults apply.
 	 * @param decimal number of decimal places to print, -1 for default
 	 * @return a configured {@link DecimalFormat}
 	 */
 	private static DecimalFormat createDecimalFormat(int decimal) {
 		DecimalFormat df = new DecimalFormat();
 		df.setGroupingUsed(false);
-		if(decimal >= 0) {
+		if (decimal >= 0) {
 			df.setMinimumFractionDigits(decimal);
 			df.setMaximumFractionDigits(decimal);
 		}

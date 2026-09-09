@@ -50,9 +50,7 @@ public class OffsetClassInitConcurrencyTest {
 	private static final String[] INIT_TARGETS = {PKG + "AOffset", PKG + "OffsetEmpty", PKG + "OffsetChar",
 		PKG + "OffsetByte", PKG + "OffsetSingle", PKG + "OffsetTwo"};
 
-	/**
-	 * Whether a class-init cycle deadlocks depends on thread timing, so repeat to make a regression reliable to catch.
-	 */
+	/** Whether a class-init cycle deadlocks depends on thread timing, so repeat to make a regression reliable to catch. */
 	private static final int ROUNDS = 20;
 
 	/** A real init deadlock never resolves; a healthy round finishes in milliseconds, so this bound is generous. */

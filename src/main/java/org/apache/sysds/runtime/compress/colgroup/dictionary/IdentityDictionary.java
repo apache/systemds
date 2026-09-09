@@ -541,8 +541,8 @@ public class IdentityDictionary extends AIdentityDictionary {
 		return "IdentityMatrix of size: " + nRowCol + " with empty: " + withEmpty;
 	}
 
-	@Override
-	public IDictionary sliceColumns(IntArrayList selectedColumns, int nCol) {
+	@Override 
+	public IDictionary sliceColumns(IntArrayList selectedColumns, int nCol){
 		return getMBDict().sliceColumns(selectedColumns, nCol);
 	}
 

@@ -57,15 +57,17 @@ import io.delta.kernel.types.StructType;
 import io.delta.kernel.types.TimestampType;
 
 /**
- * Targeted tests for the error/defensive branches of the native Delta matrix read/write code that the round-trip and
- * interop tests do not reach: malformed per-file statistics, unsupported column types, unsupported stream operations,
+ * Targeted tests for the error/defensive branches of the native Delta matrix
+ * read/write code that the round-trip and interop tests do not reach: malformed
+ * per-file statistics, unsupported column types, unsupported stream operations,
  * bad table paths, and the non-dense writer input path.
  *
- * <p>
- * A few of these branches guard against inputs that the SystemDS writer and the Delta Kernel scan API never produce in
- * a normal round trip (e.g. a statistics JSON without {@code numRecords}, or a column type code outside the supported
- * set). They are exercised here by mocking the Delta Kernel data objects and invoking the (package-private) helpers
- * reflectively, rather than widening their production visibility purely for testing.
+ * <p>A few of these branches guard against inputs that the SystemDS writer and
+ * the Delta Kernel scan API never produce in a normal round trip (e.g. a
+ * statistics JSON without {@code numRecords}, or a column type code outside the
+ * supported set). They are exercised here by mocking the Delta Kernel data
+ * objects and invoking the (package-private) helpers reflectively, rather than
+ * widening their production visibility purely for testing.
  */
 public class DeltaMatrixCoverageTest {
 
@@ -87,8 +89,8 @@ public class DeltaMatrixCoverageTest {
 
 	@Test
 	public void typeCodeReturnsNegativeForUnsupportedTypes() {
-		// non-numeric / unsupported Delta types must map to the sentinel -1 so the
-		// reader can reject them with a clear message rather than mis-decoding.
+		//non-numeric / unsupported Delta types must map to the sentinel -1 so the
+		//reader can reject them with a clear message rather than mis-decoding.
 		assertEquals(-1, DeltaKernelUtils.typeCode(DateType.DATE));
 		assertEquals(-1, DeltaKernelUtils.typeCode(TimestampType.TIMESTAMP));
 		assertEquals(-1, DeltaKernelUtils.typeCode(BinaryType.BINARY));
@@ -110,17 +112,17 @@ public class DeltaMatrixCoverageTest {
 
 	@Test
 	public void numRecordsHandlesAbsentNullAndMalformedStats() throws Exception {
-		// no "stats" field at all -> -1
+		//no "stats" field at all -> -1
 		assertEquals(-1, numRecords(addFileRow(new StructType().add("path", StringType.STRING), false, null)));
-		// stats column present but null-at -> -1
+		//stats column present but null-at -> -1
 		assertEquals(-1, numRecords(addFileRow(statsSchema(), true, null)));
-		// stats string explicitly null -> -1
+		//stats string explicitly null -> -1
 		assertEquals(-1, numRecords(addFileRow(statsSchema(), false, null)));
-		// malformed JSON -> JsonProcessingException -> -1
+		//malformed JSON -> JsonProcessingException -> -1
 		assertEquals(-1, numRecords(addFileRow(statsSchema(), false, "{not valid json")));
-		// valid JSON but no numRecords field -> -1
+		//valid JSON but no numRecords field -> -1
 		assertEquals(-1, numRecords(addFileRow(statsSchema(), false, "{\"minValues\":{}}")));
-		// well-formed stats -> the parsed count
+		//well-formed stats -> the parsed count
 		assertEquals(1234L, numRecords(addFileRow(statsSchema(), false, "{\"numRecords\":1234}")));
 	}
 
@@ -129,8 +131,8 @@ public class DeltaMatrixCoverageTest {
 		Method m = ReaderDelta.class.getDeclaredMethod("getDoubleValue", ColumnVector.class, int.class, int.class);
 		m.setAccessible(true);
 		try {
-			// type code outside the supported T_* set; the switch default must throw
-			// before touching the (null) vector.
+			//type code outside the supported T_* set; the switch default must throw
+			//before touching the (null) vector.
 			m.invoke(null, (ColumnVector) null, 0, 999);
 			fail("expected a DMLRuntimeException for an unsupported type code");
 		}
@@ -154,9 +156,9 @@ public class DeltaMatrixCoverageTest {
 
 	@Test
 	public void parallelReadWrapsFileFailure() throws Exception {
-		// a per-file decode failure in the parallel reader must surface as a single
-		// clear IOException (the awaitFileTasks catch), not a raw executor error.
-		// Provoke it by deleting one data file after the table (and its log) exist.
+		//a per-file decode failure in the parallel reader must surface as a single
+		//clear IOException (the awaitFileTasks catch), not a raw executor error.
+		//Provoke it by deleting one data file after the table (and its log) exist.
 		MatrixBlock in = TestUtils.generateTestMatrixBlock(100_000, 8, -10, 10, 1.0, 13);
 		in.recomputeNonZeros();
 		DMLConfig conf = new DMLConfig();
@@ -165,14 +167,15 @@ public class DeltaMatrixCoverageTest {
 		Path dir = Files.createTempDirectory("sysds_delta_fail_");
 		String tablePath = new File(dir.toFile(), "table").getAbsolutePath();
 		try {
-			new WriterDelta().writeMatrixToHDFS(in, tablePath, in.getNumRows(), in.getNumColumns(), -1,
-				in.getNonZeros());
+			new WriterDelta().writeMatrixToHDFS(in, tablePath,
+				in.getNumRows(), in.getNumColumns(), -1, in.getNonZeros());
 
-			// delete one parquet data file; the transaction log still references it,
-			// so the scan enumerates it but the decode task fails.
+			//delete one parquet data file; the transaction log still references it,
+			//so the scan enumerates it but the decode task fails.
 			File victim;
-			try(java.util.stream.Stream<Path> s = Files.walk(new File(tablePath).toPath())) {
-				victim = s.filter(p -> p.toString().endsWith(".parquet")).findFirst().map(Path::toFile).orElse(null);
+			try( java.util.stream.Stream<Path> s = Files.walk(new File(tablePath).toPath()) ) {
+				victim = s.filter(p -> p.toString().endsWith(".parquet"))
+					.findFirst().map(Path::toFile).orElse(null);
 			}
 			assertTrue("expected at least one data file to delete", victim != null && victim.delete());
 
@@ -197,8 +200,8 @@ public class DeltaMatrixCoverageTest {
 
 	@Test
 	public void sparseFormatMatrixRoundTrips() throws Exception {
-		// a sparse-backed MatrixBlock takes the writer's non-contiguous path (no
-		// direct double[] view), exercising MatrixColumnVector.get via MatrixBlock.
+		//a sparse-backed MatrixBlock takes the writer's non-contiguous path (no
+		//direct double[] view), exercising MatrixColumnVector.get via MatrixBlock.
 		MatrixBlock in = TestUtils.generateTestMatrixBlock(2000, 7, -5, 5, 0.05, 13);
 		in.recomputeNonZeros();
 		in.examSparsity();
@@ -207,8 +210,8 @@ public class DeltaMatrixCoverageTest {
 		Path dir = Files.createTempDirectory("sysds_delta_sparse_");
 		String tablePath = new File(dir.toFile(), "table").getAbsolutePath();
 		try {
-			new WriterDelta().writeMatrixToHDFS(in, tablePath, in.getNumRows(), in.getNumColumns(), -1,
-				in.getNonZeros());
+			new WriterDelta().writeMatrixToHDFS(in, tablePath,
+				in.getNumRows(), in.getNumColumns(), -1, in.getNonZeros());
 			MatrixBlock out = new ReaderDelta().readMatrixFromHDFS(tablePath, -1, -1, -1, -1);
 			assertEquals("rows", in.getNumRows(), out.getNumRows());
 			assertEquals("cols", in.getNumColumns(), out.getNumColumns());
@@ -221,15 +224,15 @@ public class DeltaMatrixCoverageTest {
 
 	@Test
 	public void fillDenseHandlesNonContiguousBlock() throws Exception {
-		// the dense fill normally hits the contiguous fast path; force a multi-block
-		// (non-contiguous) dense block so the row-by-row fallback is exercised. Such
-		// blocks only arise for matrices beyond a single contiguous array, so we
-		// shrink the per-block allocation cap to provoke it on a tiny matrix.
+		//the dense fill normally hits the contiguous fast path; force a multi-block
+		//(non-contiguous) dense block so the row-by-row fallback is exercised. Such
+		//blocks only arise for matrices beyond a single contiguous array, so we
+		//shrink the per-block allocation cap to provoke it on a tiny matrix.
 		int rows = 5, cols = 4;
 		int savedMaxAlloc = DenseBlockLDRB.MAX_ALLOC;
 		DenseBlock db;
 		try {
-			DenseBlockLDRB.MAX_ALLOC = 2 * cols; // ~2 rows per block -> multiple blocks
+			DenseBlockLDRB.MAX_ALLOC = 2 * cols; //~2 rows per block -> multiple blocks
 			db = new DenseBlockLFP64(new int[] {rows, cols});
 		}
 		finally {
@@ -237,14 +240,14 @@ public class DeltaMatrixCoverageTest {
 		}
 		assertTrue("expected a non-contiguous (multi-block) dense block", !db.isContiguous());
 
-		// two row-major batches (3 rows + 2 rows) covering all 5 rows
+		//two row-major batches (3 rows + 2 rows) covering all 5 rows
 		double[] b0 = new double[3 * cols];
 		double[] b1 = new double[2 * cols];
-		for(int r = 0; r < 3; r++)
-			for(int c = 0; c < cols; c++)
+		for( int r = 0; r < 3; r++ )
+			for( int c = 0; c < cols; c++ )
 				b0[r * cols + c] = cell(r, c);
-		for(int r = 0; r < 2; r++)
-			for(int c = 0; c < cols; c++)
+		for( int r = 0; r < 2; r++ )
+			for( int c = 0; c < cols; c++ )
 				b1[r * cols + c] = cell(3 + r, c);
 		java.util.ArrayList<double[]> batches = new java.util.ArrayList<>();
 		batches.add(b0);
@@ -255,8 +258,8 @@ public class DeltaMatrixCoverageTest {
 		m.setAccessible(true);
 		m.invoke(null, ret, batches);
 
-		for(int r = 0; r < rows; r++)
-			for(int c = 0; c < cols; c++)
+		for( int r = 0; r < rows; r++ )
+			for( int c = 0; c < cols; c++ )
 				assertEquals("r" + r + " c" + c, cell(r, c), ret.getDenseBlock().get(r, c), 0.0);
 	}
 
@@ -273,8 +276,8 @@ public class DeltaMatrixCoverageTest {
 	}
 
 	/**
-	 * Build a mocked scan-file row whose AddFile child has the given schema, null flag and (when not null) stats
-	 * string, matching what {@code numRecords} reads.
+	 * Build a mocked scan-file row whose AddFile child has the given schema, null
+	 * flag and (when not null) stats string, matching what {@code numRecords} reads.
 	 */
 	private static Row addFileRow(StructType addSchema, boolean statsNull, String statsValue) {
 		Row outer = mock(Row.class);
@@ -282,12 +285,12 @@ public class DeltaMatrixCoverageTest {
 		when(outer.getStruct(InternalScanFileUtils.ADD_FILE_ORDINAL)).thenReturn(add);
 		when(add.getSchema()).thenReturn(addSchema);
 		int statsOrd = addSchema.fieldNames().indexOf("stats");
-		if(statsOrd >= 0) {
+		if( statsOrd >= 0 ) {
 			when(add.isNullAt(statsOrd)).thenReturn(statsNull);
-			if(!statsNull)
+			if( !statsNull )
 				when(add.getString(statsOrd)).thenReturn(statsValue);
 		}
-		return outer; // the scan-file row numRecords consumes (its AddFile child is 'add')
+		return outer; //the scan-file row numRecords consumes (its AddFile child is 'add')
 	}
 
 	private static long numRecords(Row scanFileRow) throws Exception {

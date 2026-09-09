@@ -674,8 +674,8 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 		}
 	}
 
-	final void vectMM(double aa, double[] b, double[] c, int endT, int jd, int crl, int cru, int offOut, int k,
-		int vLen, DoubleVector vVec) {
+	final void vectMM(double aa, double[] b, double[] c, int endT, int jd, int crl, int cru, int offOut, int k, int vLen,
+		DoubleVector vVec) {
 		vVec = vVec.broadcast(aa);
 		final int offj = k * jd;
 		final int end = endT + offj;

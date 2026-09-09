@@ -114,7 +114,8 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 			case VALUEPICK: {
 				if( input2.isScalar() ) {
 					ScalarObject quantile = ec.getScalarInput(input2);
-					double[] wt = getWeightedQuantileSummary(in, mc, new double[] {quantile.getDoubleValue()}, true);
+					double[] wt = getWeightedQuantileSummary(in, mc,
+						new double[] {quantile.getDoubleValue()}, true);
 					ec.setScalarOutput(output.getName(), new DoubleObject(wt[3]));
 				}
 				else {

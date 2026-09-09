@@ -62,8 +62,8 @@ public class CLALibMMChainTest {
 	}
 
 	/**
-	 * Build a compressed matrix backed by a single DDC column group spanning all {@code nCol} columns. This guarantees
-	 * a single (non-uncompressed) column group, which is what triggers the mm-chain fast path for wide enough matrices.
+	 * Build a compressed matrix backed by a single DDC column group spanning all {@code nCol} columns. This guarantees a
+	 * single (non-uncompressed) column group, which is what triggers the mm-chain fast path for wide enough matrices.
 	 */
 	private static CompressedMatrixBlock singleDDC(int nRow, int nCol, int nVal, int seed) {
 		Random r = new Random(seed);

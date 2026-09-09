@@ -65,7 +65,7 @@ class OOCBufferedDataOutputStream extends FilterOutputStream implements DataOutp
 	public void write(int b) throws IOException {
 		if(_count >= _bufflen)
 			flushBuffer();
-		_buff[_count++] = (byte) b;
+		_buff[_count++] = (byte)b;
 		_position++;
 	}
 
@@ -109,7 +109,7 @@ class OOCBufferedDataOutputStream extends FilterOutputStream implements DataOutp
 	public void writeBoolean(boolean v) throws IOException {
 		if(_count >= _bufflen)
 			flushBuffer();
-		_buff[_count++] = (byte) (v ? 1 : 0);
+		_buff[_count++] = (byte)(v ? 1 : 0);
 		_position++;
 	}
 
@@ -153,7 +153,7 @@ class OOCBufferedDataOutputStream extends FilterOutputStream implements DataOutp
 	public void writeByte(int v) throws IOException {
 		if(_count + 1 > _bufflen)
 			flushBuffer();
-		_buff[_count++] = (byte) v;
+		_buff[_count++] = (byte)v;
 		_position++;
 	}
 
@@ -194,18 +194,18 @@ class OOCBufferedDataOutputStream extends FilterOutputStream implements DataOutp
 				flushBuffer();
 			final char c = s.charAt(i);
 			if(c >= 0x0001 && c <= 0x007F) {
-				_buff[_count++] = (byte) c;
+				_buff[_count++] = (byte)c;
 				_position++;
 			}
 			else if(c >= 0x0800) {
-				_buff[_count++] = (byte) (0xE0 | ((c >> 12) & 0x0F));
-				_buff[_count++] = (byte) (0x80 | ((c >> 6) & 0x3F));
-				_buff[_count++] = (byte) (0x80 | (c & 0x3F));
+				_buff[_count++] = (byte)(0xE0 | ((c >> 12) & 0x0F));
+				_buff[_count++] = (byte)(0x80 | ((c >> 6) & 0x3F));
+				_buff[_count++] = (byte)(0x80 | (c & 0x3F));
 				_position += 3;
 			}
 			else {
-				_buff[_count++] = (byte) (0xC0 | ((c >> 6) & 0x1F));
-				_buff[_count++] = (byte) (0x80 | (c & 0x3F));
+				_buff[_count++] = (byte)(0xC0 | ((c >> 6) & 0x1F));
+				_buff[_count++] = (byte)(0x80 | (c & 0x3F));
 				_position += 2;
 			}
 		}
@@ -213,7 +213,7 @@ class OOCBufferedDataOutputStream extends FilterOutputStream implements DataOutp
 
 	@Override
 	public void writeDoubleArray(int len, double[] varr) throws IOException {
-		for(int i = 0; i < len;) {
+		for(int i = 0; i < len; ) {
 			if(_count >= _bufflen)
 				flushBuffer();
 			int lblen = Math.min(len - i, (_bufflen - _count) / 8);

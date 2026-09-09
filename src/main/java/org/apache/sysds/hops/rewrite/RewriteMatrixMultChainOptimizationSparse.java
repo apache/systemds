@@ -33,11 +33,14 @@ import org.apache.sysds.hops.estim.EstimationUtils.EstimatorType;
 import org.apache.sysds.hops.estim.SparsityEstimator.OpCode;
 
 /**
- * Rule: Determine the optimal order of execution for a chain of matrix multiplications
- *
- * Solution: Classic Dynamic Programming Approach: Currently, the approach based only on matrix dimensions and sparsity
- * estimates using the basic average estimator Goal: To reduce the number of computations in the run-time (map-reduce)
- * layer
+ * Rule: Determine the optimal order of execution for a chain of
+ * matrix multiplications 
+ * 
+ * Solution: Classic Dynamic Programming
+ * Approach: Currently, the approach based only on matrix dimensions
+ * and sparsity estimates using the basic average estimator
+ * Goal: To reduce the number of computations in the run-time
+ * (map-reduce) layer
  */
 public class RewriteMatrixMultChainOptimizationSparse extends RewriteMatrixMultChainOptimization
 {
@@ -84,9 +87,9 @@ public class RewriteMatrixMultChainOptimizationSparse extends RewriteMatrixMultC
 			dpMatrixS[i][i] = sketchArray[i];
 		}
 
-		// compute cost-optimal chains for increasing chain sizes
-		SparsityEstimator estim = EstimatorType
-			.valueOf(ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.SPARSITY_ESTIMATOR)).getEstimator();
+		//compute cost-optimal chains for increasing chain sizes 
+		SparsityEstimator estim = EstimatorType.valueOf(ConfigurationManager.getDMLConfig()
+			.getTextValue(DMLConfig.SPARSITY_ESTIMATOR)).getEstimator();
 		for(int l = 2; l <= size; l++) { // chain length
 			for(int i = 0; i < size - l + 1; i++) {
 				int j = i + l - 1;

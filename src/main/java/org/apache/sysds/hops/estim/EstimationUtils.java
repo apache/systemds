@@ -34,7 +34,17 @@ public abstract class EstimationUtils
 	 * Enumeration for the sparsity estimators supported
 	 */
 	public enum EstimatorType {
-		BASIC_AVG, BASIC_WORST, BITSET_MM, DM, LG, MNC, MNC_LIM, MNC_EXT, RS, SAMPLE, SAMPLE_RA;
+		BASIC_AVG,
+		BASIC_WORST,
+		BITSET_MM,
+		DM,
+		LG,
+		MNC,
+		MNC_LIM,
+		MNC_EXT,
+		RS,
+		SAMPLE,
+		SAMPLE_RA;
 
 		/**
 		 * @return a sparsity estimator object corresponding to this estimator type

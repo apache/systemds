@@ -43,8 +43,7 @@ import org.junit.Test;
 /**
  * Tests the {@code order} (sort) reorg operation on compressed matrices. A single column held in a single column group
  * is sorted ascending while staying compressed (via {@link org.apache.sysds.runtime.compress.lib.CLALibSort}); every
- * other configuration falls back to a decompressed reorg. In all cases the result must match the uncompressed
- * reference.
+ * other configuration falls back to a decompressed reorg. In all cases the result must match the uncompressed reference.
  */
 public class CompressedSortTest {
 
@@ -264,7 +263,8 @@ public class CompressedSortTest {
 		assertEquals("Expected a single column group", 1, cmb.getColGroups().size());
 
 		MatrixBlock actual = cmb.reorgOperations(ASC, new MatrixBlock(), 0, 0, 0);
-		assertTrue("Expected the sorted result to stay compressed for " + ct, actual instanceof CompressedMatrixBlock);
+		assertTrue("Expected the sorted result to stay compressed for " + ct,
+			actual instanceof CompressedMatrixBlock);
 
 		MatrixBlock expected = mb.reorgOperations(ASC, new MatrixBlock(), 0, 0, 0);
 		TestUtils.compareMatrices(expected, CompressedMatrixBlock.getUncompressed(actual, "sort"), 0.0, "sort " + ct);

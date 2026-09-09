@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -44,10 +44,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Exact inverse correctness tests for the transform decoders. Recode and dummycode are lossless category encodings, so
- * a decode of the encoded matrix must reconstruct the original categorical frame. These tests assert exact
- * reconstruction for the dense path, the sparse path, and the parallel path so that the dummycode sparse binary search
- * and the parallel block split are validated against ground truth rather than only against each other.
+ * Exact inverse correctness tests for the transform decoders. Recode and dummycode are lossless category encodings, so a
+ * decode of the encoded matrix must reconstruct the original categorical frame. These tests assert exact reconstruction
+ * for the dense path, the sparse path, and the parallel path so that the dummycode sparse binary search and the parallel
+ * block split are validated against ground truth rather than only against each other.
  */
 public class TransformDecodeRoundTripTest {
 	protected static final Log LOG = LogFactory.getLog(TransformDecodeRoundTripTest.class.getName());
@@ -59,9 +59,9 @@ public class TransformDecodeRoundTripTest {
 	}
 
 	private static FrameBlock categoricalFrame() {
-		final String[] values = new String[] {"apple", "banana", "apple", "cherry", "banana", "date", "apple", "cherry",
-			"date", "banana", "elderberry", "apple", "fig", "banana", "cherry", "apple", "date", "fig", "elderberry",
-			"banana"};
+		final String[] values = new String[] {
+			"apple", "banana", "apple", "cherry", "banana", "date", "apple", "cherry", "date", "banana", "elderberry",
+			"apple", "fig", "banana", "cherry", "apple", "date", "fig", "elderberry", "banana"};
 		final FrameBlock f = new FrameBlock(new ValueType[] {ValueType.STRING});
 		f.ensureAllocatedColumns(values.length);
 		for(int i = 0; i < values.length; i++)
@@ -117,8 +117,8 @@ public class TransformDecodeRoundTripTest {
 
 	/**
 	 * Dummycode on an earlier column (1) shifts the bin column (2) to the right in the encoded matrix. The bin decoder
-	 * must walk the dummycode domain sizes to recover the bin column's true source position. This drives the non-magic
-	 * offset branch of the bin source-column mapping.
+	 * must walk the dummycode domain sizes to recover the bin column's true source position. This drives the
+	 * non-magic offset branch of the bin source-column mapping.
 	 */
 	@Test
 	public void binAfterDummycodeOnEarlierColumnConsistency() {
@@ -128,9 +128,9 @@ public class TransformDecodeRoundTripTest {
 	}
 
 	/**
-	 * Same right-shift as above, but the earlier column is feature-hashed before being dummycoded. The hash domain size
-	 * K is stored as a plain integer in the single meta cell, so the bin source-column mapping reads it (instead of
-	 * numDistinct) to compute the offset.
+	 * Same right-shift as above, but the earlier column is feature-hashed before being dummycoded. The hash domain
+	 * size K is stored as a plain integer in the single meta cell, so the bin source-column mapping reads it (instead
+	 * of numDistinct) to compute the offset.
 	 */
 	@Test
 	public void binAfterHashDummycodeOnEarlierColumnConsistency() {
@@ -211,10 +211,10 @@ public class TransformDecodeRoundTripTest {
 	}
 
 	/**
-	 * Spark broadcasts the decoder to executors via Java serialization without re-running initMetaData, so the decoder
-	 * must round-trip all of its decode state through writeExternal/readExternal. Decode with a freshly deserialized
-	 * decoder and assert it matches the in-memory decode. Covers plain bin and bin-with-dummycode (the latter exercises
-	 * the serialized _srcCols/_dcCols source-column mapping).
+	 * Spark broadcasts the decoder to executors via Java serialization without re-running initMetaData, so the
+	 * decoder must round-trip all of its decode state through writeExternal/readExternal. Decode with a freshly
+	 * deserialized decoder and assert it matches the in-memory decode. Covers plain bin and bin-with-dummycode
+	 * (the latter exercises the serialized _srcCols/_dcCols source-column mapping).
 	 */
 	@Test
 	public void binDecoderSurvivesSerialization() {
@@ -481,7 +481,8 @@ public class TransformDecodeRoundTripTest {
 				fail("expected the parallel decode wrapper to propagate the worker failure");
 			}
 			catch(DMLRuntimeException expected) {
-				assertNotNull("parallel decode wrapper must retain the worker exception as cause", expected.getCause());
+				assertNotNull("parallel decode wrapper must retain the worker exception as cause",
+					expected.getCause());
 			}
 		}
 		catch(Exception e) {

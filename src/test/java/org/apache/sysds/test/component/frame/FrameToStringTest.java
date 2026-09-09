@@ -42,7 +42,7 @@ public class FrameToStringTest {
 
 	@Test
 	public void testDecimalClampsFractionDigits() {
-		FrameBlock f = new FrameBlock(new ValueType[] {ValueType.FP64}, new String[] {"C1"});
+		FrameBlock f = new FrameBlock(new ValueType[]{ValueType.FP64}, new String[]{"C1"});
 		f.ensureAllocatedColumns(1);
 		f.set(0, 0, 5.244058388023880);
 		// decimal=2 must print exactly two fraction digits, not DecimalFormat's default max of 3
@@ -53,10 +53,10 @@ public class FrameToStringTest {
 
 	@Test
 	public void testDecimalPadsAndRounds() {
-		FrameBlock f = new FrameBlock(new ValueType[] {ValueType.FP64}, new String[] {"C1"});
+		FrameBlock f = new FrameBlock(new ValueType[]{ValueType.FP64}, new String[]{"C1"});
 		f.ensureAllocatedColumns(2);
-		f.set(0, 0, 22.0); // integer-valued: padded up to the requested digits
-		f.set(1, 0, 5.244058388023880); // rounded at the last requested digit
+		f.set(0, 0, 22.0);                // integer-valued: padded up to the requested digits
+		f.set(1, 0, 5.244058388023880);   // rounded at the last requested digit
 		String out = DataConverter.toString(f, false, " ", "\n", 2, 1, 4);
 		assertTrue("expected 22.0000 padded: " + out, out.contains("22.0000\n"));
 		assertTrue("expected 5.2441 rounded: " + out, out.contains("5.2441\n"));
@@ -64,10 +64,10 @@ public class FrameToStringTest {
 
 	@Test
 	public void testNegativeDecimalUsesDefaultFormatting() {
-		FrameBlock f = new FrameBlock(new ValueType[] {ValueType.FP64}, new String[] {"C1"});
+		FrameBlock f = new FrameBlock(new ValueType[]{ValueType.FP64}, new String[]{"C1"});
 		f.ensureAllocatedColumns(2);
-		f.set(0, 0, 22.0); // integer-valued: no fraction digits when unconstrained
-		f.set(1, 0, 5.244058388023880); // default cap of three fraction digits
+		f.set(0, 0, 22.0);                // integer-valued: no fraction digits when unconstrained
+		f.set(1, 0, 5.244058388023880);   // default cap of three fraction digits
 		// decimal < 0 leaves DecimalFormat unconstrained (no min/max fraction digits set)
 		String out = DataConverter.toString(f, false, " ", "\n", 2, 1, -1);
 		assertTrue("expected unpadded 22: " + out, out.contains("22\n"));

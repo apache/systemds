@@ -30,13 +30,32 @@ import jdk.incubator.vector.DoubleVector;
 import jdk.incubator.vector.VectorSpecies;
 
 
-	public enum BuiltinCode {
-		AUTODIFF, SIN, COS, TAN, SINH, COSH, TANH, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN, MAX, ABS, SIGN, SQRT, EXP, PLOGP,
-		PRINT, PRINTF, NROW, NCOL, LENGTH, LINEAGE, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR, CUMSUM, ROWCUMSUM,
-		CUMPROD, CUMMIN, CUMMAX, CUMSUMPROD, INVERSE, SPROP, SIGMOID, EVAL, LIST, TYPEOF, APPLY_SCHEMA, DETECTSCHEMA,
-		ISNA, ISNAN, ISINF, DROP_INVALID_TYPE, DROP_INVALID_LENGTH, VALUE_SWAP, FRAME_ROW_REPLICATE,
-		GET_CATEGORICAL_MASK, MAP, COUNT_DISTINCT, COUNT_DISTINCT_APPROX, UNIQUE
-	}
+/**
+ *  Class with pre-defined set of objects. This class can not be instantiated elsewhere.
+ *  
+ *  Notes on commons.math FastMath:
+ *  * FastMath uses lookup tables and interpolation instead of native calls.
+ *  * The memory overhead for those tables is roughly 48KB in total (acceptable)
+ *  * Micro and application benchmarks showed significantly (30%-3x) performance improvements
+ *    for most operations; without loss of accuracy.
+ *  * atan / sqrt were 20% slower in FastMath and hence, we use Math there
+ *  * round / abs were equivalent in FastMath and hence, we use Math there
+ *  * Finally, there is just one argument against FastMath - The comparison heavily depends
+ *    on the JVM. For example, currently the IBM JDK JIT compiles to HW instructions for sqrt
+ *    which makes this operation very efficient; as soon as other operations like log/exp are
+ *    similarly compiled, we should rerun the micro benchmarks, and switch back if necessary.
+ *  
+ */
+public class Builtin extends ValueFunction 
+{
+	private static final long serialVersionUID = 3836744687789840574L;
+		
+	public enum BuiltinCode { AUTODIFF, SIN, COS, TAN, SINH, COSH, TANH, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN,
+		MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, PRINTF, NROW, NCOL, LENGTH, LINEAGE, ROUND, MAXINDEX, MININDEX,
+		STOP, CEIL, FLOOR, CUMSUM, ROWCUMSUM, CUMPROD, CUMMIN, CUMMAX, CUMSUMPROD, INVERSE, SPROP, SIGMOID, EVAL, LIST,
+		TYPEOF, APPLY_SCHEMA, DETECTSCHEMA, ISNA, ISNAN, ISINF, DROP_INVALID_TYPE, 
+		DROP_INVALID_LENGTH, VALUE_SWAP, FRAME_ROW_REPLICATE, GET_CATEGORICAL_MASK,
+		MAP, COUNT_DISTINCT, COUNT_DISTINCT_APPROX, UNIQUE}
 
 	private static final VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_PREFERRED;
 	private static final int vLen = SPECIES.length();
@@ -49,59 +68,59 @@ import jdk.incubator.vector.VectorSpecies;
 	static public HashMap<String, BuiltinCode> String2BuiltinCode;
 	static {
 		String2BuiltinCode = new HashMap<>();
-		String2BuiltinCode.put("autoDiff", BuiltinCode.AUTODIFF);
-		String2BuiltinCode.put("sin", BuiltinCode.SIN);
-		String2BuiltinCode.put("cos", BuiltinCode.COS);
-		String2BuiltinCode.put("tan", BuiltinCode.TAN);
-		String2BuiltinCode.put("sinh", BuiltinCode.SINH);
-		String2BuiltinCode.put("cosh", BuiltinCode.COSH);
-		String2BuiltinCode.put("tanh", BuiltinCode.TANH);
-		String2BuiltinCode.put("asin", BuiltinCode.ASIN);
-		String2BuiltinCode.put("acos", BuiltinCode.ACOS);
-		String2BuiltinCode.put("atan", BuiltinCode.ATAN);
-		String2BuiltinCode.put("log", BuiltinCode.LOG);
-		String2BuiltinCode.put("log_nz", BuiltinCode.LOG_NZ);
-		String2BuiltinCode.put("min", BuiltinCode.MIN);
-		String2BuiltinCode.put("max", BuiltinCode.MAX);
-		String2BuiltinCode.put("maxindex", BuiltinCode.MAXINDEX);
-		String2BuiltinCode.put("minindex", BuiltinCode.MININDEX);
-		String2BuiltinCode.put("abs", BuiltinCode.ABS);
-		String2BuiltinCode.put("sign", BuiltinCode.SIGN);
-		String2BuiltinCode.put("sqrt", BuiltinCode.SQRT);
-		String2BuiltinCode.put("exp", BuiltinCode.EXP);
-		String2BuiltinCode.put("plogp", BuiltinCode.PLOGP);
-		String2BuiltinCode.put("print", BuiltinCode.PRINT);
-		String2BuiltinCode.put("printf", BuiltinCode.PRINTF);
-		String2BuiltinCode.put("eval", BuiltinCode.EVAL);
-		String2BuiltinCode.put("list", BuiltinCode.LIST);
-		String2BuiltinCode.put("nrow", BuiltinCode.NROW);
-		String2BuiltinCode.put("ncol", BuiltinCode.NCOL);
-		String2BuiltinCode.put("length", BuiltinCode.LENGTH);
-		String2BuiltinCode.put("round", BuiltinCode.ROUND);
-		String2BuiltinCode.put("stop", BuiltinCode.STOP);
-		String2BuiltinCode.put("ceil", BuiltinCode.CEIL);
-		String2BuiltinCode.put("floor", BuiltinCode.FLOOR);
-		String2BuiltinCode.put("ucumk+", BuiltinCode.CUMSUM);
-		String2BuiltinCode.put("urowcumk+", BuiltinCode.ROWCUMSUM);
-		String2BuiltinCode.put("ucum*", BuiltinCode.CUMPROD);
-		String2BuiltinCode.put("ucumk+*", BuiltinCode.CUMSUMPROD);
-		String2BuiltinCode.put("ucummin", BuiltinCode.CUMMIN);
-		String2BuiltinCode.put("ucummax", BuiltinCode.CUMMAX);
-		String2BuiltinCode.put("inverse", BuiltinCode.INVERSE);
-		String2BuiltinCode.put("sprop", BuiltinCode.SPROP);
-		String2BuiltinCode.put("sigmoid", BuiltinCode.SIGMOID);
-		String2BuiltinCode.put("typeOf", BuiltinCode.TYPEOF);
-		String2BuiltinCode.put("detectSchema", BuiltinCode.DETECTSCHEMA);
-		String2BuiltinCode.put("isna", BuiltinCode.ISNA);
-		String2BuiltinCode.put("isnan", BuiltinCode.ISNAN);
-		String2BuiltinCode.put("isinf", BuiltinCode.ISINF);
-		String2BuiltinCode.put("dropInvalidType", BuiltinCode.DROP_INVALID_TYPE);
-		String2BuiltinCode.put("freplicate", BuiltinCode.FRAME_ROW_REPLICATE);
-		String2BuiltinCode.put("dropInvalidLength", BuiltinCode.DROP_INVALID_LENGTH);
-		String2BuiltinCode.put("_map", BuiltinCode.MAP);
-		String2BuiltinCode.put("valueSwap", BuiltinCode.VALUE_SWAP);
-		String2BuiltinCode.put("applySchema", BuiltinCode.APPLY_SCHEMA);
-		String2BuiltinCode.put("get_categorical_mask", BuiltinCode.GET_CATEGORICAL_MASK);
+		String2BuiltinCode.put( "autoDiff"    , BuiltinCode.AUTODIFF);
+		String2BuiltinCode.put( "sin"    , BuiltinCode.SIN);
+		String2BuiltinCode.put( "cos"    , BuiltinCode.COS);
+		String2BuiltinCode.put( "tan"    , BuiltinCode.TAN);
+		String2BuiltinCode.put( "sinh"    , BuiltinCode.SINH);
+		String2BuiltinCode.put( "cosh"    , BuiltinCode.COSH);
+		String2BuiltinCode.put( "tanh"    , BuiltinCode.TANH);
+		String2BuiltinCode.put( "asin"   , BuiltinCode.ASIN);
+		String2BuiltinCode.put( "acos"   , BuiltinCode.ACOS);
+		String2BuiltinCode.put( "atan"   , BuiltinCode.ATAN);
+		String2BuiltinCode.put( "log"    , BuiltinCode.LOG);
+		String2BuiltinCode.put( "log_nz" , BuiltinCode.LOG_NZ);
+		String2BuiltinCode.put( "min"    , BuiltinCode.MIN);
+		String2BuiltinCode.put( "max"    , BuiltinCode.MAX);
+		String2BuiltinCode.put( "maxindex", BuiltinCode.MAXINDEX);
+		String2BuiltinCode.put( "minindex", BuiltinCode.MININDEX);
+		String2BuiltinCode.put( "abs"    , BuiltinCode.ABS);
+		String2BuiltinCode.put( "sign"   , BuiltinCode.SIGN);
+		String2BuiltinCode.put( "sqrt"   , BuiltinCode.SQRT);
+		String2BuiltinCode.put( "exp"    , BuiltinCode.EXP);
+		String2BuiltinCode.put( "plogp"  , BuiltinCode.PLOGP);
+		String2BuiltinCode.put( "print"  , BuiltinCode.PRINT);
+		String2BuiltinCode.put( "printf"  , BuiltinCode.PRINTF);
+		String2BuiltinCode.put( "eval"  , BuiltinCode.EVAL);
+		String2BuiltinCode.put( "list"  , BuiltinCode.LIST);
+		String2BuiltinCode.put( "nrow"   , BuiltinCode.NROW);
+		String2BuiltinCode.put( "ncol"   , BuiltinCode.NCOL);
+		String2BuiltinCode.put( "length" , BuiltinCode.LENGTH);
+		String2BuiltinCode.put( "round"  , BuiltinCode.ROUND);
+		String2BuiltinCode.put( "stop"   , BuiltinCode.STOP);
+		String2BuiltinCode.put( "ceil"   , BuiltinCode.CEIL);
+		String2BuiltinCode.put( "floor"  , BuiltinCode.FLOOR);
+		String2BuiltinCode.put( "ucumk+" , BuiltinCode.CUMSUM);
+		String2BuiltinCode.put( "urowcumk+" , BuiltinCode.ROWCUMSUM);
+		String2BuiltinCode.put( "ucum*"  , BuiltinCode.CUMPROD);
+		String2BuiltinCode.put( "ucumk+*", BuiltinCode.CUMSUMPROD);
+		String2BuiltinCode.put( "ucummin", BuiltinCode.CUMMIN);
+		String2BuiltinCode.put( "ucummax", BuiltinCode.CUMMAX);
+		String2BuiltinCode.put( "inverse", BuiltinCode.INVERSE);
+		String2BuiltinCode.put( "sprop",   BuiltinCode.SPROP);
+		String2BuiltinCode.put( "sigmoid", BuiltinCode.SIGMOID);
+		String2BuiltinCode.put( "typeOf", BuiltinCode.TYPEOF);
+		String2BuiltinCode.put( "detectSchema", BuiltinCode.DETECTSCHEMA);
+		String2BuiltinCode.put( "isna", BuiltinCode.ISNA);
+		String2BuiltinCode.put( "isnan", BuiltinCode.ISNAN);
+		String2BuiltinCode.put( "isinf", BuiltinCode.ISINF);
+		String2BuiltinCode.put( "dropInvalidType", BuiltinCode.DROP_INVALID_TYPE);
+		String2BuiltinCode.put( "freplicate", BuiltinCode.FRAME_ROW_REPLICATE);
+		String2BuiltinCode.put( "dropInvalidLength", BuiltinCode.DROP_INVALID_LENGTH);
+		String2BuiltinCode.put( "_map", BuiltinCode.MAP);
+		String2BuiltinCode.put( "valueSwap", BuiltinCode.VALUE_SWAP);
+		String2BuiltinCode.put( "applySchema", BuiltinCode.APPLY_SCHEMA);
+		String2BuiltinCode.put( "get_categorical_mask", BuiltinCode.GET_CATEGORICAL_MASK);
 	}
 	
 	protected Builtin(BuiltinCode bf) {

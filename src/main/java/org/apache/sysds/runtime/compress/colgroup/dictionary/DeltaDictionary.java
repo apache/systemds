@@ -138,8 +138,8 @@ public class DeltaDictionary extends ADictionary {
 		throw new NotImplementedException();
 	}
 
-	@Override
-	public IDictionary sliceColumns(IntArrayList selectedColumns, int nCol) {
+	@Override 
+	public IDictionary sliceColumns(IntArrayList selectedColumns, int nCol){
 		throw new NotImplementedException();
 	}
 

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -26,10 +26,11 @@ import org.junit.Test;
 
 /**
  * Tests the single-column (unweighted) branch of {@link MatrixBlock#pickValue(double, boolean)} and
- * {@link MatrixBlock#median()}. The values are assumed to be sorted in ascending order, mirroring the contract used by
- * the quantile pick instructions. The unweighted branch uses the same ceil-based rank as the two-column weighted branch
- * (with an implicit weight of 1 per value), so a single column yields the same quantile as the equivalent (value,
- * weight) representation. The two-column (weighted) branch is exercised separately through the compressed sort tests.
+ * {@link MatrixBlock#median()}. The values are assumed to be sorted in ascending order, mirroring the contract used
+ * by the quantile pick instructions. The unweighted branch uses the same ceil-based rank as the two-column weighted
+ * branch (with an implicit weight of 1 per value), so a single column yields the same quantile as the equivalent
+ * (value, weight) representation. The two-column (weighted) branch is exercised separately through the compressed
+ * sort tests.
  */
 public class QuantilePickTest {
 

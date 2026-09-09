@@ -117,8 +117,8 @@ public abstract class AutomatedTestBase {
 	public static final double GPU_TOLERANCE = 1e-9;
 
 	/**
-	 * Default deadline (ms) for federated worker/monitoring readiness waits and a few legacy {@code sleep()} calls.
-	 * {@link FederatedWorkerUtils} enforces its own minimum floor.
+	 * Default deadline (ms) for federated worker/monitoring readiness waits and a few legacy
+	 * {@code sleep()} calls. {@link FederatedWorkerUtils} enforces its own minimum floor.
 	 */
 	public static final int FED_WORKER_WAIT = 3000;
 	
@@ -1761,9 +1761,9 @@ public abstract class AutomatedTestBase {
 	/**
 	 * Start a new JVM for a federated monitoring backend at the port.
 	 *
-	 * <p>
-	 * Returns once the backend's TCP port accepts connections (Netty's bind has completed), or throws a
-	 * {@link RuntimeException} once the {@link FederatedWorkerUtils} readiness floor elapses.
+	 * <p>Returns once the backend's TCP port accepts connections (Netty's bind has completed), or
+	 * throws a {@link RuntimeException} once the {@link FederatedWorkerUtils} readiness floor
+	 * elapses.
 	 *
 	 * @param port    Port to use for the JVM
 	 * @param addArgs Extra CLI args to append, or null
@@ -1776,10 +1776,10 @@ public abstract class AutomatedTestBase {
 	/**
 	 * Start a new JVM for a federated monitoring backend at the port.
 	 *
-	 * <p>
-	 * Returns once the backend's TCP port accepts connections, or throws a {@link RuntimeException} after
-	 * {@code timeoutMs} elapses. The monitoring server opens the port after Netty's {@code bind().sync()} returns; a
-	 * successful TCP connect therefore signals that the HTTP listener is ready to accept requests.
+	 * <p>Returns once the backend's TCP port accepts connections, or throws a
+	 * {@link RuntimeException} after {@code timeoutMs} elapses. The monitoring server opens the
+	 * port after Netty's {@code bind().sync()} returns; a successful TCP connect therefore signals
+	 * that the HTTP listener is ready to accept requests.
 	 *
 	 * @param port      Port to use for the JVM
 	 * @param addArgs   Extra CLI args to append, or null
@@ -1798,9 +1798,8 @@ public abstract class AutomatedTestBase {
 		String separator = System.getProperty("file.separator");
 		String classpath = System.getProperty("java.class.path");
 		String path = System.getProperty("java.home") + separator + "bin" + separator + "java";
-		String[] args = ArrayUtils.addAll(
-			new String[] {path, "-cp", classpath, DMLScript.class.getName(), "-fedMonitoring", Integer.toString(port)},
-			addArgs);
+		String[] args = ArrayUtils.addAll(new String[] {path, "-cp", classpath, DMLScript.class.getName(),
+			"-fedMonitoring", Integer.toString(port)}, addArgs);
 		try {
 			return new ProcessBuilder(args).start();
 		}

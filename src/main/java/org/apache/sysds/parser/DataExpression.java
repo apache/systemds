@@ -1176,72 +1176,52 @@ public class DataExpression extends DataIdentifier
 			
 			boolean isHDF5 = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.HDF5.toString()));
 
-					// handle all csv default parameters
-					handleCSVDefaultParam(DELIM_DELIMITER, ValueType.STRING, conditional);
-					handleCSVDefaultParam(DELIM_FILL_VALUE, ValueType.FP64, conditional);
-					handleCSVDefaultParam(DELIM_HAS_HEADER_ROW, ValueType.BOOLEAN, conditional);
-					handleCSVDefaultParam(DELIM_FILL, ValueType.BOOLEAN, conditional);
-					handleCSVDefaultParam(DELIM_NA_STRINGS, ValueType.STRING, conditional);
-				}
+			boolean isCOG = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.COG.toString()));
 
-				boolean isLIBSVM = false;
-				isLIBSVM = (formatTypeString != null &&
-					formatTypeString.equalsIgnoreCase(FileFormat.LIBSVM.toString()));
-				if(isLIBSVM) {
-					// Handle libsvm file format
-					shouldReadMTD = true;
+			// Delta tables are self-describing (schema + dimensions discovered from the
+			// transaction log at read time), so dimensions are optional like CSV.
+			boolean isDelta = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.DELTA.toString()));
 
-					// only allow IO_FILENAME, READROWPARAM, READCOLPARAM
-					// as valid parameters
-					if(!inferredFormatType) {
-						for(String key : _varParams.keySet()) {
-							if(!(key.equals(IO_FILENAME) || key.equals(FORMAT_TYPE) || key.equals(READROWPARAM) ||
-								key.equals(READCOLPARAM) || key.equals(READNNZPARAM) || key.equals(DATATYPEPARAM) ||
-								key.equals(VALUETYPEPARAM) || key.equals(DELIM_DELIMITER) ||
-								key.equals(LIBSVM_INDEX_DELIM))) {
-								String msg = "Only parameters allowed are: " + IO_FILENAME + "," + READROWPARAM + ","
-									+ READCOLPARAM + DELIM_DELIMITER + "," + LIBSVM_INDEX_DELIM;
-
-								raiseValidateError(
-									"Invalid parameter " + key + " in read statement: " + toString() + ". " + msg,
-									conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-							}
-						}
-					}
-					// handle all default parameters
-					handleCSVDefaultParam(DELIM_DELIMITER, ValueType.STRING, conditional);
-					handleCSVDefaultParam(LIBSVM_INDEX_DELIM, ValueType.STRING, conditional);
-				}
-
-				boolean isHDF5 = (formatTypeString != null &&
-					formatTypeString.equalsIgnoreCase(FileFormat.HDF5.toString()));
-
-				boolean isCOG = (formatTypeString != null &&
-					formatTypeString.equalsIgnoreCase(FileFormat.COG.toString()));
-
-				// Delta tables are self-describing (schema + dimensions discovered from the
-				// transaction log at read time), so dimensions are optional like CSV.
-				boolean isDelta = (formatTypeString != null &&
-					formatTypeString.equalsIgnoreCase(FileFormat.DELTA.toString()));
-
-				dataTypeString = (getVarParam(DATATYPEPARAM) == null) ? null : getVarParam(DATATYPEPARAM).toString();
-
-				if(dataTypeString == null || dataTypeString.equalsIgnoreCase(Statement.MATRIX_DATA_TYPE) ||
-					dataTypeString.equalsIgnoreCase(Statement.FRAME_DATA_TYPE)) {
-
-					boolean isMatrix = false;
-					if(dataTypeString == null || dataTypeString.equalsIgnoreCase(Statement.MATRIX_DATA_TYPE))
+			dataTypeString = (getVarParam(DATATYPEPARAM) == null) ? null : getVarParam(DATATYPEPARAM).toString();
+			
+			if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(Statement.MATRIX_DATA_TYPE) 
+					|| dataTypeString.equalsIgnoreCase(Statement.FRAME_DATA_TYPE)) {
+				
+				boolean isMatrix = false;
+				if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(Statement.MATRIX_DATA_TYPE))
 						isMatrix = true;
+				
+				// set data type
+				getOutput().setDataType(isMatrix ? DataType.MATRIX : DataType.FRAME);
 
-					// set data type
-					getOutput().setDataType(isMatrix ? DataType.MATRIX : DataType.FRAME);
+				// set number non-zeros
+				Expression ennz = getVarParam("nnz");
+				long nnz = -1;
+				if( ennz != null ) {
+					nnz = Long.valueOf(ennz.toString());
+					getOutput().setNnz(nnz);
+				}
 
-					// set number non-zeros
-					Expression ennz = getVarParam("nnz");
-					long nnz = -1;
-					if(ennz != null) {
-						nnz = Long.valueOf(ennz.toString());
-						getOutput().setNnz(nnz);
+				// Following dimension checks must be done when data type = MATRIX_DATA_TYPE 
+				// initialize size of target data identifier to UNKNOWN
+				getOutput().setDimensions(-1, -1);
+				
+				if (!isCSV && !isLIBSVM && !isHDF5 && !isCOG && !isDelta && ConfigurationManager.getCompilerConfig()
+						.getBool(ConfigType.REJECT_READ_WRITE_UNKNOWNS) //skip check for csv/libsvm/delta format / jmlc api
+					&& (getVarParam(READROWPARAM) == null || getVarParam(READCOLPARAM) == null) ) {
+						raiseValidateError("Missing or incomplete dimension information in read statement: "
+								+ mtdFileName, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+				}
+				
+				if (getVarParam(READROWPARAM) instanceof ConstIdentifier 
+					&& getVarParam(READCOLPARAM) instanceof ConstIdentifier)
+				{
+					// these are strings that are long values
+					Long dim1 = (getVarParam(READROWPARAM) == null) ? null : Long.valueOf( getVarParam(READROWPARAM).toString());
+					Long dim2 = (getVarParam(READCOLPARAM) == null) ? null : Long.valueOf( getVarParam(READCOLPARAM).toString());
+					if ( !isCSV && !isDelta && (dim1 < 0 || dim2 < 0) && ConfigurationManager
+							.getCompilerConfig().getBool(ConfigType.REJECT_READ_WRITE_UNKNOWNS) ) {
+						raiseValidateError("Invalid dimension information in read statement", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 					}
 					
 					// set dim1 and dim2 values 
@@ -1272,10 +1252,104 @@ public class DataExpression extends DataIdentifier
 				catch(Exception ex) {
 					raiseValidateError("Invalid format '" + fmt+ "' in statement: " + toString(), conditional);
 				}
-				else if(getVarParam(FORMAT_TYPE) instanceof StringIdentifier) // literal format
-					raiseValidateError("Invalid format " + getVarParam(FORMAT_TYPE) + " in statement: " + toString(),
-						conditional);
-				break;
+				
+				if (getVarParam(ROWBLOCKCOUNTPARAM) instanceof ConstIdentifier && getVarParam(COLUMNBLOCKCOUNTPARAM) instanceof ConstIdentifier)  {
+					Integer rowBlockCount = (getVarParam(ROWBLOCKCOUNTPARAM) == null) ?
+						null : Integer.valueOf(getVarParam(ROWBLOCKCOUNTPARAM).toString());
+					getOutput().setBlocksize(rowBlockCount != null ? rowBlockCount : -1);
+				}
+				
+				// block dimensions must be -1x-1 when format="text"
+				// NOTE MB: disabled validate of default blocksize for inputs w/ format="binary"
+				// because we automatically introduce reblocks if blocksizes don't match
+				if ( (getOutput().getFileFormat().isTextFormat() || !isMatrix)  && getOutput().getBlocksize() != -1 ){
+					raiseValidateError("Invalid block dimensions (" + getOutput().getBlocksize() + ") when format=" + getVarParam(FORMAT_TYPE) + " in \"" + this.toString() + "\".", conditional);
+				}
+			
+			}
+			else if ( dataTypeString.equalsIgnoreCase(Statement.SCALAR_DATA_TYPE)) {
+				getOutput().setDataType(DataType.SCALAR);
+				getOutput().setNnz(-1L);
+			}
+			else if ( dataTypeString.equalsIgnoreCase(DataType.LIST.name())) {
+				getOutput().setDataType(DataType.LIST);
+			}
+			else{
+				raiseValidateError("Unknown Data Type " + dataTypeString + ". Valid  values: " 
+					+ Statement.SCALAR_DATA_TYPE +", " + Statement.MATRIX_DATA_TYPE+", " + Statement.FRAME_DATA_TYPE
+					+", " + DataType.LIST.name().toLowerCase(), conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			
+			// handle value type parameter
+			if (getVarParam(VALUETYPEPARAM) != null && !(getVarParam(VALUETYPEPARAM) instanceof StringIdentifier)){
+				raiseValidateError("for read method, parameter " + VALUETYPEPARAM + " can only be a string. " +
+						"Valid values are: " + Statement.DOUBLE_VALUE_TYPE +", " + Statement.INT_VALUE_TYPE + ", " + Statement.BOOLEAN_VALUE_TYPE + ", " + Statement.STRING_VALUE_TYPE, conditional);
+			}
+			// Identify the value type (used only for read method)
+			String valueTypeString = getVarParam(VALUETYPEPARAM) == null ? null :  getVarParam(VALUETYPEPARAM).toString();
+			if (valueTypeString != null) {
+				if (valueTypeString.equalsIgnoreCase(Statement.DOUBLE_VALUE_TYPE))
+					getOutput().setValueType(ValueType.FP64);
+				else if (valueTypeString.equalsIgnoreCase(Statement.STRING_VALUE_TYPE))
+					getOutput().setValueType(ValueType.STRING);
+				else if (valueTypeString.equalsIgnoreCase(Statement.INT_VALUE_TYPE))
+					getOutput().setValueType(ValueType.INT64);
+				else if (valueTypeString.equalsIgnoreCase(Statement.BOOLEAN_VALUE_TYPE))
+					getOutput().setValueType(ValueType.BOOLEAN);
+				else if (valueTypeString.equalsIgnoreCase(ValueType.UNKNOWN.name()))
+					getOutput().setValueType(ValueType.UNKNOWN);
+				else {
+					raiseValidateError("Unknown Value Type " + valueTypeString
+						+ ". Valid values are: " + Statement.DOUBLE_VALUE_TYPE +", " + Statement.INT_VALUE_TYPE + ", " + Statement.BOOLEAN_VALUE_TYPE + ", " + Statement.STRING_VALUE_TYPE, conditional);
+				}
+			} else {
+				getOutput().setValueType(ValueType.FP64);
+			}
+
+			break; 
+			
+		case WRITE:
+			
+			// for CSV format, if no delimiter specified THEN set default ","
+			if (getVarParam(FORMAT_TYPE) == null || checkFormatType(FileFormat.CSV) ){
+				if (getVarParam(DELIM_DELIMITER) == null) {
+					addVarParam(DELIM_DELIMITER, new StringIdentifier(DEFAULT_DELIM_DELIMITER, this));
+				}
+				if (getVarParam(DELIM_HAS_HEADER_ROW) == null) {
+					addVarParam(DELIM_HAS_HEADER_ROW, new BooleanIdentifier(DEFAULT_DELIM_HAS_HEADER_ROW, this));
+				}
+				if (getVarParam(DELIM_SPARSE) == null) {
+					addVarParam(DELIM_SPARSE, new BooleanIdentifier(DEFAULT_DELIM_SPARSE, this));
+				}
+			}
+			
+			// for LIBSVM format, add the default separators if not specified
+			if (getVarParam(FORMAT_TYPE) == null || checkFormatType(FileFormat.LIBSVM)) {
+				if(getVarParam(DELIM_DELIMITER) == null) {
+					addVarParam(DELIM_DELIMITER, new StringIdentifier(DEFAULT_DELIM_DELIMITER, this));
+				}
+				if(getVarParam(LIBSVM_INDEX_DELIM) == null) {
+					addVarParam(LIBSVM_INDEX_DELIM, new StringIdentifier(DEFAULT_LIBSVM_INDEX_DELIM, this));
+				}
+				if(getVarParam(DELIM_SPARSE) == null) {
+					addVarParam(DELIM_SPARSE, new BooleanIdentifier(DEFAULT_DELIM_SPARSE, this));
+				}
+			}
+			
+			//validate read filename
+			if (getVarParam(FORMAT_TYPE) == null || FileFormat.isTextFormat(getVarParam(FORMAT_TYPE).toString())
+				|| checkFormatType(FileFormat.DELTA)) //delta: columnar, no block layout
+				getOutput().setBlocksize(-1);
+			else if (checkFormatType(FileFormat.BINARY, FileFormat.COMPRESSED, FileFormat.UNKNOWN)) {
+				if( getVarParam(ROWBLOCKCOUNTPARAM)!=null )
+					getOutput().setBlocksize(Integer.parseInt(getVarParam(ROWBLOCKCOUNTPARAM).toString()));
+				else
+					getOutput().setBlocksize(ConfigurationManager.getBlocksize());
+			}
+			else if( getVarParam(FORMAT_TYPE) instanceof StringIdentifier ) //literal format
+				raiseValidateError("Invalid format " + getVarParam(FORMAT_TYPE)
+					+ " in statement: " + toString(), conditional);
+			break;
 
 			case RAND:
 			

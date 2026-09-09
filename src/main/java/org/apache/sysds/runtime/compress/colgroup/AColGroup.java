@@ -402,8 +402,7 @@ public abstract class AColGroup implements Serializable {
 	 * @param cru   The right hand side column upper
 	 * @param nRows The number of rows in this column group
 	 */
-	public void rightDecompressingMult(MatrixBlock right, MatrixBlock ret, int rl, int ru, int nRows, int crl,
-		int cru) {
+	public void rightDecompressingMult(MatrixBlock right, MatrixBlock ret, int rl, int ru, int nRows, int crl, int cru) {
 		throw new NotImplementedException(
 			"not supporting right Decompressing Multiply on class: " + this.getClass().getSimpleName());
 	}
@@ -978,9 +977,9 @@ public abstract class AColGroup implements Serializable {
 	/**
 	 * Sort the values of the column group according to double comparison operations and return as another compressed
 	 * group.
-	 *
+	 * 
 	 * This sorting assumes that the column group is sorted independently of everything else.
-	 *
+	 * 
 	 * @return The sorted group
 	 */
 	public abstract AColGroup sort();
@@ -997,9 +996,9 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Return a new column group containing only the selected rows in the given boolean vector.
-	 *
+	 * 
 	 * Whenever possible only modify the index structure, not the dictionary of the column groups.
-	 *
+	 * 
 	 * @param selectV The selection vector
 	 * @param rOut    The number of rows in the output
 	 * @return The new column group
@@ -1008,9 +1007,9 @@ public abstract class AColGroup implements Serializable {
 
 	/**
 	 * Return a new column group containing only the selected columns in the given boolean vector.
-	 *
+	 * 
 	 * Whenever possible only modify the column index, and reduce the dictionaries of the column groups.
-	 *
+	 * 
 	 * @param selectV The selection vector
 	 * @return The new column group, or {@code null} if no column of this group is selected
 	 */
@@ -1046,7 +1045,7 @@ public abstract class AColGroup implements Serializable {
 	/**
 	 * Using the selection of columns, slice out those and return in a new column group with the given column indexes.
 	 * Ideally this method should only modify the dictionaries.
-	 *
+	 * 
 	 * @param newColumnIDs    the new column indexes
 	 * @param selectedColumns The selected columns of this column group (guaranteed < current number of columns)
 	 * @return A new Column group

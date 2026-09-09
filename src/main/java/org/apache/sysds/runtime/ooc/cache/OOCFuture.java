@@ -34,8 +34,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * Small future implementation for OOC hot paths. It supports multiple synchronous subscribers without the
- * completion-stage support of {@link java.util.concurrent.CompletableFuture}.
+ * Small future implementation for OOC hot paths. It supports multiple synchronous subscribers without
+ * the completion-stage support of {@link java.util.concurrent.CompletableFuture}.
  */
 public class OOCFuture<T> {
 	private Subscriber<T> _subscribers;
@@ -240,7 +240,7 @@ public class OOCFuture<T> {
 		if(resultError == null) {
 			try {
 				@SuppressWarnings("unchecked")
-				R mapped = mapper == null ? (R) value : mapper.apply(value);
+				R mapped = mapper == null ? (R)value : mapper.apply(value);
 				result = mapped;
 			}
 			catch(Throwable t) {
@@ -345,7 +345,8 @@ public class OOCFuture<T> {
 		}
 
 		@Override
-		public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+		public T get(long timeout, TimeUnit unit)
+			throws InterruptedException, ExecutionException, TimeoutException {
 			try {
 				return mapper.apply(source.get(timeout, unit));
 			}

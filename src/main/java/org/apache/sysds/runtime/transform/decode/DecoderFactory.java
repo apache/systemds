@@ -64,15 +64,15 @@ public class DecoderFactory
 		try {
 			//parse transform specification
 			JSONObject jSpec = new JSONObject(spec);
-
-			// create decoders 'bin', 'recode', 'hash', 'dummy', and 'pass-through'
+			
+			//create decoders 'bin', 'recode', 'hash', 'dummy', and 'pass-through'
 			List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames, minCol, maxCol);
-			List<Integer> rcIDs = Arrays.asList(ArrayUtils
-				.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.RECODE.toString(), minCol, maxCol)));
-			List<Integer> hcIDs = Arrays.asList(ArrayUtils
-				.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.HASH.toString(), minCol, maxCol)));
-			List<Integer> dcIDs = Arrays.asList(ArrayUtils
-				.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.DUMMYCODE.toString(), minCol, maxCol)));
+			List<Integer> rcIDs = Arrays.asList(ArrayUtils.toObject(
+					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.RECODE.toString(), minCol, maxCol)));
+			List<Integer> hcIDs = Arrays.asList(ArrayUtils.toObject(
+					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.HASH.toString(), minCol, maxCol)));
+			List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
+					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.DUMMYCODE.toString(), minCol, maxCol)));
 			// only specially treat the columns with both recode and dictionary
 			rcIDs = unionDistinct(rcIDs, dcIDs);
 			// hashing is a lossy, one-way transform with no inverse recode map, so hash columns
@@ -106,18 +106,29 @@ public class DecoderFactory
 
 			// collect all the decoders in one list.
 			List<Decoder> ldecoders = new ArrayList<>();
-
-			if(!binIDs.isEmpty()) {
-				ldecoders.add(new DecoderBin(schema, ArrayUtils.toPrimitive(binIDs.toArray(new Integer[0])),
+			
+			if( !binIDs.isEmpty() ) {
+				ldecoders.add(new DecoderBin(schema, 
+					ArrayUtils.toPrimitive(binIDs.toArray(new Integer[0])),
 					ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0])), hashCols));
 			}
 			if( !dcIDs.isEmpty() ) {
 				ldecoders.add(new DecoderDummycode(schema, 
 					ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0])), hashCols));
 			}
-
-			// create composite decoder of all created decoders
-			// and initialize with given meta data (recode, dummy, bin)
+			if( !rcIDs.isEmpty() ) {
+				// recode on output (after dummycode rebuilds the categorical columns) when dummycoding is present
+				ldecoders.add(new DecoderRecode(schema, !dcIDs.isEmpty(),
+					ArrayUtils.toPrimitive(rcIDs.toArray(new Integer[0]))));
+			}
+			if( !ptIDs.isEmpty() ) {
+				ldecoders.add(new DecoderPassThrough(schema, 
+					ArrayUtils.toPrimitive(ptIDs.toArray(new Integer[0])),
+					ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0])), hashCols));
+			}
+			
+			//create composite decoder of all created decoders
+			//and initialize with given meta data (recode, dummy, bin)
 			decoder = new DecoderComposite(schema, ldecoders);
 			decoder.setColnames(colnames);
 			decoder.initMetaData(meta);
@@ -136,7 +147,7 @@ public class DecoderFactory
 			return DecoderType.Recode.ordinal();
 		else if( decoder instanceof DecoderPassThrough )
 			return DecoderType.PassThrough.ordinal();
-		else if(decoder instanceof DecoderBin)
+		else if( decoder instanceof DecoderBin )
 			return DecoderType.Bin.ordinal();
 		throw new DMLRuntimeException("Unsupported decoder type: "
 			+ decoder.getClass().getCanonicalName());
@@ -147,14 +158,10 @@ public class DecoderFactory
 		
 		// create instance
 		switch(dtype) {
-			case Bin:
-				return new DecoderBin();
-			case Dummycode:
-				return new DecoderDummycode(null, null);
-			case PassThrough:
-				return new DecoderPassThrough(null, null, null);
-			case Recode:
-				return new DecoderRecode(null, false, null);
+			case Bin:         return new DecoderBin();
+			case Dummycode:   return new DecoderDummycode(null, null);
+			case PassThrough: return new DecoderPassThrough(null, null, null);
+			case Recode:      return new DecoderRecode(null, false, null);
 			default:
 				throw new DMLRuntimeException("Unsupported Encoder Type used:  " + dtype);
 		}

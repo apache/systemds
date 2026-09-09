@@ -128,20 +128,17 @@ public class ReshapeOOCInstruction extends ComputationOOCInstruction {
 						long r = tmp.getIndexes().getRowIndex();
 						long c = tmp.getIndexes().getColumnIndex();
 						// adapt index to new position in row
-						return new IndexedMatrixValue(new MatrixIndexes(1, (r - 1) * numBlocksPerRowIn + c),
-							tmp.getValue());
+						return new IndexedMatrixValue(new MatrixIndexes(1, (r - 1) * numBlocksPerRowIn + c), tmp.getValue());
 					});
 				}
 				else {
 					f.join();
-					reshapeFullColBlocks(rows, cols, blen, numBlocksPerRowIn, numBlocksPerRowOut, numBlocksPerColOut,
-						singleRowBlocks, qOut);
+					reshapeFullColBlocks(rows, cols, blen, numBlocksPerRowIn, numBlocksPerRowOut, numBlocksPerColOut, singleRowBlocks, qOut);
 				}
 			}
 			else {
 				f.join();
-				reshapePartialColBlocks(rlen, clen, rows, cols, blen, numBlocksPerRowIn, numBlocksPerRowOut,
-					numBlocksPerColOut, singleRowBlocks, qOut);
+				reshapePartialColBlocks(rlen, clen, rows, cols, blen, numBlocksPerRowIn, numBlocksPerRowOut, numBlocksPerColOut, singleRowBlocks, qOut);
 			}
 		}
 		else {
@@ -169,20 +166,17 @@ public class ReshapeOOCInstruction extends ComputationOOCInstruction {
 						long r = tmp.getIndexes().getRowIndex();
 						long c = tmp.getIndexes().getColumnIndex();
 						// adapt index to new position in col
-						return new IndexedMatrixValue(new MatrixIndexes((c - 1) * numBlocksPerColIn + r, 1),
-							tmp.getValue());
+						return new IndexedMatrixValue(new MatrixIndexes((c - 1) * numBlocksPerColIn + r, 1), tmp.getValue());
 					});
 				}
 				else {
 					f.join();
-					reshapeFullRowBlocks(rows, cols, blen, numBlocksPerRowOut, numBlocksPerColIn, numBlocksPerColOut,
-						singleColBlocks, qOut);
+					reshapeFullRowBlocks(rows, cols, blen, numBlocksPerRowOut, numBlocksPerColIn, numBlocksPerColOut, singleColBlocks, qOut);
 				}
 			}
 			else {
 				f.join();
-				reshapePartialRowBlocks(rlen, clen, rows, cols, blen, numBlocksPerRowOut, numBlocksPerColIn,
-					numBlocksPerColOut, singleColBlocks, qOut);
+				reshapePartialRowBlocks(rlen, clen, rows, cols, blen, numBlocksPerRowOut, numBlocksPerColIn, numBlocksPerColOut, singleColBlocks, qOut);
 			}
 		}
 	}
@@ -232,8 +226,7 @@ public class ReshapeOOCInstruction extends ComputationOOCInstruction {
 	}
 
 	private void reshapePartialColBlocks(long rlen, long clen, long rows, long cols, int blen, int numBlocksPerRowIn,
-		int numBlocksPerRowOut, int numBlocksPerColOut, OOCStream<IndexedMatrixValue> singleRowBlocks,
-		OOCStream<IndexedMatrixValue> qOut) {
+		int numBlocksPerRowOut, int numBlocksPerColOut, OOCStream<IndexedMatrixValue> singleRowBlocks, OOCStream<IndexedMatrixValue> qOut) {
 		// use cache for accessing input rows by index
 		CachingStream singleRowBlockCache = new CachingStream(singleRowBlocks);
 		singleRowBlockCache.incrSubscriberCount(1);
@@ -244,16 +237,14 @@ public class ReshapeOOCInstruction extends ComputationOOCInstruction {
 		int r = 0;
 
 		// allocate row of output blocks
-		MatrixBlock[] outputBlockRow = allocateSliceBlocks(br, rows, cols, blen, numBlocksPerRowOut, numBlocksPerColOut,
-			true);
+		MatrixBlock[] outputBlockRow = allocateSliceBlocks(br, rows, cols, blen, numBlocksPerRowOut, numBlocksPerColOut,true);
 
 		int offsetOut = 0;
 		int localColsOut = (cols > blen) ? blen : (int) cols;
 		// iterate through input rows and add to row of output blocks
 		for(int i = 1; i <= rlen; i++) {
 			for(int j = 1; j <= numBlocksPerRowIn; j++) {
-				try(OOCStream.QueueCallback<IndexedMatrixValue> qcb = singleRowBlockCache
-					.findCached(new MatrixIndexes(i, j))) {
+				try(OOCStream.QueueCallback<IndexedMatrixValue> qcb = singleRowBlockCache.findCached(new MatrixIndexes(i, j))) {
 					MatrixBlock blk = (MatrixBlock) qcb.get().getValue();
 
 					int offsetIn = 0;
@@ -287,12 +278,10 @@ public class ReshapeOOCInstruction extends ComputationOOCInstruction {
 							if(r == outputBlockRow[0].getNumRows()) {
 								// enqueue filled output blocks and allocate new ones
 								for(int b = 0; b < outputBlockRow.length; b++)
-									qOut.enqueue(
-										new IndexedMatrixValue(new MatrixIndexes(br + 1, b + 1), outputBlockRow[b]));
+									qOut.enqueue(new IndexedMatrixValue(new MatrixIndexes(br + 1, b + 1), outputBlockRow[b]));
 								br++;
 								// allocate new block row
-								outputBlockRow = allocateSliceBlocks(br, rows, cols, blen, numBlocksPerRowOut,
-									numBlocksPerColOut, true);
+								outputBlockRow = allocateSliceBlocks(br, rows, cols, blen, numBlocksPerRowOut, numBlocksPerColOut, true);
 								r = 0;
 							}
 							bc = 0;
@@ -352,8 +341,7 @@ public class ReshapeOOCInstruction extends ComputationOOCInstruction {
 	}
 
 	private void reshapePartialRowBlocks(long rlen, long clen, long rows, long cols, int blen, int numBlocksPerRowOut,
-		int numBlocksPerColIn, int numBlocksPerColOut, OOCStream<IndexedMatrixValue> singleColBlocks,
-		OOCStream<IndexedMatrixValue> qOut) {
+		int numBlocksPerColIn, int numBlocksPerColOut, OOCStream<IndexedMatrixValue> singleColBlocks, OOCStream<IndexedMatrixValue> qOut) {
 		// use cache for accessing input cols by index
 		CachingStream singleRowBlockCache = new CachingStream(singleColBlocks);
 		singleRowBlockCache.incrSubscriberCount(1);
@@ -364,16 +352,14 @@ public class ReshapeOOCInstruction extends ComputationOOCInstruction {
 		int c = 0;
 
 		// allocate col of output blocks
-		MatrixBlock[] outputBlockCol = allocateSliceBlocks(bc, rows, cols, blen, numBlocksPerRowOut, numBlocksPerColOut,
-			false);
+		MatrixBlock[] outputBlockCol = allocateSliceBlocks(bc, rows, cols, blen, numBlocksPerRowOut, numBlocksPerColOut, false);
 
 		int offsetOut = 0;
 		int localRowsOut = (rows > blen) ? blen : (int) rows;
 		// iterate through input cols and add to col of output blocks
 		for(int j = 1; j <= clen; j++) {
 			for(int i = 1; i <= numBlocksPerColIn; i++) {
-				try(OOCStream.QueueCallback<IndexedMatrixValue> qcb = singleRowBlockCache
-					.findCached(new MatrixIndexes(i, j))) {
+				try(OOCStream.QueueCallback<IndexedMatrixValue> qcb = singleRowBlockCache.findCached(new MatrixIndexes(i, j))) {
 					MatrixBlock blk = (MatrixBlock) qcb.get().getValue();
 
 					int offsetIn = 0;
@@ -408,13 +394,11 @@ public class ReshapeOOCInstruction extends ComputationOOCInstruction {
 								// enqueue filled output blocks and allocate new ones
 								for(int b = 0; b < outputBlockCol.length; b++) {
 									outputBlockCol[b].recomputeNonZeros();
-									qOut.enqueue(
-										new IndexedMatrixValue(new MatrixIndexes(b + 1, bc + 1), outputBlockCol[b]));
+									qOut.enqueue(new IndexedMatrixValue(new MatrixIndexes(b + 1, bc + 1), outputBlockCol[b]));
 								}
 								bc++;
 								// allocate new block col
-								outputBlockCol = allocateSliceBlocks(bc, rows, cols, blen, numBlocksPerRowOut,
-									numBlocksPerColOut, false);
+								outputBlockCol = allocateSliceBlocks(bc, rows, cols, blen, numBlocksPerRowOut, numBlocksPerColOut, false);
 								c = 0;
 							}
 							br = 0;
@@ -427,20 +411,16 @@ public class ReshapeOOCInstruction extends ComputationOOCInstruction {
 		qOut.closeInput();
 	}
 
-	private MatrixBlock[] allocateSliceBlocks(int idx, long rows, long cols, int blen, int numBlocksPerRow,
-		int numBlocksPerCol, boolean isBlockRowSlice) {
+	private MatrixBlock[] allocateSliceBlocks(int idx, long rows, long cols, int blen, int numBlocksPerRow, int numBlocksPerCol, boolean isBlockRowSlice) {
 		int num = isBlockRowSlice ? numBlocksPerRow : numBlocksPerCol;
 		MatrixBlock[] res = new MatrixBlock[num];
 
 		// full inner blocks, adjust for outer blocks
-		int localRows = ((!isBlockRowSlice || idx == numBlocksPerCol - 1) && rows % blen != 0) ? (int) rows %
-			blen : blen;
-		int localCols = ((isBlockRowSlice || idx == numBlocksPerRow - 1) && cols % blen != 0) ? (int) cols %
-			blen : blen;
+		int localRows = ((!isBlockRowSlice || idx == numBlocksPerCol - 1) && rows % blen != 0) ? (int) rows % blen : blen;
+		int localCols = ((isBlockRowSlice || idx == numBlocksPerRow - 1) && cols % blen != 0) ? (int) cols % blen : blen;
 
 		for(int k = 0; k < num - 1; k++) {
-			res[k] = isBlockRowSlice ? new MatrixBlock(localRows, blen, false) : new MatrixBlock(blen, localCols,
-				false);
+			res[k] = isBlockRowSlice ? new MatrixBlock(localRows, blen, false) : new MatrixBlock(blen, localCols, false);
 			res[k].allocateDenseBlock();
 		}
 		res[num - 1] = new MatrixBlock(localRows, localCols, false);
@@ -448,13 +428,10 @@ public class ReshapeOOCInstruction extends ComputationOOCInstruction {
 		return res;
 	}
 
-	private void setOutputEntries(MatrixBlock src, MatrixBlock dest, int idx, int srcOffset, int destOffset, int length,
-		boolean rowWise) {
+	private void setOutputEntries(MatrixBlock src, MatrixBlock dest, int idx, int srcOffset, int destOffset, int length, boolean rowWise) {
 		if(rowWise)
-			((DenseBlockFP64) dest.getDenseBlock()).setPartialRow(src.getDenseBlock(), idx, srcOffset, destOffset,
-				length);
+			((DenseBlockFP64) dest.getDenseBlock()).setPartialRow(src.getDenseBlock(), idx, srcOffset, destOffset, length);
 		else
-			((DenseBlockFP64) dest.getDenseBlock()).setPartialCol(src.getDenseBlock(), idx, srcOffset, destOffset,
-				length);
+			((DenseBlockFP64) dest.getDenseBlock()).setPartialCol(src.getDenseBlock(), idx, srcOffset, destOffset, length);
 	}
 }

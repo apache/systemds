@@ -484,7 +484,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		long nonZeros = in.readLong();
 		boolean overlappingColGroups = in.readBoolean();
 		List<AColGroup> groups = ColGroupIO.readGroups(in, rlen);
-		CompressedMatrixBlock ret = new CompressedMatrixBlock(rlen, clen, nonZeros, overlappingColGroups, groups);
+		CompressedMatrixBlock ret =  new CompressedMatrixBlock(rlen, clen, nonZeros, overlappingColGroups, groups);
 		LOG.debug("Compressed read serialization time: " + t.stop());
 		return ret;
 	}

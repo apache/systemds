@@ -39,54 +39,60 @@ import io.delta.kernel.utils.CloseableIterable;
 import io.delta.kernel.utils.CloseableIterator;
 
 /**
- * Single-threaded native Delta Lake writer for matrices, built on the Spark-free Delta Kernel library. It creates a
- * Delta table at the target directory with an all-double schema {@code c0..c(n-1)} (replacing any existing table at
- * that path), streams the {@link MatrixBlock} rows as columnar batches into parquet data files via the kernel's default
- * engine, and commits the corresponding add-file actions to the transaction log.
+ * Single-threaded native Delta Lake writer for matrices, built on the
+ * Spark-free Delta Kernel library. It creates a Delta table at the target
+ * directory with an all-double schema {@code c0..c(n-1)} (replacing any existing
+ * table at that path), streams the {@link MatrixBlock} rows as columnar batches
+ * into parquet data files via the kernel's default engine, and commits the
+ * corresponding add-file actions to the transaction log.
  */
 public class WriterDelta extends MatrixWriter {
 
 	@Override
 	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int blen, long nnz, boolean diag)
-		throws IOException {
-		if(src.getNumRows() != rlen || src.getNumColumns() != clen)
-			throw new IOException("Matrix dimensions mismatch with metadata: (" + src.getNumRows() + "x"
-				+ src.getNumColumns() + ") vs (" + rlen + "x" + clen + ").");
+		throws IOException
+	{
+		if( src.getNumRows() != rlen || src.getNumColumns() != clen )
+			throw new IOException("Matrix dimensions mismatch with metadata: ("
+				+ src.getNumRows() + "x" + src.getNumColumns() + ") vs (" + rlen + "x" + clen + ").");
 		int ncol = (int) clen;
 		int nrow = (int) rlen;
 		int batchRows = ConfigurationManager.getDeltaWriterBatchSize();
-		// fast path: a contiguous dense block lets the column views read straight
-		// from the backing double[] (avoids per-cell MatrixBlock.get dispatch).
-		double[] dense = (!src.isInSparseFormat() && src.getDenseBlock() != null &&
-			src.getDenseBlock().isContiguous()) ? src.getDenseBlockValues() : null;
-		// size data files adaptively (toward one file per parallel reader) for faster parallel reads.
-		// Delta writes every cell as a double, so size by the dense footprint rather than the (possibly
-		// sparse) in-memory size, which would understate the on-disk table for sparse inputs.
+		//fast path: a contiguous dense block lets the column views read straight
+		//from the backing double[] (avoids per-cell MatrixBlock.get dispatch).
+		double[] dense = (!src.isInSparseFormat() && src.getDenseBlock() != null
+			&& src.getDenseBlock().isContiguous()) ? src.getDenseBlockValues() : null;
+		//size data files adaptively (toward one file per parallel reader) for faster parallel reads.
+		//Delta writes every cell as a double, so size by the dense footprint rather than the (possibly
+		//sparse) in-memory size, which would understate the on-disk table for sparse inputs.
 		long estimatedBytes = (long) nrow * ncol * 8L;
 		Engine engine = DeltaKernelUtils.createWriteEngine(estimatedBytes);
-		DeltaKernelUtils.commit(engine, DeltaKernelUtils.qualify(fname), buildSchema(ncol),
-			new MatrixBatchIterator(src, dense, nrow, ncol, batchRows));
+		DeltaKernelUtils.commit(engine, DeltaKernelUtils.qualify(fname),
+			buildSchema(ncol), new MatrixBatchIterator(src, dense, nrow, ncol, batchRows));
 	}
 
 	@Override
-	public void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int blen) throws IOException {
-		// empty table: create with schema but no data files
+	public void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int blen)
+		throws IOException
+	{
+		//empty table: create with schema but no data files
 		Engine engine = DeltaKernelUtils.createEngine();
-		DeltaKernelUtils.commit(engine, DeltaKernelUtils.qualify(fname), buildSchema((int) clen),
-			CloseableIterable.<FilteredColumnarBatch>emptyIterable().iterator());
+		DeltaKernelUtils.commit(engine, DeltaKernelUtils.qualify(fname),
+			buildSchema((int) clen), CloseableIterable.<FilteredColumnarBatch>emptyIterable().iterator());
 	}
 
 	private static StructType buildSchema(int ncol) {
 		StructType schema = new StructType();
-		for(int c = 0; c < ncol; c++)
+		for( int c=0; c<ncol; c++ )
 			schema = schema.add("c" + c, DoubleType.DOUBLE, false);
 		return schema;
 	}
 
-	// not implemented (out-of-core streaming write)
+	//not implemented (out-of-core streaming write)
 	@Override
-	public long writeMatrixFromStream(String fname, OOCStream<IndexedMatrixValue> stream, long rlen, long clen,
-		int blen) throws IOException {
+	public long writeMatrixFromStream(String fname, OOCStream<IndexedMatrixValue> stream, long rlen, long clen, int blen)
+		throws IOException
+	{
 		throw new UnsupportedOperationException("Out-of-core stream write is not supported for the Delta format.");
 	}
 
@@ -116,18 +122,18 @@ public class WriterDelta extends MatrixWriter {
 
 		@Override
 		public FilteredColumnarBatch next() {
-			if(!hasNext())
+			if( !hasNext() )
 				throw new NoSuchElementException();
 			int size = Math.min(_batchRows, _nrow - _pos);
 			ColumnarBatch batch = new MatrixColumnarBatch(_mb, _dense, _schema, _pos, size, _ncol);
 			_pos += size;
-			// no selection vector: all rows in the batch are written
+			//no selection vector: all rows in the batch are written
 			return new FilteredColumnarBatch(batch, Optional.empty());
 		}
 
 		@Override
 		public void close() {
-			// nothing to release
+			//nothing to release
 		}
 	}
 
@@ -156,7 +162,7 @@ public class WriterDelta extends MatrixWriter {
 
 		@Override
 		public ColumnVector getColumnVector(int ordinal) {
-			if(ordinal < 0 || ordinal >= _ncol)
+			if( ordinal < 0 || ordinal >= _ncol )
 				throw new IndexOutOfBoundsException("column ordinal " + ordinal);
 			return new MatrixColumnVector(_mb, _dense, _rowStart, _size, _ncol, ordinal);
 		}
@@ -202,14 +208,16 @@ public class WriterDelta extends MatrixWriter {
 
 		@Override
 		public double getDouble(int rowId) {
-			// dense contiguous single block => index fits in int (getDenseBlockValues
-			// is only handed over for single-block dense matrices)
-			return (_dense != null) ? _dense[(_rowStart + rowId) * _ncol + _col] : _mb.get(_rowStart + rowId, _col);
+			//dense contiguous single block => index fits in int (getDenseBlockValues
+			//is only handed over for single-block dense matrices)
+			return (_dense != null)
+				? _dense[(_rowStart + rowId) * _ncol + _col]
+				: _mb.get(_rowStart + rowId, _col);
 		}
 
 		@Override
 		public void close() {
-			// nothing to release
+			//nothing to release
 		}
 	}
 }

@@ -738,7 +738,7 @@ public class ColGroupOLE extends AColGroupOffset {
 	}
 
 	@Override
-	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns) {
+	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns){
 		throw new NotImplementedException("Unimplemented method 'removeEmptyColumns'");
 	}
 

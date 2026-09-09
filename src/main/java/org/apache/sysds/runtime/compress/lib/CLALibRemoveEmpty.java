@@ -36,7 +36,7 @@ public class CLALibRemoveEmpty {
 
 	/**
 	 * CP rmempty operation (single input, single output matrix)
-	 *
+	 * 
 	 * @param in          The input matrix
 	 * @param ret         The output matrix
 	 * @param rows        If we are removing based on rows, or columns.
@@ -66,13 +66,13 @@ public class CLALibRemoveEmpty {
 		int cOut = (int) select.getNonZeros();
 		if(cOut == -1)
 			cOut = (int) select.recomputeNonZeros();
-		if(cOut == 0) {
+		if(cOut == 0){
 			ret.reset(in.getNumRows(), !emptyReturn ? 0 : 1);
 			return ret;
 		}
 
-		final boolean[] selectV = DataConverter.convertToBooleanVector(
-			CompressedMatrixBlock.getUncompressed(select, "decompressing selection in rmempty"));
+		final boolean[] selectV = DataConverter
+			.convertToBooleanVector(CompressedMatrixBlock.getUncompressed(select, "decompressing selection in rmempty"));
 
 		final List<AColGroup> inG = in.getColGroups();
 		final List<AColGroup> retG = new ArrayList<>(inG.size());
@@ -102,16 +102,17 @@ public class CLALibRemoveEmpty {
 		int rOut = (int) select.getNonZeros();
 		if(rOut == -1)
 			rOut = (int) select.recomputeNonZeros();
-		if(rOut == 0) {
+		if(rOut == 0){
 			ret.reset(!emptyReturn ? 0 : 1, in.getNumColumns());
 			return ret;
 		}
 
-		// TODO: add optimization to avoid linear scan and make selectV indexes, if selection is small relative to
-		// number
+		// TODO: add optimization to avoid linear scan and make selectV indexes, if selection is small relative to number
 		// of rows
 		// TODO: add decompress to boolean vector.
 		final boolean[] selectV = DataConverter.convertToBooleanVector(select);
+
+
 
 		final List<AColGroup> inG = in.getColGroups();
 		final List<AColGroup> retG = new ArrayList<>(inG.size());

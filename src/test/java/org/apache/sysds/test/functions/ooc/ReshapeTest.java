@@ -76,9 +76,10 @@ public class ReshapeTest extends AutomatedTestBase {
 	@Parameterized.Parameters(name = "{0}x{1} {2}x{3} rowWise {4}")
 	public static Iterable<Object[]> getParams() {
 
-		int[][][] dims = {{{1000, 1000}, {1, 1000000}}, // single row/col
-			{{3000, 4000}, {1500, 8000}}, // partialBlocks
-			{{2400, 1400}, {800, 4200}} // fullBlocks
+		int[][][] dims = {
+			{{1000, 1000}, {1, 1000000}},	// single row/col
+			{{3000, 4000}, {1500, 8000}},	// partialBlocks
+			{{2400, 1400}, {800, 4200}}		// fullBlocks
 		};
 
 		ArrayList<Object[]> params = new ArrayList<>();
@@ -116,8 +117,7 @@ public class ReshapeTest extends AutomatedTestBase {
 
 			double[][] X = getRandomMatrix(rlen, clen, 0, 1, 1, 7);
 			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(Types.FileFormat.BINARY);
-			writer.writeMatrixToHDFS(DataConverter.convertToMatrixBlock(X), input(INPUT_NAME), rlen, clen, 1000,
-				rlen * clen);
+			writer.writeMatrixToHDFS(DataConverter.convertToMatrixBlock(X), input(INPUT_NAME), rlen, clen, 1000, rlen * clen);
 			HDFSTool.writeMetaDataFile(input(INPUT_NAME + ".mtd"), Types.ValueType.FP64,
 				new MatrixCharacteristics(rlen, clen, blen, rlen * clen), Types.FileFormat.BINARY);
 
@@ -143,8 +143,8 @@ public class ReshapeTest extends AutomatedTestBase {
 			runTest(true, false, null, -1);
 
 			// compare results
-			MatrixBlock actual = DataConverter.readMatrixFromHDFS(output(OUTPUT_NAME), Types.FileFormat.BINARY, rows,
-				cols, blen);
+			MatrixBlock actual = DataConverter.readMatrixFromHDFS(output(OUTPUT_NAME),
+				Types.FileFormat.BINARY, rows, cols, blen);
 			MatrixBlock expected = DataConverter.readMatrixFromHDFS(output(OUTPUT_NAME + "_target"),
 				Types.FileFormat.BINARY, rows, cols, blen);
 

@@ -454,7 +454,7 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 				rlen, clen, blen, mc.getNonZeros(), getFileFormatProperties());
 
 		if(iimd.getFileFormat() == FileFormat.CSV || iimd.getFileFormat() == FileFormat.DELTA) {
-			// dimensions/nnz are discovered at read time for these self-describing formats
+			//dimensions/nnz are discovered at read time for these self-describing formats
 			_metaData = _metaData instanceof MetaDataFormat ? new MetaDataFormat(newData.getDataCharacteristics(),
 				iimd.getFileFormat()) : new MetaData(newData.getDataCharacteristics());
 		}

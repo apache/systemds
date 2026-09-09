@@ -37,8 +37,8 @@ import org.apache.wink.json4j.JSONObject;
 public class BinaryFrameScalarCPInstruction extends BinaryCPInstruction {
 	// private static final Log LOG = LogFactory.getLog(BinaryFrameFrameCPInstruction.class.getName());
 
-	private static final TfMethod[] UNSUPPORTED_MASK_METHODS = new TfMethod[] {TfMethod.BIN, TfMethod.WORD_EMBEDDING,
-		TfMethod.BAG_OF_WORDS, TfMethod.UDF};
+	private static final TfMethod[] UNSUPPORTED_MASK_METHODS = new TfMethod[] {TfMethod.BIN,
+		TfMethod.WORD_EMBEDDING, TfMethod.BAG_OF_WORDS, TfMethod.UDF};
 
 	protected BinaryFrameScalarCPInstruction(MultiThreadedOperator op, CPOperand in1, CPOperand in2, CPOperand out,
 		String opcode, String istr) {
@@ -96,9 +96,9 @@ public class BinaryFrameScalarCPInstruction extends BinaryCPInstruction {
 	}
 
 	/**
-	 * Accumulates, per input column, how many output columns it expands to (lengths) and whether those output columns
-	 * are categorical (categorical). The arrays are allocated lazily: a column that no method touches keeps the
-	 * implicit default of a single, non-categorical output column.
+	 * Accumulates, per input column, how many output columns it expands to (lengths) and whether those
+	 * output columns are categorical (categorical). The arrays are allocated lazily: a column that no
+	 * method touches keeps the implicit default of a single, non-categorical output column.
 	 */
 	private static final class CategoricalMask {
 		private final FrameBlock f;

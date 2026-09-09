@@ -96,7 +96,7 @@ public final class CLALibMMChain {
 		if(x.isEmpty())
 			return returnEmpty(x, out);
 
-		if(ctype == ChainType.XtXv && x.getColGroups().size() < 5 && x.getNumColumns() > 30) {
+		if(ctype == ChainType.XtXv && x.getColGroups().size() < 5 && x.getNumColumns()> 30){
 			MatrixBlock tmp = CLALibTSMM.leftMultByTransposeSelf(x, k);
 			return tmp.aggregateBinaryOperations(tmp, v, out, InstructionUtils.getMatMultOperator(k));
 		}

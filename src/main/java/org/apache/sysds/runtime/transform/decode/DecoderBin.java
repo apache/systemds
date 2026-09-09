@@ -72,10 +72,10 @@ public class DecoderBin extends Decoder {
 				final double val = in.get(i, _srcCols[j] - 1);
 				if(!Double.isNaN(val)){
 					final int key = (int) Math.round(val);
-					if(key == 0) {
+					if(key == 0){
 						a.set(i, _binMins[j][key]);
 					}
-					else {
+					else{
 						double bmin = _binMins[j][key - 1];
 						double bmax = _binMaxs[j][key - 1];
 						double oval = bmin + (bmax - bmin) / 2 // bin center

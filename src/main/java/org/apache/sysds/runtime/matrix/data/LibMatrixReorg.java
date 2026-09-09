@@ -977,7 +977,7 @@ public class LibMatrixReorg {
 		if(ret == null)
 			ret = new MatrixBlock();
 		MatrixBlock ret2 = rmemptyEarlyAbort(in, ret, rows, emptyReturn, select);
-		if(ret2 != null)
+		if(ret2 != null )
 			return ret2;
 		// core removeEmpty
 		return rmemptyUnsafe(in, ret, rows, emptyReturn, select);
@@ -985,7 +985,7 @@ public class LibMatrixReorg {
 
 	public static MatrixBlock rmemptyUnsafe(MatrixBlock in, MatrixBlock ret, boolean rows, boolean emptyReturn,
 		MatrixBlock select) {
-		if(rows)
+		if( rows )
 			return removeEmptyRows(in, ret, select, emptyReturn);
 		else // cols
 			return removeEmptyColumns(in, ret, select, emptyReturn);
@@ -999,15 +999,14 @@ public class LibMatrixReorg {
 	 * @param rows        If removing based on rows, or columns
 	 * @param emptyReturn Return a row/column of zeros for empty input
 	 * @param select      An optional selection vector
-	 * @return The early-abort result, or {@code null} if no early termination applies and the caller must continue. For
-	 *         the select-all case the returned block is the input {@code in} itself (a shallow alias, not a copy).
+	 * @return The early-abort result, or {@code null} if no early termination applies and the caller must continue.
+	 *         For the select-all case the returned block is the input {@code in} itself (a shallow alias, not a copy).
 	 */
-	public static MatrixBlock rmemptyEarlyAbort(MatrixBlock in, MatrixBlock ret, boolean rows, boolean emptyReturn,
-		MatrixBlock select) {
-		// check for empty inputs
-		// (the semantics of removeEmpty are that for an empty m-by-n matrix, the output
-		// is an empty 1-by-n or m-by-1 matrix because we don't allow matrices with dims 0)
-		if(in.isEmptyBlock(false) && select == null) {
+	public static MatrixBlock rmemptyEarlyAbort(MatrixBlock in, MatrixBlock ret, boolean rows, boolean emptyReturn, MatrixBlock select){
+		//check for empty inputs 
+		//(the semantics of removeEmpty are that for an empty m-by-n matrix, the output 
+		//is an empty 1-by-n or m-by-1 matrix because we don't allow matrices with dims 0)
+		if( in.isEmptyBlock(false) && select == null  ) {
 			int n = emptyReturn ? 1 : 0;
 			if( rows )
 				ret.reset(n, in.clen, in.sparse);
@@ -3652,7 +3651,7 @@ public class LibMatrixReorg {
 	/**
 	 * Remove selected rows, based on the boolean array given. Note this function is internal use only, and require a
 	 * boolean vector to be constructed first.
-	 *
+	 * 
 	 * @param in          Input to remove rows from
 	 * @param ret         Output to assign the result into
 	 * @param emptyReturn If the output is allowed to be empty.
@@ -3673,9 +3672,9 @@ public class LibMatrixReorg {
 		ret.reset(rlen2, n, sp);
 		if( in.isEmptyBlock(false) )
 			return ret;
-
-		if(SHALLOW_COPY_REORG && m == rlen2 && selectNull) {
-			// the condition m==rlen2 is not enough with non-empty 1-row input but empty
+		
+		if( SHALLOW_COPY_REORG && m == rlen2 && selectNull ) {
+			// the condition m==rlen2 is not enough with non-empty 1-row input but empty 
 			// 1-row select vector because if emptyReturn should output a single empty row
 			ret.sparse = in.sparse;
 			if( ret.sparse )
@@ -3715,9 +3714,10 @@ public class LibMatrixReorg {
 					ci++;
 				}
 		}
-
-		// check sparsity
-		ret.nonZeros = (selectNull) ? in.nonZeros : ret.recomputeNonZeros();
+		
+		//check sparsity
+		ret.nonZeros = (selectNull) ?
+			in.nonZeros : ret.recomputeNonZeros();
 		ret.examSparsity();
 		
 		return ret;

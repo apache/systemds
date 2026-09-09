@@ -47,9 +47,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Unit tests that drive the get_categorical_mask instruction directly to exercise the defensive code paths
- * (distinct-count prefix in the metadata frame, default column metadata, non id-based specs and the unsupported opcode
- * guard) that the script-level transform tests cannot reach.
+ * Unit tests that drive the get_categorical_mask instruction directly to exercise the defensive code
+ * paths (distinct-count prefix in the metadata frame, default column metadata, non id-based specs and
+ * the unsupported opcode guard) that the script-level transform tests cannot reach.
  */
 public class GetCategoricalMaskInstructionTest {
 	protected static final Log LOG = LogFactory.getLog(GetCategoricalMaskInstructionTest.class.getName());
@@ -210,8 +210,7 @@ public class GetCategoricalMaskInstructionTest {
 		// impute and omit do not change the output column count or categorical flag, so a spec that
 		// only adds them on top of a recoded column must still succeed and mark that column categorical
 		FrameBlock meta = new FrameBlock(new ValueType[] {ValueType.STRING}, new String[][] {{"a"}});
-		MatrixBlock res = run(meta,
-			"{\"ids\": true, \"recode\": [1], \"impute\": [{\"id\": 1, \"method\": \"global_mode\"}], \"omit\": [1]}");
+		MatrixBlock res = run(meta, "{\"ids\": true, \"recode\": [1], \"impute\": [{\"id\": 1, \"method\": \"global_mode\"}], \"omit\": [1]}");
 
 		assertEquals(1, res.getNumRows());
 		assertEquals(1, res.getNumColumns());
@@ -231,7 +230,8 @@ public class GetCategoricalMaskInstructionTest {
 		// any frame-scalar binary opcode other than get_categorical_mask must be rejected
 		ExecutionContext ec = ExecutionContextFactory.createContext();
 		ec.setAutoCreateVars(true);
-		ec.setVariable("F", frameObject(new FrameBlock(new ValueType[] {ValueType.STRING}, new String[][] {{"a"}})));
+		ec.setVariable("F", frameObject(new FrameBlock(new ValueType[] {ValueType.STRING},
+			new String[][] {{"a"}})));
 		assertThrowsMessage("Unsupported operation", () -> maskInstruction("+").processInstruction(ec));
 	}
 
@@ -263,9 +263,9 @@ public class GetCategoricalMaskInstructionTest {
 	}
 
 	/**
-	 * Build a single-row metadata frame of nCol string columns. A positive distinct[i] is written to that column's
-	 * metadata as the recode distinct count (the path real transformencode uses), while a zero leaves the column with
-	 * default metadata (a continuous / non-dummycoded column).
+	 * Build a single-row metadata frame of nCol string columns. A positive distinct[i] is written to
+	 * that column's metadata as the recode distinct count (the path real transformencode uses), while
+	 * a zero leaves the column with default metadata (a continuous / non-dummycoded column).
 	 */
 	private static FrameBlock metaWithDistinct(int nCol, int[] distinct) {
 		ValueType[] schema = new ValueType[nCol];
@@ -290,8 +290,7 @@ public class GetCategoricalMaskInstructionTest {
 
 	private static BinaryFrameScalarCPInstruction maskInstruction(String opcode) {
 		String in1 = InstructionUtils.concatOperandParts("F", DataType.FRAME.name(), ValueType.STRING.name(), "false");
-		String in2 = InstructionUtils.concatOperandParts("spec", DataType.SCALAR.name(), ValueType.STRING.name(),
-			"true");
+		String in2 = InstructionUtils.concatOperandParts("spec", DataType.SCALAR.name(), ValueType.STRING.name(), "true");
 		String out = InstructionUtils.concatOperandParts("out", DataType.MATRIX.name(), ValueType.FP64.name(), "false");
 		String str = InstructionUtils.concatOperands("CP", opcode, in1, in2, out);
 		return (BinaryFrameScalarCPInstruction) BinaryCPInstruction.parseInstruction(str);

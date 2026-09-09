@@ -52,12 +52,18 @@ public class QuantileTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME1,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME2,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME3,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME4,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME5,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME6,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {"R"}));
 	}
 	
 	@Test

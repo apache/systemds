@@ -45,8 +45,8 @@ public class ReorgOOCInstruction extends ComputationOOCInstruction {
 		this(op, in1, out, null, null, null, opcode, istr);
 	}
 
-	private ReorgOOCInstruction(Operator op, CPOperand in, CPOperand out, CPOperand col, CPOperand desc,
-		CPOperand ixret, String opcode, String istr) {
+	private ReorgOOCInstruction(Operator op, CPOperand in, CPOperand out, CPOperand col, CPOperand desc, CPOperand ixret,
+		String opcode, String istr) {
 		super(OOCType.Reorg, op, in, out, opcode, istr);
 		_col = col;
 		_desc = desc;
@@ -76,8 +76,8 @@ public class ReorgOOCInstruction extends ComputationOOCInstruction {
 			CPOperand desc = new CPOperand(parts[3]);
 			CPOperand ixret = new CPOperand(parts[4]);
 			int k = Integer.parseInt(parts[6]);
-			return new ReorgOOCInstruction(new ReorgOperator(new SortIndex(1, false, false), k), in, out, col, desc,
-				ixret, opcode, str);
+			return new ReorgOOCInstruction(new ReorgOperator(new SortIndex(1, false, false), k),
+				in, out, col, desc, ixret, opcode, str);
 		}
 		else
 			throw new NotImplementedException();

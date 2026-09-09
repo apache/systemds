@@ -41,7 +41,7 @@ public class MatrixBlockFromFrame {
 
 	public static Boolean WARNED_FOR_FAILED_CAST = false;
 
-	private MatrixBlockFromFrame() {
+	private MatrixBlockFromFrame(){
 		// private constructor for code coverage.
 	}
 
@@ -115,7 +115,7 @@ public class MatrixBlockFromFrame {
 			return convertStrict(frame, mb, n, rl, ru);
 		}
 		catch(NumberFormatException | DMLRuntimeException e) {
-			synchronized(WARNED_FOR_FAILED_CAST) {
+			synchronized(WARNED_FOR_FAILED_CAST){
 				if(!WARNED_FOR_FAILED_CAST) {
 					LOG.error(
 						"Failed to convert to Matrix because of number format errors, falling back to NaN on incompatible cells",

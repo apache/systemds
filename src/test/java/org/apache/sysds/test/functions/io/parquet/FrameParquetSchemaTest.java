@@ -49,8 +49,9 @@ public class FrameParquetSchemaTest extends AutomatedTestBase {
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Rout"}));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"Rout"}));
 	}
+
 
 	/**
 	 * Test for sequential writer and reader

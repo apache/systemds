@@ -126,20 +126,20 @@ public class DecoderRecode extends Decoder
 		_rcMaps = new HashMap[_colList.length];
 		for( int j=0; j<_colList.length; j++ ) {
 			HashMap<Long, Object> map = new HashMap<>();
-			for(int i = 0; i < meta.getNumRows(); i++) {
-				try {
+			for( int i=0; i<meta.getNumRows(); i++ ) {
+				try{
 
-					if(meta.get(i, _colList[j] - 1) == null)
-						break; // reached end of recode map
-					String[] tmp = ColumnEncoderRecode.splitRecodeMapEntry(meta.get(i, _colList[j] - 1).toString());
-					Object obj = UtilFunctions.stringToObject(_schema[_colList[j] - 1], tmp[0]);
+					if( meta.get(i, _colList[j]-1)==null )
+						break; //reached end of recode map
+					String[] tmp = ColumnEncoderRecode.splitRecodeMapEntry(meta.get(i, _colList[j]-1).toString());
+					Object obj = UtilFunctions.stringToObject(_schema[_colList[j]-1], tmp[0]);
 					long lval = Long.parseLong(tmp[1]);
 					map.put(lval, obj);
 				}
-				catch(Exception e) {
+				catch(Exception e){
 					// avoid dumping the full recode-map column (large, may hold sensitive values)
-					throw new DMLRuntimeException(
-						"Failed to reinitialize recode map for column " + _colList[j] + " at meta row " + i, e);
+					throw new DMLRuntimeException("Failed to reinitialize recode map for column "
+						+ _colList[j] + " at meta row " + i, e);
 				}
 			}
 			_rcMaps[j] = map;

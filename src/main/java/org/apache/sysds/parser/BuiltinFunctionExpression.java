@@ -2009,6 +2009,30 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 		case DECOMPRESS:
 			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND){
 				checkNumParameters(1);
+				checkMatrixFrameParam(getFirstExpr());
+				output.setDataType(getFirstExpr().getOutput().getDataType());
+				output.setDimensions(id.getDim1(), id.getDim2());
+				output.setBlocksize (id.getBlocksize());
+				output.setValueType(id.getValueType());
+			}
+			else
+				raiseValidateError("The compress or decompress instruction is not allowed in dml scripts");
+			break;
+		case GET_CATEGORICAL_MASK: 
+			checkNumParameters(2);
+			checkFrameParam(getFirstExpr());
+			checkScalarParam(getSecondExpr());
+			output.setDataType(DataType.MATRIX);
+			output.setDimensions(1, -1);
+			output.setBlocksize( id.getBlocksize());
+			output.setValueType(ValueType.FP64);
+			break;
+		case QUANTIZE_COMPRESS:
+			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_QUANTIZE_COMPRESS_COMMAND) {
+				checkNumParameters(2);
+				Expression firstExpr = getFirstExpr();
+				Expression secondExpr = getSecondExpr();
+
 				checkMatrixParam(getFirstExpr());
 
 				if(secondExpr != null) {

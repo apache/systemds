@@ -68,11 +68,13 @@ public class FedWorkerMatrixCompress extends FedWorkerBase {
 		// federated. Compression on the worker is async; poll only when we expect compression to
 		// match the local result, otherwise a single read is enough.
 		final long id = putMatrixBlock(mb);
-		final MatrixBlock mbr = (mbcLocal instanceof CompressedMatrixBlock) ? awaitCompressed(id) : getMatrixBlock(id);
+		final MatrixBlock mbr = (mbcLocal instanceof CompressedMatrixBlock)
+			? awaitCompressed(id)
+			: getMatrixBlock(id);
 
 		if(mbcLocal instanceof CompressedMatrixBlock && !(mbr instanceof CompressedMatrixBlock))
-			fail("Invalid result, the federated site did not compress the matrix block within " + COMPRESS_TIMEOUT_MS
-				+ "ms");
+			fail("Invalid result, the federated site did not compress the matrix block within "
+				+ COMPRESS_TIMEOUT_MS + "ms");
 
 		TestUtils.compareMatricesBitAvgDistance(mbcLocal, mbr, 0, 0,
 			"Not equivalent matrix block returned from federated site");

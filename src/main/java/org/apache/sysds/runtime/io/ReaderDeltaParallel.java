@@ -35,16 +35,17 @@ import io.delta.kernel.data.Row;
 import io.delta.kernel.engine.Engine;
 
 /**
- * Parallel native Delta Lake matrix reader. Delta tables are stored as one or more parquet data files; this reader
- * decodes those files concurrently (one task per data file) and then concatenates the per-file row-major buffers into
+ * Parallel native Delta Lake matrix reader. Delta tables are stored as one or
+ * more parquet data files; this reader decodes those files concurrently (one
+ * task per data file) and then concatenates the per-file row-major buffers into
  * the dense output in the original file order.
  *
- * <p>
- * The expensive part of a Delta read is the parquet decode, which the kernel performs per data file; parallelizing
- * across files is therefore the natural way to bridge the gap to the (near-raw) binary reader. A table backed by a
- * single data file (the default for tables &lt;= the parquet target file size) cannot be split this way, so the reader
- * transparently falls back to the sequential {@link ReaderDelta} path in that case.
- * </p>
+ * <p>The expensive part of a Delta read is the parquet decode, which the kernel
+ * performs per data file; parallelizing across files is therefore the natural
+ * way to bridge the gap to the (near-raw) binary reader. A table backed by a
+ * single data file (the default for tables &lt;= the parquet target file size)
+ * cannot be split this way, so the reader transparently falls back to the
+ * sequential {@link ReaderDelta} path in that case.</p>
  */
 public class ReaderDeltaParallel extends ReaderDelta {
 
@@ -56,27 +57,28 @@ public class ReaderDeltaParallel extends ReaderDelta {
 
 	@Override
 	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz)
-		throws IOException, DMLRuntimeException {
+		throws IOException, DMLRuntimeException
+	{
 		Engine engine = DeltaKernelUtils.createEngine();
 		String tablePath = DeltaKernelUtils.qualify(fname);
 		DeltaKernelUtils.ScanHandle handle = DeltaKernelUtils.openScan(engine, tablePath);
 
 		final int nfiles = handle.scanFiles.size();
-		// nothing to gain from parallelism for single-file (or empty) tables
-		if(_numThreads <= 1 || nfiles <= 1)
+		//nothing to gain from parallelism for single-file (or empty) tables
+		if( _numThreads <= 1 || nfiles <= 1 )
 			return super.readMatrixFromHDFS(fname, rlen, clen, blen, estnnz);
 
 		final int ncol = handle.schema.length();
 		final int[] types = columnTypes(handle.schema);
 
-		// fast path: exact per-file row counts are known from metadata and the dense
-		// output fits a single contiguous array -> pre-size once and let each thread
-		// decode directly into its slice (no intermediate buffers, no serial copy).
-		if(useDirectPath(handle)) {
+		//fast path: exact per-file row counts are known from metadata and the dense
+		//output fits a single contiguous array -> pre-size once and let each thread
+		//decode directly into its slice (no intermediate buffers, no serial copy).
+		if( useDirectPath(handle) ) {
 			long total = 0;
-			for(long r : handle.numRecords)
+			for( long r : handle.numRecords )
 				total += r;
-			if(total > 0 && (long) total * ncol <= Integer.MAX_VALUE)
+			if( total > 0 && (long) total * ncol <= Integer.MAX_VALUE )
 				return readDirect(fname, handle, ncol, types, (int) total, estnnz);
 		}
 
@@ -84,9 +86,11 @@ public class ReaderDeltaParallel extends ReaderDelta {
 	}
 
 	/**
-	 * Whether the metadata-driven direct-write fast path can be used for this table (exact per-file row counts and no
-	 * deletion vectors). Visible for testing: the buffered fallback is otherwise only reachable for tables lacking row
-	 * statistics or carrying deletion vectors, which the SystemDS Delta writer never produces.
+	 * Whether the metadata-driven direct-write fast path can be used for this
+	 * table (exact per-file row counts and no deletion vectors). Visible for
+	 * testing: the buffered fallback is otherwise only reachable for tables
+	 * lacking row statistics or carrying deletion vectors, which the SystemDS
+	 * Delta writer never produces.
 	 *
 	 * @param handle the opened scan handle
 	 * @return true if the direct path is applicable
@@ -96,37 +100,38 @@ public class ReaderDeltaParallel extends ReaderDelta {
 	}
 
 	/**
-	 * Fast path: each thread decodes one data file straight into the final dense array at a metadata-derived row
-	 * offset. Single allocation, fully parallel.
+	 * Fast path: each thread decodes one data file straight into the final dense
+	 * array at a metadata-derived row offset. Single allocation, fully parallel.
 	 */
-	private MatrixBlock readDirect(String fname, DeltaKernelUtils.ScanHandle handle, int ncol, int[] types, int nrow,
-		long estnnz) throws IOException {
+	private MatrixBlock readDirect(String fname, DeltaKernelUtils.ScanHandle handle,
+		int ncol, int[] types, int nrow, long estnnz) throws IOException
+	{
 		final int nfiles = handle.scanFiles.size();
 		final int[] rowOffset = new int[nfiles];
 		int acc = 0;
-		for(int i = 0; i < nfiles; i++) {
+		for( int i=0; i<nfiles; i++ ) {
 			rowOffset[i] = acc;
 			acc += (int) handle.numRecords[i];
 		}
 
-		// force a contiguous dense allocation (matrices from Delta are dense doubles)
+		//force a contiguous dense allocation (matrices from Delta are dense doubles)
 		MatrixBlock ret = createOutputMatrixBlock(nrow, ncol, Math.max(nrow, 1), (long) nrow * ncol, true, false);
 		final double[] dv = ret.getDenseBlock().valuesAt(0);
 
 		ArrayList<Callable<Object>> tasks = new ArrayList<>(nfiles);
-		for(int i = 0; i < nfiles; i++) {
+		for( int i=0; i<nfiles; i++ ) {
 			final Row scanFileRow = handle.scanFiles.get(i);
 			final int base = rowOffset[i];
-			// exclusive upper row bound for this file's slice; a file decoding more
-			// rows than its numRecords statistic would otherwise overflow into the
-			// next file's region (concurrent overlapping writes) or off the array
+			//exclusive upper row bound for this file's slice; a file decoding more
+			//rows than its numRecords statistic would otherwise overflow into the
+			//next file's region (concurrent overlapping writes) or off the array
 			final int limit = base + (int) handle.numRecords[i];
 			tasks.add(() -> {
 				int[] cur = new int[] {base};
 				Engine eng = DeltaKernelUtils.createEngine();
 				DeltaKernelUtils.readScanFile(eng, handle.scanState, handle.physicalReadSchema, scanFileRow,
 					(cols, size, selected) -> {
-						if(cur[0] + DeltaKernelUtils.countSelected(size, selected) > limit)
+						if( cur[0] + DeltaKernelUtils.countSelected(size, selected) > limit )
 							throw new DMLRuntimeException("Delta file produced more rows than its "
 								+ "numRecords statistic; refusing parallel direct read of " + fname);
 						cur[0] += extractBatchInto(cols, size, selected, types, ncol, dv, cur[0]);
@@ -142,17 +147,19 @@ public class ReaderDeltaParallel extends ReaderDelta {
 	}
 
 	/**
-	 * Fallback path: decode each file in parallel into per-file buffers (used when row counts are unknown, deletion
-	 * vectors are present, or the matrix exceeds a single contiguous array), then concatenate in file order.
+	 * Fallback path: decode each file in parallel into per-file buffers (used when
+	 * row counts are unknown, deletion vectors are present, or the matrix exceeds a
+	 * single contiguous array), then concatenate in file order.
 	 */
-	private MatrixBlock readBuffered(String fname, DeltaKernelUtils.ScanHandle handle, int ncol, int[] types,
-		long estnnz) throws IOException {
+	private MatrixBlock readBuffered(String fname, DeltaKernelUtils.ScanHandle handle,
+		int ncol, int[] types, long estnnz) throws IOException
+	{
 		final int nfiles = handle.scanFiles.size();
 		@SuppressWarnings("unchecked")
 		final ArrayList<double[]>[] fileBufs = new ArrayList[nfiles];
 		final int[] fileRows = new int[nfiles];
 		ArrayList<Callable<Object>> tasks = new ArrayList<>(nfiles);
-		for(int i = 0; i < nfiles; i++) {
+		for( int i=0; i<nfiles; i++ ) {
 			final int fi = i;
 			final Row scanFileRow = handle.scanFiles.get(i);
 			tasks.add(() -> {
@@ -172,15 +179,15 @@ public class ReaderDeltaParallel extends ReaderDelta {
 		awaitFileTasks(tasks, fname);
 
 		int nrow = 0;
-		for(int i = 0; i < nfiles; i++)
+		for( int i=0; i<nfiles; i++ )
 			nrow += fileRows[i];
 		ArrayList<double[]> ordered = new ArrayList<>();
-		for(int i = 0; i < nfiles; i++)
+		for( int i=0; i<nfiles; i++ )
 			ordered.addAll(fileBufs[i]);
 
 		long lestnnz = (estnnz >= 0) ? estnnz : (long) nrow * ncol;
 		MatrixBlock ret = createOutputMatrixBlock(nrow, ncol, Math.max(nrow, 1), lestnnz, true, false);
-		if(nrow > 0 && ncol > 0)
+		if( nrow > 0 && ncol > 0 )
 			fillDense(ret, ordered);
 		ret.recomputeNonZeros(_numThreads);
 		ret.examSparsity();
@@ -188,15 +195,16 @@ public class ReaderDeltaParallel extends ReaderDelta {
 	}
 
 	/**
-	 * Run one decode task per data file on the shared common thread pool and await completion. Full parallelism is
-	 * requested (the task count, one per data file, naturally caps concurrency); this avoids the per-thread pool-size
-	 * caching in {@code CommonThreadPool.get(k)} that could otherwise throttle this reader to a smaller pool created
-	 * earlier on the same thread.
+	 * Run one decode task per data file on the shared common thread pool and await
+	 * completion. Full parallelism is requested (the task count, one per data file,
+	 * naturally caps concurrency); this avoids the per-thread pool-size caching in
+	 * {@code CommonThreadPool.get(k)} that could otherwise throttle this reader to a
+	 * smaller pool created earlier on the same thread.
 	 */
 	private void awaitFileTasks(List<Callable<Object>> tasks, String fname) throws IOException {
 		ExecutorService pool = CommonThreadPool.get(_numThreads);
 		try {
-			for(Future<Object> f : pool.invokeAll(tasks))
+			for( Future<Object> f : pool.invokeAll(tasks) )
 				f.get();
 		}
 		catch(Exception ex) {

@@ -148,10 +148,10 @@ public class CommonThreadPool implements ExecutorService {
 	}
 
 	/**
-	 * Thread factory that produces daemon threads. The ForkJoinPool-backed pools already use daemon threads; the
-	 * fallback {@link Executors#newFixedThreadPool} and {@link Executors#newCachedThreadPool} pools default to
-	 * non-daemon threads, which can keep the JVM (e.g. a surefire test fork) alive if a caller forgets to shut the pool
-	 * down. Making them daemon keeps that behavior uniform.
+	 * Thread factory that produces daemon threads. The ForkJoinPool-backed pools already use daemon
+	 * threads; the fallback {@link Executors#newFixedThreadPool} and {@link Executors#newCachedThreadPool}
+	 * pools default to non-daemon threads, which can keep the JVM (e.g. a surefire test fork) alive
+	 * if a caller forgets to shut the pool down. Making them daemon keeps that behavior uniform.
 	 */
 	private static ThreadFactory daemonThreadFactory() {
 		final ThreadFactory base = Executors.defaultThreadFactory();

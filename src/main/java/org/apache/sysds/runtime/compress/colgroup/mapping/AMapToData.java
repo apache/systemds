@@ -1064,7 +1064,7 @@ public abstract class AMapToData implements Serializable {
 
 	/**
 	 * Use the offsets of the select vector to choose which values to keep.
-	 *
+	 * 
 	 * @param select The row indexes to keep
 	 * @return A New MapToData
 	 */

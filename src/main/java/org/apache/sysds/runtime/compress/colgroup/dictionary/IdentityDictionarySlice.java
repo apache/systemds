@@ -311,8 +311,8 @@ public class IdentityDictionarySlice extends AIdentityDictionary {
 		return toString();
 	}
 
-	@Override
-	public IDictionary sliceColumns(IntArrayList selectedColumns, int nCol) {
+	@Override 
+	public IDictionary sliceColumns(IntArrayList selectedColumns, int nCol){
 		return getMBDict().sliceColumns(selectedColumns, nCol);
 	}
 

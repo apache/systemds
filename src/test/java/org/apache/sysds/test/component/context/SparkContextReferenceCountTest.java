@@ -35,10 +35,12 @@ import org.junit.Test;
 public class SparkContextReferenceCountTest {
 
 	/**
-	 * Two DML executions sharing the JVM-wide singleton spark context (as happens with surefire parallel tests,
-	 * threadCount&gt;1). When the first execution finishes and calls close(), the shared context must stay alive
-	 * because the second execution still has in-flight work. Before reference counting, close() stopped the context
-	 * unconditionally, which cancelled the second execution's spark job and wedged it until the test watchdog.
+	 * Two DML executions sharing the JVM-wide singleton spark context (as happens
+	 * with surefire parallel tests, threadCount&gt;1). When the first execution
+	 * finishes and calls close(), the shared context must stay alive because the
+	 * second execution still has in-flight work. Before reference counting,
+	 * close() stopped the context unconditionally, which cancelled the second
+	 * execution's spark job and wedged it until the test watchdog.
 	 */
 	@Test
 	public void closeKeepsContextAliveWhileAnotherExecutionIsActive() {
@@ -62,13 +64,16 @@ public class SparkContextReferenceCountTest {
 			// context that B still uses
 			SparkExecutionContext.exitSparkExecution();
 			ecA.close();
-			assertFalse("shared context must stay alive while another execution is active", sc.sc().isStopped());
-			assertEquals("B's job must still run on the live context", 10L, rdd.reduce(Integer::sum).longValue());
+			assertFalse("shared context must stay alive while another execution is active",
+				sc.sc().isStopped());
+			assertEquals("B's job must still run on the live context",
+				10L, rdd.reduce(Integer::sum).longValue());
 
 			// B finishes last: releasing the final registration lets close() stop it
 			SparkExecutionContext.exitSparkExecution();
 			ecB.close();
-			assertTrue("shared context must be stopped once the last execution closes", sc.sc().isStopped());
+			assertTrue("shared context must be stopped once the last execution closes",
+				sc.sc().isStopped());
 		}
 		finally {
 			// drain any remaining registrations and stop the context so a failed
@@ -82,9 +87,10 @@ public class SparkContextReferenceCountTest {
 	}
 
 	/**
-	 * An unpaired close() (a caller that borrows the shared context but never registered via enterSparkExecution())
-	 * must not stop a context another execution still uses. This fails on the old unconditional-stop code, which tore
-	 * the context down out from under the active execution.
+	 * An unpaired close() (a caller that borrows the shared context but never
+	 * registered via enterSparkExecution()) must not stop a context another
+	 * execution still uses. This fails on the old unconditional-stop code, which
+	 * tore the context down out from under the active execution.
 	 */
 	@Test
 	public void unpairedCloseDoesNotStopAContextStillInUse() {
@@ -100,12 +106,14 @@ public class SparkContextReferenceCountTest {
 			// borrows the shared context): close() must not stop a context in use
 			unregistered = ExecutionContextFactory.createSparkExecutionContext();
 			unregistered.close();
-			assertFalse("unpaired close() must not stop a context still in use", sc.sc().isStopped());
+			assertFalse("unpaired close() must not stop a context still in use",
+				sc.sc().isStopped());
 
 			// the registered execution finishing stops the context as the last user
 			SparkExecutionContext.exitSparkExecution();
 			active.close();
-			assertTrue("context must stop once the last registered execution closes", sc.sc().isStopped());
+			assertTrue("context must stop once the last registered execution closes",
+				sc.sc().isStopped());
 		}
 		finally {
 			SparkExecutionContext.exitSparkExecution();

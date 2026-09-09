@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -106,8 +106,7 @@ public class GetCategoricalMaskTest extends AutomatedTestBase {
 
 	@Test
 	public void testHash3() throws Exception {
-		FrameBlock fb = TestUtils.generateRandomFrameBlock(100,
-			new ValueType[] {ValueType.UINT8, ValueType.INT64, ValueType.UINT8}, 32);
+		FrameBlock fb = TestUtils.generateRandomFrameBlock(100, new ValueType[] {ValueType.UINT8, ValueType.INT64,ValueType.UINT8}, 32);
 		MatrixBlock expected = new MatrixBlock(1, 7, new double[] {1, 1, 1, 0, 1, 1, 1});
 
 		String spec = "{\"ids\": true, \"dummycode\": [1,3], \"hash\": [1,3], \"K\": 3}";
@@ -115,11 +114,11 @@ public class GetCategoricalMaskTest extends AutomatedTestBase {
 
 	}
 
+
 	@Test
 	public void testHybrid1() throws Exception {
-		FrameBlock fb = TestUtils.generateRandomFrameBlock(100,
-			new ValueType[] {ValueType.UINT8, ValueType.INT64, ValueType.UINT8, ValueType.BOOLEAN}, 32);
-		MatrixBlock expected = new MatrixBlock(1, 9, new double[] {1, 1, 1, 0, 1, 1, 1, 1, 1});
+		FrameBlock fb = TestUtils.generateRandomFrameBlock(100, new ValueType[] {ValueType.UINT8, ValueType.INT64,ValueType.UINT8, ValueType.BOOLEAN}, 32);
+		MatrixBlock expected = new MatrixBlock(1, 9, new double[] {1, 1, 1, 0, 1, 1, 1,1,1});
 
 		String spec = "{\"ids\": true, \"dummycode\": [1,3,4], \"hash\": [1,3], \"K\": 3}";
 		runTransformTest(fb, spec, expected);
@@ -128,9 +127,8 @@ public class GetCategoricalMaskTest extends AutomatedTestBase {
 
 	@Test
 	public void testHybrid2() throws Exception {
-		FrameBlock fb = TestUtils.generateRandomFrameBlock(100,
-			new ValueType[] {ValueType.UINT8, ValueType.BOOLEAN, ValueType.UINT8, ValueType.BOOLEAN}, 32);
-		MatrixBlock expected = new MatrixBlock(1, 10, new double[] {1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
+		FrameBlock fb = TestUtils.generateRandomFrameBlock(100, new ValueType[] {ValueType.UINT8, ValueType.BOOLEAN,ValueType.UINT8, ValueType.BOOLEAN}, 32);
+		MatrixBlock expected = new MatrixBlock(1, 10, new double[] {1, 1, 1, 1,1, 1, 1, 1,1,1});
 
 		String spec = "{\"ids\": true, \"dummycode\": [1,2,3,4], \"hash\": [1,3], \"K\": 3}";
 		runTransformTest(fb, spec, expected);
@@ -141,7 +139,7 @@ public class GetCategoricalMaskTest extends AutomatedTestBase {
 		try {
 
 			getAndLoadTestConfiguration(TEST_NAME1);
-
+			
 			String inF = input("F-In");
 			String inS = input("spec");
 

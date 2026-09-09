@@ -66,8 +66,8 @@ public abstract class Decoder implements Externalizable{
 	}
 
 	/**
-	 * Domain size of a dummycoded source column: the hash domain K from the meta cell for feature-hashed columns,
-	 * otherwise the column's {@code numDistinct} (0 when unset).
+	 * Domain size of a dummycoded source column: the hash domain K from the meta cell for
+	 * feature-hashed columns, otherwise the column's {@code numDistinct} (0 when unset).
 	 *
 	 * @param meta   transform meta frame
 	 * @param colID  1-based column id of the dummycoded source column
@@ -144,13 +144,13 @@ public abstract class Decoder implements Externalizable{
 		try {
 			final List<Future<?>> tasks = new ArrayList<>();
 			int blz = Math.max((in.getNumRows() + k) / k, 1000);
-
-			for(int i = 0; i < in.getNumRows(); i += blz) {
+			
+			for(int i = 0; i < in.getNumRows(); i += blz){
 				final int start = i;
 				final int end = Math.min(in.getNumRows(), i + blz);
 				tasks.add(pool.submit(() -> decode(in, out, start, end)));
 			}
-
+			
 			for(Future<?> f : tasks)
 				f.get();
 			return out;

@@ -1195,9 +1195,9 @@ public class ColGroupRLE extends AColGroupOffset {
 	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
 		throw new NotImplementedException("Unimplemented method 'removeEmptyRows'");
 	}
-
+	
 	@Override
-	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns) {
+	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns){
 		throw new NotImplementedException("Unimplemented method 'removeEmptyColumns'");
 	}
 

@@ -4756,13 +4756,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 	
 	/**
-	 * Pick the quantiles out of this matrix. If this matrix contains two columns it is weighted quantile picking. If a
-	 * single column it is unweighted.
-	 *
+	 * Pick the quantiles out of this matrix. If this matrix contains two columns it is weighted quantile picking.
+	 * If a single column it is unweighted.
+	 * 
 	 * Note the values are assumed to be sorted.
-	 *
+	 * 
 	 * @param quantiles The quantiles to pick
-	 * @param ret       The result matrix
+	 * @param ret The result matrix
 	 * @return The result matrix
 	 */
 	public final MatrixBlock pickValues(MatrixValue quantiles, MatrixValue ret) {
@@ -4792,11 +4792,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 	
 	/**
-	 * Pick the median value from this matrix. If this matrix has two columns it is weighted picking using the weight
-	 * column, otherwise it is unweighted over the single column.
-	 *
+	 * Pick the median value from this matrix. If this matrix has two columns it is weighted picking using the
+	 * weight column, otherwise it is unweighted over the single column.
+	 * 
 	 * Note the values are assumed to be sorted.
-	 *
+	 * 
 	 * @return The median value
 	 */
 	public double median() {
@@ -4807,11 +4807,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 
 	/**
-	 * Pick a specific quantile from this matrix. If this matrix has two columns it is weighted picking, otherwise it is
-	 * unweighted.
-	 *
+	 * Pick a specific quantile from this matrix. If this matrix has two columns it is weighted picking, otherwise it is unweighted.
+	 * 
 	 * Note the values are assumed to be sorted.
-	 *
+	 * 
 	 * @param quantile The quantile to pick
 	 * @return The quantile
 	 */
@@ -4820,13 +4819,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 	
 	/**
-	 * Pick a specific quantile from this matrix. If this matrix has two columns it is weighted picking, otherwise it is
-	 * unweighted.
-	 *
+	 * Pick a specific quantile from this matrix. If this matrix has two columns it is weighted picking, otherwise it is unweighted.
+	 * 
 	 * Note the values are assumed to be sorted.
-	 *
+	 * 
 	 * @param quantile The quantile to pick
-	 * @param average  If the quantile is averaged.
+	 * @param average If the quantile is averaged.
 	 * @return The quantile
 	 */
 	public final double pickValue(double quantile, boolean average) {

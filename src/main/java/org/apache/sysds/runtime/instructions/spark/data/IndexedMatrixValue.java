@@ -30,7 +30,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.ooc.cache.io.SpillableObject;
 
-public class IndexedMatrixValue implements SpillableObject, Serializable {
+public class IndexedMatrixValue implements SpillableObject, Serializable
+{
 	private static final long serialVersionUID = 6723389820806752110L;
 
 	private MatrixIndexes _indexes = null;
@@ -109,8 +110,8 @@ public class IndexedMatrixValue implements SpillableObject, Serializable {
 
 	@Override
 	public void read(DataInput dataInput) throws IOException {
-		_indexes = new MatrixIndexes();
-		_value = new MatrixBlock();
+		_indexes = new  MatrixIndexes();
+		_value = new  MatrixBlock();
 		_indexes.readFields(dataInput);
 		_value.readFields(dataInput);
 	}

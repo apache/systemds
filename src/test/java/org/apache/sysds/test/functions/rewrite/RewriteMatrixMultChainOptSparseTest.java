@@ -123,8 +123,8 @@ public class RewriteMatrixMultChainOptSparseTest extends AutomatedTestBase {
 				overwriteCurrentConfig(dmlConfig);
 			}
 			catch(FileNotFoundException fnfe) {
-				Assert.fail(
-					"Could not find DML config file: " + getCurConfigFile().getPath() + " . " + fnfe.getMessage());
+				Assert.fail("Could not find DML config file: " +
+					getCurConfigFile().getPath() + " . " + fnfe.getMessage());
 			}
 			catch(IOException ioe) {
 				Assert.fail("Could not overwrite the DML configuration file. " + ioe.getMessage());
@@ -132,7 +132,8 @@ public class RewriteMatrixMultChainOptSparseTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-explain", "hops", "-stats", "-args", input("X"), input("Y"), output("R")};
+			programArgs = new String[] {"-explain", "hops", "-stats",
+				"-args", input("X"), input("Y"), output("R")};
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());
 

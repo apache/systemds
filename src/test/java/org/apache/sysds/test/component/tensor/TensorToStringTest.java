@@ -30,7 +30,7 @@ import org.junit.Test;
 public class TensorToStringTest {
 	@Test
 	public void testDecimalClampsFractionDigits() {
-		TensorBlock tb = new TensorBlock(ValueType.FP64, new int[] {1, 1});
+		TensorBlock tb = new TensorBlock(ValueType.FP64, new int[]{1, 1});
 		tb.allocateBlock();
 		tb.set(0, 0, 5.244058388023880);
 		// decimal=2 must print exactly two fraction digits, not DecimalFormat's default max of 3
@@ -41,10 +41,10 @@ public class TensorToStringTest {
 
 	@Test
 	public void testDecimalPadsAndRounds() {
-		TensorBlock tb = new TensorBlock(ValueType.FP64, new int[] {1, 2});
+		TensorBlock tb = new TensorBlock(ValueType.FP64, new int[]{1, 2});
 		tb.allocateBlock();
-		tb.set(0, 0, 22.0); // integer-valued: padded up to the requested digits
-		tb.set(0, 1, 5.244058388023880); // rounded at the last requested digit
+		tb.set(0, 0, 22.0);                // integer-valued: padded up to the requested digits
+		tb.set(0, 1, 5.244058388023880);   // rounded at the last requested digit
 		String out = DataConverter.toString(tb, false, " ", "\n", "[", "]", 1, 2, 4);
 		assertTrue("expected 22.0000 padded: " + out, out.contains("22.0000"));
 		assertTrue("expected 5.2441 rounded: " + out, out.contains("5.2441"));
@@ -52,10 +52,10 @@ public class TensorToStringTest {
 
 	@Test
 	public void testNegativeDecimalUsesDefaultFormatting() {
-		TensorBlock tb = new TensorBlock(ValueType.FP64, new int[] {1, 2});
+		TensorBlock tb = new TensorBlock(ValueType.FP64, new int[]{1, 2});
 		tb.allocateBlock();
-		tb.set(0, 0, 22.0); // integer-valued: no fraction digits when unconstrained
-		tb.set(0, 1, 5.244058388023880); // default cap of three fraction digits
+		tb.set(0, 0, 22.0);                // integer-valued: no fraction digits when unconstrained
+		tb.set(0, 1, 5.244058388023880);   // default cap of three fraction digits
 		// decimal < 0 leaves DecimalFormat unconstrained (no min/max fraction digits set)
 		String out = DataConverter.toString(tb, false, " ", "\n", "[", "]", 1, 2, -1);
 		assertTrue("expected unpadded 22: " + out, out.contains("22"));

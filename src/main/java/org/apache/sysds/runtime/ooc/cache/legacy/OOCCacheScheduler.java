@@ -34,16 +34,14 @@ public interface OOCCacheScheduler {
 
 	/**
 	 * Requests a single block from the cache.
-	 *
 	 * @param key the requested key associated to the block
 	 * @return the available BlockEntry
 	 */
 	CompletableFuture<BlockEntry> request(BlockKey key);
 
 	/**
-	 * Tries to request a single block from the cache. Immediately returns the entry if present, otherwise null without
-	 * scheduling reads.
-	 *
+	 * Tries to request a single block from the cache.
+	 * Immediately returns the entry if present, otherwise null without scheduling reads.
 	 * @param key the requested key associated to the block
 	 * @return the available BlockEntry or null
 	 */
@@ -54,16 +52,14 @@ public interface OOCCacheScheduler {
 
 	/**
 	 * Requests a list of blocks from the cache that must be available at the same time.
-	 *
 	 * @param keys the requested keys associated to the block
 	 * @return the list of available BlockEntries
 	 */
 	CompletableFuture<List<BlockEntry>> request(List<BlockKey> keys);
 
 	/**
-	 * Tries to request a list of blocks from the cache that must be available at the same time. Immediately returns the
-	 * list of entries if present, otherwise null without scheduling reads.
-	 *
+	 * Tries to request a list of blocks from the cache that must be available at the same time.
+	 * Immediately returns the list of entries if present, otherwise null without scheduling reads.
 	 * @param keys the requested keys associated to the block
 	 * @return the list of available BlockEntries
 	 */
@@ -80,25 +76,24 @@ public interface OOCCacheScheduler {
 	List<BlockEntry> tryRequestAnyOf(List<BlockKey> keys, int n, List<BlockKey> selectionOut);
 
 	/**
-	 * Adds the given priority to any pending request accessing the key. Multi-requests are prioritized partially.
+	 * Adds the given priority to any pending request accessing the key.
+	 * Multi-requests are prioritized partially.
 	 */
 	void prioritize(BlockKey key, double priority);
 
 	/**
-	 * Places a new block in the cache. Note that objects are immutable and cannot be overwritten. The object data
-	 * should now only be accessed via cache, as ownership has been transferred.
-	 *
-	 * @param key  the associated key of the block
+	 * Places a new block in the cache. Note that objects are immutable and cannot be overwritten.
+	 * The object data should now only be accessed via cache, as ownership has been transferred.
+	 * @param key the associated key of the block
 	 * @param data the block data
 	 * @param size the size of the data
 	 */
 	BlockKey put(BlockKey key, Object data, long size);
 
 	/**
-	 * Places a new block in the cache and returns a pinned handle. Note that objects are immutable and cannot be
-	 * overwritten.
-	 *
-	 * @param key  the associated key of the block
+	 * Places a new block in the cache and returns a pinned handle.
+	 * Note that objects are immutable and cannot be overwritten.
+	 * @param key the associated key of the block
 	 * @param data the block data
 	 * @param size the size of the data
 	 */
@@ -106,11 +101,8 @@ public interface OOCCacheScheduler {
 
 	interface HandoverHandle {
 		BlockKey getKey();
-
 		boolean isCommitted();
-
 		CompletableFuture<Boolean> getCompletionFuture();
-
 		OOCStream.QueueCallback<IndexedMatrixValue> reclaim();
 	}
 
@@ -139,30 +131,27 @@ public interface OOCCacheScheduler {
 		OOCIOHandler.SourceBlockDescriptor descriptor);
 
 	/**
-	 * Notifies the cache that there is another reference to the same block key. This will prevent forget(key) from
-	 * removing the block from cache. A block will only be forgotten after all referencing instances called forget(key).
-	 *
+	 * Notifies the cache that there is another reference to the same block key.
+	 * This will prevent forget(key) from removing the block from cache.
+	 * A block will only be forgotten after all referencing instances called forget(key).
 	 * @param key
 	 */
 	void addReference(BlockKey key);
 
 	/**
 	 * Forgets a block from the cache.
-	 *
 	 * @param key the associated key of the block
 	 */
 	void forget(BlockKey key);
 
 	/**
 	 * Pins a BlockEntry in cache to prevent eviction.
-	 *
 	 * @param entry the entry to be pinned
 	 */
 	void pin(BlockEntry entry);
 
 	/**
 	 * Unpins a pinned block.
-	 *
 	 * @param entry the entry to be unpinned
 	 */
 	void unpin(BlockEntry entry);
@@ -203,7 +192,8 @@ public interface OOCCacheScheduler {
 	void updateLimits(long evictionLimit, long hardLimit);
 
 	/**
-	 * Creates a snapshot of the cache. Should only be used for debugging or diagnoses.
+	 * Creates a snapshot of the cache.
+	 * Should only be used for debugging or diagnoses.
 	 */
 	Collection<BlockEntry> snapshot();
 }

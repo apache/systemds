@@ -283,8 +283,7 @@ public class TransformFrameEncodeBagOfWords extends AutomatedTestBase
 				out[1][i] = in.getString(i, 1);
 			}
 			return out;
-		}
-		catch(IOException e) {
+		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}

@@ -243,9 +243,10 @@ public class Main {
 	}
 
 	/**
-	 * Repeatedly read the same on-disk Delta frame table (written once as setup). Args:
-	 * {@code 18 <rows> <k> <n> [mode] [targetFileSizeMB]} where mode is one of serial|parallel|both (default parallel)
-	 * and an omitted target file size uses the adaptive default sizing.
+	 * Repeatedly read the same on-disk Delta frame table (written once as setup).
+	 * Args: {@code 18 <rows> <k> <n> [mode] [targetFileSizeMB]}
+	 * where mode is one of serial|parallel|both (default parallel) and an omitted
+	 * target file size uses the adaptive default sizing.
 	 */
 	private static void run18(String[] args) throws Exception {
 		int rows = Integer.parseInt(args[1]);

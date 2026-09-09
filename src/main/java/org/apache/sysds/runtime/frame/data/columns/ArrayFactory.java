@@ -125,15 +125,13 @@ public interface ArrayFactory {
 
 	/**
 	 * Wrap a fully populated raw typed column array into an {@link Array} of the given value type. The runtime type of
-	 * {@code col} must match the primitive backing type of {@code vt} (e.g. {@code double[]} for
-	 * {@link ValueType#FP64}, {@code String[]} for {@link ValueType#STRING}).
+	 * {@code col} must match the primitive backing type of {@code vt} (e.g. {@code double[]} for {@link ValueType#FP64},
+	 * {@code String[]} for {@link ValueType#STRING}).
 	 *
-	 * <p>
-	 * For {@link ValueType#BOOLEAN} this mirrors {@link #allocateBoolean(int)}: a {@code boolean[]} longer than
-	 * {@link #bitSetSwitchPoint} is bit-packed into a compact {@link BitSetArray} (so a bulk decoder that fills a plain
-	 * {@code boolean[]} still ends up with the same representation as every other frame allocation path), while shorter
-	 * columns stay a plain {@link BooleanArray}.
-	 * </p>
+	 * <p>For {@link ValueType#BOOLEAN} this mirrors {@link #allocateBoolean(int)}: a {@code boolean[]} longer than
+	 * {@link #bitSetSwitchPoint} is bit-packed into a compact {@link BitSetArray} (so a bulk decoder that fills a
+	 * plain {@code boolean[]} still ends up with the same representation as every other frame allocation path),
+	 * while shorter columns stay a plain {@link BooleanArray}.</p>
 	 *
 	 * @param vt  the value type of the column
 	 * @param col the backing array to wrap
@@ -170,10 +168,10 @@ public interface ArrayFactory {
 
 	/**
 	 * Allocate the raw backing array for a column of the given value type: the inverse of
-	 * {@link #create(ValueType, Object)}. Returns {@code double[]} for {@link ValueType#FP64}, {@code int[]} for
-	 * INT32/UINT/HASH32, {@code long[]} for INT64/HASH64, {@code String[]} for STRING, etc. The runtime array type
-	 * matches what {@link #create(ValueType, Object)} expects, so a bulk decoder can fill this primitive array directly
-	 * and then wrap it via {@code create(vt, backing)}.
+	 * {@link #create(ValueType, Object)}. Returns {@code double[]} for {@link ValueType#FP64},
+	 * {@code int[]} for INT32/UINT/HASH32, {@code long[]} for INT64/HASH64, {@code String[]} for STRING, etc. The
+	 * runtime array type matches what {@link #create(ValueType, Object)} expects, so a bulk decoder can fill this
+	 * primitive array directly and then wrap it via {@code create(vt, backing)}.
 	 *
 	 * @param vt   the value type of the column
 	 * @param nRow the number of rows to allocate

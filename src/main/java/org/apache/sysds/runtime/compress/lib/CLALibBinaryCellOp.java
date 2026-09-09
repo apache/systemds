@@ -139,8 +139,7 @@ public final class CLALibBinaryCellOp {
 			m1.getColGroups().get(0) instanceof ColGroupDDC && !((CompressedMatrixBlock) that).isOverlapping() &&
 			((CompressedMatrixBlock) that).getColGroups().get(0) instanceof ColGroupDDC &&
 			((IMapToDataGroup) m1.getColGroups().get(0))
-				.getMapToData() == ((IMapToDataGroup) ((CompressedMatrixBlock) that).getColGroups().get(0))
-					.getMapToData();
+				.getMapToData() == ((IMapToDataGroup) ((CompressedMatrixBlock) that).getColGroups().get(0)).getMapToData();
 	}
 
 	private static CompressedMatrixBlock doubleCompressedBinaryOp(BinaryOperator op, CompressedMatrixBlock m1,
@@ -1063,8 +1062,7 @@ public final class CLALibBinaryCellOp {
 			return _ret.recomputeNonZeros(_rl, _ru - 1);
 		}
 
-		private final void processBlock(final int rl, final int ru, final List<AColGroup> groups,
-			final AIterator[] its) {
+		private final void processBlock(final int rl, final int ru, final List<AColGroup> groups, final AIterator[] its) {
 			decompressToTmpBlock(rl, ru, tmp.getSparseBlock(), groups, its);
 			// decompressing multiple column groups can leave the temp rows with unsorted column indices, so sort
 			// before reading them in stored order into the (column-sorted) output sparse block.

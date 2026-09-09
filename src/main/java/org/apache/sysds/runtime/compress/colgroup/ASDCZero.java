@@ -212,8 +212,8 @@ public abstract class ASDCZero extends APreAgg implements AOffsetsGroup, IContai
 				// TODO make sparse decompression where the iterator is known in argument
 				decompressToSparseBlockSparseDictionary(sb, rl, ru, offR, offC, mb.getSparseBlock());
 			else
-				decompressToSparseBlockDenseDictionaryWithProvidedIterator(sb, rl, ru, offR, offC,
-					mb.getDenseBlockValues(), it);
+				decompressToSparseBlockDenseDictionaryWithProvidedIterator(sb, rl, ru, offR, offC, mb.getDenseBlockValues(),
+					it);
 		}
 		else
 			decompressToSparseBlockDenseDictionaryWithProvidedIterator(sb, rl, ru, offR, offC, _dict.getValues(), it);
@@ -240,7 +240,7 @@ public abstract class ASDCZero extends APreAgg implements AOffsetsGroup, IContai
 	}
 
 	public abstract void decompressToSparseBlockDenseDictionaryWithProvidedIterator(SparseBlock db, int rl, int ru,
-		int offR, int offC, double[] values, AIterator it);
+	int offR, int offC, double[] values, AIterator it);
 
 	public abstract void decompressToDenseBlockDenseDictionaryWithProvidedIterator(DenseBlock db, int rl, int ru,
 		int offR, int offC, double[] values, AIterator it);

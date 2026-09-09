@@ -43,8 +43,8 @@ import org.junit.Test;
 
 /**
  * Drive the solve opcode through {@link BinaryMatrixMatrixCPInstruction} with compressed inputs to cover the
- * commons-math matrix-matrix branch that decompresses compressed left/right operands before solving. The script-level
- * solve tests only ever see uncompressed inputs, so this branch is otherwise unreached.
+ * commons-math matrix-matrix branch that decompresses compressed left/right operands before solving. The
+ * script-level solve tests only ever see uncompressed inputs, so this branch is otherwise unreached.
  */
 public class CompressedBinaryMatrixMatrixSolveTest {
 
@@ -72,8 +72,8 @@ public class CompressedBinaryMatrixMatrixSolveTest {
 		assertTrue("A must compress to exercise the compressed-left path", aC instanceof CompressedMatrixBlock);
 		CompressedMatrixBlock bC = CompressedMatrixBlockFactory.createConstant(n, 2, 1.0);
 
-		MatrixBlock expected = LibCommonsMath.matrixMatrixOperations(CompressedMatrixBlock.getUncompressed(aC),
-			CompressedMatrixBlock.getUncompressed(bC), SOLVE);
+		MatrixBlock expected = LibCommonsMath.matrixMatrixOperations(
+			CompressedMatrixBlock.getUncompressed(aC), CompressedMatrixBlock.getUncompressed(bC), SOLVE);
 
 		MatrixBlock actual = runSolve(aC, bC);
 		TestUtils.compareMatricesBitAvgDistance(expected, actual, 0, 0, SOLVE);
@@ -94,8 +94,8 @@ public class CompressedBinaryMatrixMatrixSolveTest {
 		assertTrue("A must compress to exercise the compressed-left path", aC instanceof CompressedMatrixBlock);
 		MatrixBlock b = TestUtils.round(TestUtils.generateTestMatrixBlock(n, 1, -5, 5, 1.0, 7));
 
-		MatrixBlock expected = LibCommonsMath.matrixMatrixOperations(CompressedMatrixBlock.getUncompressed(aC), b,
-			SOLVE);
+		MatrixBlock expected = LibCommonsMath.matrixMatrixOperations(
+			CompressedMatrixBlock.getUncompressed(aC), b, SOLVE);
 
 		MatrixBlock actual = runSolve(aC, b);
 		TestUtils.compareMatricesBitAvgDistance(expected, actual, 0, 0, SOLVE);
@@ -119,8 +119,7 @@ public class CompressedBinaryMatrixMatrixSolveTest {
 	}
 
 	private static MatrixObject matrixObject(String name, MatrixBlock mb) {
-		MatrixCharacteristics mc = new MatrixCharacteristics(mb.getNumRows(), mb.getNumColumns(), 1000,
-			mb.getNonZeros());
+		MatrixCharacteristics mc = new MatrixCharacteristics(mb.getNumRows(), mb.getNumColumns(), 1000, mb.getNonZeros());
 		MatrixObject mo = new MatrixObject(ValueType.FP64, "/dev/null/" + name,
 			new MetaDataFormat(mc, FileFormat.BINARY), mb);
 		return mo;

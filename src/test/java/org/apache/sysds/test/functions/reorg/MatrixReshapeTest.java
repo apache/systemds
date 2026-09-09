@@ -335,9 +335,9 @@ public class MatrixReshapeTest extends AutomatedTestBase
 				String.valueOf(trows), String.valueOf(tcols), output("Y") };
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + trows + " " + tcols + " "
-				+ expectedDir();
-
+			rCmd = "Rscript" + " " + fullRScriptName + " " + 
+				inputDir() + " " + trows + " " + tcols + " " + expectedDir();
+			
 			double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 7);
 			writeInputMatrix("X", X, true); 
 			

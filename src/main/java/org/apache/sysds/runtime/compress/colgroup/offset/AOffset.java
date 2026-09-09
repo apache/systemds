@@ -56,11 +56,11 @@ public abstract class AOffset implements Serializable {
 	protected static final Log LOG = LogFactory.getLog(AOffset.class.getName());
 
 	/**
-	 * Lazy holder for the cached empty slice. The empty slice is built on first use rather than in AOffset's static
-	 * initializer: instantiating the OffsetEmpty subclass from AOffset's {@code <clinit>} forms a superclass/subclass
-	 * class-initialization cycle that deadlocks when several threads first touch the offset classes concurrently (e.g.
-	 * parallel tests). Deferring it to first use guarantees AOffset is already initialized by the time OffsetEmpty is
-	 * loaded, so no cycle exists.
+	 * Lazy holder for the cached empty slice. The empty slice is built on first use rather than in AOffset's
+	 * static initializer: instantiating the OffsetEmpty subclass from AOffset's {@code <clinit>} forms a
+	 * superclass/subclass class-initialization cycle that deadlocks when several threads first touch the offset
+	 * classes concurrently (e.g. parallel tests). Deferring it to first use guarantees AOffset is already
+	 * initialized by the time OffsetEmpty is loaded, so no cycle exists.
 	 */
 	private static final class EmptySliceHolder {
 		static final OffsetSliceInfo EMPTY_SLICE = new OffsetSliceInfo(-1, -1, new OffsetEmpty());

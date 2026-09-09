@@ -92,7 +92,7 @@ public class LeftIndexingChainUpdateTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 			runRScript(true);
 
-			// compare results
+			//compare results
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
 			TestUtils.compareMatrices(dmlfile, rfile, 1e-14, "DML", "R");		

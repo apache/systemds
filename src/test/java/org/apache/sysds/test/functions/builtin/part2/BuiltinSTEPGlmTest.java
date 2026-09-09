@@ -59,8 +59,7 @@ public class BuiltinSTEPGlmTest extends AutomatedTestBase {
 
 			// runTest executes the script; fails if the DML script invokes stop()
 			runTest(true, false, null, -1);
-		}
-		finally {
+		} finally {
 			rtplatform = platformOld;
 		}
 	}

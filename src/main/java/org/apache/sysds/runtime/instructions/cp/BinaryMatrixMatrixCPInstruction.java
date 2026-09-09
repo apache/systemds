@@ -80,10 +80,10 @@ public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 			retBlock = inBlock1;
 		}
 		else {
-			if(LibCommonsMath.isSupportedMatrixMatrixOperation(getOpcode())) {
+			if(LibCommonsMath.isSupportedMatrixMatrixOperation(getOpcode()) ){
 				if(compressedLeft)
 					inBlock1 = CompressedMatrixBlock.getUncompressed(inBlock1, getOpcode());
-
+				
 				if(compressedRight)
 					inBlock2 = CompressedMatrixBlock.getUncompressed(inBlock2, getOpcode());
 

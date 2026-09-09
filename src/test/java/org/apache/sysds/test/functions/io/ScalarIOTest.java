@@ -81,9 +81,8 @@ public class ScalarIOTest extends AutomatedTestBase
 		fullDMLScriptName = HOME + "ScalarComputeWrite.dml";
 		runTest(true, false, null, -1);
 
-		double_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1, 1)).doubleValue();
-		Assert.assertEquals("Computation test for Doubles failed: Values not equal: " + double_scalar
-			+ Opcodes.NOTEQUAL.toString() + double_out_scalar, double_scalar, double_out_scalar);
+		double_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1,1)).doubleValue();
+		Assert.assertEquals("Computation test for Doubles failed: Values not equal: " + double_scalar + Opcodes.NOTEQUAL.toString() + double_out_scalar, double_scalar, double_out_scalar);
 	}
 
 	@Test
@@ -123,7 +122,8 @@ public class ScalarIOTest extends AutomatedTestBase
 		programArgs = new String[]{"-args", String.valueOf(int_scalar), output("a.scalar")};
 		runTest(true, false, null, -1);
 
-		int int_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1, 1)).intValue();
+		int int_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE))
+			.get(new CellIndex(1,1)).intValue();
 		Assert.assertEquals("Values not equal: " + int_scalar + Opcodes.NOTEQUAL.toString() + int_out_scalar,
 			int_scalar, int_out_scalar);
 
@@ -143,8 +143,8 @@ public class ScalarIOTest extends AutomatedTestBase
 		programArgs = new String[]{	"-args", String.valueOf(double_scalar), output("a.scalar") };
 		runTest(true, false, null, -1);
 
-		double double_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1, 1))
-			.doubleValue();
+		double double_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE))
+			.get(new CellIndex(1,1)).doubleValue();
 		Assert.assertEquals("Values not equal: " + double_scalar + Opcodes.NOTEQUAL.toString() + double_out_scalar,
 			double_scalar, double_out_scalar, 0);
 

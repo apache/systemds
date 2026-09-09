@@ -2754,12 +2754,87 @@ public class DMLTranslator
 			break;
 		}
 
-		boolean isConvolution = source.getOpCode() == Builtins.CONV2D ||
-			source.getOpCode() == Builtins.CONV2D_BACKWARD_DATA ||
-			source.getOpCode() == Builtins.CONV2D_BACKWARD_FILTER || source.getOpCode() == Builtins.MAX_POOL ||
-			source.getOpCode() == Builtins.MAX_POOL_BACKWARD || source.getOpCode() == Builtins.AVG_POOL ||
-			source.getOpCode() == Builtins.AVG_POOL_BACKWARD;
-		if(!isConvolution) {
+		case SOLVE:
+			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.SOLVE, expr, expr2);
+			break;
+
+		case INVERSE:
+		case SQRT_MATRIX_JAVA:
+		case CHOLESKY:
+		case TYPEOF:
+		case DET:
+		case DETECTSCHEMA:
+		case COLNAMES:
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(),
+				target.getValueType(), OpOp1.valueOf(source.getOpCode().name()), expr);
+			break;
+
+		case OUTER:
+			if( !(expr3 instanceof LiteralOp) )
+				throw new HopsException("Operator for outer builtin function must be a constant: "+expr3);
+			OpOp2 op = OpOp2.valueOfByOpcode(((LiteralOp)expr3).getStringValue());
+			if( op == null )
+				throw new HopsException("Unsupported outer vector binary operation: "+((LiteralOp)expr3).getStringValue());
+
+			currBuiltinOp = new BinaryOp(target.getName(), DataType.MATRIX, target.getValueType(), op, expr, expr2, true);
+			currBuiltinOp.refreshSizeInformation(); //force size reevaluation according to 'outer' flag otherwise danger of incorrect dims
+			break;
+
+		case BIASADD:
+		case BIASMULT: {
+			ArrayList<Hop> inHops1 = new ArrayList<>();
+			inHops1.add(expr);
+			inHops1.add(expr2);
+			currBuiltinOp = new DnnOp(target.getName(), DataType.MATRIX, target.getValueType(),
+				OpOpDnn.valueOf(source.getOpCode().name()), inHops1);
+			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
+			break;
+		}
+		case AVG_POOL:
+		case MAX_POOL: {
+			currBuiltinOp = new DnnOp(target.getName(), DataType.MATRIX, target.getValueType(),
+				OpOpDnn.valueOf(source.getOpCode().name()), getALHopsForPoolingForwardIM2COL(expr, source, 1, hops));
+			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
+			break;
+		}
+		case AVG_POOL_BACKWARD:
+		case MAX_POOL_BACKWARD: {
+			currBuiltinOp = new DnnOp(target.getName(), DataType.MATRIX, target.getValueType(),
+				OpOpDnn.valueOf(source.getOpCode().name()), getALHopsForConvOpPoolingCOL2IM(expr, source, 1, hops));
+			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
+			break;
+		}
+		case CONV2D:
+		case CONV2D_BACKWARD_FILTER:
+		case CONV2D_BACKWARD_DATA: {
+			currBuiltinOp = new DnnOp(target.getName(), DataType.MATRIX, target.getValueType(),
+				OpOpDnn.valueOf(source.getOpCode().name()), getALHopsForConvOp(expr, source, 1, hops));
+			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
+			break;
+		}
+
+		case ROW_COUNT_DISTINCT:
+			currBuiltinOp = new AggUnaryOp(target.getName(),
+				DataType.MATRIX, target.getValueType(), AggOp.COUNT_DISTINCT, Direction.Row, expr);
+			break;
+
+		case COL_COUNT_DISTINCT:
+			currBuiltinOp = new AggUnaryOp(target.getName(),
+				DataType.MATRIX, target.getValueType(), AggOp.COUNT_DISTINCT, Direction.Col, expr);
+			break;
+
+		case GET_CATEGORICAL_MASK:
+			currBuiltinOp = new BinaryOp(target.getName(), DataType.MATRIX, ValueType.FP64, OpOp2.GET_CATEGORICAL_MASK,  expr, expr2);
+			break;
+		default:
+			throw new ParseException("Unsupported builtin function type: "+source.getOpCode());
+		}
+
+		boolean isConvolution = source.getOpCode() == Builtins.CONV2D || source.getOpCode() == Builtins.CONV2D_BACKWARD_DATA ||
+			source.getOpCode() == Builtins.CONV2D_BACKWARD_FILTER || 
+			source.getOpCode() == Builtins.MAX_POOL || source.getOpCode() == Builtins.MAX_POOL_BACKWARD || 
+			source.getOpCode() == Builtins.AVG_POOL || source.getOpCode() == Builtins.AVG_POOL_BACKWARD;
+		if( !isConvolution) {
 			// Since the dimension of output doesnot match that of input variable for these operations
 			setIdentifierParams(currBuiltinOp, source.getOutput());
 		}

@@ -111,16 +111,17 @@ public class FedFullReuseTest extends AutomatedTestBase {
 
 			// Run reference dml script with normal matrix. Reuse of ba+*.
 			fullDMLScriptName = HOME + test + "Reference.dml";
-			programArgs = new String[] {"-stats", "-lineage", "reuse_full", "-nvargs", "X1=" + input("X1"),
-				"X2=" + input("X2"), "Y1=" + input("Y1"), "Y2=" + input("Y2"), "Z=" + expected("Z")};
+			programArgs = new String[] {"-stats", "-lineage", "reuse_full",
+				"-nvargs", "X1=" + input("X1"), "X2=" + input("X2"), "Y1=" + input("Y1"),
+				"Y2=" + input("Y2"), "Z=" + expected("Z")};
 			runTest(true, false, null, -1);
 			long mmCount = Statistics.getCPHeavyHitterCount(Opcodes.MMULT.toString());
 
 			// Run actual dml script with federated matrix
 			// The fed workers reuse ba+*
 			fullDMLScriptName = HOME + test + ".dml";
-			programArgs = new String[] {"-stats", "-lineage", "reuse_full", "-nvargs",
-				"X1=" + TestUtils.federatedAddress(port1, input("X1")),
+			programArgs = new String[] {"-stats","-lineage", "reuse_full",
+				"-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
 				"X2=" + TestUtils.federatedAddress(port2, input("X2")),
 				"Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
 				"Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
@@ -128,12 +129,12 @@ public class FedFullReuseTest extends AutomatedTestBase {
 			long mmCount_fed = Statistics.getCPHeavyHitterCount(Opcodes.MMULT.toString());
 			long fedMMCount = Statistics.getCPHeavyHitterCount("fed_ba+*");
 
-			// compare results
+			// compare results 
 			compareResults(1e-9);
 			// compare matrix multiplication count
-			// #federated execution of ba+* = #threads times #non-federated execution of ba+* (after reuse)
-			Assert.assertTrue("Violated reuse count: " + mmCount_fed + " == " + mmCount * 2,
-				mmCount_fed == mmCount * 2); // #threads = 2
+			// #federated execution of ba+* = #threads times #non-federated execution of ba+* (after reuse) 
+			Assert.assertTrue("Violated reuse count: "+mmCount_fed+" == "+mmCount*2, 
+					mmCount_fed == mmCount * 2); // #threads = 2
 			switch(test) {
 				case TEST_NAME1:
 					// If the o/p is federated, fed_ba+* will be called everytime

@@ -74,7 +74,7 @@ public class RewriteQuantizationFusedCompressionTest extends AutomatedTestBase {
 
 	/**
 	 * Unified method to test both scalar and matrix scale factors.
-	 *
+	 * 
 	 * @param testname Test name
 	 * @param rewrites Whether to enable fusion rewrites
 	 * @param isScalar Whether the scale factor is a scalar or a matrix

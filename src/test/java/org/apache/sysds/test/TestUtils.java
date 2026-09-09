@@ -2941,9 +2941,10 @@ public class TestUtils {
 		}
 	}
 
+
 	/**
 	 * Write scalar to file
-	 *
+	 * 
 	 * @param file  File to write to
 	 * @param value Value to write
 	 */
@@ -3518,9 +3519,9 @@ public class TestUtils {
 				// Bounded join: workers are daemon threads, so even if one ignores the interrupt
 				// we must not block cleanup (and the JVM) indefinitely waiting for it.
 				t.join(THREAD_SHUTDOWN_JOIN_MS);
-				if(t.isAlive())
-					LOG.warn("Federated worker thread " + t.getName() + " did not stop within "
-						+ THREAD_SHUTDOWN_JOIN_MS + "ms; leaving it as a daemon.");
+				if( t.isAlive() )
+					LOG.warn("Federated worker thread " + t.getName()
+						+ " did not stop within " + THREAD_SHUTDOWN_JOIN_MS + "ms; leaving it as a daemon.");
 			}
 			catch (InterruptedException e) {
 				Thread.currentThread().interrupt();

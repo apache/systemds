@@ -122,9 +122,9 @@ public class SparkExecutionContext extends ExecutionContext
 	//singleton spark context (as there can be only one spark context per JVM)
 	private static JavaSparkContext _spctx = null;
 
-	// registered users of the singleton context (guarded by the
-	// SparkExecutionContext.class monitor); maintained by enterSparkExecution()/
-	// exitSparkExecution(), and close() only stops the context once it hits zero
+	//registered users of the singleton context (guarded by the
+	//SparkExecutionContext.class monitor); maintained by enterSparkExecution()/
+	//exitSparkExecution(), and close() only stops the context once it hits zero
 	private static int _activeExecutions = 0;
 
 	//registry of parallelized RDDs to enforce that at any time, we spent at most
@@ -175,8 +175,8 @@ public class SparkExecutionContext extends ExecutionContext
 		initSparkContext();
 		if(_spctx.sc().isStopped()){
 			_spctx = null;
-			// the previous context was stopped; reset the active-execution count so a
-			// stale registration cannot skip a future legitimate stop of the new one
+			//the previous context was stopped; reset the active-execution count so a
+			//stale registration cannot skip a future legitimate stop of the new one
 			_activeExecutions = 0;
 			initSparkContext();
 		}
@@ -196,15 +196,16 @@ public class SparkExecutionContext extends ExecutionContext
 	public static void resetSparkContextStatic() {
 		synchronized(SparkExecutionContext.class) {
 			_spctx = null;
-			// force-discarding the shared context: drop the active-execution count so
-			// a stale registration cannot skip a future legitimate stop
+			//force-discarding the shared context: drop the active-execution count so
+			//a stale registration cannot skip a future legitimate stop
 			_activeExecutions = 0;
 		}
 	}
 
 	/**
-	 * Registers an active user of the shared spark context. Must be balanced by a later {@link #exitSparkExecution()}
-	 * so a concurrent execution cannot stop the context while this one still has in-flight jobs.
+	 * Registers an active user of the shared spark context. Must be balanced by a
+	 * later {@link #exitSparkExecution()} so a concurrent execution cannot stop the
+	 * context while this one still has in-flight jobs.
 	 */
 	public static void enterSparkExecution() {
 		synchronized(SparkExecutionContext.class) {
@@ -213,8 +214,9 @@ public class SparkExecutionContext extends ExecutionContext
 	}
 
 	/**
-	 * Releases an active user previously registered via {@link #enterSparkExecution()}. Only adjusts the count; the
-	 * actual teardown is left to {@link #close()}, which stops the context once no registered execution remains.
+	 * Releases an active user previously registered via {@link #enterSparkExecution()}.
+	 * Only adjusts the count; the actual teardown is left to {@link #close()}, which
+	 * stops the context once no registered execution remains.
 	 */
 	public static void exitSparkExecution() {
 		synchronized(SparkExecutionContext.class) {
@@ -225,13 +227,13 @@ public class SparkExecutionContext extends ExecutionContext
 
 	public void close() {
 		synchronized(SparkExecutionContext.class) {
-			// keep the shared context alive while a registered execution still uses
-			// it; close() never changes the count, so an unpaired close() (a caller
-			// that never entered) cannot stop a context another execution is using
+			//keep the shared context alive while a registered execution still uses
+			//it; close() never changes the count, so an unpaired close() (a caller
+			//that never entered) cannot stop a context another execution is using
 			if(_activeExecutions > 0) {
 				if(LOG.isDebugEnabled())
-					LOG.debug(
-						"Keeping shared spark context alive; " + _activeExecutions + " execution(s) still active");
+					LOG.debug("Keeping shared spark context alive; " + _activeExecutions
+						+ " execution(s) still active");
 				return;
 			}
 			if(_spctx != null) {

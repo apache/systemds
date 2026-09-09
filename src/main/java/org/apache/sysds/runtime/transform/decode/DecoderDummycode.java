@@ -34,7 +34,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 /**
  * Simple atomic decoder for dummycoded columns. This decoder builds internally inverted column mappings from the given
  * frame meta data.
- *
+ * 
  */
 public class DecoderDummycode extends Decoder {
 	private static final long serialVersionUID = 4758831042891032129L;

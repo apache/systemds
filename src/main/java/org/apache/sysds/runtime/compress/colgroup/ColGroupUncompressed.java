@@ -85,7 +85,7 @@ public class ColGroupUncompressed extends AColGroup {
 
 	/**
 	 * Do not use this constructor of column group uncompressed, instead use the create constructor.
-	 *
+	 * 
 	 * @param mb         The contained data.
 	 * @param colIndexes Column indexes for this Columngroup
 	 */
@@ -96,10 +96,9 @@ public class ColGroupUncompressed extends AColGroup {
 
 	/**
 	 * Do not use this constructor of column group quantization-fused uncompressed, instead use the create constructor.
-	 *
+	 * 
 	 * @param mb           The contained data.
-	 * @param scaleFactors For quantization-fused compression, scale factors per row, or a single value for entire
-	 *                     matrix
+	 * @param scaleFactors For quantization-fused compression, scale factors per row, or a single value for entire matrix
 	 * @param colIndexes   Column indexes for this Columngroup
 	 */
 	protected ColGroupUncompressed(MatrixBlock mb, IColIndex colIndexes, double[] scaleFactors) {
@@ -139,8 +138,7 @@ public class ColGroupUncompressed extends AColGroup {
 	 * 
 	 * @param mb           The MB / data to contain in the uncompressed column
 	 * @param colIndexes   The column indexes for the group
-	 * @param scaleFactors For quantization-fused compression, scale factors per row, or a single value for entire
-	 *                     matrix
+	 * @param scaleFactors For quantization-fused compression, scale factors per row, or a single value for entire matrix
 	 * @return An Uncompressed Column group
 	 */
 	public static AColGroup createQuantized(MatrixBlock mb, IColIndex colIndexes, double[] scaleFactors) {
@@ -159,8 +157,7 @@ public class ColGroupUncompressed extends AColGroup {
 	 * @param rawBlock     The uncompressed block; uncompressed data must be present at the time that the constructor is
 	 *                     called
 	 * @param transposed   Says if the input matrix raw block have been transposed.
-	 * @param scaleFactors For quantization-fused compression, scale factors per row, or a single value for entire
-	 *                     matrix
+	 * @param scaleFactors For quantization-fused compression, scale factors per row, or a single value for entire matrix
 	 * @return AColGroup.
 	 */
 	public static AColGroup createQuantized(IColIndex colIndexes, MatrixBlock rawBlock, boolean transposed,

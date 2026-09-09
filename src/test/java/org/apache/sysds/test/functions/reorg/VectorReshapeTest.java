@@ -94,9 +94,9 @@ public class VectorReshapeTest extends AutomatedTestBase
 				String.valueOf(rows2), String.valueOf(cols2), output("R") };
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + rows2 + " " + cols2 + " "
-				+ expectedDir();
-
+			rCmd = "Rscript" + " " + fullRScriptName + " " + 
+				inputDir() + " " + rows2 + " " + cols2 + " " + expectedDir();
+			
 			double sparsity = sparse ? sparsitySparse : sparsityDense;
 			double[][] X = getRandomMatrix(rows1, cols1, 0, 1, sparsity, 7);
 			writeInputMatrixWithMTD("X", X, true); 

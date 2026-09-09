@@ -634,8 +634,8 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup, IFrameOfRef
 		for(int i = 0; i < selectedColumns.size(); i++) {
 			ref[i] = _reference[selectedColumns.get(i)];
 		}
-		return ColGroupSDCFOR.create(newColumnIDs, _numRows, _dict.sliceColumns(selectedColumns, getNumCols()),
-			_indexes, _data, null, ref);
+		return ColGroupSDCFOR.create(newColumnIDs, _numRows, _dict.sliceColumns(selectedColumns, getNumCols()), _indexes, _data, null,
+			ref);
 	}
 
 	@Override

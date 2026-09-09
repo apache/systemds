@@ -78,18 +78,17 @@ public abstract class FedWorkerBase {
 	}
 
 	/**
-	 * Poll the federated worker until the matrix at {@code id} is observed as a {@link CompressedMatrixBlock}, or
-	 * {@link #COMPRESS_TIMEOUT_MS} elapses.
+	 * Poll the federated worker until the matrix at {@code id} is observed as a
+	 * {@link CompressedMatrixBlock}, or {@link #COMPRESS_TIMEOUT_MS} elapses.
 	 *
-	 * <p>
-	 * Federated workers compress asynchronously after a PUT/READ_VAR (see
-	 * {@code CompressedMatrixBlockFactory.compressAsync}), so a {@code getMatrixBlock} fired right after the operation
-	 * can race against the in-flight compression and return the uncompressed block. Tests that need to observe the
-	 * compressed form should poll instead of sleeping a fixed amount.
+	 * <p>Federated workers compress asynchronously after a PUT/READ_VAR (see
+	 * {@code CompressedMatrixBlockFactory.compressAsync}), so a {@code getMatrixBlock} fired right
+	 * after the operation can race against the in-flight compression and return the uncompressed
+	 * block. Tests that need to observe the compressed form should poll instead of sleeping a fixed
+	 * amount.
 	 *
-	 * <p>
-	 * On timeout this returns the most recent (uncompressed) read so the caller can produce a meaningful assertion
-	 * failure naming the variable.
+	 * <p>On timeout this returns the most recent (uncompressed) read so the caller can produce a
+	 * meaningful assertion failure naming the variable.
 	 *
 	 * @param id federated variable id
 	 * @return the matrix block, compressed if compression finished in time, otherwise the latest read

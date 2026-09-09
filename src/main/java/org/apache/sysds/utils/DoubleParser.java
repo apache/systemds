@@ -200,7 +200,7 @@ public interface DoubleParser {
 		// : is the first character after numbers.
 		// 0 is the first number.
 		// we use the last position, since this is not allowed to be other values than a number.
-		if(str.charAt(endIndex - 1) > '9' || str.charAt(endIndex - 1) < '0')
+		if(str.charAt(endIndex - 1) > '9' || str.charAt(endIndex - 1) < '0') 
 			return Double.parseDouble(str);
 
 		final double val = parseDecFloatLiteral(str, index, offset, endIndex);

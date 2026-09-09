@@ -76,8 +76,8 @@ public abstract class AIdentityDictionary extends ACachingMBDictionary {
 		return ret;
 	}
 
-	@Override
-	public int[] sort() {
+	@Override 
+	public int[] sort(){
 		throw new NotImplementedException();
 	}
 }

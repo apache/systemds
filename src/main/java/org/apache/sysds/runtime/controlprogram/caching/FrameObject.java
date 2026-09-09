@@ -208,8 +208,8 @@ public class FrameObject extends CacheableData<FrameBlock>
 		if(data == null)
 			throw new IOException("Unable to load frame from file: " + fname);
 
-		// Delta and CSV discover dimensions (and Delta also schema) at read time, so
-		// refresh the cached metadata to reflect the materialized frame block.
+		//Delta and CSV discover dimensions (and Delta also schema) at read time, so
+		//refresh the cached metadata to reflect the materialized frame block.
 		if(iimd.getFileFormat() == FileFormat.CSV || iimd.getFileFormat() == FileFormat.DELTA) {
 			_metaData = _metaData instanceof MetaDataFormat ? new MetaDataFormat(data.getDataCharacteristics(),
 				iimd.getFileFormat()) : new MetaData(data.getDataCharacteristics());

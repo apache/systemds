@@ -20,8 +20,13 @@
 # -------------------------------------------------------------
 import numpy as np
 from systemds.scuro.dataloader.text_loader import TextStats
+from systemds.scuro.modality.indexed import IndexedModality
 from systemds.scuro.modality.transformed import TransformedModality
-from systemds.scuro.representations.representation import RepresentationStats
+from systemds.scuro.representations.representation import (
+    FitRequirement,
+    RepresentationFitState,
+    RepresentationStats,
+)
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import save_embeddings
 from gensim.models import Word2Vec
@@ -29,7 +34,6 @@ from gensim.utils import tokenize
 
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.operator_registry import register_representation
-import nltk
 
 
 def get_embedding(sentence, model):
@@ -43,6 +47,8 @@ def get_embedding(sentence, model):
 
 @register_representation(ModalityType.TEXT)
 class W2V(UnimodalRepresentation):
+    fit_requirement = FitRequirement.UNSUPERVISED
+
     def __init__(self, vector_size=128, min_count=1, output_file=None, params=None):
         parameters = {
             "vector_size": [64, 128, 256, 512, 1024],
@@ -79,21 +85,51 @@ class W2V(UnimodalRepresentation):
         model_estimate = 100 * 1024 * 1024
         return {"cpu_peak_bytes": model_estimate + output_bytes, "gpu_peak_bytes": 0}
 
-    def transform(self, modality, params=None):
-        transformed_modality = TransformedModality(modality, self)
-        t = [list(tokenize(s.lower())) for s in modality.data]
+    def fit(self, inputs, labels=None) -> RepresentationFitState:
+        if not isinstance(inputs, IndexedModality):
+            raise TypeError("W2V.fit expects an IndexedModality")
+
         model = Word2Vec(
-            sentences=t,
+            sentences=[list(tokenize(s.lower())) for s in inputs.modality.data],
             vector_size=self.vector_size,
             min_count=self.min_count,
         )
-        embeddings = []
-        for sentences in modality.data:
-            tokens = list(tokenize(sentences.lower()))
-            embeddings.append(np.array(get_embedding(tokens, model)).astype(np.float32))
+        return RepresentationFitState(
+            self.fit_requirement,
+            fit_instance_ids=inputs.instance_ids,
+            payload=model,
+        )
+
+    def transform_fitted(self, inputs, fit_state, aggregation=None):
+        if not isinstance(inputs, IndexedModality):
+            raise TypeError("W2V.transform_fitted expects an IndexedModality")
+        if (
+            not isinstance(fit_state, RepresentationFitState)
+            or fit_state.fit_requirement is not self.fit_requirement
+            or type(fit_state.payload) is not Word2Vec
+        ):
+            raise ValueError("W2V requires a compatible fitted state")
+
+        model = fit_state.payload
+        transformed_modality = TransformedModality(inputs.modality, self)
+        embeddings = np.asarray(
+            [
+                get_embedding(list(tokenize(sentence.lower())), model)
+                for sentence in inputs.modality.data
+            ],
+            dtype=self.data_type,
+        ).reshape(-1, model.vector_size)
 
         if self.output_file is not None:
-            save_embeddings(np.array(embeddings), self.output_file)
+            save_embeddings(embeddings, self.output_file)
         transformed_modality.data_type = self.data_type
-        transformed_modality.data = np.array(embeddings)
-        return transformed_modality
+        transformed_modality.data = embeddings
+        if aggregation is not None:
+            transformed_modality.data = aggregation.execute(transformed_modality.data)
+        return IndexedModality(transformed_modality, inputs.instance_ids)
+
+    def transform(self, modality, params=None, aggregation=None):
+        inputs = IndexedModality(modality, range(len(modality.data)))
+        return self.transform_fitted(
+            inputs, self.fit(inputs), aggregation=aggregation
+        ).modality

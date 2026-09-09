@@ -34,6 +34,7 @@ import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.ooc.OOCStreamable;
@@ -55,6 +56,7 @@ import org.apache.sysds.runtime.ooc.primitives.MappingOOCPrimitive;
 import org.apache.sysds.runtime.ooc.primitives.NaryJoinOOCPrimitive;
 import org.apache.sysds.runtime.ooc.primitives.PlannableDataGenOOCPrimitive;
 import org.apache.sysds.runtime.ooc.primitives.ReduceOOCPrimitive;
+import org.apache.sysds.runtime.ooc.primitives.TSMMOOCPrimitive;
 import org.apache.sysds.runtime.ooc.primitives.TransposeOOCPrimitive;
 import org.apache.sysds.runtime.ooc.stats.OOCEventLog;
 import org.apache.sysds.runtime.ooc.store.MaterializedStore;
@@ -131,6 +133,11 @@ public final class OOCInstructionUtils {
 			outputBytes;
 		output.assignPrimitive(
 			new NaryJoinOOCPrimitive(inputs, output, key, size, operation, inputBytes, joinBytes, context));
+	}
+
+	public static void tsmm(OOCStreamable<IndexedMatrixValue> input, OOCStream<IndexedMatrixValue> output,
+		MMTSJType type, AggregateBinaryOperator multiply, BinaryOperator plus, StreamContext context) {
+		output.assignPrimitive(new TSMMOOCPrimitive(input, output, type, multiply, plus, context));
 	}
 
 	public static void matrixMultiply(OOCStreamable<IndexedMatrixValue> left, OOCStreamable<IndexedMatrixValue> right,

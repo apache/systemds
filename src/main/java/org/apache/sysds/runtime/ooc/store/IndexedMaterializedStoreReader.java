@@ -19,11 +19,14 @@
 
 package org.apache.sysds.runtime.ooc.store;
 
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.ooc.cache.BlockEntry;
 import org.apache.sysds.runtime.ooc.cache.OOCCache;
 import org.apache.sysds.runtime.ooc.cache.OOCFuture;
 import org.apache.sysds.runtime.ooc.cache.io.SpillableObject;
 import org.apache.sysds.runtime.ooc.memory.MemoryAllowance;
+import org.apache.sysds.runtime.ooc.planning.OOCStoreLayout;
 import org.apache.sysds.runtime.ooc.util.OOCUtils;
 
 import java.util.function.IntConsumer;
@@ -34,16 +37,21 @@ public final class IndexedMaterializedStoreReader<T extends SpillableObject> imp
 	private final long _streamId;
 	private final IntSupplier _completedSize;
 	private final MaterializedStore.Liveness _liveness;
+	private final OOCStoreLayout _layout;
+	private final DataCharacteristics _characteristics;
 	private final Runnable _afterClose;
 	private final IntConsumer _afterRelease;
 	private volatile boolean _closed;
 
 	IndexedMaterializedStoreReader(OOCCache cache, long streamId, IntSupplier completedSize,
-		MaterializedStore.Liveness liveness, Runnable afterClose, IntConsumer afterRelease) {
+		MaterializedStore.Liveness liveness, OOCStoreLayout layout, DataCharacteristics characteristics,
+		Runnable afterClose, IntConsumer afterRelease) {
 		_cache = cache;
 		_streamId = streamId;
 		_completedSize = completedSize;
 		_liveness = liveness;
+		_layout = layout;
+		_characteristics = characteristics;
 		_afterClose = afterClose;
 		_afterRelease = afterRelease;
 	}
@@ -66,6 +74,16 @@ public final class IndexedMaterializedStoreReader<T extends SpillableObject> imp
 		_afterClose.run();
 	}
 
+	public OOCFuture<StoreLease<T>> request(MatrixIndexes indexes, MemoryAllowance requestAllowance) {
+		return request(indexes.getRowIndex(), indexes.getColumnIndex(), requestAllowance);
+	}
+
+	public OOCFuture<StoreLease<T>> request(long row, long col, MemoryAllowance requestAllowance) {
+		if(_layout == null)
+			throw new IllegalStateException("Materialized reader has no logical matrix-index layout.");
+		return request(_layout.linearize(row, col, _characteristics), requestAllowance);
+	}
+
 	public OOCFuture<StoreLease<T>> request(int index, MemoryAllowance requestAllowance) {
 		checkReady(index);
 		reserve(index);
@@ -84,6 +102,16 @@ public final class IndexedMaterializedStoreReader<T extends SpillableObject> imp
 				result.complete(StoreLease.createAsync(entry, () -> release(index, entry, requestAllowance)));
 		});
 		return result;
+	}
+
+	public StoreLease<T> requestIfLive(MatrixIndexes indexes, MemoryAllowance requestAllowance) {
+		return requestIfLive(indexes.getRowIndex(), indexes.getColumnIndex(), requestAllowance);
+	}
+
+	public StoreLease<T> requestIfLive(long row, long col, MemoryAllowance requestAllowance) {
+		if(_layout == null)
+			throw new IllegalStateException("Materialized reader has no logical matrix-index layout.");
+		return requestIfLive(_layout.linearize(row, col, _characteristics), requestAllowance);
 	}
 
 	public StoreLease<T> requestIfLive(int index, MemoryAllowance requestAllowance) {

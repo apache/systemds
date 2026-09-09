@@ -23,10 +23,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.ooc.CachingStream;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.ooc.OOCStreamable;
@@ -34,6 +40,9 @@ import org.apache.sysds.runtime.instructions.ooc.SubscribableTaskQueue;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.ooc.cache.OOCCacheManager;
@@ -247,6 +256,80 @@ public class OOCPrimitiveTest {
 					value.getValue().get(0, 0));
 			}
 		return values;
+	}
+
+	@Test
+	public void testTsmmOutOfOrderGroups() {
+		SubscribableTaskQueue<IndexedMatrixValue> input = new SubscribableTaskQueue<>();
+		SubscribableTaskQueue<IndexedMatrixValue> output = new SubscribableTaskQueue<>();
+		input.setData(new MatrixObject(ValueType.FP64, "/dev/null",
+			new MetaDataFormat(new MatrixCharacteristics(2, 2, 1), FileFormat.BINARY)));
+		output.setData(new MatrixObject(ValueType.FP64, "/dev/null",
+			new MetaDataFormat(new MatrixCharacteristics(2, 2, 1), FileFormat.BINARY)));
+		for(double[] tile : List.of(new double[] {2, 1, 3}, new double[] {1, 2, 2}, new double[] {2, 2, 4},
+			new double[] {1, 1, 1}))
+			input.enqueue(new IndexedMatrixValue(new MatrixIndexes((long) tile[0], (long) tile[1]),
+				new MatrixBlock(1, 1, tile[2])));
+		input.closeInput();
+
+		AggregateOperator aggregate = new AggregateOperator(0, Plus.getPlusFnObject());
+		OOCInstructionUtils.tsmm(input, output, MMTSJType.LEFT,
+			new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), aggregate),
+			new BinaryOperator(Plus.getPlusFnObject()), new StreamContext());
+		output.start();
+
+		Map<String, Double> values = new HashMap<>();
+		OOCStream.QueueCallback<IndexedMatrixValue> callback;
+		while((callback = output.dequeueCB()) != null)
+			try(OOCStream.QueueCallback<IndexedMatrixValue> current = callback) {
+				IndexedMatrixValue value = current.get();
+				values.put(value.getIndexes().getRowIndex() + "," + value.getIndexes().getColumnIndex(),
+					value.getValue().get(0, 0));
+			}
+		Assert.assertEquals(Map.of("1,1", 10d, "1,2", 14d, "2,1", 14d, "2,2", 20d), values);
+	}
+
+	@Test
+	public void testTsmmConsumesLiveMaterialization() throws InterruptedException {
+		SubscribableTaskQueue<IndexedMatrixValue> input = new SubscribableTaskQueue<>();
+		SubscribableTaskQueue<IndexedMatrixValue> output = new SubscribableTaskQueue<>();
+		input.setData(new MatrixObject(ValueType.FP64, "/dev/null",
+			new MetaDataFormat(new MatrixCharacteristics(1, 2, 1), FileFormat.BINARY)));
+		output.setData(new MatrixObject(ValueType.FP64, "/dev/null",
+			new MetaDataFormat(new MatrixCharacteristics(2, 2, 1), FileFormat.BINARY)));
+
+		AggregateOperator aggregate = new AggregateOperator(0, Plus.getPlusFnObject());
+		OOCInstructionUtils.tsmm(input, output, MMTSJType.LEFT,
+			new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), aggregate),
+			new BinaryOperator(Plus.getPlusFnObject()), new StreamContext());
+
+		Map<String, Double> values = new ConcurrentHashMap<>();
+		CountDownLatch blocks = new CountDownLatch(4);
+		CountDownLatch complete = new CountDownLatch(1);
+		output.setSubscriber(callback -> {
+			try(callback) {
+				if(callback.isEos() || callback.isFailure()) {
+					complete.countDown();
+					return;
+				}
+				IndexedMatrixValue value = callback.get();
+				values.put(value.getIndexes().getRowIndex() + "," + value.getIndexes().getColumnIndex(),
+					value.getValue().get(0, 0));
+				blocks.countDown();
+			}
+		});
+		output.start();
+
+		try {
+			input.enqueue(new IndexedMatrixValue(new MatrixIndexes(1, 1), new MatrixBlock(1, 1, 1d)));
+			input.enqueue(new IndexedMatrixValue(new MatrixIndexes(1, 2), new MatrixBlock(1, 1, 2d)));
+			Assert.assertTrue("TSMM waited for materialization completion", blocks.await(10, TimeUnit.SECONDS));
+			Assert.assertEquals(Map.of("1,1", 1d, "1,2", 2d, "2,1", 2d, "2,2", 4d), values);
+		}
+		finally {
+			input.closeInput();
+		}
+		Assert.assertTrue("TSMM output did not close", complete.await(10, TimeUnit.SECONDS));
 	}
 
 	@Test

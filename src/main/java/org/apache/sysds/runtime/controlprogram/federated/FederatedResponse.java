@@ -121,6 +121,10 @@ public class FederatedResponse implements Serializable {
 		return _linItem;
 	}
 
+	public boolean isLineageReusable() {
+		return _linItem != null;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

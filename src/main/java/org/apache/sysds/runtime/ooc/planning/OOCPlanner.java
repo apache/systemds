@@ -62,7 +62,9 @@ public final class OOCPlanner {
 				boundaries.put(input, boundary);
 			}
 			primitive.discardInputHandle(request.inputIndex());
-			boundary.registerRequest(request.expectedReaders());
+			boolean live = boundary.registerRequest(request.expectedReaders(), request.liveConsumer());
+			if(request.liveRegistration() != null)
+				request.liveRegistration().accept(live);
 			primitive.installMaterializedInput(request.inputIndex(), boundary);
 		}
 		for(OOCPrimitive child : primitive.getChildren())

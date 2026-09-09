@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
@@ -229,6 +230,15 @@ public abstract class OOCPrimitive {
 		}
 	}
 
-	public record OOCMaterializedInputRequest(int inputIndex, OOCStoreLayout layout, int expectedReaders) {
+	public record OOCMaterializedInputRequest(int inputIndex, OOCStoreLayout layout, int expectedReaders,
+		Consumer<OOCStream.QueueCallback<IndexedMatrixValue>> liveConsumer, Consumer<Boolean> liveRegistration) {
+		public OOCMaterializedInputRequest(int inputIndex, OOCStoreLayout layout, int expectedReaders) {
+			this(inputIndex, layout, expectedReaders, null, null);
+		}
+
+		public OOCMaterializedInputRequest(int inputIndex, OOCStoreLayout layout, int expectedReaders,
+			Consumer<OOCStream.QueueCallback<IndexedMatrixValue>> liveConsumer) {
+			this(inputIndex, layout, expectedReaders, liveConsumer, null);
+		}
 	}
 }

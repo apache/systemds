@@ -53,7 +53,11 @@ from systemds.scuro.drsearch.split_aware_evaluator import (
     SplitAwareDAGEvaluator,
     dag_requires_fitting,
 )
-from systemds.scuro.drsearch.worker_pool import PersistentWorkerPool, create_mp_context
+from systemds.scuro.drsearch.worker_pool import (
+    PersistentWorkerPool,
+    create_mp_context,
+    default_threads_per_worker,
+)
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
@@ -410,13 +414,12 @@ class MultimodalDeapOptimizer:
         self.elite_size = max(0, min(elite_size, self.population_size - 1))
         self.max_workers = max(1, max_workers)
         self.batch_size = max(1, batch_size or self.max_workers)
-        cpu_count = os.cpu_count() or 1
         self.threads_per_worker = max(
             1,
             (
                 threads_per_worker
                 if threads_per_worker is not None
-                else cpu_count // self.max_workers
+                else default_threads_per_worker()
             ),
         )
         self.early_stopping_patience = early_stopping_patience

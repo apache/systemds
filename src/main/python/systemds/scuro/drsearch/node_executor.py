@@ -39,7 +39,11 @@ from systemds.scuro.drsearch.representation_dag import (
     RepresentationNode,
 )
 from systemds.scuro.drsearch.task import PerformanceMeasure
-from systemds.scuro.drsearch.worker_pool import PersistentWorkerPool, create_mp_context
+from systemds.scuro.drsearch.worker_pool import (
+    PersistentWorkerPool,
+    create_mp_context,
+    default_threads_per_worker,
+)
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
@@ -487,8 +491,7 @@ class NodeExecutor:
 
         self._owns_pool = worker_pool is None
         if worker_pool is None:
-            cpu_count = os.cpu_count() or 1
-            threads_per_worker = max(1, cpu_count // max(1, self.max_num_workers))
+            threads_per_worker = default_threads_per_worker()
             worker_pool = PersistentWorkerPool(
                 self.max_num_workers,
                 _WORKER_DISPATCH,

@@ -50,6 +50,10 @@ def _resolve_thread_count(num_threads: int) -> int:
     return max(1, int(num_threads))
 
 
+def default_threads_per_worker() -> int:
+    return _resolve_thread_count(1)
+
+
 def set_thread_env_before_spawn(num_threads: int) -> None:
     num_threads = _resolve_thread_count(num_threads)
     for var in _THREAD_ENV_VARS:
@@ -196,6 +200,7 @@ class PersistentWorkerPool:
         )
 
     def _spawn_worker(self, physical_gpu_id: Optional[int]) -> None:
+        previous_threads = {var: os.environ.get(var) for var in _THREAD_ENV_VARS}
         set_thread_env_before_spawn(self._threads_per_worker)
         job_q = self._ctx.Queue()
         previous_visible = os.environ.get("CUDA_VISIBLE_DEVICES")
@@ -223,6 +228,11 @@ class PersistentWorkerPool:
                 os.environ.pop("CUDA_VISIBLE_DEVICES", None)
             else:
                 os.environ["CUDA_VISIBLE_DEVICES"] = previous_visible
+            for var, value in previous_threads.items():
+                if value is None:
+                    os.environ.pop(var, None)
+                else:
+                    os.environ[var] = value
         self._workers[p.pid] = {
             "process": p,
             "job_q": job_q,

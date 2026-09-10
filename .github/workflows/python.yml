@@ -241,7 +241,7 @@ jobs:
         coverage xml -i -o coverage.xml
 
     - name: Upload merged coverage report to Codecov
-      uses: codecov/codecov-action@v5.5.1
+      uses: codecov/codecov-action@v7.0.0
       if: github.repository_owner == 'apache'
       with:
         fail_ci_if_error: false

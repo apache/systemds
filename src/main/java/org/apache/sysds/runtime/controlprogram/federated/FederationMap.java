@@ -42,12 +42,18 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.RightIndex;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionConfig;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionFactory;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressedMatrix;
+import org.apache.sysds.runtime.controlprogram.federated.compression.MatrixCompressor;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.util.IndexRange;
@@ -138,6 +144,25 @@ public class FederationMap {
 		// is fine, because with broadcast all data on all workers)
 		data.setFedMapping(copyWithNewIDAndRange(
 			cb.getNumRows(), cb.getNumColumns(), id, FType.BROADCAST));
+
+		// === COMPRESSION INTEGRATION ===
+		// Compress matrix before network transfer; worker decompresses on receipt
+		if(DMLScript.FEDERATED_COMPRESSION && cb instanceof MatrixBlock) {
+			try {
+				CompressionConfig config = CompressionConfig.builder().enable(true)
+					.withType(DMLScript.FEDERATED_COMPRESSION_TYPE)
+					.withSparsity(DMLScript.FEDERATED_COMPRESSION_SPARSITY)
+					.withBits(DMLScript.FEDERATED_COMPRESSION_BITS).build();
+				MatrixCompressor compressor = CompressionFactory.create(config);
+				CompressedMatrix compressed = compressor.compress((MatrixBlock) cb);
+				return new FederatedRequest(RequestType.PUT_VAR, lineageItem, id, compressed);
+			}
+			catch(Exception ex) {
+				// Fall back to uncompressed on any error
+			}
+		}
+		// === END COMPRESSION INTEGRATION ===
+
 		return new FederatedRequest(RequestType.PUT_VAR, lineageItem, id, cb);
 	}
 

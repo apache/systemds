@@ -1,0 +1,22 @@
+# Core dependencies
+pyyaml==6.0.2
+numpy==1.26.4
+datasets==3.2.0
+requests==2.32.3
+psutil==6.1.1
+
+# OpenAI backend
+openai==1.59.6
+python-dotenv==1.0.1
+
+# Summarization evaluation
+rouge-score==0.1.2
+
+# GPU profiling
+pynvml>=11.5.0
+
+# SystemDS backend (Py4J bridge to Java JMLC)
+py4j>=0.10.9
+
+# Testing
+pytest>=7.0

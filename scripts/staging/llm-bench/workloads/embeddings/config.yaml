@@ -1,0 +1,22 @@
+name: embeddings
+
+# available sources: stsb (STS-Benchmark from HuggingFace)
+# Task: Rate semantic similarity between sentence pairs (0.0-5.0 scale)
+# This tests the same semantic understanding that embedding models capture.
+dataset:
+  source: stsb
+  n_samples: 50
+
+generation:
+  max_tokens: 16
+  temperature: 0.0
+  top_p: 0.9
+
+openai:
+  model: gpt-4.1-mini
+  max_output_tokens: 16
+  temperature: 0.0
+  top_p: 0.9
+  streaming: true
+  max_retries: 5
+  base_sleep_s: 0.5

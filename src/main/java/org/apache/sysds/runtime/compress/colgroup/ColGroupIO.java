@@ -103,14 +103,16 @@ public interface ColGroupIO {
 		switch(ctype) {
 			case DDC:
 				return ColGroupDDC.read(in);
-		case DDCFOR:
-			return ColGroupDDCFOR.read(in);
-		case DeltaDDC:
-			return ColGroupDeltaDDC.read(in);
-		case DDCLZW:
-			return ColGroupDDCLZW.read(in);
-		case OLE:
-			return ColGroupOLE.read(in, nRows);
+			case DDCFOR:
+				return ColGroupDDCFOR.read(in);
+			case DeltaDDC:
+				return ColGroupDeltaDDC.read(in);
+			case DDCLZW:
+				return ColGroupDDCLZW.read(in);
+			case PiecewiseLinearCompressed:
+				return ColGroupPiecewiseLinearCompressed.read(in);
+			case OLE:
+				return ColGroupOLE.read(in, nRows);
 			case RLE:
 				return ColGroupRLE.read(in, nRows);
 			case CONST:
@@ -134,6 +136,13 @@ public interface ColGroupIO {
 			default:
 				throw new DMLRuntimeException("Unsupported ColGroup Type used: " + ctype);
 		}
+	}
+
+	public static int[] readIntArray(int length, DataInput in) throws IOException {
+		int[] ret = new int[length];
+		for(int i = 0; i < length; i++)
+			ret[i] = in.readInt();
+		return ret;
 	}
 
 	public static double[] readDoubleArray(int length, DataInput in) throws IOException {

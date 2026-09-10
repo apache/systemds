@@ -1,0 +1,57 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+source("scripts/builtin/autoencoder_2layer.dml") as ae
+
+X = read($X)
+
+hidden_layers = list(as.integer($H1))
+if(as.integer($H2) > 0)
+  hidden_layers = append(hidden_layers, list(as.integer($H2)))
+if(as.integer($H3) > 0)
+  hidden_layers = append(hidden_layers, list(as.integer($H3)))
+
+[model, hidden] = ae::m_autoencoder(
+  X=X,
+  hidden_layers=hidden_layers,
+  max_epochs=as.integer($EPOCH),
+  batch_size=as.integer($BATCH),
+  step=as.double($STEP),
+  decay=as.double($DECAY),
+  mu=as.double($MOMENTUM),
+  method=$METHOD,
+  mode=$MODE,
+  utype=$UTYPE,
+  freq=$FREQ,
+  k=as.integer($WORKERS),
+  scheme=$SCHEME,
+  nbatches=as.integer($NBATCHES),
+  modelAvg=as.boolean($MODELAVG)
+)
+
+layer_count = as.integer(length(model) %/% 4)
+
+W1_out = as.matrix(model[1])
+Wlast_out = as.matrix(model[layer_count])
+hidden_out = hidden
+
+write(W1_out, $W1_out)
+write(Wlast_out, $Wlast_out)
+write(hidden_out, $hidden_out)

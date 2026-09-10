@@ -1,0 +1,135 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.apache.sysds.test.functions.builtin.part1;
+
+import org.junit.Test;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.util.HashMap;
+
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+
+public class BuiltinLHSTest extends AutomatedTestBase
+{
+	private final static String TEST_NAME = "lhs";
+	private final static String TEST_DIR = "functions/builtin/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinLHSTest.class.getSimpleName() + "/";
+
+	public void checkLatinHypercubeValidity(HashMap<CellIndex, Double> m,int N, int d ) {
+		for (int col = 1; col <= d; col++) {
+            boolean[] seen = new boolean[N + 1];
+            for (int row = 1; row <= N; row++) {
+
+                double val = m.get(new CellIndex(row, col));
+                int intVal = (int) val;
+                assertTrue("value "  + val + " at row " + row + " col " + col + " is outside the bucket range (1 to " + N + ")",
+                    intVal >= 1 && intVal <= N);
+
+				        assertFalse("duplicate bucket " + intVal + " in column " + col, seen[intVal]);
+                seen[intVal] = true;
+            }
+            for (int i = 1; i <= N; i++) {
+                assertTrue("bucket " + i + " never used in column " + col, seen[i]);
+            }
+		}
+	}
+
+	@Override
+	public void setUp() {
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"}));
+	}
+
+  @Test
+  public void testRandomTwoDim() {
+		runLhsTest(5, 2, 5, "random", "opt", 0, 0, -1);
+	}
+
+	@Test
+	public void testAllMethodGoalCombinations() {
+		String[] methods = {"random", "build", "cp_sweep", "genetic"};
+		String[] goals = {"maximin", "opt", "sum_inv", "avg_dist"};
+		for (String method : methods) {
+			for (String goal : goals) {
+				try {
+					runLhsTest(10, 4, 5, method, goal, 3, 5, -1);
+				}
+				catch (Throwable t) {
+					throw new AssertionError("failed for method=" + method + ", goal=" + goal + ": " + t.getMessage(), t);
+				}
+			}
+		}
+	}
+
+	@Test
+	public void testReproducibility() {
+		String[] methods = {"random", "build", "cp_sweep", "genetic"};
+		for (String method : methods) {
+			LhsResult r1 = runLhsTest(10, 4, 5, method, "maximin", 3, 5, 321);
+			LhsResult r2 = runLhsTest(10, 4, 5, method, "maximin", 3, 5, 321);
+			TestUtils.compareMatrices(r1.m(), r2.m(), 0, "first-run-" + method, "second-run-" + method);
+		}
+	}
+
+	@Test
+	public void testGeneticOptimizesGoal() {
+		// "genetic" can't be worse than "random" with the same seed
+		// this primarily tests whether the scoring logic is correct
+		String[] goals = {"maximin", "opt", "sum_inv", "avg_dist"};
+		for (String goal : goals) {
+			double gGenetic = runLhsTest(10, 4, 1, "genetic", goal, 10, 20, 1234).g();
+			double gRandom = runLhsTest(10, 4, 1, "random", goal, 10, 20, 1234).g();
+			assertTrue("genetic G=" + gGenetic + " should not be worse than random G=" + gRandom + " for goal " + goal,
+				gGenetic <= gRandom);
+		}
+	}
+
+	private record LhsResult(HashMap<CellIndex, Double> m, double g) {}
+
+	private LhsResult runLhsTest(int N,int d, int repetitions, String method, String goal,
+		int generations, int populationSize, int seed) {
+		ExecMode platformOld = setExecMode(ExecMode.HYBRID);
+
+		try {
+			loadTestConfiguration(getTestConfiguration(TEST_NAME));
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+			programArgs = new String[]{"-args", Integer.toString(N), Integer.toString(d), Integer.toString(repetitions), method, goal,
+				Integer.toString(generations), Integer.toString(populationSize), Integer.toString(seed), output("C"), output("G")};
+
+			runTest(true, false, null, -1);
+
+			HashMap<CellIndex, Double> m = readDMLMatrixFromOutputDir("C");
+			checkLatinHypercubeValidity(m,N,d);
+
+			double G = readDMLScalarFromOutputDir("G").get(new CellIndex(1, 1));
+			assertTrue("G should be a finite number but was: " + G, !Double.isNaN(G) && !Double.isInfinite(G));
+			return new LhsResult(m, G);
+		}
+		finally {
+			rtplatform = platformOld;
+		}
+	}
+}

@@ -73,20 +73,17 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * 
 	 * @param hop high-level operator
 	 */
-	private void ruleOptimizeMMChains(Hop hop, ProgramRewriteStatus state) 
-	{
-		if( hop.isVisited() )
+	private void ruleOptimizeMMChains(Hop hop, ProgramRewriteStatus state) {
+		if(hop.isVisited())
 			return;
-		
-		if( HopRewriteUtils.isMatrixMultiply(hop)
-			&& !((AggBinaryOp)hop).hasLeftPMInput() && !hop.isVisited() ) 
-		{
+
+		if(HopRewriteUtils.isMatrixMultiply(hop) && !((AggBinaryOp) hop).hasLeftPMInput()) {
 			// Try to find and optimize the chain in which current Hop is the
 			// last operator
 			prepAndOptimizeMMChain(hop, state);
 		}
 		
-		for( Hop hi : hop.getInput() )
+		for(Hop hi : hop.getInput())
 			ruleOptimizeMMChains(hi, state);
 
 		hop.setVisited();
@@ -387,10 +384,10 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		return CollectionUtils.cardinality(h, p.getInput());
 	}
 	
-	private static void logTraceHop( Hop hop, int level ) {
-		if( LOG.isTraceEnabled() ) {
+	protected void logTraceHop(Hop hop, int level) {
+		if(LOG.isTraceEnabled()) {
 			String offset = Explain.getIdentation(level);
-			LOG.trace(offset+ "Hop " + hop.getName() + "(" + hop.getClass().getSimpleName() 
+			LOG.trace(offset+ "Hop " + hop.getName() + "(" + hop.getClass().getSimpleName()
 				+ ", " + hop.getHopID() + ")" + " " + hop.getDim1() + "x" + hop.getDim2());
 		}
 	}

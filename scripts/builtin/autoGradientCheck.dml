@@ -1,0 +1,92 @@
+# gradient_check.dml
+# Usage:
+# systemds gradient_check.dml -exec singlenode -nvargs X=... H1=16 H2=8 H3=4 LAYER=1 R=1 C=1 EPS=1e-4
+
+source("scripts/builtin/autoencoder_2layer.dml") as ae
+
+X = read($X)
+n = nrow(X)
+m = ncol(X)
+
+# ---- hidden layers list (same convention as wrapper)
+hidden_layers = list(as.integer($H1))
+if(as.integer($H2) > 0)
+  hidden_layers = append(hidden_layers, list(as.integer($H2)))
+if(as.integer($H3) > 0)
+  hidden_layers = append(hidden_layers, list(as.integer($H3)))
+
+# ---- deterministic-ish permutation input
+# If you want strict determinism, call setseed(...) before Rand in SystemDS.
+order_rand = Rand(rows=n, cols=1, min=0, max=1, pdf="uniform")
+permut = table(seq(1,n,1),
+  order(target=order_rand, by=1, index.return=TRUE),
+  n, n)
+
+X_pre = permut %*% X
+means = colSums(X_pre)/n
+stds  = sqrt((colSums(X_pre^2)/n - means*means)*n/(n-1)) + 1e-17
+X_pre = (X_pre - means)/stds
+
+# ---- init model
+layer_sizes = ae::build_layer_sizes(m, hidden_layers)
+layer_count = length(layer_sizes) - 1
+[W_list0, b_list0, updW0, updb0] = ae::init_layers(layer_sizes)
+
+# ---- forward + backward (analytic grad)
+[act0, primes0, Yhat0, E0] = ae::forward_pass_layers(X_pre, W_list0, b_list0, X_pre)
+[grads_W, grads_b] = ae::backward_pass_layers(X_pre, act0, primes0, W_list0, E0)
+
+# grads_W is stored in reverse order: grads_W[1] corresponds to last layer
+target_layer = as.integer($LAYER)     # 1..layer_count (1=first layer)
+idx = layer_count - target_layer + 1
+G = as.matrix(grads_W[idx])
+
+r = as.integer($R)
+c = as.integer($C)
+eps = as.double($EPS)
+
+g_analytic = as.double(G[r,c])
+
+# ---- helper: build W_list with one layer replaced
+replace_layer = function(list[unknown] W_list, Integer k, Matrix[Double] Wnew)
+  return(list[unknown] W_out)
+{
+  W_out = list()
+  for(i in 1:length(W_list)) {
+    if(i == k) W_out = append(W_out, list(Wnew))
+    else       W_out = append(W_out, list(as.matrix(W_list[i])))
+  }
+}
+
+# ---- finite difference: perturb W[target_layer][r,c] by +/- eps
+Wk = as.matrix(W_list0[target_layer])
+nr = nrow(Wk); nc = ncol(Wk)
+
+# sparse perturb matrix with eps at (r,c)
+ri = matrix(as.double(r), rows=1, cols=1)
+ci = matrix(as.double(c), rows=1, cols=1)
+vi = matrix(eps, rows=1, cols=1)
+D  = table(ri, ci, vi, nr, nc)
+
+W_plus  = Wk + D
+W_minus = Wk - D
+
+W_list_plus  = replace_layer(W_list0, target_layer, W_plus)
+W_list_minus = replace_layer(W_list0, target_layer, W_minus)
+
+[_, _, _, E_plus]  = ae::forward_pass_layers(X_pre, W_list_plus,  b_list0, X_pre)
+[_, _, _, E_minus] = ae::forward_pass_layers(X_pre, W_list_minus, b_list0, X_pre)
+
+obj_plus  = ae::obj(E_plus)
+obj_minus = ae::obj(E_minus)
+
+g_numeric = (obj_plus - obj_minus) / (2 * eps)
+
+# ---- report
+den = max(1e-12, abs(g_numeric) + abs(g_analytic))
+rel_err = abs(g_numeric - g_analytic) / den
+
+print("GRADCHECK layer=" + target_layer + " r=" + r + " c=" + c)
+print("  analytic = " + g_analytic)
+print("  numeric  = " + g_numeric)
+print("  rel_err  = " + rel_err)

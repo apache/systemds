@@ -30,6 +30,7 @@ import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionDecoderEndStatisticsHandler;
 import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionDecoderStartStatisticsHandler;
@@ -40,6 +41,7 @@ import org.apache.sysds.runtime.lineage.LineageCache;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.utils.PortUtils;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 import org.apache.sysds.utils.stats.Timing;
 
@@ -120,10 +122,13 @@ public class FederatedWorker {
 				e.printStackTrace();
 		}
 		catch(Exception e) {
-			// report why the worker stops, e.g., a missing certificate with ssl enabled, otherwise it exits silently
-			LOG.error("Federated worker stopped: " + e.getMessage());
+			// report why the worker stops, e.g., an occupied or reserved port, or a missing
+			// certificate with ssl enabled, otherwise it exits silently and signals success
+			final String msg = "Federated worker stopped: " + PortUtils.explainBindFailure(_port, e);
+			LOG.error(msg);
 			if(_debug)
 				e.printStackTrace();
+			throw new DMLRuntimeException(msg, e);
 		}
 		finally {
 			LOG.info("Federated Worker Shutting down.");

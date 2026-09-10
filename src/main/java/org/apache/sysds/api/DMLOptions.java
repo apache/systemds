@@ -41,6 +41,7 @@ import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCachePolicy;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.Explain.ExplainType;
+import org.apache.sysds.utils.PortUtils;
 
 /**
  * Set of DMLOptions that can be set through the command line
@@ -308,14 +309,17 @@ public class DMLOptions {
 		
 		if (line.hasOption("w")){
 			dmlOptions.fedWorker = true;
-			dmlOptions.fedWorkerPort = Integer.parseInt(line.getOptionValue("w"));
+			String port = line.getOptionValue("w");
+			// the argument is optional, a missing port falls back to the default federated port
+			if(port != null)
+				dmlOptions.fedWorkerPort = parsePort(port, "-w");
 		}
 
 		if (line.hasOption("fedMonitoring")) {
 			dmlOptions.fedMonitoring= true;
 			String port = line.getOptionValue("fedMonitoring");
 			if(port != null)
-				dmlOptions.fedMonitoringPort = Integer.parseInt(port);
+				dmlOptions.fedMonitoringPort = parsePort(port, "-fedMonitoring");
 			else
 				throw new org.apache.commons.cli.ParseException("No port [integer] specified for -fedMonitoring option");
 		}
@@ -401,7 +405,24 @@ public class DMLOptions {
 
 		return dmlOptions;
 	}
-	
+
+	/**
+	 * Parse the port of a command line option, rejecting values that no server could ever be bound to.
+	 *
+	 * @param value  the raw argument value
+	 * @param option the name of the option the value belongs to, used for the error message
+	 * @return the parsed port
+	 * @throws org.apache.commons.cli.ParseException if the value is not a port in the valid range
+	 */
+	private static int parsePort(String value, String option) throws org.apache.commons.cli.ParseException {
+		try {
+			return PortUtils.parsePort(value, option);
+		}
+		catch(IllegalArgumentException e) {
+			throw new org.apache.commons.cli.ParseException(e.getMessage());
+		}
+	}
+
 	@SuppressWarnings("static-access")
 	private static Options createCLIOptions() {
 		Options options = new Options();

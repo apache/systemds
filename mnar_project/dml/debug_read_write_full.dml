@@ -1,0 +1,7 @@
+print("debug read/write full");
+
+X = read($1, format = "csv", header = TRUE, sep = ",");
+print("nrow(X) = " + nrow(X));
+print("ncol(X) = " + ncol(X));
+
+write(X, $2, format = "csv");

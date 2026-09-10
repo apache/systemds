@@ -1,0 +1,43 @@
+
+weightedLRM = function(Matrix[Double] x_train, Matrix[Double] y_train,
+  Matrix[Double] x_missing, Matrix[Double] final_weights)
+  return(Matrix[Double] pred)
+{
+  m = colMeans(x_train);
+  s = colSds(x_train);
+  s = ifelse(s == 0, 1, s);
+
+  m_train = matrix(1, rows = nrow(x_train), cols = 1) %*% m;
+  s_train = matrix(1, rows = nrow(x_train), cols = 1) %*% s;
+  m_missing = matrix(1, rows = nrow(x_missing), cols = 1) %*% m;
+  s_missing = matrix(1, rows = nrow(x_missing), cols = 1) %*% s;
+
+  x_train_s = (x_train - m_train) / s_train;
+  x_missing_s = (x_missing - m_missing) / s_missing;
+
+  sqrt_w = sqrt(final_weights);
+  w_mat = sqrt_w %*% matrix(1, rows = 1, cols = ncol(x_train_s) + 1);
+
+  x_train_design = cbind(matrix(1, rows = nrow(x_train_s), cols = 1), x_train_s);
+  x_missing_design = cbind(matrix(1, rows = nrow(x_missing_s), cols = 1), x_missing_s);
+
+  x_train_w = x_train_design * w_mat;
+  y_train_w = y_train * sqrt_w;
+
+  p = ncol(x_train_design);
+  penalty = diag(matrix(1, rows = p, cols = 1));
+  penalty[1, 1] = 0;
+
+  xtx = t(x_train_w) %*% x_train_w;
+  xty = t(x_train_w) %*% y_train_w;
+  beta = solve(xtx + 1.0 * penalty, xty);
+
+  pred = x_missing_design %*% beta;
+}
+
+x_train = read($1, format = "csv", header = FALSE, sep = ",");
+y_train = read($2, format = "csv", header = FALSE, sep = ",");
+x_missing = read($3, format = "csv", header = FALSE, sep = ",");
+final_weights = read($4, format = "csv", header = FALSE, sep = ",");
+pred = weightedLRM(x_train = x_train, y_train = y_train, x_missing = x_missing, final_weights = final_weights);
+write(pred, $5, format = "csv");

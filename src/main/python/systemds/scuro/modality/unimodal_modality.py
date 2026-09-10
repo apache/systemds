@@ -20,7 +20,8 @@
 # -------------------------------------------------------------
 import copy
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import gc
+from contextlib import nullcontext
+from functools import partial
 import time
 import numpy as np
 from systemds.scuro.dataloader.base_loader import BaseLoader
@@ -222,12 +223,20 @@ class UnimodalModality(Modality):
         start = (
             time.time()
         )  # TODO: should be repalced in unimodal_representation.transform
-        with ThreadPoolExecutor(
-            max_workers=len(representations) if parallel else 1
+        with (
+            ThreadPoolExecutor(max_workers=len(representations))
+            if parallel and len(representations) > 1
+            else nullcontext()
         ) as executor:
             time_s = time.time()
-            for _ in self.iter_raw_data_chunks(reset=True):
+            chunks = (
+                (None,)
+                if not self.data_loader.is_chunked and self.has_data()
+                else self.iter_raw_data_chunks(reset=True)
+            )
+            for _ in chunks:
                 representations_futures = {}
+                serial_transforms = []
                 for (
                     representation_key,
                     representation,
@@ -235,14 +244,31 @@ class UnimodalModality(Modality):
                 ) in representation_specs:
                     if representation_key in failed_representations:
                         continue
-                    future = executor.submit(
-                        representation.transform, self, rep_aggregation
+                    if executor is None:
+                        serial_transforms.append(
+                            (
+                                representation_key,
+                                partial(
+                                    representation.transform, self, rep_aggregation
+                                ),
+                            )
+                        )
+                    else:
+                        future = executor.submit(
+                            representation.transform, self, rep_aggregation
+                        )
+                        representations_futures[future] = representation_key
+                completed = (
+                    (
+                        (representations_futures[future], future.result)
+                        for future in as_completed(representations_futures)
                     )
-                    representations_futures[future] = representation_key
-                for future in as_completed(representations_futures.keys()):
-                    representation_key = representations_futures.get(future)
+                    if executor is not None
+                    else serial_transforms
+                )
+                for representation_key, transform in completed:
                     try:
-                        transformed_chunk = future.result()
+                        transformed_chunk = transform()
                     except Exception as e:
                         failed_representations[representation_key] = e
                         continue
@@ -281,7 +307,6 @@ class UnimodalModality(Modality):
             transformed_modalities_per_representation[
                 representation_key
             ].self_contained = representation.self_contained
-        gc.collect()
         self.failed_representations = failed_representations
         return transformed_modalities_per_representation
 

@@ -93,7 +93,7 @@ def _place_on_device(obj: Any, gpu_id: Optional[int]) -> None:
             pass
 
 
-def _run_gpu_op(fn, gpu_id: Optional[int]):
+def _run_gpu_op(fn, gpu_id: Optional[int], cleanup_after: bool = True):
     if gpu_id is None or not torch.cuda.is_available():
         return fn()
     try:
@@ -106,7 +106,8 @@ def _run_gpu_op(fn, gpu_id: Optional[int]):
                 return fn()
             raise
     finally:
-        cleanup_gpu(gpu_id)
+        if cleanup_after:
+            cleanup_gpu(gpu_id)
 
 
 _WORKER_OP_CACHE: Dict[str, Any] = {}
@@ -207,7 +208,7 @@ def _execute_node_worker(node, input_mods: List[Any], gpu_id: Optional[int]):
     if DEBUG:
         input_resident = sum(estimate_modality_bytes(m) for m in input_mods)
         result, measurement = measure_memory_during(
-            lambda: _run_gpu_op(_run_node_op, gpu_id),
+            lambda: _run_gpu_op(_run_node_op, gpu_id, cleanup_after=False),
             input_resident_bytes=input_resident,
             sample_s=0.01,
         )
@@ -215,7 +216,7 @@ def _execute_node_worker(node, input_mods: List[Any], gpu_id: Optional[int]):
             torch.cuda.max_memory_allocated(device) if gpu_id is not None else 0
         )
     else:
-        result = _run_gpu_op(_run_node_op, gpu_id)
+        result = _run_gpu_op(_run_node_op, gpu_id, cleanup_after=False)
 
     shm_name, resident_bytes, shm_bytes, actual_stats = _offload_to_shared_memory(
         result
@@ -487,6 +488,7 @@ class NodeExecutor:
         self._job_retained_shm: Dict[int, List[str]] = {}
         self._leaf_shm_names: List[str] = []
         self._leaf_shm_owners: Dict[str, Any] = {}
+        self._leaf_original_data: Dict[str, Any] = {}
         self._task_results: Dict[str, ResultEntry] = {}
 
         self._owns_pool = worker_pool is None
@@ -551,6 +553,13 @@ class NodeExecutor:
             if self._loads_in_chunks(modality):
                 continue
             if getattr(modality, "has_data", None) and modality.has_data():
+                original = modality.data
+                wrapped, shm_name, _, _ = add_shared_memory_candidate(original)
+                if shm_name is not None:
+                    modality._data = wrapped
+                    self._leaf_shm_names.append(shm_name)
+                    self._leaf_shm_owners[shm_name] = modality
+                    self._leaf_original_data[shm_name] = original
                 continue
             attempts = 0
             while True:
@@ -585,7 +594,7 @@ class NodeExecutor:
                 close = getattr(modality._data, "close", None)
                 if callable(close):
                     close()
-                modality._data = None
+                modality._data = self._leaf_original_data.pop(shm_name, None)
             unlink_shm(shm_name)
         self._leaf_shm_names = []
         self._leaf_shm_owners = {}
@@ -652,6 +661,8 @@ class NodeExecutor:
         self._job_retained_shm[job_id] = retained
 
     def _fill_pipeline(self) -> None:
+        if not self._pool.has_idle_worker:
+            return
         ready = self.scheduler.get_runnable().copy()
 
         def _gpu_id(entry):
@@ -660,6 +671,8 @@ class NodeExecutor:
 
         ready.sort(key=lambda entry: _gpu_id(entry) is None)
         for entry in ready:
+            if not self._pool.has_idle_worker:
+                break
             gpu_id = _gpu_id(entry)
             allow_gpu_worker_for_cpu = gpu_id is None
             if not self._pool.has_idle_worker_for(
@@ -1035,17 +1048,14 @@ class NodeExecutor:
 
     def run(self) -> Dict[str, Any]:
         self._task_results = {}
-        self._load_leaf_modalities()
-
         try:
-            self._fill_pipeline()
+            self._load_leaf_modalities()
             while self._job_units or not self.scheduler.is_finished():
                 self._fill_pipeline()
                 if not self._job_units:
                     continue
                 jr = self._pool.wait()
                 self._process_result(jr)
-                self._fill_pipeline()
         finally:
             if self._owns_pool:
                 self._pool.shutdown()

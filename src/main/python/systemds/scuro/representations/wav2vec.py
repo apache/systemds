@@ -177,7 +177,9 @@ class Wav2Vec(UnimodalRepresentation):
         frames = max(1, int(np.ceil(signal_len / stride)))
 
         model_resident = 420 * 1024 * 1024  # ~420 MB
-        activation_bytes = int(frames * hidden * 4 * 24)
+        batch = min(max(1, self.batch_size), max(1, n))
+        activation_bytes = int(batch * frames * hidden * 4 * 24)
+        attention_bytes = int(batch * 12 * frames * frames * 4)
         io_temp = int(signal_len * 4 * 4) + 16 * 1024 * 1024
 
         output_bytes = n * 512 * 4
@@ -186,7 +188,10 @@ class Wav2Vec(UnimodalRepresentation):
             (model_resident + activation_bytes + io_temp + output_bytes) * 1.25
         )
 
-        gpu_peak = 0
+        gpu_peak = int(
+            (model_resident + activation_bytes + attention_bytes + batch * io_temp)
+            * 1.25
+        )
         cpu_peak = max(cpu_peak, 600 * 1024 * 1024)
 
         return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": gpu_peak}

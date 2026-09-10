@@ -194,7 +194,7 @@ jobs:
         mv .coverage .coverage.${{ matrix.test_mode }}
 
     - name: Save Python Test Coverage as Artifact
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: .coverage.${{ matrix.test_mode }}
         include-hidden-files: true
@@ -252,7 +252,7 @@ jobs:
 
     - name: Upload Coverage Report Artifact PR
       if: (github.repository_owner == 'apache') && (github.ref_name != 'main')
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: coverage.xml
         path: src/main/python/coverage.xml
@@ -260,7 +260,7 @@ jobs:
 
     - name: Upload Coverage Report Artifact Main
       if: (github.repository_owner == 'apache') && (github.ref_name == 'main')
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: coverage.xml
         path: src/main/python/coverage.xml
@@ -268,7 +268,7 @@ jobs:
 
     - name: Upload Coverage Report Artifact Fork
       if: (github.repository_owner != 'apache')
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: coverage.xml
         path: src/main/python/coverage.xml

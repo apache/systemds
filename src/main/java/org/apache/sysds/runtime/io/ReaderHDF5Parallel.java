@@ -54,7 +54,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class ReaderHDF5Parallel extends ReaderHDF5 {
 
-	final private int _numThreads;
+	private final int _numThreads;
 	protected JobConf _job;
 
 	public ReaderHDF5Parallel(FileFormatPropertiesHDF5 props) {
@@ -65,6 +65,9 @@ public class ReaderHDF5Parallel extends ReaderHDF5 {
 	@Override
 	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz)
 		throws IOException, DMLRuntimeException {
+		// COO stores sparse triples, not dense matrix rows; reuse the COO-aware sequential reader.
+		if(useSparseCOORead())
+			return new ReaderHDF5(_props).readMatrixFromHDFS(fname, rlen, clen, blen, estnnz);
 
 		// prepare file access
 		_job = new JobConf(ConfigurationManager.getCachedJobConf());
@@ -99,7 +102,7 @@ public class ReaderHDF5Parallel extends ReaderHDF5 {
 			ArrayList<ReadHDF5Task> tasks = new ArrayList<>();
 			rlen = src.getNumRows();
 			int blklen = (int) Math.ceil((double) rlen / numParts);
-			for(int i = 0; i < _numThreads & i * blklen < rlen; i++) {
+			for(int i = 0; i < _numThreads && i * blklen < rlen; i++) {
 				int rl = i * blklen;
 				int ru = (int) Math.min((i + 1) * blklen, rlen);
 				Path newPath = HDFSTool.isDirectory(fs, path) ? 

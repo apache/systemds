@@ -1,0 +1,80 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/optim/scaled_gd.dml") as scaled_gd
+source("src/test/scripts/applications/nn/util.dml") as test_util
+source("src/test/scripts/applications/nn/component/optim/optim_check.dml") as ch
+
+# scaled_gd keeps two factors X (m x r) and Y (n x r) instead of one parameter
+# matrix. its update() picks a random extension inside, so we can't check exact
+# numbers - instead we check the properties that must hold no matter the draw.
+test_scaled_gd = function() {
+  lr = 0.01
+  m = 6
+  n = 4
+  r = 2
+
+  # init just tells us the rank, which is the shared column count of X and Y
+  X = rand(rows=m, cols=r, min=-1, max=1)
+  Y = rand(rows=n, cols=r, min=-1, max=1)
+  r_init = scaled_gd::init(X, Y)
+  if (r_init != r) {
+    test_util::fail("scaled_gd/init_rank: expected r=" + r + ", got " + r_init)
+  }
+
+  # one step should hand back factors of the same shape it got
+  dX = rand(rows=m, cols=r, min=-1, max=1)
+  dY = rand(rows=n, cols=r, min=-1, max=1)
+  [X1, Y1] = scaled_gd::update(X, Y, dX, dY, lr, r)
+  if (nrow(X1) != m | ncol(X1) != r) {
+    test_util::fail("scaled_gd/shape_X: X_new must be " + m + "x" + r)
+  }
+  if (nrow(Y1) != n | ncol(Y1) != r) {
+    test_util::fail("scaled_gd/shape_Y: Y_new must be " + n + "x" + r)
+  }
+  ch::check_finite(X1, "scaled_gd/finite_X")
+  ch::check_finite(Y1, "scaled_gd/finite_Y")
+
+  # the update splits the kept singular values evenly, half into each factor,
+  # so the two factors end up balanced: X^t X and Y^t Y should match
+  GX = t(X1) %*% X1
+  GY = t(Y1) %*% Y1
+  test_util::check_all_close(GX, GY, 1e-8)
+
+  # and that matrix is just the singular values on the diagonal, so everything
+  # off the diagonal should be ~0
+  offdiag = GX - diag(diag(GX))
+  if (max(abs(offdiag)) > 1e-8) {
+    test_util::fail("scaled_gd/balanced_diagonal: X_new^t X_new is not diagonal")
+  }
+
+  # those diagonal entries are singular values, which can't be negative
+  if (min(diag(GX)) < -1e-12) {
+    test_util::fail("scaled_gd/nonneg_singvals: negative singular value retained")
+  }
+
+  # the result X * Y^t is low rank (rank r), so its total energy is just the
+  # sum of the kept singular values squared
+  M = X1 %*% t(Y1)
+  test_util::check_all_close(as.matrix(sum(M^2)), as.matrix(sum(diag(GX)^2)), 1e-6)
+}
+
+test_scaled_gd()

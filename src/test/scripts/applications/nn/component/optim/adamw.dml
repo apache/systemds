@@ -1,0 +1,245 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/optim/adamw.dml") as adamw
+source("scripts/nn/optim/adam.dml") as adam
+source("src/test/scripts/applications/nn/util.dml") as test_util
+source("src/test/scripts/applications/nn/component/optim/optim_check.dml") as ch
+
+test_adamw = function() {
+  lr      = 0.01
+  beta1   = 0.9
+  beta2   = 0.999
+  epsilon = 1e-8
+  lambda  = 0.01
+
+  # both moment vectors start at zero with the same shape as the parameters
+  X = matrix("1 2 3  4 5 6", rows=2, cols=3)
+  [m0, v0] = adamw::init(X)
+  test_util::check_all_close(m0, matrix(0, rows=2, cols=3), 1e-12)
+  test_util::check_all_close(v0, matrix(0, rows=2, cols=3), 1e-12)
+
+  # first step (m=v=0, t=0 -> internal t becomes 1):
+  #   m1 = (1-beta1)*dX,  v1 = (1-beta2)*dX^2
+  #   m_hat = m1/(1-beta1),  v_hat = v1/(1-beta2)  (bias correction at t=1)
+  #   X1 = X - lr * ( m_hat/(sqrt(v_hat)+eps) + lambda*X )
+  dX = matrix("0.5 -0.5 0.5  -1 1 -1", rows=2, cols=3)
+  [X1, m1, v1] = adamw::update(X, dX, lr, beta1, beta2, epsilon, lambda, 0, m0, v0)
+  exp_m1   = (1-beta1)*dX
+  exp_v1   = (1-beta2)*dX^2
+  m_hat1   = exp_m1 / (1-beta1)
+  v_hat1   = exp_v1 / (1-beta2)
+  exp_X1   = X - lr * ( m_hat1 / (sqrt(v_hat1) + epsilon) + lambda*X )
+  test_util::check_all_close(m1, exp_m1, 1e-12)
+  test_util::check_all_close(v1, exp_v1, 1e-12)
+  test_util::check_all_close(X1, exp_X1, 1e-12)
+  ch::check_finite(X1, "adamw/finite")
+
+  # second step (t=1 -> internal t becomes 2). Expected values are chained
+  # from exp_m1/exp_v1, not m1/v1, so a persistent bug in the moment update
+  # that agrees with itself across steps must still fail this check.
+  [X2, m2, v2] = adamw::update(X1, dX, lr, beta1, beta2, epsilon, lambda, 1, m1, v1)
+  exp_m2    = beta1*exp_m1 + (1-beta1)*dX
+  exp_v2    = beta2*exp_v1 + (1-beta2)*dX^2
+  m_hat2    = exp_m2 / (1-beta1^2)
+  v_hat2    = exp_v2 / (1-beta2^2)
+  exp_X2    = X1 - lr * ( m_hat2 / (sqrt(v_hat2) + epsilon) + lambda*X1 )
+  test_util::check_all_close(m2, exp_m2, 1e-12)
+  test_util::check_all_close(v2, exp_v2, 1e-12)
+  test_util::check_all_close(X2, exp_X2, 1e-12)
+
+  # non-trivial timestep: exercise the bias-correction exponents at t=17 from
+  # arbitrary non-zero moment state. Small t values (1, 2) can hide bugs like
+  # replacing beta^t with beta*t which agrees at t=1 and is close at t=2.
+  m_seed = matrix("0.1 -0.2 0.3  -0.4 0.5 -0.6", rows=2, cols=3)
+  v_seed = matrix("0.01 0.02 0.03  0.04 0.05 0.06", rows=2, cols=3)
+  t_in   = 16                                        # internal t becomes 17
+  [Xt, mt, vt] = adamw::update(X, dX, lr, beta1, beta2, epsilon, lambda, t_in, m_seed, v_seed)
+  exp_mt   = beta1*m_seed + (1-beta1)*dX
+  exp_vt   = beta2*v_seed + (1-beta2)*dX^2
+  m_hatt   = exp_mt / (1-beta1^17)
+  v_hatt   = exp_vt / (1-beta2^17)
+  exp_Xt   = X - lr * ( m_hatt / (sqrt(v_hatt) + epsilon) + lambda*X )
+  test_util::check_all_close(mt, exp_mt, 1e-12)
+  test_util::check_all_close(vt, exp_vt, 1e-12)
+  test_util::check_all_close(Xt, exp_Xt, 1e-12)
+
+  # with a zero gradient only the decoupled weight-decay term fires:
+  # X_wd = X * (1 - lr*lambda)
+  [Xwd, mwd, vwd] = adamw::update(X, matrix(0, rows=2, cols=3), lr, beta1, beta2, epsilon, lambda, 0, m0, v0)
+  test_util::check_all_close(Xwd, X * (1 - lr*lambda), 1e-12)
+
+  # numerical stability: with lambda=0 and dX=0 (v=0 too) the update divides
+  # through sqrt(0)+eps but must land exactly at X and be finite.
+  [Xnd, mnd, vnd] = adamw::update(X, matrix(0, rows=2, cols=3), lr, beta1, beta2, epsilon, 0.0, 0, m0, v0)
+  test_util::check_all_close(Xnd, X, 1e-12)
+  test_util::check_all_close(mnd, matrix(0, rows=2, cols=3), 1e-12)
+  test_util::check_all_close(vnd, matrix(0, rows=2, cols=3), 1e-12)
+  ch::check_finite(Xnd, "adamw/stability_zero_grad")
+
+  # decoupled weight decay: the adaptive-gradient part of the update must not
+  # depend on lambda. Running two updates with the same gradient/state but
+  # different lambdas must differ by exactly lr*(lambda_a - lambda_b)*X. If
+  # someone re-couples the decay (e.g. bakes it into sqrt(v_hat)) this fails.
+  lambda_a = 0.02
+  lambda_b = 0.001
+  [Xa, ma, va] = adamw::update(X, dX, lr, beta1, beta2, epsilon, lambda_a, 0, m0, v0)
+  [Xb, mb, vb] = adamw::update(X, dX, lr, beta1, beta2, epsilon, lambda_b, 0, m0, v0)
+  test_util::check_all_close(Xb - Xa, lr * (lambda_a - lambda_b) * X, 1e-12)
+  # the moment state must also be independent of lambda
+  test_util::check_all_close(ma, mb, 1e-12)
+  test_util::check_all_close(va, vb, 1e-12)
+
+  # per-element decay: at a coordinate where dX=0 but X!=0, the update must
+  # reduce to X*(1-lr*lambda) at that coordinate alone. Placing a zero in dX
+  # while other coordinates are non-zero exercises the branch that was only
+  # tested globally above.
+  #
+  # NOTE: the m_hat = dXmix / v_hat = dXmix^2 identities below hold only because
+  # this is the *first* step (t=1) with zero-initialized moments. At t>=2 or
+  # from non-zero m/v seed the analytic must go through the general formula.
+  dXmix = matrix("0.5 0 0.5  -1 0 -1", rows=2, cols=3)
+  [Xmix, mmix, vmix] = adamw::update(X, dXmix, lr, beta1, beta2, epsilon, lambda, 0, m0, v0)
+  # analytic expected at t=1
+  m_hatm = dXmix                                     # (1-b1)*dX / (1-b1)
+  # v_hat at dX=0 is 0, so sqrt(v_hat)+eps = eps and the term is 0/eps = 0
+  v_hatm = dXmix^2                                   # (1-b2)*dX^2 / (1-b2)
+  exp_Xmix = X - lr * ( m_hatm / (sqrt(v_hatm) + epsilon) + lambda*X )
+  test_util::check_all_close(Xmix, exp_Xmix, 1e-12)
+  # check the zero-gradient coordinates directly: they must move only by decay.
+  # This equality holds only because m,v were zero-initialized here — at a
+  # later step non-zero prior state would leave a residual adaptive term.
+  # (row 1 col 2 and row 2 col 2 are the zeros in dXmix)
+  test_util::check_all_close(Xmix[1,2], X[1,2] * (1 - lr*lambda), 1e-12)
+  test_util::check_all_close(Xmix[2,2], X[2,2] * (1 - lr*lambda), 1e-12)
+
+  # lambda=0 must reduce AdamW effectively to Adam. This is the strongest
+  # single invariant of the decoupled formulation: with no decay the two
+  # update rules are algebraically equivalent up to how epsilon sits inside
+  # the sqrt (Adam uses lr_eff = lr*sqrt(1-b2^t)/(1-b1^t) with epsilon added
+  # after sqrt(v), while AdamW divides by (1-b^t) inside then adds epsilon to
+  # sqrt(v_hat) — so the two forms differ only by an epsilon-scaling of order
+  # eps ~ 1e-8). The moment state has no epsilon in it and must match to
+  # 1e-12. Any refactor that couples lambda into the adaptive term (or forgets
+  # a *X when lambda>0) will break the X check by orders of magnitude, well
+  # above the 1e-4 slack.
+  [Xw0, mw0, vw0] = adamw::update(X, dX, lr, beta1, beta2, epsilon, 0.0, 0, m0, v0)
+  [Xa0, ma0, va0] = adam::update (X, dX, lr, beta1, beta2, epsilon,       0, m0, v0)
+  test_util::check_all_close(Xw0, Xa0, 1e-4)
+  test_util::check_all_close(mw0, ma0, 1e-12)
+  test_util::check_all_close(vw0, va0, 1e-12)
+
+  # sign / direction sanity: at X=0 with m=v=0 and lambda=0, the update sign is
+  # opposite to dX regardless of the analytic formula. With lambda=0 the decay
+  # term drops out, so this pins the adaptive term's sign directly.
+  Xs = matrix(0, rows=2, cols=3)
+  [ms0, vs0] = adamw::init(Xs)
+  [Xs1, ms1_out, vs1_out] = adamw::update(Xs, dX, lr, beta1, beta2, epsilon, 0.0, 0, ms0, vs0)
+  if (sum((sign(Xs1) == -sign(dX)) | (dX == 0)) < length(dX)) {
+    test_util::fail("adamw/sign: step is not opposite to the gradient")
+  }
+
+  # state independence from X: m and v depend only on dX and prior (m, v),
+  # not on X. Two updates with the same gradient/state but different parameters
+  # must produce identical moment state (this holds regardless of lambda).
+  Xstate_a = matrix("1 2 3  4 5 6",          rows=2, cols=3)
+  Xstate_b = matrix("10 -20 30  40 -50 60",  rows=2, cols=3)
+  [Xsa, msa, vsa] = adamw::update(Xstate_a, dX, lr, beta1, beta2, epsilon, lambda, 0, m0, v0)
+  [Xsb, msb, vsb] = adamw::update(Xstate_b, dX, lr, beta1, beta2, epsilon, lambda, 0, m0, v0)
+  test_util::check_all_close(msa, msb, 1e-12)
+  test_util::check_all_close(vsa, vsb, 1e-12)
+
+  # lr=0 no-op: with a zero learning rate the parameters must not move, even
+  # when lambda>0 — the decay term is scaled by lr too, so both contributions
+  # vanish and X must be pinned exactly.
+  [Xlr0, mlr0, vlr0] = adamw::update(X, dX, 0.0, beta1, beta2, epsilon, lambda, 0, m0, v0)
+  test_util::check_all_close(Xlr0, X, 1e-12)
+
+  # large-magnitude gradient: the adaptive part is scale-invariant, so the
+  # step from the gradient term stays ~lr. With lambda>0 the decay term adds
+  # lr*lambda*|X|, still bounded and finite.
+  dXbig = matrix(1e10, rows=2, cols=3)
+  [Xbig, mbig, vbig] = adamw::update(X, dXbig, lr, beta1, beta2, epsilon, lambda, 0, m0, v0)
+  ch::check_finite(Xbig, "adamw/finite_large_grad")
+  bound = lr + lr * lambda * max(abs(X)) + 1e-6
+  if (max(abs(Xbig - X)) > bound) {
+    test_util::fail("adamw/large_grad_step: step exceeded expected bound under huge gradient")
+  }
+
+  # non-square shape: a 1xN parameter vector must round-trip through init and
+  # update without any broadcasting or shape confusion.
+  Xr  = matrix("1 -2 3 -4 5", rows=1, cols=5)
+  dXr = matrix("0.5 -0.5 0.25 -0.25 0.1", rows=1, cols=5)
+  [mr0, vr0] = adamw::init(Xr)
+  test_util::check_all_close(mr0, matrix(0, rows=1, cols=5), 1e-12)
+  [Xr1, mr1, vr1] = adamw::update(Xr, dXr, lr, beta1, beta2, epsilon, lambda, 0, mr0, vr0)
+  exp_Xr1 = Xr - lr * ( dXr / (sqrt(dXr^2) + epsilon) + lambda*Xr )
+  test_util::check_all_close(Xr1, exp_Xr1, 1e-12)
+
+  # minimizing 0.5*||W||^2 over 400 steps should reduce the loss to <1% of init
+  W = matrix("3 -4 5  -6 7 -8", rows=2, cols=3)
+  [m, v] = adamw::init(W)
+  init_loss = 0.5 * sum(W^2)
+  t = 0
+  for (i in 1:400) {
+    [W, m, v] = adamw::update(W, W, 0.05, beta1, beta2, epsilon, 0.001, t, m, v)
+    t = t + 1
+  }
+  if (0.5 * sum(W^2) >= 0.01 * init_loss) {
+    test_util::fail("adamw/converged: loss was not reduced enough")
+  }
+
+  # decay-heavy convergence: with lambda=0.1 the L2 penalty dominates and the
+  # optimizer must still terminate to a small W. This variant catches bugs
+  # that only surface when the decay term is a first-order contributor (the
+  # lambda=0.001 case above is basically Adam).
+  Wd = matrix("3 -4 5  -6 7 -8", rows=2, cols=3)
+  [md, vd] = adamw::init(Wd)
+  init_lossd = 0.5 * sum(Wd^2)
+  td = 0
+  for (i in 1:400) {
+    [Wd, md, vd] = adamw::update(Wd, Wd, 0.05, beta1, beta2, epsilon, 0.1, td, md, vd)
+    td = td + 1
+  }
+  if (0.5 * sum(Wd^2) >= 0.01 * init_lossd) {
+    test_util::fail("adamw/converged_decay_heavy: loss was not reduced enough")
+  }
+  ch::check_finite(Wd, "adamw/converged_decay_heavy")
+
+  # non-quadratic loss: f(w) = sum(w^4), grad = 4*w^3. Unlike the quadratic
+  # bowl the gradient magnitude changes non-linearly with w, so a broken
+  # adaptive rescaling that only happens to work on ||W||^2 fails here.
+  Wq = matrix("1.5 -1.2 0.8  -0.9 1.1 -1.4", rows=2, cols=3)
+  [mq, vq] = adamw::init(Wq)
+  init_lossq = sum(Wq^4)
+  tq = 0
+  for (i in 1:600) {
+    gq = 4 * Wq^3
+    [Wq, mq, vq] = adamw::update(Wq, gq, 0.05, beta1, beta2, epsilon, 0.001, tq, mq, vq)
+    tq = tq + 1
+  }
+  if (sum(Wq^4) >= 0.01 * init_lossq) {
+    test_util::fail("adamw/converged_quartic: loss was not reduced enough")
+  }
+  ch::check_finite(Wq, "adamw/converged_quartic")
+}
+
+test_adamw()

@@ -229,7 +229,7 @@ jobs:
         pip install coverage
 
     - name: Download all Python Coverage Artifacts
-      uses: actions/download-artifact@v6
+      uses: actions/download-artifact@v8
       with:
         pattern: .coverage.*
         path: ${{ github.workspace }}/src/main/python/

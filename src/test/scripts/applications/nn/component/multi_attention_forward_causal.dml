@@ -1,0 +1,60 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/layers/multi_attention.dml") as multi_attention
+
+# Small deterministic setup:
+# B=1, H=1, T=3, D=2  => flattened shape is 1 x (T*H*D) = 1 x 6
+B = 1
+H = 1
+T = 3
+D = 2
+dropout_p = 0.0
+
+# Use non-uniform Q/K to avoid degenerate/symmetric attention patterns.
+Q = matrix("1 2 3 4 5 6", rows=B, cols=T*H*D)
+K = matrix("2 1 4 3 6 5", rows=B, cols=T*H*D)
+
+# V1 and V2 differ only in future tokens (token2, token3)
+V1 = matrix("1 10 2 20 3 30", rows=B, cols=T*H*D)
+V2 = matrix("1 10 200 2000 300 3000", rows=B, cols=T*H*D)
+
+[context_causal_1, A1, M1] = multi_attention::forward_causal(Q, K, V1, H, T, D, dropout_p)
+[context_causal_2, A2, M2] = multi_attention::forward_causal(Q, K, V2, H, T, D, dropout_p)
+[context_noncausal_1, A3, M3] = multi_attention::forward(Q, K, V1, H, T, D, dropout_p)
+[context_noncausal_2, A4, M4] = multi_attention::forward(Q, K, V2, H, T, D, dropout_p)
+
+# Reconstruct token-major shape from flattened context for B=1, H=1.
+C_causal_1 = matrix(context_causal_1[1,], rows=T, cols=H*D)
+C_causal_2 = matrix(context_causal_2[1,], rows=T, cols=H*D)
+C_noncausal_1 = matrix(context_noncausal_1[1,], rows=T, cols=H*D)
+C_noncausal_2 = matrix(context_noncausal_2[1,], rows=T, cols=H*D)
+
+# Future token changes should not affect first token in causal mode.
+causal_token1_diff = max(abs(C_causal_1[1,] - C_causal_2[1,]))
+# But they should affect later tokens.
+causal_token3_diff = max(abs(C_causal_1[3,] - C_causal_2[3,]))
+# In non-causal mode, first token can attend to all tokens and should change.
+noncausal_token1_diff = max(abs(C_noncausal_1[1,] - C_noncausal_2[1,]))
+
+write(causal_token1_diff, $1, format="text")
+write(causal_token3_diff, $2, format="text")
+write(noncausal_token1_diff, $3, format="text")

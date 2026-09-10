@@ -841,14 +841,22 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			String[] colNames = _meta.getColumnNames();
 
 			FrameBlock fbout = _decoder.decode(mb, new FrameBlock(_decoder.getSchema()));
-			fbout.setColumnNames(Arrays.copyOfRange(colNames, 0, fbout.getNumColumns()));
+
+			fbout.setColumnNames(Arrays.copyOfRange(colNames,0, fbout.getNumColumns()));
 
 			// copy characteristics
 			MatrixCharacteristics mc = new MatrixCharacteristics(mo.getDataCharacteristics());
+
 			FrameObject fo = new FrameObject(OptimizerUtils.getUniqueTempFileName(),
 				new MetaDataFormat(mc, Types.FileFormat.BINARY));
+
 			// set the encoded data
 			fo.acquireModify(fbout);
+
+			// set schema and column names
+			fo.setSchema(fbout.getSchema());
+			fo.setColumnNames(Arrays.copyOfRange(colNames,0, fbout.getNumColumns()));
+
 			fo.release();
 			mo.release();
 

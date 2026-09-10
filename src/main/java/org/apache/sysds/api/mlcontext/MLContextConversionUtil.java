@@ -189,6 +189,7 @@ public class MLContextConversionUtil {
 			FrameObject frameObject = new FrameObject(OptimizerUtils.getUniqueTempFileName(), mtd,
 				frameMetadata.getFrameSchema().getSchema().toArray(new ValueType[0]));
 			frameObject.acquireModify(frameBlock);
+			frameObject.setColumnNames(frameBlock.getColumnNames());
 			frameObject.release();
 			return frameObject;
 		} catch (DMLRuntimeException e) {
@@ -299,6 +300,7 @@ public class MLContextConversionUtil {
 		
 		FrameObject frameObject = new FrameObject(OptimizerUtils.getUniqueTempFileName(),
 			new MetaDataFormat(mc, FileFormat.BINARY), schema);
+
 		frameObject.setRDDHandle(new RDDObject(binaryBlocks));
 		return frameObject;
 	}

@@ -101,6 +101,11 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 			//update schema of output with subset of input schema
 			sec.getFrameObject(output.getName()).setSchema(
 				sec.getFrameObject(input1.getName()).getSchema((int)cl, (int)cu));
+
+			// update column names of output with subset of input column names
+			sec.getFrameObject(output.getName()).setColumnNames(
+					sec.getFrameObject(input1.getName()).getColumnNames((int)cl, (int)cu));
+
 		}
 		//left indexing
 		else if ( opcode.equalsIgnoreCase(Opcodes.LEFT_INDEX.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPLEFTINDEX.toString()))

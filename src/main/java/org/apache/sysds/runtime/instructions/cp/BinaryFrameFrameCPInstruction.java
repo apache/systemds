@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.lib.FrameLibApplySchema;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -62,6 +63,40 @@ public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction {
 			final int k = ((MultiThreadedOperator)_optr).getNumThreads();
 			final FrameBlock out = FrameLibApplySchema.applySchema(inBlock1, inBlock2, k);
 			ec.setFrameOutput(output.getName(), out);
+		}
+		else if(getOpcode().equals(Opcodes.SET_COLNAMES.toString())) {
+
+			FrameBlock in = ec.getFrameInput(input1.getName());
+			FrameBlock names = ec.getFrameInput(input2.getName());
+
+			if (names == null)
+				throw new DMLRuntimeException("Column names cannot be null.");
+
+			if (names.getNumRows() != 1)
+				throw new DMLRuntimeException(
+						"Column names must be provided as a 1 x n frame.");
+
+			if (names.getNumColumns() != in.getNumColumns())
+				throw new DMLRuntimeException(
+						"Expected " + in.getNumColumns() +
+								" column names but got " + names.getNumColumns());
+
+			String[] colNames = new String[(int) names.getNumColumns()];
+			for(int i = 0; i < colNames.length; i++){
+				colNames[i] = names.get(0, i).toString();
+			}
+
+			FrameBlock out  = new FrameBlock(in);
+
+			out.setColumnNames(colNames);
+
+			ec.setFrameOutput(output.getName(), out);
+
+			ec.releaseFrameInput(input1.getName());
+
+			ec.releaseFrameInput(input2.getName());
+
+
 		}
 		else {
 			// Execute binary operations

@@ -38,10 +38,7 @@ import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
-import org.apache.sysds.runtime.io.FileFormatProperties;
-import org.apache.sysds.runtime.io.FrameReaderFactory;
-import org.apache.sysds.runtime.io.FrameWriter;
-import org.apache.sysds.runtime.io.FrameWriterFactory;
+import org.apache.sysds.runtime.io.*;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageRecomputeUtils;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
@@ -61,7 +58,9 @@ public class FrameObject extends CacheableData<FrameBlock>
 	private static final long serialVersionUID = 1755082174281927785L;
 
 	private ValueType[] _schema = null;
-	
+
+	private String[] _colnames = null;
+
 	protected FrameObject() {
 		super(DataType.FRAME, ValueType.STRING);
 	}
@@ -85,8 +84,8 @@ public class FrameObject extends CacheableData<FrameBlock>
 	}
 	
 	/**
-	 * Copy constructor that copies meta data but NO data.
-	 * 
+	 * Copy constructor that copies meta data and column names but NO data.
+	 *
 	 * @param fo frame object
 	 */
 	public FrameObject(FrameObject fo) {
@@ -94,9 +93,10 @@ public class FrameObject extends CacheableData<FrameBlock>
 		
 		MetaDataFormat metaOld = (MetaDataFormat) fo.getMetaData();
 		_metaData = new MetaDataFormat(
-			new MatrixCharacteristics(metaOld.getDataCharacteristics()),
-			metaOld.getFileFormat());
-		_schema = fo._schema.clone();
+				new MatrixCharacteristics(metaOld.getDataCharacteristics()),
+				metaOld.getFileFormat());
+		_schema = fo._schema != null ? fo._schema.clone() : null;
+		_colnames = fo._colnames != null ? fo._colnames.clone() : null;
 	}
 	
 	@Override
@@ -112,8 +112,8 @@ public class FrameObject extends CacheableData<FrameBlock>
 	 * @return schema of value types
 	 */
 	public ValueType[] getSchema(int cl, int cu) {
-		return (_schema!=null && _schema.length>cu) ? Arrays.copyOfRange(_schema, cl, cu+1) :
-			UtilFunctions.nCopies(cu-cl+1, ValueType.STRING);
+		return (_schema != null && _schema.length > cu) ? Arrays.copyOfRange(_schema, cl, cu + 1) :
+				UtilFunctions.nCopies(cu - cl + 1, ValueType.STRING);
 	}
 	
 	/**
@@ -125,10 +125,14 @@ public class FrameObject extends CacheableData<FrameBlock>
 	 */
 	public ValueType[] mergeSchemas(FrameObject fo) {
 		return ArrayUtils.addAll(
-			(_schema!=null) ? _schema : UtilFunctions.nCopies((int)getNumColumns(), ValueType.STRING), 
-			(fo._schema!=null) ? fo._schema : UtilFunctions.nCopies((int)fo.getNumColumns(), ValueType.STRING));
-	} 
-	
+				(_schema != null) ? _schema : UtilFunctions.nCopies((int) getNumColumns(), ValueType.STRING),
+				(fo._schema != null) ? fo._schema : UtilFunctions.nCopies((int) fo.getNumColumns(), ValueType.STRING));
+	}
+
+	/**
+	 *
+	 * @param schema
+	 */
 	public void setSchema(String schema) {
 		if( schema.equals("*") ) {
 			//populate default schema
@@ -154,17 +158,44 @@ public class FrameObject extends CacheableData<FrameBlock>
 	public void setSchema(ValueType[] schema) {
 		_schema = schema;
 	}
-		
+
+	public String[] getColumnNames() {
+		return _colnames;
+	}
+
+	/**
+	 * Obtain column names
+	 *
+	 * @param cl column lower bound, inclusive
+	 * @param cu column upper bound, inclusive
+	 * @return column names
+	 */
+	public String[] getColumnNames(int cl, int cu) {
+		return (_colnames != null && _colnames.length > cu)
+				? Arrays.copyOfRange(_colnames, cl, cu + 1)
+				: FrameBlock.createColNames(cu - cl + 1);
+	}
+
+	/**
+	 *
+	 * @param colNames
+	 */
+	public void setColumnNames(String[] colNames) {
+		_colnames = colNames != null
+				? colNames.clone()
+				: null;
+	}
+
 	@Override
 	public void refreshMetaData() {
-		if ( _data == null || _metaData ==null ) //refresh only for existing data
-			throw new DMLRuntimeException("Cannot refresh meta data because there is no data or meta data. "); 
+		if (_data == null || _metaData == null) //refresh only for existing data
+			throw new DMLRuntimeException("Cannot refresh meta data because there is no data or meta data. ");
 
 		//update matrix characteristics
 		DataCharacteristics dc = _metaData.getDataCharacteristics();
-		dc.setDimension( _data.getNumRows(),_data.getNumColumns() );
-		dc.setNonZeros(_data.getNumRows()*_data.getNumColumns());
-		
+		dc.setDimension(_data.getNumRows(), _data.getNumColumns());
+		dc.setNonZeros(_data.getNumRows() * _data.getNumColumns());
+
 		//update schema information
 		_schema = _data.getSchema();
 	}
@@ -208,13 +239,27 @@ public class FrameObject extends CacheableData<FrameBlock>
 		if(data == null)
 			throw new IOException("Unable to load frame from file: " + fname);
 
+		FileFormat format = iimd.getFileFormat();
+
 		//Delta and CSV discover dimensions (and Delta also schema) at read time, so
 		//refresh the cached metadata to reflect the materialized frame block.
-		if(iimd.getFileFormat() == FileFormat.CSV || iimd.getFileFormat() == FileFormat.DELTA) {
+		if(format == FileFormat.CSV || format == FileFormat.DELTA) {
 			_metaData = _metaData instanceof MetaDataFormat ? new MetaDataFormat(data.getDataCharacteristics(),
-				iimd.getFileFormat()) : new MetaData(data.getDataCharacteristics());
-			if(iimd.getFileFormat() == FileFormat.DELTA)
+					format) : new MetaData(data.getDataCharacteristics());
+
+			if(format == FileFormat.DELTA)
 				_schema = data.getSchema();
+		}
+
+		if (format == FileFormat.PARQUET)
+			_schema = data.getSchema();
+
+		if (_colnames == null && (format == FileFormat.CSV || format == FileFormat.PARQUET)) {
+			String[] columnNames = data.getColumnNames();
+
+			if (columnNames != null) {
+				setColumnNames(columnNames);
+			}
 		}
 
 		return data;

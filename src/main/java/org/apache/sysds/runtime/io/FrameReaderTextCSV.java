@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -56,6 +57,57 @@ public class FrameReaderTextCSV extends FrameReader {
 		_props = props != null ? props : new FileFormatPropertiesCSV();
 	}
 
+	public String[] readColumnNamesFromHDFS(String fname) {
+		try {
+			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
+
+			Path path = new Path(fname);
+
+			TextInputFormat informat = new TextInputFormat();
+			informat.configure(job);
+
+			FileInputFormat.addInputPath(job, path);
+
+			InputSplit[] splits = informat.getSplits(job, 1);
+
+			if(splits == null || splits.length == 0)
+				throw new IOException(
+						"No input splits found for CSV frame: " + fname
+				);
+
+			RecordReader<LongWritable, Text> reader =
+					informat.getRecordReader(
+							splits[0],
+							job,
+							Reporter.NULL
+					);
+
+			LongWritable key = new LongWritable();
+			Text value = new Text();
+
+			try {
+				if(!reader.next(key, value))
+					throw new IOException(
+							"CSV frame does not contain a header: " + fname
+					);
+
+				return value.toString().split(
+						Pattern.quote(_props.getDelim()),
+						-1
+				);
+			}
+			finally {
+				IOUtilFunctions.closeSilently(reader);
+			}
+		}
+		catch(IOException ex) {
+			throw new DMLRuntimeException(
+					"Failed to read CSV header from: " + fname,
+					ex
+			);
+		}
+	}
+
 	@Override
 	public final FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException, DMLRuntimeException {
@@ -85,6 +137,8 @@ public class FrameReaderTextCSV extends FrameReader {
 
 		return ret;
 	}
+
+
 
 	@Override
 	public FrameBlock readFrameFromInputStream(InputStream is, ValueType[] schema, String[] names, long rlen, long clen)

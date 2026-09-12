@@ -63,7 +63,7 @@ class TrainingStats:
 
     FIELDS = (
         "fits",
-        "epochs_run",
+        "loader_passes",
         "train_steps",
         "train_samples",
         "setup_s",
@@ -88,7 +88,7 @@ class TrainingStats:
         return _Phase(self, "setup_s")
 
     def training(self):
-        """The epoch/step loop only."""
+        """The step loop only."""
         return _Phase(self, "train_loop_s")
 
     def evaluation(self):
@@ -101,8 +101,8 @@ class TrainingStats:
         self.train_steps += 1
         self.train_samples += int(batch_samples)
 
-    def count_epoch(self):
-        self.epochs_run += 1
+    def count_pass(self):
+        self.loader_passes += 1
 
     def count_eval_batch(self, batch_samples=0):
         self.eval_batches += 1
@@ -167,7 +167,7 @@ class TrainingWorkAccumulator:
         return {
             "work_folds": self.folds,
             "work_fits": totals["fits"],
-            "work_epochs_run": totals["epochs_run"],
+            "work_loader_passes": totals["loader_passes"],
             "work_train_steps": totals["train_steps"],
             "work_train_samples": totals["train_samples"],
             "work_setup_s": totals["setup_s"],

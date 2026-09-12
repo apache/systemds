@@ -26,7 +26,6 @@ from systemds.scuro.utils.schema_helpers import (
     calculate_new_frequency,
     create_timestamps,
 )
-import torch
 
 
 # TODO: needs a way to define if data comes from a dataset with multiple instances or is like a streaming scenario where we only have one instance
@@ -367,7 +366,7 @@ class DataLayout(Enum):
             elif (
                 isinstance(data, list)
                 or isinstance(data, np.ndarray)
-                or isinstance(data, torch.Tensor)
+                or type(data).__module__.split(".", 1)[0] == "torch"
             ):
                 return DataLayout.NESTED_LEVEL
 

@@ -25,7 +25,12 @@ from typing import List
 from systemds.scuro.models.model import Model
 from systemds.scuro.models.training_stats import TrainingWorkAccumulator
 import numpy as np
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import (
+    GroupKFold,
+    KFold,
+    StratifiedGroupKFold,
+    StratifiedKFold,
+)
 from systemds.scuro.drsearch.evaluation_split import EvaluationSplit
 from systemds.scuro.representations.representation import RepresentationStats
 
@@ -88,6 +93,9 @@ class Task:
         kfold=5,
         measure_performance=True,
         performance_measures=["accuracy"],
+        groups=None,
+        allow_group_overlap=False,
+        cv_seed=11,
     ):
         """
         Parent class for the prediction task that is performed on top of the aligned representation
@@ -105,6 +113,9 @@ class Task:
         self.train_indices = train_indices
         self.test_indices = val_indices
         self.kfold = kfold
+        self.groups = None if groups is None else np.asarray(groups)
+        self.allow_group_overlap = allow_group_overlap
+        self.cv_seed = cv_seed
         self.measure_performance = measure_performance
         self.inference_time = []
         self.training_time = []
@@ -205,6 +216,11 @@ class Task:
         )
         fold_sizes = [len(fold) for fold in self.cv_train_indices]
         n_fold_train = max(fold_sizes, default=len(self.train_indices or []))
+        num_steps = getattr(self.model, "num_steps", None)
+        if num_steps is not None:
+            batch_size = max(1, int(getattr(self.model, "batch_size", 1) or 1))
+            samples = max(1, int(num_steps)) * batch_size
+            return float(max(1, self.kfold) * samples * max(1, feature_dim))
         passes = max(1, int(getattr(self.model, "epochs", 1) or 1))
         return float(
             max(1, self.kfold) * passes * max(1, n_fold_train) * max(1, feature_dim)
@@ -263,26 +279,101 @@ class Task:
                 "before allocating CUDA tensors."
             )
 
+    @staticmethod
+    def _stratification_target(labels_array):
+        if labels_array.ndim == 1:
+            return labels_array
+        return None
+
+    def _fold_candidates(self, y, n_units):
+        n_splits = max(2, min(self.kfold, int(n_units)))
+        stratify_on = self._stratification_target(y)
+        candidates = []
+        if self.groups is not None:
+            if stratify_on is not None:
+                candidates.append(
+                    (
+                        StratifiedGroupKFold(
+                            n_splits=n_splits, shuffle=True, random_state=self.cv_seed
+                        ),
+                        stratify_on,
+                    )
+                )
+            candidates.append((GroupKFold(n_splits=n_splits), None))
+        else:
+            if stratify_on is not None:
+                candidates.append(
+                    (
+                        StratifiedKFold(
+                            n_splits=n_splits, shuffle=True, random_state=self.cv_seed
+                        ),
+                        stratify_on,
+                    )
+                )
+            candidates.append(
+                (
+                    KFold(n_splits=n_splits, shuffle=True, random_state=self.cv_seed),
+                    None,
+                )
+            )
+        return candidates
+
+    def _check_train_test_groups(self):
+        if self.groups is None or not len(self.test_indices or []):
+            return
+        train_groups = set(self.groups[np.asarray(self.train_indices)].tolist())
+        test_groups = set(self.groups[np.asarray(self.test_indices)].tolist())
+        shared = train_groups & test_groups
+        if shared and not self.allow_group_overlap:
+            raise ValueError(
+                f"{self.name}: train and test share {len(shared)} group(s) "
+                f"(e.g. {sorted(map(str, shared))[:5]}). Use a group-disjoint "
+                "outer split, or pass allow_group_overlap=True to declare a "
+                "group-dependent protocol explicitly."
+            )
+        self.train_test_group_overlap = sorted(map(str, shared))
+
     def _create_cv_splits(self):
-        train_labels = [self.labels[i] for i in self.train_indices]
-        train_labels_array = np.array(train_labels)
+        self._check_train_test_groups()
 
-        train_indices_array = np.array(self.train_indices)
+        train_indices_array = np.asarray(self.train_indices)
+        y = np.asarray([self.labels[i] for i in self.train_indices])
+        fold_groups = None if self.groups is None else self.groups[train_indices_array]
 
+        n_units = (
+            len(train_indices_array)
+            if fold_groups is None
+            else len(set(fold_groups.tolist()))
+        )
+        folds = None
+        reason = None
+        for splitter, stratify_on in self._fold_candidates(y, n_units):
+            try:
+                folds = list(
+                    splitter.split(train_indices_array, stratify_on, groups=fold_groups)
+                )
+            except ValueError as error:
+                reason = f"{type(splitter).__name__}: {error}"
+                continue
+            self.cv_stratified = stratify_on is not None
+            self.cv_fallback_reason = reason
+            break
+        if folds is None:
+            raise ValueError(
+                f"{self.name}: cannot build {self.kfold} folds over "
+                f"{len(train_indices_array)} training instances "
+                f"({n_units} unit(s)): {reason}"
+            )
+
+        self.kfold = len(folds)
+
+        self.cv_grouped = self.groups is not None
         self.cv_train_indices = []
         self.cv_val_indices = []
 
-        for fold_idx in range(self.kfold):
-            fold_train_indices_array, fold_val_indices_array, _, _ = train_test_split(
-                train_indices_array,
-                train_labels_array,
-                test_size=0.2,
-                shuffle=True,
-                random_state=11 + fold_idx,
-            )
-
-            fold_train_indices = fold_train_indices_array.tolist()
-            fold_val_indices = fold_val_indices_array.tolist()
+        for fold_idx, (fit_positions, val_positions) in enumerate(folds):
+            fold_train_indices = train_indices_array[fit_positions].tolist()
+            fold_val_indices = train_indices_array[val_positions].tolist()
 
             self.cv_train_indices.append(fold_train_indices)
             self.cv_val_indices.append(fold_val_indices)
@@ -293,12 +384,47 @@ class Task:
                     f"Fold {fold_idx}: Overlap detected between train and val indices: {overlap}"
                 )
 
+            if fold_groups is not None:
+                shared_groups = set(fold_groups[fit_positions].tolist()) & set(
+                    fold_groups[val_positions].tolist()
+                )
+                if shared_groups:
+                    raise ValueError(
+                        f"Fold {fold_idx}: groups appear in both the fit and the "
+                        f"validation part: {sorted(map(str, shared_groups))[:5]}"
+                    )
+
         self.evaluation_splits = tuple(
             EvaluationSplit(train_indices, val_indices, name=f"fold_{fold_idx}")
             for fold_idx, (train_indices, val_indices) in enumerate(
                 zip(self.cv_train_indices, self.cv_val_indices)
             )
         )
+
+    def split_report(self):
+        report = {
+            "task": self.name,
+            "n_train": len(self.train_indices),
+            "n_test": 0 if self.test_indices is None else len(self.test_indices),
+            "kfold": self.kfold,
+            "grouped": bool(getattr(self, "cv_grouped", False)),
+            "stratified": bool(getattr(self, "cv_stratified", False)),
+            "cv_seed": self.cv_seed,
+        }
+        if self.groups is not None:
+            report["n_groups_train"] = len(
+                set(self.groups[np.asarray(self.train_indices)].tolist())
+            )
+            if len(self.test_indices or []):
+                report["n_groups_test"] = len(
+                    set(self.groups[np.asarray(self.test_indices)].tolist())
+                )
+            report["train_test_group_overlap"] = len(
+                getattr(self, "train_test_group_overlap", [])
+            )
+        if getattr(self, "cv_fallback_reason", None):
+            report["stratification_fallback"] = self.cv_fallback_reason
+        return report
 
     def create_model(self):
         """

@@ -52,7 +52,12 @@ class JSONLoader(BaseLoader):
             source_path, indices, data_type, chunk_size, ModalityType.TEXT, ext
         )
         self.field = field
-        self.stats = self.get_stats(source_path)
+        files = self.get_file_names(self.indices)
+        self.stats = self.cached_stats(
+            files,
+            {"field": field, "extension": ext},
+            lambda: self.get_stats(source_path),
+        )
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)

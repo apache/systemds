@@ -81,7 +81,12 @@ class VideoLoader(BaseLoader):
         self.fps = fps
         self.target_size = tuple(int(v) for v in target_size) if target_size else None
         self._all_metadata = []
-        self.stats = self.get_stats(source_path)
+        files = self.get_file_names(self.indices)
+        self.stats, self._all_metadata = self.cached_stats(
+            files,
+            {"dtype": str(data_type), "fps": fps, "target_size": self.target_size},
+            lambda: (self.get_stats(source_path), self._all_metadata),
+        )
 
     def load(self):
         if self.chunk_size:

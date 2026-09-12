@@ -503,7 +503,7 @@ class NodeExecutor:
                 gpu_slots_per_device=int(
                     os.environ.get("SCURO_GPU_SLOTS_PER_DEVICE", "1")
                 ),
-                gpu_demand_fraction=self.scheduler.gpu_demand_fraction(),
+                gpu_demand_fraction=1.0,
             )
         self._pool = worker_pool
         restrict_devices = getattr(self.scheduler, "restrict_gpu_devices", None)
@@ -1045,6 +1045,10 @@ class NodeExecutor:
     @staticmethod
     def _is_task_node(node: RepresentationNode) -> bool:
         return bool(getattr(node, "parameters", {}).get("_node_kind") == "task")
+
+    def detach_worker_pool(self) -> PersistentWorkerPool:
+        self._owns_pool = False
+        return self._pool
 
     def run(self) -> Dict[str, Any]:
         self._task_results = {}

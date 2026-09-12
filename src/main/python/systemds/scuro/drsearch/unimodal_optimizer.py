@@ -86,6 +86,8 @@ class UnimodalOptimizer:
         self.checkpoint_every = checkpoint_every
         self.resume = resume
         self.max_num_workers = max_num_workers
+        self._persistent_worker_pool = None
+        self._reuse_worker_pool = False
         self._checkpoint_manager = CheckpointManager(
             self.result_path or ".",
             "unimodal_checkpoint_",
@@ -262,6 +264,16 @@ class UnimodalOptimizer:
                     continue
 
     def optimize(self):
+        self._reuse_worker_pool = True
+        try:
+            return self._optimize_modalities()
+        finally:
+            if self._persistent_worker_pool is not None:
+                self._persistent_worker_pool.shutdown()
+                self._persistent_worker_pool = None
+            self._reuse_worker_pool = False
+
+    def _optimize_modalities(self):
         if self.resume:
             self.resume_from_checkpoint()
 
@@ -379,8 +391,11 @@ class UnimodalOptimizer:
                 max_num_workers=self.max_num_workers,
                 result_path=self.result_path,
                 enable_checkpointing=self.enable_checkpointing,
+                worker_pool=self._persistent_worker_pool,
                 search_start=self._search_start,
             )
+            if self._reuse_worker_pool and self._persistent_worker_pool is None:
+                self._persistent_worker_pool = node_executor.detach_worker_pool()
             exec_out = node_executor.run()
             task_results.extend(exec_out["task_results"])
             statistics = exec_out["statistics"]
@@ -875,6 +890,9 @@ class UnimodalOptimizer:
         )
 
 
+SELECTION_STRATEGIES = ("performance", "robustness", "tradeoff")
+
+
 class UnimodalResults:
     def __init__(
         self,
@@ -884,6 +902,10 @@ class UnimodalResults:
         store_cache=True,
         k=-1,
         metric_name="accuracy",
+        selection_strategy="performance",
+        tradeoff_weights=(0.5, 0.5),
+        robustness_std_weight=1.0,
+        robustness_one_se_parsimony=True,
     ):
         self.modality_ids = [modality.modality_id for modality in modalities]
         self.task_names = [task.model.name for task in tasks]
@@ -893,6 +915,12 @@ class UnimodalResults:
         self.store_cache = store_cache
         self.k = k
         self.metric_name = metric_name
+        self.set_selection_strategy(
+            selection_strategy,
+            tradeoff_weights=tradeoff_weights,
+            robustness_std_weight=robustness_std_weight,
+            robustness_one_se_parsimony=robustness_one_se_parsimony,
+        )
         for modality in self.modality_ids:
             self.results[modality] = {task_name: [] for task_name in self.task_names}
             self.cache[modality] = {task_name: [] for task_name in self.task_names}
@@ -989,6 +1017,51 @@ class UnimodalResults:
                 for entry in self.results[modality][task_name]:
                     print(f"{modality}_{task_name}: {entry}")
 
+    def set_selection_strategy(
+        self,
+        selection_strategy,
+        tradeoff_weights=None,
+        robustness_std_weight=None,
+        robustness_one_se_parsimony=None,
+    ):
+        if selection_strategy not in SELECTION_STRATEGIES:
+            raise ValueError(
+                f"unknown selection strategy {selection_strategy!r}, "
+                f"expected one of {SELECTION_STRATEGIES}"
+            )
+        self.selection_strategy = selection_strategy
+        if tradeoff_weights is not None:
+            self.tradeoff_weights = tuple(tradeoff_weights)
+        if robustness_std_weight is not None:
+            self.robustness_std_weight = robustness_std_weight
+        if robustness_one_se_parsimony is not None:
+            self.robustness_one_se_parsimony = robustness_one_se_parsimony
+        return self
+
+    def with_selection_strategy(self, selection_strategy, **strategy_kwargs):
+        view = copy.copy(self)
+        return view.set_selection_strategy(selection_strategy, **strategy_kwargs)
+
+    def _rank_entries(self, task_results, performance_metric_name):
+        strategy = getattr(self, "selection_strategy", "performance")
+        if strategy == "robustness":
+            return rank_by_robustness(
+                task_results,
+                performance_metric_name=performance_metric_name,
+                standard_deviation_weight=getattr(self, "robustness_std_weight", 1.0),
+                one_se_parsimony=getattr(self, "robustness_one_se_parsimony", True),
+            )
+        weights = (
+            getattr(self, "tradeoff_weights", (0.5, 0.5))
+            if strategy == "tradeoff"
+            else (1.0, 0.0)
+        )
+        return rank_by_tradeoff(
+            task_results,
+            weights=weights,
+            performance_metric_name=performance_metric_name,
+        )
+
     def get_k_best_results(
         self,
         modality,
@@ -1007,8 +1080,8 @@ class UnimodalResults:
 
         task_results = self.results[modality.modality_id][task.model.name]
 
-        results, sorted_indices = rank_by_tradeoff(
-            task_results, performance_metric_name=performance_metric_name
+        results, sorted_indices = self._rank_entries(
+            task_results, performance_metric_name
         )
 
         results = results[: self.k]
@@ -1018,6 +1091,11 @@ class UnimodalResults:
             task_cache = self.cache.get(modality.modality_id, {}).get(
                 task.model.name, None
             )
+            if (
+                isinstance(task_cache, list)
+                and getattr(self, "selection_strategy", "performance") != "performance"
+            ):
+                task_cache = None
             if not task_cache:
                 cache = []
                 for result in results:
@@ -1063,7 +1141,7 @@ class UnimodalResults:
         task,
         performance_metric_name,
         k=None,
-        neighbourhood_weight=0.5,
+        standard_deviation_weight=1.0,
         one_se_parsimony=True,
     ):
         task_results = self.results[modality.modality_id][task.model.name]
@@ -1071,7 +1149,7 @@ class UnimodalResults:
         results, sorted_indices = rank_by_robustness(
             task_results,
             performance_metric_name=performance_metric_name,
-            neighbourhood_weight=neighbourhood_weight,
+            standard_deviation_weight=standard_deviation_weight,
             one_se_parsimony=one_se_parsimony,
         )
 

@@ -133,6 +133,57 @@ class SplitAwareDAGEvaluator:
         return self._wrap(transformed, inputs.instance_ids)
 
     @staticmethod
+    def _align_partition_shapes(result):
+        """Zero-pad every partition's output to one common instance shape.
+
+        Stateless operators pad to the largest instance of whatever they are
+        given (e.g. DynamicWindow pads each window to the partition's longest
+        clip), so executing them per partition yields different feature widths
+        for the fit and evaluation partitions, and a model fitted on one cannot
+        score the other. Padding to the elementwise maximum across partitions
+        reproduces the shapes of executing on all of their instances at once,
+        which is how the search computes representations. Labels play no part.
+        """
+        if len(result) < 2 or not all(isinstance(r, IndexedModality) for r in result):
+            return result
+        arrays = []
+        for item in result:
+            data = item.modality.data
+            if isinstance(data, np.ndarray):
+                array = data
+            elif isinstance(data, list) and data and all(
+                isinstance(d, np.ndarray) for d in data
+            ):
+                if len({d.shape for d in data}) != 1:
+                    return result
+                array = None
+            else:
+                return result
+            if array is not None and array.dtype == object:
+                return result
+            arrays.append(array)
+        shapes = [
+            a.shape[1:] if a is not None else item.modality.data[0].shape
+            for a, item in zip(arrays, result)
+        ]
+        if len({len(shape) for shape in shapes}) != 1 or not shapes[0]:
+            return result
+        target = tuple(max(dims) for dims in zip(*shapes))
+        for array, shape, item in zip(arrays, shapes, result):
+            if shape == target:
+                continue
+            modality = item.modality
+            source = array if array is not None else np.stack(modality.data)
+            padded = np.zeros((source.shape[0], *target), dtype=source.dtype)
+            padded[(slice(None),) + tuple(slice(0, dim) for dim in shape)] = source
+            modality.data = padded if array is not None else list(padded)
+            for metadata in modality.metadata or []:
+                layout = metadata.get("data_layout") if isinstance(metadata, dict) else None
+                if isinstance(layout, dict) and len(tuple(layout.get("shape") or ())) == len(target):
+                    layout["shape"] = target
+        return result
+
+    @staticmethod
     def _leaf_input(partition, node):
         if len(partition) == 1:
             return partition[0]
@@ -204,6 +255,7 @@ class SplitAwareDAGEvaluator:
                     self._apply_stateless(operation, partition, node)
                     for partition in input_partitions
                 )
+                result = self._align_partition_shapes(result)
 
             cache[node_id] = result
             return result

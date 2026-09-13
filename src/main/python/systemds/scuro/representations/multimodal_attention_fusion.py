@@ -28,7 +28,7 @@ from typing import List, Dict, Optional, Any
 import numpy as np
 from systemds.scuro.drsearch.operator_registry import register_fusion_operator
 from systemds.scuro.modality.modality import Modality
-from systemds.scuro.representations.fusion import Fusion
+from systemds.scuro.representations.fusion import Fusion, FusionInputTooLargeError
 from systemds.scuro.representations.representation import (
     FitRequirement,
     RepresentationStats,
@@ -175,7 +175,7 @@ class AttentionFusion(Fusion):
     ) -> None:
         total_input_dim = sum(input_dimensions.values())
         if self.max_input_dim is not None and total_input_dim > self.max_input_dim:
-            raise ValueError(
+            raise FusionInputTooLargeError(
                 f"AttentionFusion input feature dimension {total_input_dim:,} exceeds "
                 f"the configured maximum {self.max_input_dim:,}; per-modality "
                 f"dimensions: {input_dimensions}. Apply aggregation or dimensionality "
@@ -189,11 +189,24 @@ class AttentionFusion(Fusion):
             self.max_parameter_bytes is not None
             and parameter_bytes > self.max_parameter_bytes
         ):
-            raise ValueError(
+            raise FusionInputTooLargeError(
                 "AttentionFusion parameters require approximately "
                 f"{parameter_bytes / 1024**3:.2f} GiB, exceeding the configured "
                 f"maximum {self.max_parameter_bytes / 1024**3:.2f} GiB."
             )
+
+    def input_size_violation(self, input_stats) -> Optional[str]:
+        widths = self._operand_widths(input_stats)
+        if widths is None:
+            return None
+        dimensions = {f"modality_{i}": width for i, width in enumerate(widths)}
+        try:
+            # Sequence length and class count are not known from shapes; the
+            # width limit is what wide operands hit first.
+            self._validate_model_size(dimensions, 1, 2)
+        except FusionInputTooLargeError as error:
+            return str(error)
+        return None
 
     def get_output_stats(self, input_stats) -> RepresentationStats:
         stats_list = self._as_stats_list(input_stats)

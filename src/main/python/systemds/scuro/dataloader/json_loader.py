@@ -75,14 +75,13 @@ class JSONLoader(BaseLoader):
             if isinstance(index, str):
                 index = [index]
             for idx in index:
-                try:
-                    text = self._get_text(json_file[idx])
-                except:
-                    text = self._get_text(json_file)
+                # One file keyed by instance id, or one file per instance.
+                record = json_file[idx] if idx in json_file else json_file
+                text = self._get_text(record)
 
                 self.data.append(text)
                 self.metadata.append(
-                    self.modality_type.create_metadata(len(text), text) | json_file[idx]
+                    self.modality_type.create_metadata(len(text), text) | record
                 )
 
     def get_stats(self, source_path: str):

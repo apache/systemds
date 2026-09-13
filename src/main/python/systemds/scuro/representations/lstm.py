@@ -24,12 +24,12 @@ import random
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from systemds.scuro.utils.static_variables import get_device
 import numpy as np
 
 from systemds.scuro.modality.modality import Modality
-from systemds.scuro.representations.fusion import Fusion
+from systemds.scuro.representations.fusion import Fusion, FusionInputTooLargeError
 from systemds.scuro.representations.representation import (
     FitRequirement,
     RepresentationStats,
@@ -187,7 +187,7 @@ class LSTM(Fusion):
         input_dim = sum(data.shape[2] for data in processed_modalities)
         if self.max_input_dim is not None and input_dim > self.max_input_dim:
             shapes = ", ".join(self._shape_description(m) for m in modalities)
-            raise ValueError(
+            raise FusionInputTooLargeError(
                 f"LSTM input feature dimension {input_dim:,} exceeds "
                 f"the configured maximum {self.max_input_dim:,}. Inputs: {shapes}"
             )
@@ -226,12 +226,28 @@ class LSTM(Fusion):
             self.max_parameter_bytes is not None
             and parameter_bytes > self.max_parameter_bytes
         ):
-            raise ValueError(
+            raise FusionInputTooLargeError(
                 f"LSTM parameters require approximately "
                 f"{parameter_bytes / 1024**3:.2f} GiB, exceeding the configured "
                 f"maximum {self.max_parameter_bytes / 1024**3:.2f} GiB "
                 f"(input_dim={input_dim:,}, width={self.width}, depth={self.depth})."
             )
+
+    def input_size_violation(self, input_stats) -> Optional[str]:
+        widths = self._operand_widths(input_stats)
+        if widths is None:
+            return None
+        input_dim = sum(widths)
+        if self.max_input_dim is not None and input_dim > self.max_input_dim:
+            return (
+                f"LSTM input feature dimension {input_dim:,} would exceed the "
+                f"configured maximum {self.max_input_dim:,} (operand widths {widths})"
+            )
+        try:
+            self._validate_model_size(input_dim, 2)
+        except FusionInputTooLargeError as error:
+            return str(error)
+        return None
 
     def get_output_stats(self, input_stats) -> RepresentationStats:
         stats_list = self._as_stats_list(input_stats)

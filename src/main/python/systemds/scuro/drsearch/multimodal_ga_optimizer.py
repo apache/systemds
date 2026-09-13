@@ -61,6 +61,7 @@ from systemds.scuro.drsearch.worker_pool import (
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
+from systemds.scuro.representations.fusion import FusionInputTooLargeError
 from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.utils.schema_helpers import get_shape
 
@@ -289,6 +290,8 @@ def _dispatch_genome_evaluation(payload, _gpu_id):
             if fitness is None:
                 fitness = _failure_fitness(objective_specs)
             return fitness, result
+        except FusionInputTooLargeError as error:
+            return _failure_fitness(objective_specs), {"_oversized": str(error)}
         except Exception:
             return _failure_fitness(objective_specs), {
                 "_evaluation_error": traceback.format_exc()
@@ -729,6 +732,13 @@ class MultimodalDeapOptimizer:
                 ind, dag, sig = jobs.pop(jr.job_id)
                 if jr.ok:
                     fitness, payload = jr.value
+                    if isinstance(payload, dict) and "_oversized" in payload:
+                        ind.fitness.values = self._reject_oversized(
+                            task_name, None, payload["_oversized"], sig
+                        )
+                        for follower in pending_followers.pop(sig, []):
+                            follower.fitness.values = ind.fitness.values
+                        continue
                     error = (
                         payload.get("_evaluation_error")
                         if isinstance(payload, dict)
@@ -1026,7 +1036,45 @@ class MultimodalDeapOptimizer:
             return None
         return int(np.prod(root.output_shape))
 
+    def _operator_input_violation(
+        self, task_name: str, genome: DagGenome
+    ) -> Optional[str]:
+        """First fusion node whose operands its operator cannot take, if any.
+
+        Checked per node, since an operator's limit applies to its own inputs
+        (LSTM and AttentionFusion build a model over the operand width), not
+        to the width of the final fused representation.
+        """
+        if task_name is None:
+            return None
+        leaf_stats = [self._leaf_stats(task_name, leaf) for leaf in genome.leaves]
+
+        def walk(subtree: Tree, path: str):
+            if isinstance(subtree, int):
+                return leaf_stats[subtree], None
+            left, reason = walk(subtree[0], path + "L")
+            if reason is not None:
+                return None, reason
+            right, reason = walk(subtree[1], path + "R")
+            if reason is not None:
+                return None, reason
+            if left is None or right is None:
+                return None, None
+            operator = genome.fusion_ops[path]()
+            reason = operator.input_size_violation([left, right])
+            if reason is not None:
+                return None, reason
+            return operator.get_output_stats([left, right]), None
+
+        try:
+            return walk(genome.tree, "")[1]
+        except Exception:
+            return None
+
     def _oversized_reason(self, task_name: str, genome: DagGenome) -> Optional[str]:
+        reason = self._operator_input_violation(task_name, genome)
+        if reason is not None:
+            return f"{reason}; candidate rejected before execution"
         if not self.max_feature_dim:
             return None
         predicted = self._predicted_feature_dim(task_name, genome)
@@ -1039,7 +1087,7 @@ class MultimodalDeapOptimizer:
         )
 
     def _reject_oversized(
-        self, task_name: str, genome: DagGenome, reason: str
+        self, task_name: str, genome: Optional[DagGenome], reason: str, signature=None
     ) -> Tuple[float, ...]:
         self.oversized_candidates[task_name] = (
             self.oversized_candidates.get(task_name, 0) + 1
@@ -1047,9 +1095,9 @@ class MultimodalDeapOptimizer:
         if self.debug:
             print(f"[GA] task={task_name} skipped candidate: {reason}")
         fitness = _failure_fitness(self.objective_specs)
-        self._fitness_cache.setdefault(task_name, {})[
-            self._genome_signature(genome)
-        ] = fitness
+        if signature is None:
+            signature = self._genome_signature(genome)
+        self._fitness_cache.setdefault(task_name, {})[signature] = fitness
         return fitness
 
     def _evaluate_genome(self, genome: DagGenome, task: Task) -> Tuple[float, ...]:
@@ -1075,6 +1123,8 @@ class MultimodalDeapOptimizer:
             error = None
             if fitness is None:
                 fitness = _failure_fitness(self.objective_specs)
+        except FusionInputTooLargeError as too_large:
+            return self._reject_oversized(task_name, genome, str(too_large), sig)
         except Exception:
             fitness = _failure_fitness(self.objective_specs)
             payload, error = None, traceback.format_exc()

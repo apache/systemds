@@ -19,7 +19,7 @@
 #
 # -------------------------------------------------------------
 import copy
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 
@@ -44,6 +44,14 @@ from systemds.scuro.representations.representation import (
 from systemds.scuro.utils.schema_helpers import get_shape
 
 DEFAULT_MAX_ALIGNMENT_PAD_RATIO = None
+
+
+class FusionInputTooLargeError(ValueError):
+    """The operands are too wide for this fusion operator's model.
+
+    Raised before any training, so a search can discard the candidate as
+    oversized instead of counting it as a failed evaluation.
+    """
 
 
 class Fusion(Representation):
@@ -83,6 +91,32 @@ class Fusion(Representation):
 
     def _fusion_input_stats(self, input_stats) -> List[RepresentationStats]:
         return [self._pre_aggregated_stats(s) for s in self._as_stats_list(input_stats)]
+
+    def input_size_violation(self, input_stats) -> Optional[str]:
+        """Why these operands are too wide for this operator, or None.
+
+        Predicted from shapes alone so that a search can reject a candidate
+        before executing it. Operators without an input-width limit accept
+        everything.
+        """
+        return None
+
+    def _operand_widths(self, input_stats) -> Optional[List[int]]:
+        """Per-operand feature width as _prepare_modalities hands it to execute.
+
+        The width is the last axis of each operand after pre-aggregation;
+        operators that need alignment zero-pad every operand to the widest.
+        None if a shape is unknown or has more than two axes.
+        """
+        widths = []
+        for stats in self._fusion_input_stats(input_stats):
+            shape = tuple(stats.output_shape or ())
+            if not stats.output_shape_is_known or len(shape) not in (1, 2):
+                return None
+            widths.append(int(shape[-1]))
+        if self.needs_alignment and widths:
+            widths = [max(widths)] * len(widths)
+        return widths
 
     def _raw_input_bytes(self, input_stats) -> int:
         return sum(

@@ -2105,6 +2105,218 @@ public class LibMatrixMult
 			}
 		}
 	}
+
+	public static void matrixMultSparseSparseMM(SparseBlock a, SparseBlock b, DenseBlock c, boolean transA,
+		boolean transB, int m, int n, int cd, int rl, int ru) {
+		if( !transA && !transB )
+			matrixMultSparseSparseMM(a, b, c, m, cd, a.size(), rl, ru);
+		else if( transA && !transB )
+			matrixMultSparseSparseTransA(a, b, c, cd, rl, ru);
+		else if( !transA )
+			matrixMultSparseSparseTransB(a, b, c, n, rl, ru);
+		else
+			matrixMultSparseSparseTransATransB(a, b, c, n, rl, ru);
+	}
+
+	private static void matrixMultSparseSparseTransA(SparseBlock a, SparseBlock b, DenseBlock c, int cd, int rl, int ru) {
+		final int kmax = Math.min(cd, Math.min(a.numRows(), b.numRows()));
+		final long nnzA = Math.max(1, a.size());
+		final int blocksizeK = Math.max(32, Math.min(1024, UtilFunctions.nextIntPow2(
+			(int)Math.max(1, Math.pow((double)a.numRows()*Math.max(1, ru-rl)/nnzA, 2)))));
+		for( int bk=0; bk<kmax; bk+=blocksizeK ) {
+			int bkmax = Math.min(kmax, bk+blocksizeK);
+			for( int k=bk; k<bkmax; k++ ) {
+				if( a.isEmpty(k) || b.isEmpty(k) )
+					continue;
+
+				final int apos = a.pos(k);
+				final int alen = a.size(k);
+				int aixPos = (rl == 0) ? 0 : a.posFIndexGTE(k, rl);
+				if( aixPos < 0 )
+					continue;
+
+				int[] aix = a.indexes(k);
+				double[] avals = a.values(k);
+				double[] bvals = b.values(k);
+				int[] bix = b.indexes(k);
+				int bpos = b.pos(k);
+				int blen = b.size(k);
+
+				int p = apos + aixPos;
+				if( blen >= 32 ) {
+					final int end = apos + alen;
+					for( ; p+3<end && aix[p+3]<ru; p+=4 )
+						vectMultiplyAddToRows4(avals[p], avals[p+1], avals[p+2], avals[p+3], bvals, bix, bpos, blen,
+							c, aix[p], aix[p+1], aix[p+2], aix[p+3]);
+					if( p+2<end && aix[p+2]<ru ) {
+						vectMultiplyAddToRows3(avals[p], avals[p+1], avals[p+2], bvals, bix, bpos, blen,
+							c, aix[p], aix[p+1], aix[p+2]);
+						p += 3;
+					}
+					else if( p+1<end && aix[p+1]<ru ) {
+						vectMultiplyAddToRows2(avals[p], avals[p+1], bvals, bix, bpos, blen, c, aix[p], aix[p+1]);
+						p += 2;
+					}
+				}
+				for( ; p<apos+alen && aix[p]<ru; p++ )
+					vectMultiplyAdd(avals[p], bvals, c.values(aix[p]), bix, bpos, c.pos(aix[p]), blen);
+			}
+		}
+	}
+
+	private static void vectMultiplyAddToRows2(double aval1, double aval2, double[] b, int[] bix, int bpos, int blen,
+		DenseBlock c, int r1, int r2) {
+		double[] cvals1 = c.values(r1);
+		double[] cvals2 = c.values(r2);
+		int cpos1 = c.pos(r1);
+		int cpos2 = c.pos(r2);
+		for( int j=bpos; j<bpos+blen; j++ ) {
+			double bval = b[j];
+			int bixj = bix[j];
+			cvals1[cpos1+bixj] += aval1 * bval;
+			cvals2[cpos2+bixj] += aval2 * bval;
+		}
+	}
+
+	private static void vectMultiplyAddToRows3(double aval1, double aval2, double aval3, double[] b, int[] bix,
+		int bpos, int blen, DenseBlock c, int r1, int r2, int r3) {
+		double[] cvals1 = c.values(r1);
+		double[] cvals2 = c.values(r2);
+		double[] cvals3 = c.values(r3);
+		int cpos1 = c.pos(r1);
+		int cpos2 = c.pos(r2);
+		int cpos3 = c.pos(r3);
+		for( int j=bpos; j<bpos+blen; j++ ) {
+			double bval = b[j];
+			int bixj = bix[j];
+			cvals1[cpos1+bixj] += aval1 * bval;
+			cvals2[cpos2+bixj] += aval2 * bval;
+			cvals3[cpos3+bixj] += aval3 * bval;
+		}
+	}
+
+	private static void vectMultiplyAddToRows4(double aval1, double aval2, double aval3, double aval4, double[] b,
+		int[] bix, int bpos, int blen, DenseBlock c, int r1, int r2, int r3, int r4) {
+		double[] cvals1 = c.values(r1);
+		double[] cvals2 = c.values(r2);
+		double[] cvals3 = c.values(r3);
+		double[] cvals4 = c.values(r4);
+		int cpos1 = c.pos(r1);
+		int cpos2 = c.pos(r2);
+		int cpos3 = c.pos(r3);
+		int cpos4 = c.pos(r4);
+		for( int j=bpos; j<bpos+blen; j++ ) {
+			double bval = b[j];
+			int bixj = bix[j];
+			cvals1[cpos1+bixj] += aval1 * bval;
+			cvals2[cpos2+bixj] += aval2 * bval;
+			cvals3[cpos3+bixj] += aval3 * bval;
+			cvals4[cpos4+bixj] += aval4 * bval;
+		}
+	}
+
+	private static void matrixMultSparseSparseTransB(SparseBlock a, SparseBlock b, DenseBlock c, int n, int rl, int ru) {
+		final int blocksize = 256;
+		final int rmax = Math.min(ru, a.numRows());
+		final int cmax = Math.min(n, b.numRows());
+		for( int bi=rl; bi<rmax; bi+=blocksize ) {
+			int bimax = Math.min(rmax, bi+blocksize);
+			for( int bj=0; bj<cmax; bj+=blocksize ) {
+				int bjmax = Math.min(cmax, bj+blocksize);
+				for( int i=bi; i<bimax; i++ ) {
+					if( a.isEmpty(i) )
+						continue;
+
+					int apos = a.pos(i);
+					int alen = a.size(i);
+					int[] aix = a.indexes(i);
+					double[] avals = a.values(i);
+					double[] cvals = c.values(i);
+					int cix = c.pos(i);
+					for( int j=bj; j<bjmax; j++ ) {
+						if( b.isEmpty(j) )
+							continue;
+
+						double val = sparseRowDot(avals, aix, apos, alen, b.values(j), b.indexes(j), b.pos(j), b.size(j));
+						if( val != 0 )
+							cvals[cix+j] += val;
+					}
+				}
+			}
+		}
+	}
+
+	private static double sparseRowDot(double[] a, int[] aix, int apos, int alen, double[] b, int[] bix, int bpos, int blen) {
+		if( alen == 0 || blen == 0 )
+			return 0;
+		final int aend = apos + alen;
+		final int bend = bpos + blen;
+		if( aix[apos] > bix[bend-1] || aix[aend-1] < bix[bpos] )
+			return 0;
+
+		if( alen * 8 < blen )
+			return sparseRowDotBinarySearch(a, aix, apos, aend, b, bix, bpos, bend);
+		else if( blen * 8 < alen )
+			return sparseRowDotBinarySearch(b, bix, bpos, bend, a, aix, apos, aend);
+		return dotProduct(a, aix, apos, alen, b, bix, bpos, blen);
+	}
+
+	private static double sparseRowDotBinarySearch(double[] a, int[] aix, int apos, int aend,
+		double[] b, int[] bix, int bpos, int bend) {
+		double ret = 0;
+		for( int i=apos; i<aend; i++ ) {
+			int k = Arrays.binarySearch(bix, bpos, bend, aix[i]);
+			if( k >= 0 )
+				ret += a[i] * b[k];
+		}
+		return ret;
+	}
+
+	private static void matrixMultSparseSparseTransATransB(SparseBlock a, SparseBlock b, DenseBlock c, int n, int rl, int ru) {
+		final int blocksizeJ = 256;
+		final int kmax = a.numRows();
+		final long nnzB = Math.max(1, b.size());
+		final int blocksizeK = Math.max(32, Math.min(1024, UtilFunctions.nextIntPow2(
+			(int)Math.max(1, Math.pow((double)b.numRows()*Math.max(1, kmax)/nnzB, 2)))));
+		final int cmax = Math.min(n, b.numRows());
+		for( int bj=0; bj<cmax; bj+=blocksizeJ ) {
+			int bjmax = Math.min(cmax, bj+blocksizeJ);
+			for( int bk=0; bk<kmax; bk+=blocksizeK ) {
+				int bkmax = Math.min(kmax, bk+blocksizeK);
+				for( int j=bj; j<bjmax; j++ ) {
+					if( b.isEmpty(j) )
+						continue;
+
+					int bpos = b.pos(j);
+					int blen = b.size(j);
+					int[] bix = b.indexes(j);
+					double[] bvals = b.values(j);
+					int q = (bk == 0) ? 0 : b.posFIndexGTE(j, bk);
+					if( q < 0 )
+						continue;
+
+					for( q+=bpos; q<bpos+blen && bix[q]<bkmax; q++ ) {
+						int k = bix[q];
+						if( k >= a.numRows() || a.isEmpty(k) )
+							continue;
+
+						int apos = a.pos(k);
+						int alen = a.size(k);
+						int aixPos = (rl == 0) ? 0 : a.posFIndexGTE(k, rl);
+						if( aixPos < 0 )
+							continue;
+
+						int[] aix = a.indexes(k);
+						double[] avals = a.values(k);
+						for( int p=apos+aixPos; p<apos+alen && aix[p]<ru; p++ ) {
+							double[] cvals = c.values(aix[p]);
+							cvals[c.pos(aix[p])+j] += avals[p] * bvals[q];
+						}
+					}
+				}
+			}
+		}
+	}
 	
 	private static void matrixMultSparseSparseMM(SparseBlock a, SparseBlock b, DenseBlock c, int m, int cd, long nnz1, int rl, int ru) {
 		//block sizes for best-effort blocking w/ sufficient row reuse in B yet small overhead

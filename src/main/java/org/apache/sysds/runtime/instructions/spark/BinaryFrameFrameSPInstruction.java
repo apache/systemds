@@ -65,6 +65,11 @@ public class BinaryFrameFrameSPInstruction extends BinarySPInstruction {
 			out = in1.mapValues(new applySchema(fb.getValue()));
 			sec.releaseFrameInput(input2.getName());
 		}
+		else if(getOpcode().equals(Opcodes.SET_COLNAMES.toString())) {
+			Broadcast<FrameBlock> fb = sec.getSparkContext().broadcast(sec.getFrameInput(input2.getName()));
+			out = in1.mapValues(new setColumnNames(fb.getValue()));
+			sec.releaseFrameInput(input2.getName());
+		}
 		else {
 			JavaPairRDD<Long, FrameBlock> in2 = sec.getFrameBinaryBlockRDDHandleForVariable(input2.getName());
 			// create output frame
@@ -138,6 +143,24 @@ public class BinaryFrameFrameSPInstruction extends BinarySPInstruction {
 		@Override
 		public FrameBlock call(FrameBlock arg0) throws Exception {
 			return arg0.applySchema(schema);
+		}
+	}
+
+	private static class setColumnNames	implements Function<FrameBlock, FrameBlock>{
+		//private static final long serialVersionUID = 1L;
+
+		private String[] columnNames;
+
+		public setColumnNames(FrameBlock names) {
+			columnNames = new String[names.getNumColumns()];
+			for(int i = 0; i < columnNames.length; i++)
+				columnNames[i] = names.get(0, i).toString();
+		}
+
+		@Override
+		public FrameBlock call(FrameBlock arg0) throws Exception {
+			arg0.setColumnNames(columnNames);
+			return arg0;
 		}
 	}
 }

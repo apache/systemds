@@ -397,6 +397,8 @@ public class PreparedScript implements ConfigurableAPI
 		MetaDataFormat meta = new MetaDataFormat(mc, FileFormat.BINARY);
 		FrameObject fo = new FrameObject(OptimizerUtils.getUniqueTempFileName(), meta);
 		fo.acquireModify(frame);
+		fo.setSchema(frame.getSchema());
+		fo.setColumnNames(frame.getColumnNames());
 		fo.release();
 		
 		//put create matrix wrapper into symbol table

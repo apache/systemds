@@ -1,0 +1,13 @@
+print("debug impute/write full");
+
+X = read($1, format = "csv", header = TRUE, sep = ",");
+print("nrow(X) = " + nrow(X));
+print("ncol(X) = " + ncol(X));
+
+numeric_mask = matrix(0, rows = 1, cols = ncol(X));
+[X_start, imputation_vec] = imputeByMean(X, numeric_mask);
+
+print("nrow(X_start) = " + nrow(X_start));
+print("ncol(X_start) = " + ncol(X_start));
+
+write(X_start, $2, format = "csv");

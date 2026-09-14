@@ -1,0 +1,519 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# A rebalanced MICE-like Algorithm for numeric datasets with multiple incomplete columns
+# for a better MNAR-imputation.
+#
+# INPUT:
+# --------------------------------------------------------------------------------------
+# $1      csv file with numeric columns and missing values
+# $2      path for output csv file containing the imputed matrix
+# $3      path for output csv file containing the tuning inSolformation
+# $4      Number of iterations
+# --------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# --------------------------------------------------------------------------------------
+# imputed_X      imputed data matrix
+# tuning_info    selected configuration and validation score per column
+# --------------------------------------------------------------------------------------
+
+
+#Stabilize weightsso the model does not become unstable due to excessively high or low weights
+#(relative weighting is preserved)
+
+m_stabilizing = function(Matrix[Double] weights)
+  return(Matrix[Double] out)
+{
+  meanWeights = mean(weights);
+  if(meanWeights == 0)
+    out = weights + 1;
+  else
+    out = weights / meanWeights;
+}
+
+# removes current target column from X so remaining columns can be used as predictors
+
+m_removeTarget = function(Matrix[Double] X, Integer colix)
+  return(Matrix[Double] Y)
+{
+  if(colix == 1)
+    Y = X[, 2:ncol(X)];
+  else if(colix == ncol(X))
+    Y = X[, 1:(ncol(X)-1)];
+  else
+    Y = cbind(X[, 1:(colix-1)], X[, (colix+1):ncol(X)]);
+}
+
+# get missing ids from mask
+maskMissing = function(Matrix[Double] mask_col)
+  return(Matrix[Double] ids)
+{
+  ids = removeEmpty(target = mask_col * seq(1, nrow(mask_col)), margin = "rows");
+}
+
+# marks selected validation rows with 1 so they can be treated as missing
+validationMask = function(Integer n, Matrix[Double] ids)
+  return(Matrix[Double] ind)
+{
+  ind = matrix(0, rows = n, cols = 1);
+
+  if(!(nrow(ids) == 1 & as.scalar(ids[1,1] == 0)))
+  {
+    for(i in 1:nrow(ids))
+    {
+      rid = as.integer(as.scalar(ids[i,1]));
+      ind[rid, 1] = 1;
+    }
+  }
+}
+
+#calculate scewness of target values
+getScew = function(Matrix[Double] y)
+  return(Double skew)
+{
+  mu = mean(y);
+  sigma = sd(y);
+
+  if(sigma == 0)
+    skew = 0;
+  else {
+    yc = y - mu;
+    skew = mean(yc ^ 3) / (sigma ^ 3);
+  }
+}
+
+# put each target value in a bin for frequency-based weighting
+
+buildBins = function(Matrix[Double] y, Integer nbins)
+  return(Matrix[Double] bin_ids, Integer nbins_eff)
+{
+  min_y = min(y);
+  max_y = max(y);
+
+  if(max_y <= min_y) {
+    bin_ids = matrix(1, rows = nrow(y), cols = 1);
+    nbins_eff = 1;
+  }
+  else {
+    width = (max_y - min_y) / nbins;
+    bin_ids = floor((y - min_y) / width) + 1;
+    bin_ids = ifelse(bin_ids > nbins, nbins, bin_ids);
+    bin_ids = ifelse(bin_ids < 1, 1, bin_ids);
+    nbins_eff = nbins;
+  }
+}
+
+# give higher weights to rare target values&
+# values in the relevant tail of a scewed distribution
+
+computeTargetWeights = function(Matrix[Double] y_train, Integer n_bins = 6,
+  Double smoothing = 10.0, Double max_weight = 5.0, Double scew_threshold = 0.25)
+  return(Matrix[Double] targetValue_weights, Double scew)
+{
+  scew = getScew(y_train);
+  [bin_ids, nbins_eff] = buildBins(y_train, n_bins);
+
+  if(nbins_eff <= 1)
+    targetValue_weights = matrix(1, rows = nrow(y_train), cols = 1);
+  else {
+    bin_counts = matrix(0, rows = nbins_eff, cols = 1);
+    for(i in 1:nrow(y_train)) {
+      bix = as.integer(as.scalar(bin_ids[i,1]));
+      bin_counts[bix, 1] = bin_counts[bix, 1] + 1;
+    }
+
+    mean_bin_count = mean(bin_counts);
+    targetValue_weights = matrix(1, rows = nrow(y_train), cols = 1);
+
+    for(i in 1:nrow(y_train))
+    {
+      bix = as.integer(as.scalar(bin_ids[i,1]));
+      weight_by_size = mean_bin_count / (as.scalar(bin_counts[bix,1]) + smoothing);
+
+      if(scew > scew_threshold)
+        tail_direction = 1 + ((bix - 1) / max(nbins_eff - 1, 1)) * (max_weight - 1);
+      else if(scew < -scew_threshold)
+        tail_direction = 1 + ((nbins_eff - bix) / max(nbins_eff - 1, 1)) * (max_weight - 1);
+      else
+        tail_direction = 1;
+
+      targetValue_weights[i,1] = min(weight_by_size * tail_direction, max_weight);
+    }
+
+    targetValue_weights = m_stabilizing(targetValue_weights);
+  }
+}
+
+# Rows resembling rows with missing values ​​should be weighted more heavily.
+
+computeSimilarityWeights = function(Matrix[Double] X_input, Matrix[Double] missing_indicator,
+  Integer colix, Double max_weight = 3.0)
+  return(Matrix[Double] similarity_weights)
+{
+  # remove current target column from predictors
+  feature_X = m_removeTarget(X_input, colix);
+  m = colMeans(feature_X);
+  # cal. mean and sd for each predictor
+  s = colSds(feature_X);
+  s = ifelse(s == 0, 1, s);
+  # repeat for every row
+  m_matrix = matrix(1, rows = nrow(feature_X), cols = 1) %*% m;
+  s_matrix = matrix(1, rows = nrow(feature_X), cols = 1) %*% s;
+  #standardize predictors
+  feature_X = (feature_X - m_matrix) / s_matrix;
+  labels = missing_indicator+ 1;
+
+  #train model that predicts whether the target value is missing
+  beta = multiLogReg(X = feature_X, Y = labels, icpt = 2,
+    tol = 0.0001, reg = 0.00001, maxi = 20, maxii = 20, verbose = FALSE);
+  [prob, pred, acc] = multiLogRegPredict(X = feature_X, B = beta, Y = labels, verbose = FALSE);
+
+  if(ncol(prob) >= 2)
+    propensity = prob[, 2];
+  else
+    propensity = prob[, 1];
+
+  similarity_weights = removeEmpty(target = propensity, margin = "rows", select = (missing_indicator == 0));
+  similarity_weights = m_stabilizing(similarity_weights);
+  similarity_weights = ifelse(similarity_weights > max_weight, max_weight, similarity_weights);
+  similarity_weights = m_stabilizing(similarity_weights);
+}
+
+
+# train weighted linear regression model & predict missing target values
+weightedLRM = function(Matrix[Double] x_train, Matrix[Double] y_train,
+  Matrix[Double] x_missing, Matrix[Double] final_weights)
+  return(Matrix[Double] pred)
+{
+  m = colMeans(x_train);
+  # cal. mean and sd for each predictor
+  s = colSds(x_train);
+  s = ifelse(s == 0, 1, s);
+
+  #expand training means & sd to matrix dimensions
+  m_train = matrix(1, rows = nrow(x_train), cols = 1) %*% m;
+  s_train = matrix(1, rows = nrow(x_train), cols = 1) %*% s;
+  #use the same training statistics for rows with missing target values
+  m_missing = matrix(1, rows = nrow(x_missing), cols = 1) %*% m;
+  s_missing = matrix(1, rows = nrow(x_missing), cols = 1) %*% s;
+
+  x_train_s = (x_train - m_train) / s_train;
+  x_missing_s = (x_missing - m_missing) / s_missing;
+
+  # add a intercept column to both matrices
+  x_train_design = cbind(matrix(1, rows = nrow(x_train_s), cols = 1), x_train_s);
+  x_missing_design = cbind(matrix(1, rows = nrow(x_missing_s), cols = 1), x_missing_s);
+
+  # calc sq.root weights for weighted least squares
+  sqrt_w = sqrt(final_weights);
+  w_mat = sqrt_w %*% matrix(1, rows = 1, cols = ncol(x_train_design));
+  # apply weights
+  x_train_w = x_train_design * w_mat;
+  y_train_w = y_train * sqrt_w;
+
+  # fit a regularized weighted lgm
+  beta = lm(X = x_train_w, y = y_train_w, icpt = 0, reg = 1.0, tol = 1e-7, verbose = FALSE);
+  #predict target values
+  pred = lmPredict(X = x_missing_design, B = beta, ytest = matrix(0, 1, 1), icpt = 0, verbose = FALSE);
+}
+
+#complete imputation of a single column
+#prepare data, calculate weights,predict missing values
+
+imputeColumn = function(Matrix[Double] X_input, Matrix[Double] missing_indicator,
+  Integer colix, Integer n_bins, Double smoothing, Double max_weight_target,
+  Double scew_threshold, Double max_weight_similarity, Double final_weight_cap)
+  return(Matrix[Double] pred)
+{
+  observed_mask = (missing_indicator == 0);
+  missing_mask = (missing_indicator == 1);
+
+  feature_X = m_removeTarget(X_input, colix);
+
+  x_train = removeEmpty(target = feature_X, margin = "rows", select = observed_mask);
+  y_train = removeEmpty(target = X_input[, colix], margin = "rows", select = observed_mask);
+  x_missing = removeEmpty(target = feature_X, margin = "rows", select = missing_mask);
+
+  [target_weights, scew] = computeTargetWeights(y_train = y_train, n_bins = n_bins,
+    smoothing = smoothing, max_weight = max_weight_target, scew_threshold = scew_threshold);
+
+  similarity_weights = computeSimilarityWeights(X_input = X_input,
+    missing_indicator = missing_indicator, colix = colix, max_weight = max_weight_similarity);
+
+  final_weights = target_weights * similarity_weights;
+  final_weights = ifelse(final_weights > final_weight_cap, final_weight_cap, final_weights);
+  final_weights = m_stabilizing(final_weights);
+
+  pred = weightedLRM(x_train = x_train, y_train = y_train,
+    x_missing = x_missing, final_weights = final_weights);
+}
+
+#select validation rows from observed values using 
+#stratified sampling across target-value bins
+
+getValidationrows = function(Matrix[Double] observed_ids, Matrix[Double] y_observed,
+  Double validation_share = 0.2, Integer n_bins = 6, Integer seed = 100)
+  return(Matrix[Double] validation_ids)
+{
+  #assign observed target values to bins
+  n_obs = nrow(observed_ids);
+  [bin_ids, nbins_eff] = buildBins(y_observed, n_bins);
+
+  if(nbins_eff <= 1) {
+    n_val = max(1, as.integer(n_obs * validation_share));
+    s = sample(n_obs, n_val, FALSE, seed);
+    validation_ids = matrix(0, rows = n_val, cols = 1);
+
+    for(i in 1:n_val)
+    {
+      sid = as.integer(as.scalar(s[i,1]));
+      validation_ids[i, 1] = observed_ids[sid, 1];
+    }
+  }
+  else {
+    validation_ids = matrix(0, rows = n_obs, cols = 1);
+    out_ix = 0;
+    # draw validation rows separately from each targetvalue bin
+    for(b in 1:nbins_eff)
+    {
+      #find positions of observations from current bin
+      in_bin = (bin_ids == b);
+      pos_in_bin = removeEmpty(target = seq(1, nrow(y_observed)) * in_bin, margin = "rows");
+      n_bin = nrow(pos_in_bin);
+
+      if(n_bin > 0)
+      {
+        #select appr. requested validation share (at least one observation per not empty bin)
+        n_val_bin = max(1, as.integer(n_bin * validation_share));
+        s_bin = sample(n_bin, min(n_val_bin, n_bin), FALSE, seed + b);
+
+        for(i in 1:nrow(s_bin))
+        {
+          out_ix = out_ix + 1;
+          sid = as.integer(as.scalar(pos_in_bin[as.integer(as.scalar(s_bin[i,1])), 1]));
+          validation_ids[out_ix, 1] = observed_ids[sid, 1];
+        }
+      }
+    }
+
+    validation_ids = removeEmpty(target = validation_ids, margin = "rows");
+  }
+}
+
+#predefined configuration settings
+configurations = function()
+  return(Matrix[Double] configs)
+{
+  configs = matrix(0, rows = 3, cols = 7);
+
+  #n_bins, smoothing, max_weight_target, scew_threshold,
+  # max_weight_similarity, final_weight_cap, bias_weight
+  configs[1,1] = 6;
+  configs[1,2] = 10;
+  configs[1,3] = 4;
+  configs[1,4] = 0.25;
+  configs[1,5] = 2;
+  configs[1,6] = 6;
+  configs[1,7] = 0.5;
+
+  configs[2,1] = 6;
+  configs[2,2] = 8;
+  configs[2,3] = 5;
+  configs[2,4] = 0.25;
+  configs[2,5] = 3;
+  configs[2,6] = 8;
+  configs[2,7] = 0.5;
+
+  configs[3,1] = 6;
+  configs[3,2] = 20;
+  configs[3,3] = 4;
+  configs[3,4] = 0.25;
+  configs[3,5] = 2;
+  configs[3,6] = 6;
+  configs[3,7] = 0.5;
+}
+
+#choose best weight configuration for target row
+#  using hidden observed values and a MAE+bias validation score
+
+bestConfiguration = function(Matrix[Double] X_original, Matrix[Double] X_start, Integer colix, Matrix[Double] configs,
+  Double validation_share = 0.2, Integer seed = 100)
+  return(Matrix[Double] best_row)
+{
+  #select oobserved values & draw a stratified validation sample
+  observed_ids = maskMissing(is.na(X_original[, colix]) == 0);
+  y_observed = removeEmpty(target = X_original[, colix], margin = "rows", select = (is.na(X_original[, colix]) == 0));
+  validation_ids = getValidationrows(observed_ids = observed_ids, y_observed = y_observed,
+    validation_share = validation_share, n_bins = 6, seed = seed);
+  validation_indicator = validationMask(n = nrow(X_start), ids = validation_ids);
+
+  #hide selected validation values in a copy of the initialized data
+  X_val = X_start;
+  if(!(nrow(validation_ids) == 1 & as.scalar(validation_ids[1,1] == 0)))
+  {
+    #evaluate candidate config.
+    for(i in 1:nrow(validation_ids))
+    {
+      vid = as.integer(as.scalar(validation_ids[i,1]));
+      X_val[vid, colix] = NaN;
+    }
+  }
+
+  best_score = 1e18;
+  best_row = matrix(0, rows = 1, cols = 11);
+
+  for(r in 1:nrow(configs))
+  {
+    n_bins = as.integer(as.scalar(configs[r,1]));
+    smoothing = as.scalar(configs[r,2]);
+    max_weight_target = as.scalar(configs[r,3]);
+    scew_threshold = as.scalar(configs[r,4]);
+    max_weight_similarity = as.scalar(configs[r,5]);
+    final_weight_cap = as.scalar(configs[r,6]);
+    bias_weight = as.scalar(configs[r,7]);
+
+    #impute hidden validation values
+    pred = imputeColumn(X_input = X_val, missing_indicator = validation_indicator,
+      colix = colix, n_bins = n_bins, smoothing = smoothing,
+      max_weight_target = max_weight_target, scew_threshold = scew_threshold,
+      max_weight_similarity = max_weight_similarity, final_weight_cap = final_weight_cap);
+
+    #retrieve true validation values from  original data
+    actual = matrix(0, rows = nrow(validation_ids), cols = 1);
+    for(i in 1:nrow(validation_ids))
+    {
+      vid = as.integer(as.scalar(validation_ids[i,1]));
+      actual[i,1] = X_original[vid, colix];
+    }
+    #eval. prediction error & bias
+    errors = pred - actual;
+    mae_val = mean(abs(errors));
+    bias_val = mean(errors);
+    score_val = mae_val + bias_weight * abs(bias_val);
+
+    if(score_val < best_score)
+    {
+      best_score = score_val;
+      best_row[1,1] = colix;
+      best_row[1,2] = r;
+      best_row[1,3] = n_bins;
+      best_row[1,4] = smoothing;
+      best_row[1,5] = max_weight_target;
+      best_row[1,6] = scew_threshold;
+      best_row[1,7] = max_weight_similarity;
+      best_row[1,8] = final_weight_cap;
+      best_row[1,9] = bias_weight;
+      best_row[1,10] = mae_val;
+      best_row[1,11] = bias_val;
+    }
+  }
+}
+
+#main function runs mice-like imputation
+#select one config. per missing column & iteratively updates missing values
+
+mainRebalancingMice = function(Matrix[Double] X, Integer iter = 5, Double validation_share = 0.2,
+  Integer seed = 100, Boolean verbose = TRUE)
+  return(Matrix[Double] output, Matrix[Double] tuning_info)
+{
+  numeric_mask = matrix(0, rows = 1, cols = ncol(X));
+  [X_start, imputationVec] = imputeByMean(X, numeric_mask);
+
+  #identify missing columns, prepare configuration tuning
+  missing_cols = colSums(is.na(X)) > 0;
+  configs = configurations();
+  n_missing_cols = sum(missing_cols);
+  tuning_info = matrix(0, rows = n_missing_cols, cols = 11);
+  tune_ix = 0;
+
+  if(verbose)
+    print("Validation for rebalancing configurations:");
+
+  # select best configuration for each column
+  for(j in 1:ncol(X))
+  {
+    if(as.scalar(missing_cols[1,j]) > 0)
+    {
+      best_row = bestConfiguration(X_start = X_start, colix = j, configs = configs,
+        X_original = X, validation_share = validation_share, seed = seed);
+      tune_ix = tune_ix + 1;
+      tuning_info[tune_ix, ] = best_row;
+
+      if(verbose)
+        print("column " + j + ": config " + as.scalar(best_row[1,2]) + " | validation mae = " + as.scalar(best_row[1,10]));
+    }
+  }
+
+  #start iterative imputation with the mean initialized matrix
+  X_imp = X_start;
+
+  if(verbose)
+    print("MICE loop:");
+
+  for(k in 1:iter)
+  {
+    if(verbose)
+      print("iteration " + k);
+
+    for(j in 1:ncol(X))
+    {
+      if(as.scalar(missing_cols[1,j]) > 0)
+      {
+        tune_row = removeEmpty(target = tuning_info, margin = "rows", select = (tuning_info[,1] == j));
+
+        #predict all missing values of the current column
+        pred = imputeColumn(X_input = X_imp, missing_indicator = is.na(X[, j]),
+          colix = j, n_bins = as.integer(as.scalar(tune_row[1,3])), smoothing = as.scalar(tune_row[1,4]),
+          max_weight_target = as.scalar(tune_row[1,5]), scew_threshold = as.scalar(tune_row[1,6]),
+          max_weight_similarity = as.scalar(tune_row[1,7]), final_weight_cap = as.scalar(tune_row[1,8]));
+
+        miss_ids = maskMissing(is.na(X[, j]));
+        # replace current imputations withpredictions
+        if(!(nrow(miss_ids) == 1 & as.scalar(miss_ids[1,1] == 0)))
+        {
+          for(i in 1:nrow(miss_ids))
+          {
+            mid = as.integer(as.scalar(miss_ids[i,1]));
+            X_imp[mid, j] = pred[i,1];
+          }
+        }
+      }
+    }
+  }
+
+  output = X_imp + matrix(0, rows = nrow(X_imp), cols = ncol(X_imp));
+
+  if(verbose)
+  {
+    print("output Rows " + nrow(output));
+    print("output Columns = " + ncol(output));
+  }
+}
+
+#umber of iterations
+max_iter = as.integer($4);
+X = read($1, format = "csv", header = TRUE, sep = ",");
+[imputed_X, tuning_info] = mainRebalancingMice(X = X, iter = max_iter,
+  validation_share = 0.2, seed = 100, verbose = TRUE);
+
+write(imputed_X, $2, format = "csv");
+write(tuning_info, $3, format = "csv");

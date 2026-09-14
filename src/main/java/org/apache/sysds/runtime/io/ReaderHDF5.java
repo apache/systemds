@@ -81,8 +81,14 @@ public class ReaderHDF5 extends MatrixReader {
 	protected static final int HDF5_READ_PARALLEL_MIN_BYTES =
 		getHdf5ReadInt("sysds.hdf5.read.parallel.min.bytes", DEFAULT_HDF5_READ_PARALLEL_MIN_BYTES);
 
+	private static final String HDF5_READ_SPARSE_LAYOUT = System.getProperty("sysds.hdf5.read.sparse.layout", "dense");
+
 	public ReaderHDF5(FileFormatPropertiesHDF5 props) {
 		_props = props;
+	}
+
+	protected static boolean useSparseCOORead() {
+		return "coo".equalsIgnoreCase(HDF5_READ_SPARSE_LAYOUT);
 	}
 
 	@Override
@@ -219,14 +225,18 @@ public class ReaderHDF5 extends MatrixReader {
 				LOG.trace("[HDF5] Forcing dense output for dataset=" + datasetName);
 		}
 		H5RootObject rootObject = H5.H5Fopen(byteReader);
-		H5ContiguousDataset contiguousDataset = H5.H5Dopen(rootObject, datasetName);
-
-		int ncol = (int) rootObject.getCol();
-		LOG.trace("[HDF5] readMatrix dataset=" + datasetName + " dims=" + rootObject.getRow() + "x"
-			+ rootObject.getCol() + " loop=[" + rl + "," + ru + ") dest=" + dest.getNumRows() + "x"
-			+ dest.getNumColumns());
 
 		try {
+			H5ContiguousDataset contiguousDataset = H5.H5Dopen(rootObject, datasetName);
+
+			if(useSparseCOORead())
+				return readSparseCOOFromHDF5(contiguousDataset, dest, clen);
+
+			int ncol = (int) rootObject.getCol();
+			LOG.trace(
+				"[HDF5] readMatrix dataset=" + datasetName + " dims=" + rootObject.getRow() + "x" + rootObject.getCol()
+					+ " loop=[" + rl + "," + ru + ") dest=" + dest.getNumRows() + "x" + dest.getNumColumns());
+
 			double[] row = null;
 			double[] blockBuffer = null;
 			int[] ixBuffer = null;
@@ -358,6 +368,46 @@ public class ReaderHDF5 extends MatrixReader {
 			lnnz = Math.multiplyExact(ru - rl, clen);
 		}
 		return lnnz;
+	}
+
+	private static long readSparseCOOFromHDF5(H5ContiguousDataset dataset, MatrixBlock dest, long expectedClen) {
+		double[] meta = new double[3];
+		dataset.readRowDoubles(0, meta, 0);
+
+		long originalRows = (long) meta[0];
+		long originalCols = (long) meta[1];
+		long nnz = (long) meta[2];
+
+		if(originalRows != dest.getNumRows() || originalCols != dest.getNumColumns())
+			throw new DMLRuntimeException("Sparse COO HDF5 metadata mismatch: " + originalRows + "x" + originalCols
+				+ " vs " + dest.getNumRows() + "x" + dest.getNumColumns() + ".");
+
+		if(expectedClen >= 0 && originalCols != expectedClen)
+			throw new DMLRuntimeException(
+				"Sparse COO HDF5 column metadata mismatch: " + originalCols + " vs " + expectedClen + ".");
+
+		if(nnz > Integer.MAX_VALUE)
+			throw new DMLRuntimeException("Sparse COO HDF5 nnz exceeds supported row index range: " + nnz);
+
+		if(!dest.isInSparseFormat())
+			throw new DMLRuntimeException("Sparse COO HDF5 read requires sparse output.");
+
+		SparseBlock sb = dest.getSparseBlock();
+		double[] triple = new double[3];
+
+		for(int i = 1; i <= (int) nnz; i++) {
+			dataset.readRowDoubles(i, triple, 0);
+
+			int row = (int) triple[0];
+			int col = (int) triple[1];
+			double val = triple[2];
+
+			// TODO Generalize COO reconstruction by pre-counting nonzeros per row and preallocating sparse rows.
+			sb.allocate(row, 1);
+			sb.append(row, col, val);
+		}
+
+		return nnz;
 	}
 
 	public static MatrixBlock computeHDF5Size(List<Path> files, FileSystem fs, String datasetName, long estnnz)

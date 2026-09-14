@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.lib.FrameLibApplySchema;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -29,8 +30,8 @@ import org.apache.sysds.runtime.matrix.operators.MultiThreadedOperator;
 public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction {
 	// private static final Log LOG = LogFactory.getLog(BinaryFrameFrameCPInstruction.class.getName());
 
-	protected BinaryFrameFrameCPInstruction(MultiThreadedOperator op, CPOperand in1,
-			CPOperand in2, CPOperand out, String opcode, String istr) {
+	protected BinaryFrameFrameCPInstruction(MultiThreadedOperator op, CPOperand in1, CPOperand in2, CPOperand out,
+		String opcode, String istr) {
 		super(CPType.Binary, op, in1, in2, out, opcode, istr);
 	}
 
@@ -39,7 +40,7 @@ public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction {
 		// get input frames
 		FrameBlock inBlock1 = ec.getFrameInput(input1.getName());
 		FrameBlock inBlock2 = ec.getFrameInput(input2.getName());
-		
+
 		if(getOpcode().equals(Opcodes.DROPINVALIDTYPE.toString())) {
 			// Perform computation using input frames, and produce the result frame
 			FrameBlock retBlock = inBlock1.dropInvalidType(inBlock2);
@@ -59,9 +60,30 @@ public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction {
 			ec.setFrameOutput(output.getName(), retBlock);
 		}
 		else if(getOpcode().equals(Opcodes.APPLYSCHEMA.toString())) {
-			final int k = ((MultiThreadedOperator)_optr).getNumThreads();
+			final int k = ((MultiThreadedOperator) _optr).getNumThreads();
 			final FrameBlock out = FrameLibApplySchema.applySchema(inBlock1, inBlock2, k);
 			ec.setFrameOutput(output.getName(), out);
+		}
+		else if(getOpcode().equals(Opcodes.SET_COLNAMES.toString())) {
+
+			FrameBlock in = ec.getFrameInput(input1.getName());
+			FrameBlock names = ec.getFrameInput(input2.getName());
+
+			String[] colNames = new String[(int) names.getNumColumns()];
+			for(int i = 0; i < colNames.length; i++) {
+				colNames[i] = names.get(0, i).toString();
+			}
+
+			FrameBlock out = new FrameBlock(in);
+
+			out.setColumnNames(colNames);
+
+			ec.setFrameOutput(output.getName(), out);
+
+			ec.releaseFrameInput(input1.getName());
+
+			ec.releaseFrameInput(input2.getName());
+
 		}
 		else {
 			// Execute binary operations
@@ -70,7 +92,7 @@ public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction {
 			// Attach result frame with FrameBlock associated with output_name
 			ec.setFrameOutput(output.getName(), outBlock);
 		}
-		
+
 		// Release the memory occupied by input frames
 		ec.releaseFrameInput(input1.getName());
 		ec.releaseFrameInput(input2.getName());

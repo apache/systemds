@@ -1,0 +1,21 @@
+source("scripts/builtin/autoencoder_2layer.dml") as ae
+
+X = read($X)
+
+[W1, b1, W2, b2, W3, b3, W4, b4, hidden] =
+  ae::m_autoencoder_2layer(
+    X, as.integer($num_hidden1), as.integer($num_hidden2), as.integer($max_epochs),
+    FALSE, as.integer($batch_size), as.double($step), as.double($decay), as.double($mu),
+    $method, $mode, $utype, $freq, as.integer($k), $scheme, as.integer($nbatches), as.boolean($modelAvg)
+  )
+
+write(W1, $W1_out)
+write(b1, $b1_out)
+write(W2, $W2_out)
+write(b2, $b2_out)
+write(W3, $W3_out)
+write(b3, $b3_out)
+write(W4, $W4_out)
+write(b4, $b4_out)
+write(hidden, $HIDDEN)
+EOF

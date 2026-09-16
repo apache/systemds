@@ -1,0 +1,198 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Coreset selection for Classification via a depth-bounded decision tree.
+#
+# The method is adapted from the datamap-driven coreset approach of Hadar et al.,
+# "Datamap-Driven Tabular Coreset Selection for Classifier Training"
+# (https://www.vldb.org/pvldb/vol18/p876-razmadze.pdf).
+#
+# A decision tree is trained on (X, y) and each leaf defines a region which 
+# is classified by its majority fraction and size.
+#
+# majority_fraction <  psi           -> hard      (mixed labels, keep whole)
+# majority_fraction >= psi, n <= tau -> ambiguous (pure but small, keep whole)
+# majority_fraction >= psi, n > tau  -> easy      (large + pure, sample down)
+#
+# Hard and ambiguous regions are kept in full. Easy regions are sampled down
+# to samp_ratio, processed largest-first, until the target size is reached,
+# keeping any unseen regions whole once they fit. The result cannot
+# shrink below:
+#     n_min ~ |hard rows| + |ambiguous rows| + (samp_ratio * |easy rows|)
+# and requests below this floor return roughly the floor (with a warning).
+#
+# INPUT:
+# ------------------------------------------------------------------------------
+# X             Feature matrix in recoded/binned representation
+#               (as required by decisionTree)
+# y             Continuous label vector (as required by decisionTree)
+# fraction      Target coreset size as a fraction of nrow(X) (default 0.3)
+# samp_ratio    Thinning ratio applied to easy regions (default 0.03)
+# psi           Homogeneity threshold separating hard regions (default 0.90)
+# tau           Absolute size threshold separating easy from ambiguous
+#               regions among pure leaves (default 10)
+# min_leaf      Minimum samples per leaf (default 5)
+# max_depth     Bounded tree depth for the datamap (default 12)
+# seed          Seed for reproducible thinning, -1 for random (default -1)
+# verbose       Print information and summary (default FALSE)
+# ------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ------------------------------------------------------------------------------
+# Xc            Coreset feature matrix
+# yc            Coreset label vector
+# ------------------------------------------------------------------------------
+
+m_coresetDT = function(Matrix[Double] X, Matrix[Double] y,
+  Double fraction = 0.3, Double samp_ratio = 0.03, Double psi = 0.90, Int tau = 10,
+  Int max_depth = 12, Int min_leaf = 5,
+  Int seed = -1, Boolean verbose = FALSE)
+
+  return(Matrix[Double] Xc, Matrix[Double] yc)
+{
+  n = nrow(X);
+  k = as.integer(max(y));
+  nTarget = round(fraction * n)
+
+  # Step 1: build the datamap
+  ctypes = cbind(matrix(1, 1, ncol(X)), matrix(2, 1, 1));
+  tree = decisionTree(X=X, y=y, ctypes=ctypes, max_depth=max_depth,
+    min_leaf=min_leaf, min_split=2*min_leaf, max_features=1.0, seed=seed);
+
+  # route every row to its leaf (tree traversal adapted from decisionTreePredict.dml)
+  numNodes = as.integer(ncol(tree) / 2);
+  nodes = matrix(tree, rows=numNodes, cols=2);
+  features = nodes[,1];                           # split feature per node, 0 for leaves
+  values = nodes[,2];                             # split value per node, class label for leaves
+
+  Tidx = matrix(1, n, 1);
+  noChange = FALSE; 
+  i = 1;
+  while(!noChange & i <= max_depth) {
+    P = table(seq(1,n), Tidx, n, numNodes);                       # one hot row->node
+    f = P %*% features;                                           # split feature per row
+    v = P %*% values ;                                            # split value per row
+    isNotLeaf = f > 0;                                            # check if internal node
+    xv = rowSums(X * table(seq(1,n), max(f,1), n, ncol(X)));      # xv[r] = X[r, f[r]] rows value for current split feature
+    Tidx_new = ifelse(isNotLeaf, 2*Tidx + (xv > v), Tidx);        # descend to child
+    noChange = (sum(Tidx != Tidx_new) == 0);
+    Tidx = Tidx_new;
+    i = i + 1;
+  }
+  P = table(seq(1,n), Tidx, n, numNodes);
+  
+  # region stats
+  C = table(Tidx, y, numNodes, k);     # label counts per region
+  s = rowSums(C);                      # region sizes
+  mf = rowMaxs(C) / max(s, 1);         # majority fraction
+  exists = (s > 0);
+  isHard = exists & (mf < psi);
+  isAmb  = exists & (mf >= psi) & (s <= tau);
+  isEasy = exists & (mf >= psi) & (s > tau);
+
+  nHardRows = sum(isHard * s);
+  nAmbRows = sum(isAmb * s);
+  nEasyRows = sum(isEasy * s);
+  nFloor = nHardRows + nAmbRows + ceil(samp_ratio * nEasyRows);
+
+  if(verbose) {
+    pHard = round(1000 * nHardRows / n) / 10;
+    pAmb = round(1000 * nAmbRows/ n) / 10;
+    pEasy = round(1000 * nEasyRows / n) / 10;
+
+    print("coresetDT: datamap (psi=" + psi + ", tau=" + tau + ", max_depth=" + max_depth
+    + ", samp_ratio=" + samp_ratio + ") over " + n + " rows");
+
+    print("coresetDT: hard (mixed,  mf<"  + psi + "): " + sum(isHard) + " regions, "
+    + nHardRows + " rows (" + pHard + "% of data) -> kept whole");
+    print("coresetDT: ambiguous (pure, size<=" + tau + "): " + sum(isAmb) + " regions, "
+    + nAmbRows + " rows (" + pAmb + "% of data) -> kept whole");
+    print("coresetDT: easy (pure, size>"  + tau + "): " + sum(isEasy) + " regions, "
+    + nEasyRows + " rows (" + pEasy + "% of data) -> thinned to "+ samp_ratio);
+
+    print("coresetDT: size floor n_min = " + nFloor + " (" + (round(1000 * nFloor/ n) / 10) + "% of n)");
+  }
+
+  if(nTarget < nFloor)
+    print("coresetDT: WARN: requested size " + nTarget + " is below the floor " + nFloor + ". Returning ~ " + nFloor + 
+    " rows. Lower samp_ratio, raise psi, or loosen the tree to go smaller.");
+
+  # Step 2: select the coreset
+  keep = P %*% (isHard + isAmb);
+  cur = sum(keep);
+
+  # Spend remaining budget on easy regions
+  nEasy = as.integer(sum(isEasy));
+
+  if(cur < nTarget) {
+    easyIdx = removeEmpty(target=seq(1,numNodes), margin="rows", select=isEasy);
+    easySize  = removeEmpty(target=s, margin="rows", select=isEasy);
+
+    ordered = order(target=easySize, by=1, decreasing=TRUE, index.return=TRUE);
+    randVals = rand(rows=n, cols=1, seed=seed);
+    visited = matrix(0, numNodes, 1);
+    remaining = nEasyRows;
+
+    done = FALSE;
+    for(i in 1:nEasy) {
+      if(!done) {
+        pos = as.scalar(ordered[i,1]);
+        regid = as.scalar(easyIdx[pos,1]);
+        regSize = as.scalar(easySize[pos,1]);
+
+        visited[regid,1] = 1;
+        remaining = remaining - regSize;
+
+        # thin region to samp_ratio, its the k smallest random scores within region
+        keeprows = max(round(samp_ratio * regSize), 1);
+        I = P[,regid];                                                      # rows in this region
+        regRows = removeEmpty(target=seq(1,n), margin="rows", select=I);    # global ids of region rows
+        regScores = removeEmpty(target=randVals, margin="rows", select=I);  # their random scores
+        rank = order(target=regScores, by=1, index.return=TRUE);            # rank rows within region
+
+        chosenIds = table(seq(1,keeprows), rank[1:keeprows,1], keeprows, nrow(regRows)) %*% regRows;
+        keep = keep + table(chosenIds, 1, n, 1);
+        cur = cur + keeprows;
+
+        # if all unvisited easy regions fit into the budget, add them
+        if(cur + remaining <= nTarget) {
+          keep = keep + P %*% (isEasy *(1 - visited));
+          cur = cur + remaining;
+          done = TRUE;
+        }
+      }
+    }
+  }
+
+  # extract coreset rows 
+  toKeepIdx = removeEmpty(target=seq(1,n), margin="rows", select=keep);
+  Psel = table(seq(1,nrow(toKeepIdx)), toKeepIdx, nrow(toKeepIdx), n);
+  Xc = Psel %*% X;
+  yc = Psel %*% y;
+
+  if(verbose) {
+    sel = nrow(Xc);
+    mustKeep = nHardRows + nAmbRows;
+    sampledEasy = sel - mustKeep;
+    print("coresetDT: selected " + sel + " / " + n + " rows (" + (round(1000 * sel / n) / 10) + "% of data) " + mustKeep + 
+    " must-keep (hard+ambiguous) + " + sampledEasy + " sampled from easy");
+  }
+}

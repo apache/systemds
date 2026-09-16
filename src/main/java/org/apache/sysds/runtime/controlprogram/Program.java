@@ -63,12 +63,16 @@ public class Program
 	
 	public synchronized void addFunctionProgramBlock(String namespace, String fname, FunctionProgramBlock fpb) {
 		addFunctionProgramBlock(namespace, fname, fpb, true);
+
 	}
 	
 	public synchronized void addFunctionProgramBlock(String namespace, String fname, FunctionProgramBlock fpb, boolean opt) {
 		if( fpb == null )
 			throw new DMLRuntimeException("Invalid null function program block.");
-		namespace = getSafeNamespace(namespace);
+		namespace = normalizeNamespace(namespace);  // changed here
+		if ("unflatten_model".equals(fname) || "flatten_model".equals(fname)) {
+			System.err.println("REGISTER FUNC: ns=" + namespace + " fname=" + fname + " opt=" + opt);
+		}
 		FunctionDictionary<FunctionProgramBlock> dict = _namespaces.get(namespace);
 		if (dict == null)
 			_namespaces.put(namespace, dict = new FunctionDictionary<>());
@@ -76,7 +80,7 @@ public class Program
 	}
 
 	public synchronized void removeFunctionProgramBlock(String namespace, String fname) {
-		namespace = getSafeNamespace(namespace);
+		namespace = normalizeNamespace(namespace);  // changed here
 		FunctionDictionary<?> dict = null;
 		if( _namespaces.containsKey(namespace) ){
 			dict = _namespaces.get(namespace);
@@ -106,7 +110,7 @@ public class Program
 	}
 	
 	public synchronized boolean containsFunctionProgramBlock(String namespace, String fname) {
-		namespace = getSafeNamespace(namespace);
+		namespace = normalizeNamespace(namespace);  // changed here
 		return _namespaces.containsKey(namespace)
 			&& _namespaces.get(namespace).containsFunction(fname);
 	}
@@ -117,7 +121,7 @@ public class Program
 	}
 	
 	public synchronized boolean containsFunctionProgramBlock(String namespace, String fname, boolean opt) {
-		namespace = getSafeNamespace(namespace);
+		namespace = normalizeNamespace(namespace);  // changed here
 		return _namespaces.containsKey(namespace)
 			&& _namespaces.get(namespace).containsFunction(fname, opt);
 	}
@@ -132,7 +136,7 @@ public class Program
 	}
 	
 	public synchronized FunctionProgramBlock getFunctionProgramBlock(String namespace, String fname, boolean opt) {
-		namespace = getSafeNamespace(namespace);
+		namespace = normalizeNamespace(namespace);  // changed here
 		FunctionDictionary<FunctionProgramBlock> dict = _namespaces.get(namespace);
 		if (dict == null)
 			throw new DMLRuntimeException("namespace " + namespace + " is undefined.");
@@ -176,7 +180,26 @@ public class Program
 				ret.addFunctionProgramBlock(e1.getKey(), e2.getKey(), e2.getValue());
 		return ret;
 	}
-	
+
+	private static String normalizeNamespace(String namespace) {
+		// getNameSafe is not separator safe so i added this function to make sure that namespace is getting normalized without any conflicts
+		if (namespace == null)
+			return DMLProgram.DEFAULT_NAMESPACE;
+
+		// normalize separators for cross-platform robustness
+		namespace = namespace.replace('\\', '/');
+
+		// normalize leading "./"
+		if (namespace.startsWith("./"))
+			namespace = namespace.substring(2);
+
+		// collapse accidental double slashes
+		while (namespace.contains("//"))
+			namespace = namespace.replace("//", "/");
+
+		return namespace;
+	}
+
 	private static String getSafeNamespace(String namespace) {
 		return (namespace == null) ? DMLProgram.DEFAULT_NAMESPACE : namespace;
 	}

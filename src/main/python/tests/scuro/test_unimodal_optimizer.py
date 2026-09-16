@@ -20,6 +20,10 @@
 # -------------------------------------------------------------
 
 
+import os
+import pickle
+import shutil
+import tempfile
 import unittest
 from types import SimpleNamespace
 
@@ -30,6 +34,7 @@ from systemds.scuro.drsearch.node_executor import ResultEntry
 from systemds.scuro.drsearch.unimodal_optimizer import (
     UnimodalOptimizer,
     UnimodalResults,
+    get_dag_by_id,
 )
 from systemds.scuro.representations.covarep_audio_features import ZeroCrossing
 
@@ -435,3 +440,225 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
                 modalities[0], self.tasks[0], "accuracy"
             )
             assert len(result) == 1
+
+
+class TestUnimodalOptimizerPersistence(unittest.TestCase):
+    """store_results writes the search results to disk so that a long search
+    can be resumed or inspected afterwards. The files are written from the
+    result container, so no search has to run."""
+
+    # TestTask stratifies its train and validation split, so it needs at least
+    # one instance per class in each part.
+    num_instances = 10
+
+    def setUp(self):
+        self.result_path = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.result_path)
+        indices = np.array(range(self.num_instances))
+        data, metadata = ModalityRandomDataGenerator().create_audio_data(
+            self.num_instances, 200
+        )
+        self.modality = UnimodalModality(
+            TestDataLoader(
+                indices, None, ModalityType.AUDIO, data, np.float32, metadata
+            )
+        )
+        self.task = TestTask("PersistenceTask", "Test1", self.num_instances)
+        self.optimizer = UnimodalOptimizer(
+            [self.modality],
+            [self.task],
+            result_path=self.result_path,
+            enable_checkpointing=False,
+        )
+
+    def _read(self, file_name):
+        with open(os.path.join(self.result_path, file_name), "rb") as f:
+            return pickle.load(f)
+
+    def test_store_results_writes_the_results_and_the_execution_statistics(self):
+        self.optimizer.store_results("results.pkl")
+
+        self.assertEqual(
+            sorted(os.listdir(self.result_path)),
+            ["results.pkl", "results_exec_stats.pkl"],
+        )
+        self.assertEqual(
+            self._read("results.pkl"), self.optimizer.operator_performance.results
+        )
+        self.assertEqual(
+            set(self._read("results_exec_stats.pkl")),
+            {
+                "worker_stats",
+                "node_stats",
+                "reuse_stats",
+                "wall_clock_s",
+                "search_start_unix",
+                "max_num_workers",
+            },
+        )
+
+    def test_store_results_names_the_file_after_the_optimizer_and_the_time(self):
+        self.optimizer.store_results()
+
+        written = sorted(os.listdir(self.result_path))
+        self.assertEqual(len(written), 2)
+        for name in written:
+            self.assertTrue(name.startswith("unimodal_optimizer"))
+            self.assertTrue(name.endswith(".pkl"))
+
+    def test_store_results_appends_the_statistics_suffix_without_a_pkl_ending(self):
+        # The statistics file name is derived by replacing ".pkl". Without that
+        # ending the name stays unchanged, so the suffix is appended.
+        self.optimizer.store_results("results")
+
+        self.assertEqual(
+            sorted(os.listdir(self.result_path)),
+            ["results", "results_exec_stats.pkl"],
+        )
+
+    def test_results_survive_a_store_and_load_round_trip(self):
+        modality_id = self.modality.modality_id
+        task_name = self.task.model.name
+        entry = ResultEntry(
+            val_score={"accuracy": 0.75}, representation_time=1.0, task_time=2.0
+        )
+        self.optimizer.operator_performance.results[modality_id][task_name] = [entry]
+
+        self.optimizer.store_results("results.pkl")
+        self.optimizer.operator_performance.results[modality_id][task_name] = []
+        self.optimizer.load_results(os.path.join(self.result_path, "results.pkl"))
+
+        restored = self.optimizer.operator_performance.results[modality_id][task_name]
+        self.assertEqual(len(restored), 1)
+        self.assertEqual(restored[0].val_score, {"accuracy": 0.75})
+
+    def test_count_results_by_modality_counts_the_first_task_of_every_modality(self):
+        # The count drives the checkpoint progress, where every task evaluates
+        # the same representations, so one task stands for all of them.
+        counts = self.optimizer._count_results_by_modality(
+            {"audio": {"t1": [1, 2], "t2": [3]}, "text": {"t1": []}}
+        )
+
+        self.assertEqual(counts, {"audio": 2, "text": 0})
+
+    def test_resume_from_checkpoint_restores_a_stored_result_set(self):
+        restored = {"audio": {"t1": ["entry"]}}
+        with patch.object(
+            self.optimizer._checkpoint_manager,
+            "resume_from_checkpoint",
+            return_value=(restored, None, None),
+        ):
+            self.optimizer.resume_from_checkpoint()
+
+        self.assertEqual(self.optimizer.operator_performance.results, restored)
+
+    def test_resume_from_checkpoint_keeps_the_results_without_a_checkpoint(self):
+        current = self.optimizer.operator_performance.results
+        with patch.object(
+            self.optimizer._checkpoint_manager,
+            "resume_from_checkpoint",
+            return_value=None,
+        ):
+            self.optimizer.resume_from_checkpoint()
+
+        self.assertIs(self.optimizer.operator_performance.results, current)
+
+
+class TestUnimodalResultsReadout(unittest.TestCase):
+    """UnimodalResults holds the scores of every evaluated representation and a
+    cache of the data the best ones produced. get_k_best_results returns both.
+    The entries are written straight into the container, so no search has to
+    run."""
+
+    num_instances = 10
+
+    def setUp(self):
+        indices = np.array(range(self.num_instances))
+        data, metadata = ModalityRandomDataGenerator().create_audio_data(
+            self.num_instances, 200
+        )
+        self.modality = UnimodalModality(
+            TestDataLoader(
+                indices, None, ModalityType.AUDIO, data, np.float32, metadata
+            )
+        )
+        self.task = TestTask("ReadoutTask", "Test1", self.num_instances)
+        self.results = UnimodalResults(
+            [self.modality], [self.task], k=2, metric_name="accuracy"
+        )
+        self.modality_id = self.modality.modality_id
+        self.task_name = self.task.model.name
+
+    def _entry(self, accuracy, dag=None):
+        return ResultEntry(
+            val_score={"accuracy": accuracy},
+            representation_time=1.0,
+            task_time=1.0,
+            dag=dag,
+        )
+
+    def _fill(self, accuracies):
+        entries = [self._entry(a) for a in accuracies]
+        self.results.results[self.modality_id][self.task_name] = entries
+        return entries
+
+    def test_get_k_best_results_returns_the_k_highest_scores(self):
+        self._fill([0.5, 0.9, 0.7, 0.3])
+
+        best, _ = self.results.get_k_best_results(
+            self.modality, self.task, "accuracy", cache_needed=False
+        )
+
+        self.assertEqual([entry.val_score["accuracy"] for entry in best], [0.9, 0.7])
+
+    def test_get_k_best_results_uses_the_cache_when_it_holds_entries(self):
+        self._fill([0.9, 0.7])
+        self.results.cache[self.modality_id][self.task_name] = ["first", "second"]
+
+        _, cache = self.results.get_k_best_results(self.modality, self.task, "accuracy")
+
+        self.assertEqual(cache, ["first", "second"])
+
+    def test_get_k_best_results_executes_the_dag_when_the_cache_is_empty(self):
+        # load_results restores the scores but not the cached data, so the
+        # cache is empty after reading a file. The dag of every returned entry
+        # is executed to rebuild it.
+        executed = []
+
+        class RecordingDag:
+            def __init__(self, label):
+                self.label = label
+
+            def execute(self, modalities):
+                executed.append(self.label)
+                return self.label
+
+        entries = [
+            self._entry(0.9, dag=RecordingDag("best")),
+            self._entry(0.7, dag=RecordingDag("second")),
+        ]
+        self.results.results[self.modality_id][self.task_name] = entries
+        self.results.cache[self.modality_id][self.task_name] = []
+
+        _, cache = self.results.get_k_best_results(self.modality, self.task, "accuracy")
+
+        self.assertEqual(executed, ["best", "second"])
+        self.assertEqual(cache, ["best", "second"])
+
+    def test_get_k_best_results_returns_nothing_without_entries(self):
+        best, cache = self.results.get_k_best_results(
+            self.modality, self.task, "accuracy", cache_needed=False
+        )
+
+        self.assertEqual(best, [])
+        self.assertEqual(cache, [])
+
+    def test_get_dag_by_id_finds_the_matching_dag(self):
+        dags = [SimpleNamespace(dag_id=1), SimpleNamespace(dag_id=7)]
+
+        self.assertIs(get_dag_by_id(dags, 7), dags[1])
+
+    def test_get_dag_by_id_returns_none_for_an_unknown_id(self):
+        dags = [SimpleNamespace(dag_id=1)]
+
+        self.assertIsNone(get_dag_by_id(dags, 99))

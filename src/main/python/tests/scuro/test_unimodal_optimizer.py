@@ -127,16 +127,51 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
             TestTask("UnimodalRepresentationTask1", "Test1", cls.num_instances),
         ]
 
-    def test_unimodal_optimizer_for_text_modality(self):
-        text_data, text_md = ModalityRandomDataGenerator().create_text_data(
-            self.num_instances, 10
-        )
-        text = UnimodalModality(
-            TestDataLoader(
-                self.indices, None, ModalityType.TEXT, text_data, str, text_md
+    # (label, [(modality type, generator keyword arguments)]). A set with two
+    # entries is passed to the optimizer as one multi-modality search, because
+    # optimize_unimodal_representation_for_modality loops over the list.
+    MODALITY_SETS = [
+        ("text", [(ModalityType.TEXT, {})]),
+        ("image", [(ModalityType.IMAGE, {})]),
+        ("audio", [(ModalityType.AUDIO, {})]),
+        ("video", [(ModalityType.VIDEO, {"num_frames": 10})]),
+        (
+            "text+image",
+            [(ModalityType.TEXT, {"num_sentences": 1}), (ModalityType.IMAGE, {})],
+        ),
+    ]
+
+    def _create_modality(self, modality_type, num_sentences=10, num_frames=1):
+        generator = ModalityRandomDataGenerator()
+        if modality_type is ModalityType.TEXT:
+            data, metadata = generator.create_text_data(
+                self.num_instances, num_sentences
             )
+            data_type = str
+        elif modality_type is ModalityType.AUDIO:
+            data, metadata = generator.create_audio_data(self.num_instances, 3000)
+            data_type = np.float32
+        else:
+            # IMAGE and VIDEO use the same generator. The number of frames is
+            # the difference between them.
+            data, metadata = generator.create_visual_modality(
+                self.num_instances, num_frames, 10, 10
+            )
+            data_type = np.float32
+
+        return UnimodalModality(
+            TestDataLoader(self.indices, None, modality_type, data, data_type, metadata)
         )
-        self.optimize_unimodal_representation_for_modality([text])
+
+    def test_unimodal_optimizer_per_modality_set(self):
+        for label, modality_specs in self.MODALITY_SETS:
+            with self.subTest(modalities=label):
+                self.optimize_unimodal_representation_for_modality(
+                    [
+                        self._create_modality(modality_type, **kwargs)
+                        for modality_type, kwargs in modality_specs
+                    ]
+                )
 
     def test_robust_results_ignore_non_finite_scores(self):
         modality = SimpleNamespace(modality_id="modality")
@@ -193,59 +228,6 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
                     task_node = dag.get_node_by_id(dag.root_node_id)
                     task_input = dag.get_node_by_id(task_node.inputs[0])
                     self.assertIs(task_input.operation, MLPAveraging)
-
-    def test_unimodal_optimizer_for_image_modality(self):
-        image_data, image_md = ModalityRandomDataGenerator().create_visual_modality(
-            self.num_instances, 1, 10, 10
-        )
-        image = UnimodalModality(
-            TestDataLoader(
-                self.indices, None, ModalityType.IMAGE, image_data, np.float32, image_md
-            )
-        )
-        self.optimize_unimodal_representation_for_modality([image])
-
-    def test_unimodal_optimizer_for_multiple_modalities(self):
-        image_data, image_md = ModalityRandomDataGenerator().create_visual_modality(
-            self.num_instances, 1, 10, 10
-        )
-        image = UnimodalModality(
-            TestDataLoader(
-                self.indices, None, ModalityType.IMAGE, image_data, np.float32, image_md
-            )
-        )
-        text_data, text_md = ModalityRandomDataGenerator().create_text_data(
-            self.num_instances
-        )
-        text = UnimodalModality(
-            TestDataLoader(
-                self.indices, None, ModalityType.TEXT, text_data, str, text_md
-            )
-        )
-        self.optimize_unimodal_representation_for_modality([text, image])
-
-    def test_unimodal_optimizer_for_audio_modality(self):
-        audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
-            self.num_instances, 3000
-        )
-        audio = UnimodalModality(
-            TestDataLoader(
-                self.indices, None, ModalityType.AUDIO, audio_data, np.float32, audio_md
-            )
-        )
-
-        self.optimize_unimodal_representation_for_modality([audio])
-
-    def test_unimodal_optimizer_for_video_modality(self):
-        video_data, video_md = ModalityRandomDataGenerator().create_visual_modality(
-            self.num_instances, 10, 10, 10
-        )
-        video = UnimodalModality(
-            TestDataLoader(
-                self.indices, None, ModalityType.VIDEO, video_data, np.float32, video_md
-            )
-        )
-        self.optimize_unimodal_representation_for_modality([video])
 
     # ------------------------------------------------------------------
     # Every registered representation, run through the optimizer

@@ -27,6 +27,7 @@ import org.junit.Test;
 public class MultiAttentionLayerTest extends AutomatedTestBase {
 	private static final String TEST_NAME_FORWARD = "multi_attention_forward";
 	private static final String TEST_NAME_BACKWARD = "multi_attention_backward";
+	private static final String TEST_NAME_FORWARD_CAUSAL = "multi_attention_forward_causal";
 	private static final String TEST_DIR = "applications/nn/component/";
 	private static final String RESOURCE_DIR = "src/test/resources/component/transformers/multi_attention_layer/";
 
@@ -35,6 +36,7 @@ public class MultiAttentionLayerTest extends AutomatedTestBase {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME_FORWARD, new TestConfiguration(TEST_DIR, TEST_NAME_FORWARD));
 		addTestConfiguration(TEST_NAME_BACKWARD, new TestConfiguration(TEST_DIR, TEST_NAME_BACKWARD));
+		addTestConfiguration(TEST_NAME_FORWARD_CAUSAL, new TestConfiguration(TEST_DIR, TEST_NAME_FORWARD_CAUSAL));
 	}
 
 	@Test
@@ -65,6 +67,41 @@ public class MultiAttentionLayerTest extends AutomatedTestBase {
 	@Test
 	public void testMultiAttentionBackwardSmall() {
 		runMultiAttentionTest("test6", 1, 1, 1, 1, 0, TEST_NAME_BACKWARD, 1e-5, false);
+	}
+
+	@Test
+	public void testMultiAttentionForwardCausalMask() {
+		Types.ExecMode platformOld = setExecMode(Types.ExecMode.SINGLE_NODE);
+		try {
+			getAndLoadTestConfiguration(TEST_NAME_FORWARD_CAUSAL);
+			fullDMLScriptName = getScript();
+			programArgs = new String[] {
+				"-stats", "-args",
+				output("causal_token1_diff"),
+				output("causal_token3_diff"),
+				output("noncausal_token1_diff"),
+			};
+
+			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+
+			double causalToken1Diff =
+				(Double) readDMLScalarFromOutputDir("causal_token1_diff").values().toArray()[0];
+			double causalToken3Diff =
+				(Double) readDMLScalarFromOutputDir("causal_token3_diff").values().toArray()[0];
+			double noncausalToken1Diff =
+				(Double) readDMLScalarFromOutputDir("noncausal_token1_diff").values().toArray()[0];
+
+			assert causalToken1Diff < 1e-6;
+			assert causalToken3Diff > 1e-6;
+			assert noncausalToken1Diff > 1e-6;
+		}
+		catch (Throwable ex) {
+			ex.printStackTrace(System.out);
+			throw new RuntimeException(ex);
+		}
+		finally {
+			resetExecMode(platformOld);
+		}
 	}
 
 	private void runMultiAttentionTest(String testSuffix, int batchSize, int seqLength, int numHeads, int embeddingDim,

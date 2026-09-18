@@ -34,11 +34,12 @@ benchmark/data/meta.txt                  # n_train, n_test, n_features
 
 import json, os, pathlib
 import numpy as np
+import os
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from benchmark_utilities import DATA_DIR
+DATA_DIR = pathlib.Path(os.environ("DATA_DIR"))
 
 ADULT_TRAIN_URL = (
     "https://archive.ics.uci.edu/ml/machine-learning-databases"

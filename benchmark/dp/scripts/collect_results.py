@@ -24,9 +24,11 @@ Parse per-run accuracy files into a single results.csv.
 
 Output columns: label, epsilon, private, accuracy
 """
-import pathlib, csv
+import pathlib
+import csv
+import os
 
-from benchmark_utilities import RESULTS_DIR
+RESULTS_DIR = pathlib.Path(os.environ("RESULTS_DIR"))
 
 rows = []
 

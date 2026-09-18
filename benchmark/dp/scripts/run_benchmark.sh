@@ -19,6 +19,8 @@
 #
 #-------------------------------------------------------------
 BENCHMARK_DIR=benchmark/dp
+export DATA_DIR="benchmark/dp/data"
+export RESULTS_DIR="benchmark/dp/results"
 
 # 1. Prepare data (once).
 python ${BENCHMARK_DIR}/scripts/prepare_data.py

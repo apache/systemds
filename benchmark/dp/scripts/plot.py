@@ -34,8 +34,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import os
 
-from benchmark_utilities import RESULTS_DIR
+RESULTS_DIR = pathlib.Path(os.environ("RESULTS_DIR"))
 
 # ── Load ──────────────────────────────────────────────────────────────────
 rows = []

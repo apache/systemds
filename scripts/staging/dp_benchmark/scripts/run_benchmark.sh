@@ -18,9 +18,9 @@
 # under the License.
 #
 #-------------------------------------------------------------
-BENCHMARK_DIR=benchmark/dp
-export DATA_DIR="benchmark/dp/data"
-export RESULTS_DIR="benchmark/dp/results"
+BENCHMARK_DIR=scripts/staging/dp_benchmark
+export DATA_DIR="$BENCHMARK_DIR/data"
+export RESULTS_DIR="$BENCHMARK_DIR/results"
 
 # 1. Prepare data (once).
 python ${BENCHMARK_DIR}/scripts/prepare_data.py

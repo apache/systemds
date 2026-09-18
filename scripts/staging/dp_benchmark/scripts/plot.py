@@ -36,7 +36,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import os
 
-RESULTS_DIR = pathlib.Path(os.environ("RESULTS_DIR"))
+RESULTS_DIR = pathlib.Path(os.environ.get("RESULTS_DIR"))
 
 # ── Load ──────────────────────────────────────────────────────────────────
 rows = []

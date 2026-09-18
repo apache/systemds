@@ -28,7 +28,7 @@ import pathlib
 import csv
 import os
 
-RESULTS_DIR = pathlib.Path(os.environ("RESULTS_DIR"))
+RESULTS_DIR = pathlib.Path(os.environ.get("RESULTS_DIR"))
 
 rows = []
 

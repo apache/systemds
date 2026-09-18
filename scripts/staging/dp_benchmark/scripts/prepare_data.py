@@ -39,7 +39,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-DATA_DIR = pathlib.Path(os.environ("DATA_DIR"))
+DATA_DIR = pathlib.Path(os.environ.get("DATA_DIR"))
 
 ADULT_TRAIN_URL = (
     "https://archive.ics.uci.edu/ml/machine-learning-databases"

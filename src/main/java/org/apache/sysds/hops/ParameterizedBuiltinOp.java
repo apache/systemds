@@ -197,8 +197,8 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 			case AUTODIFF:
 			case DP_GAUSSIAN:
 			case DP_LAPLACE: {
-				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops, _op, getDataType(), getValueType(),
-					et);
+				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(
+					inputlops, _op, getDataType(), getValueType(), et);
 				if(isMultiThreadedOpType())
 					pbilop.setNumThreads(OptimizerUtils.getConstrainedNumThreads(_maxNumThreads));
 				setOutputDimensions(pbilop);

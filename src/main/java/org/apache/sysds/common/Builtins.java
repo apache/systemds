@@ -127,6 +127,7 @@ public enum Builtins {
 	SETDIFF("setdiff", true),
 	DIST("dist", true),
 	DMV("dmv", true),
+	DP_SET_BUDGET("dp_set_budget", false),
 	DROP_INVALID_TYPE("dropInvalidType", false),
 	DROP_INVALID_LENGTH("dropInvalidLength", false),
 	EIGEN("eigen", false, ReturnType.MULTI_RETURN),
@@ -377,6 +378,8 @@ public enum Builtins {
 	COUNT_DISTINCT_APPROX_ROW("rowCountDistinctApprox", false, true),
 	COUNT_DISTINCT_APPROX_COL("colCountDistinctApprox", false, true),
 	CVLM("cvlm", true, false),
+	DP_GAUSSIAN("dp_gaussian", false, true),
+	DP_LAPLACE("dp_laplace", false, true),
 	GROUPEDAGG("aggregate", "groupedAggregate", false, true),
 	INVCDF("icdf", false, true),
 	LISTNV("list", false, true), //note: builtin and parbuiltin

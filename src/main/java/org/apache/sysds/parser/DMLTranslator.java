@@ -2015,6 +2015,8 @@ public class DMLTranslator
 			case TRANSFORMMETA:
 			case PARAMSERV:
 			case AUTODIFF:
+			case DP_GAUSSIAN:
+			case DP_LAPLACE:
 				currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), target.getDataType(),
 					target.getValueType(), ParamBuiltinOp.valueOf(source.getOpCode().name()), paramHops);
 				break;
@@ -2589,6 +2591,19 @@ public class DMLTranslator
 			break;
 		case DECOMPRESS:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.FP64, OpOp1.DECOMPRESS, expr);
+			break;
+		case DP_SET_BUDGET:
+			// Resolved entirely at compile time; the budget is applied directly to the DMLProgram (reachable later from
+			// ExecutionContext via Program.getDMLProg())
+			if (_dmlProg.hasDPBudget())
+				throw new LanguageException(source.getOpCode() + ": dp_set_budget may only be called once per "
+					+ "script (already set to epsilon=" + _dmlProg.getDPBudgetEpsilon()
+					+ ", delta=" + _dmlProg.getDPBudgetDelta() + ")");
+			if (!(expr instanceof LiteralOp) || !(expr2 instanceof LiteralOp))
+				throw new LanguageException(source.getOpCode()
+					+ ": epsilon and delta must be compile-time numeric literals");
+			_dmlProg.setDPBudget(((LiteralOp) expr).getDoubleValue(), ((LiteralOp) expr2).getDoubleValue());
+			currBuiltinOp = expr; // echo epsilon back as confirmation
 			break;
 		case QUANTIZE_COMPRESS:
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.valueOf(source.getOpCode().name()), expr, expr2);

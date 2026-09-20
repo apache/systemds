@@ -69,7 +69,7 @@ import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction {
-	private static final Log LOG = LogFactory.getLog(ParameterizedBuiltinCPInstruction.class.getName());
+	protected static final Log LOG = LogFactory.getLog(ParameterizedBuiltinCPInstruction.class.getName());
 	private static final int TOSTRING_MAXROWS = 100;
 	private static final int TOSTRING_MAXCOLS = 100;
 	private static final int TOSTRING_DECIMAL = 3;

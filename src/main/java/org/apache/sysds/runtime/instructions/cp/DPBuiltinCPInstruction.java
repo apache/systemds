@@ -38,6 +38,8 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
  *
  * The DP math itself (transform construction, noise generation, sigma calibration) lives in {@link DPBuiltinOps}, which
  * this class calls into.
+ *
+ * NOTE: Differential privacy builtin functions are still experimental.
  */
 public class DPBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
 
@@ -48,6 +50,7 @@ public class DPBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
 
 	static DPBuiltinCPInstruction parse(String[] parts, LinkedHashMap<String, String> paramsMap, CPOperand out,
 		String opcode, String istr) {
+		LOG.warn("Differential privacy features are still experimental.");
 		InstructionUtils.checkNumFields(parts, 5, 6); // laplace=5, gaussian=6
 		if(!paramsMap.containsKey("query"))
 			throw new DMLRuntimeException(opcode + ": missing 'query'");

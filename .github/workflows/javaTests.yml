@@ -83,6 +83,7 @@ jobs:
           "**.functions.frame.**,**.functions.indexing.**,**.functions.io.**,**.functions.iogen.**",
           "**.functions.dnn.**,**.functions.ooc.**",
           "**.functions.paramserv.**",
+          "**.functions.privacy.**",
           "**.functions.recompile.**,**.functions.misc.**",
           "**.functions.mlcontext.**",
           "**.functions.nary.**,**.functions.quaternary.**",

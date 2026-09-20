@@ -31,19 +31,6 @@ import org.apache.sysds.test.TestConfiguration;
 import org.junit.Assert;
 import org.junit.Test;
 
-/*
- * ==========================================================================
- * DML integration test
- * ==========================================================================
- *
- * Full integration tests extend AutomatedTestBase and drive the DML runner.
- * Each test:
- *   (a) Writes a DML script to a temp file.
- *   (b) Provides input matrices via TestUtils.
- *   (c) Calls runTest() and reads the output MatrixBlock.
- *   (d) Verifies that the noisy result differs from the clean result by a
- *       statistically plausible amount (not zero, not astronomically large).
- */
 public class DPBuiltinDMLTest extends AutomatedTestBase {
 
 	private static final String TEST_DIR = "functions/privacy/dp/";
@@ -75,7 +62,6 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
 
 	@Test
 	public void testLaplaceColSums() {
-		// query="colSums": T is 1 x n filled with 1.0, output is the noisy column-sum row vector.
 		HashMap<CellIndex, Double> result = runAndGetResult("DPLaplace", "colSums",
 			"0.5", data);
 		assertShape(result, 1, COLS);
@@ -85,10 +71,8 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
 
 	@Test
 	public void testGaussianIdentity() {
-		// query="identity": T is the n x n identity, output is a noisy release of X itself.
 		HashMap<CellIndex, Double> result = runAndGetResult("DPGaussian", "identity", "0.5", data);
 		assertShape(result, ROWS, COLS);
-		// identity releases X row-by-row, so compare cell-by-cell rather than via a per-column reduction.
 		double maxCellDiff = 0;
 		for(int r = 0; r < ROWS; r++) {
 			for(int c = 0; c < COLS; c++) {
@@ -112,8 +96,7 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
 
 	@Test
 	public void testSetBudgetLiteralAllowsExceedingDefaultBudget() {
-		// Default budget is epsilon=1.0; a single release at epsilon=1.5 would be
-		// rejected unless dp_set_budget(3.0, ...) widens it first.
+		// Default budget is 1; a release at epsilon=1.5 will be rejected.
 		HashMap<CellIndex, Double> result = runAndGetResult("DPSetBudget",
 			"3.0", "1.5", data);
 		assertShape(result, 1, COLS);
@@ -121,18 +104,14 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
 
 	@Test
 	public void testSetBudgetNarrowBudgetStillEnforced() {
-		// An explicit narrow budget must still be enforced: epsilon=0.8 exceeds
-		// the explicit budget of 0.5.
+		// Moderate epsilon of 0.8 exceeds the budget of 0.5 and throws an exception.
 		runExpectingException("DPSetBudget", "0.5", "0.8", data,
 			DMLRuntimeException.class);
 	}
 
 	@Test
 	public void testSetBudgetCalledTwiceFailsAtCompileTime() {
-		// Thrown from DMLTranslator.processBuiltinFunctionExpression (HOP construction),
-		// which wraps all case-block exceptions in ParseException (see processExpression's
-		// catch-all) - unlike the non-literal check below, which runs during validation
-		// and so surfaces as a bare LanguageException.
+		// Setting the budget twice already throws an exception while parsing.
 		runExpectingException("DPSetBudgetTwice", "3.0", "0.5", data, ParseException.class);
 	}
 
@@ -171,7 +150,7 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
 		double apply(double[][] data, int col);
 	}
 
-	/** Computes max|noisy(1,c) - clean(data,c)| across the (1 x COLS) row-vector releases. */
+	/** Computes the maximum difference between the row-vector releases and the clean vector. */
 	private static double maxAbsDiffFromClean(double[][] data, HashMap<CellIndex, Double> result,
 		CleanColumnFn cleanFn) {
 		double maxDiff = 0;
@@ -197,26 +176,26 @@ public class DPBuiltinDMLTest extends AutomatedTestBase {
 		return sum;
 	}
 
-	private HashMap<CellIndex, Double> runAndGetResult(String testName, String query, String epsilonStr,
+	private HashMap<CellIndex, Double> runAndGetResult(String testName, String queryOrBudgetParam, String epsilonStr,
 		double[][] data) {
-		prepareScript(testName, query, epsilonStr, data);
+		prepareScript(testName, queryOrBudgetParam, epsilonStr, data);
 		runTest(true, false, null, -1);
 		return readDMLMatrixFromOutputDir("result");
 	}
 
-	private void runExpectingException(String testName, String query, String epsilonStr, double[][] data,
+	private void runExpectingException(String testName, String queryOrBudgetParam, String epsilonStr, double[][] data,
 		Class<?> expectedException) {
-		prepareScript(testName, query, epsilonStr, data);
+		prepareScript(testName, queryOrBudgetParam, epsilonStr, data);
 		runTest(true, true, expectedException, -1);
 	}
 
-	private void prepareScript(String testName, String query, String epsilonStr, double[][] data) {
+	private void prepareScript(String testName, String queryOrBudgetParam, String epsilonStr, double[][] data) {
 		getAndLoadTestConfiguration(testName);
 		writeInputMatrixWithMTD("X", data, false);
 
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + testName + "Test.dml";
 
-		programArgs = new String[] {"-args", input("X"), query, epsilonStr, output("result")};
+		programArgs = new String[] {"-args", input("X"), queryOrBudgetParam, epsilonStr, output("result")};
 	}
 }

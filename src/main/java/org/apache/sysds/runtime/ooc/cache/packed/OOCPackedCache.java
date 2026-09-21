@@ -47,7 +47,7 @@ import java.util.function.Supplier;
 
 public final class OOCPackedCache implements OOCCache {
 	private static final long PACKED_STREAM_ID = CachingStream._streamSeq.getNextID();
-	private static final long DEFAULT_PACK_THRESHOLD_BYTES = 1L << 18;
+	private static final long DEFAULT_PACK_THRESHOLD_BYTES = 1;
 	private static final long DEFAULT_PACK_TARGET_BYTES = 1L << 19; // 512 KB tile packing
 	private static final long DEFAULT_MAX_STAGING_BYTES = 1L << 26;
 	private static final int DEFAULT_MAX_OPEN_BUILDERS = 64;

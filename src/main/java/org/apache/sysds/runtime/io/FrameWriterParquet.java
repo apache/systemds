@@ -16,11 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.sysds.runtime.io;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -48,26 +47,8 @@ import org.apache.sysds.common.Types.ValueType;
  */
 public class FrameWriterParquet extends FrameWriter {
 
-	public enum DictEncoding {
-		ALL_ON, ALL_OFF, STRING_ONLY
-	}
-
-	private final CompressionCodecName codec;
-	private final DictEncoding dictEncoding;
-	private final long rowGroupSize;
-
-	public FrameWriterParquet() {
-		this(CompressionCodecName.ZSTD, DictEncoding.STRING_ONLY, ParquetWriter.DEFAULT_BLOCK_SIZE);
-	}
-
-	public FrameWriterParquet(CompressionCodecName codec, DictEncoding dictEncoding) {
-		this(codec, dictEncoding, ParquetWriter.DEFAULT_BLOCK_SIZE);
-	}
-
-	public FrameWriterParquet(CompressionCodecName codec, DictEncoding dictEncoding, long rowGroupSize) {
-		this.codec = codec;
-		this.dictEncoding = dictEncoding;
-		this.rowGroupSize = rowGroupSize;
+	protected void writeParquetFrameToHDFS(Path path, Configuration conf, FrameBlock src) throws IOException {
+		writeParquetFrameToHDFS(path, conf, src, 0, src.getNumRows());
 	}
 
 	/**
@@ -104,36 +85,69 @@ public class FrameWriterParquet extends FrameWriter {
 	 * @param path The HDFS path where the Parquet file will be written.
 	 * @param conf The Hadoop configuration.
 	 * @param src  The FrameBlock containing the data to write.
+	 * @param startRow The starting row index for the write operation.
+	 * @param endRow   The ending row index for the write operation.
 	 */
-	protected void writeParquetFrameToHDFS(Path path, Configuration conf, FrameBlock src) 
-		throws IOException 
-	{
+	protected void writeParquetFrameToHDFS(Path path, Configuration conf, FrameBlock src, int startRow, int endRow)
+		throws IOException {
+		if(startRow < 0 || endRow < startRow || endRow > src.getNumRows())
+			throw new IOException("Invalid row range for Parquet write: " + startRow + " to " + endRow);
+
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
 
 		// Create schema based on frame block metadata
 		MessageType schema = createParquetSchema(src);
 
-		String[] columnNames = src.getColumnNames();
-		ValueType[] columnTypes = src.getSchema();
+		// TODO:Experiment with different batch sizes?
+		// int batchSize = 1000;
+		// int rowCount = 0;
 
-		FrameParquetWriterBuilder writerBuilder = new FrameParquetWriterBuilder(path, schema, src).withConf(conf)
-			.withCompressionCodec(
-				CompressionCodecName.fromConf(conf.get(ParquetOutputFormat.COMPRESSION, codec.name())))
-			.withRowGroupSize(conf.getLong(ParquetOutputFormat.BLOCK_SIZE, rowGroupSize))
-			.withPageSize(conf.getInt(ParquetOutputFormat.PAGE_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE))
-			.withDictionaryPageSize(
-				conf.getInt(ParquetOutputFormat.DICTIONARY_PAGE_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE))
-			.withDictionaryEncoding(
-				conf.getBoolean(ParquetOutputFormat.ENABLE_DICTIONARY, dictEncoding == DictEncoding.ALL_ON));
+		// Write data using ParquetWriter //FIXME replace example writer?
+		try(ParquetWriter<Group> writer = ExampleParquetWriter.builder(path).withConf(conf).withType(schema)
+			.withCompressionCodec(ParquetWriter.DEFAULT_COMPRESSION_CODEC_NAME)
+			.withRowGroupSize((long) ParquetWriter.DEFAULT_BLOCK_SIZE).withPageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
+			.withDictionaryEncoding(true).build()) {
+			final int numCols = src.getNumColumns();
+			final String[] columnNames = src.getColumnNames();
+			final ValueType[] schemaTypes = src.getSchema();
 
-		if(dictEncoding == DictEncoding.STRING_ONLY)
-			for(int j = 0; j < src.getNumColumns(); j++)
-				if(columnTypes[j] == ValueType.STRING)
-					writerBuilder = writerBuilder.withDictionaryEncoding(columnNames[j], true);
+			SimpleGroupFactory groupFactory = new SimpleGroupFactory(schema);
 
-		try(ParquetWriter<Integer> writer = writerBuilder.build()) {
-			for(int i = 0; i < src.getNumRows(); i++)
-				writer.write(i);
+			// List<Group> rowBuffer = new ArrayList<>(batchSize);
+
+			for(int i = startRow; i < endRow; i++) {
+				Group group = groupFactory.newGroup();
+				for(int j = 0; j < numCols; j++) {
+					Object value = src.get(i, j);
+					if(value != null) {
+						ValueType type = schemaTypes[j];
+						switch(type) {
+							case STRING:
+								group.add(columnNames[j], value.toString());
+								break;
+							case INT32:
+								group.add(columnNames[j], (int) value);
+								break;
+							case INT64:
+								group.add(columnNames[j], (long) value);
+								break;
+							case FP32:
+								group.add(columnNames[j], (float) value);
+								break;
+							case FP64:
+								group.add(columnNames[j], (double) value);
+								break;
+							case BOOLEAN:
+								group.add(columnNames[j], (boolean) value);
+								break;
+							default:
+								throw new IOException("Unsupported value type: " + type);
+						}
+					}
+				}
+
+				writer.write(group);
+			}
 		}
 		
 		// Delete CRC files created by Hadoop if necessary
@@ -176,97 +190,7 @@ public class FrameWriterParquet extends FrameWriter {
 					throw new IllegalArgumentException("Unsupported data type: " + columnTypes[i]);
 			}
 		}
-		return builder.named("FrameSchema");
-	}
-
-	/**
-	 * WriteSupport implementation that writes rows from a FrameBlock directly to the Parquet RecordConsumer.
-	 */
-	private static class FrameWriteSupport extends WriteSupport<Integer> {
-		private final MessageType schema;
-		private final FrameBlock src;
-		private RecordConsumer recordConsumer;
-		// constant across all rows
-		private String[] colNames;
-		private ValueType[] colTypes;
-		private int numCols;
-
-		FrameWriteSupport(MessageType schema, FrameBlock src) {
-			this.schema = schema;
-			this.src = src;
-		}
-
-		@Override
-		public WriteContext init(Configuration configuration) {
-			Map<String, String> metadata = new HashMap<>();
-			return new WriteContext(schema, metadata);
-		}
-
-		@Override
-		public void prepareForWrite(RecordConsumer consumer) {
-			this.recordConsumer = consumer;
-			this.colNames = src.getColumnNames();
-			this.colTypes = src.getSchema();
-			this.numCols = src.getNumColumns();
-		}
-
-		@Override
-		public void write(Integer rowIndex) {
-			recordConsumer.startMessage();
-			for(int j = 0; j < numCols; j++) {
-				Object value = src.get(rowIndex, j);
-				if(value != null) {
-					recordConsumer.startField(colNames[j], j);
-					switch(colTypes[j]) {
-						case STRING:
-							recordConsumer.addBinary(Binary.fromString(value.toString()));
-							break;
-						case INT32:
-							recordConsumer.addInteger((int) value);
-							break;
-						case INT64:
-							recordConsumer.addLong((long) value);
-							break;
-						case FP32:
-							recordConsumer.addFloat((float) value);
-							break;
-						case FP64:
-							recordConsumer.addDouble((double) value);
-							break;
-						case BOOLEAN:
-							recordConsumer.addBoolean((boolean) value);
-							break;
-						default:
-							throw new IllegalArgumentException("Unsupported value type: " + colTypes[j]);
-					}
-					recordConsumer.endField(colNames[j], j);
-				}
-			}
-			recordConsumer.endMessage();
-		}
-	}
-
-	/**
-	 * ParquetWriter builder wired to FrameWriteSupport.
-	 */
-	private static class FrameParquetWriterBuilder extends ParquetWriter.Builder<Integer, FrameParquetWriterBuilder> {
-		private final MessageType schema;
-		private final FrameBlock src;
-
-		FrameParquetWriterBuilder(Path path, MessageType schema, FrameBlock src) {
-			super(path);
-			this.schema = schema;
-			this.src = src;
-		}
-
-		@Override
-		protected FrameParquetWriterBuilder self() {
-			return this;
-		}
-
-		@Override
-		protected WriteSupport<Integer> getWriteSupport(Configuration conf) {
-			return new FrameWriteSupport(schema, src);
-		}
+		schemaBuilder.append("}");
+		return MessageTypeParser.parseMessageType(schemaBuilder.toString());
 	}
 }

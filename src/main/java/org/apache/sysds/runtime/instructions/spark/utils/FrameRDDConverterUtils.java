@@ -664,8 +664,7 @@ public class FrameRDDConverterUtils
 			if( ix==1 ) {
 				if( _props.hasHeader() ) {
 					for(int j = 0; j < blk.getNumColumns(); j++) {
-						sb.append(blk.getColumnNames()[j])
-								.append(j < blk.getNumColumns() - 1 ? _props.getDelim() : "");
+						sb.append(blk.getColumnNames()[j]).append(j < blk.getNumColumns() - 1 ? _props.getDelim() : "");
 					}
 					ret.add(sb.toString());
 					sb.setLength(0); //reset

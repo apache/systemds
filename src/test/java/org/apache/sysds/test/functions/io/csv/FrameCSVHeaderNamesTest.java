@@ -40,8 +40,7 @@ import org.junit.Test;
 public class FrameCSVHeaderNamesTest extends AutomatedTestBase {
 	private static final String TEST_NAME = "FrameCSVHeaderNames";
 	private static final String TEST_DIR = "functions/frame/";
-	private static final String TEST_CLASS_DIR =
-		TEST_DIR + FrameCSVHeaderNamesTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + FrameCSVHeaderNamesTest.class.getSimpleName() + "/";
 
 	private static final int ROWS = 42;
 	private static final String[] COLUMN_NAMES = new String[] {"customer_id", "signup_date", "score"};
@@ -69,29 +68,28 @@ public class FrameCSVHeaderNamesTest extends AutomatedTestBase {
 			getAndLoadTestConfiguration(TEST_NAME);
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {
-				"-args", input("A"), String.valueOf(ROWS), String.valueOf(COLUMN_NAMES.length), output("B")
-			};
+			programArgs = new String[] {"-args", input("A"), String.valueOf(ROWS), String.valueOf(COLUMN_NAMES.length),
+				output("B")};
 
-			Types.ValueType[] schema = Collections.nCopies(
-				COLUMN_NAMES.length, Types.ValueType.FP64).toArray(new Types.ValueType[0]);
+			Types.ValueType[] schema = Collections.nCopies(COLUMN_NAMES.length, Types.ValueType.FP64)
+				.toArray(new Types.ValueType[0]);
 			FrameBlock inputFrame = new FrameBlock(schema);
 			inputFrame.setColumnNames(COLUMN_NAMES);
 
 			double[][] data = getRandomMatrix(ROWS, schema.length, -10, 10, 0.8, 7);
 			TestUtils.initFrameData(inputFrame, data, schema, ROWS);
 
-			FrameWriter writer = FrameWriterFactory.createFrameWriter(
-				FileFormat.CSV, new FileFormatPropertiesCSV(true, ",", false));
+			FrameWriter writer = FrameWriterFactory.createFrameWriter(FileFormat.CSV,
+				new FileFormatPropertiesCSV(true, ",", false));
 			writer.writeFrameToHDFS(inputFrame, input("A"), ROWS, schema.length);
 
 			runTest(true, false, null, -1);
 
-			FrameReader reader = FrameReaderFactory.createFrameReader(
-				FileFormat.CSV, new FileFormatPropertiesCSV(true, ",", false));
+			FrameReader reader = FrameReaderFactory.createFrameReader(FileFormat.CSV,
+				new FileFormatPropertiesCSV(true, ",", false));
 			FrameBlock outputFrame = reader.readFrameFromHDFS(output("B"), ROWS, schema.length);
-			Assert.assertArrayEquals("Column names were not preserved across CSV read/write.",
-				COLUMN_NAMES, outputFrame.getColumnNames());
+			Assert.assertArrayEquals("Column names were not preserved across CSV read/write.", COLUMN_NAMES,
+				outputFrame.getColumnNames());
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);

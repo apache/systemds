@@ -1,0 +1,61 @@
+m_stabilizing = function(Matrix[Double] weights)
+  return(Matrix[Double] out)
+{
+  meanWeights = mean(weights);
+
+  if(meanWeights == 0)
+    out = weights + 1;
+  else
+    out = weights / meanWeights;
+}
+
+
+m_removeTarget = function(Matrix[Double] X, Integer colix)
+  return(Matrix[Double] Y)
+{
+  if(colix == 1)
+    Y = X[, 2:ncol(X)];
+  else if(colix == ncol(X))
+    Y = X[, 1:(ncol(X)-1)];
+  else
+    Y = cbind(X[, 1:(colix-1)], X[, (colix+1):ncol(X)]);
+}
+
+
+computeSimilarityWeights = function(Matrix[Double] X_input, Matrix[Double] missing_indicator,
+  Integer colix, Double max_weight = 3.0)
+  return(Matrix[Double] similarity_weights, Matrix[Double] propensity)
+{
+  feature_X = m_removeTarget(X_input, colix);
+  m = colMeans(feature_X);
+  s = colSds(feature_X);
+  s = ifelse(s == 0, 1, s);
+  m_matrix = matrix(1, rows = nrow(feature_X), cols = 1) %*% m;
+  s_matrix = matrix(1, rows = nrow(feature_X), cols = 1) %*% s;
+  feature_X = (feature_X - m_matrix) / s_matrix;
+  labels = missing_indicator + 1;
+
+  beta = multiLogReg(X = feature_X, Y = labels, icpt = 2,
+    tol = 0.0001, reg = 0.00001, maxi = 20, maxii = 20, verbose = FALSE);
+  [prob, pred, acc] = multiLogRegPredict(X = feature_X, B = beta, Y = labels, verbose = FALSE);
+
+  if(ncol(prob) >= 2)
+    propensity = prob[, 2];
+  else
+    propensity = prob[, 1];
+
+  similarity_weights = removeEmpty(target = propensity, margin = "rows", select = (missing_indicator == 0));
+  similarity_weights = m_stabilizing(similarity_weights);
+  similarity_weights = ifelse(similarity_weights > max_weight, max_weight, similarity_weights);
+  similarity_weights = m_stabilizing(similarity_weights);
+}
+
+
+X = read($1, format = "csv", header = TRUE, sep = ",");
+colix = as.integer($2);
+missing_indicator = is.na(X[, colix]);
+[similarity_weights, propensity] = computeSimilarityWeights(X_input = X, missing_indicator = missing_indicator,
+  colix = colix, max_weight = 2.0);
+
+write(similarity_weights, $3, format = "csv");
+write(propensity, $4, format = "csv");

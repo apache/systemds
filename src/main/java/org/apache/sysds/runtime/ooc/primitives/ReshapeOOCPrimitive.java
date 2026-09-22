@@ -112,8 +112,6 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 			return;
 		}
 
-		initBlocking();
-
 		if(_clen <= _blen && _rlen <= _blen && _cols <= _blen && _rows <= _blen) {
 			// single block
 			OOCInstructionUtils.submitAdmittedOOCTasks(_in, _out,
@@ -122,6 +120,8 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 				_allowance, getContext()).thenRun(this::onComplete);
 			return;
 		}
+
+		initBlocking();
 
 		if(_byRow) {
 			if(_clen % _blen == 0 && _cols % _blen == 0) {
@@ -160,98 +160,82 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 	}
 
 	private CompletableFuture<Void> splitIntoTable() {
-
 		AllocatedOOCStream<IndexedMatrixValue> allocated = new AllocatedOOCStream<>(_in, _allowance,
 			ignored -> _blen * _sliceBytes);
+		return OOCInstructionUtils.submitOOCTasks(allocated, this::splitBlockIntoTable, getContext());
+	}
 
-		return OOCInstructionUtils.submitOOCTasks(allocated, callback -> {
-			try(ReservationBudget budget = AllocatedOOCStream.detachBudget(callback)) {
-				if(budget == null)
-					throw new DMLRuntimeException("Missing admitted output budget");
+	private void splitBlockIntoTable(OOCStream.QueueCallback<IndexedMatrixValue> callback) {
+		try(ReservationBudget budget = AllocatedOOCStream.detachBudget(callback)) {
+			if(budget == null)
+				throw new DMLRuntimeException("Missing admitted output budget");
 
-				IndexedMatrixValue imv = callback.get();
-				MatrixBlock blk = (MatrixBlock) imv.getValue();
-				long r = imv.getIndexes().getRowIndex();
-				long c = imv.getIndexes().getColumnIndex();
-				long rIdx;
-				long cIdx;
+			IndexedMatrixValue imv = callback.get();
+			MatrixBlock blk = (MatrixBlock) imv.getValue();
+			long r = imv.getIndexes().getRowIndex();
+			long c = imv.getIndexes().getColumnIndex();
 
-				int n = _byRow ? blk.getNumRows() : blk.getNumColumns();
-				for(int i = 0; i < n; i++) {
-					MatrixBlock slice;
-					if(_byRow) {
-						slice = blk.slice(i, i);
-						rIdx = (r - 1) * _blen + i + 1;
-						cIdx = c;
-					}
-					else {
-						slice = blk.slice(0, blk.getNumRows() - 1, i, i);
-						cIdx = (c - 1) * _blen + i + 1;
-						rIdx = r;
-					}
+			int n = _byRow ? blk.getNumRows() : blk.getNumColumns();
+			for(int i = 0; i < n; i++)
+				putSliceIntoTable(blk, r, c, i, budget);
+		}
+		catch(IllegalStateException e) {
+			throw new DMLRuntimeException(e);
+		}
+	}
 
-					long targetIdx = _byRow ? (rIdx - 1) * _numColBlocksIn + c - 1 : (cIdx - 1) * _numRowBlocksIn + r - 1;
-					IndexedMatrixValue sliceImv = new IndexedMatrixValue(new MatrixIndexes(rIdx, cIdx), slice);
-					budget.reserveBlocking(_sliceBytes);
-					_table.put((int) targetIdx, new ManagedPayload<>(sliceImv, _sliceBytes, budget));
-				}
-			}
-			catch(IllegalStateException e) {
-				throw new DMLRuntimeException(e);
-			}
-		}, getContext());
+	private void putSliceIntoTable(MatrixBlock blk, long r, long c, int i, ReservationBudget budget) {
+		MatrixBlock slice = createSlice(blk, i);
+		long rIdx = _byRow ? (r - 1) * _blen + i + 1 : r;
+		long cIdx = _byRow ? c : (c - 1) * _blen + i + 1;
+		long targetIdx = _byRow ? (rIdx - 1) * _numColBlocksIn + c - 1 : (cIdx - 1) * _numRowBlocksIn + r - 1;
+
+		IndexedMatrixValue sliceImv = new IndexedMatrixValue(new MatrixIndexes(rIdx, cIdx), slice);
+		budget.reserveBlocking(_sliceBytes);
+		_table.put((int) targetIdx, new ManagedPayload<>(sliceImv, _sliceBytes, budget));
 	}
 
 	private void submitSingleRowColTask() {
-
 		// one input block is split into blen output blocks
 		AllocatedOOCStream<IndexedMatrixValue> allocated = new AllocatedOOCStream<>(_in, _allowance,
 			ignored -> _blen * _blockBytesOut);
 
-		OOCInstructionUtils.submitOOCTasks(allocated, callback -> {
-			try(ReservationBudget budget = AllocatedOOCStream.detachBudget(callback)) {
-				if(budget == null)
-					throw new DMLRuntimeException("Missing admitted output budget");
+		OOCInstructionUtils.submitOOCTasks(allocated, this::processSingleRowColBlock, getContext())
+			.thenRun(this::onComplete).thenRun(_out::closeInput).exceptionally(error -> {
+				_out.propagateFailure(DMLRuntimeException.of(error));
+				return null;
+			});
+	}
 
-				IndexedMatrixValue imv = callback.get();
-				MatrixBlock blk = (MatrixBlock) imv.getValue();
-				long r = imv.getIndexes().getRowIndex();
-				long c = imv.getIndexes().getColumnIndex();
-				long rIdx;
-				long cIdx;
+	private void processSingleRowColBlock(OOCStream.QueueCallback<IndexedMatrixValue> callback) {
+		try(ReservationBudget budget = AllocatedOOCStream.detachBudget(callback)) {
+			if(budget == null)
+				throw new DMLRuntimeException("Missing admitted output budget");
 
-				int n = _byRow ? blk.getNumRows() : blk.getNumColumns();
-				for(int i = 0; i < n; i++) {
-					MatrixBlock slice;
-					if(_byRow) {
-						// split and adjust idx
-						slice = blk.slice(i, i);
-						// total row, 1 based
-						rIdx = (r - 1) * _blen + i + 1;
-						// all in single row
-						cIdx = (rIdx - 1) * _numColBlocksIn + c;
-						rIdx = 1;
-					}
-					else {
-						// split and adjust idx
-						slice = blk.slice(0, blk.getNumRows() - 1, i, i);
-						cIdx = (c - 1) * _blen + i + 1;
-						// all in single col
-						rIdx = (cIdx - 1) * _numRowBlocksIn + r;
-						cIdx = 1;
-					}
+			IndexedMatrixValue imv = callback.get();
+			MatrixBlock blk = (MatrixBlock) imv.getValue();
+			long r = imv.getIndexes().getRowIndex();
+			long c = imv.getIndexes().getColumnIndex();
 
-					IndexedMatrixValue sliceImv = new IndexedMatrixValue(new MatrixIndexes(rIdx, cIdx), slice);
-					OOCUtils.enqueueExact(_out, sliceImv, budget, false);
-				}
-			}
-			catch(IllegalStateException e) {
-				throw new DMLRuntimeException(e);
-			}
-		}, getContext()).thenRun(this::onComplete).thenRun(_out::closeInput).exceptionally(error -> {
-			_out.propagateFailure(DMLRuntimeException.of(error));
-			return null;
-		});
+			int n = _byRow ? blk.getNumRows() : blk.getNumColumns();
+			for(int i = 0; i < n; i++)
+				enqueueSlice(blk, r, c, i, budget);
+		}
+		catch(IllegalStateException e) {
+			throw new DMLRuntimeException(e);
+		}
+	}
+
+	private void enqueueSlice(MatrixBlock blk, long r, long c, int i, ReservationBudget budget) {
+		MatrixBlock slice = createSlice(blk, i);
+		long rIdx = _byRow ? 1 : ((c - 1) * _blen + i) * _numRowBlocksIn + r;
+		long cIdx = _byRow ? ((r - 1) * _blen + i) * _numColBlocksIn + c : 1;
+		IndexedMatrixValue sliceImv = new IndexedMatrixValue(new MatrixIndexes(rIdx, cIdx), slice);
+		OOCUtils.enqueueExact(_out, sliceImv, budget, false);
+	}
+
+	private MatrixBlock createSlice(MatrixBlock block, int i) {
+		return _byRow ? block.slice(i, i) : block.slice(0, block.getNumRows() - 1, i, i);
 	}
 
 	private void reshapeFullColBlocks() {
@@ -271,11 +255,13 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 				totalIdx += _cols;
 				long tmp = totalIdx;
 				int localRows = (br == _numRowBlocksOut - 1 && _rows % _blen != 0) ? (int) _rows % _blen : _blen;
+
 				// for each block in row
 				for(int b = 0; b < _numColBlocksOut; b++) {
 					totalIdx += 1;
 					long tmp2 = totalIdx;
 					budget = OOCUtils.reserveBudget(_allowance, outputBytes);
+
 					// for each row in block
 					for(int r = 0; r < _blen && r < localRows; r++) {
 						totalIdx += _numColBlocksOut;
@@ -283,22 +269,13 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 						futures.add(rowFuture);
 					}
 					totalIdx = tmp2;
+
 					OOCFuture<List<StoreLease<IndexedMatrixValue>>> future = OOCFuture.allOf(futures, StoreLease::close);
 					MatrixIndexes idx = new MatrixIndexes(br + 1, b + 1);
-
 					ReservationBudget finalBudget = budget;
-					future.whenComplete((leases, error) -> {
-						MatrixBlock block = new MatrixBlock(localRows, _blen, false);
-						for(int r = 0; r < leases.size(); r++) {
-							StoreLease<IndexedMatrixValue> lease = leases.get(r);
-							MatrixBlock row = (MatrixBlock) lease.value().getValue();
-							block.setRow(r, row.getDenseBlockValues());
-							lease.close();
-						}
-						block.recomputeNonZeros();
-						OOCUtils.enqueueExact(_out, new IndexedMatrixValue(idx, block), finalBudget, true);
-						futures.clear();
-					});
+
+					future.whenComplete((leases, error) -> processFullColBlock(idx, localRows, leases, finalBudget));
+					futures.clear();
 					budget = null;
 				}
 				totalIdx = tmp;
@@ -310,6 +287,22 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 		finally {
 			closeResourcesAndComplete(budget);
 		}
+	}
+
+	private void processFullColBlock(MatrixIndexes idx, int localRows, List<StoreLease<IndexedMatrixValue>> leases,
+		ReservationBudget budget) {
+
+		MatrixBlock block = new MatrixBlock(localRows, _blen, false);
+
+		for(int r = 0; r < leases.size(); r++) {
+			StoreLease<IndexedMatrixValue> lease = leases.get(r);
+			MatrixBlock row = (MatrixBlock) lease.value().getValue();
+			block.setRow(r, row.getDenseBlockValues());
+			lease.close();
+		}
+
+		block.recomputeNonZeros();
+		OOCUtils.enqueueExact(_out, new IndexedMatrixValue(idx, block), budget, true);
 	}
 
 	private void reshapeFullRowBlocks() {
@@ -334,6 +327,7 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 					totalIdx += 1;
 					long tmp2 = totalIdx;
 					budget = OOCUtils.reserveBudget(_allowance, outputBytes);
+
 					// for each col in block
 					for(int c = 0; c < _blen && c < localCols; c++) {
 						totalIdx += _numRowBlocksOut;
@@ -341,23 +335,13 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 						futures.add(colFuture);
 					}
 					totalIdx = tmp2;
+
 					OOCFuture<List<StoreLease<IndexedMatrixValue>>> future = OOCFuture.allOf(futures, StoreLease::close);
 					MatrixIndexes idx = new MatrixIndexes(b + 1, bc + 1);
-
 					ReservationBudget finalBudget = budget;
-					future.whenComplete((leases, error) -> {
-						MatrixBlock block = new MatrixBlock(_blen, localCols, false);
-						block.allocateDenseBlock();
-						for(int c = 0; c < leases.size(); c++) {
-							StoreLease<IndexedMatrixValue> lease = leases.get(c);
-							MatrixBlock col = (MatrixBlock) lease.value().getValue();
-							block.getDenseBlock().set(0, _blen, c, c + 1, col.getDenseBlock());
-							lease.close();
-						}
-						block.recomputeNonZeros();
-						OOCUtils.enqueueExact(_out, new IndexedMatrixValue(idx, block), finalBudget, true);
-						futures.clear();
-					});
+
+					future.whenComplete((leases, error) -> processFullRowBlock(idx, localCols, leases, finalBudget));
+					futures.clear();
 					budget = null;
 				}
 				totalIdx = tmp;
@@ -371,8 +355,24 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 		}
 	}
 
-	private void reshapePartialColBlocks() {
+	private void processFullRowBlock(MatrixIndexes idx, int localCols, List<StoreLease<IndexedMatrixValue>> leases,
+		ReservationBudget budget) {
 
+		MatrixBlock block = new MatrixBlock(_blen, localCols, false);
+		block.allocateDenseBlock();
+
+		for(int c = 0; c < leases.size(); c++) {
+			StoreLease<IndexedMatrixValue> lease = leases.get(c);
+			MatrixBlock col = (MatrixBlock) lease.value().getValue();
+			block.getDenseBlock().set(0, _blen, c, c + 1, col.getDenseBlock());
+			lease.close();
+		}
+
+		block.recomputeNonZeros();
+		OOCUtils.enqueueExact(_out, new IndexedMatrixValue(idx, block), budget, true);
+	}
+
+	private void reshapePartialColBlocks() {
 		long numNeededRowsIn = 2 + (long) Math
 			.ceil((((double) _numRowsBlockOut * _numColsBlockOut) / _clen) * _numColBlocksIn * _numColBlocksOut);
 		long outputBytes = numNeededRowsIn * _sliceBytes + _numColBlocksOut * _blockBytesOut;
@@ -403,81 +403,11 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 					final int finalBr = br;
 
 					OOCFuture<List<StoreLease<IndexedMatrixValue>>> future = OOCFuture.allOf(futures, StoreLease::close);
-					future.whenComplete((leases, error) -> {
-						int localJ = finalJ;
-						int offsetIn = offset[0];
+					future.whenComplete((leases, error) -> processPartialColBlocks(finalBr, finalJ, offset, totalIdx,
+						leases, finalBudget));
 
-						int bc = 0;
-						int r = 0;
-						int offsetOut = 0;
-						MatrixBlock[] outputBlockRow = allocateSliceBlocks(finalBr);
-						int localColsOut = (_cols > _blen) ? _blen : (int) _cols;
-
-						for(int k = 0; k < leases.size(); k++) {
-							StoreLease<IndexedMatrixValue> lease = leases.get(k);
-							IndexedMatrixValue slice = lease.value();
-							MatrixBlock sliceVal = (MatrixBlock) slice.getValue();
-
-							int localColsIn = (localJ == _numColBlocksIn && _clen % _blen != 0) ? (int) _clen % _blen : _blen;
-							while(offsetIn < localColsIn) {
-								// until input row fully processed
-								int remIn = localColsIn - offsetIn;
-								int remOut = localColsOut - offsetOut;
-								if(remIn < remOut) {
-									// next input
-									setOutputEntries(sliceVal, outputBlockRow[bc], r, offsetIn, offsetOut, remIn);
-									offsetIn += remIn;
-									offsetOut += remIn;
-									continue;
-								}
-								else if(remIn == remOut) {
-									// next input and next row
-									setOutputEntries(sliceVal, outputBlockRow[bc], r, offsetIn, offsetOut, remIn);
-									offsetIn += remIn;
-								}
-								else {
-									// next row
-									setOutputEntries(sliceVal, outputBlockRow[bc], r, offsetIn, offsetOut, remOut);
-									offsetIn += remOut;
-								}
-								bc++;
-								offsetOut = 0;
-								if(bc == _numColBlocksOut) {
-									// next row
-									r++;
-									if(r == outputBlockRow[0].getNumRows()) {
-										offset[0] = offsetIn == localColsIn ? 0 : offsetIn;
-										break;
-									}
-									bc = 0;
-								}
-								localColsOut = (bc == _numColBlocksOut - 1 && _cols % _blen != 0) ? (int) _cols % _blen : _blen;
-							}
-							localJ++;
-							if(localJ == _numColBlocksIn + 1)
-								localJ = 1;
-
-							lease.close();
-							offsetIn = 0;
-
-							if(k == leases.size() - 1 && offset[0] != 0) {
-								// put current slice back into table, to be able to reserve new budget
-								finalBudget.reserveBlocking(_sliceBytes);
-								_table.put(totalIdx, new ManagedPayload<>(slice, _sliceBytes, finalBudget));
-							}
-						}
-
-						// enqueue filled output blocks and allocate new ones
-						for(int b = 0; b < outputBlockRow.length; b++) {
-							outputBlockRow[b].recomputeNonZeros();
-							OOCUtils.enqueueExact(_out,
-								new IndexedMatrixValue(new MatrixIndexes(finalBr + 1, b + 1), outputBlockRow[b]),
-								finalBudget, false);
-						}
-					});
-
-					budget.close();
 					futures.clear();
+					budget = null;
 
 					if(br == _numRowBlocksOut - 1)
 						break;
@@ -506,6 +436,81 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 		finally {
 			closeResourcesAndComplete(budget);
 		}
+	}
+
+	private void processPartialColBlocks(int br, int j, int[] offset, int totalIdx,
+		List<StoreLease<IndexedMatrixValue>> leases, ReservationBudget budget) {
+
+		int offsetIn = offset[0];
+		int offsetOut = 0;
+		int bc = 0;
+		int r = 0;
+
+		MatrixBlock[] outputBlockRow = allocateSliceBlocks(br);
+		int localColsOut = (_cols > _blen) ? _blen : (int) _cols;
+
+		for(int k = 0; k < leases.size(); k++) {
+			StoreLease<IndexedMatrixValue> lease = leases.get(k);
+			IndexedMatrixValue slice = lease.value();
+			MatrixBlock sliceVal = (MatrixBlock) slice.getValue();
+
+			int localColsIn = (j == _numColBlocksIn && _clen % _blen != 0) ? (int) _clen % _blen : _blen;
+			while(offsetIn < localColsIn) {
+				// until input row fully processed
+				int remIn = localColsIn - offsetIn;
+				int remOut = localColsOut - offsetOut;
+				if(remIn < remOut) {
+					// next input
+					setOutputEntries(sliceVal, outputBlockRow[bc], r, offsetIn, offsetOut, remIn);
+					offsetIn += remIn;
+					offsetOut += remIn;
+					continue;
+				}
+				else if(remIn == remOut) {
+					// next input and next row
+					setOutputEntries(sliceVal, outputBlockRow[bc], r, offsetIn, offsetOut, remIn);
+					offsetIn += remIn;
+				}
+				else {
+					// next row
+					setOutputEntries(sliceVal, outputBlockRow[bc], r, offsetIn, offsetOut, remOut);
+					offsetIn += remOut;
+				}
+				bc++;
+				offsetOut = 0;
+				if(bc == _numColBlocksOut) {
+					// next row
+					r++;
+					if(r == outputBlockRow[0].getNumRows()) {
+						offset[0] = offsetIn == localColsIn ? 0 : offsetIn;
+						break;
+					}
+					bc = 0;
+				}
+				localColsOut = (bc == _numColBlocksOut - 1 && _cols % _blen != 0) ? (int) _cols % _blen : _blen;
+			}
+			j++;
+			if(j == _numColBlocksIn + 1)
+				j = 1;
+
+			lease.close();
+			offsetIn = 0;
+
+			if(k == leases.size() - 1 && offset[0] != 0) {
+				// put current slice back into table, to be able to reserve new budget
+				budget.reserveBlocking(_sliceBytes);
+				_table.put(totalIdx, new ManagedPayload<>(slice, _sliceBytes, budget));
+			}
+		}
+
+		// enqueue filled output blocks and allocate new ones
+		for(int b = 0; b < outputBlockRow.length; b++) {
+			outputBlockRow[b].recomputeNonZeros();
+			OOCUtils.enqueueExact(_out, new IndexedMatrixValue(new MatrixIndexes(br + 1, b + 1), outputBlockRow[b]),
+				budget, false);
+		}
+
+		budget.close();
 	}
 
 	private int getNumMissingRowSlices(int j, int br, int offsetIn) {
@@ -537,7 +542,6 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 	}
 
 	private void reshapePartialRowBlocks() {
-
 		long numNeededColsIn = 2 + (long) Math
 			.ceil((((double) _numRowsBlockOut * _numColsBlockOut) / _rlen) * _numRowBlocksIn * _numRowBlocksOut);
 		long outputBytes = numNeededColsIn * _sliceBytes + _numRowBlocksOut * _blockBytesOut;
@@ -568,82 +572,11 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 					final int finalBc = bc;
 
 					OOCFuture<List<StoreLease<IndexedMatrixValue>>> future = OOCFuture.allOf(futures, StoreLease::close);
-					future.whenComplete((leases, error) -> {
-						int localI = finalI;
-						int offsetIn = offset[0];
+					future.whenComplete((leases, error) -> processPartialRowBlocks(finalBc, finalI, offset, totalIdx,
+						leases, finalBudget));
 
-						int br = 0;
-						int c = 0;
-						int offsetOut = 0;
-
-						MatrixBlock[] outputBlockCol = allocateSliceBlocks(finalBc);
-						int localRowsOut = (_rows > _blen) ? _blen : (int) _rows;
-
-						for(int k = 0; k < leases.size(); k++) {
-							StoreLease<IndexedMatrixValue> lease = leases.get(k);
-							IndexedMatrixValue slice = lease.value();
-							MatrixBlock sliceVal = (MatrixBlock) slice.getValue();
-
-							int localRowsIn = (localI == _numRowBlocksIn && _rlen % _blen != 0) ? (int) _rlen % _blen : _blen;
-							while(offsetIn < localRowsIn) {
-								// until input col fully processed
-								int remIn = localRowsIn - offsetIn;
-								int remOut = localRowsOut - offsetOut;
-								if(remIn < remOut) {
-									// next input
-									setOutputEntries(sliceVal, outputBlockCol[br], c, offsetIn, offsetOut, remIn);
-									offsetIn += remIn;
-									offsetOut += remIn;
-									continue;
-								}
-								else if(remIn == remOut) {
-									// next input and next col
-									setOutputEntries(sliceVal, outputBlockCol[br], c, offsetIn, offsetOut, remIn);
-									offsetIn += remIn;
-								}
-								else {
-									// next col
-									setOutputEntries(sliceVal, outputBlockCol[br], c, offsetIn, offsetOut, remOut);
-									offsetIn += remOut;
-								}
-								br++;
-								offsetOut = 0;
-								if(br == _numRowBlocksOut) {
-									// next col
-									c++;
-									if(c == outputBlockCol[0].getNumColumns()) {
-										offset[0] = offsetIn == localRowsIn ? 0 : offsetIn;
-										break;
-									}
-									br = 0;
-								}
-								localRowsOut = (br == _numRowBlocksOut - 1 && _rows % _blen != 0) ? (int) _rows % _blen : _blen;
-							}
-							localI++;
-							if(localI == _numRowBlocksIn + 1)
-								localI = 1;
-
-							lease.close();
-							offsetIn = 0;
-
-							if(k == leases.size() - 1 && offset[0] != 0) {
-								// put current slice back into table, to be able to reserve new budget
-								finalBudget.reserveBlocking(_sliceBytes);
-								_table.put(totalIdx, new ManagedPayload<>(slice, _sliceBytes, finalBudget));
-							}
-						}
-
-						// enqueue filled output blocks and allocate new ones
-						for(int b = 0; b < outputBlockCol.length; b++) {
-							outputBlockCol[b].recomputeNonZeros();
-							OOCUtils.enqueueExact(_out,
-								new IndexedMatrixValue(new MatrixIndexes(b + 1, finalBc + 1), outputBlockCol[b]),
-								finalBudget, false);
-						}
-					});
-
-					budget.close();
 					futures.clear();
+					budget = null;
 
 					if(bc == _numColBlocksOut - 1)
 						break;
@@ -671,6 +604,81 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 		finally {
 			closeResourcesAndComplete(budget);
 		}
+	}
+
+	private void processPartialRowBlocks(int bc, int i, int[] offset, int totalIdx,
+		List<StoreLease<IndexedMatrixValue>> leases, ReservationBudget budget) {
+
+		int offsetIn = offset[0];
+		int offsetOut = 0;
+		int br = 0;
+		int c = 0;
+
+		MatrixBlock[] outputBlockCol = allocateSliceBlocks(bc);
+		int localRowsOut = (_rows > _blen) ? _blen : (int) _rows;
+
+		for(int k = 0; k < leases.size(); k++) {
+			StoreLease<IndexedMatrixValue> lease = leases.get(k);
+			IndexedMatrixValue slice = lease.value();
+			MatrixBlock sliceVal = (MatrixBlock) slice.getValue();
+
+			int localRowsIn = (i == _numRowBlocksIn && _rlen % _blen != 0) ? (int) _rlen % _blen : _blen;
+			while(offsetIn < localRowsIn) {
+				// until input col fully processed
+				int remIn = localRowsIn - offsetIn;
+				int remOut = localRowsOut - offsetOut;
+				if(remIn < remOut) {
+					// next input
+					setOutputEntries(sliceVal, outputBlockCol[br], c, offsetIn, offsetOut, remIn);
+					offsetIn += remIn;
+					offsetOut += remIn;
+					continue;
+				}
+				else if(remIn == remOut) {
+					// next input and next col
+					setOutputEntries(sliceVal, outputBlockCol[br], c, offsetIn, offsetOut, remIn);
+					offsetIn += remIn;
+				}
+				else {
+					// next col
+					setOutputEntries(sliceVal, outputBlockCol[br], c, offsetIn, offsetOut, remOut);
+					offsetIn += remOut;
+				}
+				br++;
+				offsetOut = 0;
+				if(br == _numRowBlocksOut) {
+					// next col
+					c++;
+					if(c == outputBlockCol[0].getNumColumns()) {
+						offset[0] = offsetIn == localRowsIn ? 0 : offsetIn;
+						break;
+					}
+					br = 0;
+				}
+				localRowsOut = (br == _numRowBlocksOut - 1 && _rows % _blen != 0) ? (int) _rows % _blen : _blen;
+			}
+			i++;
+			if(i == _numRowBlocksIn + 1)
+				i = 1;
+
+			lease.close();
+			offsetIn = 0;
+
+			if(k == leases.size() - 1 && offset[0] != 0) {
+				// put current slice back into table, to be able to reserve new budget
+				budget.reserveBlocking(_sliceBytes);
+				_table.put(totalIdx, new ManagedPayload<>(slice, _sliceBytes, budget));
+			}
+		}
+
+		// enqueue filled output blocks and allocate new ones
+		for(int b = 0; b < outputBlockCol.length; b++) {
+			outputBlockCol[b].recomputeNonZeros();
+			OOCUtils.enqueueExact(_out, new IndexedMatrixValue(new MatrixIndexes(b + 1, bc + 1), outputBlockCol[b]),
+				budget, false);
+		}
+
+		budget.close();
 	}
 
 	private int getNumMissingColSlices(int i, int bc, int offsetIn) {
@@ -742,8 +750,7 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 	private void initExecution() {
 		DataCharacteristics inputDc = _input.getDataCharacteristics();
 		if(inputDc == null || !inputDc.dimsKnown() || inputDc.getBlocksize() <= 0)
-			throw new DMLRuntimeException(
-				"Reshape OOC reduction requires known input dimensions and block size.");
+			throw new DMLRuntimeException("Reshape OOC reduction requires known input dimensions and block size.");
 
 		_in = getInputReadStream(0);
 		_out = _output.getWriteStream();

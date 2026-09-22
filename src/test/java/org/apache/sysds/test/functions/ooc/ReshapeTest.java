@@ -79,8 +79,8 @@ public class ReshapeTest extends AutomatedTestBase {
 		int[][][] dims = {
 			{{1000, 1000}, {1, 1000000}},	// single row/col
 			{{4000, 4000}, {2000, 8000}},	// full
-			{{814, 618}, {407, 1236}},		// partial
-			{{2814, 1618}, {1407, 3236}}
+			{{1400, 1200}, {1200, 1400}},	// partial
+			{{814, 618}, {407, 1236}}
 		};
 
 		ArrayList<Object[]> params = new ArrayList<>();

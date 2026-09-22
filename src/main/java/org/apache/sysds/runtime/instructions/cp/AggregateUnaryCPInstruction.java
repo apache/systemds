@@ -232,7 +232,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 				}
 				UnarySketchOperator op = (UnarySketchOperator) _optr;
 
-				MatrixBlock res = LibMatrixSketch.getUniqueValues(input, op.getDirection());
+				MatrixBlock res = LibMatrixSketch.getUniqueValues(input, op.getDirection(), op.getNumThreads());
 				ec.releaseMatrixInput(input1.getName());
 				ec.setMatrixOutput(outputName, res);
 				break;

@@ -1,0 +1,256 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Builtin function that calculates the anomaly score as described in [Liu2008]
+# for a set of samples `X` based on an iForest model.
+#
+# [Liu2008]:
+#   Liu, F. T., Ting, K. M., & Zhou, Z. H.
+#   (2008, December).
+#   Isolation forest.
+#   In 2008 eighth ieee international conference on data mining (pp. 413-422).
+#   IEEE.
+#
+# .. code-block:: python
+#
+#   >>> import numpy as np
+#   >>> from systemds.context import SystemDSContext
+#   >>> from systemds.operator.algorithm import outlierByIsolationForest, outlierByIsolationForestApply
+#   >>> with SystemDSContext() as sds:
+#   ...     # Create training data: 20 points clustered near origin
+#   ...     X_train = sds.from_numpy(np.array([
+#   ...         [0.0, 0.0], [0.1, 0.1], [0.2, 0.2], [0.3, 0.3], [0.4, 0.4],
+#   ...         [0.5, 0.5], [0.6, 0.6], [0.7, 0.7], [0.8, 0.8], [0.9, 0.9],
+#   ...         [1.0, 1.0], [1.1, 1.1], [1.2, 1.2], [1.3, 1.3], [1.4, 1.4],
+#   ...         [1.5, 1.5], [1.6, 1.6], [1.7, 1.7], [1.8, 1.8], [1.9, 1.9]
+#   ...     ]))
+#   ...     model = outlierByIsolationForest(X_train, n_trees=100, subsampling_size=10, seed=42)
+#   ...     X_test = sds.from_numpy(np.array([[1.0, 1.0], [100.0, 100.0]]))
+#   ...     scores = outlierByIsolationForestApply(model, X_test).compute()
+#   ...     print(scores.shape)
+#   ...     print(scores[1, 0] > scores[0, 0])
+#   ...     print(scores[1, 0] > 0.5)
+#   (2, 1)
+#   True
+#   True
+#
+#
+# INPUT:
+# ---------------------------------------------------------------------------------------------
+# iForestModel  The trained iForest model as returned by outlierByIsolationForest
+# X             Samples to calculate the anomaly score for
+# ---------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ---------------------------------------------------------------------------------------------
+# anomaly_scores   Column vector of anomaly scores corresponding to the samples in X.
+#                  Samples with an anomaly score > 0.5 are generally considered to be outliers
+# ---------------------------------------------------------------------------------------------
+
+s_outlierByIsolationForestApply = function(List[Unknown] iForestModel, Matrix[Double] X)
+  return(Matrix[Double] anomaly_scores)
+{
+  anomaly_scores = m_outlierByIsolationForestApply(iForestModel, X)
+}
+
+m_outlierByIsolationForestApply = function(List[Unknown] iForestModel, Matrix[Double] X)
+  return(Matrix[Double] anomaly_scores)
+{
+  assert(nrow(X) > 1)
+
+  M = as.matrix(iForestModel['model'])
+  subsampling_size = as.integer(as.scalar(iForestModel['subsampling_size']))
+  assert(subsampling_size > 1)
+
+  height_limit = ceil(log(subsampling_size, 2))
+  tree_size = 2*(2^(height_limit+1)-1)
+  assert(ncol(M) == tree_size & nrow(M) > 1)
+
+  anomaly_scores = matrix(0, rows=nrow(X), cols=1)
+  for ( i_x in 1:nrow(X)) {
+    anomaly_scores[i_x, 1] = m_score(M, X[i_x,], subsampling_size)
+  }
+}
+
+# Calculates the PathLength as defined in [Liu2008] based on a sample x
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME          TYPE             DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# M             Matrix[Double]                The linearized iTree model
+# x             Matrix[Double]                The sample to calculate the PathLength
+#
+# ---------------------------------------------------------------------------------------------
+# OUTPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# PathLength  The PathLength for the sample
+# ---------------------------------------------------------------------------------------------
+m_PathLength = function(Matrix[Double] M, Matrix[Double] x)
+  return(Double PathLength)
+{
+  [nrEdgesTraversed, externalNodeSize] = s_traverseITree(M, x)
+
+  if (externalNodeSize <= 1) {
+    PathLength = nrEdgesTraversed
+  }
+  else {
+    PathLength = nrEdgesTraversed + s_cn(externalNodeSize)
+  }
+}
+
+
+# Traverses an iTree based on a sample x
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME          TYPE             DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# M             Matrix[Double]                The linearized iTree model to traverse
+# x             Matrix[Double]                The sample to traverse the iTree with
+#
+# ---------------------------------------------------------------------------------------------
+# OUTPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# nrEdgesTraversed         The number of edges traversed until an external node was reached
+# externalNodeSize   The size of of the external node assigned to during training
+# ---------------------------------------------------------------------------------------------
+s_traverseITree = function(Matrix[Double] M, Matrix[Double] x)
+  return(Integer nrEdgesTraversed, Integer externalNodeSize)
+{
+  s_warning_assert(nrow(x) == 1, "s_traverseITree: Requirement `nrow(x) == 1` not satisfied!")
+
+  nrEdgesTraversed = 0
+  is_external_node = FALSE
+  node_id = 1
+  while (!is_external_node)
+  {
+    node_start_idx = (node_id*2) - 1
+    split_feature = as.integer(as.scalar(M[1,node_start_idx]))
+    node_value = as.scalar(M[1,node_start_idx + 1])
+
+    if (split_feature > 0) {
+      # internal node - node_value = split_value
+      nrEdgesTraversed = nrEdgesTraversed + 1
+      x_val = as.scalar(x[1, split_feature])
+      if (x_val <= node_value) {
+        # go down left
+        node_id = (node_id * 2)
+      }
+      else {
+        # go down right
+        node_id = (node_id * 2) + 1
+      }
+    }
+    else if (split_feature == 0) {
+      # External node - node_value = node size
+      externalNodeSize = as.integer(node_value)
+      is_external_node = TRUE
+    }
+    else {
+      s_warning_assert(FALSE, "iTree is not valid!")
+    }
+  }
+}
+
+
+# This function gives the average path length of unsuccessful search in BST `c(n)`
+# for `n` nodes as given in [Liu2008]. This function is used to normalize the path length
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME          TYPE             DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# n             Int                           Number of samples that corresponding to an external
+#                                             node for which c(n) should be calculated
+# ---------------------------------------------------------------------------------------------
+# OUTPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# cn   Value for c(n)
+# ---------------------------------------------------------------------------------------------
+s_cn = function(Integer n)
+  return(Double cn)
+{
+  s_warning_assert(n > 1, "s_cn: Requirement `n > 1` not satisfied!")
+
+  # Calculate H(n-1)
+  # The approximation of the Harmonic Number H using `log(n) + eulergamma` has a higher error
+  # for low n. We hence calculate it directly for the first 1000 values
+  # TODO: Discuss a good value for n --> use e.g. HarmonicNumber(1000) - (ln(1000) + 0.5772156649) in WA
+  if (n < 1000) {
+    indices = seq(1,n-1)
+    H_nminus1 =  sum(1/indices)
+
+  }
+  else{
+    # Euler–Mascheroni's constant
+    eulergamma = 0.57721566490153
+    # Approximation harmonic number H(n - 1)
+    H_nminus1 = log(n-1) + eulergamma
+  }
+
+  cn = 2*H_nminus1 - 2*(n-1)/n
+}
+
+# Scors a sample `x` according to score function `s(x, n)` for a sample x and a testset-size n, as described in [Liu2008].
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME          TYPE             DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# M             Matrix[Double]                 iForest model used to score
+# x             Matrix[Double]                 Sample to be scored
+# n             Int                            Subsample size the iTrees were built from
+# ---------------------------------------------------------------------------------------------
+# OUTPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# score   The score for
+# ---------------------------------------------------------------------------------------------
+m_score = function(Matrix[Double] M, Matrix[Double] x, Integer n)
+  return(Double score)
+{
+  s_warning_assert(n > 1, "m_score: Requirement `n > 1` not satisfied!")
+  s_warning_assert(nrow(x) == 1, "m_score: sample has the wrong dimension!")
+  s_warning_assert(nrow(M) > 1, "m_score: invalid iForest Model!")
+
+  h = matrix(0, cols=nrow(M), rows=1)
+  for (i_iTree in 1:nrow(M)) {
+    h[1, i_iTree] = m_PathLength(M[i_iTree,], x)
+  }
+
+  score = 2^-(mean(h)/s_cn(n))
+}
+
+# Function that gives a warning if a assertion is violated. This is used instead of `assert` and
+# `stop` since these function can not be used in parfor .
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME          TYPE             DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# assertion     Boolean                         Assertion to check
+# warning       String                          Warning message to print if assertion is violated
+# ---------------------------------------------------------------------------------------------
+s_warning_assert = function(Boolean assertion, String warning)
+{
+  if (!assertion)
+    print("outlierIsolationForest: "+warning)
+}

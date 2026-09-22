@@ -50,9 +50,23 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 	private final boolean _byRow;
 	private final long _rows;
 	private final long _cols;
+
 	private long _rlen;
 	private long _clen;
 	private int _blen;
+
+	OOCStream<IndexedMatrixValue> _in;
+	OOCStream<IndexedMatrixValue> _out;
+	StateTable<IndexedMatrixValue> _table;
+
+	private int _numColBlocksIn;
+	private int _numRowBlocksIn;
+	private int _numColBlocksOut;
+	private int _numRowBlocksOut;
+	private long _numRowsBlockOut;
+	private long _numColsBlockOut;
+	private long _blockBytesOut;
+	private long _sliceBytes;
 
 	public ReshapeOOCPrimitive(OOCStreamable<IndexedMatrixValue> input, OOCStreamable<IndexedMatrixValue> output,
 		long rows, long cols, boolean byRow, StreamContext context) {
@@ -80,101 +94,75 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 
 	@Override
 	protected void startExecution() {
-		DataCharacteristics inputDc = _input.getDataCharacteristics();
-		if(inputDc == null || !inputDc.dimsKnown() || inputDc.getBlocksize() <= 0)
-			throw new DMLRuntimeException("Reshape OOC reduction requires known input dimensions and block size.");
-
-		OOCStream<IndexedMatrixValue> input = getInputReadStream(0);
-		OOCStream<IndexedMatrixValue> output = _output.getWriteStream();
-		getContext().addOutStream(output);
-
-		_rlen = inputDc.getRows();
-		_clen = inputDc.getCols();
-		_blen = Math.toIntExact(inputDc.getBlocksize());
+		initExecution();
 
 		if(_rlen * _clen != _rows * _cols) {
+			// non matching dims
 			onComplete();
 			throw new DMLRuntimeException("Reshape matrix requires consistent numbers of input/output cells (" + _rlen
 				+ ":" + _clen + ", " + _rows + ":" + _cols + ").");
 		}
 
 		if(_rlen == _rows) {
+			// same block dims
 			OOCInstructionUtils
-				.submitAdmittedOOCTasks(input, output,
+				.submitAdmittedOOCTasks(_in, _out,
 					value -> new IndexedMatrixValue(value.getIndexes(), value.getValue()), _allowance, getContext())
 				.thenRun(this::onComplete);
 			return;
 		}
 
+		initBlocking();
+
 		if(_clen <= _blen && _rlen <= _blen && _cols <= _blen && _rows <= _blen) {
-			OOCInstructionUtils.submitAdmittedOOCTasks(input, output,
+			// single block
+			OOCInstructionUtils.submitAdmittedOOCTasks(_in, _out,
 				value -> new IndexedMatrixValue(value.getIndexes(),
 					((MatrixBlock) value.getValue()).reshape((int) _rows, (int) _cols, _byRow)),
 				_allowance, getContext()).thenRun(this::onComplete);
 			return;
 		}
 
-		int numColBlocksIn = Math.toIntExact(inputDc.getNumColBlocks());
-		int numRowBlocksIn = Math.toIntExact(inputDc.getNumRowBlocks());
-		int numColBlocksOut = (int) Math.ceil((double) _cols / _blen);
-		int numRowBlocksOut = (int) Math.ceil((double) _rows / _blen);
-
-		long sliceBytes = (OOCUtils.estimateFullTileBytes(input.getDataCharacteristics()) +
-			(_blen - 1) * MatrixBlock.getHeaderSize()) / _blen;
-
-		StateTable<IndexedMatrixValue> table = new StateTable<>(OOCCacheManager.getGlobalCache(),
-			CachingStream._streamSeq.getNextID());
-
 		if(_byRow) {
 			if(_clen % _blen == 0 && _cols % _blen == 0) {
-				// singleRowBlocks do not need to be split
+				// no need to split singleRowBlocks
 				if(_rows == 1) {
 					// result is one single row
-					submitSingleRowColTask(input, output, numColBlocksIn, numRowBlocksIn);
+					submitSingleRowColTask();
 				}
 				else {
-					CompletableFuture<Void> f = splitIntoTable(input, table, numColBlocksIn, numRowBlocksIn);
-					f.thenRun(() -> OOCInstructionUtils.submitOOCTask(
-						() -> reshapeFullColBlocks(table, output, numColBlocksOut, numRowBlocksOut, sliceBytes),
-						getContext()));
+					CompletableFuture<Void> f = splitIntoTable();
+					f.thenRun(() -> OOCInstructionUtils.submitOOCTask(this::reshapeFullColBlocks, getContext()));
 				}
 			}
 			else {
-				CompletableFuture<Void> f = splitIntoTable(input, table, numColBlocksIn, numRowBlocksIn);
-				f.thenRun(() -> OOCInstructionUtils.submitOOCTask(() -> reshapePartialColBlocks(table, output,
-					numColBlocksIn, numColBlocksOut, numRowBlocksOut, sliceBytes), getContext()));
+				CompletableFuture<Void> f = splitIntoTable();
+				f.thenRun(() -> OOCInstructionUtils.submitOOCTask(this::reshapePartialColBlocks, getContext()));
 			}
 		}
 		else {
 			if(_rlen % _blen == 0 && _rows % _blen == 0) {
-				// singleColBlocks do not need to be split
+				// no need to split singleColBlocks
 				if(_cols == 1) {
 					// result is one single col
-					submitSingleRowColTask(input, output, numColBlocksIn, numRowBlocksIn);
+					submitSingleRowColTask();
 				}
 				else {
-					CompletableFuture<Void> f = splitIntoTable(input, table, numColBlocksIn, numRowBlocksIn);
-					f.thenRun(() -> OOCInstructionUtils.submitOOCTask(
-						() -> reshapeFullRowBlocks(table, output, numColBlocksOut, numRowBlocksOut, sliceBytes),
-						getContext()));
+					CompletableFuture<Void> f = splitIntoTable();
+					f.thenRun(() -> OOCInstructionUtils.submitOOCTask(this::reshapeFullRowBlocks, getContext()));
 				}
 			}
 			else {
-				CompletableFuture<Void> f = splitIntoTable(input, table, numColBlocksIn, numRowBlocksIn);
-				f.thenRun(() -> OOCInstructionUtils.submitOOCTask(() -> reshapePartialRowBlocks(table, output,
-					numRowBlocksIn, numColBlocksOut, numRowBlocksOut, sliceBytes), getContext()));
+				CompletableFuture<Void> f = splitIntoTable();
+				f.thenRun(() -> OOCInstructionUtils.submitOOCTask(this::reshapePartialRowBlocks, getContext()));
 			}
 		}
 	}
 
-	private CompletableFuture<Void> splitIntoTable(OOCStream<IndexedMatrixValue> in,
-		StateTable<IndexedMatrixValue> table, int numColBlocks, int numRowBlocks) {
+	private CompletableFuture<Void> splitIntoTable() {
 
-		long blockBytes = OOCUtils.estimateFullTileBytes(in.getDataCharacteristics()) +
-			(_blen - 1) * MatrixBlock.getHeaderSize();
-		long singleSliceBytes = blockBytes / _blen;
-
-		AllocatedOOCStream<IndexedMatrixValue> allocated = new AllocatedOOCStream<>(in, _allowance, ignored -> blockBytes);
+		AllocatedOOCStream<IndexedMatrixValue> allocated = new AllocatedOOCStream<>(_in, _allowance,
+			ignored -> _blen * _sliceBytes);
 
 		return OOCInstructionUtils.submitOOCTasks(allocated, callback -> {
 			try(ReservationBudget budget = AllocatedOOCStream.detachBudget(callback)) {
@@ -202,10 +190,10 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 						rIdx = r;
 					}
 
-					long targetIdx = _byRow ? (rIdx - 1) * numColBlocks + c - 1 : (cIdx - 1) * numRowBlocks + r - 1;
+					long targetIdx = _byRow ? (rIdx - 1) * _numColBlocksIn + c - 1 : (cIdx - 1) * _numRowBlocksIn + r - 1;
 					IndexedMatrixValue sliceImv = new IndexedMatrixValue(new MatrixIndexes(rIdx, cIdx), slice);
-					budget.reserveBlocking(singleSliceBytes);
-					table.put((int) targetIdx, new ManagedPayload<>(sliceImv, singleSliceBytes, budget));
+					budget.reserveBlocking(_sliceBytes);
+					_table.put((int) targetIdx, new ManagedPayload<>(sliceImv, _sliceBytes, budget));
 				}
 			}
 			catch(IllegalStateException e) {
@@ -214,13 +202,11 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 		}, getContext());
 	}
 
-	private void submitSingleRowColTask(OOCStream<IndexedMatrixValue> in, OOCStream<IndexedMatrixValue> out,
-		int numColBlocks, int numRowBlocks) {
+	private void submitSingleRowColTask() {
 
 		// one input block is split into blen output blocks
-		long outputBytes = _blen * OOCUtils.estimateOutputTileBytes(out.getDataCharacteristics());
-
-		AllocatedOOCStream<IndexedMatrixValue> allocated = new AllocatedOOCStream<>(in, _allowance, ignored -> outputBytes);
+		AllocatedOOCStream<IndexedMatrixValue> allocated = new AllocatedOOCStream<>(_in, _allowance,
+			ignored -> _blen * _blockBytesOut);
 
 		OOCInstructionUtils.submitOOCTasks(allocated, callback -> {
 			try(ReservationBudget budget = AllocatedOOCStream.detachBudget(callback)) {
@@ -243,7 +229,7 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 						// total row, 1 based
 						rIdx = (r - 1) * _blen + i + 1;
 						// all in single row
-						cIdx = (rIdx - 1) * numColBlocks + c;
+						cIdx = (rIdx - 1) * _numColBlocksIn + c;
 						rIdx = 1;
 					}
 					else {
@@ -251,53 +237,49 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 						slice = blk.slice(0, blk.getNumRows() - 1, i, i);
 						cIdx = (c - 1) * _blen + i + 1;
 						// all in single col
-						rIdx = (cIdx - 1) * numRowBlocks + r;
+						rIdx = (cIdx - 1) * _numRowBlocksIn + r;
 						cIdx = 1;
 					}
 
 					IndexedMatrixValue sliceImv = new IndexedMatrixValue(new MatrixIndexes(rIdx, cIdx), slice);
-					OOCUtils.enqueueExact(out, sliceImv, budget, false);
+					OOCUtils.enqueueExact(_out, sliceImv, budget, false);
 				}
 			}
 			catch(IllegalStateException e) {
 				throw new DMLRuntimeException(e);
 			}
-		}, getContext()).thenRun(this::onComplete).thenRun(out::closeInput).exceptionally(error -> {
-			out.propagateFailure(DMLRuntimeException.of(error));
+		}, getContext()).thenRun(this::onComplete).thenRun(_out::closeInput).exceptionally(error -> {
+			_out.propagateFailure(DMLRuntimeException.of(error));
 			return null;
 		});
 	}
 
-	private void reshapeFullColBlocks(StateTable<IndexedMatrixValue> table, OOCStream<IndexedMatrixValue> out,
-		int numColBlocksOut, int numRowBlocksOut, long rowBytes) {
+	private void reshapeFullColBlocks() {
 
 		List<OOCFuture<StoreLease<IndexedMatrixValue>>> futures = new ArrayList<>();
+		long outputBytes = _numRowsBlockOut * _sliceBytes + _blockBytesOut;
 		ReservationBudget budget = null;
-
-		long numRowsBlockOut = Math.min(out.getDataCharacteristics().getRows(), _blen);
-		long blockBytes = OOCUtils.estimateOutputTileBytes(out.getDataCharacteristics());
-		long outputBytes = numRowsBlockOut * rowBytes + blockBytes;
 
 		// totalRowIdx corresponds to index of row block when all aligned in one row
 		// br * numColBlocksOut * blen + b + r * numColBlocksOut;
 		// with numColBlocksOut * blen = cols
-		long totalIdx = -_cols - 1 - numColBlocksOut;
+		long totalIdx = -_cols - 1 - _numColBlocksOut;
 
 		try {
 			// iterate through rows of output blocks
-			for(int br = 0; br < numRowBlocksOut; br++) {
+			for(int br = 0; br < _numRowBlocksOut; br++) {
 				totalIdx += _cols;
 				long tmp = totalIdx;
-				int localRows = (br == numRowBlocksOut - 1 && _rows % _blen != 0) ? (int) _rows % _blen : _blen;
+				int localRows = (br == _numRowBlocksOut - 1 && _rows % _blen != 0) ? (int) _rows % _blen : _blen;
 				// for each block in row
-				for(int b = 0; b < numColBlocksOut; b++) {
+				for(int b = 0; b < _numColBlocksOut; b++) {
 					totalIdx += 1;
 					long tmp2 = totalIdx;
 					budget = OOCUtils.reserveBudget(_allowance, outputBytes);
 					// for each row in block
 					for(int r = 0; r < _blen && r < localRows; r++) {
-						totalIdx += numColBlocksOut;
-						OOCFuture<StoreLease<IndexedMatrixValue>> rowFuture = table.take((int) totalIdx, budget);
+						totalIdx += _numColBlocksOut;
+						OOCFuture<StoreLease<IndexedMatrixValue>> rowFuture = _table.take((int) totalIdx, budget);
 						futures.add(rowFuture);
 					}
 					totalIdx = tmp2;
@@ -314,7 +296,7 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 							lease.close();
 						}
 						block.recomputeNonZeros();
-						OOCUtils.enqueueExact(out, new IndexedMatrixValue(idx, block), finalBudget, true);
+						OOCUtils.enqueueExact(_out, new IndexedMatrixValue(idx, block), finalBudget, true);
 						futures.clear();
 					});
 					budget = null;
@@ -326,49 +308,36 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 			throw new DMLRuntimeException(e);
 		}
 		finally {
-			if(budget != null) {
-				budget.close();
-			}
-			try {
-				table.close();
-				onComplete();
-			}
-			finally {
-				out.closeInput();
-			}
+			closeResourcesAndComplete(budget);
 		}
 	}
 
-	private void reshapeFullRowBlocks(StateTable<IndexedMatrixValue> table, OOCStream<IndexedMatrixValue> out,
-		int numColBlocksOut, int numRowBlocksOut, long colBytes) {
+	private void reshapeFullRowBlocks() {
 
 		List<OOCFuture<StoreLease<IndexedMatrixValue>>> futures = new ArrayList<>();
+		long outputBytes = _numColsBlockOut * _sliceBytes + _blockBytesOut;
 		ReservationBudget budget = null;
-
-		long numColsBlockOut = Math.min(out.getDataCharacteristics().getCols(), _blen);
-		long blockBytes = OOCUtils.estimateOutputTileBytes(out.getDataCharacteristics());
-		long outputBytes = numColsBlockOut * colBytes + blockBytes;
 
 		// totalColIdx corresponds to index of col block when all aligned in one col
 		// bc * numRowBlocksOut * blen + b + c * numRowBlocksOut;
 		// with numRowBlocksOut * blen = rows
-		long totalIdx = -_rows - 1 - numRowBlocksOut;
+		long totalIdx = -_rows - 1 - _numRowBlocksOut;
 
 		try {
 			// iterate through cols of output blocks
-			for(int bc = 0; bc < numColBlocksOut; bc++) {
+			for(int bc = 0; bc < _numColBlocksOut; bc++) {
 				totalIdx += _rows;
 				long tmp = totalIdx;
-				int localCols = (bc == numColBlocksOut - 1 && _cols % _blen != 0) ? (int) _cols % _blen : _blen;
+				int localCols = (bc == _numColBlocksOut - 1 && _cols % _blen != 0) ? (int) _cols % _blen : _blen;
 				// for each block in col
-				for(int b = 0; b < numRowBlocksOut; b++) {
+				for(int b = 0; b < _numRowBlocksOut; b++) {
 					totalIdx += 1;
 					long tmp2 = totalIdx;
 					budget = OOCUtils.reserveBudget(_allowance, outputBytes);
 					// for each col in block
 					for(int c = 0; c < _blen && c < localCols; c++) {
-						totalIdx += numRowBlocksOut;
-						OOCFuture<StoreLease<IndexedMatrixValue>> colFuture = table.take((int) totalIdx, budget);
+						totalIdx += _numRowBlocksOut;
+						OOCFuture<StoreLease<IndexedMatrixValue>> colFuture = _table.take((int) totalIdx, budget);
 						futures.add(colFuture);
 					}
 					totalIdx = tmp2;
@@ -386,7 +355,7 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 							lease.close();
 						}
 						block.recomputeNonZeros();
-						OOCUtils.enqueueExact(out, new IndexedMatrixValue(idx, block), finalBudget, true);
+						OOCUtils.enqueueExact(_out, new IndexedMatrixValue(idx, block), finalBudget, true);
 						futures.clear();
 					});
 					budget = null;
@@ -398,29 +367,15 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 			throw new DMLRuntimeException(e);
 		}
 		finally {
-			if(budget != null) {
-				budget.close();
-			}
-			try {
-				table.close();
-				onComplete();
-			}
-			finally {
-				out.closeInput();
-			}
+			closeResourcesAndComplete(budget);
 		}
 	}
 
-	private void reshapePartialColBlocks(StateTable<IndexedMatrixValue> table, OOCStream<IndexedMatrixValue> out,
-		int numColBlocksIn, int numColBlocksOut, int numRowBlocksOut, long rowBytes) {
+	private void reshapePartialColBlocks() {
 
-		long numRowsBlockOut = Math.min(_rows, _blen);
-		long numColsBlockOut = Math.min(_cols, _blen);
-
-		long numNeededRowsIn = 2 +
-			(long) Math.ceil((((double) numRowsBlockOut * numColsBlockOut) / _clen) * numColBlocksIn * numColBlocksOut);
-		long blockBytes = OOCUtils.estimateOutputTileBytes(out.getDataCharacteristics());
-		long outputBytes = numNeededRowsIn * rowBytes + numColBlocksOut * blockBytes;
+		long numNeededRowsIn = 2 + (long) Math
+			.ceil((((double) _numRowsBlockOut * _numColsBlockOut) / _clen) * _numColBlocksIn * _numColBlocksOut);
+		long outputBytes = numNeededRowsIn * _sliceBytes + _numColBlocksOut * _blockBytesOut;
 
 		ReservationBudget budget = null;
 		int br = 0;
@@ -429,15 +384,15 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 			List<OOCFuture<StoreLease<IndexedMatrixValue>>> futures = new ArrayList<>();
 			// new row of output blocks
 			budget = OOCUtils.reserveBudget(_allowance, outputBytes);
-			int missing = getNumMissingRowSlices(1, br, 0, numColBlocksIn, numRowBlocksOut);
+			int missing = getNumMissingRowSlices(1, br, 0);
 			int startJ = 1;
 			final int[] offset = {0};
 
 			// iterate through input rows and add to row of output blocks
 			for(int i = 1; i <= _rlen; i++) {
-				for(int j = 1; j <= numColBlocksIn; j++) {
-					int totalIdx = (i - 1) * numColBlocksIn + j - 1;
-					OOCFuture<StoreLease<IndexedMatrixValue>> blkFuture = table.take(totalIdx, budget);
+				for(int j = 1; j <= _numColBlocksIn; j++) {
+					int totalIdx = (i - 1) * _numColBlocksIn + j - 1;
+					OOCFuture<StoreLease<IndexedMatrixValue>> blkFuture = _table.take(totalIdx, budget);
 					futures.add(blkFuture);
 
 					if(futures.size() < missing)
@@ -455,7 +410,7 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 						int bc = 0;
 						int r = 0;
 						int offsetOut = 0;
-						MatrixBlock[] outputBlockRow = allocateSliceBlocks(finalBr, numColBlocksOut, numRowBlocksOut);
+						MatrixBlock[] outputBlockRow = allocateSliceBlocks(finalBr);
 						int localColsOut = (_cols > _blen) ? _blen : (int) _cols;
 
 						for(int k = 0; k < leases.size(); k++) {
@@ -463,7 +418,7 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 							IndexedMatrixValue slice = lease.value();
 							MatrixBlock sliceVal = (MatrixBlock) slice.getValue();
 
-							int localColsIn = (localJ == numColBlocksIn && _clen % _blen != 0) ? (int) _clen % _blen : _blen;
+							int localColsIn = (localJ == _numColBlocksIn && _clen % _blen != 0) ? (int) _clen % _blen : _blen;
 							while(offsetIn < localColsIn) {
 								// until input row fully processed
 								int remIn = localColsIn - offsetIn;
@@ -487,7 +442,7 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 								}
 								bc++;
 								offsetOut = 0;
-								if(bc == numColBlocksOut) {
+								if(bc == _numColBlocksOut) {
 									// next row
 									r++;
 									if(r == outputBlockRow[0].getNumRows()) {
@@ -496,10 +451,10 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 									}
 									bc = 0;
 								}
-								localColsOut = (bc == numColBlocksOut - 1 && _cols % _blen != 0) ? (int) _cols % _blen : _blen;
+								localColsOut = (bc == _numColBlocksOut - 1 && _cols % _blen != 0) ? (int) _cols % _blen : _blen;
 							}
 							localJ++;
-							if(localJ == numColBlocksIn + 1)
+							if(localJ == _numColBlocksIn + 1)
 								localJ = 1;
 
 							lease.close();
@@ -507,15 +462,15 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 
 							if(k == leases.size() - 1 && offset[0] != 0) {
 								// put current slice back into table, to be able to reserve new budget
-								finalBudget.reserveBlocking(rowBytes);
-								table.put(totalIdx, new ManagedPayload<>(slice, rowBytes, finalBudget));
+								finalBudget.reserveBlocking(_sliceBytes);
+								_table.put(totalIdx, new ManagedPayload<>(slice, _sliceBytes, finalBudget));
 							}
 						}
 
 						// enqueue filled output blocks and allocate new ones
 						for(int b = 0; b < outputBlockRow.length; b++) {
 							outputBlockRow[b].recomputeNonZeros();
-							OOCUtils.enqueueExact(out,
+							OOCUtils.enqueueExact(_out,
 								new IndexedMatrixValue(new MatrixIndexes(finalBr + 1, b + 1), outputBlockRow[b]),
 								finalBudget, false);
 						}
@@ -524,7 +479,7 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 					budget.close();
 					futures.clear();
 
-					if(br == numRowBlocksOut - 1)
+					if(br == _numRowBlocksOut - 1)
 						break;
 
 					// new block row
@@ -533,15 +488,15 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 
 					if(offset[0] != 0) {
 						// get slice back from table
-						blkFuture = table.take(totalIdx, budget);
+						blkFuture = _table.take(totalIdx, budget);
 						futures.add(blkFuture);
 						startJ = j;
 					}
 					else {
-						startJ = (j == numColBlocksIn) ? 1 : j + 1;
+						startJ = (j == _numColBlocksIn) ? 1 : j + 1;
 					}
 
-					missing = getNumMissingRowSlices(startJ, br, offset[0], numColBlocksIn, numRowBlocksOut);
+					missing = getNumMissingRowSlices(startJ, br, offset[0]);
 				}
 			}
 		}
@@ -549,22 +504,13 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 			throw new DMLRuntimeException(e);
 		}
 		finally {
-			if(budget != null) {
-				budget.close();
-			}
-			try {
-				table.close();
-				onComplete();
-			}
-			finally {
-				out.closeInput();
-			}
+			closeResourcesAndComplete(budget);
 		}
 	}
 
-	private int getNumMissingRowSlices(int j, int br, int offsetIn, int numColBlocksIn, int numRowBlocksOut) {
-		long localColsIn = (j == numColBlocksIn && _clen % _blen != 0) ? _clen % _blen : _blen;
-		long localRowsOut = (br == numRowBlocksOut - 1 && _rows % _blen != 0) ? _rows % _blen : _blen;
+	private int getNumMissingRowSlices(int j, int br, int offsetIn) {
+		long localColsIn = (j == _numColBlocksIn && _clen % _blen != 0) ? _clen % _blen : _blen;
+		long localRowsOut = (br == _numRowBlocksOut - 1 && _rows % _blen != 0) ? _rows % _blen : _blen;
 
 		long totalIdx = _cols * localRowsOut;
 		int cnt = 0;
@@ -576,30 +522,25 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 		}
 
 		int numRows = (int) Math.floor((double) totalIdx / _clen);
-		cnt += numRows * numColBlocksIn;
+		cnt += numRows * _numColBlocksIn;
 		totalIdx -= numRows * _clen;
 
-		long numBlenSlices = Math.max(0, numColBlocksIn - (j - 1));
+		long numBlenSlices = Math.max(0, _numColBlocksIn - (j - 1));
 		long restRow = numBlenSlices * _blen + localColsIn;
 		if(totalIdx - restRow > 0) {
 			totalIdx -= restRow;
-			cnt += numColBlocksIn - j;
+			cnt += _numColBlocksIn - j;
 		}
 		cnt += (int) Math.ceil((double) totalIdx / _blen);
 
 		return cnt;
 	}
 
-	private void reshapePartialRowBlocks(StateTable<IndexedMatrixValue> table, OOCStream<IndexedMatrixValue> out,
-		int numRowBlocksIn, int numColBlocksOut, int numRowBlocksOut, long colBytes) {
+	private void reshapePartialRowBlocks() {
 
-		long numRowsBlockOut = Math.min(_rows, _blen);
-		long numColsBlockOut = Math.min(_cols, _blen);
-
-		long numNeededColsIn = 2 +
-			(long) Math.ceil((((double) numRowsBlockOut * numColsBlockOut) / _rlen) * numRowBlocksIn * numRowBlocksOut);
-		long blockBytes = OOCUtils.estimateOutputTileBytes(out.getDataCharacteristics());
-		long outputBytes = numNeededColsIn * colBytes + numRowBlocksOut * blockBytes;
+		long numNeededColsIn = 2 + (long) Math
+			.ceil((((double) _numRowsBlockOut * _numColsBlockOut) / _rlen) * _numRowBlocksIn * _numRowBlocksOut);
+		long outputBytes = numNeededColsIn * _sliceBytes + _numRowBlocksOut * _blockBytesOut;
 
 		ReservationBudget budget = null;
 		int bc = 0;
@@ -608,15 +549,15 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 			List<OOCFuture<StoreLease<IndexedMatrixValue>>> futures = new ArrayList<>();
 			// new col of output blocks
 			budget = OOCUtils.reserveBudget(_allowance, outputBytes);
-			int missing = getNumMissingColSlices(1, bc, 0, numRowBlocksIn, numColBlocksOut);
+			int missing = getNumMissingColSlices(1, bc, 0);
 			int startI = 1;
 			final int[] offset = {0};
 
 			// iterate through input cols and add to col of output blocks
 			for(int j = 1; j <= _clen; j++) {
-				for(int i = 1; i <= numRowBlocksIn; i++) {
-					int totalIdx = (j - 1) * numRowBlocksIn + i - 1;
-					OOCFuture<StoreLease<IndexedMatrixValue>> blkFuture = table.take(totalIdx, budget);
+				for(int i = 1; i <= _numRowBlocksIn; i++) {
+					int totalIdx = (j - 1) * _numRowBlocksIn + i - 1;
+					OOCFuture<StoreLease<IndexedMatrixValue>> blkFuture = _table.take(totalIdx, budget);
 					futures.add(blkFuture);
 
 					if(futures.size() < missing)
@@ -635,7 +576,7 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 						int c = 0;
 						int offsetOut = 0;
 
-						MatrixBlock[] outputBlockCol = allocateSliceBlocks(finalBc, numColBlocksOut, numRowBlocksOut);
+						MatrixBlock[] outputBlockCol = allocateSliceBlocks(finalBc);
 						int localRowsOut = (_rows > _blen) ? _blen : (int) _rows;
 
 						for(int k = 0; k < leases.size(); k++) {
@@ -643,7 +584,7 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 							IndexedMatrixValue slice = lease.value();
 							MatrixBlock sliceVal = (MatrixBlock) slice.getValue();
 
-							int localRowsIn = (localI == numRowBlocksIn && _rlen % _blen != 0) ? (int) _rlen % _blen : _blen;
+							int localRowsIn = (localI == _numRowBlocksIn && _rlen % _blen != 0) ? (int) _rlen % _blen : _blen;
 							while(offsetIn < localRowsIn) {
 								// until input col fully processed
 								int remIn = localRowsIn - offsetIn;
@@ -667,7 +608,7 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 								}
 								br++;
 								offsetOut = 0;
-								if(br == numRowBlocksOut) {
+								if(br == _numRowBlocksOut) {
 									// next col
 									c++;
 									if(c == outputBlockCol[0].getNumColumns()) {
@@ -676,10 +617,10 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 									}
 									br = 0;
 								}
-								localRowsOut = (br == numRowBlocksOut - 1 && _rows % _blen != 0) ? (int) _rows % _blen : _blen;
+								localRowsOut = (br == _numRowBlocksOut - 1 && _rows % _blen != 0) ? (int) _rows % _blen : _blen;
 							}
 							localI++;
-							if(localI == numRowBlocksIn + 1)
+							if(localI == _numRowBlocksIn + 1)
 								localI = 1;
 
 							lease.close();
@@ -687,15 +628,15 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 
 							if(k == leases.size() - 1 && offset[0] != 0) {
 								// put current slice back into table, to be able to reserve new budget
-								finalBudget.reserveBlocking(colBytes);
-								table.put(totalIdx, new ManagedPayload<>(slice, colBytes, finalBudget));
+								finalBudget.reserveBlocking(_sliceBytes);
+								_table.put(totalIdx, new ManagedPayload<>(slice, _sliceBytes, finalBudget));
 							}
 						}
 
 						// enqueue filled output blocks and allocate new ones
 						for(int b = 0; b < outputBlockCol.length; b++) {
 							outputBlockCol[b].recomputeNonZeros();
-							OOCUtils.enqueueExact(out,
+							OOCUtils.enqueueExact(_out,
 								new IndexedMatrixValue(new MatrixIndexes(b + 1, finalBc + 1), outputBlockCol[b]),
 								finalBudget, false);
 						}
@@ -704,7 +645,7 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 					budget.close();
 					futures.clear();
 
-					if(bc == numColBlocksOut - 1)
+					if(bc == _numColBlocksOut - 1)
 						break;
 
 					// new block row
@@ -713,14 +654,14 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 
 					if(offset[0] != 0) {
 						// get slice back from table
-						blkFuture = table.take(totalIdx, budget);
+						blkFuture = _table.take(totalIdx, budget);
 						futures.add(blkFuture);
 						startI = i;
 					}
 					else {
-						startI = (i == numRowBlocksIn) ? 1 : i + 1;
+						startI = (i == _numRowBlocksIn) ? 1 : i + 1;
 					}
-					missing = getNumMissingColSlices(startI, bc, offset[0], numRowBlocksIn, numColBlocksOut);
+					missing = getNumMissingColSlices(startI, bc, offset[0]);
 				}
 			}
 		}
@@ -728,22 +669,13 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 			throw new DMLRuntimeException(e);
 		}
 		finally {
-			if(budget != null) {
-				budget.close();
-			}
-			try {
-				table.close();
-				onComplete();
-			}
-			finally {
-				out.closeInput();
-			}
+			closeResourcesAndComplete(budget);
 		}
 	}
 
-	private int getNumMissingColSlices(int i, int bc, int offsetIn, int numRowBlocksIn, int numColBlocksOut) {
-		long localRowsIn = (i == numRowBlocksIn && _rlen % _blen != 0) ? _rlen % _blen : _blen;
-		long localColsOut = (bc == numColBlocksOut - 1 && _cols % _blen != 0) ? _cols % _blen : _blen;
+	private int getNumMissingColSlices(int i, int bc, int offsetIn) {
+		long localRowsIn = (i == _numRowBlocksIn && _rlen % _blen != 0) ? _rlen % _blen : _blen;
+		long localColsOut = (bc == _numColBlocksOut - 1 && _cols % _blen != 0) ? _cols % _blen : _blen;
 
 		long totalIdx = _rows * localColsOut;
 		int cnt = 0;
@@ -755,27 +687,27 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 		}
 
 		int numCols = (int) Math.floor((double) totalIdx / _rlen);
-		cnt += numCols * numRowBlocksIn;
+		cnt += numCols * _numRowBlocksIn;
 		totalIdx -= numCols * _rlen;
 
-		long numBlenSlices = Math.max(0, numRowBlocksIn - (i - 1));
+		long numBlenSlices = Math.max(0, _numRowBlocksIn - (i - 1));
 		long restCol = numBlenSlices * _blen + localRowsIn;
 		if(totalIdx - restCol > 0) {
 			totalIdx -= restCol;
-			cnt += numRowBlocksIn - i;
+			cnt += _numRowBlocksIn - i;
 		}
 		cnt += (int) Math.ceil((double) totalIdx / _blen);
 
 		return cnt;
 	}
 
-	private MatrixBlock[] allocateSliceBlocks(int idx, int numColBlocksOut, int numRowBlocksOut) {
-		int n = _byRow ? numColBlocksOut : numRowBlocksOut;
+	private MatrixBlock[] allocateSliceBlocks(int idx) {
+		int n = _byRow ? _numColBlocksOut : _numRowBlocksOut;
 		MatrixBlock[] res = new MatrixBlock[n];
 
 		// full inner blocks, adjust for outer blocks
-		int localRows = ((!_byRow || idx == numRowBlocksOut - 1) && _rows % _blen != 0) ? (int) _rows % _blen : _blen;
-		int localCols = ((_byRow || idx == numColBlocksOut - 1) && _cols % _blen != 0) ? (int) _cols % _blen : _blen;
+		int localRows = ((!_byRow || idx == _numRowBlocksOut - 1) && _rows % _blen != 0) ? (int) _rows % _blen : _blen;
+		int localCols = ((_byRow || idx == _numColBlocksOut - 1) && _cols % _blen != 0) ? (int) _cols % _blen : _blen;
 
 		for(int k = 0; k < n - 1; k++) {
 			res[k] = _byRow ? new MatrixBlock(localRows, _blen, false) : new MatrixBlock(_blen, localCols, false);
@@ -792,5 +724,52 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 			((DenseBlockFP64) dest.getDenseBlock()).setPartialRow(src.getDenseBlock(), idx, srcOffset, destOffset, length);
 		else
 			((DenseBlockFP64) dest.getDenseBlock()).setPartialCol(src.getDenseBlock(), idx, srcOffset, destOffset, length);
+	}
+
+	private void closeResourcesAndComplete(ReservationBudget budget) {
+		if(budget != null) {
+			budget.close();
+		}
+		try {
+			_table.close();
+			onComplete();
+		}
+		finally {
+			_out.closeInput();
+		}
+	}
+
+	private void initExecution() {
+		DataCharacteristics inputDc = _input.getDataCharacteristics();
+		if(inputDc == null || !inputDc.dimsKnown() || inputDc.getBlocksize() <= 0)
+			throw new DMLRuntimeException(
+				"Reshape OOC reduction requires known input dimensions and block size.");
+
+		_in = getInputReadStream(0);
+		_out = _output.getWriteStream();
+		getContext().addOutStream(_out);
+
+		_rlen = inputDc.getRows();
+		_clen = inputDc.getCols();
+		_blen = Math.toIntExact(inputDc.getBlocksize());
+	}
+
+	private void initBlocking() {
+		DataCharacteristics inputDc = _input.getDataCharacteristics();
+
+		_numColBlocksIn = Math.toIntExact(inputDc.getNumColBlocks());
+		_numRowBlocksIn = Math.toIntExact(inputDc.getNumRowBlocks());
+
+		_numColBlocksOut = (int) Math.ceil((double) _cols / _blen);
+		_numRowBlocksOut = (int) Math.ceil((double) _rows / _blen);
+
+		_numRowsBlockOut = Math.min(_rows, _blen);
+		_numColsBlockOut = Math.min(_cols, _blen);
+
+		_blockBytesOut = OOCUtils.estimateOutputTileBytes(_out.getDataCharacteristics());
+		_sliceBytes = (OOCUtils.estimateFullTileBytes(_in.getDataCharacteristics()) +
+			(_blen - 1) * MatrixBlock.getHeaderSize()) / _blen;
+
+		_table = new StateTable<>(OOCCacheManager.getGlobalCache(), CachingStream._streamSeq.getNextID());
 	}
 }

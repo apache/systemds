@@ -76,7 +76,7 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 			in.split(parts[1]);
 			out.split(parts[2]);
 			ValueFunction func = Builtin.getBuiltinFnObject(opcode);
-			if(Arrays.asList(new String[] {"ucumk+", "ucum*", "ucumk+*", "ucummin", "ucummax", "exp", "log", "sigmoid"})
+			if(Arrays.asList(new String[] {"ucumk+", "urowcumk+", "ucum*", "ucumk+*", "ucummin", "ucummax", "exp", "log", "sigmoid"})
 				.contains(opcode)) {
 				UnaryOperator op = new UnaryOperator(func, Integer.parseInt(parts[3]), Boolean.parseBoolean(parts[4]));
 				return new UnaryMatrixFEDInstruction(op, in, out, opcode, str);

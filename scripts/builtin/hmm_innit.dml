@@ -1,0 +1,80 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#
+# DESCRIPTION:
+# ------------------------------------------------------------
+# This script builds initial parameters for an hmm model from given numbers of distinct states.
+# It takes as input the number of distinct hidden states the model has and
+# also the number of distinct observations the model can emit.
+# Observations will then be refferenced with an Integer ID between 1 and (observation_count).
+# Hidden States will then be refferenced with an Integer ID between 1 and (hiddenstates_count).
+# --------------------------------------------------------------------------------------------
+#
+# INPUT:
+# --------------------------------------------------------------------------------------------
+# observations_count        Number of Distinct Observations
+# hiddenstates_count        Number of Distinct Hidden States
+# verbose                   Boolean that states wether the hmm parameters will be printed
+# random_mode               Boolean that states wether the model parameters will be initiallizes randomly,
+#                           if false the parameters will be initiallized evenly
+# ----------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# --------------------------------------------------------------------------------------------
+# start_prob                Start probabilities of initial hmm model
+# transition_prob           Transition probabilities of initial hmm model
+# emission_prob             Emission probabilities of initial hmm model
+# --------------------------------------------------------------------------------------------
+
+s_hmm_innit = function(Integer observations_count, Integer hiddenstates_count, Boolean verbose = FALSE, Boolean random_mode = FALSE)
+    return (matrix[Double] start_prob, matrix[Double] transition_prob, matrix[Double] emission_prob)
+    {
+        if(random_mode) {
+            transition_prob = rand(rows = hiddenstates_count, cols = hiddenstates_count)
+            transition_prob = transition_prob / rowSums(transition_prob)
+
+            emission_prob = rand(rows = hiddenstates_count, cols = observations_count)
+            emission_prob = emission_prob / rowSums(emission_prob)
+
+            start_prob = rand(rows = hiddenstates_count, cols = 1)
+            start_prob = start_prob / colSums(start_prob)
+        } else {
+            start_prob = matrix((1 / hiddenstates_count), rows = hiddenstates_count, cols = 1)
+            transition_prob = matrix((0.7 / hiddenstates_count), rows = hiddenstates_count, cols = hiddenstates_count) + diag(matrix(0.3, rows = hiddenstates_count, cols = 1))
+            emission_prob = matrix((1 / observations_count), rows = hiddenstates_count, cols = observations_count)    
+        }
+
+        if(verbose) {
+            print_model(observations_count, hiddenstates_count, start_prob, transition_prob, emission_prob)
+        }
+    }
+
+
+print_model = function(Integer observations_count, Integer hiddenstates_count, matrix[Double] start_prob, 
+                       matrix[Double] transition_prob, matrix[Double] emission_prob)
+    {
+        print("Number of possible Observations: \n" + toString(observations_count) + "\n")
+        print("Number of possible Hidden States: \n" + toString(hiddenstates_count) + "\n")
+        print("Starting Probabilities of hidden states: \n" + toString(start_prob))
+        print("Hidden State Transition Probability Matrix: \n" + toString(transition_prob))
+        print("Observation Emission Probability Matrix: \n" + toString(emission_prob))
+    }
+
+

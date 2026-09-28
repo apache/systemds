@@ -211,6 +211,9 @@ class UnimodalOptimizer:
 
         return counts
 
+    def _skip_for_modality(self, modality_id) -> int:
+        return int(self._checkpoint_manager.skip_remaining_by_key.get(modality_id, 0))
+
     def resume_from_checkpoint(self):
         loaded = self._checkpoint_manager.resume_from_checkpoint(
             "eval_count_by_modality", self._count_results_by_modality
@@ -233,10 +236,7 @@ class UnimodalOptimizer:
                 executor.submit(
                     self._process_modality,
                     modality,
-                    self._checkpoint_manager.skip_remaining_by_key.get(
-                        modality.modality_id, 0
-                    )
-                    / len(self.tasks),
+                    self._skip_for_modality(modality.modality_id),
                     scheduler=None,
                 ): modality
                 for modality in self.modalities
@@ -282,14 +282,7 @@ class UnimodalOptimizer:
                 local_result, execution_time = self._process_modality(
                     modality,
                     (
-                        int(
-                            round(
-                                self._checkpoint_manager.skip_remaining_by_key.get(
-                                    modality.modality_id, 0
-                                )
-                                / len(self.tasks)
-                            )
-                        )
+                        self._skip_for_modality(modality.modality_id)
                         if self.resume
                         else 0
                     ),
@@ -488,11 +481,17 @@ class UnimodalOptimizer:
             )
 
         dags = self.add_aggregation_operator(self.builders[modality.modality_id], dags)
-        dags_with_pushdown = pushdown_aggregation(dags)
 
+        built = len(dags)
         if skip_remaining > 0:
             dags = dags[skip_remaining:]
+        print(
+            f"[resume] modality {modality.modality_id}: built {built} dag(s), "
+            f"skip {skip_remaining}, executing {len(dags)}",
+            flush=True,
+        )
 
+        dags_with_pushdown = pushdown_aggregation(dags)
         expanded_dags_with_task_roots = self._expand_dags_with_task_roots(
             dags_with_pushdown
         )
@@ -671,6 +670,11 @@ class UnimodalOptimizer:
             return None
         return int(output_shape[0])
 
+    def _dag_output_has_time_axis(self, dag: RepresentationDag) -> bool:
+        stats = self._node_output_stats(dag).get(dag.root_node_id, None)
+        output_shape = getattr(stats, "output_shape", None)
+        return output_shape is not None and len(output_shape) >= 2
+
     def _aggregation_needed(self, dag: RepresentationDag) -> bool:
         return len(self._node_output_stats(dag)[dag.root_node_id].output_shape) > 1
 
@@ -720,6 +724,19 @@ class UnimodalOptimizer:
             context_operators = self._get_context_operators(
                 rep_root.operation().output_modality_type
             )
+            if not self._dag_output_has_time_axis(rep_dag):
+                for context_op in context_operators:
+                    self.pruned.append(
+                        {
+                            "operation": context_op.__name__,
+                            "input": rep_root.operation.__name__,
+                            "reason": (
+                                "representation output is a rank-1 feature "
+                                "vector with no time axis to window over"
+                            ),
+                        }
+                    )
+                return dags
             output_length = self._dag_output_length(rep_dag)
             for context_op in context_operators:
                 context_operator_instance = context_op()
@@ -941,7 +958,7 @@ class UnimodalResults:
         if self._dag_index_source is not dags:
             self._dag_index = {dag.dag_id: dag for dag in dags}
             self._dag_index_source = dags
-        task_result.dag = self._dag_index.get(dag_id)
+        task_result.dag = self._dag_index.get(dag_id, task_result.dag)
         self.results[task_result.dag.nodes[0].modality_id][task_name].append(
             task_result
         )

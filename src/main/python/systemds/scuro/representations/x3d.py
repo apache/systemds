@@ -34,12 +34,14 @@ from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import (
-    LengthBucketBatchSampler,
     get_sequence_lengths,
     inference_context,
-    move_batch_to_device,
-    pin_memory_for,
     save_embeddings,
+)
+from systemds.scuro.representations.video_batching import (
+    MIB,
+    FrameBudgetedVideoModel,
+    VideoMemoryProfile,
 )
 from systemds.scuro.utils.static_variables import (
     get_device,
@@ -54,8 +56,23 @@ class Identity(torch.nn.Module):
 
 
 @register_representation([ModalityType.VIDEO])
-class X3D(UnimodalRepresentation):
+class X3D(FrameBudgetedVideoModel, UnimodalRepresentation):
     cache_in_worker = True
+    _MEMORY_PROFILES = {
+        "r3d": VideoMemoryProfile(
+            clip_frame_bytes=42 * MIB,
+            batch_frame_bytes=6.5 * MIB,
+            clip_bytes=26 * MIB,
+            cpu_frame_bytes=16 * MIB,
+        ),
+        "s3d": VideoMemoryProfile(
+            clip_frame_bytes=5.5 * MIB,
+            batch_frame_bytes=3 * MIB,
+            clip_bytes=20 * MIB,
+            cpu_frame_bytes=8 * MIB,
+        ),
+    }
+    _MIN_FRAMES = 14
 
     def __init__(
         self,
@@ -64,6 +81,7 @@ class X3D(UnimodalRepresentation):
         output_file=None,
         batch_size=8,
         params=None,
+        max_batch_frames=None,
     ):
         self.data_type = torch.float32
         if params is not None:
@@ -77,6 +95,7 @@ class X3D(UnimodalRepresentation):
         self.output_file = output_file
         self.layer_name = layer
         self.batch_size = batch_size
+        self.max_batch_frames = max_batch_frames
         self._gpu_id = self.device.index
         self._activation_hook = None
         self.activation = None
@@ -107,45 +126,11 @@ class X3D(UnimodalRepresentation):
         embedding_dim = 400 * math.floor((max(input_stats.max_length, 14) - 5) / 8)
         return input_stats.num_instances * embedding_dim * self.data_type.itemsize
 
-    def estimate_peak_memory_bytes(self, input_stats: VideoStats) -> dict:
-        temporal = max(input_stats.max_length, 14)
-        input_bytes = (
-            self.batch_size
-            * self.data_type.itemsize
-            * input_stats.max_channels
-            * temporal
-            * input_stats.max_height
-            * input_stats.max_width
-        )
-        output_bytes = self.estimate_output_memory_bytes(input_stats)
-        n = max(input_stats.num_instances, 1)
-        output_bytes_batch = output_bytes / n * self.batch_size
+    def _memory_profile(self) -> VideoMemoryProfile:
+        return self._MEMORY_PROFILES[self.model_name]
 
-        batch_peak_bytes = (
-            input_bytes + self.batch_size * 512 * self.data_type.itemsize
-        ) * 2
-
-        safety_margin_bytes = 100 * 1024 * 1024
-
-        param_size = 0
-        for param in self.model.parameters():
-            param_size += param.nelement() * param.element_size()
-
-        buffer_size = 0
-        for buffer in self.model.buffers():
-            buffer_size += buffer.nelement() * buffer.element_size()
-
-        size_all_bytes = param_size + buffer_size
-
-        cpu_peak = (
-            size_all_bytes * 2 * self.data_type.itemsize
-            + output_bytes_batch
-            + output_bytes
-            + input_bytes
-            + safety_margin_bytes
-        )
-        gpu_peak = (size_all_bytes * self.data_type.itemsize + batch_peak_bytes) * 6
-        return {"cpu_peak_bytes": int(cpu_peak), "gpu_peak_bytes": int(gpu_peak)}
+    def _model_lengths(self, lengths):
+        return [max(int(length), self._MIN_FRAMES) for length in lengths]
 
     @property
     def model_name(self):
@@ -204,7 +189,9 @@ class X3D(UnimodalRepresentation):
     @staticmethod
     def _collate_videos(samples):
         video_ids = torch.tensor([sample["id"] for sample in samples])
-        target_length = max(14, max(sample["data"].shape[0] for sample in samples))
+        target_length = max(
+            X3D._MIN_FRAMES, max(sample["data"].shape[0] for sample in samples)
+        )
         videos = []
         for sample in samples:
             frames = sample["data"]
@@ -239,34 +226,25 @@ class X3D(UnimodalRepresentation):
                     break
 
         dataset = CustomDataset(modality.data, self.data_type, "cpu")
-        lengths = [
-            max(length, 14)
-            for length in get_sequence_lengths(modality.data, modality.metadata)
-        ]
-        dataloader = torch.utils.data.DataLoader(
-            dataset,
-            batch_sampler=LengthBucketBatchSampler(
-                lengths, self.batch_size, exact=True
-            ),
-            collate_fn=self._collate_videos,
-            pin_memory=pin_memory_for(self.device),
-        )
+        lengths = get_sequence_lengths(modality.data, modality.metadata)
         embeddings = [None] * len(dataset)
 
+        def forward(model, batch):
+            video_ids = batch["id"].long()
+            _ = model(batch["data"].permute(0, 2, 1, 3, 4))
+            values = self.activation
+            if isinstance(values, tuple):
+                values = values[0]
+            if values.ndim > 2:
+                values = torch.nn.functional.adaptive_avg_pool2d(values, (1, 1))
+            vectors = torch.flatten(values, 1).detach().float().cpu().numpy()
+            for video_id, vector in zip(video_ids.cpu().tolist(), vectors):
+                embeddings[video_id] = vector
+
         with inference_context(self.device):
-            for batch in dataloader:
-                batch = move_batch_to_device(batch, self.device)
-                video_ids = batch["id"].long()
-                frames = batch["data"].permute(0, 2, 1, 3, 4)
-                _ = self.model(frames)
-                values = self.activation
-                if isinstance(values, tuple):
-                    values = values[0]
-                if values.ndim > 2:
-                    values = torch.nn.functional.adaptive_avg_pool2d(values, (1, 1))
-                vectors = torch.flatten(values, 1).detach().float().cpu().numpy()
-                for video_id, vector in zip(video_ids.cpu().tolist(), vectors):
-                    embeddings[video_id] = vector
+            self._run_batches(
+                dataset, lengths, forward, collate_fn=self._collate_videos
+            )
 
         if self.output_file is not None:
             save_embeddings(embeddings, self.output_file)
@@ -279,9 +257,15 @@ class X3D(UnimodalRepresentation):
         return transformed_modality
 
 
-class I3D(UnimodalRepresentation):
+class I3D(FrameBudgetedVideoModel, UnimodalRepresentation):
     _EMBEDDING_DIM = 400
     cache_in_worker = True
+    _MEMORY_PROFILE = VideoMemoryProfile(
+        clip_frame_bytes=16 * MIB,
+        batch_frame_bytes=4 * MIB,
+        clip_bytes=36 * MIB,
+        cpu_frame_bytes=13 * MIB,
+    )
 
     def __init__(
         self,
@@ -290,6 +274,7 @@ class I3D(UnimodalRepresentation):
         output_file=None,
         batch_size=8,
         params=None,
+        max_batch_frames=None,
     ):
         if params is not None:
             layer = params.get("layer_name", layer)
@@ -306,6 +291,7 @@ class I3D(UnimodalRepresentation):
         self.output_file = output_file
         self.layer_name = layer
         self.batch_size = batch_size
+        self.max_batch_frames = max_batch_frames
         self.data_type = torch.float32
         self._gpu_id = self.device.index
         self._activation_hook = None
@@ -335,6 +321,9 @@ class I3D(UnimodalRepresentation):
 
     def estimate_output_memory_bytes(self, input_stats: VideoStats) -> int:
         return input_stats.num_instances * self._EMBEDDING_DIM * self.data_type.itemsize
+
+    def _memory_profile(self) -> VideoMemoryProfile:
+        return self._MEMORY_PROFILE
 
     def _get_parameters(self, high_level=True):
         parameters = {
@@ -379,29 +368,24 @@ class I3D(UnimodalRepresentation):
                     break
 
         dataset = CustomDataset(modality.data, self.data_type, "cpu")
-        dataloader = torch.utils.data.DataLoader(
-            dataset,
-            batch_sampler=LengthBucketBatchSampler(
-                get_sequence_lengths(modality.data, modality.metadata),
-                self.batch_size,
-                exact=True,
-            ),
-            pin_memory=pin_memory_for(self.device),
-        )
         embeddings = [None] * len(dataset)
 
+        def forward(model, batch):
+            video_ids = batch["id"].long()
+            _ = model(batch["data"].permute(0, 2, 1, 3, 4))
+            values = self.features
+            if isinstance(values, tuple):
+                values = values[0]
+            vectors = torch.flatten(values, 1).detach().float().cpu().numpy()
+            for video_id, vector in zip(video_ids.cpu().tolist(), vectors):
+                embeddings[video_id] = vector
+
         with inference_context(self.device):
-            for batch in dataloader:
-                batch = move_batch_to_device(batch, self.device)
-                video_ids = batch["id"].long()
-                frames = batch["data"].permute(0, 2, 1, 3, 4)
-                _ = self.model(frames)
-                values = self.features
-                if isinstance(values, tuple):
-                    values = values[0]
-                vectors = torch.flatten(values, 1).detach().float().cpu().numpy()
-                for video_id, vector in zip(video_ids.cpu().tolist(), vectors):
-                    embeddings[video_id] = vector
+            self._run_batches(
+                dataset,
+                get_sequence_lengths(modality.data, modality.metadata),
+                forward,
+            )
 
         if self.output_file is not None:
             save_embeddings(embeddings, self.output_file)

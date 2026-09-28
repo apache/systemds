@@ -47,6 +47,10 @@ class BoW(UnimodalRepresentation):
     def __init__(self, ngram_range=2, min_df=2, output_file=None, params=None):
         parameters = {"ngram_range": [2, 3, 5, 10], "min_df": [1, 2, 4, 8]}
         super().__init__("BoW", ModalityType.EMBEDDING, parameters)
+        if params is not None:
+            ngram_range = params.get("ngram_range", ngram_range)
+            min_df = params.get("min_df", min_df)
+            output_file = params.get("output_file", output_file)
         self.ngram_range = int(ngram_range)
         self.min_df = int(min_df)
         self.output_file = output_file

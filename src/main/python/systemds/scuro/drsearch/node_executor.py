@@ -444,7 +444,11 @@ class NodeExecutor:
         search_start: Optional[float] = None,
     ):
         self.enable_checkpointing = enable_checkpointing
-        available_total_cpu = cpu_memory_budget_bytes()
+        available_total_cpu = cpu_memory_budget_bytes(
+            getattr(getattr(modalities[0], "modality_type", None), "name", None)
+            if modalities
+            else None
+        )
         self.dags = dags
         self.scheduler = MemoryAwareNodeScheduler(
             dags, modalities, tasks, available_total_cpu

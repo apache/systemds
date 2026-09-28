@@ -40,6 +40,10 @@ from systemds.scuro.utils.static_variables import DEBUG
 _MAX_GPU_SCHEDULE_ATTEMPTS = int(os.environ.get("SCURO_MAX_GPU_SCHEDULE_ATTEMPTS", "3"))
 
 
+def _exclusive_over_budget_enabled() -> bool:
+    return os.environ.get("SCURO_EXCLUSIVE_OVER_BUDGET", "0") == "1"
+
+
 class MemoryAwareNodeScheduler:
 
     def __init__(
@@ -110,6 +114,7 @@ class MemoryAwareNodeScheduler:
             },
         }
         self._cpu_reserved_nodes: Dict[str, int] = {}
+        self.exclusive_memory_nodes: Dict[str, str] = {}
         self._initialized = False
 
     def _total_cpu_in_use(self) -> float:
@@ -184,6 +189,16 @@ class MemoryAwareNodeScheduler:
     def _get_runnable_nodes(self) -> List[str]:
         runnable_nodes = list(self._candidates)
 
+        # With exclusive admission a full budget no longer stops the run, so
+        # the cache of intermediates must be drained deliberately: while the
+        # CPU budget is exceeded, nodes whose completion does not grow the
+        # cache (task roots, or last children releasing at least their own
+        # output) run before nodes that would cache another output.
+        draining_first = (
+            _exclusive_over_budget_enabled()
+            and self._total_cpu_in_use() >= self.memory_budget["cpu"]
+        )
+
         def _score(node_id: str):
             release_bytes = 0
             for parent_id in self.parents.get(node_id, set()):
@@ -192,7 +207,12 @@ class MemoryAwareNodeScheduler:
                     and self.remaining_children.get(parent_id, 0) == 1
                 ):
                     release_bytes += self.node_resources[parent_id][0]
+            adds_bytes = (
+                self.node_resources[node_id][0] if self.children.get(node_id) else 0
+            )
+            grows_cache = draining_first and adds_bytes > release_bytes
             return (
+                grows_cache,
                 -self.node_priorities.get(node_id, 0.0),
                 -release_bytes,
                 node_id not in self.roots,
@@ -430,7 +450,10 @@ class MemoryAwareNodeScheduler:
             return False
         for node_id in self._candidates:
             cpu_mem, gpu_mem = self.node_resources[node_id]
-            if cpu_mem > self.memory_budget["cpu"] - self._total_cpu_in_use():
+            if (
+                cpu_mem > self.memory_budget["cpu"] - self._total_cpu_in_use()
+                and not _exclusive_over_budget_enabled()
+            ):
                 self.deadlock_reason = (
                     f"node {node_id} needs {cpu_mem / 1024**3:.2f} GB CPU but only "
                     f"{(self.memory_budget['cpu'] - self._total_cpu_in_use()) / 1024**3:.2f} "
@@ -461,11 +484,26 @@ class MemoryAwareNodeScheduler:
     ) -> bool:
         cpu_mem, gpu_mem = self.node_resources[node_id]
         gpu_id = None
+        free_cpu = self.memory_budget["cpu"] - self._total_cpu_in_use() - pending_bytes
         if (
-            cpu_mem
-            > self.memory_budget["cpu"] - self._total_cpu_in_use() - pending_bytes
+            cpu_mem > free_cpu
+            and _exclusive_over_budget_enabled()
+            and (
+                not self.running_nodes
+                and not self._ready_set
+                and pending_bytes == 0
+                and self.memory_stats["cpu_in_flight"] == 0
+            )
         ):
-            if cpu_mem > self.memory_budget["cpu"]:
+            self.exclusive_memory_nodes[node_id] = (
+                f"estimated {cpu_mem / 1024**3:.2f} GB with {free_cpu / 1024**3:.2f} GB "
+                f"of the CPU budget free; run alone"
+            )
+        elif cpu_mem > free_cpu:
+            if (
+                cpu_mem > self.memory_budget["cpu"]
+                and not _exclusive_over_budget_enabled()
+            ):
                 self.blocked_memory_nodes_perm.append(node_id)
                 self.blocked_memory_reasons[node_id] = (
                     f"estimated CPU peak {cpu_mem / 1024**3:.2f} GB exceeds the "

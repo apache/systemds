@@ -60,21 +60,31 @@ class UnimodalModality(Modality):
             new_instance.metadata = self.metadata.copy()
         return new_instance
 
-    def subset(self, indices):
-        if self.data_loader.chunk_size is None:
-            return super().subset(indices)
-
+    def _subset_loader(self, indices):
         indices = list(indices)
         subset_loader = copy.copy(self.data_loader)
         subset_loader.indices = [self.data_loader.indices[i] for i in indices]
         subset_loader.stats = copy.copy(self.data_loader.stats)
         if hasattr(subset_loader.stats, "num_instances"):
             subset_loader.stats.num_instances = len(indices)
+        if getattr(subset_loader.stats, "lengths", None) is not None:
+            subset_loader.stats.lengths = tuple(
+                subset_loader.stats.lengths[i] for i in indices
+            )
         subset_loader.reset()
         # Re-run the setter after replacing indices so num_chunks reflects the
         # subset rather than the original dataset.
         subset_loader.chunk_size = self.data_loader.chunk_size
+        return subset_loader
 
+    def subset(self, indices):
+        if self.data_loader.chunk_size is None or self.has_data():
+            subset_modality = super().subset(indices)
+            subset_modality.data_loader = self._subset_loader(indices)
+            subset_modality.stats = subset_modality.data_loader.stats
+            return subset_modality
+
+        subset_loader = self._subset_loader(indices)
         subset_modality = type(self)(subset_loader)
         subset_modality.modality_id = self.modality_id
         subset_modality.transform_time = self.transform_time

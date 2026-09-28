@@ -50,6 +50,9 @@ class Spectrogram(UnimodalRepresentation):
     def __init__(self, hop_length=512, n_fft=2048, params=None):
         parameters = {"hop_length": [256, 512, 1024, 2048], "n_fft": [1024, 2048, 4096]}
         super().__init__("Spectrogram", ModalityType.TIMESERIES, parameters, False)
+        if params is not None:
+            hop_length = params.get("hop_length", hop_length)
+            n_fft = params.get("n_fft", n_fft)
         self.hop_length = int(hop_length)
         self.n_fft = int(n_fft)
         self.window_size = self.n_fft

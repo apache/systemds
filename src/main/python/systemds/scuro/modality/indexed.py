@@ -39,9 +39,16 @@ class IndexedModality:
             num_instances = len(self.modality.data)
         elif self.modality.has_metadata():
             num_instances = len(self.modality.metadata)
+        elif not instance_ids:
+            num_instances = 0
         else:
             raise ValueError(
-                "IndexedModality requires materialized data or instance metadata"
+                "IndexedModality requires materialized data or instance metadata "
+                f"for {len(instance_ids)} instance ID(s); modality "
+                f"id={getattr(self.modality, 'modality_id', None)} "
+                f"type={type(self.modality).__name__} "
+                f"data={type(getattr(self.modality, 'data', None)).__name__} "
+                f"metadata_len={len(self.modality.metadata or [])}"
             )
 
         if len(instance_ids) != num_instances:

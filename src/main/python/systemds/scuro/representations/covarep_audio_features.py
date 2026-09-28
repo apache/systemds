@@ -44,7 +44,9 @@ class Spectral(UnimodalRepresentation):
             "hop_length": [256, 512, 1024, 2048],
         }  # TODO
         super().__init__("Spectral", ModalityType.EMBEDDING, parameters, False)
-        self.hop_length = hop_length
+        if params is not None:
+            hop_length = params.get("hop_length", hop_length)
+        self.hop_length = int(hop_length)
 
     def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(
@@ -137,7 +139,9 @@ class ZeroCrossing(UnimodalRepresentation):
             "hop_length": [256, 512, 1024, 2048],
         }  # TODO
         super().__init__("ZeroCrossing", ModalityType.EMBEDDING, parameters, False)
-        self.hop_length = hop_length
+        if params is not None:
+            hop_length = params.get("hop_length", hop_length)
+        self.hop_length = int(hop_length)
 
     def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(
@@ -201,8 +205,11 @@ class RMSE(UnimodalRepresentation):
             "hop_length": [256, 512, 1024, 2048],
         }  # TODO
         super().__init__("RMSE", ModalityType.EMBEDDING, parameters, False)
-        self.hop_length = hop_length
-        self.frame_length = frame_length
+        if params is not None:
+            frame_length = params.get("frame_length", frame_length)
+            hop_length = params.get("hop_length", hop_length)
+        self.hop_length = int(hop_length)
+        self.frame_length = int(frame_length)
 
     def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(
@@ -266,7 +273,9 @@ class Pitch(UnimodalRepresentation):
             "hop_length": [256, 512, 1024, 2048],
         }  # TODO
         super().__init__("Pitch", ModalityType.EMBEDDING, parameters, False)
-        self.hop_length = hop_length
+        if params is not None:
+            hop_length = params.get("hop_length", hop_length)
+        self.hop_length = int(hop_length)
 
     def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(

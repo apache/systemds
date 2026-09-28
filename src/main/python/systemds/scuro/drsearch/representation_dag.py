@@ -36,6 +36,7 @@ from systemds.scuro.representations.dimensionality_reduction import (
     DimensionalityReduction,
 )
 from systemds.scuro.utils.identifier import get_op_id, get_node_id
+import time
 from collections import OrderedDict, defaultdict, deque
 
 
@@ -330,9 +331,25 @@ class RepresentationDag:
         rep_cache: Dict[Any, TransformedModality] = None,
         consumer_count: Dict[str, int] = None,
         gpu_id: int = None,
+        node_cache=None,
     ) -> Union[Dict[str, TransformedModality], TransformedModality]:
 
         def execute_node(node_id: str, task) -> TransformedModality:
+            if (
+                node_cache is None
+                or node_id == self.root_node_id
+                or not self.get_node_by_id(node_id).inputs
+            ):
+                return compute_node(node_id, task)
+            cached = node_cache.get(node_id)
+            if cached is not None:
+                return cached
+            start = time.perf_counter()
+            result = compute_node(node_id, task)
+            node_cache.put(node_id, result, time.perf_counter() - start)
+            return result
+
+        def compute_node(node_id: str, task) -> TransformedModality:
             if external_cache is not None:
                 cached = external_cache.get(node_id)
                 if cached is not None:

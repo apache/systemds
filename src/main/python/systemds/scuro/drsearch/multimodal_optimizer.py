@@ -24,7 +24,7 @@ import multiprocessing as mp
 import itertools
 import threading
 from dataclasses import dataclass
-from typing import List, Dict, Any, Generator
+from typing import List, Dict, Any, Generator, Optional
 from systemds.scuro.drsearch.task import Task, PerformanceMeasure
 from systemds.scuro.drsearch.representation_dag import (
     RepresentationDag,
@@ -126,7 +126,8 @@ class MultimodalOptimizer:
         max_modalities: int = None,
         metric: str = "accuracy",
         checkpoint_every: int = None,
-        resume: bool = True,
+        checkpoint_dir: Optional[str] = None,
+        resume: bool = False,
     ):
         self.modalities = modalities
         self.tasks = tasks
@@ -146,7 +147,7 @@ class MultimodalOptimizer:
         self.checkpoint_every = checkpoint_every
         self.resume = resume
         self._checkpoint_manager = CheckpointManager(
-            os.getcwd(),
+            checkpoint_dir or os.getcwd(),
             "multimodal_checkpoint_",
             checkpoint_every=self.checkpoint_every,
             resume=self.resume,

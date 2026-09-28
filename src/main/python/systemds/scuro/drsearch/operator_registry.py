@@ -36,10 +36,10 @@ _BUILTIN_MODULES = {
     ModalityType.TEXT: ("bert", "bow", "clip", "glove", "tfidf", "word2vec"),
     ModalityType.IMAGE: ("clip", "color_histogram", "openface", "resnet", "vgg"),
     ModalityType.VIDEO: (
+        "openface",
         "clip",
         "color_histogram",
         "image_bind",
-        "openface",
         "resnet",
         "swin_video_transformer",
         "vgg",

@@ -63,8 +63,9 @@ def dag_requires_fitting(dag: RepresentationDag) -> bool:
 
 
 class SplitAwareDAGEvaluator:
-    def __init__(self, dag: RepresentationDag, modalities, task):
+    def __init__(self, dag: RepresentationDag, modalities, task, node_cache=None):
         self.dag = dag
+        self.node_cache = node_cache
         self.modalities = (
             list(modalities) if isinstance(modalities, (list, tuple)) else [modalities]
         )
@@ -151,8 +152,10 @@ class SplitAwareDAGEvaluator:
             data = item.modality.data
             if isinstance(data, np.ndarray):
                 array = data
-            elif isinstance(data, list) and data and all(
-                isinstance(d, np.ndarray) for d in data
+            elif (
+                isinstance(data, list)
+                and data
+                and all(isinstance(d, np.ndarray) for d in data)
             ):
                 if len({d.shape for d in data}) != 1:
                     return result
@@ -178,8 +181,12 @@ class SplitAwareDAGEvaluator:
             padded[(slice(None),) + tuple(slice(0, dim) for dim in shape)] = source
             modality.data = padded if array is not None else list(padded)
             for metadata in modality.metadata or []:
-                layout = metadata.get("data_layout") if isinstance(metadata, dict) else None
-                if isinstance(layout, dict) and len(tuple(layout.get("shape") or ())) == len(target):
+                layout = (
+                    metadata.get("data_layout") if isinstance(metadata, dict) else None
+                )
+                if isinstance(layout, dict) and len(
+                    tuple(layout.get("shape") or ())
+                ) == len(target):
                     layout["shape"] = target
         return result
 
@@ -206,6 +213,10 @@ class SplitAwareDAGEvaluator:
 
     def _execute_partitions(self, *partitions):
         cache = {}
+        fitted = set()
+        partition_key = tuple(
+            tuple(item.instance_ids for item in partition) for partition in partitions
+        )
 
         def execute_node(node_id):
             if node_id in cache:
@@ -220,6 +231,17 @@ class SplitAwareDAGEvaluator:
                 return result
 
             input_results = [execute_node(input_id) for input_id in node.inputs]
+            reusable = (
+                self.node_cache is not None
+                and node_id != self.dag.root_node_id
+                and not any(input_id in fitted for input_id in node.inputs)
+            )
+            if reusable:
+                cached = self.node_cache.get(node_id, partition_key)
+                if cached is not None:
+                    cache[node_id] = cached
+                    return cached
+            start = time.perf_counter()
             input_partitions = tuple(
                 tuple(result[i] for result in input_results)
                 for i in range(len(partitions))
@@ -231,6 +253,8 @@ class SplitAwareDAGEvaluator:
             requirement = getattr(operation, "fit_requirement", FitRequirement.NONE)
 
             if requirement is not FitRequirement.NONE:
+                fitted.add(node_id)
+                reusable = False
                 labels = None
                 fit_input = input_partitions[0]
                 fit_ids = (
@@ -257,6 +281,12 @@ class SplitAwareDAGEvaluator:
                 )
                 result = self._align_partition_shapes(result)
 
+            if any(input_id in fitted for input_id in node.inputs):
+                fitted.add(node_id)
+            if reusable:
+                self.node_cache.put(
+                    node_id, result, time.perf_counter() - start, partition_key
+                )
             cache[node_id] = result
             return result
 

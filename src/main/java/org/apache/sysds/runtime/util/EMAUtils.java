@@ -145,7 +145,27 @@ public class EMAUtils {
 		double rsme;
 	}
 
+	static void validateRange(Double... values) {
+		if (values == null || values.length == 0){
+			throw new IllegalArgumentException("No arguments provided");
+		}
+        for (Double value : values) {
+            if (value > 1 || value < 0) {
+                throw new IllegalArgumentException(
+                        String.format("The Input %f is out of range [0,1]", value)
+                );
+            }
+        }
+
+	}
 	public static Container single_exponential_smoothing(Double[] data, Double alpha) {
+
+		try {
+			validateRange(alpha);
+		} catch (IllegalArgumentException e) {
+			System.err.println("Alpha is out of bounds");
+		}
+
 		int n = data.length;
 
 		Double[] pred = new Double[n];
@@ -186,6 +206,12 @@ public class EMAUtils {
 	}
 
 	public static Container double_exponential_smoothing(Double[] data, Double alpha, Double beta) {
+		try {
+			validateRange(alpha, beta);
+		} catch (IllegalArgumentException e) {
+			System.err.println("Alpha is out of bounds");
+		}
+
 		int n = data.length;
 
 		ArrayList<Double> pred = new ArrayList<>(n-1);
@@ -236,6 +262,13 @@ public class EMAUtils {
 
 	public static Container triple_exponential_smoothing(Double[] data, Double alpha, Double beta,
 		Double gamma, Integer freq) {
+
+		try {
+			validateRange(alpha, beta, gamma);
+		} catch (IllegalArgumentException e) {
+			System.err.println("Alpha is out of bounds");
+		}
+
 		double l = freq * 2;
 		ArrayList<Double> start_data = new ArrayList<>();
 

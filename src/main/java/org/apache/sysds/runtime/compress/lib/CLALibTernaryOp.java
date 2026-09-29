@@ -59,7 +59,7 @@ public final class CLALibTernaryOp {
 		final int n = Math.max(Math.max(c1, c2), c3);
 
 		// double check that the dimensions are valid.
-		MatrixBlock.ternaryOperationCheck(s1, s2, s3, m, r1, r2, r3, n, c1, c2, c3);
+		MatrixBlock.ternaryOperationCheck(op, s1, s2, s3, m, r1, r2, r3, n, c1, c2, c3);
 
 		MatrixBlock ret;
 

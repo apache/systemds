@@ -3080,29 +3080,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		final int n = Math.max(Math.max(c1, c2), c3);
 		final long nnz = nonZeros;
 		
-		ternaryOperationCheck(s1, s2, s3, m, r1, r2, r3, n, c1, c2, c3);
+		ternaryOperationCheck(op, s1, s2, s3, m, r1, r2, r3, n, c1, c2, c3);
 		
 		//prepare result
 		if( op.fn instanceof IfElse && (s1 || nnz==0 || nnz==(long)m*n) ) {
-			
-			ret.reset(m, n, false);
-			
-			//SPECIAL CASE for shallow-copy if-else
-			boolean expr = s1 ? (d1 != 0) : (nnz==(long)m*n);
-			MatrixBlock tmp = expr ? m2 : m3;
-			if( tmp.rlen==m && tmp.clen==n ) {
-				//shallow copy incl meta data
-				ret.copyShallow(tmp);
-			}
-			else {
-				//fill output with given scalar value
-				double tmpVal = tmp.get(0, 0);
-				if( tmpVal != 0 ) {
-					ret.allocateDenseBlock();
-					ret.denseBlock.set(tmpVal);
-					ret.nonZeros = (long)m * n;
-				}
-			}
+			ternaryIfElseCopy(s1, m, n, d1, nnz, m2, m3, ret);
 		}
 		else{
 			final boolean PM_Or_MM = (op.fn instanceof PlusMultiply || op.fn instanceof MinusMultiply);
@@ -3141,11 +3123,87 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return ret;
 	}
 
-	public static void ternaryOperationCheck(boolean s1, boolean s2, boolean s3, int m, int r1, int r2, int r3, int n, int c1, int c2, int c3){
+	/**
+	 * Copies and applies broadcasting to either second or third input to IfElse operation.
+	 *
+	 * If the first value of the IfElse-operation meets certain conditions, then
+	 * either the m2 or m3 matrix inputs of IfElse is the result of the operation.
+	 * This methods handles the copying if the conditions are met.
+	 *
+	 * @param s1  Flag, whether the first matrix is a scalar.
+	 * @param m   Rows of the resulting matrix.
+	 * @param n   Columns of the resulting matrix
+	 * @param d1  Value of the entry 0,0 of the first matrix input.
+	 * @param nnz Non-zero entries of the first matrix
+	 * @param m2  Second matrix input of the IfElse operation
+	 * @param m3  Third matrix input of the IfElse operation
+	 * @param ret Result of the operation, where either m2 or m3 is copied into
+	 */
+	private void ternaryIfElseCopy(boolean s1, int m, int n, double d1, long nnz, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret) {
+		ret.reset(m, n, false);
+
+		boolean expr = s1 ? (d1 != 0) : (nnz==(long)m*n);
+		MatrixBlock tmp = expr ? m2 : m3;
+		if (tmp.rlen==m && tmp.clen==n) {
+			//shallow copy incl meta data
+			ret.copyShallow(tmp);
+		}
+		else if (tmp.rlen==m && tmp.clen==1) {
+			ret.allocateDenseBlock();
+			ret.nonZeros = 0;
+			for (int i = 0; i < m; i++) {
+				double tmpVal = tmp.get(i, 0);
+				if (tmpVal != 0) {
+					ret.denseBlock.fillRow(i, tmp.get(i, 0));
+					ret.nonZeros += n;
+				}
+			}
+			ret.examSparsity();
+		}
+		else if (tmp.rlen==1 && tmp.clen==n) {
+			if (tmp.nonZeros != 0) {
+				ret.allocateDenseBlock();
+				ret.nonZeros = 0;
+				double[] tmpArr = new double[n];
+				for (int i = 0; i < n; i++) {
+					tmpArr[i] = tmp.get(0, i);
+				}
+				for (int i = 0; i < m; i++) {
+					ret.denseBlock.set(i, tmpArr);
+					ret.nonZeros += tmp.nonZeros;
+				}
+				ret.examSparsity();
+			}
+		}
+		else {
+			//fill output with given scalar value
+			double tmpVal = tmp.get(0, 0);
+			if (tmpVal != 0) {
+				ret.allocateDenseBlock();
+				ret.denseBlock.set(tmpVal);
+				ret.nonZeros = (long)m * n;
+			}
+		}
+	}
+
+	public static void ternaryOperationCheck(TernaryOperator op, boolean s1, boolean s2, boolean s3, int m, int r1, int r2, int r3, int n, int c1, int c2, int c3){
 		//error handling 
-		if( (!s1 && (r1 != m || c1 != n))
-		|| (!s2 && (r2 != m || c2 != n))
-		|| (!s3 && (r3 != m || c3 != n)) ) {
+		boolean error = false;
+		if (op.fn instanceof IfElse) {
+			error = ((r1 != 1 && r1 != m)
+				|| (r2 != 1 && r2 != m)
+				|| (r3 != 1 && r3 != m)
+				|| (c1 != 1 && c1 != n)
+				|| (c2 != 1 && c2 != n)
+				|| (c3 != 1 && c3 != n));
+		}
+		else {
+			error = ((!s1 && (r1 != m || c1 != n))
+				|| (!s2 && (r2 != m || c2 != n))
+				|| (!s3 && (r3 != m || c3 != n)));
+		}
+
+		if (error) {
 			throw new DMLRuntimeException("Block sizes are not matched for ternary cell operations: "
 			+ r1 + "x" + c1 + " vs " + r2 + "x" + c2 + " vs " + r3 + "x" + c3);
 		}

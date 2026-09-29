@@ -232,6 +232,7 @@ public enum Builtins {
 	LOCAL("local", false),
 	LOG("log", false),
 	LOGSUMEXP("logSumExp", true),
+	LHS("lhs",true),
 	LSTM("lstm", false, ReturnType.MULTI_RETURN),
 	LSTM_BACKWARD("lstm_backward", false, ReturnType.MULTI_RETURN),
 	LU("lu", false, ReturnType.MULTI_RETURN),

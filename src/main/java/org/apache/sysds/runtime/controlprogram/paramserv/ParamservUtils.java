@@ -118,6 +118,10 @@ public class ParamservUtils {
 	}
 
 	public static void cleanupListObject(ExecutionContext ec, ListObject lo, boolean[] status) {
+		if (status != null && status.length != lo.getLength()){
+			lo.deriveAndSetStatusFromData();
+			status = lo.getStatus();
+		}
 		for (int i = 0; i < lo.getLength(); i++) {
 			if (status != null && !status[i])
 				continue; // data ref by other object must not be cleaned up
@@ -387,6 +391,9 @@ public class ParamservUtils {
 	public static ListObject accrueGradients(ListObject accGradients, ListObject gradients, boolean par, boolean cleanup) {
 		if (accGradients == null)
 			return ParamservUtils.copyList(gradients, cleanup);
+		if (accGradients.getLength() != gradients.getLength()) {
+			throw new DMLRuntimeException("Gradient list length mismatch: accGradients=" + accGradients.getLength() + ", gradients=" + gradients.getLength());
+		}
 		IntStream range = IntStream.range(0, accGradients.getLength());
 		(par ? range.parallel() : range).forEach(i -> {
 			MatrixBlock mb1 = ((MatrixObject) accGradients.getData().get(i)).acquireReadAndRelease();
@@ -422,6 +429,8 @@ public class ParamservUtils {
 	public static ListObject accrueModels(ListObject accModels, ListObject model, boolean par, boolean cleanup) {
 		if (accModels == null)
 			return ParamservUtils.copyList(model, cleanup);
+		if (accModels.getLength() != model.getLength())
+			throw new DMLRuntimeException("Model list length mismatch: acc=" + accModels.getLength() + ", model=" + model.getLength());
 		IntStream range = IntStream.range(0, accModels.getLength());
 		(par ? range.parallel() : range).forEach(i -> {
 			MatrixBlock mb1 = ((MatrixObject) accModels.getData().get(i)).acquireReadAndRelease();

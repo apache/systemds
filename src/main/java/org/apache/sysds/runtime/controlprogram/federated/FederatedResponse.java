@@ -25,6 +25,10 @@ import java.util.Arrays;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressedMatrix;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionConfig;
+import org.apache.sysds.runtime.controlprogram.federated.compression.CompressionFactory;
+import org.apache.sysds.runtime.controlprogram.federated.compression.MatrixCompressor;
 import org.apache.sysds.runtime.lineage.LineageItem;
 
 public class FederatedResponse implements Serializable {
@@ -83,7 +87,34 @@ public class FederatedResponse implements Serializable {
 	public Object[] getData() throws Exception {
 		if(!isSuccessful())
 			throwExceptionFromResponse();
+		decompressData();
 		return _data;
+	}
+
+	/**
+	 * Decompresses any CompressedMatrix entries in the response payload in place. Federated matrix results are
+	 * compressed on the worker before transmission (see FederatedWorkerHandler.getVariable); this expands them back to
+	 * MatrixBlocks so callers receive the original type. Write-once _data makes this idempotent: after the first call
+	 * no CompressedMatrix remains, so repeated getData() calls are no-ops.
+	 */
+	private void decompressData() {
+		if(_data == null)
+			return;
+		for(int i = 0; i < _data.length; i++) {
+			if(_data[i] instanceof CompressedMatrix) {
+				CompressedMatrix cm = (CompressedMatrix) _data[i];
+				MatrixCompressor compressor = CompressionFactory
+					.create(CompressionConfig.builder().enable(true).withType(cm.getType()).build());
+				try {
+					_data[i] = compressor.decompress(cm);
+				}
+				catch(Exception ex) {
+					// decompress declares a checked DecompressionException; wrap it so the getData() signature
+					// (relied on by ~31 callers) does not need to widen.
+					throw new DMLRuntimeException("Failed to decompress federated matrix result", ex);
+				}
+			}
+		}
 	}
 
 	public long estimateSerializationBufferSize() {
@@ -92,6 +123,8 @@ public class FederatedResponse implements Serializable {
 			for(Object obj : _data) {
 				if(obj instanceof CacheBlock)
 					minBufferSize += ((CacheBlock<?>) obj).getExactSerializedSize();
+				else if(obj instanceof CompressedMatrix)
+					minBufferSize += 1024 * 1024; // conservative 1MB estimate
 			}
 		}
 		return minBufferSize;

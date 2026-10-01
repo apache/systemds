@@ -267,6 +267,8 @@ public interface EncoderFactory {
 			return EncoderType.WordEmbedding.ordinal();
 		else if(columnEncoder instanceof ColumnEncoderBagOfWords)
 			return EncoderType.BagOfWords.ordinal();
+		else if(columnEncoder instanceof ColumnEncoderUDF)
+			return EncoderType.UDF.ordinal();
 		throw new DMLRuntimeException("Unsupported encoder type: " + columnEncoder.getClass().getCanonicalName());
 	}
 
@@ -276,19 +278,21 @@ public interface EncoderFactory {
 			case Bin:
 				return new ColumnEncoderBin();
 			case Dummycode:
-				return new ColumnEncoderDummycode();
-			case FeatureHash:
-				return new ColumnEncoderFeatureHash();
-			case PassThrough:
-				return new ColumnEncoderPassThrough();
-			case Recode:
-				return new ColumnEncoderRecode();
-			case WordEmbedding:
-				return new ColumnEncoderWordEmbedding();
-			case BagOfWords:
-				return new ColumnEncoderBagOfWords();
-			default:
-				throw new DMLRuntimeException("Unsupported encoder type: " + etype);
+			return new ColumnEncoderDummycode();
+		case FeatureHash:
+			return new ColumnEncoderFeatureHash();
+		case PassThrough:
+			return new ColumnEncoderPassThrough();
+		case Recode:
+			return new ColumnEncoderRecode();
+		case WordEmbedding:
+			return new ColumnEncoderWordEmbedding();
+		case BagOfWords:
+			return new ColumnEncoderBagOfWords();
+		case UDF:
+			return new ColumnEncoderUDF();
+		default:
+			throw new DMLRuntimeException("Unsupported encoder type: " + etype);
 		}
 	}
 

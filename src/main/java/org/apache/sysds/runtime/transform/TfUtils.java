@@ -47,7 +47,7 @@ public class TfUtils implements Serializable
 	
 	//transform methods
 	public enum TfMethod {
-		IMPUTE, RECODE, HASH, BIN, DUMMYCODE, UDF, OMIT, WORD_EMBEDDING, BAG_OF_WORDS;
+		IMPUTE, RECODE, HASH, BIN, DUMMYCODE, UDF, OMIT, WORD_EMBEDDING, BAG_OF_WORDS, RAGGED;
 		@Override
 		public String toString() {
 			return name().toLowerCase();

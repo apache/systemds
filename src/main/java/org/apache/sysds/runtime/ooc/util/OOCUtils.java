@@ -176,21 +176,26 @@ public class OOCUtils {
 	}
 
 	public static void enqueueExact(OOCStream<IndexedMatrixValue> out, IndexedMatrixValue value,
-		ReservationBudget budget) {
+		ReservationBudget budget, boolean closeBudget) {
 		long bytes = ((MatrixBlock) value.getValue()).getExactSerializedSize();
 		OOCStream.QueueCallback<IndexedMatrixValue> callback = null;
 		try {
 			budget.reserveBlocking(bytes);
 			callback = new InMemoryQueueCallback<>(value, null, budget, bytes);
-			budget.close();
+			if(closeBudget) budget.close();
 			out.enqueue(callback);
 			callback = null;
 		}
 		finally {
-			budget.close();
+			if(closeBudget) budget.close();
 			if(callback != null)
 				callback.close();
 		}
+	}
+
+	public static void enqueueExact(OOCStream<IndexedMatrixValue> out, IndexedMatrixValue value,
+		ReservationBudget budget) {
+		enqueueExact(out, value, budget, true);
 	}
 
 	public static ReservationBudget reserveBudget(MemoryAllowance allowance, long bytes) {

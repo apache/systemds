@@ -247,7 +247,9 @@ Run in a separate terminal:
 systemds WORKER 8001
 ```
 
-This starts a worker on port `8001`.
+This starts a worker on port `8001`. The port has to be in `[1, 65535]` and free, and ports below `1024`
+are reserved system ports and require elevated privileges. Otherwise the worker reports the reason it
+could not start, e.g. `Federated worker stopped: port 8001 is already in use`.
 
 ### 4.2 Next Steps and Full Examples
 

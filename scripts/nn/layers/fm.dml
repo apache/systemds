@@ -89,12 +89,15 @@ backward = function(matrix[double] dout, matrix[double] X, matrix[double] w0, ma
   # Second term -> V(i,f) * (X(i))^2
   Xt = t( X^2 ) %*% dout  # shape (d,1)
 
-  g_V2 = Xt[1,] %*% V[1,]
-
-  for (i in 2:d) {
-    tmp = Xt[i,] %*% V[i,]
-    g_V2 = rbind(g_V2, tmp)
-  }
+  # code with loops
+  # g_V2 = Xt[1,] %*% V[1,]
+  # for (i in 2:d) {
+  #   tmp = Xt[i,] %*% V[i,]
+  #   g_V2 = rbind(g_V2, tmp)
+  # }
+  
+  # vectorized code
+  g_V2 = t(Xt) %*% V
 
   xv = X %*% V
 

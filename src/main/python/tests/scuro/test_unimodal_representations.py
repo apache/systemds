@@ -205,17 +205,7 @@ class TestUnimodalRepresentations(unittest.TestCase):
             RMSE(),
             Pitch(),
         ]
-        audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
-            self.num_instances, 200
-        )
-
-        audio = UnimodalModality(
-            TestDataLoader(
-                self.indices, None, ModalityType.AUDIO, audio_data, np.float32, audio_md
-            )
-        )
-
-        audio.extract_raw_data()
+        audio = self._create_audio_modality(signal_length=200)
         original_data = copy.deepcopy(audio.data)
 
         for representation in audio_representations:

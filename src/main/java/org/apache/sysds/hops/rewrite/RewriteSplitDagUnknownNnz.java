@@ -36,7 +36,7 @@ import org.apache.sysds.parser.VariableSet;
  * Rule: Split Hop DAG after reads with unknown nnz. This is important to create recompile
  * hooks if mtd has unspecified nnz.
  */
-public class RewriteSplitDagUnknownNnzRead extends StatementBlockRewriteRule {
+public class RewriteSplitDagUnknownNnz extends StatementBlockRewriteRule {
 	@Override
 	public boolean createsSplitDag() {
 		return true;

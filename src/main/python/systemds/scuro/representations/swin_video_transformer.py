@@ -29,7 +29,10 @@ import torch
 import torchvision.models as models
 import numpy as np
 from systemds.scuro.modality.type import ModalityType
-from systemds.scuro.drsearch.operator_registry import register_representation
+from systemds.scuro.drsearch.operator_registry import (
+    register_representation,
+    register_expensive_representation,
+)
 from systemds.scuro.dataloader.video_loader import VideoStats
 from systemds.scuro.representations.utils import (
     OwnerAccumulator,
@@ -73,7 +76,7 @@ class SwinVideoTransformer(FrameBudgetedVideoModel, UnimodalRepresentation):
                 "features.6",
                 "avgpool",
             ],
-            "batch_size": [1, 2, 4, 8, 16, 32],
+            # "batch_size": [1, 2, 4, 8, 16, 32],
         }
         self.data_type = torch.float32
         super().__init__("SwinVideoTransformer", ModalityType.EMBEDDING, parameters)

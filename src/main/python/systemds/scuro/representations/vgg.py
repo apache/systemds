@@ -24,7 +24,10 @@ from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.dataloader.video_loader import VideoStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from typing import Tuple, Any
-from systemds.scuro.drsearch.operator_registry import register_representation
+from systemds.scuro.drsearch.operator_registry import (
+    register_representation,
+    register_expensive_representation,
+)
 import torch.utils.data
 import torch
 import torchvision.models as models
@@ -51,6 +54,7 @@ class Identity(torch.nn.Module):
 
 
 @register_representation([ModalityType.IMAGE, ModalityType.VIDEO])
+@register_expensive_representation([ModalityType.IMAGE, ModalityType.VIDEO])
 class VGG19(UnimodalRepresentation):
     supports_aggregation_pushdown = True
     cache_in_worker = True
@@ -70,7 +74,7 @@ class VGG19(UnimodalRepresentation):
         super().__init__("VGG19", ModalityType.EMBEDDING, parameters)
         self.params = params
         if params is not None:
-            batch_size = int(params.get("batch_size", batch_size))
+            batch_size = int((params or {}).get("batch_size", batch_size))
             layer = params.get("layer_name", layer)
         self.output_file = output_file
         self.layer_name = layer
@@ -95,7 +99,7 @@ class VGG19(UnimodalRepresentation):
 
     def _get_parameters(self):
         parameters = {
-            "batch_size": [1, 2, 4, 8, 16, 32, 64, 128],
+            # "batch_size": [1, 2, 4, 8, 16, 32, 64, 128],
             "layer_name": [
                 "features.35",
                 "classifier.0",

@@ -27,7 +27,10 @@ from pytorchvideo.data.clip_sampling import ConstantClipsPerVideoSampler
 import torchaudio
 from torchvision import transforms
 
-from systemds.scuro.drsearch.operator_registry import register_representation
+from systemds.scuro.drsearch.operator_registry import (
+    register_representation,
+    register_expensive_representation,
+)
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations.representation import RepresentationStats
@@ -43,6 +46,9 @@ from systemds.scuro.utils.torch_dataset import TextDataset, TextSpanDataset
 
 
 @register_representation([ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT])
+@register_expensive_representation(
+    [ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT]
+)
 class ImageBind(UnimodalRepresentation):
     _EMBEDDING_DIM = 1024
     _MODEL_PARAMETER_COUNT = 1_200_000_000
@@ -54,13 +60,14 @@ class ImageBind(UnimodalRepresentation):
     cache_in_worker = True
 
     def __init__(self, output_file=None, batch_size=8, params=None):
-        parameters = {"batch_size": [1, 2, 4, 8, 16, 32]}
+        # parameters = {"batch_size": [1, 2, 4, 8, 16, 32]}
+        parameters = {}
         super().__init__("ImageBind", ModalityType.EMBEDDING, parameters)
         self.params = params
         self.output_file = output_file
         self.batch_size = batch_size
         if params is not None:
-            self.batch_size = int(params.get("batch_size", batch_size))
+            batch_size = int((params or {}).get("batch_size", batch_size))
             self.output_file = params.get("output_file", output_file)
         self.data_type = torch.float32
         self.model = None

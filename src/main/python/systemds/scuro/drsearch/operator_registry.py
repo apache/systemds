@@ -106,12 +106,14 @@ class Registry:
     _fusion_operators = []
     _context_representation_operators = {}
     _dimensionality_reduction_operators = {}
+    _expensive_representations = {}
 
     def __new__(cls):
         if not cls._instance:
             cls._instance = super().__new__(cls)
             for m_type in ModalityType:
                 cls._representations[m_type] = []
+                cls._expensive_representations[m_type] = []
         return cls._instance
 
     def set_fusion_operators(self, fusion_operators):
@@ -125,6 +127,12 @@ class Registry:
             self._representations[modality_type] = representations
         else:
             self._representations[modality_type] = [representations]
+
+    def set_expensive_representations(self, modality_type, representations):
+        if isinstance(representations, list):
+            self._expensive_representations[modality_type] = representations
+        else:
+            self._expensive_representations[modality_type] = [representations]
 
     def set_context_operators(self, modality_type, context_operators):
         if isinstance(context_operators, list):
@@ -183,6 +191,11 @@ class Registry:
             self._context_representation_operators[m_type].append(
                 context_representation
             )
+
+    def add_expensive_representation(
+        self, representation: Representation, modality: ModalityType
+    ):
+        self._expensive_representations[modality].append(representation)
 
     def get_representations(self, modality: ModalityType):
         load_builtin_operators((modality,))
@@ -305,6 +318,17 @@ class Registry:
         lengths, counts = zip(*filtered)
         return list(lengths), list(counts)
 
+    def get_expensive_representations(self, modality: ModalityType):
+        return self._expensive_representations[modality]
+
+
+def is_expensive_representation(representation: Representation):
+    registry = Registry()
+    for modality in registry._expensive_representations:
+        if representation in registry._expensive_representations[modality]:
+            return True
+    return False
+
 
 def register_representation(modalities: Union[ModalityType, List[ModalityType]]):
     """
@@ -370,6 +394,24 @@ def register_fusion_operator():
 
     def decorator(cls):
         Registry().add_fusion_operator(cls)
+        return cls
+
+    return decorator
+
+
+def register_expensive_representation(
+    modalities: Union[ModalityType, List[ModalityType]],
+):
+    """
+    Decorator to register an expensive representation for a specific modality.
+    :param modalities: The modalities for which the representation is to be registered
+    """
+    if isinstance(modalities, ModalityType):
+        modalities = [modalities]
+
+    def decorator(cls):
+        for modality in modalities:
+            Registry().add_expensive_representation(cls, modality)
         return cls
 
     return decorator

@@ -33,7 +33,10 @@ from systemds.scuro.utils.torch_dataset import CustomDataset
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from typing import Tuple, Any
-from systemds.scuro.drsearch.operator_registry import register_representation
+from systemds.scuro.drsearch.operator_registry import (
+    register_representation,
+    register_expensive_representation,
+)
 import torch.utils.data
 import torch
 import torchvision.models as models
@@ -48,6 +51,7 @@ class Identity(torch.nn.Module):
 
 
 @register_representation([ModalityType.IMAGE, ModalityType.VIDEO])
+@register_expensive_representation([ModalityType.IMAGE, ModalityType.VIDEO])
 class ResNet(UnimodalRepresentation):
     supports_aggregation_pushdown = True
     cache_in_worker = True
@@ -67,7 +71,7 @@ class ResNet(UnimodalRepresentation):
         self.gpu_id = None
         self.device = get_device()
         if params is not None:
-            self.batch_size = int(params.get("batch_size", batch_size))
+            self.batch_size = int((params or {}).get("batch_size", batch_size))
             self.layer_name = params.get("layer_name", layer_name)
             model_name = params.get("model_name", model_name)
         else:
@@ -192,7 +196,7 @@ class ResNet(UnimodalRepresentation):
 
     def _get_parameters(self, high_level=True):
         parameters = {
-            "batch_size": [1, 2, 4, 8, 16, 32, 64, 128],
+            # "batch_size": [1, 2, 4, 8, 16, 32, 64, 128],
             "model_name": [],
             "layer_name": [],
         }

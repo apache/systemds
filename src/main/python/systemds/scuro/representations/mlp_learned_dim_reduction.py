@@ -56,7 +56,7 @@ class MLPLearnedDimReduction(DimensionalityReduction):
     def __init__(self, output_dim=256, batch_size=32, learning_rate=0.001, epochs=5):
         parameters = {
             "output_dim": [64, 128, 256, 512, 1024],
-            "batch_size": [8, 16, 32, 64, 128],
+            # "batch_size": [8, 16, 32, 64, 128],
             "learning_rate": [0.001, 0.0001, 0.01, 0.1],
             "epochs": [5, 10, 20, 50, 100],
         }

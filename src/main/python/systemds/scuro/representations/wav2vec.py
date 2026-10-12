@@ -27,7 +27,10 @@ from systemds.scuro.modality.transformed import TransformedModality
 
 from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
-from systemds.scuro.drsearch.operator_registry import register_representation
+from systemds.scuro.drsearch.operator_registry import (
+    register_representation,
+    register_expensive_representation,
+)
 from systemds.scuro.utils.memory_utility import get_device
 from systemds.scuro.representations.utils import (
     LengthBucketBatchSampler,
@@ -46,6 +49,7 @@ transformers_logging.set_verbosity_error()
 
 
 @register_representation(ModalityType.AUDIO)
+@register_expensive_representation(ModalityType.AUDIO)
 class Wav2Vec(UnimodalRepresentation):
     cache_in_worker = True
     instance_parallel = False
@@ -53,7 +57,8 @@ class Wav2Vec(UnimodalRepresentation):
     MODEL_NAME = "facebook/wav2vec2-base-960h"
 
     def __init__(self, batch_size=8, params=None):
-        parameters = {"batch_size": [1, 2, 4, 8, 16, 32, 64]}
+        # parameters = {"batch_size": [1, 2, 4, 8, 16, 32, 64]}
+        parameters = {}
         super().__init__("Wav2Vec", ModalityType.TIMESERIES, parameters)
         self.batch_size = int((params or {}).get("batch_size", batch_size))
         self._processor = None

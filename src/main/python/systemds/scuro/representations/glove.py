@@ -29,7 +29,10 @@ from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import save_embeddings
 from systemds.scuro.modality.type import ModalityType
-from systemds.scuro.drsearch.operator_registry import register_representation
+from systemds.scuro.drsearch.operator_registry import (
+    register_representation,
+    register_expensive_representation,
+)
 
 
 def load_glove_embeddings(file_path):
@@ -44,6 +47,7 @@ def load_glove_embeddings(file_path):
 
 
 @register_representation(ModalityType.TEXT)
+@register_expensive_representation(ModalityType.TEXT)
 class GloVe(UnimodalRepresentation):
     def __init__(self, output_file=None, params=None):
         super().__init__("GloVe", ModalityType.TEXT)

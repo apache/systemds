@@ -37,7 +37,10 @@ from systemds.scuro.representations.utils import (
     transformer_inference_context,
 )
 from systemds.scuro.modality.type import ModalityType
-from systemds.scuro.drsearch.operator_registry import register_representation
+from systemds.scuro.drsearch.operator_registry import (
+    register_representation,
+    register_expensive_representation,
+)
 from systemds.scuro.utils.memory_utility import (
     get_device,
 )
@@ -66,7 +69,7 @@ class BertFamily(UnimodalRepresentation):
     ):
         parameters = {
             **(parameters or {}),
-            "batch_size": [1, 2, 4, 8, 16, 32, 64, 128],
+            # "batch_size": [1, 2, 4, 8, 16, 32, 64, 128],
         }
         self.model_name = model_name
         super().__init__(representation_name, ModalityType.EMBEDDING, parameters)
@@ -88,7 +91,7 @@ class BertFamily(UnimodalRepresentation):
         self._activation_hook = None
         if params is not None:
             self.layer = params.get("layer", self.layer)
-            self.batch_size = int(params.get("batch_size", self.batch_size))
+            self.batch_size = int((params or {}).get("batch_size", batch_size))
 
     @property
     def gpu_id(self):
@@ -104,7 +107,7 @@ class BertFamily(UnimodalRepresentation):
     ):
         if params is not None:
             self.max_seq_length = int(params.get("max_seq_length", max_seq_length))
-            self.batch_size = int(params.get("batch_size", batch_size))
+            self.batch_size = int((params or {}).get("batch_size", batch_size))
             self.layer = params.get("layer", layer)
             self.output_file = params.get("output_file", output_file)
         else:
@@ -349,6 +352,7 @@ class BertFamily(UnimodalRepresentation):
 
 
 @register_representation(ModalityType.TEXT)
+@register_expensive_representation(ModalityType.TEXT)
 class Bert(BertFamily):
     def __init__(
         self,
@@ -393,6 +397,7 @@ class Bert(BertFamily):
 
 
 @register_representation(ModalityType.TEXT)
+@register_expensive_representation(ModalityType.TEXT)
 class RoBERTa(BertFamily):
     def __init__(
         self,

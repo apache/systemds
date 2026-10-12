@@ -57,7 +57,7 @@ class AttentionFusion(Fusion):
             "hidden_dim": [32, 128, 256, 384, 512, 768],
             "num_heads": [2, 4, 8, 12],
             "dropout": [0.0, 0.1, 0.2, 0.3, 0.4],
-            "batch_size": [8, 16, 32, 64, 128],
+            # "batch_size": [8, 16, 32, 64, 128],
             "num_epochs": [10, 20, 50, 100, 150, 200],
             "learning_rate": [1e-5, 1e-4, 1e-3, 1e-2],
         }
@@ -73,7 +73,7 @@ class AttentionFusion(Fusion):
             self.hidden_dim = int(params.get("hidden_dim", self.hidden_dim))
             self.num_heads = int(params.get("num_heads", self.num_heads))
             self.dropout = float(params.get("dropout", self.dropout))
-            self.batch_size = int(params.get("batch_size", self.batch_size))
+            self.batch_size = int((params or {}).get("batch_size", batch_size))
             self.num_epochs = int(params.get("num_epochs", self.num_epochs))
             self.learning_rate = float(params.get("learning_rate", self.learning_rate))
             max_input_dim = params.get("max_input_dim", max_input_dim)

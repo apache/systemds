@@ -39,10 +39,12 @@ from systemds.scuro.representations.utils import (
     transformer_inference_context,
 )
 from systemds.scuro.modality.type import ModalityType
-from systemds.scuro.drsearch.operator_registry import register_representation
+from systemds.scuro.drsearch.operator_registry import (
+    register_representation,
+    register_expensive_representation,
+)
 from transformers import CLIPProcessor, CLIPModel
 
-from systemds.scuro.utils.converter import numpy_dtype_to_torch_dtype
 from systemds.scuro.utils.static_variables import get_device
 from systemds.scuro.utils.torch_dataset import (
     CustomDataset,
@@ -59,6 +61,7 @@ from torch.utils.data import DataLoader
 
 
 @register_representation([ModalityType.VIDEO, ModalityType.IMAGE])
+@register_expensive_representation([ModalityType.VIDEO, ModalityType.IMAGE])
 class CLIPVisual(UnimodalRepresentation):
     supports_aggregation_pushdown = True
     cache_in_worker = True
@@ -71,7 +74,7 @@ class CLIPVisual(UnimodalRepresentation):
         self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
         self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
         if params is not None:
-            self.batch_size = int(params.get("batch_size", batch_size))
+            self.batch_size = int((params or {}).get("batch_size", batch_size))
             self.layer_name = params.get("layer_name", layer_name)
         else:
             self.batch_size = batch_size
@@ -93,7 +96,7 @@ class CLIPVisual(UnimodalRepresentation):
 
     def _get_parameters(self):
         parameters = {
-            "batch_size": [1, 2, 4, 8, 16, 32, 64, 128],
+            # "batch_size": [1, 2, 4, 8, 16, 32, 64, 128],
             "layer_name": [
                 "",
                 "encoder.layers.0.layer_norm2",
@@ -339,13 +342,14 @@ class CLIPVisual(UnimodalRepresentation):
 
 
 @register_representation(ModalityType.TEXT)
+@register_expensive_representation(ModalityType.TEXT)
 class CLIPText(UnimodalRepresentation):
     supports_aggregation_pushdown = True
     cache_in_worker = True
 
     def __init__(self, output_file=None, batch_size=32, layer_name="", params=None):
         if params is not None:
-            self.batch_size = int(params.get("batch_size", batch_size))
+            self.batch_size = int((params or {}).get("batch_size", batch_size))
             self.layer_name = params.get("layer_name", layer_name)
         else:
             self.batch_size = batch_size

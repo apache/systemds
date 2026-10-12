@@ -28,7 +28,10 @@ import torchvision.models as models
 from torchvision.models.video import r3d_18, s3d
 
 from systemds.scuro.dataloader.video_loader import VideoStats
-from systemds.scuro.drsearch.operator_registry import register_representation
+from systemds.scuro.drsearch.operator_registry import (
+    register_representation,
+    register_expensive_representation,
+)
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations.representation import RepresentationStats
@@ -152,7 +155,7 @@ class X3D(FrameBudgetedVideoModel, UnimodalRepresentation):
 
     def _get_parameters(self, high_level=True):
         parameters = {
-            "batch_size": [1, 2, 4, 8, 16, 32],
+            "batch_size": [8],
             "model_name": [],
             "layer_name": [],
         }
@@ -327,7 +330,7 @@ class I3D(FrameBudgetedVideoModel, UnimodalRepresentation):
 
     def _get_parameters(self, high_level=True):
         parameters = {
-            "batch_size": [1, 2, 4, 8, 16, 32],
+            "batch_size": [8],
             "layer_name": [],
         }
 

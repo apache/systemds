@@ -28,7 +28,10 @@ import numpy as np
 import torch
 
 from systemds.scuro.dataloader.video_loader import VideoStats
-from systemds.scuro.drsearch.operator_registry import register_representation
+from systemds.scuro.drsearch.operator_registry import (
+    register_representation,
+    register_expensive_representation,
+)
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations.representation import (
@@ -95,6 +98,7 @@ def _patch_openface_package_defaults(needs_landmarks: bool) -> None:
 
 
 @register_representation([ModalityType.IMAGE, ModalityType.VIDEO])
+@register_expensive_representation([ModalityType.IMAGE, ModalityType.VIDEO])
 class OpenFace(UnimodalRepresentation):
     supports_aggregation_pushdown = True
     cache_in_worker = True

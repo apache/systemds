@@ -48,8 +48,9 @@ from systemds.scuro.drsearch.trial_result_cache import (
     TrialResultCache,
     trial_node_signatures,
 )
+from systemds.scuro.drsearch.process_cache import HPOExecutionCache
+from systemds.scuro.drsearch.operator_registry import is_expensive_representation
 
-# torch.OutOfMemoryError only exists on newer torch; RuntimeError covers the rest.
 _CUDA_OOM_ERRORS = tuple(
     e
     for e in (getattr(torch, "OutOfMemoryError", None), torch.cuda.OutOfMemoryError)
@@ -363,6 +364,7 @@ class HyperparameterTuner:
         wandb_group: Optional[str] = None,
         wandb_tags: Optional[List[str]] = None,
         enable_checkpointing: bool = False,
+        representation_cache_size: int = 128,
     ):
         self.tasks = tasks
         self.unimodal_optimization_results = optimization_results
@@ -400,6 +402,14 @@ class HyperparameterTuner:
         self.wandb_tags = wandb_tags or []
         self._wandb_run = None
         self.enable_checkpointing = enable_checkpointing
+
+        self.execution_cache = HPOExecutionCache(
+            representation_entries=representation_cache_size,
+            should_cache_representation=self._should_cache_representation,
+        )
+
+    def _should_cache_representation(self, operation: Any) -> bool:
+        return is_expensive_representation(operation)
 
     def get_modalities_by_id(self, modality_ids: List[int]) -> Modality:
         modalities = []
@@ -1163,10 +1173,6 @@ class HyperparameterTuner:
                     dag, params, node_order, modality_ids, task, modalities_override
                 )
             except _CUDA_OOM_ERRORS as oom:
-                # A trial that does not fit the card used to be recorded as nan, which
-                # silently shrinks the tuning the stage is supposed to perform. Fall back
-                # to the CPU for this trial, the same way the node executor does when no
-                # GPU has room. Same configuration, same budget, different device.
                 self.logger.warning(
                     f"Trial ran out of GPU memory ({oom}); retrying on the CPU"
                 )
@@ -1185,10 +1191,7 @@ class HyperparameterTuner:
                     torch.cuda.empty_cache()
                 return result
         except Exception as e:
-            import traceback
-
-            traceback.print_exc()
-            self.logger.error(f"Error evaluating DAG with params {params}: {e}")
+            self.logger.warning("Skipping invalid DAG candidate %s: %s", params, e)
             return params, [np.nan, np.nan, np.nan]
 
     def tune_multimodal_representations(

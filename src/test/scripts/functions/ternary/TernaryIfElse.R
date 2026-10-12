@@ -31,14 +31,20 @@ m = max(max(nrow(A), nrow(B)), nrow(C))
 n = max(max(ncol(A), ncol(B)), ncol(C))
 
 if( nrow(A)==1 ) {
+  A = matrix(A, m, n, byrow=TRUE);
+} else if ( ncol(A) == 1 ) {
   A = matrix(A, m, n);
 }
 if( nrow(B)==1 ) {
+  B = matrix(B, m, n, byrow=TRUE);
+} else if ( ncol(B)==1 ) {
   B = matrix(B, m, n);
 }
 if( nrow(C)==1 ) {
+  C = matrix(C, m, n, byrow=TRUE);
+} else if( ncol(C)==1 ) {
   C = matrix(C, m, n);
-}  
+}
 
 R = matrix(ifelse(as.vector(A), as.vector(B), as.vector(C)), m, n);
 

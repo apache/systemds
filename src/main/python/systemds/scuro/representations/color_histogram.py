@@ -66,7 +66,7 @@ class ColorHistogram(UnimodalRepresentation):
             "color_space": ["RGB", "HSV", "GRAY"],
             "bins": [8, 16, 32, 64, 128, 256],
             "normalize": [True, False],
-            "aggregation": ["mean", "max", "concat"],
+            "aggregation": ["mean", "max"],
         }
 
     def compute_histogram(self, image):

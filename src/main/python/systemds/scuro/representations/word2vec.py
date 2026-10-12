@@ -33,7 +33,10 @@ from gensim.models import Word2Vec
 from gensim.utils import tokenize
 
 from systemds.scuro.modality.type import ModalityType
-from systemds.scuro.drsearch.operator_registry import register_representation
+from systemds.scuro.drsearch.operator_registry import (
+    register_representation,
+    register_expensive_representation,
+)
 
 
 def get_embedding(sentence, model):
@@ -46,6 +49,7 @@ def get_embedding(sentence, model):
 
 
 @register_representation(ModalityType.TEXT)
+@register_expensive_representation(ModalityType.TEXT)
 class W2V(UnimodalRepresentation):
     fit_requirement = FitRequirement.UNSUPERVISED
 

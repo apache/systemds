@@ -134,9 +134,7 @@ class TestHPTuner(unittest.TestCase):
                 ModalityType.IMAGE: [ResNet, ColorHistogram],
                 ModalityType.EMBEDDING: [],
             },
-        ):
-            registry = Registry()
-            registry._fusion_operators = [LSTM]
+        ), patch.object(Registry, "_fusion_operators", [LSTM]):
             unimodal_optimizer = UnimodalOptimizer(
                 modalities, self.tasks, False, k=2, max_num_workers=1
             )

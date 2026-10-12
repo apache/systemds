@@ -649,7 +649,21 @@ def get_consumer_count(dags: List[RepresentationDag]) -> Dict[str, int]:
     return consumer_count
 
 
+def _consumers_by_node(
+    dag_group: List[RepresentationDag],
+) -> Dict[str, set]:
+    consumers: Dict[str, set] = defaultdict(set)
+    for dag in dag_group:
+        consumers[dag.root_node_id].add(None)
+        for node in dag.nodes:
+            for input_id in node.inputs:
+                consumers[input_id].add(node.node_id)
+    return consumers
+
+
 def pushdown_aggregation(dag_group: List[RepresentationDag]) -> List[RepresentationDag]:
+    consumers = _consumers_by_node(dag_group)
+    changed = False
     for dag in dag_group:
         agg_nodes = [
             n
@@ -674,11 +688,18 @@ def pushdown_aggregation(dag_group: List[RepresentationDag]) -> List[Representat
             ):
                 continue
 
+            if consumers[input_id] != {agg_node.node_id}:
+                continue
+
             aggregation_parameters = copy.deepcopy(agg_node.parameters)
             agg_node.operation = input_node.operation
             agg_node.inputs = list(input_node.inputs)
             agg_node.parameters = copy.deepcopy(input_node.parameters)
             agg_node.parameters["_pushdown_aggregation"] = aggregation_parameters
+            changed = True
+
+    if changed:
+        for dag in dag_group:
             dag.nodes = dag.filter_connected_nodes(dag.nodes)
 
     return dag_group

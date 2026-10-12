@@ -32,7 +32,10 @@ import math
 import random
 from systemds.scuro.drsearch.representation_dag import (
     RepresentationNode,
+    get_modality_by_id_and_instance_id,
 )
+from systemds.scuro.representations.representation import infer_stats_from_data
+from systemds.scuro.utils.memory_utility import cpu_memory_budget_bytes
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.drsearch.split_aware_evaluator import (
     SplitAwareDAGEvaluator,
@@ -149,6 +152,65 @@ def _is_window_operation(op: Any) -> bool:
         return issubclass(op, Window)
     except ImportError:
         return False
+
+
+def _is_leading_axis_concatenation(node: RepresentationNode) -> bool:
+    from systemds.scuro.representations.concatenation import Concatenation
+
+    return (
+        inspect.isclass(node.operation)
+        and issubclass(node.operation, Concatenation)
+        and bool((node.parameters or {}).get("preserve_leading_axis"))
+    )
+
+
+def _tied_window_params(dag) -> Dict[str, str]:
+    parent = {}
+
+    def find(node_id):
+        while parent[node_id] != node_id:
+            node_id = parent[node_id]
+        return node_id
+
+    def windows_under(node_id):
+        node = dag.get_node_by_id(node_id)
+        if _is_window_operation(node.operation):
+            return [node_id]
+        if _is_leading_axis_concatenation(node):
+            return [w for input_id in node.inputs for w in windows_under(input_id)]
+        return []
+
+    for node in dag.nodes:
+        if not _is_leading_axis_concatenation(node):
+            continue
+        windows = windows_under(node.node_id)
+        for window_id in windows:
+            parent.setdefault(window_id, window_id)
+        for window_id in windows[1:]:
+            parent[find(window_id)] = find(windows[0])
+
+    tied = {}
+    canonical = {}
+    for window_id in parent:
+        name = dag.get_node_by_id(window_id).operation.granularity_parameter
+        if name is None:
+            continue
+        key = (find(window_id), name)
+        canonical.setdefault(key, f"{window_id}-{name}")
+        if canonical[key] != f"{window_id}-{name}":
+            tied[f"{window_id}-{name}"] = canonical[key]
+    return tied
+
+
+def _expand_tied_params(
+    config: Dict[str, Any], tied_params: Dict[str, str]
+) -> Dict[str, Any]:
+    return {
+        **config,
+        **{
+            alias: config[name] for alias, name in tied_params.items() if name in config
+        },
+    }
 
 
 def _materialize_node_params(
@@ -581,6 +643,8 @@ class HyperparameterTuner:
                 for node_id in hyperparams
             }
             param_specs = self._build_param_specs(hyperparams, node_parameters)
+            tied_params = _tied_window_params(dag)
+            param_specs = [s for s in param_specs if s["name"] not in tied_params]
             discrete_size = self._estimate_discrete_search_size(param_specs)
             n_calls = min(discrete_size, max_evals) if max_evals else discrete_size
             all_results = self._search_best_configs(
@@ -593,6 +657,7 @@ class HyperparameterTuner:
                 budget=n_calls,
                 initial_config=None,
                 rep_name=rep_name,
+                tied_params=tied_params,
             )
             all_results.append(baseline)
 
@@ -924,6 +989,7 @@ class HyperparameterTuner:
         budget: int,
         initial_config: Optional[Dict[str, Any]],
         rep_name: str = "",
+        tied_params: Optional[Dict[str, str]] = None,
     ) -> List[Tuple[Dict[str, Any], Any]]:
         import optuna
         from optuna.trial import TrialState
@@ -1002,10 +1068,24 @@ class HyperparameterTuner:
         trial_results: List[Tuple[Dict[str, Any], Any]] = []
 
         def objective(trial: optuna.Trial) -> float:
-            config = self._suggest_config_from_specs(trial, param_specs)
+            config = _expand_tied_params(
+                self._suggest_config_from_specs(trial, param_specs), tied_params or {}
+            )
             key = self._config_key(config)
             if key in seen:
                 trial.set_user_attr("duplicate", True)
+                raise optuna.TrialPruned()
+
+            estimate = self._estimate_trial_peak_bytes(
+                dag, config, modality_ids, task, modalities_override
+            )
+            budget_bytes = cpu_memory_budget_bytes()
+            if estimate is not None and estimate > budget_bytes:
+                self.logger.warning(
+                    f"{rep_name}: skipping trial estimated at {estimate / 1024**3:.1f} GB "
+                    f"(budget {budget_bytes / 1024**3:.1f} GB): {config}"
+                )
+                trial.set_user_attr("over_memory_budget", True)
                 raise optuna.TrialPruned()
 
             params, scores = self.evaluate_dag_config(
@@ -1071,6 +1151,47 @@ class HyperparameterTuner:
                 self.k_best_cache_by_modality[task.model.name].get(modality_id, [])
             )
         return cached_modalities
+
+    def _estimate_trial_peak_bytes(
+        self, dag, params, modality_ids, task, modalities_override=None
+    ) -> Optional[int]:
+        modalities = (
+            modalities_override
+            if modalities_override is not None
+            else self.get_modalities_by_id(modality_ids)
+        )
+        stats = {}
+
+        def visit(node_id):
+            if node_id in stats:
+                return stats[node_id]
+            node = dag.get_node_by_id(node_id)
+            if not node.inputs:
+                modality = get_modality_by_id_and_instance_id(
+                    modalities, int(node.modality_id), node.representation_index
+                )
+                stats[node_id] = (
+                    modality.get_stats()
+                    if hasattr(modality, "get_stats")
+                    else infer_stats_from_data(modality.data)
+                )
+                return stats[node_id]
+            inputs = [visit(input_id) for input_id in node.inputs]
+            if any(s is None for s in inputs):
+                stats[node_id] = None
+                return None
+            inputs = inputs[0] if len(inputs) == 1 else inputs
+            operation = node.operation(params=_apply_trial_params_to_node(node, params))
+            peaks.append(operation.estimate_peak_memory_bytes(inputs)["cpu_peak_bytes"])
+            stats[node_id] = operation.get_output_stats(inputs)
+            return stats[node_id]
+
+        peaks = []
+        output_stats = visit(dag.root_node_id)
+        if output_stats is None:
+            return None
+        peaks.append(task.estimate_peak_memory_bytes(output_stats)["cpu_peak_bytes"])
+        return int(max(peaks))
 
     def _trial_node_cache(self, dag, params):
         store = getattr(self, "_trial_cache", None)

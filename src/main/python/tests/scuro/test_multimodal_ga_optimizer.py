@@ -36,6 +36,7 @@ from systemds.scuro.drsearch.multimodal_ga_optimizer import (
     _collect_leaf_indices,
     _failure_fitness,
     _objective_value,
+    _task_uses_gpu,
 )
 from systemds.scuro.drsearch.operator_registry import Registry, register_fusion_operator
 from systemds.scuro.modality.type import ModalityType
@@ -110,10 +111,20 @@ def _fake_success_body(_dag, _task, _modalities, _objective_specs, value=0.5):
 class _SynchronousPool:
     instances = []
 
-    def __init__(self, n_workers, dispatch, ctx=None, threads_per_worker=1):
+    def __init__(
+        self,
+        n_workers,
+        dispatch,
+        ctx=None,
+        threads_per_worker=1,
+        gpu_devices=None,
+        gpu_slots_per_device=1,
+        gpu_demand_fraction=1.0,
+    ):
         self.n_workers = n_workers
         self.dispatch = dispatch
         self.threads_per_worker = threads_per_worker
+        self.gpu_devices = list(gpu_devices or [])
         self.pending = None
         self.next_job_id = 0
         self.shutdown_called = False
@@ -123,7 +134,18 @@ class _SynchronousPool:
     def has_idle_worker(self):
         return self.pending is None
 
-    def submit(self, kind, payload, gpu_id=None):
+    @property
+    def has_idle_cpu_worker(self):
+        return self.pending is None
+
+    @property
+    def gpu_worker_devices(self):
+        return []
+
+    def has_idle_worker_for(self, gpu_id, allow_gpu_worker_for_cpu=False):
+        return self.pending is None
+
+    def submit(self, kind, payload, gpu_id=None, allow_gpu_worker_for_cpu=False):
         job_id = self.next_job_id
         self.next_job_id += 1
         try:
@@ -1214,6 +1236,54 @@ class TestMultiObjective(unittest.TestCase):
         self.assertGreater(len(results[task.model.name]), 0)
         for result in results[task.model.name]:
             self.assertGreaterEqual(result.runtime, 0.0)
+
+
+class _LanePool:
+    """Idle-worker bookkeeping of PersistentWorkerPool, without processes."""
+
+    def __init__(self, idle_gpu, idle_cpu):
+        self.idle_gpu = set(idle_gpu)
+        self.idle_cpu = idle_cpu
+        self.gpu_worker_devices = [0, 1]
+
+    @property
+    def has_idle_cpu_worker(self):
+        return self.idle_cpu
+
+    def has_idle_worker_for(self, gpu_id, allow_gpu_worker_for_cpu=False):
+        if gpu_id is not None:
+            return gpu_id in self.idle_gpu
+        return self.idle_cpu or (allow_gpu_worker_for_cpu and bool(self.idle_gpu))
+
+
+class TestGpuLanes(unittest.TestCase):
+    def _lane(self, pool, uses_gpu):
+        return MultimodalDeapOptimizer._idle_lane(
+            SimpleNamespace(_worker_pool=pool), uses_gpu
+        )
+
+    def test_gpu_task_prefers_idle_gpu_worker(self):
+        self.assertEqual(self._lane(_LanePool({1}, idle_cpu=True), True), 1)
+
+    def test_gpu_task_overflows_to_cpu_worker(self):
+        self.assertIsNone(self._lane(_LanePool(set(), idle_cpu=True), True))
+
+    def test_cpu_task_may_take_gpu_worker(self):
+        self.assertIsNone(self._lane(_LanePool({0}, idle_cpu=False), False))
+
+    def test_no_idle_worker(self):
+        self.assertIs(self._lane(_LanePool(set(), idle_cpu=False), True), False)
+        self.assertIs(self._lane(_LanePool(set(), idle_cpu=False), False), False)
+
+    def test_task_uses_gpu_from_flag_or_device(self):
+        def task(**model_attrs):
+            return SimpleNamespace(model=SimpleNamespace(**model_attrs))
+
+        self.assertTrue(_task_uses_gpu(task(uses_gpu=True)))
+        self.assertFalse(_task_uses_gpu(task(uses_gpu=False, device="cuda")))
+        self.assertTrue(_task_uses_gpu(task(device=SimpleNamespace(type="cuda"))))
+        self.assertFalse(_task_uses_gpu(task(device=SimpleNamespace(type="cpu"))))
+        self.assertFalse(_task_uses_gpu(task()))
 
 
 if __name__ == "__main__":

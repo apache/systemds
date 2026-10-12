@@ -44,6 +44,10 @@ def _exclusive_over_budget_enabled() -> bool:
     return os.environ.get("SCURO_EXCLUSIVE_OVER_BUDGET", "0") == "1"
 
 
+def _cache_drain_fraction() -> float:
+    return float(os.environ.get("SCURO_CACHE_DRAIN_FRACTION", "0.5"))
+
+
 class MemoryAwareNodeScheduler:
 
     def __init__(
@@ -141,15 +145,44 @@ class MemoryAwareNodeScheduler:
     def update_cpu_memory_in_use(self, delta_bytes: int):
         self.memory_stats["cpu_cached"] += delta_bytes
 
+    def set_cached_cpu_bytes(self, cached_bytes: int) -> None:
+        self.memory_stats["cpu_cached"] = cached_bytes
+
+    def _cache_draining(self) -> bool:
+        budget = self.memory_budget["cpu"]
+        if _exclusive_over_budget_enabled() and self._total_cpu_in_use() >= budget:
+            return True
+        return self.memory_stats["cpu_cached"] >= _cache_drain_fraction() * budget
+
+    def _release_bytes(self, node_id: str) -> int:
+        release_bytes = 0
+        for parent_id in self.parents.get(node_id, set()):
+            if (
+                parent_id not in self.leaves
+                and self.remaining_children.get(parent_id, 0) == 1
+            ):
+                release_bytes += self.node_resources[parent_id][0]
+        return release_bytes
+
+    def _grows_cache(self, node_id: str) -> bool:
+        adds_bytes = (
+            self.node_resources[node_id][0] if self.children.get(node_id) else 0
+        )
+        return adds_bytes > self._release_bytes(node_id)
+
     def get_runnable(self) -> List[RepresentationNode]:
         runnable_nodes = self._get_runnable_nodes()
 
         admitted_bytes = self._pending_admitted_cpu_bytes()
         pending_gpu = {gpu_id: 0 for gpu_id in self.gpu_devices}
         pending_slots = {gpu_id: 0 for gpu_id in self.gpu_devices}
+        draining = self._cache_draining()
+        hold_growing_nodes = False
 
         for node in runnable_nodes:
             if node in self._ready_set:
+                continue
+            if hold_growing_nodes and self._grows_cache(node):
                 continue
             ok, gpu_id = self._check_memory_constraints(
                 node, admitted_bytes, pending_gpu, pending_slots
@@ -163,6 +196,13 @@ class MemoryAwareNodeScheduler:
                 self._candidates.discard(node)
                 self.ready_nodes.append(node)
                 self._ready_set.add(node)
+            elif (
+                draining
+                and not self._grows_cache(node)
+                and self.node_resources[node][0]
+                > self.memory_budget["cpu"] - self._total_cpu_in_use() - admitted_bytes
+            ):
+                hold_growing_nodes = True
         chunked_leaf_by_device = defaultdict(list)
         for node in self.ready_nodes:
             if isinstance(node, list):
@@ -189,28 +229,17 @@ class MemoryAwareNodeScheduler:
     def _get_runnable_nodes(self) -> List[str]:
         runnable_nodes = list(self._candidates)
 
-        # With exclusive admission a full budget no longer stops the run, so
-        # the cache of intermediates must be drained deliberately: while the
-        # CPU budget is exceeded, nodes whose completion does not grow the
-        # cache (task roots, or last children releasing at least their own
-        # output) run before nodes that would cache another output.
-        draining_first = (
-            _exclusive_over_budget_enabled()
-            and self._total_cpu_in_use() >= self.memory_budget["cpu"]
-        )
+        # Upward rank always puts a producer ahead of its consumers, so without
+        # a counterweight every large intermediate is materialized before the
+        # tasks that would release it. Once the cache holds a large share of
+        # the budget (or, with exclusive admission, the budget is exceeded),
+        # nodes whose completion does not grow the cache (task roots, or last
+        # children releasing at least their own output) run first.
+        draining_first = self._cache_draining()
 
         def _score(node_id: str):
-            release_bytes = 0
-            for parent_id in self.parents.get(node_id, set()):
-                if (
-                    parent_id not in self.leaves
-                    and self.remaining_children.get(parent_id, 0) == 1
-                ):
-                    release_bytes += self.node_resources[parent_id][0]
-            adds_bytes = (
-                self.node_resources[node_id][0] if self.children.get(node_id) else 0
-            )
-            grows_cache = draining_first and adds_bytes > release_bytes
+            release_bytes = self._release_bytes(node_id)
+            grows_cache = draining_first and self._grows_cache(node_id)
             return (
                 grows_cache,
                 -self.node_priorities.get(node_id, 0.0),

@@ -42,6 +42,7 @@ from systemds.scuro.drsearch.operator_registry import register_fusion_operator
 @register_fusion_operator()
 class LSTM(Fusion):
     fit_requirement = FitRequirement.SUPERVISED
+    preserves_leading_axis = True
 
     def __init__(
         self,
@@ -89,7 +90,6 @@ class LSTM(Fusion):
         self.device = get_device()
         self.needs_training = True
         self.needs_alignment = False
-        self.preserves_leading_axis = True
         self.model = None
         self.input_dim = None
         self.num_classes = None

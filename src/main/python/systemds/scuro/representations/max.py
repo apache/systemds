@@ -31,6 +31,8 @@ from systemds.scuro.drsearch.operator_registry import register_fusion_operator
 
 @register_fusion_operator()
 class RowMax(Fusion):
+    _laws = frozenset({"comm", "assoc"})
+
     def __init__(self, params=None):
         """
         Combines modalities by computing the outer product of a modality combination and
@@ -38,8 +40,6 @@ class RowMax(Fusion):
         """
         super().__init__("RowMax")
         self.needs_alignment = True
-        self.associative = True
-        self.commutative = True
 
     def execute(
         self,
@@ -64,3 +64,14 @@ class RowMax(Fusion):
             output_shape = max(stats_list, key=self._stats_num_elements).output_shape
         output_shape_is_known = all(s.output_shape_is_known for s in stats_list)
         return RepresentationStats(num_instances, output_shape, output_shape_is_known)
+
+    def estimate_peak_memory_bytes(self, input_stats) -> dict:
+        stats_list = self._as_stats_list(input_stats)
+        input_bytes = sum(self._stats_bytes(s) for s in stats_list)
+        output_bytes = self._stats_bytes(self.get_output_stats(input_stats))
+
+        raw_bytes = self._raw_input_bytes(input_stats)
+        cpu_peak = (
+            int((raw_bytes + 2 * input_bytes + output_bytes) * 1.15) + 8 * 1024 * 1024
+        )
+        return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}

@@ -49,8 +49,10 @@ def load_glove_embeddings(file_path):
 @register_representation(ModalityType.TEXT)
 @register_expensive_representation(ModalityType.TEXT)
 class GloVe(UnimodalRepresentation):
+    OUTPUT_MODALITY_TYPE = ModalityType.EMBEDDING
+
     def __init__(self, output_file=None, params=None):
-        super().__init__("GloVe", ModalityType.TEXT)
+        super().__init__("GloVe", self.OUTPUT_MODALITY_TYPE)
         file_path = hf_hub_download(
             repo_id="stanfordnlp/glove", filename="glove.6B.zip"
         )

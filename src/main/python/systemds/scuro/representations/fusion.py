@@ -55,21 +55,27 @@ class FusionInputTooLargeError(ValueError):
 
 
 class Fusion(Representation):
+    _laws = frozenset()
+    preserves_leading_axis = False
+
     def __init__(self, name, parameters=None):
         """
         Parent class for different multimodal fusion types
         :param name: Name of the fusion type
         """
         super().__init__(name, parameters)
-        self.associative = False
-        self.commutative = False
+        self.associative = "assoc" in self._laws
+        self.commutative = "comm" in self._laws
         self.needs_alignment = False
         self.needs_training = False
         self.needs_instance_alignment = False
-        self.preserves_leading_axis = False
         self.output_modality_type = ModalityType.EMBEDDING
         self.data_type = np.float32
         self.max_alignment_pad_ratio = DEFAULT_MAX_ALIGNMENT_PAD_RATIO
+
+    @classmethod
+    def algebraic_laws(cls, parameters: dict) -> frozenset:
+        return cls._laws
 
     @staticmethod
     def _as_stats_list(input_stats) -> List[RepresentationStats]:

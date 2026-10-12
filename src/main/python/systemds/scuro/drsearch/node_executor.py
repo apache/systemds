@@ -163,6 +163,10 @@ def _offload_to_shared_memory(result: Any):
     return shm_name, resident_bytes, int(shm_bytes or 0), actual_stats
 
 
+def _measure_memory() -> bool:
+    return DEBUG or os.environ.get("SCURO_MEASURE_MEMORY", "0") == "1"
+
+
 def _execute_node_worker(node, input_mods: List[Any], gpu_id: Optional[int]):
     start_time = time.perf_counter()
     if gpu_id is not None:
@@ -205,7 +209,7 @@ def _execute_node_worker(node, input_mods: List[Any], gpu_id: Optional[int]):
 
     gpu_peak_bytes = -1
     measurement = None
-    if DEBUG:
+    if _measure_memory():
         input_resident = sum(estimate_modality_bytes(m) for m in input_mods)
         result, measurement = measure_memory_during(
             lambda: _run_gpu_op(_run_node_op, gpu_id, cleanup_after=False),
@@ -271,7 +275,7 @@ def _execute_task_worker(
 
     gpu_peak_bytes = -1
     measurement = None
-    if DEBUG:
+    if _measure_memory():
         result, measurement = measure_memory_during(
             lambda: _run_gpu_op(_run_task, gpu_id),
             input_resident_bytes=estimate_modality_bytes(modality),
@@ -480,6 +484,7 @@ class NodeExecutor:
         self._cache_misses = 0
         self._nodes_executed = 0
         self._peak_cache_bytes = 0
+        self._leaf_cached_bytes = self.scheduler.memory_stats["cpu_cached"]
         self._eval_counter = 0
         self._nodes_executed = 0
         self._search_start = (
@@ -741,6 +746,12 @@ class NodeExecutor:
         finally:
             if retained:
                 self._result_cache.release_shm_names(retained)
+            self._sync_cache_accounting()
+
+    def _sync_cache_accounting(self) -> None:
+        cache_bytes = self._result_cache.get_memory_total_memory_usage()
+        self._peak_cache_bytes = max(self._peak_cache_bytes, cache_bytes)
+        self.scheduler.set_cached_cpu_bytes(self._leaf_cached_bytes + cache_bytes)
 
     def _handle_job_failure(self, unit: Union[_NodeUnit, _BatchUnit], jr):
         reason = jr.error or "unknown worker failure"
@@ -860,8 +871,8 @@ class NodeExecutor:
                 operation_name,
                 actual_stats,
                 measurement=measurement,
+                estimated_stats=estimated_stats,
             )
-        before_bytes = self._result_cache.get_memory_total_memory_usage()
         self._manage_result_cache(
             node_id,
             transformed_modality,
@@ -869,9 +880,7 @@ class NodeExecutor:
             resident_bytes=resident_bytes,
             shm_bytes=shm_bytes,
         )
-        after_bytes = self._result_cache.get_memory_total_memory_usage()
-        self._peak_cache_bytes = max(self._peak_cache_bytes, after_bytes)
-        self.scheduler.update_cpu_memory_in_use(after_bytes - before_bytes)
+        self._sync_cache_accounting()
         self.scheduler.complete_node(node_id)
 
     def _manage_result_cache(
@@ -906,9 +915,12 @@ class NodeExecutor:
         operation_name: str,
         actual_stats: Optional[RepresentationStats],
         measurement: Optional[MemoryMeasurement] = None,
+        estimated_stats: Optional[RepresentationStats] = None,
     ):
         if self.enable_checkpointing:
             self._memory_usage_checkpoint.increment(node_id)
+        if estimated_stats is None:
+            estimated_stats = self.scheduler.node_stats.get(node_id)
 
         if measurement is not None:
             peak_bytes = measurement.footprint_bytes
@@ -962,6 +974,12 @@ class NodeExecutor:
                 "rss_delta_bytes": measurement.rss_delta_bytes if measurement else -1,
                 "num_instances": getattr(actual_stats, "num_instances", None),
                 "output_shape": getattr(actual_stats, "output_shape", None),
+                "estimated_output_shape": getattr(
+                    estimated_stats, "output_shape", None
+                ),
+                "estimated_num_instances": getattr(
+                    estimated_stats, "num_instances", None
+                ),
                 "dtype": str(getattr(actual_stats, "dtype", None)),
                 "container": str(getattr(actual_stats, "container", None)),
             }
@@ -1100,6 +1118,13 @@ class NodeExecutor:
                 "cpu_fallback_nodes": len(
                     getattr(self.scheduler, "cpu_fallback_nodes", []) or []
                 ),
+                "planned_task_nodes": len(getattr(self.scheduler, "roots", ()) or ()),
+                "completed_task_nodes": self._eval_counter,
+                "exclusive_memory_nodes": len(
+                    getattr(self.scheduler, "exclusive_memory_nodes", {}) or {}
+                ),
+                "deadlock": bool(getattr(self.scheduler, "deadlock", False)),
+                "deadlock_reason": getattr(self.scheduler, "deadlock_reason", None),
             }
         )
         return report

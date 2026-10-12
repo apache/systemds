@@ -97,9 +97,8 @@ public class RewriteSplitDagUnknownNnz extends StatementBlockRewriteRule {
 				sbSplit.setSplitDag(true); // avoid later merge by other rewrites
 			}
 			sb.setSplitDag(true); // avoid later merge by other rewrites
-			LOG.debug("Applied splitDagUnknownNnzRead.");
+			LOG.debug("RewriteSplitDagUnknownNnz: Split DAG into " + (ret.size() + 1) + " statement blocks.");
 		}
-
 		
 		ret.add(sb);
 		return ret;
@@ -110,23 +109,28 @@ public class RewriteSplitDagUnknownNnz extends StatementBlockRewriteRule {
 		return sbs;
 	}
 
-	private void rSplitMMChain(Hop parentHop, ListIterator<ArrayList<Hop>> candListIter) {
+	private void rSplitMMChain(Hop hop, ListIterator<ArrayList<Hop>> candListIter) {
+		if(hop.isVisited())
+			return;
+		if(HopRewriteUtils.isMatrixMultiply(hop)) {
+			rSplitMMChainChildren(hop, candListIter);
+		}
+		else {
+			// split again when operation is different from matrix multiply (i.e., before mm chain)
+			getNextLevel(candListIter).add(hop);
+			rCollectNnzComputationCandidatesChildren(hop, candListIter);
+			candListIter.previous();
+		}
+		hop.setVisited();
+	}
+
+	private void rSplitMMChainChildren(Hop parentHop, ListIterator<ArrayList<Hop>> candListIter) {
 		if(parentHop.getInput() == null)
 			throw new DMLRuntimeException("rSplitMMChain should be called for MM chain hops only. " +
 				"An MM hop must have inputs.");
-		// split children again when operation is different from matrix multiply
+		// process children
 		for(Hop childHop : parentHop.getInput()) {
-			if(childHop.isVisited())
-				continue;
-			if(HopRewriteUtils.isMatrixMultiply(childHop)) {
-				rSplitMMChain(childHop, candListIter);
-			}
-			else {
-				getNextLevel(candListIter).add(childHop);
-				rCollectNnzComputationCandidatesChildren(childHop, candListIter);
-				candListIter.previous();
-			}
-			childHop.setVisited();
+			rSplitMMChain(childHop, candListIter);
 		}
 	}
 
@@ -134,8 +138,8 @@ public class RewriteSplitDagUnknownNnz extends StatementBlockRewriteRule {
 		if(roots == null)
 			return;
 		Hop.resetVisitStatus(roots);
+		ListIterator<ArrayList<Hop>> candListIter = candidateLists.listIterator();
 		for(Hop root : roots) {
-			ListIterator<ArrayList<Hop>> candListIter = candidateLists.listIterator();
 			rCollectNnzComputationCandidates(root, candListIter);
 		}
 	}
@@ -156,19 +160,13 @@ public class RewriteSplitDagUnknownNnz extends StatementBlockRewriteRule {
 			return;
 
 		// collect persistent reads with unknown nnz
-		if(hop instanceof DataOp) {
-			DataOp dop = (DataOp) hop;
-			if(dop.getOp() == OpOpData.PERSISTENTREAD && !dop.nnzKnown()) {
-				getNextLevel(candListIter).add(dop);
+		if(hop instanceof DataOp && ((DataOp) hop).getOp() == OpOpData.PERSISTENTREAD && !((DataOp) hop).nnzKnown()) {
+				getNextLevel(candListIter).add(hop);
 				candListIter.previous(); // reset level increment (no children to process)
-			}
-			else {
-				rCollectNnzComputationCandidatesChildren(hop, candListIter);
-			}
 		}
 		else if(HopRewriteUtils.isMatrixMultiply(hop) && !((AggBinaryOp) hop).hasLeftPMInput()) {
 			getNextLevel(candListIter).add(hop);
-			rSplitMMChain(hop, candListIter);
+			rSplitMMChainChildren(hop, candListIter);
 			candListIter.previous(); // reset level increment after processing children
 		}
 		else{

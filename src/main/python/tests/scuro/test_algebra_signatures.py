@@ -19,7 +19,7 @@
 #
 # -------------------------------------------------------------
 
-import pytest
+import unittest
 
 from systemds.scuro.drsearch.algebra import ANY_TYPE, operator_signature
 from systemds.scuro.drsearch.operator_registry import Registry, load_builtin_operators
@@ -48,39 +48,43 @@ REGISTERED = sorted(
     key=lambda t: (t[0].__name__, t[1], t[2].name),
 ) + [(op, "fuse", None) for op in Registry().get_fusion_operators()]
 
+RANK_CASES = [
+    (Sum, {}, ("fuse", "n", "vector", "vector")),
+    (
+        Concatenation,
+        {"preserve_leading_axis": False},
+        ("fuse", "n", "vector", "vector"),
+    ),
+    (Concatenation, {"preserve_leading_axis": True}, ("fuse", "n", "seq", "seq")),
+    (LSTM, {}, ("fuse", "n", "seq", "vector")),
+    (AggregatedRepresentation, {}, ("aggregate", 1, "seq", "vector")),
+    (WindowAggregation, {}, ("context", 1, "seq", "windows")),
+    (MLPAveraging, {}, ("reduce", 1, "vector", "vector")),
+    (None, {}, ("task", 1, "any", "any")),
+]
 
-@pytest.mark.parametrize(
-    "op, kind, modality",
-    REGISTERED,
-    ids=[
-        f"{op.__name__}-{kind}-{getattr(m, 'name', '')}" for op, kind, m in REGISTERED
-    ],
-)
-def test_every_registered_operator_has_a_signature(op, kind, modality):
-    sig = operator_signature(op)
-    assert sig.kind == kind
-    assert modality is None or modality in sig.input_types
-    if kind in ("encode", "fuse"):
-        assert isinstance(sig.output_type, ModalityType)
+
+class TestOperatorSignatures(unittest.TestCase):
+    def test_every_registered_operator_has_a_signature(self):
+        for op, kind, modality in REGISTERED:
+            with self.subTest(
+                op=op.__name__, kind=kind, modality=getattr(modality, "name", None)
+            ):
+                sig = operator_signature(op)
+                self.assertEqual(sig.kind, kind)
+                if modality is not None:
+                    self.assertIn(modality, sig.input_types)
+                if kind in ("encode", "fuse"):
+                    self.assertIsInstance(sig.output_type, ModalityType)
+
+    def test_rank_rules(self):
+        for op, params, expected in RANK_CASES:
+            with self.subTest(op=getattr(op, "__name__", None), params=params):
+                sig = operator_signature(op, params)
+                self.assertEqual(
+                    (sig.kind, sig.arity, sig.input_rank, sig.output_rank), expected
+                )
 
 
-@pytest.mark.parametrize(
-    "op, params, expected",
-    [
-        (Sum, {}, ("fuse", "n", "vector", "vector")),
-        (
-            Concatenation,
-            {"preserve_leading_axis": False},
-            ("fuse", "n", "vector", "vector"),
-        ),
-        (Concatenation, {"preserve_leading_axis": True}, ("fuse", "n", "seq", "seq")),
-        (LSTM, {}, ("fuse", "n", "seq", "vector")),
-        (AggregatedRepresentation, {}, ("aggregate", 1, "seq", "vector")),
-        (WindowAggregation, {}, ("context", 1, "seq", "windows")),
-        (MLPAveraging, {}, ("reduce", 1, "vector", "vector")),
-        (None, {}, ("task", 1, "any", "any")),
-    ],
-)
-def test_rank_rules(op, params, expected):
-    sig = operator_signature(op, params)
-    assert (sig.kind, sig.arity, sig.input_rank, sig.output_rank) == expected
+if __name__ == "__main__":
+    unittest.main()

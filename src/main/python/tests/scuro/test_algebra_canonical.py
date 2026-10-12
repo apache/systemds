@@ -20,8 +20,7 @@
 # -------------------------------------------------------------
 
 import json
-
-import pytest
+import unittest
 
 from systemds.scuro.drsearch.algebra import ALL_LAWS, canonical_id
 from systemds.scuro.drsearch.representation_dag import RepresentationDAGBuilder
@@ -242,28 +241,31 @@ def build(expr):
     return builder.build(make(expr))
 
 
-@pytest.mark.parametrize(
-    "left,right,laws,invariant,equal", [c[1:] for c in CASES], ids=[c[0] for c in CASES]
-)
-def test_canonical_pairs(left, right, laws, invariant, equal):
-    laws = frozenset(laws)
-    left, right = build(left), build(right)
-    ids = [canonical_id(dag, laws, invariant) for dag in (left, right)]
-    assert (ids[0] == ids[1]) == equal
-    for dag, dag_id in zip((left, right), ids):
-        spec = json.loads(json.dumps(dag.to_spec()))
-        assert canonical_id(spec, laws, invariant) == dag_id
+class TestCanonicalId(unittest.TestCase):
+    def test_canonical_pairs(self):
+        for name, left, right, laws, invariant, equal in CASES:
+            with self.subTest(name):
+                laws = frozenset(laws)
+                left, right = build(left), build(right)
+                ids = [canonical_id(dag, laws, invariant) for dag in (left, right)]
+                self.assertEqual(ids[0] == ids[1], equal)
+                for dag, dag_id in zip((left, right), ids):
+                    spec = json.loads(json.dumps(dag.to_spec()))
+                    self.assertEqual(canonical_id(spec, laws, invariant), dag_id)
+
+    def test_dag_method_defaults(self):
+        dag = build(C("a", S("c", "b")))
+        self.assertEqual(dag.canonical_id(), canonical_id(dag, ALL_LAWS, False))
+        self.assertNotEqual(dag.canonical_id(laws=NONE), dag.canonical_id())
+
+    def test_sub_plan_signature(self):
+        dag = build(C("a", S("b", "c")))
+        sub = dag.get_node_by_id(dag.get_node_by_id(dag.root_node_id).inputs[1])
+        self.assertEqual(
+            canonical_id(dag, ALL_LAWS, False, sub.node_id),
+            canonical_id(build(S("c", "b")), ALL_LAWS, False),
+        )
 
 
-def test_dag_method_defaults():
-    dag = build(C("a", S("c", "b")))
-    assert dag.canonical_id() == canonical_id(dag, ALL_LAWS, False)
-    assert dag.canonical_id(laws=NONE) != dag.canonical_id()
-
-
-def test_sub_plan_signature():
-    dag = build(C("a", S("b", "c")))
-    sub = dag.get_node_by_id(dag.get_node_by_id(dag.root_node_id).inputs[1])
-    assert canonical_id(dag, ALL_LAWS, False, sub.node_id) == canonical_id(
-        build(S("c", "b")), ALL_LAWS, False
-    )
+if __name__ == "__main__":
+    unittest.main()

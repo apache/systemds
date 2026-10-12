@@ -19,10 +19,10 @@
 #
 # -------------------------------------------------------------
 
+import unittest
 from types import SimpleNamespace
 
 import numpy as np
-import pytest
 
 from systemds.scuro.drsearch.algebra import AlgebraConfig, typecheck
 from systemds.scuro.drsearch.multimodal_ga_optimizer import (
@@ -55,67 +55,79 @@ def _check(op, params, leaves, with_stats=True):
     return sorted((v.severity, v.kind) for v in violations)
 
 
-@pytest.mark.parametrize(
-    "op, params, leaves, expected",
-    [
-        (BoW, {}, [(TEXT, None)], []),
-        (MFCC, {}, [(TEXT, None)], [("error", "input_type")]),
-        (Sum, {}, [(EMB, VEC)], [("error", "arity")]),
-        (BoW, {}, [(TEXT, None), (TEXT, None)], [("error", "arity")]),
-        (Sum, {}, [(EMB, VEC), (EMB, VEC)], []),
-        (
-            Sum,
-            {},
-            [(EMB, SEQ), (EMB, VEC)],
-            [("implicit", "hidden_aggregation"), ("implicit", "zero_padding")],
-        ),
-        (
-            Concatenation,
-            {},
-            [(EMB, SEQ), (EMB, VEC)],
-            [("implicit", "hidden_aggregation")],
-        ),
-        (Concatenation, {"preserve_leading_axis": True}, [(EMB, SEQ), (EMB, SEQ)], []),
-    ],
-)
-def test_violations(op, params, leaves, expected):
-    assert _check(op, params, leaves) == expected
+VIOLATION_CASES = [
+    (BoW, {}, [(TEXT, None)], []),
+    (MFCC, {}, [(TEXT, None)], [("error", "input_type")]),
+    (Sum, {}, [(EMB, VEC)], [("error", "arity")]),
+    (BoW, {}, [(TEXT, None), (TEXT, None)], [("error", "arity")]),
+    (Sum, {}, [(EMB, VEC), (EMB, VEC)], []),
+    (
+        Sum,
+        {},
+        [(EMB, SEQ), (EMB, VEC)],
+        [("implicit", "hidden_aggregation"), ("implicit", "zero_padding")],
+    ),
+    (
+        Concatenation,
+        {},
+        [(EMB, SEQ), (EMB, VEC)],
+        [("implicit", "hidden_aggregation")],
+    ),
+    (Concatenation, {"preserve_leading_axis": True}, [(EMB, SEQ), (EMB, SEQ)], []),
+]
 
 
-def test_shapes_unknown_without_leaf_stats():
-    assert _check(Sum, {}, [(EMB, SEQ), (EMB, VEC)], with_stats=False) == []
+class TestTypecheck(unittest.TestCase):
+    def test_violations(self):
+        for i, (op, params, leaves, expected) in enumerate(VIOLATION_CASES):
+            with self.subTest(case=i, op=op.__name__):
+                self.assertEqual(_check(op, params, leaves), expected)
+
+    def test_shapes_unknown_without_leaf_stats(self):
+        violations = _check(Sum, {}, [(EMB, SEQ), (EMB, VEC)], with_stats=False)
+        self.assertEqual(violations, [])
+
+    def test_builder_modes(self):
+        for mode, raises, counted in [
+            ("off", False, 0),
+            ("warn", False, 1),
+            ("strict", True, 1),
+        ]:
+            with self.subTest(mode=mode):
+                modality = SimpleNamespace(
+                    modality_id="t", modality_type=TEXT, stats=None
+                )
+                builder = CSEAwareDAGBuilder(
+                    AlgebraConfig(typecheck=mode), leaves=[modality]
+                )
+                root = builder.create_operation_node(
+                    MFCC, [builder.create_leaf_node("t")], {}
+                )
+                if raises:
+                    with self.assertRaisesRegex(ValueError, "input_type"):
+                        builder.build(root)
+                else:
+                    builder.build(root)
+                self.assertEqual(builder.algebra_stats["typecheck_input_type"], counted)
+
+    def test_ga_counts_hidden_operators(self):
+        reps = {
+            "m0": [SimpleNamespace(modality_type=EMB, data=np.zeros((5, 4, 8)))],
+            "m1": [SimpleNamespace(modality_type=EMB, data=np.zeros((5, 3)))],
+        }
+        optimizer = MultimodalDeapOptimizer(
+            [SimpleNamespace(modality_id=m) for m in reps],
+            _FakeUnimodalResults(reps),
+            [_make_task()],
+            debug=False,
+            algebra=AlgebraConfig(typecheck="strict"),
+        )
+        genome = DagGenome([("m0", 0), ("m1", 0)], (0, 1), {"": Sum})
+        self.assertIsNone(optimizer._oversized_reason("task0", genome))
+        stats = optimizer.algebra_stats
+        self.assertEqual(stats["typecheck_hidden_aggregation"], 1)
+        self.assertEqual(stats["typecheck_zero_padding:Sum"], 1)
 
 
-@pytest.mark.parametrize(
-    "mode, raises, counted",
-    [("off", False, 0), ("warn", False, 1), ("strict", True, 1)],
-)
-def test_builder_modes(mode, raises, counted):
-    modality = SimpleNamespace(modality_id="t", modality_type=TEXT, stats=None)
-    builder = CSEAwareDAGBuilder(AlgebraConfig(typecheck=mode), leaves=[modality])
-    root = builder.create_operation_node(MFCC, [builder.create_leaf_node("t")], {})
-    if raises:
-        with pytest.raises(ValueError, match="input_type"):
-            builder.build(root)
-    else:
-        builder.build(root)
-    assert builder.algebra_stats["typecheck_input_type"] == counted
-
-
-def test_ga_counts_hidden_operators():
-    reps = {
-        "m0": [SimpleNamespace(modality_type=EMB, data=np.zeros((5, 4, 8)))],
-        "m1": [SimpleNamespace(modality_type=EMB, data=np.zeros((5, 3)))],
-    }
-    optimizer = MultimodalDeapOptimizer(
-        [SimpleNamespace(modality_id=m) for m in reps],
-        _FakeUnimodalResults(reps),
-        [_make_task()],
-        debug=False,
-        algebra=AlgebraConfig(typecheck="strict"),
-    )
-    genome = DagGenome([("m0", 0), ("m1", 0)], (0, 1), {"": Sum})
-    assert optimizer._oversized_reason("task0", genome) is None
-    stats = optimizer.algebra_stats
-    assert stats["typecheck_hidden_aggregation"] == 1
-    assert stats["typecheck_zero_padding:Sum"] == 1
+if __name__ == "__main__":
+    unittest.main()

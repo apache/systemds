@@ -19,12 +19,13 @@
 #
 # -------------------------------------------------------------
 
+import itertools
 import tempfile
+import unittest
 from collections import Counter
 from types import SimpleNamespace
 
 import numpy as np
-import pytest
 
 from systemds.scuro.drsearch.algebra import (
     ALL_LAWS,
@@ -125,94 +126,117 @@ def _ga_dag(algebra, reps, genome):
     return optimizer._genome_to_dag(genome)
 
 
-@pytest.mark.parametrize("algebra", [AGG, PAD, BOTH])
-@pytest.mark.parametrize("op", FUSIONS)
-@pytest.mark.parametrize("leaves", [(0, 1), (1, 2)])
-def test_ga_genome_to_dag(algebra, op, leaves):
-    reps = _reps()
-    genome = DagGenome([(m, 0) for m in leaves], (0, 1), {"": op})
-    _assert_equivalent(
-        _ga_dag(AlgebraConfig(), reps, genome),
-        _ga_dag(algebra, reps, genome),
-        reps,
-        _expected(algebra, op, leaves),
-    )
+class TestExplicitPrep(unittest.TestCase):
+    def test_ga_genome_to_dag(self):
+        cases = itertools.product([AGG, PAD, BOTH], FUSIONS, [(0, 1), (1, 2)])
+        for algebra, op, leaves in cases:
+            with self.subTest(algebra=algebra, op=op.__name__, leaves=leaves):
+                reps = _reps()
+                genome = DagGenome([(m, 0) for m in leaves], (0, 1), {"": op})
+                _assert_equivalent(
+                    _ga_dag(AlgebraConfig(), reps, genome),
+                    _ga_dag(algebra, reps, genome),
+                    reps,
+                    _expected(algebra, op, leaves),
+                )
 
+    def test_exhaustive_enumerator(self):
+        for algebra in (AGG, BOTH):
+            with self.subTest(algebra=algebra):
+                reps = _reps()
+                runs = []
+                for explicit in (AlgebraConfig(), algebra):
+                    with tempfile.TemporaryDirectory() as tmp:
+                        optimizer = MultimodalOptimizer(
+                            [_FakeModality(m) for m in reps],
+                            _FakeUnimodalResults(reps),
+                            [_make_task()],
+                            debug=False,
+                            checkpoint_dir=tmp,
+                            algebra=AlgebraConfig(
+                                exhaustive_dedup_permutations=True,
+                                explicit_fusion_prep=explicit.explicit_fusion_prep,
+                                explicit_padding=explicit.explicit_padding,
+                            ),
+                        )
+                    optimizer.fusion_operators = FUSIONS
+                    runs.append(
+                        list(
+                            optimizer._generate_fusion_dags(
+                                [0, 1], {0: 0, 1: 0}, "task0"
+                            )
+                        )
+                    )
+                self.assertEqual(len(runs[0]), 2 * len(FUSIONS))
+                self.assertEqual(len(runs[1]), 2 * len(FUSIONS))
+                for legacy, explicit, op in zip(*runs, FUSIONS * 2):
+                    _assert_equivalent(
+                        legacy, explicit, reps, _expected(algebra, op, (0, 1))
+                    )
+                self.assertEqual(
+                    optimizer.algebra_stats["explicit_prep_plans"], 2 * len(FUSIONS)
+                )
 
-@pytest.mark.parametrize("algebra", [AGG, BOTH])
-def test_exhaustive_enumerator(algebra):
-    reps = _reps()
-    runs = []
-    for explicit in (AlgebraConfig(), algebra):
-        with tempfile.TemporaryDirectory() as tmp:
-            optimizer = MultimodalOptimizer(
-                [_FakeModality(m) for m in reps],
-                _FakeUnimodalResults(reps),
-                [_make_task()],
-                debug=False,
-                checkpoint_dir=tmp,
-                algebra=AlgebraConfig(
-                    exhaustive_dedup_permutations=True,
-                    explicit_fusion_prep=explicit.explicit_fusion_prep,
-                    explicit_padding=explicit.explicit_padding,
-                ),
-            )
-        optimizer.fusion_operators = FUSIONS
-        runs.append(
-            list(optimizer._generate_fusion_dags([0, 1], {0: 0, 1: 0}, "task0"))
+    def test_counts_and_typechecks_padded_plan(self):
+        reps = _reps()
+        dag = _ga_dag(BOTH, reps, DagGenome([(0, 0), (1, 0)], (0, 1), {"": Sum}))
+        stats = Counter()
+        count_explicit_prep(stats, dag)
+        self.assertEqual(
+            stats,
+            {
+                "explicit_prep_plans": 1,
+                "explicit_padding_plans": 1,
+                "explicit_aggregations": 1,
+                "explicit_paddings": 1,
+                "explicit_padding_ratio_sum": 8 / 3,
+                "explicit_padding_ratio_max": 8 / 3,
+            },
         )
-    assert len(runs[0]) == len(runs[1]) == 2 * len(FUSIONS)
-    for legacy, explicit, op in zip(*runs, FUSIONS * 2):
-        _assert_equivalent(legacy, explicit, reps, _expected(algebra, op, (0, 1)))
-    assert optimizer.algebra_stats["explicit_prep_plans"] == 2 * len(FUSIONS)
+        leaves = {(m, 0): r[0] for m, r in reps.items()}
+        types = {k: r.modality_type for k, r in leaves.items()}
+        leaf_stats = {k: sample_stats(r) for k, r in leaves.items()}
+        self.assertEqual(typecheck(dag, types, leaf_stats), [])
+
+    def test_zero_pad_is_not_registered(self):
+        registry = Registry()
+        lists = [
+            registry._representations,
+            registry._context_operators,
+            registry._dimensionality_reduction_operators,
+        ]
+        for ops in (ops for lst in lists for ops in lst.values()):
+            self.assertNotIn(ZeroPad, ops)
+
+    def test_unbound_genome_to_dag_and_bare_checker(self):
+        reps = _reps()
+        genome = DagGenome([(0, 0), (1, 0)], (0, 1), {"": Sum})
+        dag = MultimodalDeapOptimizer._genome_to_dag(None, genome)
+        self.assertEqual(_prep_nodes(dag), [])
+        checker = object.__new__(MultimodalDeapOptimizer)
+        checker.max_feature_dim = None
+        checker.k_best_representations = {"task0": reps}
+        self.assertIsNone(checker._oversized_reason("task0", genome))
+
+    def test_cse_builder(self):
+        for params, wrapped in (({}, True), ({"preserve_leading_axis": True}, False)):
+            with self.subTest(params=params):
+                leaf = SimpleNamespace(
+                    modality_id="t", stats=RepresentationStats(5, (4, 8))
+                )
+                builder = CSEAwareDAGBuilder(BOTH, leaves=[leaf])
+                leaf_id = builder.create_leaf_node("t")
+                root = builder.create_operation_node(
+                    Concatenation, [leaf_id, leaf_id], params
+                )
+                builder.build(root)
+                self.assertEqual(
+                    builder.get_node(root).inputs != [leaf_id, leaf_id], wrapped
+                )
+                self.assertEqual(
+                    builder.algebra_stats["explicit_aggregations"], 2 * wrapped
+                )
 
 
-def test_counts_and_typechecks_padded_plan():
-    reps = _reps()
-    dag = _ga_dag(BOTH, reps, DagGenome([(0, 0), (1, 0)], (0, 1), {"": Sum}))
-    stats = Counter()
-    count_explicit_prep(stats, dag)
-    assert stats == {
-        "explicit_prep_plans": 1,
-        "explicit_padding_plans": 1,
-        "explicit_aggregations": 1,
-        "explicit_paddings": 1,
-        "explicit_padding_ratio_sum": 8 / 3,
-        "explicit_padding_ratio_max": 8 / 3,
-    }
-    leaves = {(m, 0): r[0] for m, r in reps.items()}
-    types = {k: r.modality_type for k, r in leaves.items()}
-    assert typecheck(dag, types, {k: sample_stats(r) for k, r in leaves.items()}) == []
-
-
-def test_zero_pad_is_not_registered():
-    registry = Registry()
-    lists = [
-        registry._representations,
-        registry._context_operators,
-        registry._dimensionality_reduction_operators,
-    ]
-    assert all(ZeroPad not in ops for lst in lists for ops in lst.values())
-
-
-def test_unbound_genome_to_dag_and_bare_checker():
-    reps = _reps()
-    genome = DagGenome([(0, 0), (1, 0)], (0, 1), {"": Sum})
-    assert _prep_nodes(MultimodalDeapOptimizer._genome_to_dag(None, genome)) == []
-    checker = object.__new__(MultimodalDeapOptimizer)
-    checker.max_feature_dim = None
-    checker.k_best_representations = {"task0": reps}
-    assert checker._oversized_reason("task0", genome) is None
-
-
-@pytest.mark.parametrize(
-    "params, wrapped", [({}, True), ({"preserve_leading_axis": True}, False)]
-)
-def test_cse_builder(params, wrapped):
-    leaf = SimpleNamespace(modality_id="t", stats=RepresentationStats(5, (4, 8)))
-    builder = CSEAwareDAGBuilder(BOTH, leaves=[leaf])
-    leaf_id = builder.create_leaf_node("t")
-    root = builder.create_operation_node(Concatenation, [leaf_id, leaf_id], params)
-    builder.build(root)
-    assert (builder.get_node(root).inputs != [leaf_id, leaf_id]) == wrapped
-    assert builder.algebra_stats["explicit_aggregations"] == 2 * wrapped
+if __name__ == "__main__":
+    unittest.main()

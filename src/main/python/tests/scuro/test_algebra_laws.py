@@ -19,8 +19,10 @@
 #
 # -------------------------------------------------------------
 
+import itertools
+import unittest
+
 import numpy as np
-import pytest
 
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.modality.modality import Modality
@@ -107,30 +109,36 @@ LAW_CHECKS = {
 }
 
 
-def test_every_declared_law_is_checked():
-    assert {law for _, _, law in DECLARED} <= LAW_CHECKS.keys()
+class TestAlgebraLaws(unittest.TestCase):
+    def test_every_declared_law_is_checked(self):
+        self.assertLessEqual({law for _, _, law in DECLARED}, set(LAW_CHECKS))
+
+    def test_declared_law_holds(self):
+        cases = itertools.product(DECLARED, WIDTHS, DTYPES, (1, 2))
+        for (op, params, law), widths, dtypes, rank in cases:
+            with self.subTest(
+                op=f"{op.__name__}{params or ''}",
+                law=law,
+                widths=widths,
+                dtypes=dtypes,
+                rank=rank,
+            ):
+                LAW_CHECKS[law](
+                    lambda *xs: _fuse(op, params, *xs),
+                    *_operands(WIDTHS[widths], DTYPES[dtypes], rank),
+                    exact=op is Concatenation,
+                )
+
+    def test_window_axis_concatenation_is_order_sensitive(self):
+        params = {"preserve_leading_axis": True}
+        a, b, _ = _operands(WIDTHS["equal"], DTYPES["float32"], rank=2)
+        self.assertFalse(
+            np.array_equal(
+                _fuse(Concatenation, params, a, b), _fuse(Concatenation, params, b, a)
+            )
+        )
+        self.assertFalse({"comm", "concat_perm"} & Concatenation.algebraic_laws(params))
 
 
-@pytest.mark.parametrize("rank", [1, 2])
-@pytest.mark.parametrize("dtypes", DTYPES.values(), ids=DTYPES.keys())
-@pytest.mark.parametrize("widths", WIDTHS.values(), ids=WIDTHS.keys())
-@pytest.mark.parametrize(
-    "op,params,law",
-    DECLARED,
-    ids=[f"{op.__name__}{params or ''}-{law}" for op, params, law in DECLARED],
-)
-def test_declared_law_holds(op, params, law, widths, dtypes, rank):
-    LAW_CHECKS[law](
-        lambda *xs: _fuse(op, params, *xs),
-        *_operands(widths, dtypes, rank),
-        exact=op is Concatenation,
-    )
-
-
-def test_window_axis_concatenation_is_order_sensitive():
-    params = {"preserve_leading_axis": True}
-    a, b, _ = _operands(WIDTHS["equal"], DTYPES["float32"], rank=2)
-    assert not np.array_equal(
-        _fuse(Concatenation, params, a, b), _fuse(Concatenation, params, b, a)
-    )
-    assert not {"comm", "concat_perm"} & Concatenation.algebraic_laws(params)
+if __name__ == "__main__":
+    unittest.main()

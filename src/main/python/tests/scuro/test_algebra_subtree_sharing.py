@@ -18,10 +18,10 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import unittest
 from unittest.mock import patch
 
 import numpy as np
-import pytest
 
 from systemds.scuro.drsearch import multimodal_ga_optimizer as ga
 from systemds.scuro.drsearch.algebra import AlgebraConfig
@@ -47,16 +47,6 @@ class _RecordingSVM(TestSVM):
         return super().fit(X, y, X_test, y_test)
 
 
-@pytest.fixture
-def setup(monkeypatch):
-    monkeypatch.setattr(ga, "_SUBTREE_CACHE", TrialResultCache(2**30, 0.0))
-    task = TestTask("share_task", "share_model", 40)
-    task.model = _RecordingSVM("share_model")
-    modalities = [_make_real_representation(i, 40, 4) for i in range(3)]
-    _RecordingSVM.inputs = []
-    return task, modalities
-
-
 def _dag(leaves, root_op=None):
     b = RepresentationDAGBuilder()
     ids = [b.create_leaf_node(i, 0) for i in leaves]
@@ -72,44 +62,66 @@ def _evaluate(task, modalities, dag, share):
     return payload, _RecordingSVM.inputs
 
 
-def test_fitted_subtree_is_reused_bit_identically(setup):
-    task, modalities = setup
-    _evaluate(task, modalities, _dag([0, 1]), True)
-    shared, shared_inputs = _evaluate(
-        task, modalities, _dag([0, 1, 2], Concatenation), True
-    )
-    _, fresh_inputs = _evaluate(task, modalities, _dag([0, 1, 2], Concatenation), False)
+class TestSubtreeSharing(unittest.TestCase):
+    def setUp(self):
+        cache = patch.object(ga, "_SUBTREE_CACHE", TrialResultCache(2**30, 0.0))
+        cache.start()
+        self.addCleanup(cache.stop)
+        self.task = TestTask("share_task", "share_model", 40)
+        self.task.model = _RecordingSVM("share_model")
+        self.modalities = [_make_real_representation(i, 40, 4) for i in range(3)]
+        _RecordingSVM.inputs = []
 
-    assert shared["subtree_cache"]["hits"] == len(task.evaluation_splits)
-    assert len(shared_inputs) == len(fresh_inputs) == len(task.evaluation_splits)
-    assert all(np.array_equal(a, b) for a, b in zip(shared_inputs, fresh_inputs))
+    def test_fitted_subtree_is_reused_bit_identically(self):
+        task, modalities = self.task, self.modalities
+        splits = len(task.evaluation_splits)
+        _evaluate(task, modalities, _dag([0, 1]), True)
+        shared, shared_inputs = _evaluate(
+            task, modalities, _dag([0, 1, 2], Concatenation), True
+        )
+        _, fresh_inputs = _evaluate(
+            task, modalities, _dag([0, 1, 2], Concatenation), False
+        )
+
+        self.assertEqual(shared["subtree_cache"]["hits"], splits)
+        self.assertEqual(len(shared_inputs), splits)
+        self.assertEqual(len(fresh_inputs), splits)
+        for a, b in zip(shared_inputs, fresh_inputs):
+            np.testing.assert_array_equal(a, b)
+
+    def test_operand_order_is_part_of_the_key(self):
+        _evaluate(self.task, self.modalities, _dag([0, 1]), True)
+        swapped, _ = _evaluate(self.task, self.modalities, _dag([1, 0]), True)
+        self.assertEqual(swapped["subtree_cache"]["hits"], 0)
+
+    def test_switch_controls_call_and_stats(self):
+        payload = {
+            "train_score": {},
+            "val_score": {"accuracy": 0.5},
+            "test_score": {},
+            "runtime": 1.0,
+            "task_time": 0.5,
+            "representation_time": 0.5,
+            "subtree_cache": {
+                "hits": 3,
+                "misses": 2,
+                "saved_seconds": 4.0,
+                "bytes": 10,
+            },
+        }
+        for share in (False, True):
+            with self.subTest(share=share):
+                optimizer, task = _build_real_optimizer(
+                    fusion_ops=[LSTM], algebra=AlgebraConfig(share_fused_subtrees=share)
+                )
+                genome = optimizer._random_genome(task.model.name)
+                with patch.object(
+                    ga, "_evaluate_genome_body", return_value=((0.5,), payload)
+                ) as body:
+                    optimizer._evaluate_genome(genome, task)
+                self.assertEqual(len(body.call_args.args), 4 + share)
+                self.assertEqual(optimizer.algebra_stats["subtree_cache_hits"], 3)
 
 
-def test_operand_order_is_part_of_the_key(setup):
-    task, modalities = setup
-    _evaluate(task, modalities, _dag([0, 1]), True)
-    swapped, _ = _evaluate(task, modalities, _dag([1, 0]), True)
-    assert swapped["subtree_cache"]["hits"] == 0
-
-
-@pytest.mark.parametrize("share", [False, True])
-def test_switch_controls_call_and_stats(share):
-    optimizer, task = _build_real_optimizer(
-        fusion_ops=[LSTM], algebra=AlgebraConfig(share_fused_subtrees=share)
-    )
-    genome = optimizer._random_genome(task.model.name)
-    payload = {
-        "train_score": {},
-        "val_score": {"accuracy": 0.5},
-        "test_score": {},
-        "runtime": 1.0,
-        "task_time": 0.5,
-        "representation_time": 0.5,
-        "subtree_cache": {"hits": 3, "misses": 2, "saved_seconds": 4.0, "bytes": 10},
-    }
-    with patch.object(
-        ga, "_evaluate_genome_body", return_value=((0.5,), payload)
-    ) as body:
-        optimizer._evaluate_genome(genome, task)
-    assert len(body.call_args.args) == 4 + share
-    assert optimizer.algebra_stats["subtree_cache_hits"] == 3
+if __name__ == "__main__":
+    unittest.main()

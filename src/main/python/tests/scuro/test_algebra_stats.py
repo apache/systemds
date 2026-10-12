@@ -19,8 +19,10 @@
 #
 # -------------------------------------------------------------
 
+import itertools
+import unittest
+
 import numpy as np
-import pytest
 
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.representations.representation import RepresentationStats
@@ -39,14 +41,25 @@ OPERANDS = {
 }
 
 
-@pytest.mark.parametrize("case", OPERANDS)
-@pytest.mark.parametrize("op", OPERATORS, ids=lambda op: op.__name__)
-def test_predicted_stats_match_execution(op, case):
-    rng = np.random.default_rng(0)
-    operands = [
-        rng.standard_normal(shape).astype(np.float32) for shape in OPERANDS[case]
-    ]
-    stats = [RepresentationStats(len(x), x.shape[1:]) for x in operands]
-    fused = _fuse(op, {}, *operands)
-    assert tuple(op().get_output_stats(stats).output_shape) == fused.shape[1:]
-    assert op().estimate_peak_memory_bytes(stats)["cpu_peak_bytes"] > fused.nbytes
+class TestPredictedStats(unittest.TestCase):
+    def test_predicted_stats_match_execution(self):
+        for op, case in itertools.product(OPERATORS, OPERANDS):
+            with self.subTest(op=op.__name__, case=case):
+                rng = np.random.default_rng(0)
+                operands = [
+                    rng.standard_normal(shape).astype(np.float32)
+                    for shape in OPERANDS[case]
+                ]
+                stats = [RepresentationStats(len(x), x.shape[1:]) for x in operands]
+                fused = _fuse(op, {}, *operands)
+                self.assertEqual(
+                    tuple(op().get_output_stats(stats).output_shape), fused.shape[1:]
+                )
+                self.assertGreater(
+                    op().estimate_peak_memory_bytes(stats)["cpu_peak_bytes"],
+                    fused.nbytes,
+                )
+
+
+if __name__ == "__main__":
+    unittest.main()

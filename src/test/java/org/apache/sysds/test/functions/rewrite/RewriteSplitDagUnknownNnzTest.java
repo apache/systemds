@@ -51,12 +51,12 @@ import java.util.stream.Stream;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class RewriteSplitDagUnknownNnzReadTest extends AutomatedTestBase {
+public class RewriteSplitDagUnknownNnzTest extends AutomatedTestBase {
 
 	private static final String TEST_NAME = "RewriteSplitDagUnknownNnz";
 	private static final String TEST_DIR = "functions/rewrite/";
 	private static final String TEST_CLASS_DIR =
-		TEST_DIR + RewriteSplitDagUnknownNnzReadTest.class.getSimpleName() + "/";
+		TEST_DIR + RewriteSplitDagUnknownNnzTest.class.getSimpleName() + "/";
 	private static final String PACKAGE_REWRITE = "org.apache.sysds.hops.rewrite.HopRewriteRule";
 	private static final String PACKAGE_RECOMPILE = "org.apache.sysds.hops.rewrite.StatementBlockRewriteRule";
 	private static Level _oldLevelRewrite;
@@ -103,7 +103,7 @@ public class RewriteSplitDagUnknownNnzReadTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testSplitDagUnknownNnzRead() {
+	public void testSplitDagUnknownNnzReadAndMMChain() {
 		boolean oldFlag1 = OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES;
 		boolean oldFlag2 = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		DMLConfig oldDMLConfig = ConfigurationManager.getDMLConfig();

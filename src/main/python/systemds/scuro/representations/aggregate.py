@@ -20,7 +20,6 @@
 # -------------------------------------------------------------
 import numpy as np
 
-from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations import utils
 
 
@@ -105,11 +104,6 @@ class Aggregation:
             data.append([])
             if isinstance(instance, np.ndarray) or isinstance(instance, list):
                 if (
-                    modality.modality_type == ModalityType.IMAGE
-                    or modality.modality_type == ModalityType.VIDEO
-                ) and instance.ndim > 2:
-                    aggregated_data = instance.flatten()
-                elif (
                     squeeze_singleton
                     and isinstance(instance, np.ndarray)
                     and instance.ndim == 2

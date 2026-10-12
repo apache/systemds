@@ -23,6 +23,7 @@ from typing import List
 import numpy as np
 
 from systemds.scuro.modality.modality import Modality
+from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.fusion import Fusion
 
 from systemds.scuro.drsearch.operator_registry import register_fusion_operator
@@ -46,3 +47,20 @@ class RowMax(Fusion):
     ):
         fused_data = np.maximum.reduce([m.data for m in modalities])
         return fused_data
+
+    def get_output_stats(self, input_stats_list) -> RepresentationStats:
+        # Elementwise over operands aligned to the widest, as in Average.
+        stats_list = self._fusion_input_stats(input_stats_list)
+        if not stats_list:
+            return RepresentationStats(0, (0,))
+
+        num_instances = max(s.num_instances for s in stats_list)
+        rank = len(stats_list[0].output_shape)
+        if rank > 0 and all(len(s.output_shape) == rank for s in stats_list):
+            output_shape = tuple(
+                max(s.output_shape[d] for s in stats_list) for d in range(rank)
+            )
+        else:
+            output_shape = max(stats_list, key=self._stats_num_elements).output_shape
+        output_shape_is_known = all(s.output_shape_is_known for s in stats_list)
+        return RepresentationStats(num_instances, output_shape, output_shape_is_known)

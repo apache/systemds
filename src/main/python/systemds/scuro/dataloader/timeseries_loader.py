@@ -60,7 +60,19 @@ class TimeseriesLoader(BaseLoader):
         self.normalize = normalize
         self.channel_index = channel_index
         self.file_format = file_format.lower()
-        self.stats = self.get_stats(source_path, sampling_rate)
+        self.channel_index = channel_index
+        files = [source_path + name + "." + self.file_format for name in self.indices]
+        self.stats = self.cached_stats(
+            files,
+            {
+                "dtype": str(data_type),
+                "signals": signal_names,
+                "sampling_rate": sampling_rate,
+                "format": self.file_format,
+                "channel_index": channel_index,
+            },
+            lambda: self.get_stats(source_path, sampling_rate),
+        )
         if self.file_format not in ["npy", "mat", "hdf5", "txt"]:
             raise ValueError(f"Unsupported file format: {self.file_format}")
 
@@ -69,7 +81,9 @@ class TimeseriesLoader(BaseLoader):
 
         data = self._load_data(file)
 
-        if data.ndim > 1 and len(self.signal_names) == 1:
+        if self.channel_index is not None and data.ndim > 1:
+            data = data[:, self.channel_index]
+        elif data.ndim > 1 and len(self.signal_names) == 1:
             data = data.flatten()
 
         if self.normalize:
@@ -159,11 +173,17 @@ class TimeseriesLoader(BaseLoader):
         avg_length = 0
         for file_name in self.indices:
             file = source_path + file_name + "." + self.file_format
-            data = self._load_data(file)
+            data = (
+                np.load(file, mmap_mode="r")
+                if self.file_format == "npy"
+                else self._load_data(file)
+            )
+            if self.channel_index is not None and data.ndim > 1:
+                data = data[:, self.channel_index]
             max_length = max(max_length, data.shape[0])
             avg_length += data.shape[0]
             num_instances += 1
-            num_signals = max(num_signals, data.shape[1])
+            num_signals = max(num_signals, data.shape[1] if data.ndim > 1 else 1)
         return TimeseriesStats(
             max_length,
             num_instances,

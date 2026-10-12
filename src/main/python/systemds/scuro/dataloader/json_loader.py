@@ -43,7 +43,7 @@ class JSONLoader(BaseLoader):
         self,
         source_path: str,
         indices: List[str],
-        field: str,  # TODO: make this a list so it is easier to get multiple fields from a json file. (i.e. Mustard: context + sentence)
+        field: Union[str, List[str]],
         data_type: Union[np.dtype, str] = str,
         chunk_size: Optional[int] = None,
         ext: str = ".json",
@@ -52,7 +52,20 @@ class JSONLoader(BaseLoader):
             source_path, indices, data_type, chunk_size, ModalityType.TEXT, ext
         )
         self.field = field
-        self.stats = self.get_stats(source_path)
+        files = self.get_file_names(self.indices)
+        self.stats = self.cached_stats(
+            files,
+            {"field": field, "extension": ext},
+            lambda: self.get_stats(source_path),
+        )
+
+    def _get_text(self, record: dict) -> str:
+        fields = [self.field] if isinstance(self.field, str) else self.field
+        parts = []
+        for field in fields:
+            text = record[field]
+            parts.append(" ".join(text) if isinstance(text, list) else text)
+        return " ".join(part for part in parts if part)
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
@@ -62,15 +75,13 @@ class JSONLoader(BaseLoader):
             if isinstance(index, str):
                 index = [index]
             for idx in index:
-                try:
-                    text = json_file[idx][self.field]
-                except:
-                    text = json_file[self.field]
+                # One file keyed by instance id, or one file per instance.
+                record = json_file[idx] if idx in json_file else json_file
+                text = self._get_text(record)
 
-                text = " ".join(text) if isinstance(text, list) else text
                 self.data.append(text)
                 self.metadata.append(
-                    self.modality_type.create_metadata(len(text), text) | json_file[idx]
+                    self.modality_type.create_metadata(len(text), text) | record
                 )
 
     def get_stats(self, source_path: str):
@@ -85,11 +96,10 @@ class JSONLoader(BaseLoader):
                 json_file = json.load(f)
                 for id in self.indices:
                     try:
-                        text = json_file[id][self.field]
+                        text = self._get_text(json_file[id])
                     except:
-                        text = json_file[self.field]
+                        text = self._get_text(json_file)
 
-                    text = " ".join(text) if isinstance(text, list) else text
                     num_instances += 1
                     max_length = max(max_length, len(text))
                     avg_length += len(text)
@@ -97,9 +107,8 @@ class JSONLoader(BaseLoader):
             for id in self.indices:
                 with open(os.path.join(source_path, f"{id}{self._ext}")) as f:
                     json_file = json.load(f)
-                    text = json_file[self.field]
+                    text = self._get_text(json_file)
 
-                    text = " ".join(text) if isinstance(text, list) else text
                     num_instances += 1
                     max_length = max(max_length, len(text))  # number of characters
                     max_words = max(max_words, len(text.split()))

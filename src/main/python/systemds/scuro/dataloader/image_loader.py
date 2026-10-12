@@ -56,7 +56,12 @@ class ImageLoader(BaseLoader):
         )
         self.load_data_from_file = load
         self._all_metadata = []
-        self.stats = self.get_stats(source_path)
+        files = self.get_file_names(self.indices)
+        self.stats, self._all_metadata = self.cached_stats(
+            files,
+            {"dtype": str(data_type), "extension": ext},
+            lambda: (self.get_stats(source_path), self._all_metadata),
+        )
 
     def load(self):
         if self.chunk_size:
@@ -102,11 +107,14 @@ class ImageLoader(BaseLoader):
         for file in self.indices:
             path = os.path.join(source_path, f"{file}{self._ext}")
             self.file_sanity_check(path)
-            image = cv2.imread(path, cv2.IMREAD_COLOR)
-            if image is None:
-                raise ValueError(f"Could not read image at path: {path}")
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            height, width, channels = image.shape
+            from PIL import Image
+
+            try:
+                with Image.open(path) as image:
+                    width, height = image.size
+            except OSError as exc:
+                raise ValueError(f"Could not read image at path: {path}") from exc
+            channels = 3
             self._all_metadata.append(
                 self.modality_type.create_metadata(width, height, channels)
             )

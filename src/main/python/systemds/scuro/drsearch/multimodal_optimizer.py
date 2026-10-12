@@ -24,11 +24,15 @@ import multiprocessing as mp
 import itertools
 import threading
 from dataclasses import dataclass
-from typing import List, Dict, Any, Generator
+from typing import List, Dict, Any, Generator, Optional
 from systemds.scuro.drsearch.task import Task, PerformanceMeasure
 from systemds.scuro.drsearch.representation_dag import (
     RepresentationDag,
     RepresentationDAGBuilder,
+)
+from systemds.scuro.drsearch.split_aware_evaluator import (
+    SplitAwareDAGEvaluator,
+    dag_requires_fitting,
 )
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
@@ -55,6 +59,22 @@ def _evaluate_dag_worker(dag_pickle, task_pickle, modalities_pickle, debug=False
         if debug:
             print(
                 f"[DEBUG][worker] pid={os.getpid()} evaluating dag_root={getattr(dag, 'root_node_id', None)} task={getattr(task.model, 'name', None)}"
+            )
+
+        if dag_requires_fitting(dag):
+            evaluation = SplitAwareDAGEvaluator(
+                dag, modalities_for_dag, task
+            ).evaluate()
+            total_time = evaluation.representation_time + evaluation.task_time
+            return OptimizationResult(
+                dag=dag,
+                train_score=evaluation.scores[0].average_scores,
+                val_score=evaluation.scores[1].average_scores,
+                test_score=evaluation.scores[2].average_scores,
+                runtime=total_time,
+                task_name=task.model.name,
+                task_time=evaluation.task_time,
+                representation_time=evaluation.representation_time,
             )
 
         fused_representation = dag.execute(modalities_for_dag, task)
@@ -106,7 +126,8 @@ class MultimodalOptimizer:
         max_modalities: int = None,
         metric: str = "accuracy",
         checkpoint_every: int = None,
-        resume: bool = True,
+        checkpoint_dir: Optional[str] = None,
+        resume: bool = False,
     ):
         self.modalities = modalities
         self.tasks = tasks
@@ -126,7 +147,7 @@ class MultimodalOptimizer:
         self.checkpoint_every = checkpoint_every
         self.resume = resume
         self._checkpoint_manager = CheckpointManager(
-            os.getcwd(),
+            checkpoint_dir or os.getcwd(),
             "multimodal_checkpoint_",
             checkpoint_every=self.checkpoint_every,
             resume=self.resume,
@@ -405,6 +426,27 @@ class MultimodalOptimizer:
     def _evaluate_dag(self, dag: RepresentationDag, task: Task) -> "OptimizationResult":
         start_time = time.time()
         try:
+
+            modalities_for_dag = list(
+                chain.from_iterable(
+                    self.k_best_representations[task.model.name].values()
+                )
+            )
+            if dag_requires_fitting(dag):
+                evaluation = SplitAwareDAGEvaluator(
+                    dag, modalities_for_dag, task
+                ).evaluate()
+                total_time = evaluation.representation_time + evaluation.task_time
+                return OptimizationResult(
+                    dag=dag,
+                    train_score=evaluation.scores[0].average_scores,
+                    val_score=evaluation.scores[1].average_scores,
+                    test_score=evaluation.scores[2].average_scores,
+                    runtime=total_time,
+                    representation_time=evaluation.representation_time,
+                    task_name=task.model.name,
+                    task_time=evaluation.task_time,
+                )
 
             fused_representation = dag.execute(
                 list(

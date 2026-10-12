@@ -21,7 +21,7 @@
 import multiprocessing as mp
 import os
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 
 import torch
@@ -39,7 +39,11 @@ from systemds.scuro.drsearch.representation_dag import (
     RepresentationNode,
 )
 from systemds.scuro.drsearch.task import PerformanceMeasure
-from systemds.scuro.drsearch.worker_pool import PersistentWorkerPool, create_mp_context
+from systemds.scuro.drsearch.worker_pool import (
+    PersistentWorkerPool,
+    create_mp_context,
+    default_threads_per_worker,
+)
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
@@ -79,12 +83,17 @@ def _place_on_device(obj: Any, gpu_id: Optional[int]) -> None:
             obj.device = device
         except (AttributeError, RuntimeError):
             pass
-    model = getattr(obj, "model", None)
+
+    model = obj.__dict__.get("model")
     if model is not None and hasattr(model, "to"):
-        obj.model = model.to(device)
+        try:
+            obj.model = model.to(device)
+        except (AttributeError, RuntimeError):
+            # A read-only "model" means the operator owns its own placement.
+            pass
 
 
-def _run_gpu_op(fn, gpu_id: Optional[int]):
+def _run_gpu_op(fn, gpu_id: Optional[int], cleanup_after: bool = True):
     if gpu_id is None or not torch.cuda.is_available():
         return fn()
     try:
@@ -97,7 +106,8 @@ def _run_gpu_op(fn, gpu_id: Optional[int]):
                 return fn()
             raise
     finally:
-        cleanup_gpu(gpu_id)
+        if cleanup_after:
+            cleanup_gpu(gpu_id)
 
 
 _WORKER_OP_CACHE: Dict[str, Any] = {}
@@ -188,8 +198,8 @@ def _execute_node_worker(node, input_mods: List[Any], gpu_id: Optional[int]):
         else:
             fusion_op = node_operation
             if getattr(fusion_op, "needs_training", False):
-                return input_mods[0].combine_with_training(
-                    input_mods[1:], fusion_op, None
+                raise RuntimeError(
+                    "Fitted representations require SplitAwareDAGEvaluator"
                 )
             return input_mods[0].combine(input_mods[1:], fusion_op)
 
@@ -198,7 +208,7 @@ def _execute_node_worker(node, input_mods: List[Any], gpu_id: Optional[int]):
     if DEBUG:
         input_resident = sum(estimate_modality_bytes(m) for m in input_mods)
         result, measurement = measure_memory_during(
-            lambda: _run_gpu_op(_run_node_op, gpu_id),
+            lambda: _run_gpu_op(_run_node_op, gpu_id, cleanup_after=False),
             input_resident_bytes=input_resident,
             sample_s=0.01,
         )
@@ -206,7 +216,7 @@ def _execute_node_worker(node, input_mods: List[Any], gpu_id: Optional[int]):
             torch.cuda.max_memory_allocated(device) if gpu_id is not None else 0
         )
     else:
-        result = _run_gpu_op(_run_node_op, gpu_id)
+        result = _run_gpu_op(_run_node_op, gpu_id, cleanup_after=False)
 
     shm_name, resident_bytes, shm_bytes, actual_stats = _offload_to_shared_memory(
         result
@@ -276,6 +286,7 @@ def _execute_task_worker(
     return {
         "scores": result[0],
         "task_time": result[1],
+        "task_timing": getattr(task, "last_run_timing", {}),
         "memory": measurement,
         "peak_bytes": measurement.increment_bytes if measurement else -1,
         "gpu_peak_bytes": gpu_peak_bytes,
@@ -406,6 +417,18 @@ class ResultEntry:
     task_time: float = 0.0
     dag: RepresentationDag = None
     tradeoff_score: float = 0.0
+    train_fold_scores: dict = field(default_factory=dict)
+    val_fold_scores: dict = field(default_factory=dict)
+    test_fold_scores: dict = field(default_factory=dict)
+    train_score_stds: dict = field(default_factory=dict)
+    val_score_stds: dict = field(default_factory=dict)
+    test_score_stds: dict = field(default_factory=dict)
+    task_timing: dict = field(default_factory=dict)
+    peak_cpu_bytes: int = -1
+    peak_gpu_bytes: int = -1
+    eval_index: int = -1
+    t_since_search_start_s: float = 0.0
+    t_eval_end_unix: float = 0.0
 
 
 class NodeExecutor:
@@ -421,7 +444,11 @@ class NodeExecutor:
         search_start: Optional[float] = None,
     ):
         self.enable_checkpointing = enable_checkpointing
-        available_total_cpu = cpu_memory_budget_bytes()
+        available_total_cpu = cpu_memory_budget_bytes(
+            getattr(getattr(modalities[0], "modality_type", None), "name", None)
+            if modalities
+            else None
+        )
         self.dags = dags
         self.scheduler = MemoryAwareNodeScheduler(
             dags, modalities, tasks, available_total_cpu
@@ -448,7 +475,11 @@ class NodeExecutor:
             resume=False,
         )
         self._memory_usage_data: Dict[str, Any] = {}
-        self.statistics = {"worker_stats": {}, "node_stats": {}}
+        self.statistics = {"worker_stats": {}, "node_stats": {}, "reuse": {}}
+        self._cache_consumptions = 0
+        self._cache_misses = 0
+        self._nodes_executed = 0
+        self._peak_cache_bytes = 0
         self._eval_counter = 0
         self._nodes_executed = 0
         self._search_start = (
@@ -460,12 +491,13 @@ class NodeExecutor:
         self._job_units: Dict[int, Union[_NodeUnit, _BatchUnit]] = {}
         self._job_retained_shm: Dict[int, List[str]] = {}
         self._leaf_shm_names: List[str] = []
+        self._leaf_shm_owners: Dict[str, Any] = {}
+        self._leaf_original_data: Dict[str, Any] = {}
         self._task_results: Dict[str, ResultEntry] = {}
 
         self._owns_pool = worker_pool is None
         if worker_pool is None:
-            cpu_count = os.cpu_count() or 1
-            threads_per_worker = max(1, cpu_count // max(1, self.max_num_workers))
+            threads_per_worker = default_threads_per_worker()
             worker_pool = PersistentWorkerPool(
                 self.max_num_workers,
                 _WORKER_DISPATCH,
@@ -475,7 +507,7 @@ class NodeExecutor:
                 gpu_slots_per_device=int(
                     os.environ.get("SCURO_GPU_SLOTS_PER_DEVICE", "1")
                 ),
-                gpu_demand_fraction=self.scheduler.gpu_demand_fraction(),
+                gpu_demand_fraction=1.0,
             )
         self._pool = worker_pool
         restrict_devices = getattr(self.scheduler, "restrict_gpu_devices", None)
@@ -525,6 +557,13 @@ class NodeExecutor:
             if self._loads_in_chunks(modality):
                 continue
             if getattr(modality, "has_data", None) and modality.has_data():
+                original = modality.data
+                wrapped, shm_name, _, _ = add_shared_memory_candidate(original)
+                if shm_name is not None:
+                    modality._data = wrapped
+                    self._leaf_shm_names.append(shm_name)
+                    self._leaf_shm_owners[shm_name] = modality
+                    self._leaf_original_data[shm_name] = original
                 continue
             attempts = 0
             while True:
@@ -543,6 +582,7 @@ class NodeExecutor:
             shm_name = jr.value.get("shm_name")
             if shm_name is not None:
                 self._leaf_shm_names.append(shm_name)
+                self._leaf_shm_owners[shm_name] = modality
 
     @staticmethod
     def _loads_in_chunks(modality: Any) -> bool:
@@ -551,8 +591,17 @@ class NodeExecutor:
 
     def _cleanup_leaf_shared_memory(self) -> None:
         for shm_name in self._leaf_shm_names:
+            modality = self._leaf_shm_owners.pop(shm_name, None)
+            if modality is not None and shm_name in collect_shm_names_from_payload(
+                getattr(modality, "_data", None)
+            ):
+                close = getattr(modality._data, "close", None)
+                if callable(close):
+                    close()
+                modality._data = self._leaf_original_data.pop(shm_name, None)
             unlink_shm(shm_name)
         self._leaf_shm_names = []
+        self._leaf_shm_owners = {}
 
     def _submit_node(
         self, node_id: str, allow_gpu_worker_for_cpu: bool = False
@@ -561,7 +610,7 @@ class NodeExecutor:
         gpu_id = node.gpu_id
         parent_ids = self.scheduler.get_valid_parents(node_id)
         parent_results = (
-            [self._result_cache.get(pid) for pid in parent_ids] if parent_ids else None
+            [self._get_cached_parent(pid) for pid in parent_ids] if parent_ids else None
         )
 
         if self._is_task_node(node):
@@ -616,6 +665,8 @@ class NodeExecutor:
         self._job_retained_shm[job_id] = retained
 
     def _fill_pipeline(self) -> None:
+        if not self._pool.has_idle_worker:
+            return
         ready = self.scheduler.get_runnable().copy()
 
         def _gpu_id(entry):
@@ -624,6 +675,8 @@ class NodeExecutor:
 
         ready.sort(key=lambda entry: _gpu_id(entry) is None)
         for entry in ready:
+            if not self._pool.has_idle_worker:
+                break
             gpu_id = _gpu_id(entry)
             allow_gpu_worker_for_cpu = gpu_id is None
             if not self._pool.has_idle_worker_for(
@@ -644,7 +697,17 @@ class NodeExecutor:
                     allow_gpu_worker_for_cpu=allow_gpu_worker_for_cpu,
                 )
 
+    def _get_cached_parent(self, parent_id: str):
+        try:
+            result = self._result_cache.get(parent_id)
+        except KeyError:
+            self._cache_misses += 1
+            raise
+        self._cache_consumptions += 1
+        return result
+
     def _record_stats(self, node_id: str, pid: int, start_time: float, end_time: float):
+        self._nodes_executed += 1
         node_stats = self.statistics["node_stats"]
         worker_stats = self.statistics["worker_stats"]
         node_stats[node_id] = {"start_time": start_time, "end_time": end_time}
@@ -702,6 +765,19 @@ class NodeExecutor:
             entry.train_score = value["scores"][0].average_scores
             entry.val_score = value["scores"][1].average_scores
             entry.test_score = value["scores"][2].average_scores
+            entry.train_fold_scores = value["scores"][0].fold_scores()
+            entry.val_fold_scores = value["scores"][1].fold_scores()
+            entry.test_fold_scores = value["scores"][2].fold_scores()
+            entry.train_score_stds = value["scores"][0].score_stds()
+            entry.val_score_stds = value["scores"][1].score_stds()
+            entry.test_score_stds = value["scores"][2].score_stds()
+            entry.task_timing = value.get("task_timing", {})
+            entry.peak_cpu_bytes = value.get("peak_bytes", -1)
+            entry.peak_gpu_bytes = value.get("gpu_peak_bytes", -1)
+            entry.eval_index = self._eval_counter
+            entry.t_since_search_start_s = time.perf_counter() - self._search_start
+            entry.t_eval_end_unix = time.time()
+            self._eval_counter += 1
             if self.enable_checkpointing:
                 self._checkpoint_manager.increment(node_id)
                 self._checkpoint_manager.checkpoint_if_due(
@@ -794,6 +870,7 @@ class NodeExecutor:
             shm_bytes=shm_bytes,
         )
         after_bytes = self._result_cache.get_memory_total_memory_usage()
+        self._peak_cache_bytes = max(self._peak_cache_bytes, after_bytes)
         self.scheduler.update_cpu_memory_in_use(after_bytes - before_bytes)
         self.scheduler.complete_node(node_id)
 
@@ -973,19 +1050,20 @@ class NodeExecutor:
     def _is_task_node(node: RepresentationNode) -> bool:
         return bool(getattr(node, "parameters", {}).get("_node_kind") == "task")
 
+    def detach_worker_pool(self) -> PersistentWorkerPool:
+        self._owns_pool = False
+        return self._pool
+
     def run(self) -> Dict[str, Any]:
         self._task_results = {}
-        self._load_leaf_modalities()
-
         try:
-            self._fill_pipeline()
+            self._load_leaf_modalities()
             while self._job_units or not self.scheduler.is_finished():
                 self._fill_pipeline()
                 if not self._job_units:
                     continue
                 jr = self._pool.wait()
                 self._process_result(jr)
-                self._fill_pipeline()
         finally:
             if self._owns_pool:
                 self._pool.shutdown()
@@ -997,7 +1075,31 @@ class NodeExecutor:
                 self._task_results, self._discard_report()
             )
 
+        self.statistics["reuse"] = self._reuse_report()
+
         return {
             "task_results": list(self._task_results.values()),
             "statistics": self.statistics,
         }
+
+    def _reuse_report(self) -> Dict[str, Any]:
+        report = dict(getattr(self.scheduler, "reuse_stats", {}) or {})
+        slots = report.get("dag_node_slots", 0)
+        saved = report.get("nodes_saved_by_merging", 0)
+        report.update(
+            {
+                "nodes_executed": self._nodes_executed,
+                "cache_consumptions": self._cache_consumptions,
+                "cache_misses": self._cache_misses,
+                "peak_cache_bytes": self._peak_cache_bytes,
+                "slot_reduction_ratio": (saved / slots) if slots else 0.0,
+                "failed_nodes": len(getattr(self.scheduler, "failed_nodes", []) or []),
+                "blocked_memory_nodes": len(
+                    getattr(self.scheduler, "blocked_memory_nodes_perm", []) or []
+                ),
+                "cpu_fallback_nodes": len(
+                    getattr(self.scheduler, "cpu_fallback_nodes", []) or []
+                ),
+            }
+        )
+        return report

@@ -31,15 +31,31 @@ import itertools
 import math
 import random
 from systemds.scuro.drsearch.representation_dag import (
-    RepresentationDAGBuilder,
     RepresentationNode,
 )
 from systemds.scuro.modality.modality import Modality
+from systemds.scuro.drsearch.split_aware_evaluator import (
+    SplitAwareDAGEvaluator,
+    dag_requires_fitting,
+)
 from systemds.scuro.drsearch.task import PerformanceMeasure
 import pickle
+import torch
 from systemds.scuro.utils.checkpointing import CheckpointManager
+from systemds.scuro.drsearch.node_executor import _place_on_device
+from systemds.scuro.drsearch.trial_result_cache import (
+    TrialNodeCache,
+    TrialResultCache,
+    trial_node_signatures,
+)
 from systemds.scuro.drsearch.process_cache import HPOExecutionCache
 from systemds.scuro.drsearch.operator_registry import is_expensive_representation
+
+_CUDA_OOM_ERRORS = tuple(
+    e
+    for e in (getattr(torch, "OutOfMemoryError", None), torch.cuda.OutOfMemoryError)
+    if e is not None
+) or (RuntimeError,)
 
 
 def _wandb_safe_tag(s: str, max_len: int = 64) -> str:
@@ -231,12 +247,40 @@ def _apply_trial_params_to_node(
     return {**base_params, **trial_params}
 
 
+class HyperparamEvaluationScores(list):
+    """Backward-compatible score triple with complete CV details."""
+
+    def __init__(self, scores, metric):
+        split_names = ("train", "val", "test")
+        for split_name, score in zip(split_names, scores):
+            if isinstance(score, PerformanceMeasure):
+                averages = dict(score.average_scores or {})
+                fold_scores = score.fold_scores()
+                score_stds = score.score_stds()
+            else:
+                value = float(score)
+                averages = {metric: value}
+                fold_scores = {metric: [value]}
+                score_stds = {metric: 0.0}
+            setattr(self, f"all_{split_name}_scores", averages)
+            setattr(self, f"{split_name}_fold_scores", fold_scores)
+            setattr(self, f"{split_name}_score_stds", score_stds)
+
+        super().__init__(
+            [
+                self.all_train_scores.get(metric, np.nan),
+                self.val_fold_scores.get(metric, []),
+                self.all_test_scores.get(metric, np.nan),
+            ]
+        )
+
+
 @dataclass
 class HyperparamResult:
     representation_name: str
     best_params: Dict[str, Any]
     best_score: float
-    all_results: List[Tuple[Dict[str, Any], float]]
+    all_results: List[Tuple[Dict[str, Any], Any]]
     tuning_time: float
     modality_id: int
     task_name: str
@@ -274,25 +318,23 @@ class HyperparamResults:
         results = self.results[task.model.name][modality.modality_id]
         dags = []
         for result in results:
-            dag_with_best_params = RepresentationDAGBuilder()
-            prev_node_id = None
-            for node in result.dag.nodes:
-                if node.operation is not None and node.parameters:
-                    params = _apply_trial_params_to_node(node, result.best_params)
-                    prev_node_id = dag_with_best_params.create_operation_node(
-                        node.operation, [prev_node_id], params
+            dag_with_best_params = copy.deepcopy(result.dag)
+            for node in dag_with_best_params.nodes:
+                if node.operation is not None:
+                    node.parameters = _apply_trial_params_to_node(
+                        node, result.best_params
                     )
-                else:  # it is a leaf node
-                    prev_node_id = dag_with_best_params.create_leaf_node(
-                        node.modality_id
-                    )
-
-            dags.append(dag_with_best_params.build(prev_node_id))
+            dags.append(dag_with_best_params)
         return results, dags
 
     def get_k_best_results(self, modality, task, performance_metric_name):
         results, dags = self.get_k_best_dags(modality, task)
-        representations = [list(dag.execute([modality]).values())[-1] for dag in dags]
+        representations = []
+        for dag in dags:
+            representation = dag.execute([modality])
+            if isinstance(representation, dict):
+                representation = representation[list(representation.keys())[-1]]
+            representations.append(representation)
         return results, representations
 
 
@@ -310,7 +352,8 @@ class HyperparameterTuner:
         save_results: bool = False,
         debug: bool = False,
         checkpoint_every: Optional[int] = None,
-        resume: bool = True,
+        checkpoint_dir: Optional[str] = None,
+        resume: bool = False,
         random_state: int = 42,
         exhaustive_threshold: int = 256,
         local_search_patience: int = 3,
@@ -346,7 +389,7 @@ class HyperparameterTuner:
         self.local_search_patience = max(1, local_search_patience)
         self._rng = random.Random(self.random_state)
         self._checkpoint_manager = CheckpointManager(
-            os.getcwd(),
+            checkpoint_dir or os.getcwd(),
             "hyperparam_checkpoint_",
             checkpoint_every=self.checkpoint_every,
             resume=self.resume,
@@ -427,15 +470,14 @@ class HyperparameterTuner:
             self.optimization_results.results = results
 
     def tune_unimodal_representations(self, max_eval_per_rep: Optional[int] = None):
-        # self.resume_from_checkpoint()
+        self.resume_from_checkpoint()
         for task in self.tasks:
             reps = self.k_best_representations[task.model.name]
-            skip_remaining = 0
-            # skip_remaining = self._checkpoint_manager.skip_remaining_by_key.get(
-            #     task.model.name, 0
-            # )
-            # if skip_remaining >= len(reps):
-            #     continue
+            skip_remaining = self._checkpoint_manager.skip_remaining_by_key.get(
+                task.model.name, 0
+            )
+            if skip_remaining >= len(reps):
+                continue
 
             chunk_size = self.checkpoint_every or len(reps)
             for start_idx in range(skip_remaining, len(reps), chunk_size):
@@ -469,6 +511,24 @@ class HyperparameterTuner:
     def tune_dag_representation(
         self, dag, root_node_id, task, max_evals=None, mm_opt=False
     ):
+        self._trial_cache = TrialResultCache.from_env()
+        try:
+            return self._tune_dag_representation(
+                dag, root_node_id, task, max_evals, mm_opt
+            )
+        finally:
+            if self._trial_cache is not None:
+                self.logger.info(
+                    f"trial cache for {dag.get_represntation_names()} / "
+                    f"{task.model.name}: {self._trial_cache.summary()}"
+                )
+                print(f"[hpo-cache] {task.model.name}: {self._trial_cache.summary()}")
+                self._trial_cache.clear()
+            self._trial_cache = None
+
+    def _tune_dag_representation(
+        self, dag, root_node_id, task, max_evals=None, mm_opt=False
+    ):
         hyperparams = {}
         reps = []
         modality_ids = []
@@ -484,7 +544,7 @@ class HyperparameterTuner:
                 visit_node(input_id)
             visited.add(node_id)
             if node.operation is not None:
-                params = self.__get_params_for_node(node)
+                params = self.__get_params_for_node(node, dag)
                 if params:
                     hyperparams[node_id] = params
                 reps.append(node.operation)
@@ -510,11 +570,7 @@ class HyperparameterTuner:
         )
         baseline = (
             baseline_params,
-            [
-                self._score_value(baseline_raw_scores[0]),
-                self._score_value_list(baseline_raw_scores[1]),
-                self._score_value(baseline_raw_scores[2]),
-            ],
+            HyperparamEvaluationScores(baseline_raw_scores, self.scoring_metric),
         )
 
         if not hyperparams:
@@ -595,7 +651,22 @@ class HyperparameterTuner:
 
         return best_result
 
-    def __get_params_for_node(self, node: RepresentationNode) -> Dict[str, Any]:
+    def _leaf_input_stats(self, node: RepresentationNode, dag) -> Any:
+        if dag is None or len(node.inputs) != 1:
+            return None
+        try:
+            input_node = dag.get_node_by_id(node.inputs[0])
+        except Exception:
+            return None
+        if input_node is None or input_node.operation is not None:
+            return None
+        modalities = self.get_modalities_by_id([input_node.modality_id])
+        get_stats = getattr(modalities[0], "get_stats", None) if modalities else None
+        return get_stats() if callable(get_stats) else None
+
+    def __get_params_for_node(
+        self, node: RepresentationNode, dag=None
+    ) -> Dict[str, Any]:
         try:
             if node.parameters:
                 op = node.operation(params=node.parameters)
@@ -608,6 +679,13 @@ class HyperparameterTuner:
             return None
 
         params = copy.deepcopy(op.parameters)
+        input_stats = self._leaf_input_stats(node, dag)
+        if input_stats is not None:
+            for name, values in list(params.items()):
+                if isinstance(values, list):
+                    params[name] = (
+                        op.filter_parameter_domain(name, values, input_stats) or values
+                    )
         if node.parameters:
             if inspect.isclass(node.parameters.get("aggregation_function")):
                 params["aggregation_function"] = node.parameters["aggregation_function"]
@@ -938,21 +1016,15 @@ class HyperparameterTuner:
                 task,
                 modalities_override=modalities_override,
             )
-            train_score = self._score_value(scores[0])
             val_score = self._score_value(scores[1])
-            test_score = self._score_value(scores[2])
             if np.isnan(val_score):
                 raise optuna.TrialPruned()
 
-            seen[self._config_key(params)] = (
-                params,
-                [train_score, self._score_value_list(scores[1]), test_score],
-            )
+            evaluation_scores = HyperparamEvaluationScores(scores, self.scoring_metric)
+            seen[self._config_key(params)] = (params, evaluation_scores)
 
-            trial_results.append(
-                (params, [train_score, self._score_value_list(scores[1]), test_score])
-            )
-            val_folds = self._score_value_list(scores[1])
+            trial_results.append((params, evaluation_scores))
+            val_folds = evaluation_scores.val_fold_scores.get(self.scoring_metric, [])
             if val_folds is not None and len(val_folds) > 1:
                 lam = 0.5
                 robust_val = np.mean(val_folds) - lam * np.std(val_folds, ddof=1)
@@ -1000,27 +1072,129 @@ class HyperparameterTuner:
             )
         return cached_modalities
 
+    def _trial_node_cache(self, dag, params):
+        store = getattr(self, "_trial_cache", None)
+        if store is None:
+            return None
+        return TrialNodeCache(store, trial_node_signatures(dag, params))
+
+    def _evaluate_dag_once(
+        self,
+        dag,
+        params,
+        node_order,
+        modality_ids,
+        task,
+        modalities_override=None,
+        on_cpu=False,
+        node_cache=None,
+    ):
+        dag_copy = copy.deepcopy(dag)
+        for node_id in node_order:
+            node = dag_copy.get_node_by_id(node_id)
+            if node.operation is not None:
+                node.parameters = _apply_trial_params_to_node(node, params)
+            if on_cpu and node.operation is not None:
+                _place_on_device(node.operation, None)
+
+        modalities = (
+            modalities_override
+            if modalities_override is not None
+            else self.get_modalities_by_id(modality_ids)
+        )
+        if on_cpu:
+            _place_on_device(getattr(task, "model", task), None)
+
+        if dag_requires_fitting(dag_copy):
+            evaluation = SplitAwareDAGEvaluator(
+                dag_copy, modalities, task, node_cache=node_cache
+            ).evaluate()
+            return params, evaluation.scores
+        modified_modality = dag_copy.execute(
+            modalities,
+            task,
+            node_cache=node_cache,
+            execution_cache=self.execution_cache,
+        )
+        return params, task.run(modified_modality.data)
+
+    def _evaluate_dag_trial(
+        self,
+        dag,
+        params,
+        node_order,
+        modality_ids,
+        task,
+        modalities_override=None,
+        on_cpu=False,
+    ):
+        node_cache = self._trial_node_cache(dag, params)
+        if node_cache is None:
+            return self._evaluate_dag_once(
+                dag,
+                params,
+                node_order,
+                modality_ids,
+                task,
+                modalities_override,
+                on_cpu=on_cpu,
+            )
+        try:
+            return self._evaluate_dag_once(
+                dag,
+                params,
+                node_order,
+                modality_ids,
+                task,
+                modalities_override,
+                on_cpu=on_cpu,
+                node_cache=node_cache,
+            )
+        except _CUDA_OOM_ERRORS:
+            raise
+        except Exception as error:
+            if node_cache.hits == 0:
+                raise
+            self.logger.warning(
+                f"Trial with {node_cache.hits} cached result(s) failed ({error}); "
+                "repeating it without the cache"
+            )
+            return self._evaluate_dag_once(
+                dag,
+                params,
+                node_order,
+                modality_ids,
+                task,
+                modalities_override,
+                on_cpu=on_cpu,
+            )
+
     def evaluate_dag_config(
         self, dag, params, node_order, modality_ids, task, modalities_override=None
     ):
         try:
-            dag_copy = copy.deepcopy(dag)
-            for node_id in node_order:
-                node = dag_copy.get_node_by_id(node_id)
-                if node.operation is not None:
-                    node.parameters = _apply_trial_params_to_node(node, params)
-
-            modalities = (
-                modalities_override
-                if modalities_override is not None
-                else self.get_modalities_by_id(modality_ids)
-            )
-            modified_modality = dag_copy.execute(
-                modalities, task, execution_cache=self.execution_cache
-            )
-            score = task.run(modified_modality.data)
-
-            return params, score
+            try:
+                return self._evaluate_dag_trial(
+                    dag, params, node_order, modality_ids, task, modalities_override
+                )
+            except _CUDA_OOM_ERRORS as oom:
+                self.logger.warning(
+                    f"Trial ran out of GPU memory ({oom}); retrying on the CPU"
+                )
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                result = self._evaluate_dag_trial(
+                    dag,
+                    params,
+                    node_order,
+                    modality_ids,
+                    task,
+                    modalities_override,
+                    on_cpu=True,
+                )
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                return result
         except Exception as e:
             self.logger.warning("Skipping invalid DAG candidate %s: %s", params, e)
             return params, [np.nan, np.nan, np.nan]

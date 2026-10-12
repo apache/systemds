@@ -65,21 +65,34 @@ def aggregate_chunk_embeddings(embeddings, aggregation):
 
 
 class LengthBucketBatchSampler(torch.utils.data.Sampler):
-    """Build deterministic batches from samples with similar sequence lengths."""
 
-    def __init__(self, lengths, batch_size, exact=False):
+    def __init__(self, lengths, batch_size, exact=False, max_batch_items=None):
         self.lengths = [int(length) for length in lengths]
         self.batch_size = max(1, int(batch_size))
         self.exact = exact
+        self.max_batch_items = (
+            None if max_batch_items is None else max(1, int(max_batch_items))
+        )
         self._batches = self._build_batches()
+
+    def _batch_size_for(self, length):
+        if self.max_batch_items is None:
+            return self.batch_size
+        return max(1, min(self.batch_size, self.max_batch_items // max(length, 1)))
 
     def _build_batches(self):
         indices = sorted(range(len(self.lengths)), key=lambda i: (self.lengths[i], i))
         if not self.exact:
-            return [
-                indices[start : start + self.batch_size]
-                for start in range(0, len(indices), self.batch_size)
-            ]
+            batches = []
+            batch = []
+            for index in indices:
+                if batch and len(batch) >= self._batch_size_for(self.lengths[index]):
+                    batches.append(batch)
+                    batch = []
+                batch.append(index)
+            if batch:
+                batches.append(batch)
+            return batches
 
         batches = []
         start = 0
@@ -88,9 +101,10 @@ class LengthBucketBatchSampler(torch.utils.data.Sampler):
             end = start
             while end < len(indices) and self.lengths[indices[end]] == length:
                 end += 1
+            batch_size = self._batch_size_for(length)
             batches.extend(
-                indices[offset : min(offset + self.batch_size, end)]
-                for offset in range(start, end, self.batch_size)
+                indices[offset : min(offset + batch_size, end)]
+                for offset in range(start, end, batch_size)
             )
             start = end
         return batches

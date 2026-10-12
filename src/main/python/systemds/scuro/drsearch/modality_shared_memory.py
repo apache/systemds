@@ -20,16 +20,9 @@
 # -------------------------------------------------------------
 from typing import Any, List, Tuple
 import numpy as np
-from multiprocessing import shared_memory, resource_tracker
+from multiprocessing import shared_memory
 
 SHARED_MEMORY_MIN_BYTES = 1 * 1024 * 1024
-
-
-def _untrack(shm: shared_memory.SharedMemory) -> None:
-    try:
-        resource_tracker.unregister(shm._name, "shared_memory")
-    except Exception:
-        pass
 
 
 def unlink_shm(name: str) -> None:
@@ -55,7 +48,6 @@ class SharedStringList:
     def _ensure_attached(self):
         if self._shm is None:
             self._shm = shared_memory.SharedMemory(name=self.shm_name)
-            _untrack(self._shm)
 
     def __len__(self):
         return len(self.offsets)
@@ -110,7 +102,6 @@ class SharedGroupedArrayList:
     def _ensure_attached(self):
         if self._shm is None:
             self._shm = shared_memory.SharedMemory(name=self.shm_name)
-            _untrack(self._shm)
             self._buffer = np.ndarray(
                 (self.total_elems,), dtype=self._dtype, buffer=self._shm.buf
             )
@@ -166,7 +157,6 @@ class SharedNDArray:
     def _ensure_attached(self):
         if self._shm is None:
             self._shm = shared_memory.SharedMemory(name=self.shm_name)
-            _untrack(self._shm)
             self._arr = np.ndarray(self.shape, dtype=self._dtype, buffer=self._shm.buf)
             self._arr.setflags(write=False)
 
@@ -236,7 +226,6 @@ class SharedArrayList(list):
     def _ensure_attached(self):
         if self._shm is None:
             self._shm = shared_memory.SharedMemory(name=self.shm_name)
-            _untrack(self._shm)
             self._buffer = np.ndarray(
                 (self.total_elems,), dtype=self._dtype, buffer=self._shm.buf
             )
@@ -358,7 +347,6 @@ def add_shared_memory_candidate(data: Any, resident_bytes: int = 0) -> bool:
                 resident_bytes, max(2 * 1024 * 1024, len(offsets) * 64)
             )
             shm.close()
-            _untrack(shm)
             return data, shm.name, data_nbytes, resident_bytes
     elif _is_shared_ndarray_candidate(data):
         arr = data
@@ -373,7 +361,6 @@ def add_shared_memory_candidate(data: Any, resident_bytes: int = 0) -> bool:
             resident_bytes = min(resident_bytes, 2 * 1024 * 1024)
 
             shm.close()
-            _untrack(shm)
             return data, shm.name, data_nbytes, resident_bytes
     elif _is_nested_shared_memory_candidate(data):
         leaves: List[np.ndarray] = []
@@ -409,7 +396,6 @@ def add_shared_memory_candidate(data: Any, resident_bytes: int = 0) -> bool:
                 resident_bytes, max(2 * 1024 * 1024, len(offsets) * 64)
             )
             shm.close()
-            _untrack(shm)
             return data, shm.name, data_nbytes, resident_bytes
     elif _is_string_list_shared_memory_candidate(data):
         encoded = [s.encode("utf-8") for s in data]
@@ -429,7 +415,6 @@ def add_shared_memory_candidate(data: Any, resident_bytes: int = 0) -> bool:
                 resident_bytes, max(2 * 1024 * 1024, len(str_offsets) * 32)
             )
             shm.close()
-            _untrack(shm)
             return data, shm.name, data_nbytes, resident_bytes
 
     return None, None, 0, resident_bytes

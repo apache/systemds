@@ -52,7 +52,16 @@ class TabularLoader(BaseLoader):
         self.file_format = file_format.lower()
         if self.file_format != "npy":
             raise ValueError(f"Unsupported file format: {self.file_format}")
-        self.stats = self.get_stats(source_path)
+        files = [source_path + name + "." + self.file_format for name in self.indices]
+        self.stats = self.cached_stats(
+            files,
+            {
+                "dtype": str(data_type),
+                "features": feature_names,
+                "format": self.file_format,
+            },
+            lambda: self.get_stats(source_path),
+        )
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
@@ -72,7 +81,7 @@ class TabularLoader(BaseLoader):
         for file_name in self.indices:
             file = source_path + file_name + "." + self.file_format
             self.file_sanity_check(file)
-            data = np.load(file)
+            data = np.load(file, mmap_mode="r")
             num_features = max(num_features, int(np.prod(data.shape)))
             num_instances += 1
         return TabularStats(num_instances, num_features, (num_features,))

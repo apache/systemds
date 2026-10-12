@@ -43,6 +43,11 @@ class ELMoRepresentation(UnimodalRepresentation):
         output_file=None,
         params=None,
     ):
+        if params is not None:
+            model_name = params.get("model_name", model_name)
+            layer = params.get("layer", layer)
+            pooling = params.get("pooling", pooling)
+            output_file = params.get("output_file", output_file)
         self.data_type = torch.float32
         self.model_name = model_name
         self.layer_name = layer

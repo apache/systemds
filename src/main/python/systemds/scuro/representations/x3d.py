@@ -59,6 +59,7 @@ class Identity(torch.nn.Module):
 
 
 @register_representation([ModalityType.VIDEO])
+@register_expensive_representation([ModalityType.VIDEO])
 class X3D(FrameBudgetedVideoModel, UnimodalRepresentation):
     cache_in_worker = True
     _MEMORY_PROFILES = {

@@ -27,13 +27,22 @@ from systemds.scuro.representations.representation import Representation
 _BUILTIN_MODULES = {
     ModalityType.AUDIO: (
         "covarep_audio_features",
+        "image_bind",
         "mel_spectrogram",
         "mfcc",
         "spectrogram",
         "timeseries_representations",
         "wav2vec",
     ),
-    ModalityType.TEXT: ("bert", "bow", "clip", "glove", "tfidf", "word2vec"),
+    ModalityType.TEXT: (
+        "bert",
+        "bow",
+        "clip",
+        "glove",
+        "image_bind",
+        "tfidf",
+        "word2vec",
+    ),
     ModalityType.IMAGE: ("clip", "color_histogram", "openface", "resnet", "vgg"),
     ModalityType.VIDEO: (
         "openface",
@@ -56,7 +65,7 @@ _CONTEXT_MODULES = {
     ModalityType.AUDIO: ("window_aggregation",),
     ModalityType.TEXT: ("text_context", "text_context_with_indices"),
     ModalityType.VIDEO: ("window_aggregation",),
-    ModalityType.TIMESERIES: ("window_aggregation",),
+    ModalityType.TIMESERIES: ("physiological_window", "window_aggregation"),
     ModalityType.PHYSIOLOGICAL: ("physiological_window", "window_aggregation"),
 }
 _FUSION_MODULES = (

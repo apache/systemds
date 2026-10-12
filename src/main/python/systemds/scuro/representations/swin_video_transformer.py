@@ -53,6 +53,7 @@ from systemds.scuro.utils.static_variables import (
 
 
 @register_representation([ModalityType.VIDEO])
+@register_expensive_representation([ModalityType.VIDEO])
 class SwinVideoTransformer(FrameBudgetedVideoModel, UnimodalRepresentation):
     _EMBED_DIM = 768
     cache_in_worker = True

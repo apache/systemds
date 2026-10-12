@@ -1110,7 +1110,12 @@ class HyperparameterTuner:
                 dag_copy, modalities, task, node_cache=node_cache
             ).evaluate()
             return params, evaluation.scores
-        modified_modality = dag_copy.execute(modalities, task, node_cache=node_cache)
+        modified_modality = dag_copy.execute(
+            modalities,
+            task,
+            node_cache=node_cache,
+            execution_cache=self.execution_cache,
+        )
         return params, task.run(modified_modality.data)
 
     def _evaluate_dag_trial(

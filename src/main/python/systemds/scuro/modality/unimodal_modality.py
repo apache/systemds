@@ -78,7 +78,9 @@ class UnimodalModality(Modality):
         return subset_loader
 
     def subset(self, indices):
-        if self.data_loader.chunk_size is None or self.has_data():
+        if self.data_loader.chunk_size is None or (
+            self.has_data() and len(self.data) == len(self.data_loader.indices)
+        ):
             subset_modality = super().subset(indices)
             subset_modality.data_loader = self._subset_loader(indices)
             subset_modality.stats = subset_modality.data_loader.stats

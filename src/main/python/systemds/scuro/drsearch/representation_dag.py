@@ -390,72 +390,35 @@ class RepresentationDag:
             input_mods = [execute_node(input_id, task) for input_id in node.inputs]
             is_unimodal = len(input_mods) == 1
 
-            if external_cache is not None and is_unimodal:
-                cached = external_cache.get(node_id)
-                if cached is not None:
-                    result = cached
+            def run_operation():
+                node_operation = node.operation(params=node.parameters)
+                if gpu_id is not None and hasattr(node_operation, "gpu_id"):
+                    node_operation.gpu_id = gpu_id
+                if len(input_mods) == 1:
+                    # It's a unimodal operation
+                    if isinstance(node_operation, Context):
+                        result = input_mods[0].context(node_operation)
+                    elif isinstance(node_operation, DimensionalityReduction):
+                        result = input_mods[0].dimensionality_reduction(node_operation)
+                    elif isinstance(node_operation, AggregatedRepresentation):
+                        result = node_operation.transform(input_mods[0])
+                    elif isinstance(node_operation, UnimodalRepresentation):
+                        if rep_cache is not None:
+                            result = rep_cache[node_operation.name]
+                        else:
+                            agg = pushdown_aggregation_for_node(node.parameters)
+                            result = input_mods[0].apply_representation(
+                                node_operation, aggregation=agg
+                            )
                 else:
-                    node_operation = node.operation(params=node.parameters)
-                    if gpu_id is not None and hasattr(node_operation, "gpu_id"):
-                        node_operation.gpu_id = gpu_id
-                    if len(input_mods) == 1:
-                        # It's a unimodal operation
-                        if isinstance(node_operation, Context):
-                            result = input_mods[0].context(node_operation)
-                        elif isinstance(node_operation, DimensionalityReduction):
-                            result = input_mods[0].dimensionality_reduction(
-                                node_operation
-                            )
-                        elif isinstance(node_operation, AggregatedRepresentation):
-                            result = node_operation.transform(input_mods[0])
-                        elif isinstance(node_operation, UnimodalRepresentation):
-                            if rep_cache is not None:
-                                result = rep_cache[node_operation.name]
-                            else:
-                                agg = pushdown_aggregation_for_node(node.parameters)
-                                result = input_mods[0].apply_representation(
-                                    node_operation, aggregation=agg
-                                )
-                    else:
-                        # It's a fusion operation
-                        fusion_op = node_operation
-                        if getattr(fusion_op, "needs_training", False):
-                            raise RuntimeError(
-                                "Fitted representations require SplitAwareDAGEvaluator"
-                            )
-                        result = input_mods[0].combine(input_mods[1:], fusion_op)
-            else:
-
-                def run_operation():
-                    node_operation = node.operation(params=node.parameters)
-                    if gpu_id is not None and hasattr(node_operation, "gpu_id"):
-                        node_operation.gpu_id = gpu_id
-                    if len(input_mods) == 1:
-                        # It's a unimodal operation
-                        if isinstance(node_operation, Context):
-                            result = input_mods[0].context(node_operation)
-                        elif isinstance(node_operation, DimensionalityReduction):
-                            result = input_mods[0].dimensionality_reduction(
-                                node_operation
-                            )
-                        elif isinstance(node_operation, AggregatedRepresentation):
-                            result = node_operation.transform(input_mods[0])
-                        elif isinstance(node_operation, UnimodalRepresentation):
-                            if rep_cache is not None:
-                                result = rep_cache[node_operation.name]
-                            else:
-                                agg = pushdown_aggregation_for_node(node.parameters)
-                                result = input_mods[0].apply_representation(
-                                    node_operation, aggregation=agg
-                                )
-                    else:
-                        # It's a fusion operation
-                        fusion_op = node_operation
-                        if getattr(fusion_op, "needs_training", False):
-                            raise RuntimeError(
-                                "Fitted representations require SplitAwareDAGEvaluator"
-                            )
-                        result = input_mods[0].combine(input_mods[1:], fusion_op)
+                    # It's a fusion operation
+                    fusion_op = node_operation
+                    if getattr(fusion_op, "needs_training", False):
+                        raise RuntimeError(
+                            "Fitted representations require SplitAwareDAGEvaluator"
+                        )
+                    result = input_mods[0].combine(input_mods[1:], fusion_op)
+                return result
 
             if execution_cache is not None and is_unimodal:
                 result = execution_cache.get_or_compute_representation(

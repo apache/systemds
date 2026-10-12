@@ -518,12 +518,19 @@ class OpenFace(UnimodalRepresentation):
             yield start, min(start + self.FRAME_BATCH_SIZE, count)
 
     def _detect_faces(self, images_bgr):
+        """Return the top-scoring face crop and its 15-value detection per image.
+
+        Only the highest-scoring box is used downstream, and NMS always keeps
+        the highest-scoring box first, so NMS is skipped: an argmax over the
+        scores selects the same detection and only that prior is decoded.
+        """
         from openface.Pytorch_Retinaface.layers.functions.prior_box import PriorBox
         from openface.Pytorch_Retinaface.utils.box_utils import decode, decode_landm
-        from openface.Pytorch_Retinaface.utils.nms.py_cpu_nms import py_cpu_nms
 
         detector = self._face_detector
+        device = detector.device
         variance = detector.cfg["variance"]
+        mean = torch.tensor(self.DETECTOR_MEAN_BGR, dtype=torch.float32, device=device)
         faces = [None] * len(images_bgr)
         detections = [None] * len(images_bgr)
         priors_by_shape = {}
@@ -536,44 +543,43 @@ class OpenFace(UnimodalRepresentation):
                 priors_by_shape[(height, width)] = (
                     PriorBox(detector.cfg, image_size=(height, width))
                     .forward()
-                    .to(detector.device)
+                    .to(device)
                     .data
                 )
             priors = priors_by_shape[(height, width)]
-            box_scale = torch.Tensor([width, height, width, height]).to(detector.device)
-            landmark_scale = torch.Tensor([width, height] * 5).to(detector.device)
-
-            batch = torch.cat(
-                [
-                    detector.preprocess_image(
-                        self._pad_to(images_bgr[i], height, width)
-                    )[0]
-                    for i in chunk
-                ]
+            box_scale = torch.tensor(
+                [width, height] * 2, dtype=torch.float32, device=device
             )
+            landmark_scale = torch.tensor(
+                [width, height] * 5, dtype=torch.float32, device=device
+            )
+
+            batch = np.stack([self._pad_to(images_bgr[i], height, width) for i in chunk])
+            batch = torch.from_numpy(batch).to(device)
+            batch = (batch.float() - mean).permute(0, 3, 1, 2).contiguous()
             with torch.no_grad():
                 locations, confidences, landmark_offsets = detector.model(batch)
 
-            for row, index in enumerate(chunk):
-                boxes = decode(locations.data[row], priors, variance)
-                boxes = (boxes * box_scale).cpu().numpy()
-                scores = confidences[row].data.cpu().numpy()[:, 1]
-                points = decode_landm(landmark_offsets.data[row], priors, variance)
-                points = (points * landmark_scale).cpu().numpy()
-
-                keep = np.where(scores > detector.confidence_threshold)[0]
-                boxes, points, scores = boxes[keep], points[keep], scores[keep]
-                dets = np.hstack((boxes, scores[:, np.newaxis])).astype(
-                    np.float32, copy=False
+                rows = torch.arange(len(chunk), device=device)
+                scores, best = confidences[:, :, 1].max(dim=1)
+                best_priors = priors[best]
+                boxes = decode(locations[rows, best], best_priors, variance)
+                points = decode_landm(landmark_offsets[rows, best], best_priors, variance)
+                best_dets = torch.cat(
+                    (boxes * box_scale, scores[:, None], points * landmark_scale), dim=1
                 )
-                keep = py_cpu_nms(dets, detector.nms_threshold)
-                dets = np.concatenate((dets[keep], points[keep]), axis=1)
+            best_dets = best_dets.cpu().numpy()
 
-                if len(dets) == 0 or dets[0][4] < detector.vis_threshold:
+            for row, index in enumerate(chunk):
+                det = best_dets[row]
+                if (
+                    det[4] <= detector.confidence_threshold
+                    or det[4] < detector.vis_threshold
+                ):
                     continue
-                bbox = dets[0][:4].astype(int)
+                bbox = det[:4].astype(int)
                 faces[index] = images_bgr[index][bbox[1] : bbox[3], bbox[0] : bbox[2]]
-                detections[index] = dets
+                detections[index] = det
         return faces, detections
 
     def _predict_multitask(self, faces, needs_backbone):
@@ -582,9 +588,12 @@ class OpenFace(UnimodalRepresentation):
             self._ensure_backbone_hook()
         outputs = ([], [], [], [])
         for start, stop in self._chunks(len(faces)):
-            batch = torch.cat(
-                [predictor.preprocess(face) for face in faces[start:stop]]
-            )
+            batch = torch.stack(
+                [
+                    predictor.transform(cv2.cvtColor(face, cv2.COLOR_BGR2RGB))
+                    for face in faces[start:stop]
+                ]
+            ).to(predictor.device)
             self._backbone_output = None
             with torch.no_grad():
                 emotion, gaze, action_units = predictor.model(batch)
@@ -603,46 +612,63 @@ class OpenFace(UnimodalRepresentation):
         features = np.zeros(
             (len(images_bgr), len(self.LANDMARK_COLUMNS)), dtype=np.float32
         )
-        crops = []
-        for index, dets in enumerate(detections):
-            det = dets[0]
+        max_value = torch.tensor(255.0, device=alignment.device)
+        indices, matrices = [], []
+        for index, det in enumerate(detections):
             if det[4] < self.vis_threshold:
                 continue
             x1, y1, x2, y2 = det[:4].astype(int)
             scale = min(x2 - x1, y2 - y1) / 200 * 1.05
-            crops.append(
-                (index,)
-                + alignment.preprocess(
-                    images_bgr[index],
-                    float(scale),
-                    float((x2 + x1) / 2),
-                    float((y2 + y1) / 2),
+            indices.append(index)
+            matrices.append(
+                alignment.getCropMatrix.process(
+                    float(scale), float((x2 + x1) / 2), float((y2 + y1) / 2)
                 )
             )
 
-        for start, stop in self._chunks(len(crops)):
-            chunk = crops[start:stop]
+        for start, stop in self._chunks(len(indices)):
+            chunk = indices[start:stop]
+            crops = np.stack(
+                [
+                    alignment.transformPerspective.process(images_bgr[index], matrix)
+                    for index, matrix in zip(chunk, matrices[start:stop])
+                ]
+            )
+            crops = torch.from_numpy(crops).to(alignment.device)
+            # A device-side divisor keeps CUDA from rewriting the division as a
+            # reciprocal multiply, so the inputs match OpenFace's CPU preprocessing.
+            crops = crops.float().permute(0, 3, 1, 2) / max_value * 2.0 - 1.0
             with torch.no_grad():
-                output = alignment.alignment(torch.cat([c[1] for c in chunk]))
-            points_batch = alignment.denorm_points(output[-1]).data.cpu().numpy()
-            for (index, _, matrix), points in zip(chunk, points_batch):
-                points = alignment.postprocess(points, np.linalg.inv(matrix))
-                points = np.asarray(points, dtype=np.float32)
-                if points.shape != (self.NUM_LANDMARKS, 2):
-                    raise RuntimeError(
-                        "OpenFace 3.0 returned unexpected landmark dimensions: "
-                        f"{points.shape}"
-                    )
-                height, width = images_bgr[index].shape[:2]
-                points = points.copy()
-                points[:, 0] /= width
-                points[:, 1] /= height
-                features[index] = points.reshape(-1)
+                output = alignment.alignment(crops)
+            points = alignment.denorm_points(output[-1]).cpu().numpy()
+            if points.shape[1:] != (self.NUM_LANDMARKS, 2):
+                raise RuntimeError(
+                    "OpenFace 3.0 returned unexpected landmark dimensions: "
+                    f"{points.shape[1:]}"
+                )
+            inverse = np.linalg.inv(np.stack(matrices[start:stop]))
+            x, y = points[..., 0], points[..., 1]
+            image_points = np.stack(
+                (
+                    inverse[:, 0, 0, None] * x
+                    + inverse[:, 0, 1, None] * y
+                    + inverse[:, 0, 2, None],
+                    inverse[:, 1, 0, None] * x
+                    + inverse[:, 1, 1, None] * y
+                    + inverse[:, 1, 2, None],
+                ),
+                axis=-1,
+            )
+            image_sizes = np.array(
+                [images_bgr[index].shape[1::-1] for index in chunk], dtype=np.float32
+            )
+            image_points /= image_sizes[:, None, :]
+            features[chunk] = image_points.reshape(len(chunk), -1)
         return features
 
     @classmethod
-    def _detection_features(cls, detections, image_shape):
-        detection = np.asarray(detections[0], dtype=np.float32)
+    def _detection_features(cls, detection, image_shape):
+        detection = np.asarray(detection, dtype=np.float32)
         if detection.size < len(cls.DETECTION_COLUMNS):
             raise RuntimeError(
                 "OpenFace 3.0 returned unexpected face-detection dimensions: "

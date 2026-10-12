@@ -437,6 +437,36 @@ def add_shared_memory_candidate(data: Any, resident_bytes: int = 0) -> bool:
     return None, None, 0, resident_bytes
 
 
+def move_arrays_to_shared_memory(arrays: List[np.ndarray]):
+    if not _is_shared_memory_candidate(arrays):
+        return None, None, 0
+    data_nbytes = _estimate_ndarray_list_nbytes(arrays)
+    if data_nbytes <= 0 or not _should_offload(data_nbytes):
+        return None, None, 0
+
+    dtype = arrays[0].dtype
+    offsets = []
+    total_elems = 0
+    for arr in arrays:
+        offsets.append((total_elems, int(arr.size), tuple(arr.shape)))
+        total_elems += int(arr.size)
+
+    shm = shared_memory.SharedMemory(create=True, size=data_nbytes)
+    try:
+        buffer = np.ndarray((total_elems,), dtype=dtype, buffer=shm.buf)
+        for i, (start, size, _) in enumerate(offsets):
+            buffer[start : start + size] = arrays[i].reshape(-1)
+            arrays[i] = None
+        del buffer
+    except BaseException:
+        shm.close()
+        shm.unlink()
+        raise
+    name = shm.name
+    shm.close()
+    return SharedArrayList(name, dtype.str, offsets, total_elems), name, data_nbytes
+
+
 _SHARED_MEMORY_WRAPPER_TYPES = (
     SharedStringList,
     SharedGroupedArrayList,

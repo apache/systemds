@@ -34,7 +34,11 @@ class PHashAlignment(Alignment):
         if segment.ndim == 4:  # For videos
             descriptors = []
             for s in segment:
-                frame = (s * 255).astype(np.uint8, copy=True)
+                frame = (
+                    (s * 255).astype(np.uint8, copy=True)
+                    if np.issubdtype(s.dtype, np.floating)
+                    else np.asarray(s, dtype=np.uint8)
+                )
                 descriptors.append(self.hasher.compute(frame))
             return descriptors
         raise ("PHashAlignment is only implemented for ndim=3 or ndim=4")

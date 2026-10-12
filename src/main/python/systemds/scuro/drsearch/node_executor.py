@@ -26,11 +26,15 @@ from typing import Any, Dict, List, Optional, Union
 
 import torch
 
+from systemds.scuro.dataloader.base_loader import LazyFileSequence
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.drsearch.modality_result_cache import RefCountResultCache
 from systemds.scuro.drsearch.modality_shared_memory import (
+    SHARED_MEMORY_MIN_BYTES,
+    _should_offload,
     add_shared_memory_candidate,
     collect_shm_names_from_payload,
+    move_arrays_to_shared_memory,
     unlink_shm,
 )
 from systemds.scuro.drsearch.node_scheduler import MemoryAwareNodeScheduler
@@ -68,6 +72,14 @@ from systemds.scuro.utils.memory_utility import (
 from systemds.scuro.utils.static_variables import DEBUG
 
 _MAX_NODE_RETRIES = int(os.environ.get("SCURO_MAX_NODE_RETRIES", "3"))
+
+
+def _materialize_lazy_leaves() -> bool:
+    return os.environ.get("SCURO_MATERIALIZE_LAZY_LEAVES", "1") == "1"
+
+
+def _lazy_leaf_budget_fraction() -> float:
+    return float(os.environ.get("SCURO_LAZY_LEAF_BUDGET_FRACTION", "0.5"))
 
 
 def _place_on_device(obj: Any, gpu_id: Optional[int]) -> None:
@@ -347,11 +359,29 @@ def _execute_leaf_batch_worker(nodes: List[Any], modality: Any, gpu_id: Optional
     }
 
 
-def _load_leaf_worker(modality: Any) -> Dict[str, Any]:
+def _load_leaf_worker(modality: Any, materialize: bool = False) -> Dict[str, Any]:
     if hasattr(modality, "extract_raw_data") and not modality.has_data():
         modality.extract_raw_data()
 
     data = modality.data
+    if materialize and isinstance(data, LazyFileSequence):
+        arrays = data.materialize()
+        shared, shm_name, shm_bytes = move_arrays_to_shared_memory(arrays)
+        if shared is not None:
+            return {
+                "data": shared,
+                "metadata": modality.metadata,
+                "shm_name": shm_name,
+                "shm_bytes": shm_bytes,
+            }
+        if sum(getattr(a, "nbytes", 0) for a in arrays) < SHARED_MEMORY_MIN_BYTES:
+            return {
+                "data": arrays,
+                "metadata": modality.metadata,
+                "shm_name": None,
+                "materialized": True,
+            }
+
     resident_bytes = 0
     try:
         resident_bytes = modality.estimate_peak_memory_bytes()["cpu_peak_bytes"]
@@ -390,8 +420,8 @@ def _dispatch_leaf_batch(payload, gpu_id):
 
 
 def _dispatch_load_leaf(payload, _gpu_id):
-    (modality,) = payload
-    return _load_leaf_worker(modality)
+    modality, materialize = payload
+    return _load_leaf_worker(modality, materialize)
 
 
 _WORKER_DISPATCH = {
@@ -498,6 +528,7 @@ class NodeExecutor:
         self._leaf_shm_names: List[str] = []
         self._leaf_shm_owners: Dict[str, Any] = {}
         self._leaf_original_data: Dict[str, Any] = {}
+        self._leaf_unshared_originals: List[tuple] = []
         self._task_results: Dict[str, ResultEntry] = {}
 
         self._owns_pool = worker_pool is None
@@ -557,22 +588,50 @@ class NodeExecutor:
         names = list(dict.fromkeys(names))
         return self._result_cache.retain_shm_names(names)
 
+    def _should_materialize_leaf(self, modality: Any) -> bool:
+        if not _materialize_lazy_leaves():
+            return False
+        data = modality.data if modality.has_data() else None
+        if data is not None and not isinstance(data, LazyFileSequence):
+            return False
+        estimate = getattr(
+            getattr(modality, "data_loader", None), "estimate_decoded_bytes", None
+        )
+        if not callable(estimate):
+            return False
+        metadata = None
+        if data is not None and len(modality.metadata or []) == len(data):
+            metadata = modality.metadata
+        try:
+            decoded_bytes = estimate(metadata)
+        except (KeyError, TypeError, ValueError):
+            return False
+        if not decoded_bytes:
+            return False
+        budget = self.scheduler.memory_budget["cpu"] * _lazy_leaf_budget_fraction()
+        if self._leaf_cached_bytes + decoded_bytes > budget:
+            return False
+        return decoded_bytes < SHARED_MEMORY_MIN_BYTES or _should_offload(decoded_bytes)
+
     def _load_leaf_modalities(self) -> None:
         for modality in self._modalities:
             if self._loads_in_chunks(modality):
                 continue
+            original = None
             if getattr(modality, "has_data", None) and modality.has_data():
                 original = modality.data
-                wrapped, shm_name, _, _ = add_shared_memory_candidate(original)
-                if shm_name is not None:
-                    modality._data = wrapped
-                    self._leaf_shm_names.append(shm_name)
-                    self._leaf_shm_owners[shm_name] = modality
-                    self._leaf_original_data[shm_name] = original
-                continue
+                if not isinstance(original, LazyFileSequence):
+                    wrapped, shm_name, _, _ = add_shared_memory_candidate(original)
+                    if shm_name is not None:
+                        modality._data = wrapped
+                        self._leaf_shm_names.append(shm_name)
+                        self._leaf_shm_owners[shm_name] = modality
+                        self._leaf_original_data[shm_name] = original
+                    continue
+            materialize = self._should_materialize_leaf(modality)
             attempts = 0
             while True:
-                self._pool.submit("load_leaf", (modality,), gpu_id=None)
+                self._pool.submit("load_leaf", (modality, materialize), gpu_id=None)
                 jr = self._pool.wait()
                 if jr.ok:
                     break
@@ -584,10 +643,20 @@ class NodeExecutor:
                     )
             modality._data = jr.value["data"]
             modality.metadata = jr.value["metadata"]
+            if jr.value.get("materialized"):
+                self._leaf_unshared_originals.append((modality, original))
             shm_name = jr.value.get("shm_name")
             if shm_name is not None:
                 self._leaf_shm_names.append(shm_name)
                 self._leaf_shm_owners[shm_name] = modality
+                if original is not None:
+                    self._leaf_original_data[shm_name] = original
+                shm_bytes = int(jr.value.get("shm_bytes", 0) or 0)
+                if shm_bytes:
+                    # The decoded leaf now occupies RAM (/dev/shm) for the
+                    # whole run; the scheduler only knew one lazy instance.
+                    self._leaf_cached_bytes += shm_bytes
+                    self._sync_cache_accounting()
 
     @staticmethod
     def _loads_in_chunks(modality: Any) -> bool:
@@ -607,6 +676,9 @@ class NodeExecutor:
             unlink_shm(shm_name)
         self._leaf_shm_names = []
         self._leaf_shm_owners = {}
+        for modality, original in self._leaf_unshared_originals:
+            modality._data = original
+        self._leaf_unshared_originals = []
 
     def _submit_node(
         self, node_id: str, allow_gpu_worker_for_cpu: bool = False

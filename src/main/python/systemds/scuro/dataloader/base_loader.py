@@ -24,11 +24,22 @@ import os
 import pickle
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
+from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Iterator, List, Optional, Tuple, Union
 import math
 from numbers import Integral
 
 import numpy as np
+
+
+def decode_threads() -> int:
+    explicit = os.environ.get("SCURO_DECODE_THREADS")
+    if explicit:
+        try:
+            return max(1, int(explicit))
+        except ValueError:
+            pass
+    return max(1, min(16, os.cpu_count() or 1))
 
 
 class LazyFileSequence(Sequence):
@@ -48,6 +59,13 @@ class LazyFileSequence(Sequence):
 
     def subset(self, indices):
         return type(self)([self.file_names[i] for i in indices], self.decoder)
+
+    def materialize(self, num_threads: Optional[int] = None) -> list:
+        num_threads = decode_threads() if num_threads is None else int(num_threads)
+        if num_threads <= 1 or len(self) <= 1:
+            return [self.decoder(file_name) for file_name in self.file_names]
+        with ThreadPoolExecutor(max_workers=min(num_threads, len(self))) as pool:
+            return list(pool.map(self.decoder, self.file_names))
 
 
 class BaseLoader(ABC):
@@ -254,6 +272,13 @@ class BaseLoader(ABC):
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         pass
 
+    def estimate_decoded_bytes(self, metadata=None) -> Optional[int]:
+        """
+        Bytes of all instances once decoded (of the instances `metadata`
+        describes, if given), or None if not known before decoding.
+        """
+        return None
+
     @staticmethod
     def file_sanity_check(file):
         """
@@ -271,6 +296,7 @@ class BaseLoader(ABC):
     def resolve_data_type(data_type):
         if isinstance(data_type, str):
             if data_type.lower() in [
+                "uint8",
                 "float16",
                 "float32",
                 "float64",
@@ -282,6 +308,7 @@ class BaseLoader(ABC):
             else:
                 raise ValueError(f"Unsupported data_type string: {data_type}")
         elif data_type in [
+            np.uint8,
             np.float16,
             np.float32,
             np.float64,

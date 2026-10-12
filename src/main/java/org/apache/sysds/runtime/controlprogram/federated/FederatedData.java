@@ -33,13 +33,16 @@ import java.util.Set;
 import java.util.concurrent.Future;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.ChannelFutureListener;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
@@ -60,11 +63,11 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.Reques
 import org.apache.sysds.runtime.controlprogram.paramserv.NetworkTrafficCounter;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.conf.DMLConfig;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.serialization.ObjectEncoder;
+import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.concurrent.Promise;
@@ -205,6 +208,7 @@ public class FederatedData {
 				createWorkGroup();
 			b.group(workerGroup);
 			b.channel(NioSocketChannel.class);
+			b.option(ChannelOption.ALLOW_HALF_CLOSURE, true);
 			final DataRequestHandler handler = new DataRequestHandler();
 			// Client Netty
 
@@ -213,7 +217,12 @@ public class FederatedData {
 			ChannelFuture f = b.connect(address).sync();
 			Promise<FederatedResponse> promise = f.channel().eventLoop().newPromise();
 			handler.setPromise(promise);
-			f.channel().writeAndFlush(request);
+			f.channel().writeAndFlush(request).addListener((ChannelFutureListener) future -> {
+				if(!future.isSuccess()) {
+					LOG.error("Federated network write failed: " + future.cause().getMessage());
+					promise.setFailure(future.cause());
+				}
+			});
 
 			return handler.getProm();
 		}
@@ -258,9 +267,11 @@ public class FederatedData {
 					cp.addLast(new ReadTimeoutHandler(timeout));
 
 				compressionStrategy.ifPresent(strategy -> cp.addLast(strategy.left));
-				cp.addLast(FederationUtils.decoder());
+				cp.addLast(new FederatedFormatDecoder());
 				compressionStrategy.ifPresent(strategy -> cp.addLast(strategy.right));
+				cp.addLast(new ChunkedWriteHandler());
 				cp.addLast(new FederatedRequestEncoder());
+				cp.addLast(new FederatedFormatEncoder());
 				cp.addLast(handler);
 			}
 		};
@@ -348,6 +359,15 @@ public class FederatedData {
 					_failure = cause;
 			}
 			ctx.close();
+		}
+
+		@Override
+		public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+			// Fail (rather than leave hanging) any request whose connection closed before its response
+			// was delivered, so a waiting caller gets an exception instead of blocking until timeout.
+			if(_prom != null && !_prom.isDone())
+				_prom.tryFailure(new IOException("Channel closed before federated response was received"));
+			super.channelInactive(ctx);
 		}
 
 		public Promise<FederatedResponse> getProm() {

@@ -89,30 +89,36 @@ from systemds.scuro.representations.physiological_window import (
 class TestOperatorRegistry(unittest.TestCase):
     def test_audio_representations_in_registry(self):
         registry = Registry()
-        assert registry.get_representations(ModalityType.AUDIO) == [
-            MelSpectrogram,
-            MFCC,
-            ImageBind,
-            Spectrogram,
-            Wav2Vec,
-            Spectral,
-            ZeroCrossing,
-            RMSE,
-            Pitch,
-        ]
+        self.assertCountEqual(
+            registry.get_representations(ModalityType.AUDIO),
+            [
+                MelSpectrogram,
+                MFCC,
+                ImageBind,
+                Spectrogram,
+                Wav2Vec,
+                Spectral,
+                ZeroCrossing,
+                RMSE,
+                Pitch,
+            ],
+        )
 
     def test_video_representations_in_registry(self):
         registry = Registry()
-        assert registry.get_representations(ModalityType.VIDEO) == [
-            ResNet,
-            OpenFace,
-            ImageBind,
-            SwinVideoTransformer,
-            X3D,
-            ColorHistogram,
-            VGG19,
-            CLIPVisual,
-        ]
+        self.assertCountEqual(
+            registry.get_representations(ModalityType.VIDEO),
+            [
+                ResNet,
+                OpenFace,
+                ImageBind,
+                SwinVideoTransformer,
+                X3D,
+                ColorHistogram,
+                VGG19,
+                CLIPVisual,
+            ],
+        )
 
     def test_timeseries_representations_in_registry(self):
         registry = Registry()

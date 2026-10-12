@@ -286,7 +286,7 @@ def _execute_task_worker(
     return {
         "scores": result[0],
         "task_time": result[1],
-        "task_timing": task.last_run_timing,
+        "task_timing": getattr(task, "last_run_timing", {}),
         "memory": measurement,
         "peak_bytes": measurement.increment_bytes if measurement else -1,
         "gpu_peak_bytes": gpu_peak_bytes,

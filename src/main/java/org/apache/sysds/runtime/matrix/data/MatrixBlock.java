@@ -3080,29 +3080,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		final int n = Math.max(Math.max(c1, c2), c3);
 		final long nnz = nonZeros;
 		
-		ternaryOperationCheck(s1, s2, s3, m, r1, r2, r3, n, c1, c2, c3);
+		ternaryOperationCheck(op, s1, s2, s3, m, r1, r2, r3, n, c1, c2, c3);
 		
 		//prepare result
 		if( op.fn instanceof IfElse && (s1 || nnz==0 || nnz==(long)m*n) ) {
-			
-			ret.reset(m, n, false);
-			
-			//SPECIAL CASE for shallow-copy if-else
-			boolean expr = s1 ? (d1 != 0) : (nnz==(long)m*n);
-			MatrixBlock tmp = expr ? m2 : m3;
-			if( tmp.rlen==m && tmp.clen==n ) {
-				//shallow copy incl meta data
-				ret.copyShallow(tmp);
-			}
-			else {
-				//fill output with given scalar value
-				double tmpVal = tmp.get(0, 0);
-				if( tmpVal != 0 ) {
-					ret.allocateDenseBlock();
-					ret.denseBlock.set(tmpVal);
-					ret.nonZeros = (long)m * n;
-				}
-			}
+			ternaryIfElseCopy(s1, m, n, d1, nnz, m2, m3, ret);
 		}
 		else{
 			final boolean PM_Or_MM = (op.fn instanceof PlusMultiply || op.fn instanceof MinusMultiply);
@@ -3141,11 +3123,87 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return ret;
 	}
 
-	public static void ternaryOperationCheck(boolean s1, boolean s2, boolean s3, int m, int r1, int r2, int r3, int n, int c1, int c2, int c3){
+	/**
+	 * Copies and applies broadcasting to either second or third input to IfElse operation.
+	 *
+	 * If the first value of the IfElse-operation meets certain conditions, then
+	 * either the m2 or m3 matrix inputs of IfElse is the result of the operation.
+	 * This methods handles the copying if the conditions are met.
+	 *
+	 * @param s1  Flag, whether the first matrix is a scalar.
+	 * @param m   Rows of the resulting matrix.
+	 * @param n   Columns of the resulting matrix
+	 * @param d1  Value of the entry 0,0 of the first matrix input.
+	 * @param nnz Non-zero entries of the first matrix
+	 * @param m2  Second matrix input of the IfElse operation
+	 * @param m3  Third matrix input of the IfElse operation
+	 * @param ret Result of the operation, where either m2 or m3 is copied into
+	 */
+	private void ternaryIfElseCopy(boolean s1, int m, int n, double d1, long nnz, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret) {
+		ret.reset(m, n, false);
+
+		boolean expr = s1 ? (d1 != 0) : (nnz==(long)m*n);
+		MatrixBlock tmp = expr ? m2 : m3;
+		if (tmp.rlen==m && tmp.clen==n) {
+			//shallow copy incl meta data
+			ret.copyShallow(tmp);
+		}
+		else if (tmp.rlen==m && tmp.clen==1) {
+			ret.allocateDenseBlock();
+			ret.nonZeros = 0;
+			for (int i = 0; i < m; i++) {
+				double tmpVal = tmp.get(i, 0);
+				if (tmpVal != 0) {
+					ret.denseBlock.fillRow(i, tmp.get(i, 0));
+					ret.nonZeros += n;
+				}
+			}
+			ret.examSparsity();
+		}
+		else if (tmp.rlen==1 && tmp.clen==n) {
+			if (tmp.nonZeros != 0) {
+				ret.allocateDenseBlock();
+				ret.nonZeros = 0;
+				double[] tmpArr = new double[n];
+				for (int i = 0; i < n; i++) {
+					tmpArr[i] = tmp.get(0, i);
+				}
+				for (int i = 0; i < m; i++) {
+					ret.denseBlock.set(i, tmpArr);
+					ret.nonZeros += tmp.nonZeros;
+				}
+				ret.examSparsity();
+			}
+		}
+		else {
+			//fill output with given scalar value
+			double tmpVal = tmp.get(0, 0);
+			if (tmpVal != 0) {
+				ret.allocateDenseBlock();
+				ret.denseBlock.set(tmpVal);
+				ret.nonZeros = (long)m * n;
+			}
+		}
+	}
+
+	public static void ternaryOperationCheck(TernaryOperator op, boolean s1, boolean s2, boolean s3, int m, int r1, int r2, int r3, int n, int c1, int c2, int c3){
 		//error handling 
-		if( (!s1 && (r1 != m || c1 != n))
-		|| (!s2 && (r2 != m || c2 != n))
-		|| (!s3 && (r3 != m || c3 != n)) ) {
+		boolean error = false;
+		if (op.fn instanceof IfElse) {
+			error = ((r1 != 1 && r1 != m)
+				|| (r2 != 1 && r2 != m)
+				|| (r3 != 1 && r3 != m)
+				|| (c1 != 1 && c1 != n)
+				|| (c2 != 1 && c2 != n)
+				|| (c3 != 1 && c3 != n));
+		}
+		else {
+			error = ((!s1 && (r1 != m || c1 != n))
+				|| (!s2 && (r2 != m || c2 != n))
+				|| (!s3 && (r3 != m || c3 != n)));
+		}
+
+		if (error) {
 			throw new DMLRuntimeException("Block sizes are not matched for ternary cell operations: "
 			+ r1 + "x" + c1 + " vs " + r2 + "x" + c2 + " vs " + r3 + "x" + c3);
 		}
@@ -4749,142 +4807,117 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		//compute final IQM, incl. correction for q25 and q75 portions 
 		return computeIQMCorrection(sum, sum_wt, q25Part, q25Val, q75Part, q75Val);
 	}
-	
-	public static double computeIQMCorrection(double sum, double sum_wt, 
-		double q25Part, double q25Val, double q75Part, double q75Val) {
-		return (sum + q25Part*q25Val - q75Part*q75Val) / (sum_wt*0.5); 
+
+	public static double computeIQMCorrection(double sum, double sum_wt, double q25Part, double q25Val, double q75Part,
+		double q75Val) {
+		return (sum + q25Part * q25Val - q75Part * q75Val) / (sum_wt * 0.5);
 	}
-	
+
+	/**
+	 * R quantile type 7 rank triple {lo, hi, g} for a sequence of length n and probability p. lo and hi are 1-based
+	 * order-statistic indices (returned as double for a single primitive-array return; cast to long at the call site);
+	 * g in [0, 1) is the interpolation weight. The picked quantile is (1 - g) * x[lo] + g * x[hi], reducing to x[lo]
+	 * when g == 0 or hi == lo (the p == 1 upper-bound clamp). Used by single-block picking and the distributed and
+	 * federated pick paths.
+	 */
+	public static double[] computeQuantileRank(long n, double p) {
+		final double h = (n - 1) * p + 1.0;
+		final double lo = Math.max(1.0, Math.min(Math.floor(h), (double) n));
+		return new double[] {lo, Math.min(lo + 1.0, (double) n), h - Math.floor(h)};
+	}
+
 	/**
 	 * Pick the quantiles out of this matrix. If this matrix contains two columns it is weighted quantile picking.
 	 * If a single column it is unweighted.
-	 * 
+	 *
 	 * Note the values are assumed to be sorted.
-	 * 
+	 *
 	 * @param quantiles The quantiles to pick
 	 * @param ret The result matrix
 	 * @return The result matrix
 	 */
-	public final MatrixBlock pickValues(MatrixValue quantiles, MatrixValue ret) {
-		return pickValues(quantiles, ret, false);
-	}
-	
-	public MatrixBlock pickValues(MatrixValue quantiles, MatrixValue ret, boolean average) {
-		MatrixBlock qs=checkType(quantiles);
-		
-		if ( qs.clen != 1 ) {
+	public MatrixBlock pickValues(MatrixValue quantiles, MatrixValue ret) {
+		MatrixBlock qs = checkType(quantiles);
+
+		if(qs.clen != 1) {
 			throw new DMLRuntimeException("Multiple quantiles can only be computed on a 1D matrix");
 		}
-		
+
 		MatrixBlock output = checkType(ret);
 
-		if(output==null)
-			output=new MatrixBlock(qs.rlen, qs.clen, false); // resulting matrix is mostly likely be dense
+		if(output == null)
+			output = new MatrixBlock(qs.rlen, qs.clen, false); // resulting matrix is mostly likely be dense
 		else
 			output.reset(qs.rlen, qs.clen, false);
 
 		for(int i = 0; i < qs.rlen; i++) {
-			// FIXME: include the average parameter here to fix SYSTEMDS-3953
 			output.set(i, 0, this.pickValue(qs.get(i, 0)));
 		}
-		
+
 		return output;
 	}
-	
+
 	/**
 	 * Pick the median value from this matrix. If this matrix has two columns it is weighted picking using the
 	 * weight column, otherwise it is unweighted over the single column.
-	 * 
+	 *
 	 * Note the values are assumed to be sorted.
-	 * 
+	 *
 	 * @return The median value
 	 */
 	public double median() {
-		if(getNumColumns() == 1)
-			return pickValue(0.5, getNumRows() % 2 == 0);
-		double sum_wt = sumWeightForQuantile();
-		return pickValue(0.5, sum_wt%2==0);
+		return pickValue(0.5);
 	}
 
 	/**
-	 * Pick a specific quantile from this matrix. If this matrix has two columns it is weighted picking, otherwise it is unweighted.
-	 * 
+	 * Pick a specific quantile from this matrix using R's default (type 7) definition: linear interpolation between the
+	 * two adjacent order statistics. If this matrix has two columns the second is treated as integer weights.
+	 *
 	 * Note the values are assumed to be sorted.
-	 * 
-	 * @param quantile The quantile to pick
+	 *
+	 * @param quantile The quantile in [0, 1] to pick
 	 * @return The quantile
 	 */
-	public final double pickValue(double quantile){
-		return pickValue(quantile, false);
-	}
-	
-	/**
-	 * Pick a specific quantile from this matrix. If this matrix has two columns it is weighted picking, otherwise it is unweighted.
-	 * 
-	 * Note the values are assumed to be sorted.
-	 * 
-	 * @param quantile The quantile to pick
-	 * @param average If the quantile is averaged.
-	 * @return The quantile
-	 */
-	public final double pickValue(double quantile, boolean average) {
+	public final double pickValue(double quantile) {
 		if(this.getNumColumns() == 1)
-			return pickUnweightedValue(quantile, average);
-		return pickWeightedValue(quantile, average);
+			return pickUnweightedValue(quantile);
+		return pickWeightedValue(quantile);
 	}
 
-	private double pickUnweightedValue(double quantile, boolean average) {
-		// Mirror the weighted convention (pickWeightedValue) with an implicit weight of 1 per value, so a single
-		// column yields the same quantile as the equivalent two-column (value, weight) representation: take the
-		// ceil-based rank and only average adjacent order statistics when an even number of values straddles it.
+	private double pickUnweightedValue(double quantile) {
+		final double[] r = computeQuantileRank(getNumRows(), quantile);
+		final long lo = (long) r[0], hi = (long) r[1];
+		final double g = r[2];
+		final double loVal = get((int) (lo - 1), 0);
+		return (1.0 - g) * loVal + g * get((int) (hi - 1), 0);
+	}
+
+	private double pickWeightedValue(double quantile) {
+		// R quantile type 7 generalized to integer weights: treat as expanded sorted sequence of length sum_wt.
+		final double[] r = computeQuantileRank(Math.round(sumWeightForQuantile()), quantile);
+		final long lo = (long) r[0], hi = (long) r[1];
+		final double g = r[2];
+		final double loVal = valueAtWeightedRank(lo);
+		return (1.0 - g) * loVal + g * valueAtWeightedRank(hi);
+	}
+
+	private double valueAtWeightedRank(long rank) {
+		// Walk cumulative weights until we reach the requested 1-based rank in the expanded sequence.
 		final int rows = getNumRows();
-		average = average && (rows % 2 == 0);
-		final int pos = (int) Math.ceil(quantile * rows); // 1-based rank
-		final int i = Math.min(Math.max(pos - 1, 0), rows - 1);
-		if(average && pos > 0 && pos < rows)
-			return (get(i, 0) + get(i + 1, 0)) / 2;
-		return get(i, 0);
-	}
-
-	private double pickWeightedValue(double quantile, boolean average) {
-		double sum_wt = sumWeightForQuantile();
-		
-		// do averaging only if it is asked for; and sum_wt is even
-		average = average && (sum_wt%2 == 0);
-		
-		int pos = (int) Math.ceil(quantile*sum_wt);
-		
-		int t = 0, i=-1;
+		long t = 0;
+		int i = -1;
 		do {
 			i++;
-			t += get(i,1);
-		} while(t<pos && i < getNumRows());
-		
-		if ( get(i,1) != 0 ) {
-			// i^th value is present in the data set, simply return it
-			if ( average && pos < getNumRows()-1 ) {
-				if(pos < t) {
-					return get(i,0);
-				}
-				if(get(i+1,1) != 0)
-					return (get(i,0)+get(i+1,0))/2;
-				else
-					// (i+1)^th value is 0. So, fetch (i+2)^th value
-					return (get(i,0)+get(i+2,0))/2;
-			}
-			else 
-				return get(i, 0);
+			t += (long) get(i, 1);
 		}
-		else {
-			// i^th value is not present in the data set. 
-			// It can only happen in the case where i^th value is 0.0; and 0.0 is not present in the data set (but introduced by sort).
-			if ( i+1 < getNumRows() )
-				// when 0.0 is not the last element in the sorted order
-				return get(i+1,0);
-			else
-				// when 0.0 is the last element in the sorted order (input data is all negative)
-				return get(i-1,0);
-		}
+		while(t < rank && i + 1 < rows);
+
+		if(get(i, 1) != 0)
+			return get(i, 0);
+		// i^th value is 0.0 introduced by sort but not present in the original data; use a real neighbor.
+		if(i + 1 < rows)
+			return get(i + 1, 0);
+		return get(i - 1, 0);
 	}
 	
 	/**

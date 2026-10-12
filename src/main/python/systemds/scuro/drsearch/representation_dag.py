@@ -332,7 +332,30 @@ class RepresentationDag:
         consumer_count: Dict[str, int] = None,
         gpu_id: int = None,
         node_cache=None,
+        execution_cache=None,
     ) -> Union[Dict[str, TransformedModality], TransformedModality]:
+
+        execution_keys = {}
+
+        def execution_key(node_id: str):
+            if execution_cache is None:
+                return None
+            if node_id in execution_keys:
+                return execution_keys[node_id]
+            node = self.get_node_by_id(node_id)
+            if not node.inputs:
+                modality = get_modality_by_id_and_instance_id(
+                    modalities, int(node.modality_id), node.representation_index
+                )
+                key = execution_cache.modality_key(modality)
+            else:
+                key = execution_cache.representation_key(
+                    node.operation,
+                    node.parameters,
+                    [execution_key(input_id) for input_id in node.inputs],
+                )
+            execution_keys[node_id] = key
+            return key
 
         def execute_node(node_id: str, task) -> TransformedModality:
             if (
@@ -367,41 +390,7 @@ class RepresentationDag:
             input_mods = [execute_node(input_id, task) for input_id in node.inputs]
             is_unimodal = len(input_mods) == 1
 
-            if external_cache is not None and is_unimodal:
-                cached = external_cache.get(node_id)
-                if cached is not None:
-                    result = cached
-                else:
-                    node_operation = node.operation(params=node.parameters)
-                    if gpu_id is not None and hasattr(node_operation, "gpu_id"):
-                        node_operation.gpu_id = gpu_id
-                    if len(input_mods) == 1:
-                        # It's a unimodal operation
-                        if isinstance(node_operation, Context):
-                            result = input_mods[0].context(node_operation)
-                        elif isinstance(node_operation, DimensionalityReduction):
-                            result = input_mods[0].dimensionality_reduction(
-                                node_operation
-                            )
-                        elif isinstance(node_operation, AggregatedRepresentation):
-                            result = node_operation.transform(input_mods[0])
-                        elif isinstance(node_operation, UnimodalRepresentation):
-                            if rep_cache is not None:
-                                result = rep_cache[node_operation.name]
-                            else:
-                                agg = pushdown_aggregation_for_node(node.parameters)
-                                result = input_mods[0].apply_representation(
-                                    node_operation, aggregation=agg
-                                )
-                    else:
-                        # It's a fusion operation
-                        fusion_op = node_operation
-                        if getattr(fusion_op, "needs_training", False):
-                            raise RuntimeError(
-                                "Fitted representations require SplitAwareDAGEvaluator"
-                            )
-                        result = input_mods[0].combine(input_mods[1:], fusion_op)
-            else:
+            def run_operation():
                 node_operation = node.operation(params=node.parameters)
                 if gpu_id is not None and hasattr(node_operation, "gpu_id"):
                     node_operation.gpu_id = gpu_id
@@ -429,14 +418,22 @@ class RepresentationDag:
                             "Fitted representations require SplitAwareDAGEvaluator"
                         )
                     result = input_mods[0].combine(input_mods[1:], fusion_op)
+                return result
 
-                if (
-                    enable_cache
-                    and external_cache is not None
-                    and is_unimodal
-                    and consumer_count[node_id] > 1
-                ):
-                    external_cache.put(node_id, result)
+            if execution_cache is not None and is_unimodal:
+                result = execution_cache.get_or_compute_representation(
+                    node.operation, execution_key(node_id), run_operation
+                )
+            else:
+                result = run_operation()
+
+            if (
+                enable_cache
+                and external_cache is not None
+                and is_unimodal
+                and (consumer_count is None or consumer_count.get(node_id, 0) > 1)
+            ):
+                external_cache.put(node_id, result)
             return result
 
         result = execute_node(self.root_node_id, task)

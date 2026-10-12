@@ -19,9 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.ooc;
 
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.lops.MMTSJ;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
@@ -33,7 +30,6 @@ import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
-import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
@@ -67,6 +63,10 @@ public class TSMMOOCInstruction extends ComputationOOCInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		MatrixObject min = ec.getMatrixObject(input1);
+		if(!min.getDataCharacteristics().dimsKnown() || min.getBlocksize() <= 0)
+			throw new DMLRuntimeException("OOC TSMM requires known dimensions and a positive block size: "
+				+ min.getNumRows() + "x" + min.getNumColumns() + " (blocksize " + min.getBlocksize() + ")");
+
 		int numRowBlocks = Math.toIntExact(min.getDataCharacteristics().getNumRowBlocks());
 		int numColBlocks = Math.toIntExact(min.getDataCharacteristics().getNumColBlocks());
 		if((_type.isLeft() && numColBlocks == 1) || (_type.isRight() && numRowBlocks == 1)) {
@@ -74,38 +74,10 @@ public class TSMMOOCInstruction extends ComputationOOCInstruction {
 			return;
 		}
 
-		int blocksPerJoinGroup = _type.isLeft() ? numColBlocks : numRowBlocks;
-		int partialsPerOutput = _type.isLeft() ? numRowBlocks : numColBlocks;
-
-		OOCStreamable<IndexedMatrixValue> inputStreamable = min.getStreamable();
-		final boolean createdCache = !inputStreamable.hasStreamCache();
-		final CachingStream inputCache = createdCache ? new CachingStream(min.getStreamHandle()) : inputStreamable
-			.getStreamCache();
-
-		OOCStream<List<IndexedMatrixValue>> groupedPartials = createWritableStream();
-		OOCStream<IndexedMatrixValue> partials = createWritableStream();
 		OOCStream<IndexedMatrixValue> out = createWritableStream();
-		addOutStream(out);
 		ec.getMatrixObject(output).setStreamHandle(out);
-
-		CompletableFuture<Void> joinFuture = joinManyOOC(inputCache.getReadStream(), inputCache.getReadStream(),
-			groupedPartials, this::createPartialOutputTiles, this::getJoinIndex, this::getJoinIndex, blocksPerJoinGroup,
-			blocksPerJoinGroup);
-		CompletableFuture<Void> expandFuture = expandOOC(groupedPartials, partials, values -> values);
-
 		BinaryOperator plus = InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString());
-		CompletableFuture<Void> outFuture = groupedReduceOOC(partials, out, (left, right) -> {
-			MatrixBlock result = ((MatrixBlock) left.getValue()).binaryOperations(plus, right.getValue());
-			left.setValue(result);
-			return left;
-		}, partialsPerOutput);
-
-		propagateFailuresToOutput(out, List.of(joinFuture, expandFuture, outFuture));
-
-		outFuture.whenComplete((result, error) -> {
-			if(createdCache)
-				inputCache.scheduleDeletion();
-		});
+		OOCInstructionUtils.tsmm(min.getStreamable(), out, _type, (AggregateBinaryOperator) _optr, plus, getContext());
 	}
 
 	private void processSingleOutputTileInstruction(ExecutionContext ec, MatrixObject min) {
@@ -118,53 +90,5 @@ public class TSMMOOCInstruction extends ComputationOOCInstruction {
 			(left, right) -> new IndexedMatrixValue(new MatrixIndexes(1, 1),
 				((MatrixBlock) left.getValue()).binaryOperationsInPlace(plus, right.getValue())),
 			value -> ((MatrixBlock) value.getValue()).getExactSerializedSize(), getContext());
-	}
-
-	private long getJoinIndex(IndexedMatrixValue value) {
-		return _type.isLeft() ? value.getIndexes().getRowIndex() : value.getIndexes().getColumnIndex();
-	}
-
-	private long getOutputIndex(IndexedMatrixValue value) {
-		return _type.isLeft() ? value.getIndexes().getColumnIndex() : value.getIndexes().getRowIndex();
-	}
-
-	private List<IndexedMatrixValue> createPartialOutputTiles(IndexedMatrixValue left, IndexedMatrixValue right) {
-		long leftIndex = getOutputIndex(left);
-		long rightIndex = getOutputIndex(right);
-		if(leftIndex > rightIndex)
-			return List.of();
-
-		MatrixBlock leftBlock = (MatrixBlock) left.getValue();
-		MatrixBlock rightBlock = (MatrixBlock) right.getValue();
-		if(leftIndex == rightIndex) {
-			MatrixBlock diagonal = leftBlock.transposeSelfMatrixMultOperations(new MatrixBlock(), _type);
-			return List.of(new IndexedMatrixValue(new MatrixIndexes(leftIndex, rightIndex), diagonal));
-		}
-
-		MatrixBlock partial = multiplyOffDiagonal(leftBlock, rightBlock);
-		MatrixBlock mirror = LibMatrixReorg.transpose(partial);
-		return List.of(new IndexedMatrixValue(new MatrixIndexes(leftIndex, rightIndex), partial),
-			new IndexedMatrixValue(new MatrixIndexes(rightIndex, leftIndex), mirror));
-	}
-
-	private MatrixBlock multiplyOffDiagonal(MatrixBlock leftBlock, MatrixBlock rightBlock) {
-		if(_type.isLeft()) {
-			MatrixBlock leftTranspose = LibMatrixReorg.transpose(leftBlock);
-			return leftTranspose.aggregateBinaryOperations(leftTranspose, rightBlock, new MatrixBlock(),
-				(AggregateBinaryOperator) _optr);
-		}
-
-		MatrixBlock rightTranspose = LibMatrixReorg.transpose(rightBlock);
-		return leftBlock.aggregateBinaryOperations(leftBlock, rightTranspose, new MatrixBlock(),
-			(AggregateBinaryOperator) _optr);
-	}
-
-	private static void propagateFailuresToOutput(OOCStream<?> out, List<CompletableFuture<Void>> futures) {
-		for(CompletableFuture<Void> future : futures) {
-			future.exceptionally(error -> {
-				out.propagateFailure(DMLRuntimeException.of(error));
-				return null;
-			});
-		}
 	}
 }

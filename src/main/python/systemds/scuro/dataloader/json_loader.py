@@ -81,7 +81,7 @@ class JSONLoader(BaseLoader):
 
                 self.data.append(text)
                 self.metadata.append(
-                    self.modality_type.create_metadata(len(text), text) | record
+                    {**self.modality_type.create_metadata(len(text), text), **record}
                 )
 
     def get_stats(self, source_path: str):

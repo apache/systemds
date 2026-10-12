@@ -693,10 +693,11 @@ class DynamicWindow(Window):
         if isinstance(self.aggregation_function, Aggregation):
             return in_shape[1:]
         length = in_shape[0] if in_shape else 0
-        approx_window_size = (
-            max(1, int(length / self._effective_num_windows(length))) if in_shape else 1
-        )
-        return self._per_window_feature_shape(approx_window_size)
+        # Window sizes grow geometrically and _pad_stack pads every window's
+        # features to the largest one, so size them from the largest window
+        # (about 4x the mean), not the mean.
+        max_window_size = int(self._window_sizes(length).max()) if in_shape else 1
+        return self._per_window_feature_shape(max_window_size)
 
     def get_output_stats(self, input_stats: RepresentationStats) -> tuple:
         in_shape = tuple(int(s) for s in input_stats.output_shape)

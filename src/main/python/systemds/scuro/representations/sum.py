@@ -33,6 +33,8 @@ from systemds.scuro.drsearch.operator_registry import register_fusion_operator
 
 @register_fusion_operator()
 class Sum(Fusion):
+    _laws = frozenset({"comm", "assoc"})
+
     def __init__(self, params=None):
         """
         Combines modalities using colum-wise sum
@@ -41,16 +43,13 @@ class Sum(Fusion):
         self.needs_alignment = True
 
     def execute(self, modalities: List[Modality]):
-        data = np.array(
-            modalities[0].data,
-            dtype=modalities[0].metadata[0]["data_layout"]["type"],
-        )
-
-        for m in range(1, len(modalities)):
-            data += np.asarray(
-                modalities[m].data,
-                dtype=modalities[m].metadata[0]["data_layout"]["type"],
-            )
+        arrays = [
+            np.asarray(m.data, dtype=m.metadata[0]["data_layout"]["type"])
+            for m in modalities
+        ]
+        data = np.array(arrays[0], dtype=np.result_type(*arrays))
+        for array in arrays[1:]:
+            data += array
         return data
 
     def get_output_stats(self, input_stats_list) -> RepresentationStats:

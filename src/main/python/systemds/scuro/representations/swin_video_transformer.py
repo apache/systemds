@@ -55,6 +55,7 @@ from systemds.scuro.utils.static_variables import (
 @register_representation([ModalityType.VIDEO])
 @register_expensive_representation([ModalityType.VIDEO])
 class SwinVideoTransformer(FrameBudgetedVideoModel, UnimodalRepresentation):
+    OUTPUT_MODALITY_TYPE = ModalityType.EMBEDDING
     _EMBED_DIM = 768
     cache_in_worker = True
     _MEMORY_PROFILE = VideoMemoryProfile(
@@ -80,7 +81,7 @@ class SwinVideoTransformer(FrameBudgetedVideoModel, UnimodalRepresentation):
             # "batch_size": [1, 2, 4, 8, 16, 32],
         }
         self.data_type = torch.float32
-        super().__init__("SwinVideoTransformer", ModalityType.EMBEDDING, parameters)
+        super().__init__("SwinVideoTransformer", self.OUTPUT_MODALITY_TYPE, parameters)
         if params is not None:
             layer_name = params.get("layer_name", layer_name)
             batch_size = int(params.get("batch_size", batch_size))

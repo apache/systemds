@@ -37,6 +37,7 @@ from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations.representation import (
     CONTAINER_LIST,
     RepresentationStats,
+    stats_itemsize,
 )
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import get_sequence_lengths
@@ -170,6 +171,9 @@ class OpenFace(UnimodalRepresentation):
     FEATURE_DIM = len(FEATURE_COLUMNS)
 
     FRAME_BATCH_SIZE = 32
+    MAX_SIDE = 1024
+    SIZE_WINDOW_CHUNKS = 8
+    DETECTOR_MEAN_BGR = (104, 117, 123)
 
     FACE_MODEL_MEMORY_BYTES = 8 * 1024 * 1024
     MULTITASK_MODEL_MEMORY_BYTES = 128 * 1024 * 1024
@@ -177,6 +181,7 @@ class OpenFace(UnimodalRepresentation):
     CPU_RUNTIME_OVERHEAD_BYTES = 128 * 1024 * 1024
     GPU_RUNTIME_OVERHEAD_BYTES = 64 * 1024 * 1024
     LANDMARK_RUNTIME_BYTES = 2400 * 1024 * 1024
+    DETECTOR_BYTES_PER_PIXEL = 144
     LANDMARK_BYTES_PER_FRAME = 52 * 1024 * 1024
     MULTITASK_BYTES_PER_FRAME = 26 * 1024 * 1024
 
@@ -186,6 +191,7 @@ class OpenFace(UnimodalRepresentation):
         confidence_threshold=0.02,
         nms_threshold=0.4,
         vis_threshold=0.5,
+        max_side=MAX_SIDE,
         params=None,
     ):
         if params is not None:
@@ -195,6 +201,7 @@ class OpenFace(UnimodalRepresentation):
             )
             nms_threshold = params.get("nms_threshold", nms_threshold)
             vis_threshold = params.get("vis_threshold", vis_threshold)
+            max_side = params.get("max_side", max_side)
 
         parameters = {
             "feature_set": list(self.FEATURE_SETS),
@@ -207,6 +214,7 @@ class OpenFace(UnimodalRepresentation):
         self.confidence_threshold = float(confidence_threshold)
         self.nms_threshold = float(nms_threshold)
         self.vis_threshold = float(vis_threshold)
+        self.max_side = int(max_side)
         self.params = params
         self.data_type = np.float32
         self._gpu_id = None
@@ -300,9 +308,28 @@ class OpenFace(UnimodalRepresentation):
         max_height = int(getattr(input_stats, "max_height", 224))
         max_width = int(getattr(input_stats, "max_width", 224))
         max_channels = int(getattr(input_stats, "max_channels", 3))
-        frame_bytes = (
-            max_height * max_width * max_channels * np.dtype(np.float32).itemsize
+        float_size = np.dtype(np.float32).itemsize
+
+        if isinstance(input_stats, VideoStats):
+            video_bytes = (
+                int(input_stats.max_length)
+                * max_height
+                * max_width
+                * max_channels
+                * stats_itemsize(input_stats)
+            )
+            sample_bytes = 2 * video_bytes + 2 * max_height * max_width * 3 * float_size
+        else:
+            sample_bytes = 2 * max_height * max_width * max_channels
+
+        canvas_pixels = min(max_height, self.max_side) * min(max_width, self.max_side)
+        window_bytes = (
+            self.FRAME_BATCH_SIZE * self.SIZE_WINDOW_CHUNKS * canvas_pixels * 3
         )
+        chunk_bytes = window_bytes + (
+            self.FRAME_BATCH_SIZE * canvas_pixels * 3 * 2 * float_size
+        )
+
         model_bytes = self.FACE_MODEL_MEMORY_BYTES + self.MULTITASK_MODEL_MEMORY_BYTES
         batch_bytes = self.MULTITASK_BYTES_PER_FRAME
         runtime_bytes = self.GPU_RUNTIME_OVERHEAD_BYTES
@@ -315,13 +342,15 @@ class OpenFace(UnimodalRepresentation):
         return {
             "cpu_peak_bytes": int(
                 output_bytes
-                + frame_bytes
+                + sample_bytes
+                + chunk_bytes
                 + model_bytes
                 + self.CPU_RUNTIME_OVERHEAD_BYTES
             ),
             "gpu_peak_bytes": int(
                 model_bytes
-                + self.FRAME_BATCH_SIZE * (frame_bytes + batch_bytes)
+                + self.FRAME_BATCH_SIZE
+                * (canvas_pixels * self.DETECTOR_BYTES_PER_PIXEL + batch_bytes)
                 + runtime_bytes
             ),
         }
@@ -366,15 +395,54 @@ class OpenFace(UnimodalRepresentation):
         return transformed_modality
 
     def _extract_image_features(self, images):
-        return list(self._extract_batch_features([self._to_bgr(i) for i in images]))
+        return list(self._extract_streamed_features(images))
 
     def _extract_video_features(self, frames, owner_id):
         if len(frames) == 0:
             raise ValueError(f"Video instance {owner_id} contains no frames")
-        return self._extract_batch_features([self._to_bgr(frame) for frame in frames])
+        return self._extract_streamed_features(frames)
 
     def _extract_features(self, image):
-        return self._extract_batch_features([self._to_bgr(image)])[0]
+        return self._extract_batch_features([self._prepare(image)])[0]
+
+    def _extract_streamed_features(self, samples):
+        features = np.zeros((len(samples), self.feature_dim), dtype=np.float32)
+        window = self.FRAME_BATCH_SIZE * self.SIZE_WINDOW_CHUNKS
+        for window_start in range(0, len(samples), window):
+            indices = range(window_start, min(window_start + window, len(samples)))
+            prepared = {index: self._prepare(samples[index]) for index in indices}
+            order = sorted(indices, key=lambda index: prepared[index].shape[:2])
+            for start, stop in self._chunks(len(order)):
+                chunk = order[start:stop]
+                features[chunk] = self._extract_batch_features(
+                    [prepared[index] for index in chunk]
+                )
+        return features
+
+    def _prepare(self, image):
+        image = self._to_bgr(image)
+        height, width = image.shape[:2]
+        longer = max(height, width)
+        if longer <= self.max_side:
+            return image
+        scale = self.max_side / longer
+        size = (max(1, round(width * scale)), max(1, round(height * scale)))
+        return cv2.resize(image, size, interpolation=cv2.INTER_AREA)
+
+    def _pad_to(self, image, height, width):
+        pad_bottom = height - image.shape[0]
+        pad_right = width - image.shape[1]
+        if not pad_bottom and not pad_right:
+            return image
+        return cv2.copyMakeBorder(
+            image,
+            0,
+            pad_bottom,
+            0,
+            pad_right,
+            cv2.BORDER_CONSTANT,
+            value=self.DETECTOR_MEAN_BGR,
+        )
 
     def _extract_batch_features(self, images_bgr):
         self._load_models()
@@ -460,53 +528,52 @@ class OpenFace(UnimodalRepresentation):
         detections = [None] * len(images_bgr)
         priors_by_shape = {}
 
-        by_shape = {}
-        for index, image in enumerate(images_bgr):
-            by_shape.setdefault(image.shape, []).append(index)
-
-        for shape, indices in by_shape.items():
-            height, width = shape[:2]
-            if shape not in priors_by_shape:
-                priors_by_shape[shape] = (
+        for start, stop in self._chunks(len(images_bgr)):
+            chunk = range(start, stop)
+            height = max(images_bgr[i].shape[0] for i in chunk)
+            width = max(images_bgr[i].shape[1] for i in chunk)
+            if (height, width) not in priors_by_shape:
+                priors_by_shape[(height, width)] = (
                     PriorBox(detector.cfg, image_size=(height, width))
                     .forward()
                     .to(detector.device)
                     .data
                 )
-            priors = priors_by_shape[shape]
+            priors = priors_by_shape[(height, width)]
             box_scale = torch.Tensor([width, height, width, height]).to(detector.device)
             landmark_scale = torch.Tensor([width, height] * 5).to(detector.device)
 
-            for start, stop in self._chunks(len(indices)):
-                chunk = indices[start:stop]
-                batch = torch.cat(
-                    [detector.preprocess_image(images_bgr[i])[0] for i in chunk]
+            batch = torch.cat(
+                [
+                    detector.preprocess_image(
+                        self._pad_to(images_bgr[i], height, width)
+                    )[0]
+                    for i in chunk
+                ]
+            )
+            with torch.no_grad():
+                locations, confidences, landmark_offsets = detector.model(batch)
+
+            for row, index in enumerate(chunk):
+                boxes = decode(locations.data[row], priors, variance)
+                boxes = (boxes * box_scale).cpu().numpy()
+                scores = confidences[row].data.cpu().numpy()[:, 1]
+                points = decode_landm(landmark_offsets.data[row], priors, variance)
+                points = (points * landmark_scale).cpu().numpy()
+
+                keep = np.where(scores > detector.confidence_threshold)[0]
+                boxes, points, scores = boxes[keep], points[keep], scores[keep]
+                dets = np.hstack((boxes, scores[:, np.newaxis])).astype(
+                    np.float32, copy=False
                 )
-                with torch.no_grad():
-                    locations, confidences, landmark_offsets = detector.model(batch)
+                keep = py_cpu_nms(dets, detector.nms_threshold)
+                dets = np.concatenate((dets[keep], points[keep]), axis=1)
 
-                for row, index in enumerate(chunk):
-                    boxes = decode(locations.data[row], priors, variance)
-                    boxes = (boxes * box_scale).cpu().numpy()
-                    scores = confidences[row].data.cpu().numpy()[:, 1]
-                    points = decode_landm(landmark_offsets.data[row], priors, variance)
-                    points = (points * landmark_scale).cpu().numpy()
-
-                    keep = np.where(scores > detector.confidence_threshold)[0]
-                    boxes, points, scores = boxes[keep], points[keep], scores[keep]
-                    dets = np.hstack((boxes, scores[:, np.newaxis])).astype(
-                        np.float32, copy=False
-                    )
-                    keep = py_cpu_nms(dets, detector.nms_threshold)
-                    dets = np.concatenate((dets[keep], points[keep]), axis=1)
-
-                    if len(dets) == 0 or dets[0][4] < detector.vis_threshold:
-                        continue
-                    bbox = dets[0][:4].astype(int)
-                    faces[index] = images_bgr[index][
-                        bbox[1] : bbox[3], bbox[0] : bbox[2]
-                    ]
-                    detections[index] = dets
+                if len(dets) == 0 or dets[0][4] < detector.vis_threshold:
+                    continue
+                bbox = dets[0][:4].astype(int)
+                faces[index] = images_bgr[index][bbox[1] : bbox[3], bbox[0] : bbox[2]]
+                detections[index] = dets
         return faces, detections
 
     def _predict_multitask(self, faces, needs_backbone):

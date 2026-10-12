@@ -22,6 +22,7 @@
 
 class Model:
     uses_gpu = None
+    feature_order_invariant = None
 
     def __init__(self, name: str):
         """

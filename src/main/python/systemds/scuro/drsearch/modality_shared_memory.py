@@ -18,11 +18,28 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import os
+import shutil
 from typing import Any, List, Tuple
 import numpy as np
 from multiprocessing import shared_memory
 
 SHARED_MEMORY_MIN_BYTES = 1 * 1024 * 1024
+_SHM_DIR = "/dev/shm"
+
+
+def _shm_reserve_bytes() -> int:
+    return int(float(os.environ.get("SCURO_SHM_RESERVE_GB", "8")) * 1024**3)
+
+
+def _should_offload(data_nbytes: int) -> bool:
+    if data_nbytes < SHARED_MEMORY_MIN_BYTES:
+        return False
+    try:
+        free = shutil.disk_usage(_SHM_DIR).free
+    except OSError:
+        return True
+    return data_nbytes + _shm_reserve_bytes() <= free
 
 
 def unlink_shm(name: str) -> None:
@@ -324,7 +341,7 @@ def _is_nested_shared_memory_candidate(data: Any) -> bool:
 def add_shared_memory_candidate(data: Any, resident_bytes: int = 0) -> bool:
     if _is_shared_memory_candidate(data):
         data_nbytes = _estimate_ndarray_list_nbytes(data)
-        if data_nbytes >= SHARED_MEMORY_MIN_BYTES:
+        if _should_offload(data_nbytes):
             dtype = data[0].dtype
             offsets = []
             total_elems = 0
@@ -351,7 +368,7 @@ def add_shared_memory_candidate(data: Any, resident_bytes: int = 0) -> bool:
     elif _is_shared_ndarray_candidate(data):
         arr = data
         data_nbytes = int(arr.nbytes)
-        if data_nbytes >= SHARED_MEMORY_MIN_BYTES:
+        if _should_offload(data_nbytes):
             shm = shared_memory.SharedMemory(create=True, size=data_nbytes)
             shm_arr = np.ndarray(arr.shape, dtype=arr.dtype, buffer=shm.buf)
             np.copyto(shm_arr, arr, casting="no")
@@ -371,7 +388,7 @@ def add_shared_memory_candidate(data: Any, resident_bytes: int = 0) -> bool:
                 leaves.append(arr)
             group_bounds.append((lo, len(leaves)))
         data_nbytes = _estimate_ndarray_list_nbytes(leaves)
-        if data_nbytes >= SHARED_MEMORY_MIN_BYTES:
+        if _should_offload(data_nbytes):
             dtype = leaves[0].dtype
             offsets = []
             total_elems = 0
@@ -400,7 +417,7 @@ def add_shared_memory_candidate(data: Any, resident_bytes: int = 0) -> bool:
     elif _is_string_list_shared_memory_candidate(data):
         encoded = [s.encode("utf-8") for s in data]
         data_nbytes = int(sum(len(b) for b in encoded))
-        if data_nbytes >= SHARED_MEMORY_MIN_BYTES:
+        if _should_offload(data_nbytes):
             shm = shared_memory.SharedMemory(create=True, size=data_nbytes)
             mv = shm.buf
             cursor = 0

@@ -63,9 +63,17 @@ def dag_requires_fitting(dag: RepresentationDag) -> bool:
 
 
 class SplitAwareDAGEvaluator:
-    def __init__(self, dag: RepresentationDag, modalities, task, node_cache=None):
+    def __init__(
+        self,
+        dag: RepresentationDag,
+        modalities,
+        task,
+        node_cache=None,
+        share_fitted=False,
+    ):
         self.dag = dag
         self.node_cache = node_cache
+        self.share_fitted = share_fitted
         self.modalities = (
             list(modalities) if isinstance(modalities, (list, tuple)) else [modalities]
         )
@@ -231,10 +239,12 @@ class SplitAwareDAGEvaluator:
                 return result
 
             input_results = [execute_node(input_id) for input_id in node.inputs]
-            reusable = (
-                self.node_cache is not None
-                and node_id != self.dag.root_node_id
-                and not any(input_id in fitted for input_id in node.inputs)
+            reusable = self.node_cache is not None and (
+                self.share_fitted
+                or (
+                    node_id != self.dag.root_node_id
+                    and not any(input_id in fitted for input_id in node.inputs)
+                )
             )
             if reusable:
                 cached = self.node_cache.get(node_id, partition_key)
@@ -254,7 +264,7 @@ class SplitAwareDAGEvaluator:
 
             if requirement is not FitRequirement.NONE:
                 fitted.add(node_id)
-                reusable = False
+                reusable = reusable and self.share_fitted
                 labels = None
                 fit_input = input_partitions[0]
                 fit_ids = (

@@ -185,10 +185,13 @@ class TransformedModality(Modality):
         fused_modality = TransformedModality(
             self, fusion_method, ModalityType.EMBEDDING
         )
+        modalities = self.create_modality_list(other)
         start_time = time.time()
-        fused_modality.data = fusion_method.transform(self.create_modality_list(other))
+        fused_modality.data = fusion_method.transform(modalities)
         end_time = time.time()
-        fused_modality.transform_time = end_time - start_time
+        fused_modality.transform_time += (end_time - start_time) + sum(
+            getattr(m, "transform_time", 0) or 0 for m in modalities[1:]
+        )
         return fused_modality
 
     def create_modality_list(self, other: Union[Modality, List[Modality]]):

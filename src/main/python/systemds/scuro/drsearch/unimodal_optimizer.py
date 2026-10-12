@@ -19,6 +19,7 @@
 #
 # -------------------------------------------------------------
 import copy
+from collections import Counter
 import math
 import pickle
 import time
@@ -44,6 +45,7 @@ from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
 from systemds.scuro.modality.modality import Modality
+from systemds.scuro.drsearch.algebra import AlgebraConfig
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.representations.window_aggregation import WindowAggregation
 from systemds.scuro.utils.checkpointing import CheckpointManager
@@ -71,10 +73,13 @@ class UnimodalOptimizer:
         max_num_workers: int = -1,
         enable_checkpointing: bool = False,
         window_combination_chains: int = 1,
+        algebra: Optional[AlgebraConfig] = None,
     ):
         self._node_stats: Dict[str, Any] = {}
         self.pruned = []
         self.window_combination_chains = window_combination_chains
+        self.algebra = algebra or AlgebraConfig()
+        self.algebra_stats = Counter()
         self.enable_checkpointing = enable_checkpointing
         self.modalities = modalities
         self.tasks = tasks
@@ -96,7 +101,8 @@ class UnimodalOptimizer:
         )
         # TODO: check if we should make this a local variable (might keep unnecessary memory usage)
         self.builders = {
-            modality.modality_id: CSEAwareDAGBuilder() for modality in modalities
+            modality.modality_id: CSEAwareDAGBuilder(self.algebra, tasks, [modality])
+            for modality in modalities
         }
 
         self.debug = debug
@@ -392,6 +398,17 @@ class UnimodalOptimizer:
             exec_out = node_executor.run()
             task_results.extend(exec_out["task_results"])
             statistics = exec_out["statistics"]
+            reuse = statistics.get("reuse", {})
+            planned = reuse.get("planned_task_nodes", 0)
+            completed = reuse.get("completed_task_nodes", planned)
+            if reuse.get("deadlock") or completed < planned:
+                print(
+                    f"[unimodal] WARNING: modality {modality.modality_id} "
+                    f"evaluated {completed} of {planned} planned task nodes; "
+                    f"deadlock={reuse.get('deadlock')} "
+                    f"reason={reuse.get('deadlock_reason')}",
+                    flush=True,
+                )
 
         if fitted_dags:
             fitted_task_dags = self._expand_dags_with_task_roots(fitted_dags)

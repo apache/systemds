@@ -63,12 +63,13 @@ from torch.utils.data import DataLoader
 @register_representation([ModalityType.VIDEO, ModalityType.IMAGE])
 @register_expensive_representation([ModalityType.VIDEO, ModalityType.IMAGE])
 class CLIPVisual(UnimodalRepresentation):
+    OUTPUT_MODALITY_TYPE = ModalityType.EMBEDDING
     supports_aggregation_pushdown = True
     cache_in_worker = True
 
     def __init__(self, output_file=None, batch_size=32, layer_name="", params=None):
         parameters = self._get_parameters()
-        super().__init__("CLIPVisual", ModalityType.EMBEDDING, parameters)
+        super().__init__("CLIPVisual", self.OUTPUT_MODALITY_TYPE, parameters)
         self.params = params
         self._activation_hook = None
         self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")

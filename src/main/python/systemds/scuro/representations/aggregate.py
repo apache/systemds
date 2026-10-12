@@ -51,18 +51,22 @@ class Aggregation:
         if arr.ndim == 1:
             values, counts = np.unique(arr, return_counts=True)
             return values[np.argmax(counts)]
-        moved = np.moveaxis(arr, axis, -1)
-        flat = moved.reshape(-1, moved.shape[-1])
+        axes = tuple(
+            a % arr.ndim for a in (axis if isinstance(axis, tuple) else (axis,))
+        )
+        moved = np.moveaxis(arr, axes, tuple(range(arr.ndim - len(axes), arr.ndim)))
+        kept = moved.shape[: arr.ndim - len(axes)]
+        flat = moved.reshape(int(np.prod(kept)), -1)
         modes = np.empty(flat.shape[0], dtype=arr.dtype)
         for i in range(flat.shape[0]):
             values, counts = np.unique(flat[i], return_counts=True)
             modes[i] = values[np.argmax(counts)]
-        return modes.reshape(moved.shape[:-1])
+        return modes.reshape(kept)
 
     @staticmethod
     def _normalize_axis(aggregate_dim):
         if isinstance(aggregate_dim, tuple):
-            return aggregate_dim[0] if aggregate_dim else 0
+            return aggregate_dim if aggregate_dim else 0
         return aggregate_dim
 
     _aggregation_function = {

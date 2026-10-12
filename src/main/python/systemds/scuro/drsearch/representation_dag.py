@@ -36,8 +36,20 @@ from systemds.scuro.representations.dimensionality_reduction import (
     DimensionalityReduction,
 )
 from systemds.scuro.utils.identifier import get_op_id, get_node_id
+from systemds.scuro.drsearch.algebra import (
+    ALL_LAWS,
+    AlgebraConfig,
+    canonical_id,
+    count_explicit_prep,
+    count_violations,
+    explicit_fusion_operands,
+    explicit_prep_on,
+    order_invariant,
+    typecheck,
+)
+from systemds.scuro.representations.fusion import Fusion
 import time
-from collections import OrderedDict, defaultdict, deque
+from collections import Counter, OrderedDict, defaultdict, deque
 
 
 def pushdown_aggregation_for_node(
@@ -155,6 +167,9 @@ class RepresentationDag:
     def pipeline_id(self) -> str:
         blob = json.dumps(self.to_spec(), sort_keys=True, separators=(",", ":"))
         return hashlib.sha1(blob.encode()).hexdigest()[:16]
+
+    def canonical_id(self, laws=ALL_LAWS, invariant=False) -> str:
+        return canonical_id(self, laws, invariant)
 
     def _topological_order(self) -> List[str]:
         node_map = {node.node_id: node for node in self.nodes}
@@ -670,7 +685,13 @@ def pushdown_aggregation(dag_group: List[RepresentationDag]) -> List[Representat
 
 
 class CSEAwareDAGBuilder:
-    def __init__(self):
+    def __init__(self, algebra: Optional[AlgebraConfig] = None, tasks=None, leaves=()):
+        self.algebra = algebra or AlgebraConfig()
+        self.leaves = leaves
+        self.algebra_stats = Counter()
+        self._order_invariant = order_invariant(self.algebra, tasks)
+        self._seen_ordered = set()
+        self._seen_legacy = set()
         self.global_nodes: List[RepresentationNode] = []
         self.signature_to_node: Dict[Hashable, str] = {}
         self.node_to_signature: Dict[str, Hashable] = {}
@@ -685,7 +706,27 @@ class CSEAwareDAGBuilder:
         input_sigs = tuple(sorted(ip, key=repr)) if inputs else ()
         op_cls = operation().name
         params_items = tuple(sorted((parameters or {}).items()))
+        if self.algebra.cse_law_aware and not self._may_reorder(operation, parameters):
+            input_sigs = tuple(ip)
         return ("op", op_cls, params_items, input_sigs)
+
+    def _may_reorder(self, operation: Any, parameters: Dict[str, Any]) -> bool:
+        if not issubclass(operation, Fusion):
+            return False
+        laws = operation.algebraic_laws(parameters or {})
+        return "comm" in laws or ("concat_perm" in laws and self._order_invariant)
+
+    def _count_law_merges(self, signature: Hashable, inputs: List[str]):
+        ip = tuple(self.node_to_signature[inp] for inp in inputs)
+        ordered = signature[:3] + (ip,)
+        legacy = signature[:3] + (tuple(sorted(ip, key=repr)),)
+        if signature in self.signature_to_node:
+            if ordered not in self._seen_ordered:
+                self.algebra_stats["cse_merges_by_law"] += 1
+        elif legacy in self._seen_legacy:
+            self.algebra_stats["cse_unsafe_merges_prevented"] += 1
+        self._seen_ordered.add(ordered)
+        self._seen_legacy.add(legacy)
 
     def _compute_leaf_signature(
         self, modality_id: str, representation_index: int = -1
@@ -705,6 +746,8 @@ class CSEAwareDAGBuilder:
             signature = self._compute_leaf_signature(modality_id, representation_index)
         else:
             signature = self._compute_node_signature(operation, inputs, parameters)
+            if self.algebra.cse_law_aware:
+                self._count_law_merges(signature, inputs)
 
         try:
             if signature in self.signature_to_node:
@@ -751,6 +794,15 @@ class CSEAwareDAGBuilder:
     def create_operation_node(
         self, operation: Any, inputs: List[str], parameters: Dict[str, Any] = None
     ):
+        if explicit_prep_on(self.algebra):
+            inputs = explicit_fusion_operands(
+                self,
+                operation,
+                parameters,
+                inputs,
+                self._leaf_stats(),
+                self.algebra,
+            )
         return self._get_or_create_node(
             operation=operation, inputs=inputs, parameters=parameters, is_leaf=False
         )
@@ -769,10 +821,30 @@ class CSEAwareDAGBuilder:
         self.dag_counter += 1
         if not dag.validate():
             raise ValueError("Invalid DAG construction")
+        if self.algebra.typecheck != "off":
+            self._typecheck(dag)
+        if explicit_prep_on(self.algebra):
+            count_explicit_prep(self.algebra_stats, dag)
 
         if dag_id is None:
             self._dag_by_root[root_node_id] = dag
         return dag
+
+    def _leaf_stats(self) -> Dict[Hashable, Any]:
+        return {(m.modality_id, -1): getattr(m, "stats", None) for m in self.leaves}
+
+    def _typecheck(self, dag: RepresentationDag) -> None:
+        violations = typecheck(
+            dag,
+            {
+                (m.modality_id, -1): getattr(m, "modality_type", None)
+                for m in self.leaves
+            },
+            self._leaf_stats(),
+        )
+        errors = count_violations(self.algebra_stats, violations)
+        if errors and self.algebra.typecheck == "strict":
+            raise ValueError(f"Ill-typed plan: {errors}")
 
     def get_node(self, node_id: str) -> Optional[RepresentationNode]:
         for node in self.global_nodes:

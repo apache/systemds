@@ -56,6 +56,7 @@ class Identity(torch.nn.Module):
 @register_representation([ModalityType.IMAGE, ModalityType.VIDEO])
 @register_expensive_representation([ModalityType.IMAGE, ModalityType.VIDEO])
 class VGG19(UnimodalRepresentation):
+    OUTPUT_MODALITY_TYPE = ModalityType.EMBEDDING
     supports_aggregation_pushdown = True
     cache_in_worker = True
 
@@ -71,7 +72,7 @@ class VGG19(UnimodalRepresentation):
         self.model = models.vgg19(weights=models.VGG19_Weights.DEFAULT)
         self.model = self.model.to(self.device)
         parameters = self._get_parameters()
-        super().__init__("VGG19", ModalityType.EMBEDDING, parameters)
+        super().__init__("VGG19", self.OUTPUT_MODALITY_TYPE, parameters)
         self.params = params
         if params is not None:
             batch_size = int((params or {}).get("batch_size", batch_size))

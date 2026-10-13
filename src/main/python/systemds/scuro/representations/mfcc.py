@@ -79,8 +79,8 @@ class MFCC(UnimodalRepresentation):
             modality, self, self.output_modality_type
         )
         result = []
-        sr = modality.metadata[0]["frequency"] if modality.metadata else 22050
-        for sample in modality.data:
+        for i, sample in enumerate(modality.data):
+            sr = modality.metadata[i]["frequency"] if modality.metadata else None
             computed_feature = self.compute_feature(sample, sr=sr)
             result.append(computed_feature)
         transformed_modality.data = result

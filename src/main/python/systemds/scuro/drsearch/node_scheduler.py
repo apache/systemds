@@ -34,6 +34,7 @@ from systemds.scuro.representations.representation import (
     stats_dtype,
     stats_itemsize,
 )
+from systemds.scuro.drsearch.worker_pool import default_gpu_slots_per_device
 from systemds.scuro.utils.memory_utility import gpu_memory_info
 from systemds.scuro.utils.static_variables import DEBUG
 
@@ -81,9 +82,7 @@ class MemoryAwareNodeScheduler:
         self.node_costs = self._estimate_node_costs()
         self.node_priorities = self._compute_upward_ranks()
         self.gpu_devices = list(self.memory_budget["gpu"])
-        self.gpu_slots_per_device = max(
-            1, int(os.environ.get("SCURO_GPU_SLOTS_PER_DEVICE", "1"))
-        )
+        self.gpu_slots_per_device = default_gpu_slots_per_device()
         self.gpu_slots_in_use = {gpu_id: 0 for gpu_id in self.gpu_devices}
         self._gpu_slot_nodes: Dict[str, int] = {}
         self.success = False

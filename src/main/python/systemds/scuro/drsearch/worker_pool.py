@@ -56,6 +56,19 @@ def default_threads_per_worker() -> int:
     return _resolve_thread_count(1)
 
 
+DEFAULT_GPU_SLOTS_PER_DEVICE = 4
+
+
+def default_gpu_slots_per_device() -> int:
+    explicit = os.environ.get("SCURO_GPU_SLOTS_PER_DEVICE")
+    if explicit:
+        try:
+            return max(1, int(explicit))
+        except ValueError:
+            pass
+    return DEFAULT_GPU_SLOTS_PER_DEVICE
+
+
 def set_thread_env_before_spawn(num_threads: int) -> None:
     num_threads = _resolve_thread_count(num_threads)
     for var in _THREAD_ENV_VARS:

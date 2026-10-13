@@ -70,6 +70,7 @@ from systemds.scuro.drsearch.trial_result_cache import TrialNodeCache, TrialResu
 from systemds.scuro.drsearch.worker_pool import (
     PersistentWorkerPool,
     create_mp_context,
+    default_gpu_slots_per_device,
     default_threads_per_worker,
 )
 from systemds.scuro.representations.aggregated_representation import (
@@ -739,9 +740,7 @@ class MultimodalDeapOptimizer:
                 ctx=create_mp_context(),
                 threads_per_worker=self.threads_per_worker,
                 gpu_devices=[info["index"] for info in gpu_memory_info()],
-                gpu_slots_per_device=int(
-                    os.environ.get("SCURO_GPU_SLOTS_PER_DEVICE", "1")
-                ),
+                gpu_slots_per_device=default_gpu_slots_per_device(),
                 gpu_demand_fraction=1.0,
             )
         except Exception:

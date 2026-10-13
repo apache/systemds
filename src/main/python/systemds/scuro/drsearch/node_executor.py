@@ -46,6 +46,7 @@ from systemds.scuro.drsearch.task import PerformanceMeasure
 from systemds.scuro.drsearch.worker_pool import (
     PersistentWorkerPool,
     create_mp_context,
+    default_gpu_slots_per_device,
     default_threads_per_worker,
 )
 from systemds.scuro.representations.aggregated_representation import (
@@ -540,9 +541,7 @@ class NodeExecutor:
                 ctx=create_mp_context(),
                 threads_per_worker=threads_per_worker,
                 gpu_devices=list(getattr(self.scheduler, "gpu_devices", [])),
-                gpu_slots_per_device=int(
-                    os.environ.get("SCURO_GPU_SLOTS_PER_DEVICE", "1")
-                ),
+                gpu_slots_per_device=default_gpu_slots_per_device(),
                 gpu_demand_fraction=1.0,
             )
         self._pool = worker_pool

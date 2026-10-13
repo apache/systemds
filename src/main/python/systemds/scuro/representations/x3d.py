@@ -50,7 +50,12 @@ from systemds.scuro.utils.static_variables import (
     get_device,
     get_device_for_model,
 )
-from systemds.scuro.utils.torch_dataset import CustomDataset
+from systemds.scuro.utils.torch_dataset import (
+    FrameDataset,
+    FramePreprocessor,
+    collate_frames,
+    stack_or_list,
+)
 
 
 class Identity(torch.nn.Module):
@@ -192,10 +197,10 @@ class X3D(FrameBudgetedVideoModel, UnimodalRepresentation):
 
     @staticmethod
     def _collate_videos(samples):
+        """Pad raw clips to a common length; the padding is zeroed after preprocessing."""
         video_ids = torch.tensor([sample["id"] for sample in samples])
-        target_length = max(
-            X3D._MIN_FRAMES, max(sample["data"].shape[0] for sample in samples)
-        )
+        lengths = torch.tensor([sample["data"].shape[0] for sample in samples])
+        target_length = max(X3D._MIN_FRAMES, int(lengths.max()))
         videos = []
         for sample in samples:
             frames = sample["data"]
@@ -206,7 +211,7 @@ class X3D(FrameBudgetedVideoModel, UnimodalRepresentation):
                 )
                 frames = torch.cat((frames, pad), dim=0)
             videos.append(frames)
-        return {"id": video_ids, "data": torch.stack(videos)}
+        return {"id": video_ids, "data": stack_or_list(videos), "lengths": lengths}
 
     def transform(self, modality, aggregation=None):
         self.model = self.model.to(self.device)
@@ -229,13 +234,17 @@ class X3D(FrameBudgetedVideoModel, UnimodalRepresentation):
                     )
                     break
 
-        dataset = CustomDataset(modality.data, self.data_type, "cpu")
+        dataset = FrameDataset(modality.data, video=True)
+        preprocess = FramePreprocessor(dtype=self.data_type)
         lengths = get_sequence_lengths(modality.data, modality.metadata)
         embeddings = [None] * len(dataset)
 
         def forward(model, batch):
             video_ids = batch["id"].long()
-            _ = model(batch["data"].permute(0, 2, 1, 3, 4))
+            frames = preprocess(batch["data"], next(model.parameters()).device)
+            for i, length in enumerate(batch["lengths"].tolist()):
+                frames[i, length:] = 0
+            _ = model(frames.permute(0, 2, 1, 3, 4))
             values = self.activation
             if isinstance(values, tuple):
                 values = values[0]
@@ -371,12 +380,14 @@ class I3D(FrameBudgetedVideoModel, UnimodalRepresentation):
                     )
                     break
 
-        dataset = CustomDataset(modality.data, self.data_type, "cpu")
+        dataset = FrameDataset(modality.data, video=True)
+        preprocess = FramePreprocessor(dtype=self.data_type)
         embeddings = [None] * len(dataset)
 
         def forward(model, batch):
             video_ids = batch["id"].long()
-            _ = model(batch["data"].permute(0, 2, 1, 3, 4))
+            frames = preprocess(batch["data"], next(model.parameters()).device)
+            _ = model(frames.permute(0, 2, 1, 3, 4))
             values = self.features
             if isinstance(values, tuple):
                 values = values[0]
@@ -389,6 +400,7 @@ class I3D(FrameBudgetedVideoModel, UnimodalRepresentation):
                 dataset,
                 get_sequence_lengths(modality.data, modality.metadata),
                 forward,
+                collate_fn=collate_frames,
             )
 
         if self.output_file is not None:

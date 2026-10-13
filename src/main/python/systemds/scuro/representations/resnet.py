@@ -26,10 +26,13 @@ from systemds.scuro.representations.utils import (
     flatten_owned_sequences,
     get_sequence_lengths,
     inference_context,
-    move_batch_to_device,
     pin_memory_for,
 )
-from systemds.scuro.utils.torch_dataset import CustomDataset
+from systemds.scuro.utils.torch_dataset import (
+    FrameDataset,
+    FramePreprocessor,
+    collate_frames,
+)
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from typing import Tuple, Any
@@ -248,11 +251,13 @@ class ResNet(UnimodalRepresentation):
             lengths = get_sequence_lengths(modality.data, modality.metadata)
             samples, owner_ids = flatten_owned_sequences(modality.data, lengths)
 
-        dataset = CustomDataset(samples, self.data_type, "cpu")
+        dataset = FrameDataset(samples)
+        preprocess = FramePreprocessor(dtype=self.data_type)
         dataloader = torch.utils.data.DataLoader(
             dataset,
             batch_size=self.batch_size,
             shuffle=False,
+            collate_fn=collate_frames,
             pin_memory=pin_memory_for(self.device),
         )
         owner_by_chunk = torch.tensor(owner_ids, dtype=torch.long)
@@ -261,8 +266,7 @@ class ResNet(UnimodalRepresentation):
         with inference_context(self.device):
             for batch in dataloader:
                 chunk_ids = batch["id"].long()
-                batch = move_batch_to_device(batch, self.device)
-                _ = self.model(batch["data"])
+                _ = self.model(preprocess(batch["data"], self.device))
                 output = self.activation
                 if output.ndim > 2:
                     output = torch.nn.functional.adaptive_avg_pool2d(output, (1, 1))

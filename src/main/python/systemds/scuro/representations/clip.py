@@ -20,7 +20,6 @@
 # -------------------------------------------------------------
 import numpy as np
 import torch
-from torchvision import transforms
 
 from systemds.scuro.dataloader.video_loader import VideoStats
 from systemds.scuro.modality.transformed import TransformedModality
@@ -47,8 +46,10 @@ from transformers import CLIPProcessor, CLIPModel
 
 from systemds.scuro.utils.static_variables import get_device
 from systemds.scuro.utils.torch_dataset import (
-    CustomDataset,
+    FrameDataset,
+    FramePreprocessor,
     TextDataset,
+    collate_frames,
     TextSpanDataset,
 )
 from systemds.scuro.utils.static_variables import (
@@ -279,14 +280,8 @@ class CLIPVisual(UnimodalRepresentation):
         return transformed_modality
 
     def create_visual_embeddings(self, modality, aggregation=None):
-        clip_transform = transforms.Compose(
-            [
-                transforms.ToPILImage(),
-                transforms.Resize(256),
-                transforms.CenterCrop(224),
-                transforms.ToTensor(),
-                transforms.ConvertImageDtype(dtype=self.data_type),
-            ]
+        preprocess = FramePreprocessor.from_hf_processor(
+            self.processor, dtype=self.data_type
         )
         is_image = modality.modality_type == ModalityType.IMAGE
         if is_image:
@@ -296,11 +291,12 @@ class CLIPVisual(UnimodalRepresentation):
             lengths = get_sequence_lengths(modality.data, modality.metadata)
             samples, owner_ids = flatten_owned_sequences(modality.data, lengths)
 
-        dataset = CustomDataset(samples, self.data_type, "cpu", tf=clip_transform)
+        dataset = FrameDataset(samples)
         dataloader = DataLoader(
             dataset,
             batch_size=self.batch_size,
             shuffle=False,
+            collate_fn=collate_frames,
             pin_memory=pin_memory_for(self.device),
         )
         owner_by_chunk = torch.tensor(owner_ids, dtype=torch.long)
@@ -309,10 +305,7 @@ class CLIPVisual(UnimodalRepresentation):
         with transformer_inference_context(self.device):
             for batch in dataloader:
                 chunk_ids = batch["id"].long()
-                inputs = self.processor(
-                    images=batch["data"], return_tensors="pt", do_rescale=False
-                )
-                inputs = move_batch_to_device(dict(inputs), self.device)
+                inputs = {"pixel_values": preprocess(batch["data"], self.device)}
                 if self.layer_name != "":
                     _ = self.model.vision_model(**inputs)
                     output = self.clip_output

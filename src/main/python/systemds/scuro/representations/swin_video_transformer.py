@@ -45,7 +45,11 @@ from systemds.scuro.representations.video_batching import (
     VideoMemoryProfile,
 )
 
-from systemds.scuro.utils.torch_dataset import CustomDataset
+from systemds.scuro.utils.torch_dataset import (
+    FrameDataset,
+    FramePreprocessor,
+    collate_frames,
+)
 from systemds.scuro.utils.static_variables import (
     get_device,
     get_device_for_model,
@@ -139,13 +143,15 @@ class SwinVideoTransformer(FrameBudgetedVideoModel, UnimodalRepresentation):
                     )
                     break
 
-        dataset = CustomDataset(modality.data, self.data_type, "cpu")
+        dataset = FrameDataset(modality.data, video=True)
+        preprocess = FramePreprocessor(dtype=self.data_type)
         lengths = get_sequence_lengths(modality.data, modality.metadata)
         accumulator = OwnerAccumulator(len(dataset), len(dataset), aggregation)
 
         def forward(model, batch):
             video_ids = batch["id"].long()
-            _ = model(batch["data"].permute(0, 2, 1, 3, 4))
+            frames = preprocess(batch["data"], next(model.parameters()).device)
+            _ = model(frames.permute(0, 2, 1, 3, 4))
             values = self.swin_output
             if isinstance(values, tuple):
                 values = values[0]
@@ -160,7 +166,7 @@ class SwinVideoTransformer(FrameBudgetedVideoModel, UnimodalRepresentation):
             accumulator.update(pooled.to(self.device), video_ids, video_ids)
 
         with transformer_inference_context(self.device):
-            self._run_batches(dataset, lengths, forward)
+            self._run_batches(dataset, lengths, forward, collate_fn=collate_frames)
 
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type

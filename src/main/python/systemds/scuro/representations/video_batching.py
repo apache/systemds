@@ -83,6 +83,9 @@ class FrameBudgetedVideoModel:
         self._max_batch_frames = None if value is None else max(1, int(value))
 
     def _release_cache_on_new_shape(self, frames) -> None:
+        if not isinstance(frames, torch.Tensor):
+            # Clips of differing frame sizes stay a list until preprocessing.
+            return
         shape = tuple(frames.shape)
         if frames.is_cuda and shape != getattr(self, "_last_batch_shape", None):
             if getattr(self, "_last_batch_shape", None) is not None:

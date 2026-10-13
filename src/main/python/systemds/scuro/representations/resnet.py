@@ -22,6 +22,7 @@ from systemds.scuro.dataloader.image_loader import ImageStats
 from systemds.scuro.dataloader.video_loader import VideoStats
 from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.utils import (
+    LazyModelMixin,
     OwnerAccumulator,
     flatten_owned_sequences,
     get_sequence_lengths,
@@ -55,9 +56,16 @@ class Identity(torch.nn.Module):
 
 @register_representation([ModalityType.IMAGE, ModalityType.VIDEO])
 @register_expensive_representation([ModalityType.IMAGE, ModalityType.VIDEO])
-class ResNet(UnimodalRepresentation):
+class ResNet(LazyModelMixin, UnimodalRepresentation):
     supports_aggregation_pushdown = True
     cache_in_worker = True
+    MODEL_BYTES = {
+        "ResNet18": 46_796_608,
+        "ResNet34": 87_259_072,
+        "ResNet50": 102_441_032,
+        "ResNet101": 178_618_848,
+        "ResNet152": 241_378_168,
+    }
 
     def __init__(
         self,
@@ -68,7 +76,6 @@ class ResNet(UnimodalRepresentation):
         params=None,
     ):
         self.data_type = torch.float32
-        self.model = None
         self._activation_hook = None
         self.activation = None
         self.gpu_id = None
@@ -86,11 +93,6 @@ class ResNet(UnimodalRepresentation):
         self.params = params
 
         self.output_file = output_file
-        self.model.eval()
-        for param in self.model.parameters():
-            param.requires_grad = False
-
-        self.model.fc = Identity()
 
     @property
     def gpu_id(self):
@@ -100,7 +102,7 @@ class ResNet(UnimodalRepresentation):
     def gpu_id(self, gpu_id):
         self._gpu_id = gpu_id
         self.device = get_device(gpu_id)
-        if self.model is not None:
+        if self._model is not None:
             self.model = self.model.to(self.device)
 
     @property
@@ -109,32 +111,25 @@ class ResNet(UnimodalRepresentation):
 
     @model_name.setter
     def model_name(self, model_name):
-        self._model_name = model_name
-        if model_name == "ResNet18":
-            model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
-            self.model = model.to(self.device)
-            self.model = self.model.to(self.data_type)
-
-        elif model_name == "ResNet34":
-            model = models.resnet34(weights=models.ResNet34_Weights.DEFAULT)
-            self.model = model.to(self.device)
-            self.model = self.model.to(self.data_type)
-        elif model_name == "ResNet50":
-            model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
-            self.model = model.to(self.device)
-            self.model = self.model.to(self.data_type)
-
-        elif model_name == "ResNet101":
-            model = models.resnet101(weights=models.ResNet101_Weights.DEFAULT)
-            self.model = model.to(self.device)
-            self.model = self.model.to(self.data_type)
-
-        elif model_name == "ResNet152":
-            model = models.resnet152(weights=models.ResNet152_Weights.DEFAULT)
-            self.model = model.to(self.device)
-            self.model = self.model.to(self.data_type)
-        else:
+        if model_name not in self.MODEL_BYTES:
             raise NotImplementedError
+        self._model_name = model_name
+        self._model = None
+
+    def _build_model(self):
+        factory, weights = {
+            "ResNet18": (models.resnet18, models.ResNet18_Weights),
+            "ResNet34": (models.resnet34, models.ResNet34_Weights),
+            "ResNet50": (models.resnet50, models.ResNet50_Weights),
+            "ResNet101": (models.resnet101, models.ResNet101_Weights),
+            "ResNet152": (models.resnet152, models.ResNet152_Weights),
+        }[self.model_name]
+        model = factory(weights=weights.DEFAULT)
+        model.eval()
+        for param in model.parameters():
+            param.requires_grad = False
+        model.fc = Identity()
+        return model.to(self.device).to(self.data_type)
 
     def estimate_output_memory_bytes(self, input_stats: ImageStats) -> int:
         shape = self.get_output_stats(input_stats).output_shape
@@ -177,15 +172,7 @@ class ResNet(UnimodalRepresentation):
 
         safety_margin_bytes = 100 * 1024 * 1024
 
-        param_size = 0
-        for param in self.model.parameters():
-            param_size += param.nelement() * param.element_size()
-
-        buffer_size = 0
-        for buffer in self.model.buffers():
-            buffer_size += buffer.nelement() * buffer.element_size()
-
-        size_all_bytes = param_size + buffer_size
+        size_all_bytes = self.MODEL_BYTES[self.model_name]
 
         cpu_peak = (
             size_all_bytes * 2 * self.data_type.itemsize

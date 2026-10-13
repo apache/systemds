@@ -26,6 +26,7 @@ from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import (
+    LazyModelMixin,
     LengthBucketBatchSampler,
     OwnerAccumulator,
     OwnedSequenceDataset,
@@ -60,21 +61,28 @@ from systemds.scuro.utils.static_variables import (
 )
 from torch.utils.data import DataLoader
 
+CLIP_MODEL_NAME = "openai/clip-vit-base-patch32"
+# Memory footprint (fp32 parameters and buffers) of the full CLIPModel.
+CLIP_MODEL_BYTES = 605_110_268
+
 
 @register_representation([ModalityType.VIDEO, ModalityType.IMAGE])
 @register_expensive_representation([ModalityType.VIDEO, ModalityType.IMAGE])
-class CLIPVisual(UnimodalRepresentation):
+class CLIPVisual(LazyModelMixin, UnimodalRepresentation):
     OUTPUT_MODALITY_TYPE = ModalityType.EMBEDDING
     supports_aggregation_pushdown = True
     cache_in_worker = True
+    MODEL_BYTES = CLIP_MODEL_BYTES
+    HIDDEN_SIZE = 768
+    NUM_LAYERS = 12
+    PATCH_SIZE = 32
 
     def __init__(self, output_file=None, batch_size=32, layer_name="", params=None):
         parameters = self._get_parameters()
         super().__init__("CLIPVisual", self.OUTPUT_MODALITY_TYPE, parameters)
         self.params = params
         self._activation_hook = None
-        self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-        self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        self._processor = None
         if params is not None:
             self.batch_size = int((params or {}).get("batch_size", batch_size))
             self.layer_name = params.get("layer_name", layer_name)
@@ -95,6 +103,15 @@ class CLIPVisual(UnimodalRepresentation):
     def gpu_id(self, gpu_id):
         self._gpu_id = gpu_id
         self.device = get_device(gpu_id)
+
+    def _build_model(self):
+        return CLIPModel.from_pretrained(CLIP_MODEL_NAME)
+
+    @property
+    def processor(self):
+        if self._processor is None:
+            self._processor = CLIPProcessor.from_pretrained(CLIP_MODEL_NAME)
+        return self._processor
 
     def _get_parameters(self):
         parameters = {
@@ -171,8 +188,7 @@ class CLIPVisual(UnimodalRepresentation):
         )
         max_frames = int(getattr(input_stats, "max_length", 1))
 
-        model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-        model_bytes = int(model.get_memory_footprint())
+        model_bytes = self.MODEL_BYTES
 
         per_image_payload = EMB_DIM * out_dtype_size
         per_image_item = per_image_payload + NP_ARRAY_HEADER_BYTES + PY_LIST_SLOT_BYTES
@@ -213,10 +229,9 @@ class CLIPVisual(UnimodalRepresentation):
 
         cpu_peak = model_bytes + outputs_retained + cpu_transient
 
-        cfg = model.vision_model.config
-        hidden_size = int(cfg.hidden_size)
-        num_layers = int(cfg.num_hidden_layers)
-        patch = int(cfg.patch_size)
+        hidden_size = self.HIDDEN_SIZE
+        num_layers = self.NUM_LAYERS
+        patch = self.PATCH_SIZE
         seq_len = (224 // patch) ** 2 + 1
 
         gpu_input = batch_size * 3 * 224 * 224 * out_dtype_size
@@ -340,6 +355,11 @@ class CLIPVisual(UnimodalRepresentation):
 class CLIPText(UnimodalRepresentation):
     supports_aggregation_pushdown = True
     cache_in_worker = True
+    MODEL_BYTES = CLIP_MODEL_BYTES
+    HIDDEN_SIZE = 512
+    NUM_LAYERS = 12
+    INTERMEDIATE_SIZE = 2048
+    NUM_HEADS = 8
 
     def __init__(self, output_file=None, batch_size=32, layer_name="", params=None):
         if params is not None:
@@ -425,13 +445,10 @@ class CLIPText(UnimodalRepresentation):
     def estimate_peak_memory_bytes(self, input_stats) -> dict:
         output_bytes = self.estimate_output_memory_bytes(input_stats)
 
-        model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-
-        cfg = model.text_model.config
-        hidden_size = cfg.hidden_size
-        num_layers = cfg.num_hidden_layers
-        intermediate_size = getattr(cfg, "intermediate_size", 4 * hidden_size)
-        num_heads = cfg.num_attention_heads
+        hidden_size = self.HIDDEN_SIZE
+        num_layers = self.NUM_LAYERS
+        intermediate_size = self.INTERMEDIATE_SIZE
+        num_heads = self.NUM_HEADS
         dtype_size = self.data_type.itemsize
         batch_tokens = self.batch_size * self.max_seq_length
         hidden_ffn_bytes = (
@@ -464,7 +481,7 @@ class CLIPText(UnimodalRepresentation):
             input_bytes_all_instances = self.batch_size * per_instance_input_bytes
         batch_output_bytes = self.batch_size * 512 * np.dtype(np.float32).itemsize
         cpu_peak = (
-            model.get_memory_footprint()
+            self.MODEL_BYTES
             + 100 * 1024 * 1024
             + output_bytes
             + batch_peak_bytes
@@ -472,10 +489,7 @@ class CLIPText(UnimodalRepresentation):
             + input_bytes_all_instances
         )
         gpu_peak = (
-            model.get_memory_footprint()
-            + batch_peak_bytes
-            + activations_bytes
-            + batch_output_bytes
+            self.MODEL_BYTES + batch_peak_bytes + activations_bytes + batch_output_bytes
         )
         return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": gpu_peak}
 
@@ -484,11 +498,9 @@ class CLIPText(UnimodalRepresentation):
             modality, self, self.output_modality_type
         )
         if self.processor is None:
-            self.processor = CLIPProcessor.from_pretrained(
-                "openai/clip-vit-base-patch32"
-            )
+            self.processor = CLIPProcessor.from_pretrained(CLIP_MODEL_NAME)
         if self.model is None:
-            self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+            self.model = CLIPModel.from_pretrained(CLIP_MODEL_NAME)
         self.model = self.model.to(self.device)
         self.model.eval()
         self.clip_output = None

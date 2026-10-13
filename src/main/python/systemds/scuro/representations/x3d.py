@@ -37,6 +37,7 @@ from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import (
+    LazyModelMixin,
     get_sequence_lengths,
     inference_context,
     save_embeddings,
@@ -65,8 +66,9 @@ class Identity(torch.nn.Module):
 
 @register_representation([ModalityType.VIDEO])
 @register_expensive_representation([ModalityType.VIDEO])
-class X3D(FrameBudgetedVideoModel, UnimodalRepresentation):
+class X3D(LazyModelMixin, FrameBudgetedVideoModel, UnimodalRepresentation):
     cache_in_worker = True
+    MODEL_BYTES = {"r3d": 133_524_448, "s3d": 33_365_672}
     _MEMORY_PROFILES = {
         "r3d": VideoMemoryProfile(
             clip_frame_bytes=42 * MIB,
@@ -97,6 +99,9 @@ class X3D(FrameBudgetedVideoModel, UnimodalRepresentation):
             model_name = params.get("model_name", model_name)
             layer = params.get("layer_name", layer)
             batch_size = int(params.get("batch_size", batch_size))
+        self.device = get_device()
+        self._gpu_id = None
+        self._placed = False
         self.model_name = model_name
         parameters = self._get_parameters()
         super().__init__("X3D", ModalityType.EMBEDDING, parameters)
@@ -105,14 +110,25 @@ class X3D(FrameBudgetedVideoModel, UnimodalRepresentation):
         self.layer_name = layer
         self.batch_size = batch_size
         self.max_batch_frames = max_batch_frames
-        self._gpu_id = self.device.index
         self._activation_hook = None
         self.activation = None
-        self.model.eval()
-        for param in self.model.parameters():
-            param.requires_grad = False
 
-        self.model.fc = Identity()
+    def _build_model(self):
+        if self.model_name == "r3d":
+            model = r3d_18(pretrained=True)
+        else:
+            model = s3d(weights=models.video.S3D_Weights.DEFAULT)
+        if not self._placed:
+            self.device = get_device_for_model(model, memory_factor=1.5)
+            self._gpu_id = self.device.index
+        model.eval()
+        for param in model.parameters():
+            param.requires_grad = False
+        model.fc = Identity()
+        return model.to(self.device)
+
+    def _model_bytes(self) -> int:
+        return self.MODEL_BYTES[self.model_name]
 
     @property
     def gpu_id(self):
@@ -121,8 +137,9 @@ class X3D(FrameBudgetedVideoModel, UnimodalRepresentation):
     @gpu_id.setter
     def gpu_id(self, gpu_id):
         self._gpu_id = gpu_id
+        self._placed = True
         self.device = get_device(gpu_id)
-        if self.model is not None:
+        if self._model is not None:
             self.model = self.model.to(self.device)
 
     def get_output_stats(self, input_stats) -> RepresentationStats:
@@ -147,17 +164,10 @@ class X3D(FrameBudgetedVideoModel, UnimodalRepresentation):
 
     @model_name.setter
     def model_name(self, model_name):
-        self._model_name = model_name
-        if model_name == "r3d":
-            self.model = r3d_18(pretrained=True)
-            self.device = get_device_for_model(self.model, memory_factor=1.5)
-            self.model = self.model.to(self.device)
-        elif model_name == "s3d":
-            self.model = s3d(weights=models.video.S3D_Weights.DEFAULT)
-            self.device = get_device_for_model(self.model, memory_factor=1.5)
-            self.model = self.model.to(self.device)
-        else:
+        if model_name not in self.MODEL_BYTES:
             raise NotImplementedError
+        self._model_name = model_name
+        self._model = None
 
     def _get_parameters(self, high_level=True):
         parameters = {

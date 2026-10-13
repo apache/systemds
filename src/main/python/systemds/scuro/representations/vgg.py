@@ -43,6 +43,7 @@ from systemds.scuro.utils.static_variables import (
 from systemds.scuro.dataloader.image_loader import ImageStats
 from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.utils import (
+    LazyModelMixin,
     OwnerAccumulator,
     flatten_owned_sequences,
     get_sequence_lengths,
@@ -58,22 +59,20 @@ class Identity(torch.nn.Module):
 
 @register_representation([ModalityType.IMAGE, ModalityType.VIDEO])
 @register_expensive_representation([ModalityType.IMAGE, ModalityType.VIDEO])
-class VGG19(UnimodalRepresentation):
+class VGG19(LazyModelMixin, UnimodalRepresentation):
     OUTPUT_MODALITY_TYPE = ModalityType.EMBEDDING
     supports_aggregation_pushdown = True
     cache_in_worker = True
+    MODEL_BYTES = 574_668_960
 
     def __init__(
         self, layer="classifier.0", output_file=None, params=None, batch_size=32
     ):
         self.data_type = torch.bfloat16
-        self.model = None
         self._activation_hook = None
         self.activation = None
         self.gpu_id = None
         self.device = get_device()
-        self.model = models.vgg19(weights=models.VGG19_Weights.DEFAULT)
-        self.model = self.model.to(self.device)
         parameters = self._get_parameters()
         super().__init__("VGG19", self.OUTPUT_MODALITY_TYPE, parameters)
         self.params = params
@@ -82,13 +81,15 @@ class VGG19(UnimodalRepresentation):
             layer = params.get("layer_name", layer)
         self.output_file = output_file
         self.layer_name = layer
-        self.model.eval()
         self.batch_size = batch_size
 
-        for param in self.model.parameters():
+    def _build_model(self):
+        model = models.vgg19(weights=models.VGG19_Weights.DEFAULT)
+        model.eval()
+        for param in model.parameters():
             param.requires_grad = False
-
-        self.model.fc = Identity()
+        model.fc = Identity()
+        return model.to(self.device)
 
     @property
     def gpu_id(self):
@@ -98,7 +99,7 @@ class VGG19(UnimodalRepresentation):
     def gpu_id(self, gpu_id):
         self._gpu_id = gpu_id
         self.device = get_device(gpu_id)
-        if self.model is not None:
+        if self._model is not None:
             self.model = self.model.to(self.device)
 
     def _get_parameters(self):
@@ -144,12 +145,7 @@ class VGG19(UnimodalRepresentation):
             * input_stats.max_channels
             * self.data_type.itemsize
         )
-        model_size_bytes = sum(
-            p.nelement() * p.element_size() for p in self.model.parameters()
-        )
-        model_size_bytes += sum(
-            b.nelement() * b.element_size() for b in self.model.buffers()
-        )
+        model_size_bytes = self.MODEL_BYTES
 
         return {
             "cpu_peak_bytes": (

@@ -54,6 +54,10 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 class BertFamily(UnimodalRepresentation):
     supports_aggregation_pushdown = True
     cache_in_worker = True
+    MODEL_BYTES = None
+    HIDDEN_SIZE = 768
+    NUM_LAYERS = 12
+    INTERMEDIATE_SIZE = 3072
 
     def __init__(
         self,
@@ -143,9 +147,25 @@ class BertFamily(UnimodalRepresentation):
             input_stats.num_instances * np.prod(output_stats) * self.data_type.itemsize
         )
 
-    def estimate_peak_memory_bytes(self, input_stats):
+    def _model_spec(self):
+        if self.MODEL_BYTES is not None:
+            return (
+                self.MODEL_BYTES,
+                self.HIDDEN_SIZE,
+                self.NUM_LAYERS,
+                self.INTERMEDIATE_SIZE,
+            )
         model = AutoModel.from_pretrained(self.model_name)
-        params_bytes = model.get_memory_footprint()
+        cfg = model.config
+        return (
+            model.get_memory_footprint(),
+            cfg.hidden_size,
+            cfg.num_hidden_layers,
+            getattr(cfg, "intermediate_size", 4 * cfg.hidden_size),
+        )
+
+    def estimate_peak_memory_bytes(self, input_stats):
+        params_bytes, hidden_size, num_layers, intermediate_size = self._model_spec()
         tokenizer_bytes = 60 * 1024 * 1024  # rough upper bound
 
         output_bytes = self.estimate_output_memory_bytes(input_stats)
@@ -177,11 +197,6 @@ class BertFamily(UnimodalRepresentation):
             + model_specific_margin_bytes
             + 128 * 1024 * 1024
         )
-
-        cfg = model.config
-        hidden_size = cfg.hidden_size
-        num_layers = cfg.num_hidden_layers
-        intermediate_size = getattr(cfg, "intermediate_size", 4 * hidden_size)
 
         batch_tokens = self.batch_size * self.max_seq_length
         activations_per_token_per_layer = (
@@ -354,6 +369,8 @@ class BertFamily(UnimodalRepresentation):
 @register_representation(ModalityType.TEXT)
 @register_expensive_representation(ModalityType.TEXT)
 class Bert(BertFamily):
+    MODEL_BYTES = 437_937_152
+
     def __init__(
         self,
         layer="cls",
@@ -399,6 +416,8 @@ class Bert(BertFamily):
 @register_representation(ModalityType.TEXT)
 @register_expensive_representation(ModalityType.TEXT)
 class RoBERTa(BertFamily):
+    MODEL_BYTES = 498_590_752
+
     def __init__(
         self,
         layer="cls",
@@ -504,6 +523,8 @@ class ALBERT(BertFamily):
 
 # @register_representation(ModalityType.TEXT)
 class ELECTRA(BertFamily):
+    MODEL_BYTES = 435_574_784
+
     def __init__(
         self,
         layer="cls",

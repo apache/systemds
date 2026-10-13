@@ -35,6 +35,7 @@ from systemds.scuro.drsearch.operator_registry import (
 )
 from systemds.scuro.dataloader.video_loader import VideoStats
 from systemds.scuro.representations.utils import (
+    LazyModelMixin,
     OwnerAccumulator,
     get_sequence_lengths,
     transformer_inference_context,
@@ -58,9 +59,12 @@ from systemds.scuro.utils.static_variables import (
 
 @register_representation([ModalityType.VIDEO])
 @register_expensive_representation([ModalityType.VIDEO])
-class SwinVideoTransformer(FrameBudgetedVideoModel, UnimodalRepresentation):
+class SwinVideoTransformer(
+    LazyModelMixin, FrameBudgetedVideoModel, UnimodalRepresentation
+):
     OUTPUT_MODALITY_TYPE = ModalityType.EMBEDDING
     _EMBED_DIM = 768
+    MODEL_BYTES = 127_384_024
     cache_in_worker = True
     _MEMORY_PROFILE = VideoMemoryProfile(
         clip_frame_bytes=1 * MIB,
@@ -93,14 +97,24 @@ class SwinVideoTransformer(FrameBudgetedVideoModel, UnimodalRepresentation):
         self.batch_size = batch_size
         # 32 clips of 300 frames would need ~175 GiB; see FrameBudgetedVideoModel.
         self.max_batch_frames = max_batch_frames
-        self.model = swin3d_t(weights=models.video.Swin3D_T_Weights.KINETICS400_V1)
-        self.device = get_device_for_model(self.model, memory_factor=1.5)
-        self._gpu_id = self.device.index
+        self.device = get_device()
+        self._gpu_id = None
+        # Until the scheduler places it, the model picks a device when built.
+        self._placed = False
         self._activation_hook = None
-        self.model = self.model.to(self.device)
-        self.model.eval()
-        for param in self.model.parameters():
+
+    def _build_model(self):
+        model = swin3d_t(weights=models.video.Swin3D_T_Weights.KINETICS400_V1)
+        if not self._placed:
+            self.device = get_device_for_model(model, memory_factor=1.5)
+            self._gpu_id = self.device.index
+        model.eval()
+        for param in model.parameters():
             param.requires_grad = False
+        return model.to(self.device)
+
+    def _model_bytes(self) -> int:
+        return self.MODEL_BYTES
 
     @property
     def gpu_id(self):
@@ -109,6 +123,7 @@ class SwinVideoTransformer(FrameBudgetedVideoModel, UnimodalRepresentation):
     @gpu_id.setter
     def gpu_id(self, gpu_id):
         self._gpu_id = gpu_id
+        self._placed = True
         self.device = get_device(gpu_id)
 
     def get_output_stats(self, input_stats) -> RepresentationStats:

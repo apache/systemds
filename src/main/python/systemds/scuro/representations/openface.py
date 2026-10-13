@@ -554,7 +554,9 @@ class OpenFace(UnimodalRepresentation):
                 [width, height] * 5, dtype=torch.float32, device=device
             )
 
-            batch = np.stack([self._pad_to(images_bgr[i], height, width) for i in chunk])
+            batch = np.stack(
+                [self._pad_to(images_bgr[i], height, width) for i in chunk]
+            )
             batch = torch.from_numpy(batch).to(device)
             batch = (batch.float() - mean).permute(0, 3, 1, 2).contiguous()
             with torch.no_grad():
@@ -564,7 +566,9 @@ class OpenFace(UnimodalRepresentation):
                 scores, best = confidences[:, :, 1].max(dim=1)
                 best_priors = priors[best]
                 boxes = decode(locations[rows, best], best_priors, variance)
-                points = decode_landm(landmark_offsets[rows, best], best_priors, variance)
+                points = decode_landm(
+                    landmark_offsets[rows, best], best_priors, variance
+                )
                 best_dets = torch.cat(
                     (boxes * box_scale, scores[:, None], points * landmark_scale), dim=1
                 )

@@ -175,6 +175,30 @@ class FlattenedSequence(Sequence):
         return self.offsets[-1]
 
 
+class LazyModelMixin:
+    """Loads the pretrained model on first use of ``self.model``.
+
+    The optimizer and scheduler instantiate operators in the main process only
+    to read their parameter grids, output shapes and memory estimates, so
+    those must come from class-level constants rather than the model.
+    """
+
+    _model = None
+
+    def _build_model(self):
+        raise NotImplementedError
+
+    @property
+    def model(self):
+        if self._model is None:
+            self._model = self._build_model()
+        return self._model
+
+    @model.setter
+    def model(self, model):
+        self._model = model
+
+
 def get_sequence_lengths(sequences, metadata):
     if len(metadata) == len(sequences) and all("length" in md for md in metadata):
         return [int(md["length"]) for md in metadata]

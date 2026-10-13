@@ -24,6 +24,11 @@ from systemds.scuro.representations.representation import Representation
 
 
 class UnimodalRepresentation(Representation):
+    # Parameter that selects which layer's activations an encoder returns. An
+    # encoder that sets it implements transform_layers, so a search over that
+    # parameter can obtain every layer from one pass over the data.
+    layer_parameter = None
+
     def __init__(
         self, name: str, output_modality_type, parameters=None, self_contained=True
     ):
@@ -45,6 +50,15 @@ class UnimodalRepresentation(Representation):
     def transform(self, data, aggregation=None):
         # TODO: check if there is a way to time the transformation in here (needed for chunked execution)
         raise f"Not implemented for {self.name}"
+
+    def transform_layers(self, data, layer_names, aggregation=None):
+        """Return {layer name: transformed modality} from one pass over the data.
+
+        Layers that the model does not have are left out of the result.
+        """
+        raise NotImplementedError(
+            f"transform_layers is not implemented for {self.name}"
+        )
 
 
 class PixelRepresentation(UnimodalRepresentation):

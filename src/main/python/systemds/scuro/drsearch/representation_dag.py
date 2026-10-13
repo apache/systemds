@@ -435,7 +435,31 @@ class RepresentationDag:
                     result = input_mods[0].combine(input_mods[1:], fusion_op)
                 return result
 
-            if execution_cache is not None and is_unimodal:
+            def run_layers(layer_names):
+                node_operation = node.operation(params=node.parameters)
+                if gpu_id is not None and hasattr(node_operation, "gpu_id"):
+                    node_operation.gpu_id = gpu_id
+                return input_mods[0].apply_representation_layers(
+                    node_operation,
+                    layer_names,
+                    aggregation=pushdown_aggregation_for_node(node.parameters),
+                )
+
+            layer_sweep = (
+                execution_cache.layer_sweep(node_id)
+                if execution_cache is not None and is_unimodal and rep_cache is None
+                else None
+            )
+            if layer_sweep and hasattr(input_mods[0], "apply_representation_layers"):
+                result = execution_cache.get_or_compute_layer(
+                    node.operation,
+                    node.parameters,
+                    [execution_key(input_id) for input_id in node.inputs],
+                    layer_sweep,
+                    run_layers,
+                    run_operation,
+                )
+            elif execution_cache is not None and is_unimodal:
                 result = execution_cache.get_or_compute_representation(
                     node.operation, execution_key(node_id), run_operation
                 )

@@ -702,7 +702,8 @@ class UnimodalOptimizer:
             for dag in dags:
                 if self._aggregation_needed(dag):
                     agg_op = AggregatedRepresentation(
-                        target_dimensions=self.expected_dimensions
+                        target_dimensions=self.expected_dimensions,
+                        aggregate_leading=True,
                     )
                     agg_node_id = builder.create_operation_node(
                         agg_op.__class__,

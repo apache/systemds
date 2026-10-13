@@ -587,6 +587,26 @@ class HyperparameterTuner:
                 print(f"[hpo-cache] {task.model.name}: {self._trial_cache.summary()}")
                 self._trial_cache.clear()
             self._trial_cache = None
+            self.execution_cache.set_layer_sweeps(None)
+
+    def _layer_sweeps(self, dag, param_specs) -> Dict[str, List[Any]]:
+        """Per node, the layers a search over its layer parameter can select.
+
+        An encoder computes all of them in one pass the first time any is
+        needed, so trying another layer reuses that pass instead of running
+        the encoder again. SCURO_HPO_LAYER_SWEEP=0 turns this off.
+        """
+        if os.environ.get("SCURO_HPO_LAYER_SWEEP", "1") == "0":
+            return {}
+        sweeps = {}
+        for spec in param_specs:
+            node_id, _, param = spec["name"].rpartition("-")
+            if spec["type"] != "categorical" or len(spec["domain"]) < 2:
+                continue
+            operation = dag.get_node_by_id(node_id).operation
+            if param == getattr(operation, "layer_parameter", None):
+                sweeps[node_id] = list(spec["domain"])
+        return sweeps
 
     def _tune_dag_representation(
         self, dag, root_node_id, task, max_evals=None, mm_opt=False
@@ -622,6 +642,18 @@ class HyperparameterTuner:
             self._get_cached_modalities_for_task(task, modality_ids) if mm_opt else None
         )
 
+        param_specs = []
+        tied_params = {}
+        if hyperparams:
+            node_parameters = {
+                node_id: (dag.get_node_by_id(node_id).parameters or {})
+                for node_id in hyperparams
+            }
+            param_specs = self._build_param_specs(hyperparams, node_parameters)
+            tied_params = _tied_window_params(dag)
+            param_specs = [s for s in param_specs if s["name"] not in tied_params]
+        self.execution_cache.set_layer_sweeps(self._layer_sweeps(dag, param_specs))
+
         baseline_params, baseline_raw_scores = self.evaluate_dag_config(
             dag,
             {},
@@ -638,13 +670,6 @@ class HyperparameterTuner:
         if not hyperparams:
             all_results = [baseline]
         else:
-            node_parameters = {
-                node_id: (dag.get_node_by_id(node_id).parameters or {})
-                for node_id in hyperparams
-            }
-            param_specs = self._build_param_specs(hyperparams, node_parameters)
-            tied_params = _tied_window_params(dag)
-            param_specs = [s for s in param_specs if s["name"] not in tied_params]
             discrete_size = self._estimate_discrete_search_size(param_specs)
             n_calls = min(discrete_size, max_evals) if max_evals else discrete_size
             all_results = self._search_best_configs(

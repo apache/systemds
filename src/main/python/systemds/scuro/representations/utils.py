@@ -327,6 +327,43 @@ def inference_context(device):
 transformer_inference_context = inference_context
 
 
+def existing_layers(model, layer_names):
+    """Return the requested layer names that name a submodule of ``model``.
+
+    The empty name, which ``named_modules`` gives the model itself, is not a layer.
+    """
+    modules = dict(model.named_modules())
+    return [name for name in dict.fromkeys(layer_names) if name and name in modules]
+
+
+@contextmanager
+def capture_layer_outputs(model, layer_names, reduce):
+    """Hook every named layer and keep ``reduce(output)`` of the latest forward.
+
+    One forward pass then yields the features of all layers. Reducing inside
+    the hook keeps only the pooled vectors on the device instead of every full
+    activation map until the pass ends; no hooked layer's output is modified
+    in place later in the pass, so this equals reducing after the pass.
+    """
+    modules = dict(model.named_modules())
+    outputs = {}
+    handles = []
+
+    def hook_for(name):
+        def hook(_module, _input, output):
+            outputs[name] = reduce(output)
+
+        return hook
+
+    try:
+        for name in layer_names:
+            handles.append(modules[name].register_forward_hook(hook_for(name)))
+        yield outputs
+    finally:
+        for handle in handles:
+            handle.remove()
+
+
 class OwnerAccumulator:
     """Collect chunk vectors on-device and restore or aggregate their owners."""
 

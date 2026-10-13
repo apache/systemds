@@ -19,14 +19,16 @@
 #
 # -------------------------------------------------------------
 import hashlib
+import logging
 import os
 import threading
 from collections import OrderedDict
-from typing import Any, Callable, Hashable, Optional, Tuple
+from typing import Any, Callable, Dict, Hashable, Iterable, List, Optional, Tuple
 
 import numpy as np
 
 _MISSING = object()
+logger = logging.getLogger(__name__)
 
 
 def freeze_cache_value(value: Any) -> Hashable:
@@ -160,6 +162,49 @@ class BoundedProcessCache:
                         pending.set()
             pending.wait()
 
+    def get_or_compute_group(
+        self,
+        key: Hashable,
+        group_key: Hashable,
+        compute_group: Callable[[], Dict[Hashable, Any]],
+    ) -> Any:
+        """Like get_or_compute, but one computation yields several entries.
+
+        ``compute_group`` returns {key: value} including ``key``; every entry is
+        stored. A caller that misses a different key of the same group while it
+        is being computed waits for it instead of starting a second computation.
+        """
+        if self.max_entries == 0:
+            return compute_group()[key]
+
+        while True:
+            with self._lock:
+                value = self._values.pop(key, _MISSING)
+                if value is not _MISSING:
+                    self._values[key] = value
+                    return value
+                pending = self._pending.get(group_key)
+                if pending is None:
+                    pending = threading.Event()
+                    self._pending[group_key] = pending
+                    owner = True
+                else:
+                    owner = False
+
+            if owner:
+                try:
+                    values = compute_group()
+                    for other_key, other_value in values.items():
+                        if other_key != key:
+                            self.put(other_key, other_value)
+                    self.put(key, values[key])
+                    return values[key]
+                finally:
+                    with self._lock:
+                        self._pending.pop(group_key, None)
+                        pending.set()
+            pending.wait()
+
     def clear(self) -> None:
         with self._lock:
             self._values.clear()
@@ -178,6 +223,7 @@ class HPOExecutionCache:
         self.representations = BoundedProcessCache(representation_entries)
         self.should_cache_representation = should_cache_representation
         self._modality_keys = {}
+        self._layer_sweeps = {}
         self._lock = threading.RLock()
 
     def modality_key(self, modality) -> Tuple[str, str]:
@@ -251,7 +297,97 @@ class HPOExecutionCache:
             return compute()
         return self.representations.get_or_compute(key, compute)
 
+    def set_layer_sweeps(self, sweeps: Optional[Dict[str, Iterable[Any]]]) -> None:
+        """Set, per DAG node id, the layers to compute together on a miss."""
+        with self._lock:
+            self._layer_sweeps = {
+                node_id: list(layers) for node_id, layers in (sweeps or {}).items()
+            }
+
+    def layer_sweep(self, node_id: str) -> Optional[List[Any]]:
+        with self._lock:
+            return self._layer_sweeps.get(node_id)
+
+    def get_or_compute_layer(
+        self,
+        operation,
+        parameters,
+        input_keys,
+        layer_names: List[Any],
+        compute_layers: Callable[[List[Any]], Dict[Any, Any]],
+        compute: Callable[[], Any],
+    ):
+        """Return one layer's representation, computing all ``layer_names`` at once.
+
+        On a miss, ``compute_layers(layers)`` runs the encoder once for every
+        layer and returns {layer: representation}; each one is cached under the
+        key that a configuration selecting that layer looks up. If that pass
+        fails or lacks the requested layer, ``compute()`` computes it alone.
+        """
+        parameters = dict(parameters or {})
+        key = self.representation_key(operation, parameters, input_keys)
+        layer_parameter = getattr(operation, "layer_parameter", None)
+        if layer_parameter is None or layer_parameter not in parameters:
+            return self.get_or_compute_representation(operation, key, compute)
+        if (
+            self.should_cache_representation is not None
+            and not self.should_cache_representation(operation)
+        ):
+            return compute()
+
+        layer = parameters[layer_parameter]
+        layers = list(dict.fromkeys([layer, *layer_names]))
+        keys = {
+            name: self.representation_key(
+                operation, {**parameters, layer_parameter: name}, input_keys
+            )
+            for name in layers
+        }
+        shared = {k: v for k, v in parameters.items() if k != layer_parameter}
+        group_key = (
+            "layers",
+            layer_parameter,
+            self.representation_key(operation, shared, input_keys),
+        )
+
+        def compute_group():
+            try:
+                values = compute_layers(layers)
+            except Exception as error:
+                logger.warning(
+                    "Computing %d layers of %s in one pass failed (%s); "
+                    "computing %s=%r alone",
+                    len(layers),
+                    operation.__name__,
+                    error,
+                    layer_parameter,
+                    layer,
+                )
+                values = {}
+                _release_cuda_cache()
+            computed = {
+                keys[name]: value for name, value in values.items() if name in keys
+            }
+            if key not in computed:
+                # Keep the other layers even if this one cannot be computed.
+                for other_key, value in computed.items():
+                    self.representations.put(other_key, value)
+                computed[key] = compute()
+            return computed
+
+        return self.representations.get_or_compute_group(key, group_key, compute_group)
+
     def clear(self) -> None:
         self.representations.clear()
         with self._lock:
             self._modality_keys.clear()
+            self._layer_sweeps.clear()
+
+
+def _release_cuda_cache() -> None:
+    try:
+        import torch
+    except ImportError:
+        return
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()

@@ -163,7 +163,7 @@ public class RewriteSplitDagUnknownNnzTest extends AutomatedTestBase {
 			// check original log output
 			String log_original_string = String.join(DELIMITER,
 				log_original.stream().map(l -> l.getMessage().toString()).toArray(String[]::new));
-			Assert.assertTrue(log_original_string.contains("RewriteSplitDagUnknownNnz: Split DAG into 4 statement blocks."));
+			Assert.assertTrue(log_original_string.contains("RewriteSplitDagUnknownNnz: Split DAG into 3 statement blocks."));
 			Assert.assertTrue(log_original_string.contains("mmchainoptsparse"));
 			Assert.assertTrue(log_original_string.contains("Optimal Sparse MM Chain:"));
 			// check reference log output

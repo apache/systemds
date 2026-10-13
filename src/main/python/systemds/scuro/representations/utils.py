@@ -20,7 +20,9 @@
 # -------------------------------------------------------------
 import os
 import pickle
+import threading
 from bisect import bisect_right
+from collections import OrderedDict
 from collections.abc import Sequence
 from contextlib import contextmanager
 
@@ -461,6 +463,98 @@ class OwnerAccumulator:
             return values
         owner_ids = self._owner_ids.cpu().numpy()
         return [values[owner_ids == owner] for owner in range(self.num_owners)]
+
+
+class ChunkEmbeddingCache:
+    """Process-wide LRU of pooled text-chunk vectors, bounded in bytes.
+
+    Text-context configurations split the same texts into largely the same
+    chunks, so across a search the encoder sees most chunks many times. A
+    vector is only reusable if it does not depend on the batch it was encoded
+    in; under mixed precision it does depend on the batch shape, so encoders
+    that use this cache encode in fixed-shape batches (see ``canonical_batches``).
+    """
+
+    def __init__(self, max_bytes):
+        self.max_bytes = int(max_bytes)
+        self._entries = OrderedDict()
+        self._bytes = 0
+        self._lock = threading.Lock()
+
+    def get(self, key):
+        with self._lock:
+            value = self._entries.get(key)
+            if value is not None:
+                self._entries.move_to_end(key)
+            return value
+
+    def put(self, key, value):
+        size = value.element_size() * value.nelement()
+        if size > self.max_bytes:
+            return
+        with self._lock:
+            previous = self._entries.pop(key, None)
+            if previous is not None:
+                self._bytes -= previous.element_size() * previous.nelement()
+            self._entries[key] = value
+            self._bytes += size
+            while self._bytes > self.max_bytes:
+                _, evicted = self._entries.popitem(last=False)
+                self._bytes -= evicted.element_size() * evicted.nelement()
+
+    def clear(self):
+        with self._lock:
+            self._entries.clear()
+            self._bytes = 0
+
+    def __len__(self):
+        return len(self._entries)
+
+
+_CHUNK_EMBEDDING_CACHE = None
+_CHUNK_EMBEDDING_CACHE_LOCK = threading.Lock()
+
+
+def chunk_embedding_cache():
+    """The process's chunk cache, or None unless SCURO_TEXT_CHUNK_CACHE=1.
+
+    SCURO_TEXT_CHUNK_CACHE_MB bounds it (default 512 MB per process).
+    """
+    global _CHUNK_EMBEDDING_CACHE
+    if os.environ.get("SCURO_TEXT_CHUNK_CACHE", "0") != "1":
+        return None
+    with _CHUNK_EMBEDDING_CACHE_LOCK:
+        if _CHUNK_EMBEDDING_CACHE is None:
+            max_mb = float(os.environ.get("SCURO_TEXT_CHUNK_CACHE_MB", "512"))
+            _CHUNK_EMBEDDING_CACHE = ChunkEmbeddingCache(max_mb * 1024 * 1024)
+        return _CHUNK_EMBEDDING_CACHE
+
+
+def canonical_batches(lengths, batch_size, length_step, max_length=None):
+    """Group sequences into batches of exactly ``batch_size`` rows each.
+
+    Each batch holds sequences of one padded length, ``lengths`` rounded up to
+    a multiple of ``length_step`` (at most ``max_length``). A partial batch is
+    filled up by repeating
+    its last index. Returns [(padded length, indices, number of real rows)].
+
+    With every batch of the same shape, a sequence's output depends only on
+    its own tokens and padded length, not on which others share its batch.
+    """
+    buckets = {}
+    for index, length in sorted(enumerate(lengths), key=lambda item: item[1]):
+        padded = max(1, -(-int(length) // length_step)) * length_step
+        if max_length is not None:
+            padded = min(padded, int(max_length))
+        buckets.setdefault(padded, []).append(index)
+    batches = []
+    for padded, indices in sorted(buckets.items()):
+        for start in range(0, len(indices), batch_size):
+            rows = indices[start : start + batch_size]
+            batches.append(
+                (padded, rows + [rows[-1]] * (batch_size - len(rows)), len(rows))
+            )
+    return batches
 
 
 def dense_instance_batch(data):

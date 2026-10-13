@@ -29,6 +29,8 @@ from systemds.scuro.representations.utils import (
     LazyModelMixin,
     LengthBucketBatchSampler,
     OwnerAccumulator,
+    capture_layer_outputs,
+    existing_layers,
     OwnedSequenceDataset,
     flatten_owned_sequences,
     get_sequence_lengths,
@@ -72,6 +74,7 @@ class CLIPVisual(LazyModelMixin, UnimodalRepresentation):
     OUTPUT_MODALITY_TYPE = ModalityType.EMBEDDING
     supports_aggregation_pushdown = True
     cache_in_worker = True
+    layer_parameter = "layer_name"
     MODEL_BYTES = CLIP_MODEL_BYTES
     HIDDEN_SIZE = 768
     NUM_LAYERS = 12
@@ -81,7 +84,6 @@ class CLIPVisual(LazyModelMixin, UnimodalRepresentation):
         parameters = self._get_parameters()
         super().__init__("CLIPVisual", self.OUTPUT_MODALITY_TYPE, parameters)
         self.params = params
-        self._activation_hook = None
         self._processor = None
         if params is not None:
             self.batch_size = int((params or {}).get("batch_size", batch_size))
@@ -255,46 +257,54 @@ class CLIPVisual(LazyModelMixin, UnimodalRepresentation):
         }
 
     def transform(self, modality, aggregation=None):
-        transformed_modality = TransformedModality(
-            modality, self, self.output_modality_type
-        )
+        layers = self.transform_layers(modality, [self.layer_name], aggregation)
+        if self.layer_name not in layers:
+            raise ValueError(f"CLIPVisual has no layer {self.layer_name!r}")
+        transformed_modality = layers[self.layer_name]
+        if self.output_file is not None:
+            save_embeddings(transformed_modality.data, self.output_file)
+        return transformed_modality
+
+    def transform_layers(self, modality, layer_names, aggregation=None):
         self.data_type = torch.float32
         if next(self.model.parameters()).dtype != self.data_type:
             self.model = self.model.to(self.data_type)
 
         self.model = self.model.to(self.device)
         self.model.eval()
-        self.clip_output = None
+        layer_names = _clip_layers(self.model.vision_model, layer_names)
+        if not layer_names:
+            return {}
 
-        def get_activation(name):
-            def hook(model, input, output):
-                self.clip_output = output[0] if isinstance(output, tuple) else output
-
-            return hook
-
-        if self.layer_name != "" and self._activation_hook is None:
-            for name, layer in self.model.vision_model.named_modules():
-                if name == self.layer_name:
-                    self._activation_hook = layer.register_forward_hook(
-                        get_activation(name)
-                    )
-                    break
-
-        embeddings = self.create_visual_embeddings(modality, aggregation)
-
-        if self.output_file is not None:
-            save_embeddings(embeddings, self.output_file)
-
-        transformed_modality.data_type = np.float32
-        transformed_modality.aggregate_dim = (
-            None
-            if aggregation is not None or modality.modality_type == ModalityType.IMAGE
-            else (0,)
+        embeddings = self._visual_embeddings_by_layer(
+            modality, aggregation, layer_names
         )
-        transformed_modality.data = embeddings
-        return transformed_modality
+        transformed = {}
+        for name in layer_names:
+            transformed_modality = TransformedModality(
+                modality, self, self.output_modality_type
+            )
+            transformed_modality.data_type = np.float32
+            transformed_modality.aggregate_dim = (
+                None
+                if aggregation is not None
+                or modality.modality_type == ModalityType.IMAGE
+                else (0,)
+            )
+            transformed_modality.data = embeddings.pop(name)
+            transformed[name] = transformed_modality
+        return transformed
 
     def create_visual_embeddings(self, modality, aggregation=None):
+        return self._visual_embeddings_by_layer(
+            modality, aggregation, [self.layer_name]
+        )[self.layer_name]
+
+    def _visual_embeddings_by_layer(self, modality, aggregation, layer_names):
+        """Embed every frame once and pool each requested layer's output.
+
+        The empty layer name is CLIP's projected image embedding.
+        """
         preprocess = FramePreprocessor.from_hf_processor(
             self.processor, dtype=self.data_type
         )
@@ -315,28 +325,48 @@ class CLIPVisual(LazyModelMixin, UnimodalRepresentation):
             pin_memory=pin_memory_for(self.device),
         )
         owner_by_chunk = torch.tensor(owner_ids, dtype=torch.long)
-        accumulator = OwnerAccumulator(len(modality.data), len(dataset), aggregation)
+        accumulators = {
+            name: OwnerAccumulator(len(modality.data), len(dataset), aggregation)
+            for name in layer_names
+        }
+        hooked = [name for name in layer_names if name != ""]
+        project = "" in layer_names
 
-        with transformer_inference_context(self.device):
+        def pool_hooked(output):
+            return self._pool_visual_output(
+                output[0] if isinstance(output, tuple) else output
+            )
+
+        with transformer_inference_context(self.device), capture_layer_outputs(
+            self.model.vision_model, hooked, pool_hooked
+        ) as outputs:
             for batch in dataloader:
                 chunk_ids = batch["id"].long()
                 inputs = {"pixel_values": preprocess(batch["data"], self.device)}
-                if self.layer_name != "":
-                    _ = self.model.vision_model(**inputs)
-                    output = self.clip_output
+                if not hooked:
+                    outputs[""] = self.model.get_image_features(**inputs)
                 else:
-                    output = self.model.get_image_features(**inputs)
+                    vision_outputs = self.model.vision_model(**inputs)
+                    if project:
+                        # What get_image_features computes, from this same pass.
+                        outputs[""] = self.model.visual_projection(vision_outputs[1])
+                owners = owner_by_chunk.index_select(0, chunk_ids)
+                for name in layer_names:
+                    output = outputs[name]
+                    if name == "":
+                        output = self._pool_visual_output(output)
+                    accumulators[name].update(
+                        torch.flatten(output, 1), owners, chunk_ids
+                    )
 
-                output = self._pool_visual_output(output)
-                accumulator.update(
-                    torch.flatten(output, 1),
-                    owner_by_chunk.index_select(0, chunk_ids),
-                    chunk_ids,
-                )
-
-        embeddings = accumulator.finalize(grouped=not is_image and aggregation is None)
-        if is_image and aggregation is None:
-            return list(embeddings)
+        embeddings = {}
+        for name in layer_names:
+            layer_embeddings = accumulators.pop(name).finalize(
+                grouped=not is_image and aggregation is None
+            )
+            if is_image and aggregation is None:
+                layer_embeddings = list(layer_embeddings)
+            embeddings[name] = layer_embeddings
         return embeddings
 
     def _pool_visual_output(self, output: torch.Tensor) -> torch.Tensor:
@@ -355,6 +385,7 @@ class CLIPVisual(LazyModelMixin, UnimodalRepresentation):
 class CLIPText(UnimodalRepresentation):
     supports_aggregation_pushdown = True
     cache_in_worker = True
+    layer_parameter = "layer_name"
     MODEL_BYTES = CLIP_MODEL_BYTES
     HIDDEN_SIZE = 512
     NUM_LAYERS = 12
@@ -381,7 +412,6 @@ class CLIPText(UnimodalRepresentation):
         self.gpu_id = None
         self.device = get_device()
         self.params = params
-        self._activation_hook = None
 
     @property
     def gpu_id(self):
@@ -494,54 +524,54 @@ class CLIPText(UnimodalRepresentation):
         return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": gpu_peak}
 
     def transform(self, modality, aggregation=None):
-        transformed_modality = TransformedModality(
-            modality, self, self.output_modality_type
-        )
+        layers = self.transform_layers(modality, [self.layer_name], aggregation)
+        if self.layer_name not in layers:
+            raise ValueError(f"CLIPText has no layer {self.layer_name!r}")
+        transformed_modality = layers[self.layer_name]
+        if self.output_file is not None:
+            save_embeddings(transformed_modality.data, self.output_file)
+        return transformed_modality
+
+    def transform_layers(self, modality, layer_names, aggregation=None):
         if self.processor is None:
             self.processor = CLIPProcessor.from_pretrained(CLIP_MODEL_NAME)
         if self.model is None:
             self.model = CLIPModel.from_pretrained(CLIP_MODEL_NAME)
         self.model = self.model.to(self.device)
         self.model.eval()
-        self.clip_output = None
-
-        def get_activation(name):
-            def hook(model, input, output):
-                self.clip_output = output[0] if isinstance(output, tuple) else output
-
-            return hook
-
-        if self.layer_name != "" and self._activation_hook is None:
-            for name, layer in self.model.text_model.named_modules():
-                if name == self.layer_name:
-                    self._activation_hook = layer.register_forward_hook(
-                        get_activation(name)
-                    )
-                    break
+        layer_names = _clip_layers(self.model.text_model, layer_names)
+        if not layer_names:
+            return {}
 
         aggregate_dim = None
         if ModalityType.TEXT.has_field(modality.metadata, "text_spans"):
             chunk_groups = list(TextSpanDataset(modality.data, modality.metadata))
             chunks, owner_ids = flatten_owned_sequences(chunk_groups)
             aggregate_dim = None if aggregation is not None else (0,)
-            embeddings = self.create_text_embeddings(
+            embeddings = self._text_embeddings_by_layer(
                 chunks,
                 self.model,
+                layer_names,
                 aggregation,
                 owner_ids=owner_ids,
                 num_owners=len(chunk_groups),
                 grouped=aggregation is None,
             )
         else:
-            embeddings = self.create_text_embeddings(modality.data, self.model)
+            embeddings = self._text_embeddings_by_layer(
+                modality.data, self.model, layer_names
+            )
 
-        if self.output_file is not None:
-            save_embeddings(embeddings, self.output_file)
-
-        transformed_modality.data_type = np.float32
-        transformed_modality.aggregate_dim = aggregate_dim
-        transformed_modality.data = embeddings
-        return transformed_modality
+        transformed = {}
+        for name in layer_names:
+            transformed_modality = TransformedModality(
+                modality, self, self.output_modality_type
+            )
+            transformed_modality.data_type = np.float32
+            transformed_modality.aggregate_dim = aggregate_dim
+            transformed_modality.data = embeddings.pop(name)
+            transformed[name] = transformed_modality
+        return transformed
 
     def create_text_embeddings(
         self,
@@ -552,6 +582,30 @@ class CLIPText(UnimodalRepresentation):
         num_owners=None,
         grouped=False,
     ):
+        return self._text_embeddings_by_layer(
+            data,
+            model,
+            [self.layer_name],
+            aggregation,
+            owner_ids=owner_ids,
+            num_owners=num_owners,
+            grouped=grouped,
+        )[self.layer_name]
+
+    def _text_embeddings_by_layer(
+        self,
+        data,
+        model,
+        layer_names,
+        aggregation=None,
+        owner_ids=None,
+        num_owners=None,
+        grouped=False,
+    ):
+        """Encode every text once and pool each requested layer's output.
+
+        The empty layer name is CLIP's projected text embedding.
+        """
         texts = list(TextDataset(data))
         single_owner = owner_ids is None and aggregation is not None
         if owner_ids is None:
@@ -593,22 +647,50 @@ class CLIPText(UnimodalRepresentation):
             collate_fn=collate,
             pin_memory=pin_memory_for(self.device),
         )
-        accumulator = OwnerAccumulator(num_owners, len(dataset), aggregation)
-        with transformer_inference_context(self.device):
+        accumulators = {
+            name: OwnerAccumulator(num_owners, len(dataset), aggregation)
+            for name in layer_names
+        }
+        hooked = [name for name in layer_names if name != ""]
+        project = "" in layer_names
+        batch_mask = {}
+
+        def pool_hooked(output):
+            return pool_transformer_output(
+                output[0] if isinstance(output, tuple) else output,
+                batch_mask["attention_mask"],
+            )
+
+        with transformer_inference_context(self.device), capture_layer_outputs(
+            model.text_model, hooked, pool_hooked
+        ) as outputs:
             for inputs, batch_owner_ids, chunk_ids in dataloader:
                 inputs = move_batch_to_device(inputs, self.device)
-                if self.layer_name != "":
-                    _ = model.text_model(**inputs)
-                    pooled = pool_transformer_output(
-                        self.clip_output, inputs["attention_mask"]
-                    )
+                batch_mask["attention_mask"] = inputs["attention_mask"]
+                if not hooked:
+                    outputs[""] = model.get_text_features(**inputs)
                 else:
-                    pooled = model.get_text_features(**inputs)
-                accumulator.update(pooled, batch_owner_ids, chunk_ids)
+                    text_outputs = model.text_model(**inputs)
+                    if project:
+                        # What get_text_features computes, from this same pass.
+                        outputs[""] = model.text_projection(text_outputs[1])
+                for name in layer_names:
+                    accumulators[name].update(outputs[name], batch_owner_ids, chunk_ids)
 
-        embeddings = accumulator.finalize(grouped=grouped)
-        if single_owner:
-            return embeddings[0]
-        if aggregation is None and not grouped:
-            return list(embeddings)
+        embeddings = {}
+        for name in layer_names:
+            layer_embeddings = accumulators.pop(name).finalize(grouped=grouped)
+            if single_owner:
+                layer_embeddings = layer_embeddings[0]
+            elif aggregation is None and not grouped:
+                layer_embeddings = list(layer_embeddings)
+            embeddings[name] = layer_embeddings
         return embeddings
+
+
+def _clip_layers(model, layer_names):
+    """The requested layers that exist; the empty name is the projected embedding."""
+    existing = set(existing_layers(model, layer_names))
+    return [
+        name for name in dict.fromkeys(layer_names) if name == "" or name in existing
+    ]

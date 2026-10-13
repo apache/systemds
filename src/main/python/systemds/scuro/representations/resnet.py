@@ -24,6 +24,8 @@ from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.utils import (
     LazyModelMixin,
     build_torchvision_model,
+    capture_layer_outputs,
+    existing_layers,
     OwnerAccumulator,
     flatten_owned_sequences,
     get_sequence_lengths,
@@ -37,7 +39,6 @@ from systemds.scuro.utils.torch_dataset import (
 )
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
-from typing import Tuple, Any
 from systemds.scuro.drsearch.operator_registry import (
     register_representation,
     register_expensive_representation,
@@ -60,6 +61,7 @@ class Identity(torch.nn.Module):
 class ResNet(LazyModelMixin, UnimodalRepresentation):
     supports_aggregation_pushdown = True
     cache_in_worker = True
+    layer_parameter = "layer_name"
     MODEL_BYTES = {
         "ResNet18": 46_796_608,
         "ResNet34": 87_259_072,
@@ -77,8 +79,6 @@ class ResNet(LazyModelMixin, UnimodalRepresentation):
         params=None,
     ):
         self.data_type = torch.float32
-        self._activation_hook = None
-        self.activation = None
         self.gpu_id = None
         self.device = get_device()
         if params is not None:
@@ -209,27 +209,19 @@ class ResNet(LazyModelMixin, UnimodalRepresentation):
         return parameters
 
     def transform(self, modality, aggregation=None):
+        layers = self.transform_layers(modality, [self.layer_name], aggregation)
+        if self.layer_name not in layers:
+            raise ValueError(f"{self.model_name} has no layer {self.layer_name!r}")
+        return layers[self.layer_name]
+
+    def transform_layers(self, modality, layer_names, aggregation=None):
         if next(self.model.parameters()).dtype != self.data_type:
             self.model = self.model.to(self.data_type)
         self.model = self.model.to(self.device)
         self.model.eval()
-        self.activation = None
-
-        def get_features(name_):
-            def hook(
-                _module: torch.nn.Module, input_: Tuple[torch.Tensor], output: Any
-            ):
-                self.activation = output
-
-            return hook
-
-        if self.layer_name and self._activation_hook is None:
-            for name, layer in self.model.named_modules():
-                if name == self.layer_name:
-                    self._activation_hook = layer.register_forward_hook(
-                        get_features(name)
-                    )
-                    break
+        layer_names = existing_layers(self.model, layer_names)
+        if not layer_names:
+            return {}
 
         is_image = modality.modality_type == ModalityType.IMAGE
         if is_image:
@@ -249,31 +241,42 @@ class ResNet(LazyModelMixin, UnimodalRepresentation):
             pin_memory=pin_memory_for(self.device),
         )
         owner_by_chunk = torch.tensor(owner_ids, dtype=torch.long)
-        accumulator = OwnerAccumulator(len(modality.data), len(dataset), aggregation)
+        accumulators = {
+            name: OwnerAccumulator(len(modality.data), len(dataset), aggregation)
+            for name in layer_names
+        }
 
-        with inference_context(self.device):
+        with inference_context(self.device), capture_layer_outputs(
+            self.model, layer_names, _pooled_features
+        ) as outputs:
             for batch in dataloader:
                 chunk_ids = batch["id"].long()
-                _ = self.model(preprocess(batch["data"], self.device))
-                output = self.activation
-                if output.ndim > 2:
-                    output = torch.nn.functional.adaptive_avg_pool2d(output, (1, 1))
-                accumulator.update(
-                    torch.flatten(output, 1),
-                    owner_by_chunk.index_select(0, chunk_ids),
-                    chunk_ids,
-                )
+                self.model(preprocess(batch["data"], self.device))
+                owners = owner_by_chunk.index_select(0, chunk_ids)
+                for name in layer_names:
+                    accumulators[name].update(outputs[name], owners, chunk_ids)
 
-        embeddings = accumulator.finalize(grouped=not is_image and aggregation is None)
-        if is_image and aggregation is None:
-            embeddings = list(embeddings)
+        transformed = {}
+        for name in layer_names:
+            embeddings = accumulators.pop(name).finalize(
+                grouped=not is_image and aggregation is None
+            )
+            if is_image and aggregation is None:
+                embeddings = list(embeddings)
 
-        transformed_modality = TransformedModality(
-            modality, self, self.output_modality_type
-        )
-        transformed_modality.data_type = np.float32
-        transformed_modality.aggregate_dim = (
-            None if aggregation is not None or is_image else (0,)
-        )
-        transformed_modality.data = embeddings
-        return transformed_modality
+            transformed_modality = TransformedModality(
+                modality, self, self.output_modality_type
+            )
+            transformed_modality.data_type = np.float32
+            transformed_modality.aggregate_dim = (
+                None if aggregation is not None or is_image else (0,)
+            )
+            transformed_modality.data = embeddings
+            transformed[name] = transformed_modality
+        return transformed
+
+
+def _pooled_features(output: torch.Tensor) -> torch.Tensor:
+    if output.ndim > 2:
+        output = torch.nn.functional.adaptive_avg_pool2d(output, (1, 1))
+    return torch.flatten(output, 1)

@@ -139,8 +139,7 @@ class Wav2Vec(UnimodalRepresentation):
         with transformer_inference_context(self.device):
             for inputs, owner_ids, chunk_ids in dataloader:
                 inputs = move_batch_to_device(inputs, self.device)
-                outputs = model(**inputs)
-                features = outputs.extract_features
+                features = _extract_features(model, inputs["input_values"])
                 attention_mask = inputs.get("attention_mask")
                 if attention_mask is not None and hasattr(
                     model, "_get_feature_vector_attention_mask"
@@ -177,14 +176,11 @@ class Wav2Vec(UnimodalRepresentation):
             signal_len = 16000
         signal_len = max(signal_len, 1)
 
-        hidden = 768
-        stride = 320  # conv frontend effective stride
-        frames = max(1, int(np.ceil(signal_len / stride)))
-
         model_resident = 420 * 1024 * 1024  # ~420 MB
         batch = min(max(1, self.batch_size), max(1, n))
-        activation_bytes = int(batch * frames * hidden * 4 * 24)
-        attention_bytes = int(batch * 12 * frames * frames * 4)
+        # Only the CNN front end runs. Its first conv layer (512 channels,
+        # stride 5) dominates: measured peaks are ~1 KB per input sample.
+        activation_bytes = int(batch * signal_len * 1024)
         io_temp = int(signal_len * 4 * 4) + 16 * 1024 * 1024
 
         output_bytes = n * 512 * 4
@@ -193,10 +189,18 @@ class Wav2Vec(UnimodalRepresentation):
             (model_resident + activation_bytes + io_temp + output_bytes) * 1.25
         )
 
-        gpu_peak = int(
-            (model_resident + activation_bytes + attention_bytes + batch * io_temp)
-            * 1.25
-        )
+        gpu_peak = int((model_resident + activation_bytes + batch * io_temp) * 1.25)
         cpu_peak = max(cpu_peak, 600 * 1024 * 1024)
 
         return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": gpu_peak}
+
+
+def _extract_features(model, input_values):
+    """``Wav2Vec2Model(...).extract_features`` without running the encoder.
+
+    That output is the layer-normed CNN front end, which the transformer
+    encoder does not change, so computing only the front end gives the same
+    features at a fraction of the cost.
+    """
+    features = model.feature_extractor(input_values).transpose(1, 2)
+    return model.feature_projection.layer_norm(features)

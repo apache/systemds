@@ -29,6 +29,8 @@ from systemds.scuro.representations.utils import (
     LengthBucketBatchSampler,
     OwnerAccumulator,
     OwnedSequenceDataset,
+    capture_layer_outputs,
+    existing_layers,
     flatten_owned_sequences,
     move_batch_to_device,
     pin_memory_for,
@@ -54,6 +56,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 class BertFamily(UnimodalRepresentation):
     supports_aggregation_pushdown = True
     cache_in_worker = True
+    layer_parameter = "layer"
     MODEL_BYTES = None
     HIDDEN_SIZE = 768
     NUM_LAYERS = 12
@@ -91,8 +94,6 @@ class BertFamily(UnimodalRepresentation):
         self.params = params
         self.model = None
         self.tokenizer = None
-        self.bert_output = None
-        self._activation_hook = None
         if params is not None:
             self.layer = params.get("layer", self.layer)
             self.batch_size = int((params or {}).get("batch_size", batch_size))
@@ -212,7 +213,16 @@ class BertFamily(UnimodalRepresentation):
         }
 
     def transform(self, modality, aggregation=None):
-        transformed_modality = TransformedModality(modality, self)
+        layers = self.transform_layers(modality, [self.layer], aggregation)
+        if self.layer not in layers:
+            raise ValueError(f"{self.name} has no layer {self.layer!r}")
+        transformed_modality = layers[self.layer]
+        if self.output_file is not None:
+            save_embeddings(transformed_modality.data, self.output_file)
+        self.assert_output_stats(transformed_modality)
+        return transformed_modality
+
+    def transform_layers(self, modality, layer_names, aggregation=None):
         if self.tokenizer is None:
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.model_name, clean_up_tokenization_spaces=True
@@ -222,53 +232,43 @@ class BertFamily(UnimodalRepresentation):
 
         self.model = self.model.to(self.device)
         self.model.eval()
-        self.bert_output = None
-
-        def get_activation(name):
-            def hook(model, input, output):
-                if isinstance(output, tuple):
-                    self.bert_output = output[0]
-                elif hasattr(output, "last_hidden_state"):
-                    self.bert_output = output.last_hidden_state
-                else:
-                    self.bert_output = output
-
-            return hook
+        existing = set(existing_layers(self.model, layer_names))
+        layer_names = [
+            name
+            for name in dict.fromkeys(layer_names)
+            if name == "cls" or name in existing
+        ]
+        if not layer_names:
+            return {}
 
         aggregate_dim = (0,)
-        if self.layer != "cls":
-            if self._activation_hook is None:
-                for name, layer in self.model.named_modules():
-                    if name == self.layer:
-                        self._activation_hook = layer.register_forward_hook(
-                            get_activation(name)
-                        )
-                        break
         if ModalityType.TEXT.has_field(modality.metadata, "text_spans"):
             chunk_groups = list(TextSpanDataset(modality.data, modality.metadata))
             chunks, owner_ids = flatten_owned_sequences(chunk_groups)
             aggregate_dim = None if aggregation is not None else (0,)
-            embeddings = self.create_embeddings(
+            embeddings = self._embeddings_by_layer(
                 chunks,
                 self.model,
                 self.tokenizer,
+                layer_names,
                 aggregation,
                 owner_ids=owner_ids,
                 num_owners=len(chunk_groups),
                 grouped=aggregation is None,
             )
         else:
-            embeddings = self.create_embeddings(
-                modality.data, self.model, self.tokenizer
+            embeddings = self._embeddings_by_layer(
+                modality.data, self.model, self.tokenizer, layer_names
             )
-        if self.output_file is not None:
-            save_embeddings(embeddings, self.output_file)
 
-        transformed_modality.data_type = np.float32
-        transformed_modality.aggregate_dim = aggregate_dim
-        transformed_modality.data = embeddings
-        self.assert_output_stats(transformed_modality)
-        return transformed_modality
+        transformed = {}
+        for name in layer_names:
+            transformed_modality = TransformedModality(modality, self)
+            transformed_modality.data_type = np.float32
+            transformed_modality.aggregate_dim = aggregate_dim
+            transformed_modality.data = embeddings.pop(name)
+            transformed[name] = transformed_modality
+        return transformed
 
     def assert_output_stats(self, transformed_modality):
         if self.stats:
@@ -296,6 +296,33 @@ class BertFamily(UnimodalRepresentation):
         num_owners=None,
         grouped=False,
     ):
+        return self._embeddings_by_layer(
+            data,
+            model,
+            tokenizer,
+            [self.layer],
+            aggregation,
+            owner_ids=owner_ids,
+            num_owners=num_owners,
+            grouped=grouped,
+        )[self.layer]
+
+    def _embeddings_by_layer(
+        self,
+        data,
+        model,
+        tokenizer,
+        layer_names,
+        aggregation=None,
+        owner_ids=None,
+        num_owners=None,
+        grouped=False,
+    ):
+        """Encode every text once and pool each requested layer's output.
+
+        The layer name "cls" is the CLS token of the last hidden state; any
+        other name is a submodule whose output is mean-pooled over the tokens.
+        """
         texts = list(TextDataset(data))
         single_owner = owner_ids is None and aggregation is not None
         if owner_ids is None:
@@ -342,28 +369,54 @@ class BertFamily(UnimodalRepresentation):
             collate_fn=collate,
             pin_memory=pin_memory_for(self.device),
         )
-        accumulator = OwnerAccumulator(num_owners, len(dataset), aggregation)
-        with transformer_inference_context(self.device):
+        accumulators = {
+            name: OwnerAccumulator(num_owners, len(dataset), aggregation)
+            for name in layer_names
+        }
+        hooked = [name for name in layer_names if name != "cls"]
+        batch_mask = {}
+
+        def pool_hooked(output):
+            return pool_transformer_output(
+                _hidden_state(output), batch_mask["attention_mask"]
+            )
+
+        with transformer_inference_context(self.device), capture_layer_outputs(
+            model, hooked, pool_hooked
+        ) as outputs:
             for inputs, batch_owner_ids, chunk_ids in dataloader:
                 inputs = move_batch_to_device(inputs, self.device)
-                outputs = model(**inputs)
-                if self.layer == "cls":
-                    hidden_state = outputs.last_hidden_state
-                else:
-                    hidden_state = self.bert_output
-                pooled = pool_transformer_output(
-                    hidden_state,
-                    inputs["attention_mask"],
-                    use_cls=self.layer == "cls",
-                )
-                accumulator.update(pooled, batch_owner_ids, chunk_ids)
+                batch_mask["attention_mask"] = inputs["attention_mask"]
+                model_outputs = model(**inputs)
+                if "cls" in layer_names:
+                    outputs["cls"] = pool_transformer_output(
+                        model_outputs.last_hidden_state,
+                        inputs["attention_mask"],
+                        use_cls=True,
+                    )
+                for name in layer_names:
+                    accumulators[name].update(
+                        outputs[name], batch_owner_ids, chunk_ids
+                    )
 
-        embeddings = accumulator.finalize(grouped=grouped)
-        if single_owner:
-            return embeddings[0]
-        if aggregation is None and not grouped:
-            return list(embeddings)
+        embeddings = {}
+        for name in layer_names:
+            layer_embeddings = accumulators.pop(name).finalize(grouped=grouped)
+            if single_owner:
+                layer_embeddings = layer_embeddings[0]
+            elif aggregation is None and not grouped:
+                layer_embeddings = list(layer_embeddings)
+            embeddings[name] = layer_embeddings
         return embeddings
+
+
+def _hidden_state(output):
+    """The token states in a layer's output, whatever form the layer returns."""
+    if isinstance(output, tuple):
+        return output[0]
+    if hasattr(output, "last_hidden_state"):
+        return output.last_hidden_state
+    return output
 
 
 @register_representation(ModalityType.TEXT)
@@ -443,8 +496,8 @@ class RoBERTa(BertFamily):
                 "encoder.layer.9",
                 "encoder.layer.10",
                 "encoder.layer.11",
-                "pooler",
-                "pooler.activation",
+                # No "pooler": roberta-base ships no pooler weights, so it is
+                # randomly initialized on every load.
             ]
         }
         super().__init__(

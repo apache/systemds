@@ -83,6 +83,10 @@ def _lazy_leaf_budget_fraction() -> float:
     return float(os.environ.get("SCURO_LAZY_LEAF_BUDGET_FRACTION", "0.5"))
 
 
+def _keep_worker_models() -> bool:
+    return os.environ.get("SCURO_KEEP_WORKER_MODELS", "1") == "1"
+
+
 def _place_on_device(obj: Any, gpu_id: Optional[int]) -> None:
     """Apply scheduler placement even when an object selected CUDA itself."""
     device = torch.device("cpu" if gpu_id is None else f"cuda:{gpu_id}")
@@ -126,17 +130,21 @@ def _run_gpu_op(fn, gpu_id: Optional[int], cleanup_after: bool = True):
 _WORKER_OP_CACHE: Dict[str, Any] = {}
 
 
+def _operation_cache_key(node) -> Optional[str]:
+    if not getattr(node.operation, "cache_in_worker", False):
+        return None
+    try:
+        params = sorted(
+            (kv for kv in node.parameters.items() if not kv[0].startswith("_")),
+            key=lambda kv: kv[0],
+        )
+        return f"{node.operation.__module__}.{node.operation.__qualname__}|{params!r}"
+    except Exception:
+        return None
+
+
 def _instantiate_operation(node):
-    cache_key = None
-    if getattr(node.operation, "cache_in_worker", False):
-        try:
-            params_repr = repr(sorted(node.parameters.items(), key=lambda kv: kv[0]))
-            cache_key = (
-                f"{node.operation.__module__}.{node.operation.__qualname__}"
-                f"|{params_repr}"
-            )
-        except Exception:
-            cache_key = None
+    cache_key = _operation_cache_key(node)
     if cache_key is not None and cache_key in _WORKER_OP_CACHE:
         return _WORKER_OP_CACHE[cache_key]
     operation = node.operation(params=node.parameters)
@@ -398,16 +406,42 @@ def _load_leaf_worker(modality: Any, materialize: bool = False) -> Dict[str, Any
     return {"data": data, "metadata": modality.metadata, "shm_name": shm_name}
 
 
+def _retained_gpu_bytes() -> int:
+    if not torch.cuda.is_available() or not torch.cuda.is_initialized():
+        return 0
+    return int(torch.cuda.memory_allocated(0))
+
+
+def _release_worker_models() -> None:
+    _WORKER_OP_CACHE.clear()
+    if torch.cuda.is_available() and torch.cuda.is_initialized():
+        cleanup_gpu(0)
+
+
 def _dispatch_node(payload, gpu_id):
     node, input_mods = payload
+    cache_key = _operation_cache_key(node)
+    if cache_key is not None and cache_key not in _WORKER_OP_CACHE:
+        _release_worker_models()
+    keep = cache_key is not None and gpu_id is not None and _keep_worker_models()
     try:
-        return _execute_node_worker(node, input_mods, gpu_id)
+        value = _execute_node_worker(node, input_mods, gpu_id)
+    except BaseException:
+        keep = False
+        raise
     finally:
-        # CSE executes each node once; retaining its model after completion
-        # makes scheduler reservations lie about persistent worker memory.
-        _WORKER_OP_CACHE.clear()
-        if gpu_id is not None:
+        if cache_key is not None and not keep:
+            _release_worker_models()
+        elif gpu_id is not None:
             cleanup_gpu(gpu_id)
+    value["cached_operation"] = next(iter(_WORKER_OP_CACHE), None)
+    value["retained_gpu_bytes"] = _retained_gpu_bytes()
+    return value
+
+
+def _dispatch_release_models(_payload, _gpu_id):
+    _release_worker_models()
+    return {"retained_gpu_bytes": _retained_gpu_bytes()}
 
 
 def _dispatch_task(payload, gpu_id):
@@ -430,12 +464,18 @@ _WORKER_DISPATCH = {
     "task": _dispatch_task,
     "leaf_batch": _dispatch_leaf_batch,
     "load_leaf": _dispatch_load_leaf,
+    "release_models": _dispatch_release_models,
 }
 
 
 @dataclass
 class _NodeUnit:
     node_id: str
+
+
+@dataclass
+class _ReleaseUnit:
+    pid: int
 
 
 @dataclass
@@ -524,7 +564,8 @@ class NodeExecutor:
 
         self._node_attempts: Dict[str, int] = {}
 
-        self._job_units: Dict[int, Union[_NodeUnit, _BatchUnit]] = {}
+        self._job_units: Dict[int, Union[_NodeUnit, _BatchUnit, _ReleaseUnit]] = {}
+        self._worker_models: Dict[int, tuple] = {}
         self._job_retained_shm: Dict[int, List[str]] = {}
         self._leaf_shm_names: List[str] = []
         self._leaf_shm_owners: Dict[str, Any] = {}
@@ -712,12 +753,20 @@ class NodeExecutor:
             retained = self._retain_for_submit(parent_ids, payload)
             self.scheduler.begin_execution(node_id)
             self.scheduler.move_to_running(node_id)
+            cache_key = _operation_cache_key(node)
             job_id = self._pool.submit(
                 "node",
                 (node, payload),
                 gpu_id=gpu_id,
                 allow_gpu_worker_for_cpu=allow_gpu_worker_for_cpu,
+                preferred_pids=[
+                    pid
+                    for pid, (_, _, key) in self._worker_models.items()
+                    if cache_key is not None and key == cache_key
+                ],
             )
+            if cache_key is not None:
+                self._set_worker_model(self._pool.job_pid(job_id), 0, None)
 
         self._job_units[job_id] = _NodeUnit(node_id)
         self._job_retained_shm[job_id] = retained
@@ -739,6 +788,52 @@ class NodeExecutor:
         )
         self._job_units[job_id] = _BatchUnit(node_ids)
         self._job_retained_shm[job_id] = retained
+
+    def _set_worker_model(
+        self, pid: Optional[int], retained_bytes: int, cache_key: Optional[str]
+    ) -> None:
+        if pid is None:
+            return
+        if cache_key is None:
+            self._worker_models.pop(pid, None)
+        else:
+            self._worker_models[pid] = (
+                self._pool.worker_gpu(pid),
+                int(retained_bytes),
+                cache_key,
+            )
+        bytes_by_gpu: Dict[int, int] = {}
+        for gpu_id, nbytes, _ in self._worker_models.values():
+            if gpu_id is not None:
+                bytes_by_gpu[gpu_id] = bytes_by_gpu.get(gpu_id, 0) + nbytes
+        set_retained = getattr(self.scheduler, "set_retained_gpu_bytes", None)
+        if callable(set_retained):
+            set_retained(bytes_by_gpu)
+
+    def _submit_model_release(self, pid: int) -> int:
+        job_id = self._pool.submit_to(pid, "release_models", None)
+        self._job_units[job_id] = _ReleaseUnit(pid)
+        self._job_retained_shm[job_id] = []
+        return job_id
+
+    def _release_blocking_models(self) -> None:
+        pop_requests = getattr(self.scheduler, "pop_release_requests", None)
+        if not callable(pop_requests):
+            return
+        for gpu_id in pop_requests():
+            for pid, (worker_gpu, nbytes, _) in list(self._worker_models.items()):
+                if worker_gpu == gpu_id and nbytes > 0 and self._pool.is_idle(pid):
+                    self._submit_model_release(pid)
+
+    def _release_all_worker_models(self) -> None:
+        """Leave a reused pool's GPUs as free as the next executor measures."""
+        if self._job_units:
+            return
+        for pid in list(self._worker_models):
+            if self._pool.is_idle(pid):
+                self._submit_model_release(pid)
+        while self._job_units:
+            self._process_result(self._pool.wait())
 
     def _fill_pipeline(self) -> None:
         if not self._pool.has_idle_worker:
@@ -772,6 +867,7 @@ class NodeExecutor:
                     entry,
                     allow_gpu_worker_for_cpu=allow_gpu_worker_for_cpu,
                 )
+        self._release_blocking_models()
 
     def _get_cached_parent(self, parent_id: str):
         try:
@@ -807,6 +903,12 @@ class NodeExecutor:
         try:
             if unit is None:
                 return
+            if isinstance(unit, _ReleaseUnit):
+                # A failed release is not retried; forgetting the model at
+                # worst under-counts it until the worker's next node.
+                retained_bytes = jr.value["retained_gpu_bytes"] if jr.ok else 0
+                self._set_worker_model(unit.pid, retained_bytes, None)
+                return
             if not jr.ok:
                 self._handle_job_failure(unit, jr)
                 return
@@ -825,6 +927,11 @@ class NodeExecutor:
         self.scheduler.set_cached_cpu_bytes(self._leaf_cached_bytes + cache_bytes)
 
     def _handle_job_failure(self, unit: Union[_NodeUnit, _BatchUnit], jr):
+        if jr.worker_died or (
+            isinstance(unit, _NodeUnit)
+            and not self._is_task_node(self.scheduler.mapping[unit.node_id])
+        ):
+            self._set_worker_model(jr.pid, 0, None)
         reason = jr.error or "unknown worker failure"
         if jr.cuda_oom:
             reason += " (CUDA out of memory)"
@@ -876,6 +983,11 @@ class NodeExecutor:
             self._release_parents(node_id)
             self.scheduler.complete_node(node_id)
         else:
+            self._set_worker_model(
+                value.get("pid"),
+                value.get("retained_gpu_bytes", 0),
+                value.get("cached_operation"),
+            )
             self._handle_modality_result(
                 value["result"],
                 node_id,
@@ -1156,6 +1268,8 @@ class NodeExecutor:
         finally:
             if self._owns_pool:
                 self._pool.shutdown()
+            else:
+                self._release_all_worker_models()
             self._result_cache.cleanup_all()
             self._cleanup_leaf_shared_memory()
 

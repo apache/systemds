@@ -38,6 +38,7 @@ from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import (
     LazyModelMixin,
+    build_torchvision_model,
     get_sequence_lengths,
     inference_context,
     save_embeddings,
@@ -115,9 +116,11 @@ class X3D(LazyModelMixin, FrameBudgetedVideoModel, UnimodalRepresentation):
 
     def _build_model(self):
         if self.model_name == "r3d":
-            model = r3d_18(pretrained=True)
+            model = build_torchvision_model(
+                r3d_18, models.video.R3D_18_Weights.KINETICS400_V1
+            )
         else:
-            model = s3d(weights=models.video.S3D_Weights.DEFAULT)
+            model = build_torchvision_model(s3d, models.video.S3D_Weights.DEFAULT)
         if not self._placed:
             self.device = get_device_for_model(model, memory_factor=1.5)
             self._gpu_id = self.device.index

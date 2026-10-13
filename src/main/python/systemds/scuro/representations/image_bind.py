@@ -19,6 +19,7 @@
 #
 # -------------------------------------------------------------
 import math
+import os
 
 import numpy as np
 import torch
@@ -37,6 +38,8 @@ from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import (
     OwnerAccumulator,
+    build_pretrained,
+    load_checkpoint,
     flatten_owned_sequences,
     inference_context,
     save_embeddings,
@@ -56,6 +59,7 @@ class ImageBind(UnimodalRepresentation):
     _SPATIAL_CROPS = 3
     _FRAMES_PER_CLIP = 2
     _CROP_SIZE = 224
+    _CHECKPOINT_PATH = os.path.join(".checkpoints", "imagebind_huge.pth")
     supports_aggregation_pushdown = True
     cache_in_worker = True
 
@@ -145,7 +149,13 @@ class ImageBind(UnimodalRepresentation):
                 "ImageBind requires the optional 'imagebind' package"
             ) from error
         if self.model is None:
-            self.model = imagebind_model.imagebind_huge(pretrained=True)
+            if os.path.exists(self._CHECKPOINT_PATH):
+                self.model = build_pretrained(
+                    imagebind_model.imagebind_huge,
+                    load_checkpoint(self._CHECKPOINT_PATH),
+                )
+            else:
+                self.model = imagebind_model.imagebind_huge(pretrained=True)
             for param in self.model.parameters():
                 param.requires_grad = False
         self.model = self.model.to(self.device)

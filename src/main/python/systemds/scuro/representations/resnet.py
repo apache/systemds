@@ -23,6 +23,7 @@ from systemds.scuro.dataloader.video_loader import VideoStats
 from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.utils import (
     LazyModelMixin,
+    build_torchvision_model,
     OwnerAccumulator,
     flatten_owned_sequences,
     get_sequence_lengths,
@@ -124,7 +125,7 @@ class ResNet(LazyModelMixin, UnimodalRepresentation):
             "ResNet101": (models.resnet101, models.ResNet101_Weights),
             "ResNet152": (models.resnet152, models.ResNet152_Weights),
         }[self.model_name]
-        model = factory(weights=weights.DEFAULT)
+        model = build_torchvision_model(factory, weights.DEFAULT)
         model.eval()
         for param in model.parameters():
             param.requires_grad = False

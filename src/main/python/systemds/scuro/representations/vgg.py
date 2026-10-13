@@ -44,6 +44,7 @@ from systemds.scuro.dataloader.image_loader import ImageStats
 from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.utils import (
     LazyModelMixin,
+    build_torchvision_model,
     OwnerAccumulator,
     flatten_owned_sequences,
     get_sequence_lengths,
@@ -84,7 +85,7 @@ class VGG19(LazyModelMixin, UnimodalRepresentation):
         self.batch_size = batch_size
 
     def _build_model(self):
-        model = models.vgg19(weights=models.VGG19_Weights.DEFAULT)
+        model = build_torchvision_model(models.vgg19, models.VGG19_Weights.DEFAULT)
         model.eval()
         for param in model.parameters():
             param.requires_grad = False

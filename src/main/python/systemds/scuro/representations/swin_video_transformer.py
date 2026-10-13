@@ -36,6 +36,7 @@ from systemds.scuro.drsearch.operator_registry import (
 from systemds.scuro.dataloader.video_loader import VideoStats
 from systemds.scuro.representations.utils import (
     LazyModelMixin,
+    build_torchvision_model,
     OwnerAccumulator,
     get_sequence_lengths,
     transformer_inference_context,
@@ -104,7 +105,9 @@ class SwinVideoTransformer(
         self._activation_hook = None
 
     def _build_model(self):
-        model = swin3d_t(weights=models.video.Swin3D_T_Weights.KINETICS400_V1)
+        model = build_torchvision_model(
+            swin3d_t, models.video.Swin3D_T_Weights.KINETICS400_V1
+        )
         if not self._placed:
             self.device = get_device_for_model(model, memory_factor=1.5)
             self._gpu_id = self.device.index

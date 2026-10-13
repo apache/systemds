@@ -199,6 +199,81 @@ class LazyModelMixin:
         self._model = model
 
 
+@contextmanager
+def _parameters_on_meta():
+    """Move every parameter to the meta device as soon as it is registered.
+
+    Weight initializers then run on meta tensors and cost nothing. Buffers stay
+    real because some modules compute them in ``__init__`` (e.g. ImageBind's
+    causal mask) and a non-persistent buffer is never restored from a
+    checkpoint. Whole-module ``torch.device("meta")`` would also break modules
+    that call ``.item()`` on tensors during construction.
+    """
+    register_parameter = torch.nn.Module.register_parameter
+
+    def register_on_meta(module, name, param):
+        register_parameter(module, name, param)
+        if param is not None and not param.is_meta:
+            module._parameters[name] = torch.nn.Parameter(
+                param.to("meta"), requires_grad=param.requires_grad
+            )
+
+    torch.nn.Module.register_parameter = register_on_meta
+    try:
+        yield
+    finally:
+        torch.nn.Module.register_parameter = register_parameter
+
+
+def build_pretrained(build_fn, state_dict):
+    """Build ``build_fn()`` without random weight init and load ``state_dict``.
+
+    Initializing a large model only to overwrite every weight from the
+    checkpoint dominates load time (about 12 s of ImageBind's 20 s).
+    """
+    with _parameters_on_meta():
+        model = build_fn()
+    model.load_state_dict(state_dict, strict=True, assign=True)
+    missing = [
+        name
+        for name, tensor in [*model.named_parameters(), *model.named_buffers()]
+        if tensor.is_meta
+    ]
+    if missing:
+        raise RuntimeError(f"Checkpoint did not provide weights for {missing}")
+    return model
+
+
+def load_checkpoint(path):
+    """Load a state dict on the CPU, memory-mapped when the format allows it."""
+    try:
+        return torch.load(path, map_location="cpu", mmap=True, weights_only=True)
+    except RuntimeError as error:
+        # Checkpoints in the legacy (pre zip) format cannot be memory-mapped.
+        if "mmap" not in str(error):
+            raise
+        return torch.load(path, map_location="cpu", weights_only=True)
+
+
+def torchvision_state_dict(weights):
+    """Load torchvision ``weights`` from the torch hub cache."""
+    from urllib.parse import urlparse
+
+    file_name = os.path.basename(urlparse(weights.url).path)
+    path = os.path.join(torch.hub.get_dir(), "checkpoints", file_name)
+    if not os.path.exists(path):
+        return weights.get_state_dict(progress=False, check_hash=True)
+    return load_checkpoint(path)
+
+
+def build_torchvision_model(factory, weights, **kwargs):
+    """Equivalent to ``factory(weights=weights, **kwargs)`` without random init."""
+    kwargs.setdefault("num_classes", len(weights.meta["categories"]))
+    return build_pretrained(
+        lambda: factory(weights=None, **kwargs), torchvision_state_dict(weights)
+    )
+
+
 def get_sequence_lengths(sequences, metadata):
     if len(metadata) == len(sequences) and all("length" in md for md in metadata):
         return [int(md["length"]) for md in metadata]

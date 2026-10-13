@@ -92,6 +92,10 @@ public class MatrixBuiltinGPUInstruction extends BuiltinUnaryGPUInstruction {
 				LibMatrixCUDA.cumulativeScan(ec, ec.getGPUContext(0), getExtendedOpcode(), "cumulative_sum", mat,
 						_output.getName());
 				break;
+			case "urowcumk+":
+				LibMatrixCUDA.cumulativeScan(ec, ec.getGPUContext(0), getExtendedOpcode(), "row_cumulative_sum", mat,
+						_output.getName());
+				break;
 			case "ucum*":
 				LibMatrixCUDA.cumulativeScan(ec, ec.getGPUContext(0), getExtendedOpcode(), "cumulative_prod", mat,
 						_output.getName());

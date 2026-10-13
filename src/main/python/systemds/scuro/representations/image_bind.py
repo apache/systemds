@@ -18,15 +18,15 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import html
 import math
 import os
+from fractions import Fraction
 
 import numpy as np
 import torch
 from pytorchvideo import transforms as pv_transforms
-from pytorchvideo.data.clip_sampling import ConstantClipsPerVideoSampler
 import torchaudio
-from torchvision import transforms
 
 from systemds.scuro.drsearch.operator_registry import (
     register_representation,
@@ -53,13 +53,34 @@ from systemds.scuro.utils.torch_dataset import TextDataset, TextSpanDataset
     [ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT]
 )
 class ImageBind(UnimodalRepresentation):
+    """ImageBind (Girdhar et al., CVPR 2023) embeddings for video, audio and text.
+
+    Input preparation is implemented here; only the pretrained network comes
+    from the optional ``imagebind`` package. Its code and weights are licensed
+    CC BY-NC-SA 4.0, so this representation is restricted to non-commercial use.
+    """
+
     _EMBEDDING_DIM = 1024
     _MODEL_PARAMETER_COUNT = 1_200_000_000
+    _CLIP_SECONDS = 2
     _CLIPS_PER_VIDEO = 5
     _SPATIAL_CROPS = 3
     _FRAMES_PER_CLIP = 2
     _CROP_SIZE = 224
+    # OpenAI CLIP pixel statistics, which ImageBind's vision encoder inherits.
+    _PIXEL_MEAN = (0.48145466, 0.4578275, 0.40821073)
+    _PIXEL_STD = (0.26862954, 0.26130258, 0.27577711)
+    _AUDIO_SAMPLE_RATE = 16000
+    _CLIPS_PER_AUDIO = 3
+    _MEL_BINS = 128
+    _MEL_FRAMES = 204
+    _MEL_MEAN = -4.268
+    _MEL_STD = 9.138
+    _TEXT_CONTEXT_LENGTH = 77
+    # ImageBind's text encoder uses the OpenAI CLIP BPE vocabulary.
+    _TOKENIZER_NAME = "openai/clip-vit-base-patch32"
     _CHECKPOINT_PATH = os.path.join(".checkpoints", "imagebind_huge.pth")
+    _tokenizer = None
     supports_aggregation_pushdown = True
     cache_in_worker = True
 
@@ -139,9 +160,8 @@ class ImageBind(UnimodalRepresentation):
         return {"cpu_peak_bytes": int(cpu_peak), "gpu_peak_bytes": int(gpu_peak)}
 
     def _ensure_model(self):
-        global data, imagebind_model, IBModalityType
+        global imagebind_model, IBModalityType
         try:
-            import imagebind.data as data
             from imagebind.models import imagebind_model
             from imagebind.models.imagebind_model import ModalityType as IBModalityType
         except ImportError as error:
@@ -179,24 +199,46 @@ class ImageBind(UnimodalRepresentation):
             )
         return sampling_rate
 
-    def _transform_audio_data(self, samples, metadata):
-        """Adapt ImageBind audio preprocessing to Scuro-loaded waveforms.
+    @staticmethod
+    def _clip_windows(duration, num_clips, clip_seconds):
+        """(start, end) seconds of num_clips evenly spaced windows over duration.
 
-        The clip sampling, mel conversion, and normalization match ImageBind's
-        load_and_transform_audio_data; only path-based loading is replaced.
+        The first window starts at 0 and the last one ends with the signal;
+        signals shorter than a window repeat [0, clip_seconds). Fractions keep
+        the sample and frame boundaries free of float rounding.
         """
-        sample_rate = 16000
-        clip_duration = 2
-        clip_sampler = ConstantClipsPerVideoSampler(
-            clip_duration=clip_duration, clips_per_video=3
-        )
-        normalize = transforms.Normalize(mean=-4.268, std=9.138)
+        clip_seconds = Fraction(clip_seconds)
+        last_start = Fraction(max(duration - clip_seconds, 0))
+        stride = last_start / max(num_clips - 1, 1)
+        return [(i * stride, i * stride + clip_seconds) for i in range(num_clips)]
+
+    def _log_mel(self, waveform):
+        """Normalized (1, mel bins, frames) Kaldi filterbank of a centred clip."""
+        fbank = torchaudio.compliance.kaldi.fbank(
+            waveform,
+            sample_frequency=self._AUDIO_SAMPLE_RATE,
+            num_mel_bins=self._MEL_BINS,
+            frame_length=25,
+            frame_shift=10,
+            window_type="hanning",
+            dither=0.0,
+            use_energy=False,
+            htk_compat=True,
+        ).T
+        # The encoder expects a fixed number of frames: zero-pad or truncate.
+        missing = self._MEL_FRAMES - fbank.shape[1]
+        if missing > 0:
+            fbank = torch.nn.functional.pad(fbank, (0, missing))
+        fbank = fbank[:, : self._MEL_FRAMES]
+        return ((fbank - self._MEL_MEAN) / self._MEL_STD).unsqueeze(0)
+
+    def _transform_audio_data(self, samples, metadata):
+        """(batch, clips, 1, mel bins, frames) log-mel inputs for the audio encoder."""
+        sample_rate = self._AUDIO_SAMPLE_RATE
         audio_outputs = []
 
         for sample, sample_metadata in zip(samples, metadata):
-            # ImageBind uses torchaudio.load(path). Scuro already supplies the
-            # decoded waveform, and cloning prevents in-place mean centering in
-            # waveform2melspec from modifying the modality data.
+            # Copy, since clips are centred in place below.
             waveform = torch.as_tensor(np.asarray(sample)).clone().float()
             if waveform.ndim == 1:
                 waveform = waveform.unsqueeze(0)
@@ -214,52 +256,46 @@ class ImageBind(UnimodalRepresentation):
                     waveform, orig_freq=original_rate, new_freq=sample_rate
                 )
 
-            timepoints = data.get_clip_timepoints(
-                clip_sampler, waveform.size(1) / sample_rate
+            windows = self._clip_windows(
+                waveform.size(1) / sample_rate,
+                self._CLIPS_PER_AUDIO,
+                self._CLIP_SECONDS,
             )
             clips = []
-            for start, end in timepoints:
-                waveform_clip = waveform[
-                    :, int(start * sample_rate) : int(end * sample_rate)
-                ]
-                mel_spectrogram = data.waveform2melspec(
-                    waveform_clip,
-                    sample_rate,
-                    num_mel_bins=128,
-                    target_length=204,
-                )
-                clips.append(normalize(mel_spectrogram))
+            for start, end in windows:
+                clip = waveform[:, int(start * sample_rate) : int(end * sample_rate)]
+                # Centring the view in place means overlapping windows of short
+                # audio see already centred samples. The released ImageBind
+                # pipeline behaves the same way, so embeddings stay comparable.
+                clip -= clip.mean()
+                clips.append(self._log_mel(clip))
             audio_outputs.append(torch.stack(clips))
 
         return torch.stack(audio_outputs).to(self.device)
 
-    def _transform_video_data(self, samples, metadata):
-        """Adapt ImageBind video preprocessing to Scuro-loaded frame arrays.
+    def _three_crops(self, clip):
+        """Square crops at the start, centre and end of a clip's longer side."""
+        height, width = clip.shape[-2:]
+        size = self._CROP_SIZE
+        top = math.ceil((height - size) / 2)
+        left = math.ceil((width - size) / 2)
+        if height > width:
+            offsets = [(0, left), (top, left), (height - size, left)]
+        else:
+            offsets = [(top, 0), (top, left), (top, width - size)]
+        return [clip[..., y : y + size, x : x + size] for y, x in offsets]
 
-        ImageBind's temporal sampling, spatial transforms, normalization, and
-        crop expansion are retained; file decoding is replaced by array slicing.
-        """
-        clip_duration = 2
-        clip_sampler = ConstantClipsPerVideoSampler(
-            clip_duration=clip_duration, clips_per_video=5
-        )
-        frame_sampler = pv_transforms.UniformTemporalSubsample(
-            num_samples=clip_duration
-        )
-        video_transform = transforms.Compose(
-            [
-                pv_transforms.ShortSideScale(224),
-                data.NormalizeVideo(
-                    mean=(0.48145466, 0.4578275, 0.40821073),
-                    std=(0.26862954, 0.26130258, 0.27577711),
-                ),
-            ]
-        )
+    def _transform_video_data(self, samples, metadata):
+        """(batch, clips * crops, C, T, H, W) inputs for the vision encoder."""
+        subsample = pv_transforms.UniformTemporalSubsample(self._FRAMES_PER_CLIP)
+        rescale = pv_transforms.ShortSideScale(self._CROP_SIZE)
+        mean = torch.tensor(self._PIXEL_MEAN)[:, None, None, None]
+        std = torch.tensor(self._PIXEL_STD)[:, None, None, None]
         video_outputs = []
 
         for sample, sample_metadata in zip(samples, metadata):
-            # ImageBind's decoder returns (C, T, H, W). Scuro stores decoded
-            # video as (T, H, W, C), already scaled when it has a float dtype.
+            # Scuro stores decoded video as (T, H, W, C), already scaled to
+            # [0, 1] when it has a float dtype; the encoder wants (C, T, H, W).
             frames = np.asarray(sample)
             if frames.ndim != 4 or frames.shape[-1] != 3:
                 raise ValueError(
@@ -272,30 +308,60 @@ class ImageBind(UnimodalRepresentation):
                 video = video / 255.0
 
             sampling_rate = self._sampling_rate(sample_metadata, ModalityType.VIDEO)
-            timepoints = data.get_clip_timepoints(
-                clip_sampler, video.shape[1] / sampling_rate
+            windows = self._clip_windows(
+                video.shape[1] / sampling_rate,
+                self._CLIPS_PER_VIDEO,
+                self._CLIP_SECONDS,
             )
-            clips = []
-            for start, end in timepoints:
-                # Match the ceil-based [start, end) indexing used by the
-                # Decord-backed EncodedVideo loader in ImageBind.
+            crops = []
+            for start, end in windows:
+                # Frames whose timestamps fall in [start, end).
                 start_frame = math.ceil(sampling_rate * start)
                 end_frame = min(math.ceil(sampling_rate * end), video.shape[1])
-                video_clip = frame_sampler(video[:, start_frame:end_frame])
-                clips.append(video_transform(video_clip))
-
-            clips = data.SpatialCrop(224, num_crops=3)(clips)
-            video_outputs.append(torch.stack(clips))
+                clip = rescale(subsample(video[:, start_frame:end_frame]))
+                crops.extend(self._three_crops((clip - mean) / std))
+            video_outputs.append(torch.stack(crops))
 
         return torch.stack(video_outputs).to(self.device)
 
+    @classmethod
+    def _get_tokenizer(cls):
+        if cls._tokenizer is None:
+            from transformers import CLIPTokenizer
+
+            cls._tokenizer = CLIPTokenizer.from_pretrained(cls._TOKENIZER_NAME)
+        return cls._tokenizer
+
+    @staticmethod
+    def _clean_text(text):
+        try:
+            import ftfy
+
+            text = ftfy.fix_text(text)
+        except ImportError:
+            pass
+        return html.unescape(html.unescape(text)).strip()
+
+    def _tokenize(self, texts):
+        """(len(texts), 77) token ids: start, up to 75 text tokens, end, zeros."""
+        tokenizer = self._get_tokenizer()
+        text_ids = tokenizer(
+            [self._clean_text(text) for text in texts],
+            add_special_tokens=False,
+            truncation=True,
+            max_length=self._TEXT_CONTEXT_LENGTH - 2,
+        )["input_ids"]
+        tokens = torch.zeros(
+            (len(text_ids), self._TEXT_CONTEXT_LENGTH), dtype=torch.long
+        )
+        for row, ids in enumerate(text_ids):
+            ids = [tokenizer.bos_token_id, *ids, tokenizer.eos_token_id]
+            tokens[row, : len(ids)] = torch.tensor(ids)
+        return tokens.to(self.device)
+
     def _prepare_inputs(self, samples, metadata, modality_type):
         if modality_type == ModalityType.TEXT:
-            # ImageBind's text loader already accepts decoded strings, so its
-            # tokenizer can be reused without a Scuro-specific adapter.
-            return IBModalityType.TEXT, data.load_and_transform_text(
-                samples, self.device
-            )
+            return IBModalityType.TEXT, self._tokenize(samples)
         if modality_type == ModalityType.AUDIO:
             return IBModalityType.AUDIO, self._transform_audio_data(samples, metadata)
         if modality_type == ModalityType.VIDEO:

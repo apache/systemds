@@ -19,6 +19,7 @@
 #
 # -------------------------------------------------------------
 from typing import Dict, List, Tuple, Any, Optional
+from systemds.scuro.utils.static_variables import get_global_seed
 import inspect
 import os
 import numpy as np
@@ -416,7 +417,7 @@ class HyperparameterTuner:
         checkpoint_every: Optional[int] = None,
         checkpoint_dir: Optional[str] = None,
         resume: bool = False,
-        random_state: int = 42,
+        random_state: Optional[int] = None,
         exhaustive_threshold: int = 256,
         local_search_patience: int = 3,
         optuna_sampler: str = "tpe",  # "tpe" | "random" | "bayes"
@@ -446,7 +447,7 @@ class HyperparameterTuner:
         self.logger = logging.getLogger(__name__)
         self.checkpoint_every = checkpoint_every
         self.resume = resume
-        self.random_state = random_state
+        self.random_state = get_global_seed() if random_state is None else random_state
         self.exhaustive_threshold = max(1, exhaustive_threshold)
         self.local_search_patience = max(1, local_search_patience)
         self._rng = random.Random(self.random_state)

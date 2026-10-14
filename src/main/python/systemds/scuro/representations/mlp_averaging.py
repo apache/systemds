@@ -140,7 +140,7 @@ class MLPAveraging(DimensionalityReduction):
         return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": gpu_peak}
 
     def execute(self, data):
-        set_random_seeds(42)
+        set_random_seeds()
 
         input_dim = data.shape[1]
         if input_dim <= self.output_dim:

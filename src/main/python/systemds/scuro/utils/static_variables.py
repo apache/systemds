@@ -18,6 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import os
 import numpy as np
 import torch
 from typing import Tuple
@@ -28,7 +29,21 @@ NP_ARRAY_HEADER_BYTES = 112
 
 DEBUG = False
 
-global_rng = np.random.default_rng(42)
+# Read from the environment so spawned worker processes inherit the parent's seed.
+SEED = int(os.environ.get("SCURO_SEED", 42))
+global_rng = np.random.default_rng(SEED)
+
+
+def set_seed(seed: int):
+    """Set the root seed that all scuro seeds (CV folds, search, model init) default to."""
+    global SEED, global_rng
+    SEED = seed
+    os.environ["SCURO_SEED"] = str(seed)
+    global_rng = np.random.default_rng(seed)
+
+
+def get_global_seed() -> int:
+    return SEED
 
 
 def get_seed():

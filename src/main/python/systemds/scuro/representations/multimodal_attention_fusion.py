@@ -19,8 +19,6 @@
 #
 # -------------------------------------------------------------
 
-import os
-import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -35,6 +33,7 @@ from systemds.scuro.representations.representation import (
     stats_bytes,
 )
 from systemds.scuro.utils.static_variables import get_device
+from systemds.scuro.utils.utils import set_random_seeds
 
 
 @register_fusion_operator()
@@ -95,16 +94,8 @@ class AttentionFusion(Fusion):
         self.model_state = None
         self.is_multilabel = False
 
-        self._set_random_seeds()
+        set_random_seeds()
 
-    def _set_random_seeds(self, seed=42):
-        os.environ["PYTHONHASHSEED"] = str(seed)
-        random.seed(seed)
-        np.random.seed(seed)
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed(seed)
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
 
     def _prepare_data(self, modalities: List[Modality]):
         inputs = {}

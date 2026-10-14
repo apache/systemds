@@ -34,6 +34,7 @@ import traceback
 from dataclasses import dataclass, field
 from itertools import chain
 from typing import Any, Dict, List, Optional, Tuple, Union
+from systemds.scuro.utils.static_variables import get_global_seed
 
 import numpy as np
 from deap import base, tools
@@ -388,7 +389,7 @@ class MultimodalDeapOptimizer:
         generations: int = 20,
         crossover_probability: float = 0.7,
         mutation_probability: float = 0.4,
-        random_seed: int = 42,
+        random_seed: Optional[int] = None,
         maximize_metric: bool = True,
         elite_size: int = 2,
         max_workers: int = 1,
@@ -476,6 +477,7 @@ class MultimodalDeapOptimizer:
         self.hall_of_fame_size = max(1, hall_of_fame_size)
         self.hall_of_fame: Dict[str, List[FusionSearchResult]] = {}
         self._hof_fitness: Dict[str, List[Tuple[float, ...]]] = {}
+        random_seed = get_global_seed() if random_seed is None else random_seed
         self.rng = random.Random(random_seed)
         self._eval_counter = 0
         self._current_generation = -1

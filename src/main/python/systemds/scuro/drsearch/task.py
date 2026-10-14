@@ -22,6 +22,7 @@ import copy
 import os
 import time
 from typing import List
+from systemds.scuro.utils.static_variables import get_global_seed
 from systemds.scuro.models.model import Model
 from systemds.scuro.models.training_stats import TrainingWorkAccumulator
 import numpy as np
@@ -95,7 +96,7 @@ class Task:
         performance_measures=["accuracy"],
         groups=None,
         allow_group_overlap=False,
-        cv_seed=11,
+        cv_seed=None,
     ):
         """
         Parent class for the prediction task that is performed on top of the aligned representation
@@ -115,7 +116,7 @@ class Task:
         self.kfold = kfold
         self.groups = None if groups is None else np.asarray(groups)
         self.allow_group_overlap = allow_group_overlap
-        self.cv_seed = cv_seed
+        self.cv_seed = get_global_seed() if cv_seed is None else cv_seed
         self.measure_performance = measure_performance
         self.inference_time = []
         self.training_time = []

@@ -18,14 +18,13 @@
 # under the License.
 #
 # -------------------------------------------------------------
-import os
-import random
 
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 from typing import List, Dict, Any, Optional
 from systemds.scuro.utils.static_variables import get_device
+from systemds.scuro.utils.utils import set_random_seeds
 import numpy as np
 
 from systemds.scuro.modality.modality import Modality
@@ -97,16 +96,8 @@ class LSTM(Fusion):
         self.model_state = None
         self.is_multilabel = False
 
-        self._set_random_seeds()
+        set_random_seeds()
 
-    def _set_random_seeds(self, seed=42):
-        os.environ["PYTHONHASHSEED"] = str(seed)
-        random.seed(seed)
-        np.random.seed(seed)
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed(seed)
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
 
     @staticmethod
     def _shape_description(modality: Modality) -> str:

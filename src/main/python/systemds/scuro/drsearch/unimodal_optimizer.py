@@ -533,11 +533,10 @@ class UnimodalOptimizer:
                     local_results.wall_clock_s.get(modality_id, 0.0)
                 )
 
-    def add_dimensionality_reduction_operators(self, builder, current_node_id):
+    def add_dimensionality_reduction_operators(self, builder, current_node_id, rep_dag):
         dags = []
-        modality_type = (
-            builder.get_node(current_node_id).operation().output_modality_type
-        )
+        rep_operation = builder.get_node(current_node_id).operation
+        modality_type = rep_operation().output_modality_type
 
         if modality_type is not ModalityType.EMBEDDING:
             return None
@@ -545,6 +544,21 @@ class UnimodalOptimizer:
         dimensionality_reduction_operators = (
             self._get_dimensionality_reduction_operators(modality_type)
         )
+        
+        if self._dag_output_has_time_axis(rep_dag):
+            for dimensionality_reduction_op in dimensionality_reduction_operators:
+                self.pruned.append(
+                    {
+                        "operation": dimensionality_reduction_op.__name__,
+                        "input": rep_operation.__name__,
+                        "reason": (
+                            "representation output is a sequence; dimensionality "
+                            "reduction only applies to rank-1 vectors"
+                        ),
+                    }
+                )
+            return None
+
         for dimensionality_reduction_op in dimensionality_reduction_operators:
             dimensionality_reduction_node_id = builder.create_operation_node(
                 dimensionality_reduction_op,
@@ -573,7 +587,7 @@ class UnimodalOptimizer:
             dags.append(rep_dag)
 
         dimensionality_reduction_dags = self.add_dimensionality_reduction_operators(
-            builder, current_node_id
+            builder, current_node_id, rep_dag
         )
         if dimensionality_reduction_dags is not None:
             dags.extend(dimensionality_reduction_dags)

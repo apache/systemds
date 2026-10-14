@@ -533,7 +533,8 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 	}
 
 	private int getNumMissingRowSlices(int j, int br, int offsetIn) {
-		long localColsIn = (j == _numColBlocksIn && _clen % _blen != 0) ? _clen % _blen : _blen;
+		long lastBlockColsIn = (_clen % _blen != 0) ? _clen % _blen : _blen;
+		long localColsIn = (j == _numColBlocksIn) ? lastBlockColsIn : _blen;
 		long localRowsOut = (br == _numRowBlocksOut - 1 && _rows % _blen != 0) ? _rows % _blen : _blen;
 
 		long remaining = _cols * localRowsOut;
@@ -543,17 +544,18 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 			// reuse table entry
 			remaining -= (localColsIn - offsetIn);
 			missing++;
+			j = (j == _numColBlocksIn) ? 1 : j + 1;
 		}
 
 		int numRows = (int) Math.floor((double) remaining / _clen);
 		missing += numRows * _numColBlocksIn;
 		remaining -= numRows * _clen;
 
-		long numBlenSlices = Math.max(0, _numColBlocksIn - (j - 1));
-		long restRow = numBlenSlices * _blen + localColsIn;
+		int numBlenSlices = Math.max(0, _numColBlocksIn - j);
+		long restRow = (long) numBlenSlices * _blen + lastBlockColsIn;
 		if(remaining >= restRow) {
 			remaining -= restRow;
-			missing += _numColBlocksIn - j;
+			missing += numBlenSlices + 1;
 		}
 		missing += (int) Math.ceil((double) remaining / _blen);
 
@@ -706,7 +708,8 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 	}
 
 	private int getNumMissingColSlices(int i, int bc, int offsetIn) {
-		long localRowsIn = (i == _numRowBlocksIn && _rlen % _blen != 0) ? _rlen % _blen : _blen;
+		long lastBlockRowsIn = (_rlen % _blen != 0) ? _rlen % _blen : _blen;
+		long localRowsIn = (i == _numRowBlocksIn) ? lastBlockRowsIn : _blen;
 		long localColsOut = (bc == _numColBlocksOut - 1 && _cols % _blen != 0) ? _cols % _blen : _blen;
 
 		long remaining = _rows * localColsOut;
@@ -716,17 +719,18 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 			// reuse table entry
 			remaining -= (localRowsIn - offsetIn);
 			missing++;
+			i = (i == _numRowBlocksIn) ? 1 : i + 1;
 		}
 
 		int numCols = (int) Math.floor((double) remaining / _rlen);
 		missing += numCols * _numRowBlocksIn;
 		remaining -= numCols * _rlen;
 
-		long numBlenSlices = Math.max(0, _numRowBlocksIn - (i - 1));
-		long restCol = numBlenSlices * _blen + localRowsIn;
+		int numBlenSlices = Math.max(0, _numRowBlocksIn - i);
+		long restCol = (long) numBlenSlices * _blen + lastBlockRowsIn;
 		if(remaining >= restCol) {
 			remaining -= restCol;
-			missing += _numRowBlocksIn - i;
+			missing += numBlenSlices + 1;
 		}
 		missing += (int) Math.ceil((double) remaining / _blen);
 

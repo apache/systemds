@@ -305,11 +305,13 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 		for(int r = 0; r < leases.size(); r++) {
 			StoreLease<IndexedMatrixValue> lease = leases.get(r);
 			MatrixBlock row = (MatrixBlock) lease.value().getValue();
+			if(row.isInSparseFormat()) row.sparseToDense();
 			block.setRow(r, row.getDenseBlockValues());
 			lease.close();
 		}
 
 		block.recomputeNonZeros();
+		block.examSparsity();
 		OOCUtils.enqueueExact(_out, new IndexedMatrixValue(idx, block), budget, true);
 	}
 
@@ -374,11 +376,13 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 		for(int c = 0; c < leases.size(); c++) {
 			StoreLease<IndexedMatrixValue> lease = leases.get(c);
 			MatrixBlock col = (MatrixBlock) lease.value().getValue();
+			if(col.isInSparseFormat()) col.sparseToDense();
 			block.getDenseBlock().set(0, _blen, c, c + 1, col.getDenseBlock());
 			lease.close();
 		}
 
 		block.recomputeNonZeros();
+		block.examSparsity();
 		OOCUtils.enqueueExact(_out, new IndexedMatrixValue(idx, block), budget, true);
 	}
 
@@ -520,6 +524,7 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 		// enqueue filled output blocks and allocate new ones
 		for(int b = 0; b < outputBlockRow.length; b++) {
 			outputBlockRow[b].recomputeNonZeros();
+			outputBlockRow[b].examSparsity();
 			OOCUtils.enqueueExact(_out, new IndexedMatrixValue(new MatrixIndexes(br + 1, b + 1), outputBlockRow[b]),
 				budget, false);
 		}
@@ -692,6 +697,7 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 		// enqueue filled output blocks and allocate new ones
 		for(int b = 0; b < outputBlockCol.length; b++) {
 			outputBlockCol[b].recomputeNonZeros();
+			outputBlockCol[b].examSparsity();
 			OOCUtils.enqueueExact(_out, new IndexedMatrixValue(new MatrixIndexes(b + 1, bc + 1), outputBlockCol[b]),
 				budget, false);
 		}
@@ -749,6 +755,7 @@ public class ReshapeOOCPrimitive extends OOCPrimitive {
 	}
 
 	private void setOutputEntries(MatrixBlock src, MatrixBlock dest, int idx, int srcOffset, int destOffset, int length) {
+		if(src.isInSparseFormat()) src.sparseToDense();
 		if(_byRow)
 			((DenseBlockFP64) dest.getDenseBlock()).setPartialRow(src.getDenseBlock(), idx, srcOffset, destOffset, length);
 		else

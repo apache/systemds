@@ -415,7 +415,8 @@ class WindowAggregation(Window):
             target_length = max(original_lengths)
 
             padded_features = np.zeros(
-                (len(windowed_data), target_length, *windowed_data[0].shape[1:])
+                (len(windowed_data), target_length, *windowed_data[0].shape[1:]),
+                dtype=np.result_type(*windowed_data),
             )
             for i, features in enumerate(windowed_data):
                 if padded_features.ndim == 3:
@@ -435,7 +436,7 @@ class WindowAggregation(Window):
             windowed_data = padded_features
             data_type = modality.metadata[0]["data_layout"]["type"]
             if data_type != "str":
-                windowed_data = windowed_data.astype(data_type)
+                windowed_data = windowed_data.astype(data_type, copy=False)
 
         self.assert_output_stats(windowed_data)
         return windowed_data

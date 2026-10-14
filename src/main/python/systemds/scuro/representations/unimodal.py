@@ -28,6 +28,10 @@ class UnimodalRepresentation(Representation):
     # encoder that sets it implements transform_layers, so a search over that
     # parameter can obtain every layer from one pass over the data.
     layer_parameter = None
+    # Set by the executor (e.g. HPOExecutionCache.intermediates) for
+    # representations that share an intermediate result with other
+    # configurations; None computes it every time.
+    intermediate_cache = None
 
     def __init__(
         self, name: str, output_modality_type, parameters=None, self_contained=True

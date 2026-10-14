@@ -409,6 +409,10 @@ class RepresentationDag:
                 node_operation = node.operation(params=node.parameters)
                 if gpu_id is not None and hasattr(node_operation, "gpu_id"):
                     node_operation.gpu_id = gpu_id
+                if execution_cache is not None and hasattr(
+                    node_operation, "intermediate_cache"
+                ):
+                    node_operation.intermediate_cache = execution_cache.intermediates
                 if len(input_mods) == 1:
                     # It's a unimodal operation
                     if isinstance(node_operation, Context):

@@ -110,9 +110,20 @@ def data_fingerprint(*values: Any) -> str:
 
 
 class BoundedProcessCache:
-    def __init__(self, max_entries: int):
+    def __init__(
+        self,
+        max_entries: int,
+        max_bytes: Optional[int] = None,
+        sizeof: Optional[Callable[[Any], int]] = None,
+    ):
+        """LRU cache holding at most ``max_entries`` values and, if ``max_bytes``
+        is set, at most that many bytes as measured by ``sizeof``."""
         self.max_entries = max(0, int(max_entries))
+        self.max_bytes = None if max_bytes is None else max(0, int(max_bytes))
+        self.sizeof = sizeof or nbytes
         self._values = OrderedDict()
+        self._sizes = {}
+        self._total_bytes = 0
         self._pending = {}
         self._lock = threading.RLock()
 
@@ -127,11 +138,22 @@ class BoundedProcessCache:
     def put(self, key: Hashable, value: Any) -> None:
         if self.max_entries == 0:
             return
+        size = self.sizeof(value) if self.max_bytes is not None else 0
         with self._lock:
-            self._values.pop(key, None)
+            self._discard(key)
+            if self.max_bytes is not None and size > self.max_bytes:
+                return
             self._values[key] = value
-            while len(self._values) > self.max_entries:
-                self._values.popitem(last=False)
+            self._sizes[key] = size
+            self._total_bytes += size
+            while len(self._values) > self.max_entries or (
+                self.max_bytes is not None and self._total_bytes > self.max_bytes
+            ):
+                self._discard(next(iter(self._values)))
+
+    def _discard(self, key: Hashable) -> None:
+        if self._values.pop(key, _MISSING) is not _MISSING:
+            self._total_bytes -= self._sizes.pop(key)
 
     def get_or_compute(self, key: Hashable, compute: Callable[[], Any]) -> Any:
         if self.max_entries == 0:
@@ -208,10 +230,29 @@ class BoundedProcessCache:
     def clear(self) -> None:
         with self._lock:
             self._values.clear()
+            self._sizes.clear()
+            self._total_bytes = 0
 
     def __len__(self) -> int:
         with self._lock:
             return len(self._values)
+
+
+def nbytes(value: Any) -> int:
+    """Bytes held by the arrays in ``value`` (nested lists, tuples and dicts)."""
+    if isinstance(value, np.ndarray):
+        if value.dtype.hasobject:
+            return value.nbytes + sum(nbytes(item) for item in value.flat)
+        return value.nbytes
+    if isinstance(value, (list, tuple)):
+        return sum(nbytes(item) for item in value)
+    if isinstance(value, dict):
+        return sum(nbytes(item) for item in value.values())
+    return int(getattr(value, "nbytes", 0))
+
+
+def _intermediate_cache_bytes() -> int:
+    return int(float(os.environ.get("SCURO_HPO_INTERMEDIATE_CACHE_MB", "2048")) * 2**20)
 
 
 class HPOExecutionCache:
@@ -219,8 +260,18 @@ class HPOExecutionCache:
         self,
         representation_entries: int = 128,
         should_cache_representation: Optional[Callable[[Any], bool]] = None,
+        intermediate_bytes: Optional[int] = None,
     ):
         self.representations = BoundedProcessCache(representation_entries)
+        # Results that representations with different parameters share, such as
+        # the mel spectrogram under every MFCC n_mfcc/dct_type. A representation
+        # reads it through its ``intermediate_cache`` attribute and keys entries
+        # by the parameters and data they depend on.
+        if intermediate_bytes is None:
+            intermediate_bytes = _intermediate_cache_bytes()
+        self.intermediates = BoundedProcessCache(
+            4096 if intermediate_bytes > 0 else 0, max_bytes=intermediate_bytes
+        )
         self.should_cache_representation = should_cache_representation
         self._modality_keys = {}
         self._layer_sweeps = {}
@@ -379,6 +430,7 @@ class HPOExecutionCache:
 
     def clear(self) -> None:
         self.representations.clear()
+        self.intermediates.clear()
         with self._lock:
             self._modality_keys.clear()
             self._layer_sweeps.clear()

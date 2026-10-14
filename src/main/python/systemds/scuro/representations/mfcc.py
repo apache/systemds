@@ -26,6 +26,11 @@ from systemds.scuro.modality.transformed import TransformedModality
 
 from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
+from systemds.scuro.representations.mel_spectrogram import (
+    mel_spectrograms,
+    power_mel_spectrogram,
+)
+from systemds.scuro.representations.spectral import power_to_db
 from systemds.scuro.drsearch.operator_registry import (
     register_representation,
     register_context_representation_operator,
@@ -78,25 +83,31 @@ class MFCC(UnimodalRepresentation):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )
-        result = []
-        for i, sample in enumerate(modality.data):
-            sr = modality.metadata[i]["frequency"] if modality.metadata else None
-            computed_feature = self.compute_feature(sample, sr=sr)
-            result.append(computed_feature)
-        transformed_modality.data = result
+        spectrograms = mel_spectrograms(
+            modality,
+            self.n_mels,
+            self.hop_length,
+            self.n_fft,
+            self.intermediate_cache,
+        )
+        transformed_modality.data = [self.mfcc_from_mel(S) for S in spectrograms]
         return transformed_modality
 
     def compute_feature(self, instance, sr=None):
-        if sr is None:
-            sr = 22050
+        return self.mfcc_from_mel(
+            power_mel_spectrogram(
+                instance, sr, self.n_mels, self.hop_length, self.n_fft
+            )
+        )
+
+    def mfcc_from_mel(self, S):
+        """Normalized MFCCs, frames first, from a power mel spectrogram S.
+
+        Equivalent to librosa.feature.mfcc on the signal; S is not modified.
+        A batch of spectrograms is processed independently per spectrogram.
+        """
         mfcc = librosa.feature.mfcc(
-            y=np.asarray(instance, dtype=np.float32),
-            sr=sr,
-            n_mfcc=self.n_mfcc,
-            dct_type=self.dct_type,
-            hop_length=self.hop_length,
-            n_mels=self.n_mels,
-            n_fft=self.n_fft,
+            S=power_to_db(S), n_mfcc=self.n_mfcc, dct_type=self.dct_type
         )
         if mfcc.ndim == 2:
             mean = mfcc.mean(keepdims=True)
@@ -106,10 +117,6 @@ class MFCC(UnimodalRepresentation):
             std = mfcc.std(axis=(-2, -1), keepdims=True)
         mfcc -= mean
         mfcc /= np.maximum(std, 1e-8)
-
-        if instance.ndim == 1:
-            return mfcc.T
-
         return np.swapaxes(mfcc, -2, -1)
 
     def compute_features_batched(self, data, sr=None):

@@ -296,8 +296,8 @@ class LSTM(Fusion):
                 self.classifier = nn.Linear(hidden_dim * 2, num_classes)
 
             def forward(self, x):
-                lstm_out, _ = self.lstm(x)
-                last_output = lstm_out[:, -1, :]
+                _, (h_n, _) = self.lstm(x)
+                last_output = torch.cat((h_n[-2], h_n[-1]), dim=1)
                 dropped = self.dropout(last_output)
                 output = self.classifier(dropped)
 

@@ -54,7 +54,7 @@ class AttentionFusion(Fusion):
     ):
         parameters = {
             "hidden_dim": [32, 128, 256, 384, 512, 768],
-            "num_heads": [2, 4, 8, 12],
+            "num_heads": [2, 4, 8],
             "dropout": [0.0, 0.1, 0.2, 0.3, 0.4],
             # "batch_size": [8, 16, 32, 64, 128],
             "num_epochs": [10, 20, 50, 100, 150, 200],

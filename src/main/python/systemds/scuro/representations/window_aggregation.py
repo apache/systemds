@@ -251,8 +251,9 @@ class Window(Context):
             assert (
                 windowed_data.shape[1] == self.stats.output_shape[0]
             ), f"Output shape: {windowed_data.shape}, Expected shape: {self.stats.output_shape}"
-            assert (
-                windowed_data.shape[2:] == self.stats.output_shape[1:]
+            feat_shape, bound = windowed_data.shape[2:], self.stats.output_shape[1:]
+            assert len(feat_shape) == len(bound) and all(
+                s <= b for s, b in zip(feat_shape, bound)
             ), f"Output shape: {windowed_data.shape}, Expected shape: {self.stats.output_shape}"
 
     @staticmethod
@@ -683,14 +684,27 @@ class DynamicWindow(Window):
         sizes[-1] += length - int(sizes.sum())
         return sizes
 
+    def _max_window_size(self, max_length: int) -> int:
+        # Upper bound on every window of every instance with at most max_length
+        # elements. Window i < q-1 holds more than w_i (L - q) elements, so the
+        # last one (which also takes the rounding remainder) holds fewer than
+        # q + w_last (L - q); and no window exceeds L - q + 1.
+        num_windows = self._effective_num_windows(max_length)
+        length = max(int(max_length), num_windows)
+        weights = np.geomspace(4, 256, num=num_windows)
+        last_share = weights[-1] / np.sum(weights)
+        geometric_bound = int(np.ceil(num_windows + last_share * (length - num_windows)))
+        return max(1, min(length - num_windows + 1, geometric_bound))
+
     def _feature_shape(self, in_shape):
         if isinstance(self.aggregation_function, Aggregation):
             return in_shape[1:]
         length = in_shape[0] if in_shape else 0
         # Window sizes grow geometrically and _pad_stack pads every window's
-        # features to the largest one, so size them from the largest window
-        # (about 4x the mean), not the mean.
-        max_window_size = int(self._window_sizes(length).max()) if in_shape else 1
+        # features to the largest one, so size them from an upper bound on the
+        # largest window (about 4x the mean) over all lengths up to L, not the
+        # mean: a shorter instance can have a longer last window.
+        max_window_size = self._max_window_size(length) if in_shape else 1
         return self._per_window_feature_shape(max_window_size)
 
     def get_output_stats(self, input_stats: RepresentationStats) -> tuple:

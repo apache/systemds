@@ -261,7 +261,7 @@ def _evaluate_genome_body(
     share_subtrees: bool = False,
 ) -> Tuple[Optional[Tuple[float, ...]], Optional[Dict[str, Any]]]:
     start = time.time()
-    if dag_requires_fitting(dag):
+    if dag_requires_fitting(dag, modalities):
         node_cache = _subtree_node_cache(dag, task) if share_subtrees else None
         if node_cache is not None:
             store = node_cache.store

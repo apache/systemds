@@ -1149,12 +1149,14 @@ class UnimodalResults:
                 cache = []
                 for result in results:
                     if dag_requires_fitting(result.dag):
+                        SplitAwareDAGEvaluator.materialize(modality)
                         transformed = SplitAwareDAGEvaluator(
                             result.dag, modality, task
                         ).fit_transform(
                             task.train_indices,
                             range(len(modality.data)),
                         )
+                        transformed.modality.fold_source = (result.dag, modality)
                         cache.append(transformed.modality)
                     else:
                         cache.append(result.dag.execute([modality]))

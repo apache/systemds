@@ -53,11 +53,17 @@ class SplitEvaluationResult:
     task_time: float
 
 
-def dag_requires_fitting(dag: RepresentationDag) -> bool:
+def dag_requires_fitting(dag: RepresentationDag, modalities=()) -> bool:
+    fold_ids = {
+        str(m.modality_id) for m in modalities if getattr(m, "fold_source", None)
+    }
     return any(
-        node.operation is not None
-        and getattr(node.operation, "fit_requirement", FitRequirement.NONE)
-        is not FitRequirement.NONE
+        (
+            node.operation is not None
+            and getattr(node.operation, "fit_requirement", FitRequirement.NONE)
+            is not FitRequirement.NONE
+        )
+        or (not node.inputs and str(node.modality_id) in fold_ids)
         for node in dag.nodes
     )
 
@@ -235,6 +241,12 @@ class SplitAwareDAGEvaluator:
                 result = tuple(
                     self._leaf_input(partition, node) for partition in partitions
                 )
+                source = getattr(
+                    self._leaf_input(self._full, node).modality, "fold_source", None
+                )
+                if source is not None:
+                    result = self._refit_leaf(source, result)
+                    fitted.add(node_id)
                 cache[node_id] = result
                 return result
 
@@ -302,12 +314,21 @@ class SplitAwareDAGEvaluator:
 
         return execute_node(self.dag.root_node_id)
 
+    def _refit_leaf(self, source, partitions):
+        source_dag, raw_modality = source
+        evaluator = SplitAwareDAGEvaluator(source_dag, raw_modality, self.task)
+        (full,) = evaluator._indexed_modalities()
+        return evaluator._execute_partitions(
+            *((full.subset(item.instance_ids),) for item in partitions)
+        )
+
     def _indexed_modalities(self):
         full = []
         for modality in self.modalities:
             self.materialize(modality)
             full.append(IndexedModality(modality, range(len(modality.data))))
-        return tuple(full)
+        self._full = tuple(full)
+        return self._full
 
     def fit_transform(self, fit_indices, transform_indices) -> IndexedModality:
         full = self._indexed_modalities()

@@ -1315,11 +1315,15 @@ class MultimodalDeapOptimizer:
         c1, c2 = copy.deepcopy(g1), copy.deepcopy(g2)
 
         if c1.leaves == c2.leaves:
-            paths1 = self._internal_paths(c1.tree)
-            paths2 = self._internal_paths(c2.tree)
-            if paths1 and paths2:
-                path1 = self.rng.choice(paths1)
-                path2 = self.rng.choice(paths2)
+            pairs = [
+                (path1, path2)
+                for path1 in self._internal_paths(c1.tree)
+                for path2 in self._internal_paths(c2.tree)
+                if sorted(_collect_leaf_indices(_get_subtree(c1.tree, path1)))
+                == sorted(_collect_leaf_indices(_get_subtree(c2.tree, path2)))
+            ]
+            if pairs:
+                path1, path2 = self.rng.choice(pairs)
                 subtree1 = _get_subtree(c1.tree, path1)
                 subtree2 = _get_subtree(c2.tree, path2)
                 c1.tree = _replace_subtree(c1.tree, path1, subtree2)

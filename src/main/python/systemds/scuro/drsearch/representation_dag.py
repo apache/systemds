@@ -44,7 +44,6 @@ from systemds.scuro.drsearch.algebra import (
     count_violations,
     explicit_fusion_operands,
     explicit_prep_on,
-    order_invariant,
     typecheck,
 )
 from systemds.scuro.representations.fusion import Fusion
@@ -738,7 +737,6 @@ class CSEAwareDAGBuilder:
         self.algebra = algebra or AlgebraConfig()
         self.leaves = leaves
         self.algebra_stats = Counter()
-        self._order_invariant = order_invariant(self.algebra, tasks)
         self._seen_ordered = set()
         self._seen_legacy = set()
         self.global_nodes: List[RepresentationNode] = []
@@ -751,19 +749,17 @@ class CSEAwareDAGBuilder:
     def _compute_node_signature(
         self, operation: Any, inputs: List[str], parameters: Dict[str, Any] = None
     ) -> Hashable:
-        ip = [self.node_to_signature[inp] for inp in inputs]
-        input_sigs = tuple(sorted(ip, key=repr)) if inputs else ()
+        input_sigs = tuple(self.node_to_signature[inp] for inp in inputs)
         op_cls = operation().name
         params_items = tuple(sorted((parameters or {}).items()))
-        if self.algebra.cse_law_aware and not self._may_reorder(operation, parameters):
-            input_sigs = tuple(ip)
+        if self._may_reorder(operation, parameters):
+            input_sigs = tuple(sorted(input_sigs, key=repr))
         return ("op", op_cls, params_items, input_sigs)
 
     def _may_reorder(self, operation: Any, parameters: Dict[str, Any]) -> bool:
         if not issubclass(operation, Fusion):
             return False
-        laws = operation.algebraic_laws(parameters or {})
-        return "comm" in laws or ("concat_perm" in laws and self._order_invariant)
+        return "comm" in operation.algebraic_laws(parameters or {})
 
     def _count_law_merges(self, signature: Hashable, inputs: List[str]):
         ip = tuple(self.node_to_signature[inp] for inp in inputs)

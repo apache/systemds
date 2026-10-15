@@ -25,6 +25,7 @@ from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.window_aggregation import WindowAggregation
+from systemds.scuro.representations.aggregate import set_valid_windows
 import time
 import sys
 
@@ -129,6 +130,7 @@ class TransformedModality(Modality):
         )
         start = time.time()
         transformed_modality.data = w.execute(self)
+        set_valid_windows(transformed_modality, w.valid_windows)
         transformed_modality.transform_time += time.time() - start
         return transformed_modality
 
@@ -138,6 +140,9 @@ class TransformedModality(Modality):
         )
         start = time.time()
         transformed_modality.data = context_operator.execute(self)
+        set_valid_windows(
+            transformed_modality, getattr(context_operator, "valid_windows", None)
+        )
         transformed_modality.transform_time += time.time() - start
         return transformed_modality
 

@@ -29,6 +29,7 @@ from systemds.scuro.modality.modality import Modality
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.transformed import TransformedModality
+from systemds.scuro.representations.aggregate import set_valid_windows
 from systemds.scuro.representations.representation import (
     CONTAINER_ARRAY,
     RepresentationStats,
@@ -178,6 +179,9 @@ class UnimodalModality(Modality):
             transformed_modality.data = d
         else:
             transformed_modality.data = self.data
+        set_valid_windows(
+            transformed_modality, getattr(context_operator, "valid_windows", None)
+        )
         transformed_modality.transform_time += time.time() - start
         return transformed_modality
 

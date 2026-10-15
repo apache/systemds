@@ -379,6 +379,7 @@ class WindowAggregation(Window):
         return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}
 
     def execute(self, modality):
+        self.valid_windows = None
         batch = self._dense_batch(modality)
         if batch is not None:
             windowed_data = self.window_aggregate_single_level_batched(batch)
@@ -424,15 +425,7 @@ class WindowAggregation(Window):
                 else:
                     padded_features[i, : features.shape[0]] = features
 
-            # attention_masks = np.zeros((len(windowed_data), target_length))
-            # for i, length in enumerate(original_lengths):
-            #     actual_length = min(length, target_length)
-            #     attention_masks[i, :actual_length] = 1
-
-            # ModalityType(modality.modality_type).add_field_for_instances(
-            #     modality.metadata, "attention_masks", attention_masks
-            # )
-
+            self.valid_windows = [(n, target_length) for n in original_lengths]
             windowed_data = padded_features
             data_type = modality.metadata[0]["data_layout"]["type"]
             if data_type != "str":

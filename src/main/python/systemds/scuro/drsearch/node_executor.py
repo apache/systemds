@@ -940,6 +940,8 @@ class NodeExecutor:
             requeued = self._requeue_or_give_up(node_id, reason)
             if not requeued:
                 self._release_parents(node_id)
+            elif isinstance(unit, _NodeUnit) and jr.gpu_peak_bytes > 0:
+                self.scheduler.raise_gpu_estimate(node_id, jr.gpu_peak_bytes)
 
     def _handle_node_success(self, node_id: str, value: Dict[str, Any]) -> None:
         node = self.scheduler.mapping[node_id]

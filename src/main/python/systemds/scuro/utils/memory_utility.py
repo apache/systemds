@@ -19,6 +19,7 @@
 #
 # -------------------------------------------------------------
 import os
+import re
 import resource
 import sys
 import threading
@@ -253,6 +254,17 @@ def is_cuda_oom(exc: BaseException) -> bool:
         or "cudamalloc" in msg
         or "cuda error: out of memory" in msg
     )
+
+
+def cuda_oom_peak_bytes(exc: BaseException) -> int:
+    if not torch.cuda.is_available():
+        return -1
+    peak = torch.cuda.max_memory_allocated()
+    m = re.search(r"tried to allocate ([\d.]+) (bytes|kib|mib|gib)", str(exc).lower())
+    if m:
+        unit = ("bytes", "kib", "mib", "gib").index(m.group(2))
+        peak += int(float(m.group(1)) * 1024**unit)
+    return int(peak)
 
 
 def cleanup_gpu(gpu_id: Optional[int]) -> None:

@@ -323,6 +323,10 @@ class MemoryAwareNodeScheduler:
         self._release_execution_memory(node_id, self.mapping[node_id].gpu_id)
         self._candidates.add(node_id)
 
+    def raise_gpu_estimate(self, node_id: str, observed_bytes: int) -> None:
+        cpu_mem, gpu_mem = self.node_resources[node_id]
+        self.node_resources[node_id] = (cpu_mem, max(gpu_mem, int(observed_bytes)))
+
     def begin_execution(self, node_id: str) -> None:
         gpu_id = self.mapping[node_id].gpu_id
         cpu_mem, gpu_mem = self.node_resources[node_id]

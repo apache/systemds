@@ -30,7 +30,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import torch
 
-from systemds.scuro.utils.memory_utility import is_cuda_oom
+from systemds.scuro.utils.memory_utility import cuda_oom_peak_bytes, is_cuda_oom
 
 _THREAD_ENV_VARS = (
     "OMP_NUM_THREADS",
@@ -102,6 +102,7 @@ class _JobResult:
     error: Optional[str] = None
     cuda_oom: bool = False
     worker_died: bool = False
+    gpu_peak_bytes: int = -1
 
 
 def _worker_main(
@@ -129,13 +130,15 @@ def _worker_main(
             value = dispatch[job.kind](job.payload, local_gpu_id)
             result_q.put(_JobResult(job.job_id, True, os.getpid(), value=value))
         except Exception as e:
+            cuda_oom = is_cuda_oom(e)
             result_q.put(
                 _JobResult(
                     job.job_id,
                     False,
                     os.getpid(),
                     error=f"{type(e).__name__}: {e}",
-                    cuda_oom=is_cuda_oom(e),
+                    cuda_oom=cuda_oom,
+                    gpu_peak_bytes=cuda_oom_peak_bytes(e) if cuda_oom else -1,
                 )
             )
 

@@ -795,6 +795,9 @@ class TestUnimodalResultsReadout(unittest.TestCase):
         executed = []
 
         class RecordingDag:
+            # no node needs fitting, so the dag is executed directly
+            nodes = []
+
             def __init__(self, label):
                 self.label = label
 
@@ -831,8 +834,8 @@ class TestUnimodalResultsReadout(unittest.TestCase):
         dags = [SimpleNamespace(dag_id=1)]
 
         self.assertIsNone(get_dag_by_id(dags, 99))
-        
-        
+
+
 class TestSelectionStrategies(unittest.TestCase):
     """The three selection strategies must genuinely disagree.
 

@@ -1,0 +1,110 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+#-------------------------------------------------------------
+# Apache SystemDS - autoencoder wrapper
+# Prints stable BEFORE/AFTER objective lines for parsing
+# and optionally writes outputs (skips if /dev/null).
+#-------------------------------------------------------------
+source("scripts/builtin/autoencoder_2layer.dml") as ae
+
+# --------- read inputs ---------
+X = read($X)
+
+# Build encoder hidden layer list
+hidden_layers = list(as.integer($H1))
+if(as.integer($H2) > 0)
+  hidden_layers = append(hidden_layers, list(as.integer($H2)))
+if(as.integer($H3) > 0)
+  hidden_layers = append(hidden_layers, list(as.integer($H3)))
+
+# --------- compute objective BEFORE training ---------
+# I compute it on a standardized + permuted copy, consistent with training.
+# Create a fixed permutation seed via order_rand so both pre and training match.
+n = nrow(X)
+order_rand = Rand(rows=n, cols=1, min=0, max=1, pdf="uniform")
+permut = table(
+  seq(1, n, 1),
+  order(target=order_rand, by=1, index.return=TRUE),
+  n, n
+)
+X_pre = permut %*% X
+
+means = colSums(X_pre) / n
+stds  = sqrt((colSums(X_pre^2)/n - means*means) * n/(n-1)) + 1e-17
+X_pre = (X_pre - means) / stds
+
+# Initialize a model once which same initializer used by training
+layer_sizes = ae::build_layer_sizes(ncol(X_pre), hidden_layers)
+[W_list0, b_list0, updW0, updb0] = ae::init_layers(layer_sizes)
+
+# Forward + objective
+[act0, primes0, Yhat0, E0] = ae::forward_pass_layers(X_pre, W_list0, b_list0, X_pre)
+obj_before = ae::obj(E0)
+print("WRAPPER FULL OBJ BEFORE TRAIN = " + obj_before)
+
+# --------- train ---------
+# IMPORTANT: pass order_rand so training uses same permutation as X_pre
+[model, hidden] = ae::m_autoencoder(
+  X=X,
+  hidden_layers=hidden_layers,
+  max_epochs=as.integer($EPOCH),
+  full_obj=as.boolean($FULL_OBJ),
+  batch_size=as.integer($BATCH),
+  step=as.double($STEP),
+  decay=as.double($DECAY),
+  mu=as.double($MOMENTUM),
+  method=$METHOD,
+  mode=$MODE,
+  utype=$UTYPE,
+  freq=$FREQ,
+  k=as.integer($WORKERS),
+  scheme=$SCHEME,
+  nbatches=as.integer($NBATCHES),
+  modelAvg=as.boolean($MODELAVG),
+  order_rand=order_rand
+)
+
+# --------- compute objective AFTER training on SAME X_pre ---------
+encoder_layers = length(hidden_layers)
+layer_count = 2 * encoder_layers
+
+W_list1 = list()
+b_list1 = list()
+
+# model layout in generalized code path is:
+# [W1..WL, b1..bL, updW1..updWL, updb1..updbL]
+for(i in 1:layer_count)
+  W_list1 = append(W_list1, list(as.matrix(model[i])))
+for(i in 1:layer_count)
+  b_list1 = append(b_list1, list(as.matrix(model[layer_count + i])))
+
+[act1, primes1, Yhat1, E1] = ae::forward_pass_layers(X_pre, W_list1, b_list1, X_pre)
+obj_after = ae::obj(E1)
+print("WRAPPER FULL OBJ AFTER TRAIN  = " + obj_after)
+
+# --------- optional outputs skip if /dev/null ---------
+W1_out = as.matrix(model[1])
+Wlast_out = as.matrix(model[layer_count])
+hidden_out = hidden
+
+if($W1_out != "/dev/null")     write(W1_out, $W1_out)
+if($Wlast_out != "/dev/null")  write(Wlast_out, $Wlast_out)
+if($hidden_out != "/dev/null") write(hidden_out, $hidden_out)

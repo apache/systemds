@@ -51,12 +51,12 @@ import java.util.stream.Stream;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class RewriteSplitDagUnknownNnzReadTest extends AutomatedTestBase {
+public class RewriteSplitDagUnknownNnzTest extends AutomatedTestBase {
 
 	private static final String TEST_NAME = "RewriteSplitDagUnknownNnz";
 	private static final String TEST_DIR = "functions/rewrite/";
 	private static final String TEST_CLASS_DIR =
-		TEST_DIR + RewriteSplitDagUnknownNnzReadTest.class.getSimpleName() + "/";
+		TEST_DIR + RewriteSplitDagUnknownNnzTest.class.getSimpleName() + "/";
 	private static final String PACKAGE_REWRITE = "org.apache.sysds.hops.rewrite.HopRewriteRule";
 	private static final String PACKAGE_RECOMPILE = "org.apache.sysds.hops.rewrite.StatementBlockRewriteRule";
 	private static Level _oldLevelRewrite;
@@ -80,7 +80,7 @@ public class RewriteSplitDagUnknownNnzReadTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
-			// {rows, cols, sparsities, eps},
+			// {rows, cols, sparsities, eps, tsmm},
 			{1000, 300, new double[] {0.10d, 0.10d}, Math.pow(10, -10), false},
 			{5, 3, new double[] {0.1, 1}, Math.pow(10, -10), true},});
 	}
@@ -103,7 +103,7 @@ public class RewriteSplitDagUnknownNnzReadTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testSplitDagUnknownNnzRead() {
+	public void testSplitDagUnknownNnzReadAndMMChain() {
 		boolean oldFlag1 = OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES;
 		boolean oldFlag2 = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		DMLConfig oldDMLConfig = ConfigurationManager.getDMLConfig();
@@ -163,13 +163,13 @@ public class RewriteSplitDagUnknownNnzReadTest extends AutomatedTestBase {
 			// check original log output
 			String log_original_string = String.join(DELIMITER,
 				log_original.stream().map(l -> l.getMessage().toString()).toArray(String[]::new));
-			Assert.assertTrue(log_original_string.contains("Applied splitDagUnknownNnzRead."));
+			Assert.assertTrue(log_original_string.contains("RewriteSplitDagUnknownNnz: Split DAG into 4 statement blocks."));
 			Assert.assertTrue(log_original_string.contains("mmchainoptsparse"));
 			Assert.assertTrue(log_original_string.contains("Optimal Sparse MM Chain:"));
 			// check reference log output
 			String log_reference_string = String.join(DELIMITER,
 				log_reference.stream().map(l -> l.getMessage().toString()).toArray(String[]::new));
-			Assert.assertFalse(log_reference_string.contains("splitDagUnknownNnzRead"));
+			Assert.assertFalse(log_reference_string.contains("RewriteSplitDagUnknownNnz"));
 			Assert.assertFalse(log_reference_string.contains("mmchainoptsparse"));
 		}
 		finally {

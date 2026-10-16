@@ -292,7 +292,7 @@ class HyperparamResults:
 
     def get_k_best_results(self, modality, task, performance_metric_name):
         results, dags = self.get_k_best_dags(modality, task)
-        representations = [list(dag.execute([modality]).values())[-1] for dag in dags]
+        representations = [dag.execute([modality]) for dag in dags]
         return results, representations
 
 

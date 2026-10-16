@@ -42,6 +42,7 @@ from systemds.scuro.representations.covarep_audio_features import (
 )
 from systemds.scuro.representations.word2vec import W2V
 from systemds.scuro.representations.bow import BoW
+from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.resnet import ResNet
 from tests.scuro.data_generator import (
@@ -66,7 +67,6 @@ from systemds.scuro.drsearch.hyperparameter_tuner import (
 )
 from systemds.scuro.drsearch.representation_dag import (
     RepresentationDAGBuilder,
-    RepresentationDag,
     RepresentationNode,
 )
 from systemds.scuro.representations.aggregate import Aggregation
@@ -605,18 +605,26 @@ class TestHyperparamResults(unittest.TestCase):
             self.results.get_k_best_dags(self.modality, self.task), ([], [])
         )
 
-    def test_get_k_best_results_returns_the_last_output_of_every_dag(self):
-        # executing a DAG returns one entry per node
-        dag, _ = self._dag_with_one_operation()
-        self._store([self._result(dag, {})])
-        outputs = {"leaf": "raw modality", "operation": "representation"}
+    def test_get_k_best_results_executes_every_rebuilt_dag(self):
+        modality = ModalityRandomDataGenerator().create1DModality(
+            6, 4, ModalityType.TIMESERIES
+        )
+        modality.modality_id = 0
+        results = HyperparamResults([self.task], [modality])
+        builder = RepresentationDAGBuilder()
+        leaf_id = builder.create_leaf_node(modality.modality_id)
+        operation_id = builder.create_operation_node(
+            WindowAggregation, [leaf_id], {"window_size": 2}
+        )
+        results.results[self.task.model.name][modality.modality_id] = [
+            self._result(builder.build(operation_id), {})
+        ]
 
-        with patch.object(RepresentationDag, "execute", return_value=outputs):
-            _, representations = self.results.get_k_best_results(
-                self.modality, self.task, "accuracy"
-            )
+        _, representations = results.get_k_best_results(modality, self.task, "accuracy")
 
-        self.assertEqual(representations, ["representation"])
+        self.assertEqual(len(representations), 1)
+        self.assertIsInstance(representations[0], TransformedModality)
+        self.assertEqual(len(representations[0].data), 6)
 
 
 if __name__ == "__main__":

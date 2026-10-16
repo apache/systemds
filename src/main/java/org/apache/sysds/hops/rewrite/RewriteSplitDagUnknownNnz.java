@@ -133,21 +133,21 @@ public class RewriteSplitDagUnknownNnz extends StatementBlockRewriteRule {
 		if(hop.isVisited())
 			return;
 
-		if(!hop.nnzKnown()) {
-			if(hop instanceof DataOp && ((DataOp) hop).getOp() == OpOpData.PERSISTENTREAD) {
-				// collect persistent reads with unknown nnz
-				splitAndProcessChildren(hop, candListIter);
-			}
-			else if(parentHop != null && HopRewriteUtils.isMatrixMultiply(parentHop) &&
-				!((AggBinaryOp) parentHop).hasLeftPMInput() && !HopRewriteUtils.isMatrixMultiply(hop)) {
-				// split before mm chain to ensure correct sparsity information for mm chain sparsity estimation
-				splitAndProcessChildren(hop, candListIter);
-			}
-			else{
-				rCollectCandidatesChildren(hop, candListIter);
-			}
+		if(hop instanceof DataOp && ((DataOp) hop).getOp() == OpOpData.PERSISTENTREAD && !hop.nnzKnown()) {
+			// split persistent reads with unknown nnz to obtain their nnz before continuing rewrites
+			splitAndProcessChildren(hop, candListIter);
 		}
-		else {
+		else if(parentHop != null && HopRewriteUtils.isMatrixMultiply(parentHop) &&
+			!((AggBinaryOp) parentHop).hasLeftPMInput() && !HopRewriteUtils.isMatrixMultiply(hop)) {
+			// split before mm chain to ensure correct sparsity information for mm chain sparsity estimation
+			splitAndProcessChildren(hop, candListIter);
+		}
+		else if(!HopRewriteUtils.isMatrixMultiply(parentHop) && HopRewriteUtils.isMatrixMultiply(hop)
+			&& !((AggBinaryOp) hop).hasLeftPMInput()) {
+			// split after mm chain to force the mm chain into a separate statment block for isolated optimization
+			splitAndProcessChildren(hop, candListIter);
+		}
+		else{
 			rCollectCandidatesChildren(hop, candListIter);
 		}
 

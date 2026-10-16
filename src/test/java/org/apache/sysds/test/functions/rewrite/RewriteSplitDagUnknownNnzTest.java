@@ -80,7 +80,7 @@ public class RewriteSplitDagUnknownNnzTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
-			// {rows, cols, sparsities, eps},
+			// {rows, cols, sparsities, eps, tsmm},
 			{1000, 300, new double[] {0.10d, 0.10d}, Math.pow(10, -10), false},
 			{5, 3, new double[] {0.1, 1}, Math.pow(10, -10), true},});
 	}
@@ -163,7 +163,7 @@ public class RewriteSplitDagUnknownNnzTest extends AutomatedTestBase {
 			// check original log output
 			String log_original_string = String.join(DELIMITER,
 				log_original.stream().map(l -> l.getMessage().toString()).toArray(String[]::new));
-			Assert.assertTrue(log_original_string.contains("RewriteSplitDagUnknownNnz: Split DAG into 3 statement blocks."));
+			Assert.assertTrue(log_original_string.contains("RewriteSplitDagUnknownNnz: Split DAG into 4 statement blocks."));
 			Assert.assertTrue(log_original_string.contains("mmchainoptsparse"));
 			Assert.assertTrue(log_original_string.contains("Optimal Sparse MM Chain:"));
 			// check reference log output

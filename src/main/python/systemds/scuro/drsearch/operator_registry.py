@@ -18,10 +18,88 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from typing import Union, List
+from importlib import import_module
+from typing import Iterable, Union, List
 import math
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations.representation import Representation
+
+_BUILTIN_MODULES = {
+    ModalityType.AUDIO: (
+        "covarep_audio_features",
+        "image_bind",
+        "mel_spectrogram",
+        "mfcc",
+        "spectrogram",
+        "timeseries_representations",
+        "wav2vec",
+    ),
+    ModalityType.TEXT: (
+        "bert",
+        "bow",
+        "clip",
+        "glove",
+        "image_bind",
+        "tfidf",
+        "word2vec",
+    ),
+    ModalityType.IMAGE: ("clip", "color_histogram", "openface", "resnet", "vgg"),
+    ModalityType.VIDEO: (
+        "openface",
+        "clip",
+        "color_histogram",
+        "image_bind",
+        "resnet",
+        "swin_video_transformer",
+        "vgg",
+        "x3d",
+    ),
+    ModalityType.TIMESERIES: ("timeseries_representations",),
+    ModalityType.PHYSIOLOGICAL: (
+        "physiological_representations",
+        "timeseries_representations",
+    ),
+    ModalityType.EMBEDDING: ("tabular_features",),
+}
+_CONTEXT_MODULES = {
+    ModalityType.AUDIO: ("window_aggregation",),
+    ModalityType.TEXT: ("text_context", "text_context_with_indices"),
+    ModalityType.VIDEO: ("window_aggregation",),
+    ModalityType.TIMESERIES: ("physiological_window", "window_aggregation"),
+    ModalityType.PHYSIOLOGICAL: ("physiological_window", "window_aggregation"),
+}
+_FUSION_MODULES = (
+    "average",
+    "concatenation",
+    "hadamard",
+    "lstm",
+    "max",
+    "multimodal_attention_fusion",
+    "sum",
+)
+_DIMENSIONALITY_REDUCTION_MODULES = ("mlp_averaging",)
+_OPTIONAL_MODULES = {"image_bind"}
+_loaded_builtin_modules = set()
+
+
+def load_builtin_operators(
+    modality_types: Iterable[ModalityType], include_fusion: bool = False
+):
+    modules = set()
+    for modality_type in modality_types:
+        modules.update(_BUILTIN_MODULES.get(modality_type, ()))
+        modules.update(_CONTEXT_MODULES.get(modality_type, ()))
+        if modality_type == ModalityType.EMBEDDING:
+            modules.update(_DIMENSIONALITY_REDUCTION_MODULES)
+    if include_fusion:
+        modules.update(_FUSION_MODULES)
+    for module_name in sorted(modules - _loaded_builtin_modules):
+        try:
+            import_module(f"systemds.scuro.representations.{module_name}")
+        except ImportError:
+            if module_name not in _OPTIONAL_MODULES:
+                raise
+        _loaded_builtin_modules.add(module_name)
 
 
 class Registry:
@@ -129,6 +207,7 @@ class Registry:
         self._expensive_representations[modality].append(representation)
 
     def get_representations(self, modality: ModalityType):
+        load_builtin_operators((modality,))
         return self._representations[modality]
 
     def get_not_self_contained_representations(self, modality: ModalityType):
@@ -139,14 +218,17 @@ class Registry:
         return reps
 
     def get_context_operators(self, modality_type):
+        load_builtin_operators((modality_type,))
         if modality_type not in self._context_operators.keys():
             return []
         return self._context_operators[modality_type]
 
     def get_dimensionality_reduction_operators(self, modality_type):
+        load_builtin_operators((modality_type,))
         return self._dimensionality_reduction_operators.get(modality_type, [])
 
     def get_fusion_operators(self):
+        load_builtin_operators((), include_fusion=True)
         return type(self)._fusion_operators
 
     def get_fusion_operator_by_name(self, fusion_name):

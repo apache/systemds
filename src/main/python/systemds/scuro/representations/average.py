@@ -32,14 +32,14 @@ from systemds.scuro.drsearch.operator_registry import register_fusion_operator
 
 @register_fusion_operator()
 class Average(Fusion):
+    _laws = frozenset({"comm", "avg_flatten"})
+
     def __init__(self, params=None):
         """
         Combines modalities using averaging
         """
         super().__init__("Average")
         self.needs_alignment = True
-        self.associative = True
-        self.commutative = True
 
     def execute(self, modalities: List[Modality]):
         data = np.array(modalities[0].data, dtype=np.float64)

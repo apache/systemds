@@ -22,8 +22,14 @@ import abc
 
 import numpy as np
 
+from systemds.scuro.modality.indexed import IndexedModality
 from systemds.scuro.modality.modality import Modality
-from systemds.scuro.representations.representation import Representation
+from systemds.scuro.modality.transformed import TransformedModality
+from systemds.scuro.representations.representation import (
+    FitRequirement,
+    Representation,
+    RepresentationFitState,
+)
 
 
 class DimensionalityReduction(Representation):
@@ -43,10 +49,7 @@ class DimensionalityReduction(Representation):
         :param labels: labels for learned dimensionality reduction
         :return: dimensionality reduced data
         """
-        if labels is not None:
-            self.execute_with_training(data, labels)
-        else:
-            self.execute(data)
+        raise NotImplementedError(f"execute is not implemented for {self.name}")
 
     def apply_representation(self, data):
         """
@@ -56,26 +59,48 @@ class DimensionalityReduction(Representation):
         """
         raise f"Not implemented for Dimensionality Reduction Operator: {self.name}"
 
-    def execute_with_training(self, modality, task):
-        fusion_train_indices = task.fusion_train_indices
-        # Handle 3d data
-        data = modality.data
-        if (
-            len(np.array(modality.data).shape) == 3
-            and np.array(modality.data).shape[1] == 1
-        ):
-            data = np.array([x.reshape(-1) for x in modality.data])
-        transformed_train = self.execute(
-            np.array(data)[fusion_train_indices], task.labels[fusion_train_indices]
+    @staticmethod
+    def _prepare_data(modality):
+        data = np.asarray(modality.data)
+        if data.ndim == 3 and data.shape[1] == 1:
+            return data.reshape(data.shape[0], -1)
+        return data
+
+    def fit(self, inputs, labels=None) -> RepresentationFitState:
+        if self.fit_requirement is not FitRequirement.SUPERVISED:
+            return super().fit(inputs, labels)
+        if not isinstance(inputs, IndexedModality):
+            raise TypeError(
+                "Trainable dimensionality reduction expects an IndexedModality"
+            )
+        if labels is None:
+            raise ValueError(f"{self.name} requires labels for fitting")
+        if len(labels) != len(inputs):
+            raise ValueError(
+                f"Expected {len(inputs)} labels for {self.name}, got {len(labels)}"
+            )
+
+        self.execute(self._prepare_data(inputs.modality), np.asarray(labels))
+        return RepresentationFitState(
+            self.fit_requirement,
+            fit_instance_ids=inputs.instance_ids,
+            payload=self,
         )
 
-        all_other_indices = [
-            i for i in range(len(modality.data)) if i not in fusion_train_indices
-        ]
-        transformed_other = self.apply_representation(np.array(data)[all_other_indices])
+    def transform_fitted(self, inputs, fit_state, **kwargs):
+        if not isinstance(inputs, IndexedModality):
+            raise TypeError(
+                "Trainable dimensionality reduction expects an IndexedModality"
+            )
+        if (
+            not isinstance(fit_state, RepresentationFitState)
+            or fit_state.fit_requirement is not self.fit_requirement
+            or not isinstance(fit_state.payload, type(self))
+        ):
+            raise ValueError(f"{self.name} requires a compatible fitted state")
 
-        transformed_data = np.zeros((len(data), transformed_train.shape[1]))
-        transformed_data[fusion_train_indices] = transformed_train
-        transformed_data[all_other_indices] = transformed_other
-
-        return transformed_data
+        transformed = TransformedModality(inputs.modality, fit_state.payload)
+        transformed.data = fit_state.payload.apply_representation(
+            self._prepare_data(inputs.modality)
+        )
+        return IndexedModality(transformed, inputs.instance_ids)

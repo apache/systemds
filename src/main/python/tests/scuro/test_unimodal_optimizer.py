@@ -52,6 +52,7 @@ from systemds.scuro.representations.tfidf import TfIdf
 from systemds.scuro.representations.bow import BoW
 from systemds.scuro.representations.bert import Bert
 from systemds.scuro.representations.word2vec import W2V
+from systemds.scuro.representations.window_aggregation import Window
 from tests.scuro.test_unimodal_representations import (
     PHYSIOLOGICAL_REPRESENTATIONS,
     TIMESERIES_REPRESENTATIONS,
@@ -202,6 +203,43 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
         self.assertEqual(indices, [0, 5])
         self.assertTrue(all(np.isfinite(entry.robustness_score) for entry in robust))
 
+    def test_robust_results_penalise_fold_variation(self):
+        modality = SimpleNamespace(modality_id="modality")
+        task = SimpleNamespace(model=SimpleNamespace(name="task"))
+        results = UnimodalResults([modality], [task], k=2)
+        entries = [
+            ResultEntry(
+                val_score={"accuracy": 0.90},
+                val_fold_scores={"accuracy": [0.70, 0.80, 0.90, 1.00, 1.10]},
+                dag=SimpleNamespace(
+                    nodes=[SimpleNamespace(operation=UnimodalOptimizer)]
+                ),
+            ),
+            ResultEntry(
+                val_score={"accuracy": 0.86},
+                val_fold_scores={"accuracy": [0.85, 0.86, 0.87, 0.85, 0.87]},
+                dag=SimpleNamespace(
+                    nodes=[SimpleNamespace(operation=UnimodalOptimizer)]
+                ),
+            ),
+        ]
+        results.results[modality.modality_id][task.model.name] = entries
+
+        robust, indices = results.get_k_most_robust_results(
+            modality, task, "accuracy", one_se_parsimony=False
+        )
+
+        self.assertEqual(robust, [entries[1], entries[0]])
+        self.assertEqual(indices, [1, 0])
+        self.assertAlmostEqual(
+            entries[0].robustness_score,
+            0.90 - np.std(entries[0].val_fold_scores["accuracy"], ddof=1),
+        )
+        self.assertAlmostEqual(
+            entries[1].robustness_score,
+            0.86 - np.std(entries[1].val_fold_scores["accuracy"], ddof=1),
+        )
+
     def test_bow_and_tfidf_require_dimensionality_reduction_before_task(self):
         text_data, text_md = ModalityRandomDataGenerator().create_text_data(
             self.num_instances, 10
@@ -233,6 +271,137 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
                     task_node = dag.get_node_by_id(dag.root_node_id)
                     task_input = dag.get_node_by_id(task_node.inputs[0])
                     self.assertIs(task_input.operation, MLPAveraging)
+
+    def _window_inputs(self, modality, representations):
+        """(input operation, input rank) of every window node in the search."""
+        with patch.object(
+            Registry,
+            "_representations",
+            registry_for(modality.modality_type, representations),
+        ):
+            optimizer = UnimodalOptimizer(
+                [modality], self.tasks, False, enable_checkpointing=False
+            )
+            dags, _, _ = optimizer._build_execution_dags_for_modality(modality)
+            stats = {}
+            for dag in dags:
+                stats.update(optimizer._node_output_stats(dag))
+            inputs = []
+            for dag in dags:
+                for node in dag.nodes:
+                    if node.operation is None or not issubclass(node.operation, Window):
+                        continue
+                    source = dag.get_node_by_id(node.inputs[0])
+                    inputs.append(
+                        (
+                            source.operation,
+                            len(stats[source.node_id].output_shape),
+                        )
+                    )
+            return optimizer, inputs
+
+    def test_windows_are_not_applied_to_rank_one_representation_outputs(self):
+        text_data, text_md = ModalityRandomDataGenerator().create_text_data(
+            self.num_instances, 10
+        )
+        text = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.TEXT, text_data, str, text_md
+            )
+        )
+        audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
+            self.num_instances, 4000
+        )
+        audio = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.AUDIO, audio_data, np.float32, audio_md
+            )
+        )
+        # W2V pools to one vector per instance; Concatenation flattens the
+        # (frames, features) outputs of Spectral and ZeroCrossing to rank 1.
+        for modality, representations in (
+            (text, [W2V]),
+            (audio, [Spectral, ZeroCrossing]),
+        ):
+            with self.subTest(modality=modality.modality_type.name):
+                optimizer, inputs = self._window_inputs(modality, representations)
+                representation_inputs = [
+                    (operation, rank)
+                    for operation, rank in inputs
+                    if operation is not None
+                ]
+                self.assertEqual(representation_inputs, [])
+                self.assertTrue(
+                    any("no time axis" in p["reason"] for p in optimizer.pruned)
+                )
+
+    def test_windows_are_kept_for_representations_with_a_time_axis(self):
+        video_data, video_md = ModalityRandomDataGenerator().create_visual_modality(
+            self.num_instances, 10, 10, 10
+        )
+        video = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.VIDEO, video_data, np.float32, video_md
+            )
+        )
+        _, inputs = self._window_inputs(video, [ResNet])
+        self.assertGreater(len(inputs), 0)
+        for operation, rank in inputs:
+            self.assertIs(operation, ResNet)
+            self.assertGreaterEqual(rank, 2)
+
+    def test_unimodal_optimizer_for_image_modality(self):
+        image_data, image_md = ModalityRandomDataGenerator().create_visual_modality(
+            self.num_instances, 1, 10, 10
+        )
+        image = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.IMAGE, image_data, np.float32, image_md
+            )
+        )
+        self.optimize_unimodal_representation_for_modality([image])
+
+    def test_unimodal_optimizer_for_multiple_modalities(self):
+        image_data, image_md = ModalityRandomDataGenerator().create_visual_modality(
+            self.num_instances, 1, 10, 10
+        )
+        image = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.IMAGE, image_data, np.float32, image_md
+            )
+        )
+        text_data, text_md = ModalityRandomDataGenerator().create_text_data(
+            self.num_instances
+        )
+        text = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.TEXT, text_data, str, text_md
+            )
+        )
+        self.optimize_unimodal_representation_for_modality([text, image])
+
+    def test_unimodal_optimizer_for_audio_modality(self):
+        audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
+            self.num_instances, 3000
+        )
+        audio = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.AUDIO, audio_data, np.float32, audio_md
+            )
+        )
+
+        self.optimize_unimodal_representation_for_modality([audio])
+
+    def test_unimodal_optimizer_for_video_modality(self):
+        video_data, video_md = ModalityRandomDataGenerator().create_visual_modality(
+            self.num_instances, 10, 10, 10
+        )
+        video = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.VIDEO, video_data, np.float32, video_md
+            )
+        )
+        self.optimize_unimodal_representation_for_modality([video])
 
     # ------------------------------------------------------------------
     # Every registered representation, run through the optimizer
@@ -662,3 +831,71 @@ class TestUnimodalResultsReadout(unittest.TestCase):
         dags = [SimpleNamespace(dag_id=1)]
 
         self.assertIsNone(get_dag_by_id(dags, 99))
+        
+        
+class TestSelectionStrategies(unittest.TestCase):
+    """The three selection strategies must genuinely disagree.
+
+    They are only worth carrying separately through HPO and fusion if they can
+    pick different winners out of the same pool, so the fixture is built so
+    each strategy has a different answer: A wins on raw score, B on robustness
+    (low fold variation, small DAG), and B again once runtime counts, with A
+    demoted for being slow.
+    """
+
+    @staticmethod
+    def _entry(accuracy, std, runtime, n_nodes):
+        dag = SimpleNamespace(
+            nodes=[SimpleNamespace(operation=object()) for _ in range(n_nodes)]
+        )
+        return SimpleNamespace(
+            dag=dag,
+            val_score={"accuracy": accuracy},
+            val_fold_scores={"accuracy": [accuracy - std, accuracy + std]},
+            val_score_stds={"accuracy": std},
+            representation_time=runtime,
+            task_time=0.0,
+        )
+
+    def setUp(self):
+        self.modality = SimpleNamespace(modality_id="m1")
+        self.task = SimpleNamespace(model=SimpleNamespace(name="t1"))
+        self.entries = {
+            "noisy_slow": self._entry(0.90, 0.10, 100.0, 5),
+            "stable_fast": self._entry(0.88, 0.01, 10.0, 2),
+            "weak_fastest": self._entry(0.85, 0.05, 1.0, 1),
+        }
+        self.results = UnimodalResults([self.modality], [self.task], k=3)
+        self.results.results["m1"]["t1"] = list(self.entries.values())
+
+    def _winner(self, strategy, **kwargs):
+        view = self.results.with_selection_strategy(strategy, **kwargs)
+        ranked, _ = view.get_k_best_results(
+            self.modality, self.task, "accuracy", cache_needed=False
+        )
+        return ranked[0]
+
+    def test_performance_takes_the_validation_argmax(self):
+        self.assertIs(self._winner("performance"), self.entries["noisy_slow"])
+
+    def test_robustness_penalises_fold_variation(self):
+        self.assertIs(self._winner("robustness"), self.entries["stable_fast"])
+
+    def test_tradeoff_weighs_runtime_against_accuracy(self):
+        self.assertIs(self._winner("tradeoff"), self.entries["stable_fast"])
+
+    def test_tradeoff_with_all_weight_on_accuracy_matches_performance(self):
+        self.assertIs(
+            self._winner("tradeoff", tradeoff_weights=(1.0, 0.0)),
+            self.entries["noisy_slow"],
+        )
+
+    def test_views_share_the_candidate_pool_and_leave_the_source_alone(self):
+        view = self.results.with_selection_strategy("robustness")
+        self.assertIs(view.results, self.results.results)
+        self.assertIs(view.cache, self.results.cache)
+        self.assertEqual(self.results.selection_strategy, "performance")
+
+    def test_unknown_strategy_is_rejected(self):
+        with self.assertRaises(ValueError):
+            self.results.with_selection_strategy("cheapest")

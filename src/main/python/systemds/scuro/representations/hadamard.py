@@ -33,14 +33,14 @@ from systemds.scuro.drsearch.operator_registry import register_fusion_operator
 
 @register_fusion_operator()
 class Hadamard(Fusion):
+    _laws = frozenset({"comm", "assoc"})
+
     def __init__(self, params=None):
         """
         Combines modalities using elementwise multiply (Hadamard product)
         """
         super().__init__("Hadamard")
         self.needs_alignment = True  # zero padding falsifies the result
-        self.commutative = True
-        self.associative = True
 
     def execute(self, modalities: List[Modality], train_indices=None):
         fused_data = np.prod([m.data for m in modalities], axis=0)

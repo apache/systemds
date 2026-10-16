@@ -19,6 +19,7 @@
 #
 # -------------------------------------------------------------
 from dataclasses import dataclass
+import math
 import os
 from typing import List, Optional, Union
 import librosa
@@ -56,7 +57,12 @@ class AudioLoader(BaseLoader):
         )
         self.normalize = normalize
         self.load_data_from_file = load
-        self.stats = self.get_stats(source_path)
+        files = self.get_file_names(self.indices)
+        self.stats = self.cached_stats(
+            files,
+            {"dtype": str(data_type), "normalize": normalize},
+            lambda: self.get_stats(source_path),
+        )
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
@@ -80,15 +86,20 @@ class AudioLoader(BaseLoader):
         max_length = 0
         avg_length = 0
         num_instances = 0
-        for file in os.listdir(source_path):
-            file_name = file.split(".")[0]
-            if file_name not in self.indices:
-                continue
-            self.file_sanity_check(source_path + file)
-            audio, sr = librosa.load(source_path + file, dtype=self._data_type)
+        import soundfile
+
+        for file in self.get_file_names(self.indices):
+            self.file_sanity_check(file)
+            try:
+                info = soundfile.info(file)
+                sr = 22050
+                length = math.ceil(info.frames * sr / info.samplerate)
+            except (RuntimeError, TypeError):
+                audio, sr = librosa.load(file, dtype=self._data_type)
+                length = audio.shape[0]
             num_instances += 1
             sampling_rate = max(sampling_rate, sr)
-            max_length = max(max_length, audio.shape[0])
-            avg_length += audio.shape[0]
+            max_length = max(max_length, length)
+            avg_length += length
         avg_length /= num_instances
         return AudioStats(sampling_rate, max_length, avg_length, num_instances, True)

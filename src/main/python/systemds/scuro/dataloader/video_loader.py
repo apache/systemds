@@ -40,6 +40,7 @@ class VideoStats:
     num_instances: int
     num_total_instances: int
     shape_variance: float = 0.0
+    lengths: Optional[Tuple[int, ...]] = None
 
     @property
     def output_shape(self):
@@ -81,7 +82,18 @@ class VideoLoader(BaseLoader):
         self.fps = fps
         self.target_size = tuple(int(v) for v in target_size) if target_size else None
         self._all_metadata = []
-        self.stats = self.get_stats(source_path)
+        files = self.get_file_names(self.indices)
+        self.stats, self._all_metadata = self.cached_stats(
+            files,
+            {
+                "dtype": str(data_type),
+                "fps": fps,
+                "target_size": self.target_size,
+                "frame_count": "decodable",
+            },
+            lambda: (self.get_stats(source_path), self._all_metadata),
+        )
+        self.stats.lengths = tuple(int(md["length"]) for md in self._all_metadata)
 
     def load(self):
         if self.chunk_size:
@@ -100,6 +112,13 @@ class VideoLoader(BaseLoader):
         if self.fps and source_fps and self.fps < source_fps:
             return max(1, int(round(source_fps / self.fps)))
         return 1
+
+    @staticmethod
+    def _decodable_frame_count(cap) -> int:
+        count = 0
+        while cap.grab():
+            count += 1
+        return count
 
     def _stored_length(self, source_length: int, source_fps: float) -> int:
         interval = self._frame_interval(source_fps)
@@ -188,10 +207,10 @@ class VideoLoader(BaseLoader):
             if not cap.isOpened():
                 raise ValueError(f"Could not read video at path: {file}")
             try:
-                source_length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
                 source_fps = cap.get(cv2.CAP_PROP_FPS)
                 width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                 height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                source_length = self._decodable_frame_count(cap)
             finally:
                 cap.release()
 

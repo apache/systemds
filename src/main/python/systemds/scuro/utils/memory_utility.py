@@ -38,10 +38,22 @@ _CPU_MEMORY_BUDGET_FRACTION = float(
 _CPU_MEMORY_BUDGET_GB = os.environ.get("SCURO_CPU_MEMORY_BUDGET_GB")
 
 
-def cpu_memory_budget_bytes() -> float:
+def cpu_memory_budget_bytes(modality_type: Optional[str] = None) -> float:
+    """CPU memory budget for one executor run.
+
+    SCURO_CPU_MEMORY_BUDGET_GB_<MODALITY TYPE> (e.g. ..._AUDIO) overrides
+    SCURO_CPU_MEMORY_BUDGET_GB for executors over that modality type, so a
+    modality whose memory estimates are far below actual use can be throttled
+    without slowing down every other modality.
+    """
     budget = float(psutil.virtual_memory().available) * _CPU_MEMORY_BUDGET_FRACTION
-    if _CPU_MEMORY_BUDGET_GB:
-        budget = min(budget, float(_CPU_MEMORY_BUDGET_GB) * 1024**3)
+    limit = _CPU_MEMORY_BUDGET_GB
+    if modality_type:
+        limit = os.environ.get(
+            f"SCURO_CPU_MEMORY_BUDGET_GB_{str(modality_type).upper()}", limit
+        )
+    if limit:
+        budget = min(budget, float(limit) * 1024**3)
     return budget
 
 

@@ -18,7 +18,10 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import hashlib
+import json
 import os
+import pickle
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import Callable, Iterator, List, Optional, Tuple, Union
@@ -76,6 +79,50 @@ class BaseLoader(ABC):
         self._ext = ext
         self.stats = None
         self.chunk_size = chunk_size
+
+    def cached_stats(self, files, options, compute):
+        if os.environ.get("SCURO_DISABLE_STATS_CACHE", "0") == "1":
+            return compute()
+        if isinstance(files, (str, os.PathLike)):
+            files = [files]
+        fingerprint = []
+        for file in files:
+            path = os.path.realpath(os.fspath(file))
+            stat = os.stat(path)
+            fingerprint.append((path, stat.st_size, stat.st_mtime_ns))
+        key = json.dumps(
+            {
+                "schema": 2,
+                "loader": f"{type(self).__module__}.{type(self).__qualname__}",
+                "files": fingerprint,
+                "options": options,
+            },
+            sort_keys=True,
+            default=str,
+        ).encode()
+        digest = hashlib.sha256(key).hexdigest()
+        cache_root = os.environ.get("SCURO_STATS_CACHE_DIR")
+        if cache_root is None:
+            cache_root = os.path.join(
+                os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")),
+                "scuro",
+                "loader_stats",
+            )
+        cache_path = os.path.join(cache_root, f"{digest}.pkl")
+        try:
+            with open(cache_path, "rb") as cache_file:
+                return pickle.load(cache_file)
+        except (FileNotFoundError, EOFError, OSError, pickle.PickleError):
+            stats = compute()
+        try:
+            os.makedirs(cache_root, exist_ok=True)
+            temporary_path = f"{cache_path}.{os.getpid()}.tmp"
+            with open(temporary_path, "wb") as cache_file:
+                pickle.dump(stats, cache_file, protocol=pickle.HIGHEST_PROTOCOL)
+            os.replace(temporary_path, cache_path)
+        except OSError:
+            pass
+        return stats
 
     @property
     def chunk_size(self):

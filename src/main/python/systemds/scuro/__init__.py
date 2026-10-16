@@ -18,152 +18,113 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from systemds.scuro.dataloader.base_loader import BaseLoader
-from systemds.scuro.dataloader.audio_loader import AudioLoader
-from systemds.scuro.dataloader.image_loader import ImageLoader
-from systemds.scuro.dataloader.video_loader import VideoLoader
-from systemds.scuro.dataloader.text_loader import TextLoader
-from systemds.scuro.dataloader.json_loader import JSONLoader
-from systemds.scuro.dataloader.tabular_loader import TabularLoader
-from systemds.scuro.representations.representation import Representation
-from systemds.scuro.representations.aggregate import Aggregation
-from systemds.scuro.representations.aggregated_representation import (
-    AggregatedRepresentation,
-)
-from systemds.scuro.representations.average import Average
-from systemds.scuro.representations.bert import (
-    Bert,
-    RoBERTa,
-    DistillBERT,
-    ALBERT,
-    ELECTRA,
-)
-from systemds.scuro.representations.bow import BoW
-from systemds.scuro.representations.concatenation import Concatenation
-from systemds.scuro.representations.context import Context
-from systemds.scuro.representations.fusion import Fusion
-from systemds.scuro.representations.glove import GloVe
-from systemds.scuro.representations.lstm import LSTM
-from systemds.scuro.representations.max import RowMax
-from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
-from systemds.scuro.representations.multimodal_attention_fusion import (
-    AttentionFusion,
-)
-from systemds.scuro.representations.timeseries_representations import (
-    Mean,
-    Max,
-    Min,
-    Kurtosis,
-    Skew,
-    Std,
-    RMS,
-    ACF,
-    FrequencyMagnitude,
-    SpectralCentroid,
-    Quantile,
-    ZeroCrossingRate,
-    BandpowerFFT,
-)
-from systemds.scuro.representations.mfcc import MFCC
-from systemds.scuro.representations.hadamard import Hadamard
-from systemds.scuro.representations.optical_flow import OpticalFlow
-from systemds.scuro.representations.representation import Representation
-from systemds.scuro.representations.representation_dataloader import NPY
-from systemds.scuro.representations.representation_dataloader import JSON
-from systemds.scuro.representations.representation_dataloader import Pickle
-from systemds.scuro.representations.resnet import ResNet
-from systemds.scuro.representations.openface import OpenFace
+from importlib import import_module
 
-try:
-    from systemds.scuro.representations.image_bind import ImageBind
-except ImportError as _imagebind_import_error:  # pragma: no cover
-    import warnings as _warnings
-
-    _warnings.warn(
-        f"ImageBind representation unavailable, it is excluded from the search "
-        f"({_imagebind_import_error})."
-    )
-    ImageBind = None
-
-from systemds.scuro.representations.spectrogram import Spectrogram
-from systemds.scuro.representations.sum import Sum
-from systemds.scuro.representations.swin_video_transformer import SwinVideoTransformer
-from systemds.scuro.representations.tabular_features import TabularFeatures
-from systemds.scuro.representations.tfidf import TfIdf
-from systemds.scuro.representations.unimodal import UnimodalRepresentation
-from systemds.scuro.representations.wav2vec import Wav2Vec
-from systemds.scuro.representations.window_aggregation import (
-    WindowAggregation,
-    DynamicWindow,
-    StaticWindow,
+_EXPORT_GROUPS = (
+    ("dataloader.base_loader", "BaseLoader"),
+    ("dataloader.audio_loader", "AudioLoader"),
+    ("dataloader.image_loader", "ImageLoader"),
+    ("dataloader.video_loader", "VideoLoader"),
+    ("dataloader.text_loader", "TextLoader"),
+    ("dataloader.json_loader", "JSONLoader"),
+    ("dataloader.tabular_loader", "TabularLoader"),
+    (
+        "representations.representation",
+        "FitRequirement Representation RepresentationFitState",
+    ),
+    ("representations.aggregate", "Aggregation"),
+    ("representations.aggregated_representation", "AggregatedRepresentation"),
+    ("representations.average", "Average"),
+    ("representations.bert", "Bert RoBERTa DistillBERT ALBERT ELECTRA"),
+    ("representations.bow", "BoW"),
+    ("representations.concatenation", "Concatenation"),
+    ("representations.context", "Context"),
+    ("representations.fusion", "Fusion"),
+    ("representations.glove", "GloVe"),
+    ("representations.lstm", "LSTM"),
+    ("representations.max", "RowMax"),
+    ("representations.mel_spectrogram", "MelSpectrogram"),
+    ("representations.multimodal_attention_fusion", "AttentionFusion"),
+    (
+        "representations.timeseries_representations",
+        "Mean Max Min Kurtosis Skew Std RMS ACF FrequencyMagnitude SpectralCentroid Quantile ZeroCrossingRate BandpowerFFT",
+    ),
+    ("representations.mfcc", "MFCC"),
+    ("representations.hadamard", "Hadamard"),
+    ("representations.optical_flow", "OpticalFlow"),
+    ("representations.representation_dataloader", "NPY JSON Pickle"),
+    ("representations.resnet", "ResNet"),
+    ("representations.openface", "OpenFace"),
+    ("representations.image_bind", "ImageBind"),
+    ("representations.spectrogram", "Spectrogram"),
+    ("representations.sum", "Sum"),
+    ("representations.swin_video_transformer", "SwinVideoTransformer"),
+    ("representations.tabular_features", "TabularFeatures"),
+    ("representations.tfidf", "TfIdf"),
+    ("representations.unimodal", "UnimodalRepresentation"),
+    ("representations.wav2vec", "Wav2Vec"),
+    (
+        "representations.window_aggregation",
+        "WindowAggregation DynamicWindow StaticWindow",
+    ),
+    ("representations.physiological_window", "AdaptiveWindow PhysiologicalEventWindow"),
+    ("representations.word2vec", "W2V"),
+    ("representations.x3d", "X3D"),
+    ("representations.color_histogram", "ColorHistogram"),
+    ("models.model", "Model"),
+    ("models.discrete_model", "DiscreteModel"),
+    ("modality.joined", "JoinedModality"),
+    ("modality.joined_transformed", "JoinedTransformedModality"),
+    ("modality.modality", "Modality"),
+    ("modality.indexed", "IndexedModality"),
+    ("utils.identifier", "Identifier"),
+    ("modality.transformed", "TransformedModality"),
+    ("modality.type", "ModalityType"),
+    ("modality.unimodal_modality", "UnimodalModality"),
+    ("drsearch.task", "Task"),
+    ("drsearch.evaluation_split", "EvaluationSplit"),
+    ("drsearch.operator_registry", "Registry"),
+    ("drsearch.optimization_data", "OptimizationData"),
+    ("drsearch.multimodal_optimizer", "MultimodalOptimizer"),
+    ("drsearch.unimodal_optimizer", "UnimodalOptimizer"),
+    ("representations.covarep_audio_features", "RMSE Spectral ZeroCrossing Pitch"),
+    ("representations.vgg", "VGG19"),
+    ("representations.clip", "CLIPText CLIPVisual"),
+    ("representations.text_context", "SentenceBoundarySplit OverlappingSplit"),
+    (
+        "representations.text_context_with_indices",
+        "SentenceBoundarySplitIndices OverlappingSplitIndices",
+    ),
+    ("representations.elmo", "ELMoRepresentation"),
+    ("representations.dimensionality_reduction", "DimensionalityReduction"),
+    ("representations.mlp_averaging", "MLPAveraging"),
+    ("representations.mlp_learned_dim_reduction", "MLPLearnedDimReduction"),
+    (
+        "representations.physiological_representations",
+        "SDNN RMSSD pNN RRPerMinute HRVBandPower HRVVLF HRVLF HRVHF HRVLFHF PoincareSD1 PoincareSD2 SCLSlope SCLDynamicRange SCRPeaksPerMinute SCRAverageAmplitude SCRAverageDuration",
+    ),
 )
-from systemds.scuro.representations.physiological_window import (
-    AdaptiveWindow,
-    PhysiologicalEventWindow,
-)
-from systemds.scuro.representations.word2vec import W2V
-from systemds.scuro.representations.x3d import X3D
-from systemds.scuro.representations.color_histogram import ColorHistogram
-from systemds.scuro.models.model import Model
-from systemds.scuro.models.discrete_model import DiscreteModel
-from systemds.scuro.modality.joined import JoinedModality
-from systemds.scuro.modality.joined_transformed import JoinedTransformedModality
-from systemds.scuro.modality.modality import Modality
-from systemds.scuro.utils.identifier import Identifier
-from systemds.scuro.modality.transformed import TransformedModality
-from systemds.scuro.modality.type import ModalityType
-from systemds.scuro.modality.unimodal_modality import UnimodalModality
-from systemds.scuro.drsearch.task import Task
-from systemds.scuro.drsearch.operator_registry import Registry
-from systemds.scuro.drsearch.optimization_data import OptimizationData
-from systemds.scuro.representations.covarep_audio_features import (
-    RMSE,
-    Spectral,
-    ZeroCrossing,
-    Pitch,
-)
-from systemds.scuro.drsearch.multimodal_optimizer import MultimodalOptimizer
-from systemds.scuro.drsearch.unimodal_optimizer import UnimodalOptimizer
-from systemds.scuro.representations.vgg import VGG19
-from systemds.scuro.representations.clip import CLIPText, CLIPVisual
-from systemds.scuro.representations.text_context import (
-    SentenceBoundarySplit,
-    OverlappingSplit,
-)
-from systemds.scuro.representations.text_context_with_indices import (
-    SentenceBoundarySplitIndices,
-    OverlappingSplitIndices,
-)
-from systemds.scuro.representations.elmo import ELMoRepresentation
-from systemds.scuro.representations.dimensionality_reduction import (
-    DimensionalityReduction,
-)
-from systemds.scuro.representations.mlp_averaging import MLPAveraging
-from systemds.scuro.representations.mlp_learned_dim_reduction import (
-    MLPLearnedDimReduction,
-)
+_EXPORTS = {
+    name: (module_name, name)
+    for module_name, names in _EXPORT_GROUPS
+    for name in names.split()
+}
 
 
-from systemds.scuro.representations.physiological_representations import (
-    SDNN,
-    RMSSD,
-    pNN,
-    RRPerMinute,
-    HRVBandPower,
-    HRVVLF,
-    HRVLF,
-    HRVHF,
-    HRVLFHF,
-    PoincareSD1,
-    PoincareSD2,
-    # SampleEntropy,
-    # DFAAlpha,
-    SCLSlope,
-    SCLDynamicRange,
-    SCRPeaksPerMinute,
-    SCRAverageAmplitude,
-    SCRAverageDuration,
-)
+def __getattr__(name):
+    try:
+        module_name, attribute = _EXPORTS[name]
+    except KeyError as exc:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from exc
+    try:
+        value = getattr(import_module(f"{__name__}.{module_name}"), attribute)
+    except ImportError:
+        if name != "ImageBind":
+            raise
+        value = None
+    globals()[name] = value
+    return value
+
 
 __all__ = [
     "BaseLoader",
@@ -256,7 +217,6 @@ __all__ = [
     "MLPAveraging",
     "MLPLearnedDimReduction",
     "DimensionalityReduction",
-    "MultimodalGAPymooOptimizer",
     "SDNN",
     "RMSSD",
     "pNN",

@@ -22,7 +22,6 @@
 
 X = read($1);
 Y = read($2);
-
-R = t(X) %*% X %*% Y;
+R = t(X) %*% X %*% t(t(X) %*% X) %*% Y;
 
 write(R, $3);

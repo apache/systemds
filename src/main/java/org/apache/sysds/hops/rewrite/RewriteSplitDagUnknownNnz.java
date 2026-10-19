@@ -72,7 +72,7 @@ public class RewriteSplitDagUnknownNnz extends StatementBlockRewriteRule {
 					tRead.setRequiresRecompile();
 
 					// replace persistent read with transient read
-					ArrayList<Hop> parents = new ArrayList<>(cHop.getParent());
+					List<Hop> parents = cHop.getParent();
 					for(int i = 0; i < parents.size(); i++) {
 						Hop parent = parents.get(i);
 						HopRewriteUtils.replaceChildReference(parent, cHop, tRead);
@@ -129,6 +129,14 @@ public class RewriteSplitDagUnknownNnz extends StatementBlockRewriteRule {
 		}
 	}
 
+	public static boolean anyParentIsMatrixMultiply(Hop hop) {
+		return hop.getParent().stream().anyMatch(parentHop -> HopRewriteUtils.isMatrixMultiply(parentHop));
+	}
+
+	public static boolean allParentsAreMatrixMultiply(Hop hop) {
+		return hop.getParent().stream().allMatch(parentHop -> HopRewriteUtils.isMatrixMultiply(parentHop));
+	}
+
 	private void rCollectNnzComputationCandidates(Hop hop, ListIterator<ArrayList<Hop>> candListIter, Hop parentHop) {
 		if(hop.isVisited())
 			return;
@@ -137,13 +145,12 @@ public class RewriteSplitDagUnknownNnz extends StatementBlockRewriteRule {
 			// split persistent reads with unknown nnz to obtain their nnz before continuing rewrites
 			splitAndProcessChildren(hop, candListIter);
 		}
-		else if(parentHop != null && HopRewriteUtils.isMatrixMultiply(parentHop) &&
-			!((AggBinaryOp) parentHop).hasLeftPMInput() && !HopRewriteUtils.isMatrixMultiply(hop)) {
+		else if(parentHop != null && anyParentIsMatrixMultiply(hop) && !HopRewriteUtils.isMatrixMultiply(hop)) {
 			// split before mm chain to ensure correct sparsity information for mm chain sparsity estimation
 			splitAndProcessChildren(hop, candListIter);
 		}
-		else if(!HopRewriteUtils.isMatrixMultiply(parentHop) && HopRewriteUtils.isMatrixMultiply(hop)
-			&& !((AggBinaryOp) hop).hasLeftPMInput()) {
+		else if((!HopRewriteUtils.isMatrixMultiply(parentHop) || !allParentsAreMatrixMultiply(hop))
+			&& HopRewriteUtils.isMatrixMultiply(hop) && !((AggBinaryOp) hop).hasLeftPMInput()) {
 			// split after mm chain to force the mm chain into a separate statment block for isolated optimization
 			splitAndProcessChildren(hop, candListIter);
 		}

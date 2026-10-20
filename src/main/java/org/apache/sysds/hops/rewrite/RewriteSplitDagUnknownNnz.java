@@ -20,8 +20,6 @@
 package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.ListIterator;
 import java.util.List;
 
 import org.apache.sysds.common.Types.OpOpData;
@@ -46,59 +44,64 @@ public class RewriteSplitDagUnknownNnz extends StatementBlockRewriteRule {
 
 	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state) {
+		return rRewriteStatementBlock(sb, state);
+	}
+
+	public List<StatementBlock> rRewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state) {
 		ArrayList<StatementBlock> ret = new ArrayList<>();
 
 		// collect all candidate hops in levels based on their data dependencies
-		ArrayList<ArrayList<Hop>> candidateLists = new ArrayList<ArrayList<Hop>>();
-		collectNnzComputationCandidates(sb.getHops(), candidateLists);
-		Collections.reverse(candidateLists); // reverse order of dependency levels
+		ArrayList<Hop> cand = new ArrayList<Hop>();
+		collectNnzComputationCandidates(sb.getHops(), cand);
 
 		// split hop dag on demand and if sparsity rewrites are enabled (splitting is pointless w/o rewrite)
-		if(!candidateLists.isEmpty() && ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.SPARSITY_REWRITES)) {
-			for(ArrayList<Hop> cand : candidateLists) {
-				// duplicate sb incl live variable sets
-				StatementBlock sbSplit = new StatementBlock();
-				sbSplit.setDMLProg(sb.getDMLProg());
-				sbSplit.setParseInfo(sb);
-				sbSplit.setLiveIn(new VariableSet());
-				sbSplit.setLiveOut(new VariableSet());
+		if(!cand.isEmpty() && ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.SPARSITY_REWRITES)) {
+			// duplicate sb incl live variable sets
+			StatementBlock sbSplit = new StatementBlock();
+			sbSplit.setDMLProg(sb.getDMLProg());
+			sbSplit.setParseInfo(sb);
+			sbSplit.setLiveIn(new VariableSet());
+			sbSplit.setLiveOut(new VariableSet());
 
-				// move candidate hops to new statement block
-				// (and replace original persistent read with transient read)
-				ArrayList<Hop> sbSplitHops = new ArrayList<>();
-				for(Hop cHop : cand) {
-					// create new transient read
-					DataOp tRead = HopRewriteUtils.createTransientRead(cHop.getName(), cHop);
-					tRead.setRequiresRecompile();
+			// move candidate hops to new statement block
+			// (and replace original persistent read with transient read)
+			ArrayList<Hop> sbSplitHops = new ArrayList<>();
+			for(Hop cHop : cand) {
+				// create new transient read
+				DataOp tRead = HopRewriteUtils.createTransientRead(cHop.getName(), cHop);
+				tRead.setRequiresRecompile();
 
-					// replace persistent read with transient read
-					List<Hop> parents = cHop.getParent();
-					for(int i = 0; i < parents.size(); i++) {
-						Hop parent = parents.get(i);
-						HopRewriteUtils.replaceChildReference(parent, cHop, tRead);
-					}
-
-					// add reblock sub dag to first statement block
-					DataOp tWrite = HopRewriteUtils.createTransientWrite(cHop.getName(), cHop);
-					sbSplitHops.add(tWrite);
-
-					// update live in and out of new statement block (for piggybacking)
-					DataIdentifier diVar = sb.variablesRead().getVariable(cHop.getName());
-					if(diVar != null) { // var read should always exist because persistent read
-						sbSplit.liveOut().addVariable(cHop.getName(), new DataIdentifier(diVar));
-						sb.liveIn().addVariable(cHop.getName(), new DataIdentifier(diVar));
-					}
+				// replace persistent read with transient read
+				List<Hop> parents = cHop.getParent();
+				for(int i = 0; i < parents.size(); i++) {
+					Hop parent = parents.get(i);
+					HopRewriteUtils.replaceChildReference(parent, cHop, tRead);
 				}
 
-				sbSplit.setHops(sbSplitHops);
-				sbSplit.updateRecompilationFlag();
-				ret.add(sbSplit); // statement block with permanent read and transient write
-				sbSplit.setSplitDag(true); // avoid later merge by other rewrites
+				// add reblock sub dag to first statement block
+				DataOp tWrite = HopRewriteUtils.createTransientWrite(cHop.getName(), cHop);
+				sbSplitHops.add(tWrite);
+
+				// update live in and out of new statement block (for piggybacking)
+				DataIdentifier diVar = sb.variablesRead().getVariable(cHop.getName());
+				if(diVar != null) { // var read should always exist because persistent read
+					sbSplit.liveOut().addVariable(cHop.getName(), new DataIdentifier(diVar));
+					sb.liveIn().addVariable(cHop.getName(), new DataIdentifier(diVar));
+				}
 			}
+
+			sbSplit.setHops(sbSplitHops);
+			sbSplit.updateRecompilationFlag();
+			sbSplit.setSplitDag(true); // avoid later merge by other rewrites
+
+			//recursive application of rewrite rule
+			List<StatementBlock> tmp = rRewriteStatementBlock(sbSplit, state);
+
+			ret.addAll(tmp); // statement block with permanent read and transient write
 			sb.setSplitDag(true); // avoid later merge by other rewrites
 			LOG.debug("RewriteSplitDagUnknownNnz: Split DAG into " + (ret.size() + 1) + " statement blocks.");
 		}
-		
+
 		ret.add(sb);
 		return ret;
 	}
@@ -108,24 +111,12 @@ public class RewriteSplitDagUnknownNnz extends StatementBlockRewriteRule {
 		return sbs;
 	}
 
-	private void collectNnzComputationCandidates(ArrayList<Hop> roots, ArrayList<ArrayList<Hop>> candidateLists) {
+	private void collectNnzComputationCandidates(ArrayList<Hop> roots, ArrayList<Hop> cand) {
 		if(roots == null)
 			return;
 		Hop.resetVisitStatus(roots);
-		ListIterator<ArrayList<Hop>> candListIter = candidateLists.listIterator();
 		for(Hop root : roots) {
-			rCollectNnzComputationCandidates(root, candListIter, null);
-		}
-	}
-	
-	private ArrayList<Hop> getNextLevel(ListIterator<ArrayList<Hop>> liter) {
-		if(liter.hasNext()) {
-			return liter.next();
-		}
-		else {
-			ArrayList<Hop> newLevel = new ArrayList<Hop>();
-			liter.add(newLevel);
-			return newLevel;
+			rCollectNnzComputationCandidates(root, cand, null);
 		}
 	}
 
@@ -137,42 +128,45 @@ public class RewriteSplitDagUnknownNnz extends StatementBlockRewriteRule {
 		return hop.getParent().stream().allMatch(parentHop -> HopRewriteUtils.isMatrixMultiply(parentHop));
 	}
 
-	private void rCollectNnzComputationCandidates(Hop hop, ListIterator<ArrayList<Hop>> candListIter, Hop parentHop) {
+	private void rCollectNnzComputationCandidates(Hop hop, ArrayList<Hop> cand, Hop parentHop) {
 		if(hop.isVisited())
 			return;
+		// has already been split off
+		boolean noSplitRequired = HopRewriteUtils.hasOnlyWriteParents(hop, true, false);
 
-		if(hop instanceof DataOp && ((DataOp) hop).getOp() == OpOpData.PERSISTENTREAD && !hop.nnzKnown()) {
-			// split persistent reads with unknown nnz to obtain their nnz before continuing rewrites
-			splitAndProcessChildren(hop, candListIter);
+		if(!noSplitRequired) {
+			if(hop instanceof DataOp && ((DataOp) hop).getOp() == OpOpData.PERSISTENTREAD && !hop.nnzKnown()) {
+				// split persistent reads with unknown nnz to obtain their nnz before continuing rewrites
+				// splitAndProcessChildren(hop, candListIter);
+				cand.add(hop);
+			}
+			else if(parentHop != null && anyParentIsMatrixMultiply(hop) && !HopRewriteUtils.isMatrixMultiply(hop)) {
+				// split before mm chain to ensure correct sparsity information for mm chain sparsity estimation
+				// splitAndProcessChildren(hop, candListIter);
+				cand.add(hop);
+			}
+			else if((!HopRewriteUtils.isMatrixMultiply(parentHop) || !allParentsAreMatrixMultiply(hop))
+				&& HopRewriteUtils.isMatrixMultiply(hop) && !((AggBinaryOp) hop).hasLeftPMInput()) {
+				// split after mm chain to force the mm chain into a separate statment block for isolated optimization
+				// splitAndProcessChildren(hop, candListIter);
+				cand.add(hop);
+			}
+			else {
+				rCollectCandidatesChildren(hop, cand);
+			}
 		}
-		else if(parentHop != null && anyParentIsMatrixMultiply(hop) && !HopRewriteUtils.isMatrixMultiply(hop)) {
-			// split before mm chain to ensure correct sparsity information for mm chain sparsity estimation
-			splitAndProcessChildren(hop, candListIter);
-		}
-		else if((!HopRewriteUtils.isMatrixMultiply(parentHop) || !allParentsAreMatrixMultiply(hop))
-			&& HopRewriteUtils.isMatrixMultiply(hop) && !((AggBinaryOp) hop).hasLeftPMInput()) {
-			// split after mm chain to force the mm chain into a separate statment block for isolated optimization
-			splitAndProcessChildren(hop, candListIter);
-		}
-		else{
-			rCollectCandidatesChildren(hop, candListIter);
+		else {
+			rCollectCandidatesChildren(hop, cand);
 		}
 
 		hop.setVisited();
 	}
 
-	private void rCollectCandidatesChildren(Hop parentHop, ListIterator<ArrayList<Hop>> candListIter) {
+	private void rCollectCandidatesChildren(Hop parentHop, ArrayList<Hop> cand) {
 		// process children
 		if(parentHop.getInput() != null) {
 			for(Hop c : parentHop.getInput())
-				rCollectNnzComputationCandidates(c, candListIter, parentHop);
+				rCollectNnzComputationCandidates(c, cand, parentHop);
 		}
-	}
-
-	// add the hop to the candidates and proceed with its inputs
-	private void splitAndProcessChildren(Hop hop, ListIterator<ArrayList<Hop>> candListIter) {
-		getNextLevel(candListIter).add(hop);
-		rCollectCandidatesChildren(hop, candListIter);
-		candListIter.previous(); // reset level increment after processing children
 	}
 }

@@ -1,0 +1,12 @@
+{
+    "data_type": "matrix",
+    "value_type": "double",
+    "rows": 30,
+    "cols": 6,
+    "nnz": 180,
+    "format": "csv",
+    "author": "nicol",
+    "header": false,
+    "sep": ",",
+    "created": "2026-02-16 08:39:42 MEZ"
+}

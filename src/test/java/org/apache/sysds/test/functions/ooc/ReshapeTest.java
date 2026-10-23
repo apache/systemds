@@ -78,8 +78,10 @@ public class ReshapeTest extends AutomatedTestBase {
 
 		int[][][] dims = {
 			{{1000, 1000}, {1, 1000000}},	// single row/col
-			{{3000, 4000}, {1500, 8000}},	// partialBlocks
-			{{2400, 1400}, {800, 4200}}		// fullBlocks
+			{{4000, 4000}, {2000, 8000}},	// full
+			{{1400, 1200}, {1200, 1400}},	// partial
+			{{814, 618}, {407, 1236}},
+			{{20, 1300}, {13000, 2}}
 		};
 
 		ArrayList<Object[]> params = new ArrayList<>();
@@ -117,9 +119,10 @@ public class ReshapeTest extends AutomatedTestBase {
 
 			double[][] X = getRandomMatrix(rlen, clen, 0, 1, 1, 7);
 			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(Types.FileFormat.BINARY);
-			writer.writeMatrixToHDFS(DataConverter.convertToMatrixBlock(X), input(INPUT_NAME), rlen, clen, 1000, rlen * clen);
+			writer.writeMatrixToHDFS(DataConverter.convertToMatrixBlock(X), input(INPUT_NAME), rlen, clen, 1000,
+				(long) rlen * clen);
 			HDFSTool.writeMetaDataFile(input(INPUT_NAME + ".mtd"), Types.ValueType.FP64,
-				new MatrixCharacteristics(rlen, clen, blen, rlen * clen), Types.FileFormat.BINARY);
+				new MatrixCharacteristics(rlen, clen, blen, (long) rlen * clen), Types.FileFormat.BINARY);
 
 			programArgs = new String[] {"-explain", "-stats", "-ooc", "-args", input(INPUT_NAME), String.valueOf(rlen),
 				String.valueOf(clen), String.valueOf(rows), String.valueOf(cols), output(OUTPUT_NAME)};

@@ -51,13 +51,13 @@ import java.util.stream.Stream;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class RewriteSplitDagUnknownNnzTest extends AutomatedTestBase {
+public class RewriteSplitDagSparsityRecompileTest extends AutomatedTestBase {
 
-	private static final String TEST_NAME_READ = "RewriteSplitDagUnknownNnzRead";
-	private static final String TEST_NAME_MMCHAIN = "RewriteSplitDagUnknownNnzMMChain";
+	private static final String TEST_NAME_READ = "RewriteSplitDagSparsityRecompileRead";
+	private static final String TEST_NAME_MMCHAIN = "RewriteSplitDagSparsityRecompileMMChain";
 	private static final String TEST_DIR = "functions/rewrite/";
 	private static final String TEST_CLASS_DIR =
-		TEST_DIR + RewriteSplitDagUnknownNnzTest.class.getSimpleName() + "/";
+		TEST_DIR + RewriteSplitDagSparsityRecompileTest.class.getSimpleName() + "/";
 	private static final String PACKAGE_REWRITE = "org.apache.sysds.hops.rewrite.HopRewriteRule";
 	private static final String PACKAGE_RECOMPILE = "org.apache.sysds.hops.rewrite.StatementBlockRewriteRule";
 	private static Level _oldLevelRewrite;
@@ -105,16 +105,16 @@ public class RewriteSplitDagUnknownNnzTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testSplitDagUnknownNnzRead() {
-		testSplitDagUnknownNnz(TEST_NAME_READ, 4);
+	public void testSplitDagSparsityRecompileRead() {
+		testSplitDagSparsityRecompile(TEST_NAME_READ, 4);
 	}
 
 	@Test
-	public void testSplitDagUnknownNnzMMChain() {
-		testSplitDagUnknownNnz(TEST_NAME_MMCHAIN, 4);
+	public void testSplitDagSparsityRecompileMMChain() {
+		testSplitDagSparsityRecompile(TEST_NAME_MMCHAIN, 4);
 	}
 
-	private void testSplitDagUnknownNnz(String testName, int numSBs) {
+	private void testSplitDagSparsityRecompile(String testName, int numSBs) {
 		boolean oldFlag1 = OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES;
 		boolean oldFlag2 = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		boolean oldFlag3 = OptimizerUtils.ALLOW_SPLIT_HOP_DAGS;
@@ -176,14 +176,14 @@ public class RewriteSplitDagUnknownNnzTest extends AutomatedTestBase {
 			// check original log output
 			String log_original_string = String.join(DELIMITER,
 				log_original.stream().map(l -> l.getMessage().toString()).toArray(String[]::new));
-			Assert.assertTrue(log_original_string.contains("RewriteSplitDagUnknownNnz: Split DAG into " +
+			Assert.assertTrue(log_original_string.contains("RewriteSplitDagSparsityRecompile: Split DAG into " +
 				numSBs + " statement blocks."));
 			Assert.assertTrue(log_original_string.contains("mmchainoptsparse"));
 			Assert.assertTrue(log_original_string.contains("Optimal Sparse MM Chain:"));
 			// check reference log output
 			String log_reference_string = String.join(DELIMITER,
 				log_reference.stream().map(l -> l.getMessage().toString()).toArray(String[]::new));
-			Assert.assertFalse(log_reference_string.contains("RewriteSplitDagUnknownNnz"));
+			Assert.assertFalse(log_reference_string.contains("RewriteSplitDagSparsityRecompile"));
 			Assert.assertFalse(log_reference_string.contains("mmchainoptsparse"));
 		}
 		finally {

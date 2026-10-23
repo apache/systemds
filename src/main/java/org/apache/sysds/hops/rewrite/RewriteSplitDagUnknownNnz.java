@@ -21,6 +21,7 @@ package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
@@ -30,10 +31,12 @@ import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.VariableSet;
+import org.apache.sysds.runtime.matrix.data.Pair;
 
 /**
  * Rule: Split Hop DAG after reads with unknown nnz. This is important to create recompile
@@ -111,6 +114,9 @@ public class RewriteSplitDagUnknownNnz extends StatementBlockRewriteRule {
 				sb.variablesRead().addVariable(varname, new DataIdentifier(diVar));
 			}
 
+			// ensure disjoint operators across DAGs (prevent replicated operations)
+			handleReplicatedOperators(sbSplitHops, sb.getHops(), sbSplit.liveOut(), sb.liveIn());
+
 			sbSplit.setHops(Recompiler.deepCopyHopsDag(sbSplitHops));
 			sbSplit.updateRecompilationFlag();
 			sbSplit.setSplitDag(true); // avoid later merge by other rewrites
@@ -125,6 +131,96 @@ public class RewriteSplitDagUnknownNnz extends StatementBlockRewriteRule {
 
 		ret.add(sb);
 		return ret;
+	}
+
+	private void handleReplicatedOperators(ArrayList<Hop> rootsSbSplit, ArrayList<Hop> rootsSbOrigin,
+		VariableSet sbSplitOut, VariableSet sbOriginIn) {
+		// step 1: create probe set SB1
+		HashSet<Hop> probeSet = new HashSet<>();
+		Hop.resetVisitStatus(rootsSbSplit);
+		for(Hop h : rootsSbSplit) {
+			rAddHopsToProbeSet(h, probeSet);
+		}
+
+		// step 2: probe SB2 operators top-down (collect cut candidates)
+		HashSet<Pair<Hop,Hop>> candSet = new HashSet<>();
+		Hop.resetVisitStatus(rootsSbOrigin);
+		for(Hop h : rootsSbOrigin) {
+			rProbeAndAddHopsToCandidateSet(h, probeSet, candSet);
+		}
+
+		// step 3: create additional cuts with reuse for common references
+		HashMap<Long, DataOp> reuseTRead = new HashMap<>();
+		for(Pair<Hop,Hop> p : candSet) {
+			Hop hop = p.getKey();
+			Hop c = p.getValue();
+
+			DataOp tRead = reuseTRead.get(c.getHopID());
+			if(tRead == null) {
+				String varname = createCutVarName(false);
+
+				tRead = HopRewriteUtils.createTransientRead(varname, c);
+				reuseTRead.put(c.getHopID(), tRead);
+
+				DataOp twrite = HopRewriteUtils.createTransientWrite(varname, c);
+
+				// update live in and out of new statement block (for piggybacking)
+				DataIdentifier diVar = new DataIdentifier(varname);
+				diVar.setDimensions(c.getDim1(), c.getDim2());
+				diVar.setBlocksize(c.getBlocksize());
+				diVar.setDataType(c.getDataType());
+				diVar.setValueType(c.getValueType());
+				sbSplitOut.addVariable(varname, new DataIdentifier(diVar));
+				sbOriginIn.addVariable(varname, new DataIdentifier(diVar));
+
+				rootsSbSplit.add(twrite);
+			}
+
+			// create additional cut by rewriting both hop dags
+			int pos = HopRewriteUtils.getChildReferencePos(hop, c);
+			HopRewriteUtils.removeChildReferenceByPos(hop, c, pos);
+			HopRewriteUtils.addChildReference(hop, tRead, pos);
+		}
+	}
+
+	private void rAddHopsToProbeSet(Hop hop, HashSet<Hop> probeSet) {
+		if(hop.isVisited())
+			return;
+
+		// prevent cuts for no-ops
+		if(!(hop instanceof DataOp && !((DataOp)hop).isPersistentReadWrite()) && !(hop instanceof LiteralOp))
+			probeSet.add(hop);
+
+		if(hop.getInput() != null)
+			for(Hop c : hop.getInput())
+				rAddHopsToProbeSet(c, probeSet);
+
+		hop.setVisited();
+	}
+
+	/**
+	 * NOTE: candset is a set of parent-child pairs because a parent might have
+	 * multiple references to replicated hops.
+	 *
+	 * @param hop high-level operator
+	 * @param probeSet probe set?
+	 * @param candSet candidate set?
+	 */
+	private void rProbeAndAddHopsToCandidateSet(Hop hop, HashSet<Hop> probeSet, HashSet<Pair<Hop,Hop>> candSet) {
+		if(hop.isVisited())
+			return;
+
+		if(hop.getInput() != null)
+			for(Hop c : hop.getInput()) {
+				// probe for replicated operator, if any child is replicated, keep parent
+				// for cut between parent-child; otherwise recursively descend.
+				if(!probeSet.contains(c))
+					rProbeAndAddHopsToCandidateSet(c, probeSet, candSet);
+				else
+					candSet.add(new Pair<>(hop,c));
+			}
+
+		hop.setVisited();
 	}
 
 	private void collectCandidateChildOperators(ArrayList<Hop> cand, HashSet<Hop> candChilds) {
@@ -187,6 +283,27 @@ public class RewriteSplitDagUnknownNnz extends StatementBlockRewriteRule {
 		return hop.getParent().stream().allMatch(parentHop -> HopRewriteUtils.isMatrixMultiply(parentHop));
 	}
 
+	public static boolean anyChildIsMatrixMultiply(Hop hop) {
+		return hop.getInput().stream().anyMatch(childHop -> HopRewriteUtils.isMatrixMultiply(childHop));
+	}
+
+	public static boolean allChildsAreMatrixMultiply(Hop hop) {
+		return hop.getInput().stream().allMatch(childHop -> HopRewriteUtils.isMatrixMultiply(childHop));
+	}
+
+	public static boolean isMMChain(Hop hop) {
+		// hop is part of mm chain with at least two matrix multplications
+		return HopRewriteUtils.isMatrixMultiply(hop)
+			&& (anyParentIsMatrixMultiply(hop) || anyChildIsMatrixMultiply(hop));
+	}
+
+	public static boolean anyParentIsMMChain(Hop hop) {
+		List<Hop> parentHops = hop.getParent();
+		if(parentHops == null)
+			return false;
+		return parentHops.stream().anyMatch(pHop -> isMMChain(pHop));
+	}
+
 	private void rCollectNnzComputationCandidates(Hop hop, ArrayList<Hop> cand, Hop parentHop) {
 		if(hop.isVisited())
 			return;
@@ -198,13 +315,15 @@ public class RewriteSplitDagUnknownNnz extends StatementBlockRewriteRule {
 				// split persistent reads with unknown nnz to obtain their nnz before continuing rewrites
 				cand.add(hop);
 			}
-			else if(parentHop != null && anyParentIsMatrixMultiply(hop) && !HopRewriteUtils.isMatrixMultiply(hop)
-				&& !(hop instanceof DataOp && ((DataOp) hop).getOp() == OpOpData.TRANSIENTREAD)) {
+			else if(parentHop != null && !HopRewriteUtils.isMatrixMultiply(hop)
+				&& !(hop instanceof DataOp && ((DataOp) hop).getOp() == OpOpData.TRANSIENTREAD)
+				&& anyParentIsMMChain(hop)) { // split only mm chains (i.e., at least two matrix multiplications)
 				// split before mm chain to ensure correct sparsity information for mm chain sparsity estimation
 				cand.add(hop);
 			}
 			else if((!HopRewriteUtils.isMatrixMultiply(parentHop) || !allParentsAreMatrixMultiply(hop))
-				&& HopRewriteUtils.isMatrixMultiply(hop) && !((AggBinaryOp) hop).hasLeftPMInput()) {
+				&& isMMChain(hop) // split only mm chains (i.e., at least two matrix multiplications)
+				&& !((AggBinaryOp) hop).hasLeftPMInput()) {
 				// split after mm chain to force the mm chain into a separate statment block for isolated optimization
 				cand.add(hop);
 			}

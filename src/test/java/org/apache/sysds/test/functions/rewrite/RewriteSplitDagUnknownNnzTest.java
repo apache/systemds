@@ -111,7 +111,7 @@ public class RewriteSplitDagUnknownNnzTest extends AutomatedTestBase {
 
 	@Test
 	public void testSplitDagUnknownNnzMMChain() {
-		testSplitDagUnknownNnz(TEST_NAME_MMCHAIN, 5);
+		testSplitDagUnknownNnz(TEST_NAME_MMCHAIN, 4);
 	}
 
 	private void testSplitDagUnknownNnz(String testName, int numSBs) {

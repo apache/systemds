@@ -21,7 +21,6 @@ package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
@@ -48,7 +47,6 @@ import org.apache.sysds.lops.Compression.CompressConfig;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.VariableSet;
-import org.apache.sysds.runtime.matrix.data.Pair;
 
 /**
  * Rule: Split Hop DAG after specific data-dependent operators. This is
@@ -67,13 +65,8 @@ import org.apache.sysds.runtime.matrix.data.Pair;
  * split statements blocks again (for consistency). However, currently it is
  * only used in places (e.g., parfor optimizer) that are not directly affected.
  */
-public class RewriteSplitDagDataDependentOperators extends StatementBlockRewriteRule
+public class RewriteSplitDagDataDependentOperators extends SplitStatementBlockRewriteRule
 {
-	@Override
-	public boolean createsSplitDag() {
-		return true;
-	}
-	
 	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
 	{
@@ -342,140 +335,6 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		return null;
 	}
 
-	private void handleReplicatedOperators( ArrayList<Hop> rootsSB1, ArrayList<Hop> rootsSB2, VariableSet sb1out, VariableSet sb2in )
-	{
-		//step 1: create probe set SB1
-		HashSet<Hop> probeSet = new HashSet<>();
-		Hop.resetVisitStatus(rootsSB1);
-		for( Hop h : rootsSB1 )
-			rAddHopsToProbeSet( h, probeSet );
-		
-		//step 2: probe SB2 operators top-down (collect cut candidates)
-		HashSet<Pair<Hop,Hop>> candSet = new HashSet<>();
-		Hop.resetVisitStatus(rootsSB2);
-		for( Hop h : rootsSB2 )
-			rProbeAndAddHopsToCandidateSet(h, probeSet, candSet);
-		
-		//step 3: create additional cuts with reuse for common references
-		HashMap<Long, DataOp> reuseTRead = new HashMap<>();
-		for( Pair<Hop,Hop> p : candSet ) {
-			Hop hop = p.getKey();
-			Hop c = p.getValue();
-			
-			DataOp tread = reuseTRead.get(c.getHopID());
-			if( tread == null ) {
-				String varname = createCutVarName(false);
-				
-				tread = HopRewriteUtils.createTransientRead(varname, c);
-				reuseTRead.put(c.getHopID(), tread);
-				
-				DataOp twrite = HopRewriteUtils.createTransientWrite(varname, c);
-				
-				//update live in and out of new statement block (for piggybacking)
-				DataIdentifier diVar = new DataIdentifier(varname);
-				diVar.setDimensions(c.getDim1(), c.getDim2());
-				diVar.setBlocksize(c.getBlocksize());
-				diVar.setDataType(c.getDataType());
-				diVar.setValueType(c.getValueType());
-				sb1out.addVariable(varname, new DataIdentifier(diVar));
-				sb2in.addVariable(varname, new DataIdentifier(diVar));
-				
-				rootsSB1.add(twrite);
-			}
-			
-			//create additional cut by rewriting both hop dags 
-			int pos = HopRewriteUtils.getChildReferencePos(hop, c);
-			HopRewriteUtils.removeChildReferenceByPos(hop, c, pos);
-			HopRewriteUtils.addChildReference(hop, tread, pos);
-		}
-	}
-
-	private void rAddHopsToProbeSet( Hop hop, HashSet<Hop> probeSet )
-	{
-		if( hop.isVisited() )
-			return;
-		
-		//prevent cuts for no-ops
-		if( !(   (hop instanceof DataOp && !((DataOp)hop).isPersistentReadWrite() )
-			   || hop instanceof LiteralOp) )
-		{
-			probeSet.add(hop);
-		}
-			
-		if( hop.getInput() != null )
-			for( Hop c : hop.getInput() )
-				rAddHopsToProbeSet(c, probeSet);
-	
-		hop.setVisited();
-	}
-	
-	/**
-	 * NOTE: candset is a set of parent-child pairs because a parent might have 
-	 * multiple references to replicated hops.
-	 * 
-	 * @param hop high-level operator
-	 * @param probeSet probe set?
-	 * @param candSet candidate set?
-	 */
-	private void rProbeAndAddHopsToCandidateSet( Hop hop, HashSet<Hop> probeSet, HashSet<Pair<Hop,Hop>> candSet )
-	{
-		if( hop.isVisited() )
-			return;
-
-		if( hop.getInput() != null )
-			for( Hop c : hop.getInput() )  {
-				//probe for replicated operator, if any child is replicated, keep parent
-				//for cut between parent-child; otherwise recursively descend.
-				if( !probeSet.contains(c) )
-					rProbeAndAddHopsToCandidateSet(c, probeSet, candSet);
-				else
-				{
-					candSet.add(new Pair<>(hop,c));
-				}
-			}
-		
-		hop.setVisited();
-	}
-	
-	private void collectCandidateChildOperators( ArrayList<Hop> cand, HashSet<Hop> candChilds )
-	{
-		Hop.resetVisitStatus(cand);
-		if( cand != null )
-			for( Hop root : cand )
-				rCollectCandidateChildOperators(root, cand, candChilds, false);
-		
-		// Immediately reset the visit status because candidates might be inner nodes in the DAG.
-		// Subsequent resets on the root nodes of the DAG would otherwise not necessarily reach 
-		// these nodes which could lead to missing checks on subsequent passes (e.g., when checking 
-		// for replicated operators).
-		Hop.resetVisitStatus(cand);
-	}
-	
-	private void rCollectCandidateChildOperators( Hop hop, ArrayList<Hop> cand, HashSet<Hop> candChilds, boolean collect )
-	{
-		if( hop.isVisited() )
-			return;
-		
-		//collect operator if necessary
-		if( collect ) {
-			candChilds.add(hop);
-		}
-		
-		//activate collection if we passed a candidate
-		boolean passedFlag = collect;
-		if( cand.contains(hop) ) {
-			passedFlag = true;
-		}
-		
-		//process childs recursively
-		if( hop.getInput()!=null ) {
-			for( Hop c : hop.getInput() )
-				rCollectCandidateChildOperators(c, cand, candChilds, passedFlag);
-		}
-		
-		hop.setVisited();
-	}
-	
 	@Override
 	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus sate) {
 		return sbs;

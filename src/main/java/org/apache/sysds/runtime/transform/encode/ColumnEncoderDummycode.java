@@ -35,10 +35,12 @@ import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DependencyTask;
+import org.apache.sysds.utils.ParameterizedLogger;
 import org.apache.sysds.utils.stats.TransformStatistics;
 
 public class ColumnEncoderDummycode extends ColumnEncoder {
 	private static final long serialVersionUID = 5832130477659116489L;
+	private static final ParameterizedLogger LOG = ParameterizedLogger.getLogger(ColumnEncoderDummycode.class);
 
 	/** The number of columns outputted from this column group. */ 
 	public int _domainSize = -1; 
@@ -224,10 +226,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 
 			if(distinct != -1) {
 				_domainSize = Math.max(1, distinct);
-				if(LOG.isDebugEnabled()){
-
-					LOG.debug("DummyCoder for column: " + _colID + " has domain size: " + _domainSize);
-				}
+				LOG.debug("DummyCoder for column: {} has domain size: {}", _colID, _domainSize);
 			}
 		}
 	}

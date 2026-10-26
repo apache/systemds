@@ -109,6 +109,8 @@ public class ProgramRewriter{
 			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS &&
 				ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.SPARSITY_RECOMPILE) )
 				_sbRuleSet.add(new RewriteSplitDagSparsityRecompile());
+			if( ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.SPARSITY_RECOMPILE) )
+				_sbRuleSet.add(new SparsityOptimizer());
 			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS && 
 				ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS) )
 				_sbRuleSet.add(  new RewriteSplitDagDataDependentOperators()     ); //dependency: merge blocks

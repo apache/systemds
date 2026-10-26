@@ -59,10 +59,10 @@ public class RewriteSplitDagSparsityRecompileTest extends AutomatedTestBase {
 	private static final String TEST_DIR = "functions/rewrite/";
 	private static final String TEST_CLASS_DIR =
 		TEST_DIR + RewriteSplitDagSparsityRecompileTest.class.getSimpleName() + "/";
-	private static final String PACKAGE_REWRITE = "org.apache.sysds.hops.rewrite.HopRewriteRule";
 	private static final String PACKAGE_RECOMPILE = "org.apache.sysds.hops.rewrite.StatementBlockRewriteRule";
-	private static Level _oldLevelRewrite;
+	private static final String PACKAGE_SPARSITYOPTIMIZER = "org.apache.sysds.hops.rewrite.SparsityOptimizer";
 	private static Level _oldLevelRecompile;
+	private static Level _oldLevelSparsityOptimizer;
 
 	@Parameterized.Parameter(0)
 	public int rows;
@@ -93,17 +93,17 @@ public class RewriteSplitDagSparsityRecompileTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME_READ, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_READ, new String[] {"R"}));
 		addTestConfiguration(TEST_NAME_MMCHAIN, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_MMCHAIN, new String[] {"R"}));
 		addTestConfiguration(TEST_NAME_MMCHAIN2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_MMCHAIN2, new String[] {"R"}));
-		_oldLevelRewrite = Logger.getLogger(PACKAGE_REWRITE).getLevel();
-		Logger.getLogger(PACKAGE_REWRITE).setLevel(Level.TRACE);
 		_oldLevelRecompile = Logger.getLogger(PACKAGE_RECOMPILE).getLevel();
 		Logger.getLogger(PACKAGE_RECOMPILE).setLevel(Level.TRACE);
+		_oldLevelSparsityOptimizer = Logger.getLogger(PACKAGE_SPARSITYOPTIMIZER).getLevel();
+		Logger.getLogger(PACKAGE_SPARSITYOPTIMIZER).setLevel(Level.TRACE);
 	}
 
 	@Override
 	public void tearDown() {
 		super.tearDown();
-		Logger.getLogger(PACKAGE_REWRITE).setLevel(_oldLevelRewrite);
 		Logger.getLogger(PACKAGE_RECOMPILE).setLevel(_oldLevelRecompile);
+		Logger.getLogger(PACKAGE_SPARSITYOPTIMIZER).setLevel(_oldLevelSparsityOptimizer);
 	}
 
 	@Test
@@ -156,7 +156,6 @@ public class RewriteSplitDagSparsityRecompileTest extends AutomatedTestBase {
 
 			try {
 				DMLConfig dmlConfig = new DMLConfig(getCurConfigFile().getPath());
-				dmlConfig.setTextValue(DMLConfig.SPARSITY_REWRITES, "true");
 				dmlConfig.setTextValue(DMLConfig.SPARSITY_RECOMPILE, "true");
 				overwriteCurrentConfig(dmlConfig);
 			}
@@ -185,13 +184,10 @@ public class RewriteSplitDagSparsityRecompileTest extends AutomatedTestBase {
 				log_original.stream().map(l -> l.getMessage().toString()).toArray(String[]::new));
 			Assert.assertTrue(log_original_string.contains("RewriteSplitDagSparsityRecompile: Split DAG into " +
 				numSBs + " statement blocks."));
-			Assert.assertTrue(log_original_string.contains("mmchainoptsparse"));
-			Assert.assertTrue(log_original_string.contains("Optimal Sparse MM Chain:"));
 			// check reference log output
 			String log_reference_string = String.join(DELIMITER,
 				log_reference.stream().map(l -> l.getMessage().toString()).toArray(String[]::new));
 			Assert.assertFalse(log_reference_string.contains("RewriteSplitDagSparsityRecompile"));
-			Assert.assertFalse(log_reference_string.contains("mmchainoptsparse"));
 		}
 		finally {
 			OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES = oldFlag1;

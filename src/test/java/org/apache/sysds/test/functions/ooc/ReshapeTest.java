@@ -57,6 +57,7 @@ public class ReshapeTest extends AutomatedTestBase {
 	private final int rows;
 	private final int cols;
 	private final boolean rowWise;
+	private final boolean emptyBlock;
 
 	@Override
 	public void setUp() {
@@ -65,40 +66,46 @@ public class ReshapeTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2));
 	}
 
-	public ReshapeTest(int rlen, int clen, int rows, int cols, boolean rowWise) {
+	public ReshapeTest(int rlen, int clen, int rows, int cols, boolean rowWise, boolean emptyBlock) {
 		this.rlen = rlen;
 		this.clen = clen;
 		this.rows = rows;
 		this.cols = cols;
 		this.rowWise = rowWise;
+		this.emptyBlock = emptyBlock;
 	}
 
-	@Parameterized.Parameters(name = "{0}x{1} {2}x{3} rowWise {4}")
+	@Parameterized.Parameters(name = "{0}x{1} {2}x{3} rowWise {4} emptyBlock {5}")
 	public static Iterable<Object[]> getParams() {
 
 		int[][][] dims = {
 			{{1000, 1000}, {1, 1000000}},	// single row/col
-			{{3000, 4000}, {1500, 8000}},	// partialBlocks
-			{{2400, 1400}, {800, 4200}}		// fullBlocks
+			{{4000, 4000}, {2000, 8000}},	// full
+			{{1400, 1200}, {1200, 1400}},	// partial
+			{{814, 618}, {407, 1236}},
+			{{20, 1300}, {13000, 2}},
+			{{2, 600}, {1200, 1}}
 		};
 
 		ArrayList<Object[]> params = new ArrayList<>();
 
 		for(int[][] d : dims) {
-			params.add(new Object[] {d[0][0], d[0][1], d[1][0], d[1][1], true});
-			params.add(new Object[] {d[1][0], d[1][1], d[0][0], d[0][1], true});
+			params.add(new Object[] {d[0][0], d[0][1], d[1][0], d[1][1], true, false});
+			params.add(new Object[] {d[1][0], d[1][1], d[0][0], d[0][1], true, false});
 
-			params.add(new Object[] {d[0][1], d[0][0], d[1][1], d[1][0], false});
-			params.add(new Object[] {d[1][1], d[1][0], d[0][1], d[0][0], false});
+			params.add(new Object[] {d[0][1], d[0][0], d[1][1], d[1][0], false, false});
+			params.add(new Object[] {d[1][1], d[1][0], d[0][1], d[0][0], false, false});
 		}
 
 		for(boolean rowWise : new boolean[] {true, false}) {
 			// single block
-			params.add(new Object[] {400, 300, 300, 400, rowWise});
+			params.add(new Object[] {400, 300, 300, 400, rowWise, false});
 			// non matching dims
-			params.add(new Object[] {1400, 1000, 5000, 1, rowWise});
+			params.add(new Object[] {1400, 1000, 5000, 1, rowWise, false});
 			// no change
-			params.add(new Object[] {300, 400, 300, 400, rowWise});
+			params.add(new Object[] {300, 400, 300, 400, rowWise, false});
+			params.add(new Object[] {2000, 2000, 1000, 4000, rowWise, true});
+			params.add(new Object[] {1400, 1200, 1200, 1400, rowWise, true});
 		}
 
 		return params;
@@ -116,10 +123,15 @@ public class ReshapeTest extends AutomatedTestBase {
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 
 			double[][] X = getRandomMatrix(rlen, clen, 0, 1, 1, 7);
+			if(emptyBlock)
+				for(int r = 0; r < Math.min(blen, rlen); r++)
+					for(int c = 0; c < Math.min(blen, clen); c++)
+						X[r][c] = 0;
+			MatrixBlock inputBlock = DataConverter.convertToMatrixBlock(X);
 			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(Types.FileFormat.BINARY);
-			writer.writeMatrixToHDFS(DataConverter.convertToMatrixBlock(X), input(INPUT_NAME), rlen, clen, 1000, rlen * clen);
+			writer.writeMatrixToHDFS(inputBlock, input(INPUT_NAME), rlen, clen, 1000, inputBlock.getNonZeros());
 			HDFSTool.writeMetaDataFile(input(INPUT_NAME + ".mtd"), Types.ValueType.FP64,
-				new MatrixCharacteristics(rlen, clen, blen, rlen * clen), Types.FileFormat.BINARY);
+				new MatrixCharacteristics(rlen, clen, blen, inputBlock.getNonZeros()), Types.FileFormat.BINARY);
 
 			programArgs = new String[] {"-explain", "-stats", "-ooc", "-args", input(INPUT_NAME), String.valueOf(rlen),
 				String.valueOf(clen), String.valueOf(rows), String.valueOf(cols), output(OUTPUT_NAME)};

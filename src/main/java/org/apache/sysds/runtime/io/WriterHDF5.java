@@ -39,10 +39,40 @@ import java.util.Arrays;
 
 public class WriterHDF5 extends MatrixWriter {
 
+	private static final int DEFAULT_HDF5_WRITE_BATCH_ROWS = 1024;
+	private static final int DEFAULT_HDF5_WRITE_BATCH_BYTES = 1024 * 1024;
+
+	private static final int HDF5_WRITE_BATCH_ROWS = getHdf5WriteInt("sysds.hdf5.write.batch.rows",
+		DEFAULT_HDF5_WRITE_BATCH_ROWS);
+
+	private static final int HDF5_WRITE_BATCH_BYTES = getHdf5WriteInt("sysds.hdf5.write.batch.bytes",
+		DEFAULT_HDF5_WRITE_BATCH_BYTES);
+
+	private static final String HDF5_WRITE_SPARSE_LAYOUT = System.getProperty("sysds.hdf5.write.sparse.layout",
+		"dense");
+
+	private static int getHdf5WriteInt(String key, int defaultValue) {
+		String value = System.getProperty(key);
+		if(value == null)
+			return defaultValue;
+
+		try {
+			int parsed = Integer.parseInt(value.trim());
+			return parsed > 0 ? parsed : defaultValue;
+		}
+		catch(NumberFormatException ex) {
+			return defaultValue;
+		}
+	}
+
 	protected static FileFormatPropertiesHDF5 _props = null;
 
 	public WriterHDF5(FileFormatPropertiesHDF5 _props) {
 		WriterHDF5._props = _props;
+	}
+
+	private static boolean useSparseCOO(MatrixBlock src) {
+		return src.isInSparseFormat() && "coo".equalsIgnoreCase(HDF5_WRITE_SPARSE_LAYOUT);
 	}
 
 	@Override
@@ -65,8 +95,10 @@ public class WriterHDF5 extends MatrixWriter {
 		//if the file already exists on HDFS, remove it.
 		HDFSTool.deleteFileIfExistOnHDFS(fname);
 
-		//core write (sequential/parallel)
-		writeHDF5MatrixToHDFS(path, job, fs, src);
+		if(useSparseCOO(src))
+			writeSparseCOOMatrixToFile(path, fs, src, rlen, clen, nnz);
+		else
+			writeHDF5MatrixToHDFS(path, job, fs, src);
 
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
@@ -88,48 +120,148 @@ public class WriterHDF5 extends MatrixWriter {
 		throws IOException 
 	{
 		int clen = src.getNumColumns();
-		BufferedOutputStream bos = new BufferedOutputStream(fs.create(path, true));
 		String datasetName = _props.getDatasetName();
-		H5RootObject rootObject = H5.H5Screate(bos, src.getNumRows(), src.getNumColumns());
-		H5.H5Dcreate(rootObject, src.getNumRows(), src.getNumColumns(), datasetName);
 
-		//write headers
-		if(rl == 0) {
+		try(BufferedOutputStream bos = new BufferedOutputStream(fs.create(path, true))) {
+			H5RootObject rootObject = H5.H5Screate(bos, src.getNumRows(), src.getNumColumns());
+			H5.H5Dcreate(rootObject, src.getNumRows(), src.getNumColumns(), datasetName);
+
+			if(rl == 0)
+				H5.H5WriteHeaders(rootObject);
+
+			int batchRows = getWriteBatchRows(clen);
+			if(src.isInSparseFormat())
+				writeSparseBatched(rootObject, src, rl, rlen, clen, batchRows);
+			else
+				writeDenseBatched(rootObject, src, rl, rlen, clen, batchRows);
+		}
+	}
+
+	private static int getWriteBatchRows(int clen) {
+		long rowBytes = (long) clen * Double.BYTES;
+
+		int rowsByBytes = rowBytes > 0 ? (int) Math.max(1, HDF5_WRITE_BATCH_BYTES / rowBytes) : 1;
+
+		int rows = Math.max(1, Math.min(HDF5_WRITE_BATCH_ROWS, rowsByBytes));
+		rows = roundDownPowerOfTwo(rows);
+		long cells = (long) rows * clen;
+
+		if(cells > Integer.MAX_VALUE)
+			throw new DMLRuntimeException("HDF5 write batch too large: " + rows + " x " + clen);
+
+		return rows;
+	}
+
+	private static int roundDownPowerOfTwo(int value) {
+		int ret = 1;
+		while(ret <= value / 2)
+			ret *= 2;
+		return ret;
+	}
+
+	private static void writeDenseBatched(H5RootObject rootObject, MatrixBlock src, int rl, int ru, int clen,
+		int batchRows) {
+
+		DenseBlock db = src.getDenseBlock();
+		double[] batch = new double[batchRows * clen];
+
+		for(int rowStart = rl; rowStart < ru; rowStart += batchRows) {
+			int rows = Math.min(batchRows, ru - rowStart);
+
+			for(int r = 0; r < rows; r++) {
+				int srcRow = rowStart + r;
+				int off = r * clen;
+
+				for(int c = 0; c < clen; c++)
+					batch[off + c] = db.get(srcRow, c);
+			}
+
+			if(rows == batchRows)
+				H5.H5Dwrite(rootObject, batch);
+			else
+				H5.H5Dwrite(rootObject, Arrays.copyOf(batch, rows * clen));
+		}
+	}
+
+	private static void writeSparseBatched(H5RootObject rootObject, MatrixBlock src, int rl, int ru, int clen,
+		int batchRows) {
+		SparseBlock sb = src.getSparseBlock();
+		double[] batch = new double[batchRows * clen];
+
+		for(int rowStart = rl; rowStart < ru; rowStart += batchRows) {
+			int rows = Math.min(batchRows, ru - rowStart);
+			Arrays.fill(batch, 0, rows * clen, 0.0);
+
+			for(int r = 0; r < rows; r++) {
+				int srcRow = rowStart + r;
+
+				if(sb == null || sb.isEmpty(srcRow))
+					continue;
+
+				int apos = sb.pos(srcRow);
+				int alen = sb.size(srcRow);
+				int[] aix = sb.indexes(srcRow);
+				double[] avals = sb.values(srcRow);
+
+				int off = r * clen;
+				for(int k = apos; k < apos + alen; k++)
+					batch[off + aix[k]] = avals[k];
+			}
+
+			if(rows == batchRows)
+				H5.H5Dwrite(rootObject, batch);
+			else
+				H5.H5Dwrite(rootObject, Arrays.copyOf(batch, rows * clen));
+		}
+	}
+
+	private static void writeSparseCOOMatrixToFile(Path path, FileSystem fs, MatrixBlock src, long rlen, long clen,
+		long nnz) throws IOException {
+		String datasetName = _props.getDatasetName();
+
+		long cooRows = nnz + 1;
+		long cooCols = 3;
+
+		try(BufferedOutputStream bos = new BufferedOutputStream(fs.create(path, true))) {
+			H5RootObject rootObject = H5.H5Screate(bos, cooRows, cooCols);
+			H5.H5Dcreate(rootObject, cooRows, cooCols, datasetName);
 			H5.H5WriteHeaders(rootObject);
+
+			H5.H5Dwrite(rootObject, new double[] {(double) rlen, (double) clen, (double) nnz});
+
+			writeSparseCOOEntries(rootObject, src);
+		}
+	}
+
+	private static void writeSparseCOOEntries(H5RootObject rootObject, MatrixBlock src) {
+		SparseBlock sb = src.getSparseBlock();
+		int batchRows = getWriteBatchRows(3);
+		double[] batch = new double[batchRows * 3];
+
+		int pos = 0;
+		for(int i = 0; i < src.getNumRows(); i++) {
+			if(sb == null || sb.isEmpty(i))
+				continue;
+
+			int apos = sb.pos(i);
+			int alen = sb.size(i);
+			int[] aix = sb.indexes(i);
+			double[] avals = sb.values(i);
+
+			for(int k = apos; k < apos + alen; k++) {
+				batch[pos++] = i;
+				batch[pos++] = aix[k];
+				batch[pos++] = avals[k];
+
+				if(pos == batch.length) {
+					H5.H5Dwrite(rootObject, batch);
+					pos = 0;
+				}
+			}
 		}
 
-		try {
-			// Write the data to the datasets.
-			double[] row = new double[clen];
-			if( src.isInSparseFormat() ) {
-				SparseBlock sb = src.getSparseBlock();
-				for(int i = rl; i < rlen; i++) {
-					Arrays.fill(row, 0);
-					if( !sb.isEmpty(i) ) {
-						int apos = sb.pos(i);
-						int alen = sb.size(i);
-						double[] avals = sb.values(i);
-						int[] aix = sb.indexes(i);
-						for(int j = apos; j < apos+alen; j++)
-							row[aix[j]] = avals[j];
-					}
-					H5.H5Dwrite(rootObject, row);
-				}
-			}
-			else {
-				DenseBlock db = src.getDenseBlock();
-				for(int i = rl; i < rlen; i++) {
-					for(int j = 0; j < clen;j++) {
-						double lvalue = db!=null ? db.get(i, j) : 0;
-						row[j] = lvalue;
-					}
-					H5.H5Dwrite(rootObject, row);
-				}
-			}
-		}
-		finally {
-			IOUtilFunctions.closeSilently(bos);
-		}
+		if(pos > 0)
+			H5.H5Dwrite(rootObject, Arrays.copyOf(batch, pos));
 	}
 
 	@Override

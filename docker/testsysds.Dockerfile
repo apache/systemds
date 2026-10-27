@@ -18,8 +18,8 @@
 # under the License.
 #
 #-------------------------------------------------------------
-# Stage 1: Build SEAL
-FROM ubuntu:noble@sha256:728785b59223d755e3e5c5af178fab1be7031f3522c5ccd7a0b32b80d8248123 AS seal-build
+# Stage 1: Build SEAL, OpenBLAS, MKL
+FROM ubuntu:noble@sha256:728785b59223d755e3e5c5af178fab1be7031f3522c5ccd7a0b32b80d8248123 AS build
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -28,18 +28,52 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tar \
     git \
     ca-certificates \
+    gnupg \
+    python3 \
+    python3-pip \
+    python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /seal
 
 # Install SEAL
-RUN wget -qO- https://github.com/microsoft/SEAL/archive/refs/tags/v3.7.0.tar.gz | tar xzf - \
-    && cd SEAL-3.7.0 \
+ARG SEAL_VERSION="3.7.0"
+RUN wget -qO- https://github.com/microsoft/SEAL/archive/refs/tags/v${SEAL_VERSION}.tar.gz | tar xzf - \
+    && cd SEAL-${SEAL_VERSION} \
     && cmake -S . -B build -DBUILD_SHARED_LIBS=ON \
     && cmake --build build \
     && cmake --install build --prefix /seal-install
 
-# Stage 2: Final image with R, JDK, Maven, SEAL
+WORKDIR /openBLAS
+
+# Install OpenBLAS
+ARG OPENBLAS_VERSION="0.3.26"
+RUN wget -qO- https://github.com/OpenMathLib/OpenBLAS/archive/refs/tags/v${OPENBLAS_VERSION}.tar.gz | tar xzf - \
+    && cd OpenBLAS-${OPENBLAS_VERSION} \
+    && make -j$(nproc) \
+    && make install PREFIX=/openBLAS-install
+
+WORKDIR /mkl
+
+# Install old MKL, since SystemDS depends on intel MKL <= 2019.x
+# Only package distro which has such old version available is PyPi
+ENV PATH="/mkl-install/bin:$PATH"
+RUN python3 -m venv /mkl-install && \
+    pip install mkl-devel==2018.0.0
+
+# Delete unused libraries, since MKL libraries take up a lot of disk space
+RUN find /mkl-install/lib \( \ 
+    -name '*ilp64*' -o \
+    -name 'libmkl_gnu_thread*' -o \
+    -name 'libmkl_tbb_thread*' -o \
+    -name '*_openmpi_*' -o \
+    -name '*_intelmpi_*' -o \
+    -name 'libmkl_vml*' -o \
+    -name 'libmkl_scalapack*' \
+    \) -delete
+
+
+# Stage 2: Final image with R, JDK, Maven, SEAL, OpenBLAS, MKL
 FROM ubuntu:noble@sha256:728785b59223d755e3e5c5af178fab1be7031f3522c5ccd7a0b32b80d8248123 
 
 WORKDIR /usr/src/
@@ -71,6 +105,7 @@ RUN apt-get install -y --no-install-recommends \
     libssl-dev \
 	r-base-dev \
 	r-base-core \
+    gfortran \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
 	&& mkdir -p /usr/lib/jvm \
 	&& wget -qO- \
@@ -101,8 +136,16 @@ RUN mkdir -p $HADOOP_HOME/lib/native \
 	rm -rf native
 
 # Copy SEAL
-COPY --from=seal-build /seal-install/lib/ /usr/local/lib/
-COPY --from=seal-build /seal-install/include/ /usr/local/include/
+COPY --from=build /seal-install/lib/ /usr/local/lib/
+COPY --from=build /seal-install/include/ /usr/local/include/
+
+# Copy OpenBLAS
+COPY --from=build /openBLAS-install/lib/ /usr/local/lib/
+COPY --from=build /openBLAS-install/include/ /usr/local/include/
+
+# Copy MKL
+COPY --from=build /mkl-install/include /usr/local/include/
+COPY --from=build /mkl-install/lib /usr/local/lib/
 
 ENV LD_LIBRARY_PATH=/opt/hadoop/lib/native;/usr/local/lib/
 

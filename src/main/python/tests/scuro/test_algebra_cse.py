@@ -49,22 +49,13 @@ def _nodes(builder, op):
 
 
 class TestLawAwareCSE(unittest.TestCase):
-    def test_window_concatenation_rotations(self):
-        for algebra, expected in ((LEGACY, 1), (LAW_AWARE, 2), (FULL, 2)):
-            with self.subTest(algebra=algebra):
-                optimizer, builder, windows = _builder(algebra)
-                optimizer.combine_windowed_representations(builder, windows)
-                self.assertEqual(len(_nodes(builder, Concatenation)), expected)
-                prevented = builder.algebra_stats["cse_unsafe_merges_prevented"]
-                self.assertEqual(prevented, int(algebra.cse_law_aware))
-
-    def test_commutative_fusion_merges_in_both_modes(self):
+    def test_only_commutative_fusion_merges_in_both_modes(self):
         cases = [
             (Sum, {}, LEGACY, 1),
             (Sum, {}, LAW_AWARE, 1),
-            (Concatenation, {"preserve_leading_axis": False}, LEGACY, 1),
+            (Concatenation, {"preserve_leading_axis": False}, LEGACY, 2),
             (Concatenation, {"preserve_leading_axis": False}, LAW_AWARE, 2),
-            (Concatenation, {"preserve_leading_axis": False}, FULL, 1),
+            (Concatenation, {"preserve_leading_axis": False}, FULL, 2),
         ]
         for op, params, algebra, expected in cases:
             with self.subTest(op=op.__name__, algebra=algebra):

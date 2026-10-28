@@ -32,6 +32,7 @@ import torch
 from typing import List, Optional, Tuple
 import psutil
 import gc
+from systemds.scuro.utils.static_variables import cuda_allowed, deterministic_enabled
 
 _CPU_MEMORY_BUDGET_FRACTION = float(
     os.environ.get("SCURO_CPU_MEMORY_BUDGET_FRACTION", "0.5")
@@ -88,8 +89,10 @@ def get_best_gpu() -> Tuple[int, float]:
 def get_device_for_model(
     model: torch.nn.Module, memory_factor: float = 1.5
 ) -> torch.device:
-    if not torch.cuda.is_available():
+    if not cuda_allowed():
         return torch.device("cpu")
+    if deterministic_enabled():
+        return torch.device(f"cuda:{torch.cuda.current_device()}")
 
     model_mb = get_model_size_mb(model)
     required_mb = model_mb * memory_factor
@@ -138,7 +141,7 @@ def compute_batch_size(
     memory_fraction: float = 0.8,
 ) -> int:
 
-    if device.type == "cpu":
+    if device.type == "cpu" or deterministic_enabled():
         return max_batch_size
 
     gpu_idx = device.index if device.index is not None else 0
@@ -162,7 +165,7 @@ def compute_batch_size(
 def get_device(gpu_id: int = None):
     if gpu_id is not None:
         return torch.device(f"cuda:{gpu_id}")
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    return torch.device("cuda" if cuda_allowed() else "cpu")
 
 
 def get_cpu_memory_mb():

@@ -87,9 +87,7 @@ class AudioLoader(BaseLoader):
             audio = np.array([0])
             sr = 1000
         else:
-            audio, sr = librosa.load(
-                file, sr=self.sampling_rate, dtype=self._data_type
-            )
+            audio, sr = librosa.load(file, sr=self.sampling_rate, dtype=self._data_type)
 
             if self.normalize:
                 audio = librosa.util.normalize(audio)

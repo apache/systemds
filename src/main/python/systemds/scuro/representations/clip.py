@@ -384,6 +384,7 @@ class CLIPVisual(LazyModelMixin, UnimodalRepresentation):
 @register_expensive_representation(ModalityType.TEXT)
 class CLIPText(UnimodalRepresentation):
     supports_aggregation_pushdown = True
+    max_context_words = 60
     cache_in_worker = True
     layer_parameter = "layer_name"
     MODEL_BYTES = CLIP_MODEL_BYTES

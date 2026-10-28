@@ -35,10 +35,7 @@ from systemds.scuro.representations.representation import (
     stats_bytes,
 )
 
-from systemds.scuro.drsearch.operator_registry import register_fusion_operator
 
-
-@register_fusion_operator()
 class LSTM(Fusion):
     fit_requirement = FitRequirement.SUPERVISED
     preserves_leading_axis = True
@@ -97,7 +94,6 @@ class LSTM(Fusion):
         self.is_multilabel = False
 
         set_random_seeds()
-
 
     @staticmethod
     def _shape_description(modality: Modality) -> str:
@@ -193,7 +189,9 @@ class LSTM(Fusion):
             aligned_modalities.append(data)
 
         concatenated_data = np.concatenate(aligned_modalities, axis=2)
-        return concatenated_data.astype(np.float32)
+        return np.nan_to_num(
+            concatenated_data.astype(np.float32), nan=0.0, posinf=0.0, neginf=0.0
+        )
 
     def _parameter_bytes(self, input_dim: int, num_classes: int) -> int:
         directions = 2

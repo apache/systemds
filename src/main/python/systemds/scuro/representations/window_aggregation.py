@@ -693,7 +693,9 @@ class DynamicWindow(Window):
         length = max(int(max_length), num_windows)
         weights = np.geomspace(4, 256, num=num_windows)
         last_share = weights[-1] / np.sum(weights)
-        geometric_bound = int(np.ceil(num_windows + last_share * (length - num_windows)))
+        geometric_bound = int(
+            np.ceil(num_windows + last_share * (length - num_windows))
+        )
         return max(1, min(length - num_windows + 1, geometric_bound))
 
     def _feature_shape(self, in_shape):

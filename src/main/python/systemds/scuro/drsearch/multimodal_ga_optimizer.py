@@ -34,7 +34,11 @@ import traceback
 from dataclasses import dataclass, field
 from itertools import chain
 from typing import Any, Dict, List, Optional, Tuple, Union
-from systemds.scuro.utils.static_variables import get_global_seed
+from systemds.scuro.utils.static_variables import (
+    cuda_allowed,
+    deterministic_enabled,
+    get_global_seed,
+)
 
 import numpy as np
 from deap import base, tools
@@ -344,6 +348,10 @@ def _evaluate_genome_body(
 
 def _dispatch_genome_evaluation(payload, _gpu_id):
     dag, task, modalities, objective_specs, *share = payload
+    allowed = os.sched_getaffinity(0)
+    if cuda_allowed():
+        cores = sorted(allowed)
+        os.sched_setaffinity(0, {cores[os.getpid() % len(cores)]})
     try:
         try:
             fitness, result = _evaluate_genome_body(
@@ -359,6 +367,7 @@ def _dispatch_genome_evaluation(payload, _gpu_id):
                 "_evaluation_error": traceback.format_exc()
             }
     finally:
+        os.sched_setaffinity(0, allowed)
         _release_cuda_memory()
 
 
@@ -372,7 +381,6 @@ class _FusionIndividual(list):
 
 
 class MultimodalDeapOptimizer:
-    # For instances made without __init__, as regret_analysis/exhaustive_enumerator.py does.
     algebra = AlgebraConfig()
 
     def __init__(
@@ -533,6 +541,7 @@ class MultimodalDeapOptimizer:
         for task in self.tasks:
             task_name = task.model.name
             self._current_task_name = task_name
+            self.rng = self._task_rng(task_name)
             self.optimization_results.setdefault(task_name, [])
             self.evaluation_errors.setdefault(task_name, 0)
             self.oversized_candidates.setdefault(task_name, 0)
@@ -600,6 +609,20 @@ class MultimodalDeapOptimizer:
                 population = self._next_generation(population, task_name, task)
 
         return self.optimization_results
+
+    def _task_rng(self, task_name: str) -> random.Random:
+        return random.Random(f"{self.random_seed}:{task_name}")
+
+    def _select_tournament(self, population: List[Any], k: int, tournsize: int):
+        """deap.tools.selTournament, but drawing from self.rng instead of the
+        global random module."""
+        return [
+            max(
+                (self.rng.choice(population) for _ in range(tournsize)),
+                key=lambda ind: ind.fitness,
+            )
+            for _ in range(k)
+        ]
 
     def _make_individual(self, genome: DagGenome):
         return _FusionIndividual([genome], self._fitness_type)
@@ -676,7 +699,7 @@ class MultimodalDeapOptimizer:
         retries = 0
         tournsize = max(1, min(3, len(population)))
         while len(next_population) < self.population_size and retries < retry_budget:
-            p1, p2 = tools.selTournament(population, 2, tournsize=tournsize)
+            p1, p2 = self._select_tournament(population, 2, tournsize)
 
             if self.rng.random() < self.crossover_probability:
                 g1, g2 = self._crossover_genomes(p1[0], p2[0])
@@ -770,6 +793,8 @@ class MultimodalDeapOptimizer:
             for gpu_id in pool.gpu_worker_devices:
                 if pool.has_idle_worker_for(gpu_id):
                     return gpu_id
+            if deterministic_enabled() and pool.gpu_worker_devices:
+                return False
             return None if pool.has_idle_cpu_worker else False
         if pool.has_idle_worker_for(None, allow_gpu_worker_for_cpu=True):
             return None
@@ -1344,7 +1369,7 @@ class MultimodalDeapOptimizer:
                 )
             return c1, c2
 
-        shared_paths = set(c1.fusion_ops) & set(c2.fusion_ops)
+        shared_paths = sorted(set(c1.fusion_ops) & set(c2.fusion_ops))
         for path in shared_paths:
             if self.rng.random() < 0.5:
                 c1.fusion_ops[path], c2.fusion_ops[path] = (

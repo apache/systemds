@@ -24,14 +24,9 @@ from systemds.scuro.representations.representation import Representation
 
 
 class UnimodalRepresentation(Representation):
-    # Parameter that selects which layer's activations an encoder returns. An
-    # encoder that sets it implements transform_layers, so a search over that
-    # parameter can obtain every layer from one pass over the data.
     layer_parameter = None
-    # Set by the executor (e.g. HPOExecutionCache.intermediates) for
-    # representations that share an intermediate result with other
-    # configurations; None computes it every time.
     intermediate_cache = None
+    max_context_words = None
 
     def __init__(
         self, name: str, output_modality_type, parameters=None, self_contained=True
@@ -49,6 +44,9 @@ class UnimodalRepresentation(Representation):
         self.self_contained = self_contained
         self.needs_context = False
         self.initial_context_length = None
+
+    def needs_context_for(self, modality_type):
+        return self.needs_context
 
     @abc.abstractmethod
     def transform(self, data, aggregation=None):

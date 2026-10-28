@@ -18,6 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import logging
 import os
 import tempfile
 from contextlib import contextmanager
@@ -95,6 +96,21 @@ def _patch_openface_package_defaults(needs_landmarks: bool) -> None:
             self.log_dir = os.path.join(self.work_dir, "log")
 
         star_alignment.Alignment.__init__ = patched_init
+        original_init_instance = star_alignment.Alignment.init_instance
+
+        def patched_init_instance(self):
+            root = logging.getLogger()
+            level, handlers = root.level, list(root.handlers)
+            try:
+                original_init_instance(self)
+            finally:
+                for handler in list(root.handlers):
+                    if handler not in handlers:
+                        root.removeHandler(handler)
+                        handler.close()
+                root.setLevel(level)
+
+        star_alignment.Alignment.init_instance = patched_init_instance
         _star_dirs_patched = True
 
 

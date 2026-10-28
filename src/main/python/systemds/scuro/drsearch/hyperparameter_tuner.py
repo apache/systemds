@@ -53,6 +53,7 @@ from systemds.scuro.drsearch.trial_result_cache import (
     trial_node_signatures,
 )
 from systemds.scuro.drsearch.process_cache import HPOExecutionCache
+from systemds.scuro.drsearch.ranking import tie_broken
 from systemds.scuro.drsearch.operator_registry import is_expensive_representation
 
 _CUDA_OOM_ERRORS = tuple(
@@ -142,6 +143,29 @@ def _expand_aggregation_param_specs(
         if spec is not None:
             specs.append(spec)
     return specs
+
+
+def _limit_context_words(node: RepresentationNode, dag, params: Dict[str, Any]):
+    """Drop max_words values longer than the consuming encoder's text window.
+
+    A text context operator's chunks are only seen in full by an encoder up to
+    its max_context_words; longer chunks are truncated, so those trials repeat
+    a shorter configuration.
+    """
+    values = params.get("max_words")
+    if dag is None or not isinstance(values, list):
+        return params
+    limits = [
+        getattr(consumer.operation, "max_context_words", None)
+        for consumer in dag.nodes
+        if node.node_id in consumer.inputs
+    ]
+    limits = [limit for limit in limits if limit is not None]
+    if not limits:
+        return params
+    limit = min(limits)
+    params["max_words"] = [value for value in values if value <= limit] or [min(values)]
+    return params
 
 
 def _is_window_operation(op: Any) -> bool:
@@ -777,6 +801,7 @@ class HyperparameterTuner:
                     params[name] = (
                         op.filter_parameter_domain(name, values, input_stats) or values
                     )
+        params = _limit_context_words(node, dag, params)
         if node.parameters:
             if inspect.isclass(node.parameters.get("aggregation_function")):
                 params["aggregation_function"] = node.parameters["aggregation_function"]
@@ -1368,8 +1393,9 @@ class HyperparameterTuner:
                     )
                 return score
 
+            candidates = optimization_results[task.model.name]
             best_results = sorted(
-                optimization_results[task.model.name],
+                [candidates[i] for i in tie_broken(candidates)],
                 key=_get_metric_value,
                 reverse=self.maximize_metric,
             )[:k]

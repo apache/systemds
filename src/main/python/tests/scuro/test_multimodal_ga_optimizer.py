@@ -23,6 +23,8 @@ import copy
 import os
 import pickle
 import random
+import subprocess
+import sys
 import tempfile
 import unittest
 from types import SimpleNamespace
@@ -34,6 +36,7 @@ from systemds.scuro.drsearch.multimodal_ga_optimizer import (
     DagGenome,
     MultimodalDeapOptimizer,
     _collect_leaf_indices,
+    _dispatch_genome_evaluation,
     _failure_fitness,
     _objective_value,
     _task_uses_gpu,
@@ -595,6 +598,26 @@ class TestCrossover(unittest.TestCase):
                 set(child.fusion_ops.keys()), set(optimizer._internal_paths(child.tree))
             )
 
+    def test_subtree_swap_keeps_every_leaf_exactly_once(self):
+        """Swapping subtrees with different leaf sets used to duplicate one
+        leaf and drop another from the child's tree."""
+        optimizer, _, task = _make_optimizer(
+            n_modalities=4, reps_per_modality=2, min_modalities=4, max_modalities=4
+        )
+        optimizer.fusion_operators = [Concatenation, Average]
+        optimizer.rng = random.Random(0)
+        for _ in range(100):
+            g1 = optimizer._random_genome(task.model.name)
+            g2 = copy.deepcopy(g1)
+            g2.tree = optimizer._random_binary_tree(len(g2.leaves))
+            g2.fusion_ops = {}
+            optimizer._assign_fusion_ops(g2.tree, g2.fusion_ops, "")
+            for child in optimizer._crossover_genomes(g1, g2):
+                self.assertEqual(
+                    sorted(_collect_leaf_indices(child.tree)),
+                    list(range(len(child.leaves))),
+                )
+
     def test_mismatched_leaves_still_recombines(self):
         """Regression test: the original crossover returned both parents
         completely unchanged whenever they didn't select the exact same
@@ -627,6 +650,49 @@ class TestCrossover(unittest.TestCase):
         # leaves/tree topology are untouched by the op-only fallback
         self.assertEqual(c1.leaves, g1.leaves)
         self.assertEqual(c2.leaves, g2.leaves)
+
+    def test_mismatched_leaves_crossover_is_independent_of_hash_seed(self):
+        """Regression test: the op-only fallback iterated a set of path
+        strings while drawing from the rng, so every process (PYTHONHASHSEED)
+        paired the paths with different draws and two runs of the same seed
+        bred different children."""
+        script = (
+            "import json, random\n"
+            "from tests.scuro.test_multimodal_ga_optimizer import _make_optimizer\n"
+            "from systemds.scuro.representations.average import Average\n"
+            "from systemds.scuro.representations.concatenation import Concatenation\n"
+            "from systemds.scuro.representations.sum import Sum\n"
+            "opt, _, task = _make_optimizer(n_modalities=6, reps_per_modality=2,\n"
+            "                               min_modalities=4, max_modalities=6)\n"
+            "opt.fusion_operators = [Concatenation, Average, Sum]\n"
+            "opt.rng = random.Random(0)\n"
+            "children = []\n"
+            "for _ in range(100):\n"
+            "    g1 = opt._random_genome(task.model.name)\n"
+            "    g2 = opt._random_genome(task.model.name)\n"
+            "    for c in opt._crossover_genomes(g1, g2):\n"
+            "        children.append(sorted((p, op.__name__) for p, op in c.fusion_ops.items()))\n"
+            "print(json.dumps(children))\n"
+        )
+        root = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        )
+        outputs = set()
+        for seed in ("0", "1", "2", "3"):
+            env = dict(os.environ, PYTHONHASHSEED=seed)
+            env["PYTHONPATH"] = os.pathsep.join(
+                filter(None, [root, env.get("PYTHONPATH")])
+            )
+            result = subprocess.run(
+                [sys.executable, "-c", script],
+                cwd=root,
+                env=env,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            outputs.add(result.stdout.strip().splitlines()[-1])
+        self.assertEqual(len(outputs), 1)
 
 
 class TestGenomeSignature(unittest.TestCase):
@@ -934,6 +1000,58 @@ class TestStoreResults(unittest.TestCase):
                     optimizer.store_results(path)
             self.assertFalse(os.path.exists(path))
             self.assertEqual(os.listdir(d), [])
+
+
+class TestSearchReproducibility(unittest.TestCase):
+    def _run(self, first_task_offset, global_seed):
+        """Searches two tasks and returns the genomes evaluated per task. The
+        first task's scores are shifted by `first_task_offset`; the global
+        random module is seeded with `global_seed`."""
+        tasks = [_make_task("first"), _make_task("second")]
+        modalities = [_FakeModality(f"m{i}") for i in range(4)]
+        reps = {m.modality_id: [object() for _ in range(3)] for m in modalities}
+        optimizer = MultimodalDeapOptimizer(
+            modalities,
+            _FakeUnimodalResults(reps),
+            tasks,
+            debug=False,
+            population_size=8,
+            generations=4,
+            early_stopping_patience=None,
+            random_seed=7,
+        )
+        optimizer.fusion_operators = [Concatenation, Average, Sum]
+        evaluated = {"first": [], "second": []}
+
+        def evaluate(population, task):
+            for ind in population:
+                key = (
+                    tuple(ind[0].leaves),
+                    tuple(
+                        sorted((p, c.__name__) for p, c in ind[0].fusion_ops.items())
+                    ),
+                )
+                value = (hash(repr(key)) % 1000) / 1000.0
+                if task.model.name == "first":
+                    value = (value + first_task_offset) % 1.0
+                ind.fitness.values = (value,)
+                evaluated[task.model.name].append(key)
+
+        random.seed(global_seed)
+        with patch.object(optimizer, "_evaluate_population", side_effect=evaluate):
+            optimizer._optimize()
+        return evaluated
+
+    def test_a_task_search_ignores_earlier_tasks_and_global_random(self):
+        a = self._run(first_task_offset=0.0, global_seed=0)
+        b = self._run(first_task_offset=0.37, global_seed=1)
+        self.assertNotEqual(
+            a["first"], b["first"], "test setup needs diverging first task"
+        )
+        self.assertEqual(a["second"], b["second"])
+
+    def test_same_scores_give_the_same_search(self):
+        self.assertEqual(self._run(0.0, 0), self._run(0.0, 1))
 
 
 class TestRealFusionIntegration(unittest.TestCase):

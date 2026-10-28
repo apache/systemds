@@ -36,7 +36,7 @@ from systemds.scuro.representations.representation import (
 )
 from systemds.scuro.drsearch.worker_pool import default_gpu_slots_per_device
 from systemds.scuro.utils.memory_utility import gpu_memory_info
-from systemds.scuro.utils.static_variables import DEBUG
+from systemds.scuro.utils.static_variables import DEBUG, deterministic_enabled
 
 _MAX_GPU_SCHEDULE_ATTEMPTS = int(os.environ.get("SCURO_MAX_GPU_SCHEDULE_ATTEMPTS", "3"))
 
@@ -241,13 +241,6 @@ class MemoryAwareNodeScheduler:
 
     def _get_runnable_nodes(self) -> List[str]:
         runnable_nodes = list(self._candidates)
-
-        # Upward rank always puts a producer ahead of its consumers, so without
-        # a counterweight every large intermediate is materialized before the
-        # tasks that would release it. Once the cache holds a large share of
-        # the budget (or, with exclusive admission, the budget is exceeded),
-        # nodes whose completion does not grow the cache (task roots, or last
-        # children releasing at least their own output) run first.
         draining_first = self._cache_draining()
 
         def _score(node_id: str):
@@ -323,6 +316,27 @@ class MemoryAwareNodeScheduler:
         self._release_execution_memory(node_id, self.mapping[node_id].gpu_id)
         self._candidates.add(node_id)
 
+    def reserve_gpu(self, memory_needed: int, usable, force: bool = False):
+        for gpu_id in sorted(
+            self.gpu_devices, key=lambda g: -self._free_gpu_bytes(g, {})
+        ):
+            if not usable(gpu_id):
+                continue
+            if self.gpu_slots_in_use[gpu_id] >= self.gpu_slots_per_device:
+                continue
+            if not force and self._free_gpu_bytes(gpu_id, {}) < memory_needed:
+                continue
+            self.gpu_slots_in_use[gpu_id] += 1
+            self.memory_stats["gpu_in_use"][gpu_id] += memory_needed
+            return gpu_id
+        return None
+
+    def release_gpu(self, gpu_id: int, memory_needed: int) -> None:
+        self.gpu_slots_in_use[gpu_id] = max(0, self.gpu_slots_in_use[gpu_id] - 1)
+        self.memory_stats["gpu_in_use"][gpu_id] = max(
+            0, self.memory_stats["gpu_in_use"][gpu_id] - memory_needed
+        )
+
     def raise_gpu_estimate(self, node_id: str, observed_bytes: int) -> None:
         cpu_mem, gpu_mem = self.node_resources[node_id]
         self.node_resources[node_id] = (cpu_mem, max(gpu_mem, int(observed_bytes)))
@@ -387,12 +401,8 @@ class MemoryAwareNodeScheduler:
 
         return False
 
-    def get_valid_parents(self, node_id: str) -> bool:
-        parents = []
-        for parent_id in self.parents[node_id]:
-            if parent_id not in self.leaves:
-                parents.append(parent_id)
-        return parents
+    def get_valid_parents(self, node_id: str) -> List[str]:
+        return [pid for pid in self.mapping[node_id].inputs if pid not in self.leaves]
 
     def get_children(self, node_id: str) -> List[str]:
         return list(self.children[node_id])
@@ -572,6 +582,11 @@ class MemoryAwareNodeScheduler:
                 release_gpu = self._gpu_freed_by_release(gpu_mem, pending_gpu)
                 if release_gpu is not None:
                     self.release_requests.add(release_gpu)
+                    return False, None
+                if deterministic_enabled() and any(
+                    gpu_mem <= self.memory_budget["gpu"][gpu]
+                    for gpu in self.gpu_devices
+                ):
                     return False, None
                 attempts = self.gpu_wait_attempts.get(node_id, 0) + 1
                 self.gpu_wait_attempts[node_id] = attempts

@@ -49,7 +49,25 @@ class _BatchEncoding(dict):
         return self
 
 
-class _Tokenizer:
+class _PadMixin:
+    def pad(self, features, **kwargs):
+        rows = [
+            {
+                key: torch.as_tensor(feature[key])
+                for key in ("input_ids", "attention_mask")
+            }
+            for feature in features
+        ]
+        padded_length = max(len(row["input_ids"]) for row in rows)
+        input_ids = torch.zeros((len(rows), padded_length), dtype=torch.long)
+        attention_mask = torch.zeros_like(input_ids)
+        for index, row in enumerate(rows):
+            input_ids[index, : len(row["input_ids"])] = row["input_ids"]
+            attention_mask[index, : len(row["attention_mask"])] = row["attention_mask"]
+        return _BatchEncoding(input_ids=input_ids, attention_mask=attention_mask)
+
+
+class _Tokenizer(_PadMixin):
     def __call__(self, batch, **kwargs):
         ids = torch.tensor([int(text) for text in batch])
         input_ids = ids.unsqueeze(1).repeat(1, 3)
@@ -61,8 +79,8 @@ class _Tokenizer:
         )
 
 
-class _BertModel:
-    def __call__(self, input_ids, attention_mask):
+class _BertModel(torch.nn.Module):
+    def forward(self, input_ids, attention_mask):
         ids = input_ids[:, 0].float()
         hidden = torch.stack(
             (
@@ -75,7 +93,7 @@ class _BertModel:
         return SimpleNamespace(last_hidden_state=hidden)
 
 
-class _DynamicTokenizer:
+class _DynamicTokenizer(_PadMixin):
     def __call__(self, batch, **kwargs):
         tokens = [[int(token) for token in text.split()] for text in batch]
         max_length = kwargs.get("max_length")
@@ -103,11 +121,12 @@ class _DynamicTokenizer:
         )
 
 
-class _IntermediateBertModel:
+class _IntermediateBertModel(torch.nn.Module):
     def __init__(self, representation):
-        self.representation = representation
+        super().__init__()
+        self.intermediate = torch.nn.Identity()
 
-    def __call__(self, input_ids, attention_mask):
+    def forward(self, input_ids, attention_mask):
         values = input_ids.float()
         hidden = torch.stack((values, values + 10), dim=-1)
         hidden = torch.where(
@@ -115,8 +134,7 @@ class _IntermediateBertModel:
             hidden,
             torch.full_like(hidden, 1000),
         )
-        self.representation.bert_output = hidden
-        return SimpleNamespace(last_hidden_state=hidden)
+        return SimpleNamespace(last_hidden_state=self.intermediate(hidden))
 
 
 class _CLIPProcessor:
@@ -128,25 +146,28 @@ class _CLIPProcessor:
         )
 
 
-class _CLIPTextModel:
-    def __init__(self, representation):
-        self.representation = representation
+class _CLIPTextModel(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.intermediate = torch.nn.Identity()
 
-    def __call__(self, input_ids, attention_mask):
+    def forward(self, input_ids, attention_mask):
         ids = input_ids[:, 0].float()
-        self.representation.clip_output = torch.stack(
-            (
-                torch.stack((ids, ids + 2), dim=1),
-                torch.stack((ids + 2, ids + 4), dim=1),
-                torch.full((len(ids), 2), 1000.0, device=ids.device),
-            ),
-            dim=1,
+        return self.intermediate(
+            torch.stack(
+                (
+                    torch.stack((ids, ids + 2), dim=1),
+                    torch.stack((ids + 2, ids + 4), dim=1),
+                    torch.full((len(ids), 2), 1000.0, device=ids.device),
+                ),
+                dim=1,
+            )
         )
 
 
 class _CLIPModel:
     def __init__(self, representation):
-        self.text_model = _CLIPTextModel(representation)
+        self.text_model = _CLIPTextModel()
 
 
 class TestTransformerTextAggregation(unittest.TestCase):
@@ -288,7 +309,7 @@ class TestTransformerTextAggregation(unittest.TestCase):
         np.testing.assert_allclose(result, [3.0, 5.0])
         self.assertEqual(result.shape, (2,))
 
-    def test_pushdown_keeps_shared_plain_and_aggregated_paths_distinct(self):
+    def test_pushdown_skipped_when_plain_output_is_also_needed(self):
         builder = CSEAwareDAGBuilder()
         leaf_id = builder.create_leaf_node("transformer_pushdown")
         bert = Bert()
@@ -312,17 +333,17 @@ class TestTransformerTextAggregation(unittest.TestCase):
 
         pushdown_aggregation([plain_dag, aggregated_dag])
 
+        # Bert runs once; its plain output feeds both DAGs and the aggregation
+        # is applied to it instead of being fused into a second Bert run.
         plain_node = plain_dag.get_node_by_id(bert_id)
         self.assertIs(plain_node.operation, Bert)
         self.assertNotIn("_pushdown_aggregation", plain_node.parameters)
 
-        pushed_node = aggregated_dag.get_node_by_id(aggregation_id)
-        self.assertIs(pushed_node.operation, Bert)
-        self.assertEqual(pushed_node.inputs, [leaf_id])
-        self.assertEqual(
-            pushed_node.parameters["_pushdown_aggregation"], aggregation_params
-        )
-        self.assertIsNone(aggregated_dag.get_node_by_id(bert_id))
+        aggregation_node = aggregated_dag.get_node_by_id(aggregation_id)
+        self.assertIs(aggregation_node.operation, AggregatedRepresentation)
+        self.assertEqual(aggregation_node.inputs, [bert_id])
+        self.assertEqual(aggregation_node.parameters, aggregation_params)
+        self.assertIs(aggregated_dag.get_node_by_id(bert_id), plain_node)
 
     def test_clip_text_supports_aggregation_pushdown(self):
         builder = CSEAwareDAGBuilder()

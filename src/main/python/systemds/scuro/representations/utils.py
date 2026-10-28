@@ -428,7 +428,16 @@ class OwnerAccumulator:
             0, owner_ids, torch.ones_like(owner_ids, dtype=torch.long)
         )
         if name in ("mean", "sum"):
-            self._values.index_add_(0, owner_ids, vectors)
+            owners, inverse = owner_ids.unique(return_inverse=True)
+            one_hot = torch.zeros(
+                (len(owners), len(owner_ids)),
+                device=vectors.device,
+                dtype=vectors.dtype,
+            )
+            one_hot[inverse, torch.arange(len(owner_ids), device=vectors.device)] = 1
+            with torch.autocast(device_type=vectors.device.type, enabled=False):
+                sums = one_hot @ vectors
+            self._values.index_add_(0, owners, sums)
         elif name in ("max", "min"):
             indices = owner_ids[:, None].expand_as(vectors)
             self._values.scatter_reduce_(

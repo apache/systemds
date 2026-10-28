@@ -122,7 +122,6 @@ class FramePreprocessor:
             return torch.stack([self(f, device) for f in frames])
 
         device = torch.device(device)
-        # Antialiased interpolation is not implemented on MPS.
         work_device = torch.device("cpu") if device.type == "mps" else device
         frames = frames.to(work_device, non_blocking=frames.is_pinned())
         leading = frames.shape[:-3]
@@ -140,13 +139,23 @@ class FramePreprocessor:
             x = x[:, :3]
         if x.is_floating_point():
             x = x.float().mul(255.0).round_().clamp_(0, 255).to(torch.uint8)
-        x = TF.resize(
-            x, [self.resize], interpolation=self.interpolation, antialias=True
-        )
+        x = self._resize(x)
         x = TF.center_crop(x, [self.crop, self.crop])
         x = x.to(self.dtype).div_(255.0)
-        # Frames arrive channel-last; hand the model the NCHW layout it got before.
         return TF.normalize(x, self.mean, self.std).contiguous()
+
+    def _resize(self, x: torch.Tensor) -> torch.Tensor:
+        try:
+            return TF.resize(
+                x, [self.resize], interpolation=self.interpolation, antialias=True
+            )
+        except RuntimeError as e:
+            if x.device.type != "cuda" or "shared memory" not in str(e):
+                raise
+            resized = TF.resize(
+                x.cpu(), [self.resize], interpolation=self.interpolation, antialias=True
+            )
+            return resized.to(x.device)
 
 
 class CustomDataset(torch.utils.data.Dataset):

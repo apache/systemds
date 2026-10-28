@@ -19,11 +19,13 @@
 #
 # -------------------------------------------------------------
 import copy
+import os
 import time
 from dataclasses import dataclass
 
 import numpy as np
 
+from systemds.scuro.drsearch.trial_result_cache import TrialResultCache, _freeze
 from systemds.scuro.models.training_stats import TrainingWorkAccumulator
 from systemds.scuro.drsearch.representation_dag import (
     RepresentationDag,
@@ -51,6 +53,17 @@ class SplitEvaluationResult:
     scores: list
     representation_time: float
     task_time: float
+
+
+_REFIT_CACHE = None
+
+
+def _refit_cache() -> TrialResultCache:
+    global _REFIT_CACHE
+    if _REFIT_CACHE is None:
+        gb = float(os.environ.get("SCURO_LEAF_REFIT_CACHE_GB", "4"))
+        _REFIT_CACHE = TrialResultCache(int(gb * 1024**3), min_compute_seconds=0)
+    return _REFIT_CACHE
 
 
 def dag_requires_fitting(dag: RepresentationDag, modalities=()) -> bool:
@@ -149,16 +162,6 @@ class SplitAwareDAGEvaluator:
 
     @staticmethod
     def _align_partition_shapes(result):
-        """Zero-pad every partition's output to one common instance shape.
-
-        Stateless operators pad to the largest instance of whatever they are
-        given (e.g. DynamicWindow pads each window to the partition's longest
-        clip), so executing them per partition yields different feature widths
-        for the fit and evaluation partitions, and a model fitted on one cannot
-        score the other. Padding to the elementwise maximum across partitions
-        reproduces the shapes of executing on all of their instances at once,
-        which is how the search computes representations. Labels play no part.
-        """
         if len(result) < 2 or not all(isinstance(r, IndexedModality) for r in result):
             return result
         arrays = []
@@ -316,11 +319,23 @@ class SplitAwareDAGEvaluator:
 
     def _refit_leaf(self, source, partitions):
         source_dag, raw_modality = source
+        key = (
+            _freeze(source_dag.to_spec()),
+            str(raw_modality.modality_id),
+            getattr(self.task.model, "name", None),
+            tuple(item.instance_ids for item in partitions),
+        )
+        cached = _refit_cache().get(key)
+        if cached is not None:
+            return cached
+        start = time.perf_counter()
         evaluator = SplitAwareDAGEvaluator(source_dag, raw_modality, self.task)
         (full,) = evaluator._indexed_modalities()
-        return evaluator._execute_partitions(
+        result = evaluator._execute_partitions(
             *((full.subset(item.instance_ids),) for item in partitions)
         )
+        _refit_cache().put(key, result, time.perf_counter() - start)
+        return result
 
     def _indexed_modalities(self):
         full = []

@@ -25,9 +25,12 @@ from fractions import Fraction
 
 import numpy as np
 import torch
+from PIL import Image
 from pytorchvideo import transforms as pv_transforms
 import torchaudio
+from torchvision import transforms as tv_transforms
 
+from systemds.scuro.dataloader.image_loader import ImageStats
 from systemds.scuro.drsearch.operator_registry import (
     register_representation,
     register_expensive_representation,
@@ -48,12 +51,15 @@ from systemds.scuro.utils.memory_utility import get_device
 from systemds.scuro.utils.torch_dataset import TextDataset, TextSpanDataset
 
 
-@register_representation([ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT])
+@register_representation(
+    [ModalityType.IMAGE, ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT]
+)
 @register_expensive_representation(
-    [ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT]
+    [ModalityType.IMAGE, ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT]
 )
 class ImageBind(UnimodalRepresentation):
-    """ImageBind (Girdhar et al., CVPR 2023) embeddings for video, audio and text.
+    """ImageBind (Girdhar et al., CVPR 2023) embeddings for images, video, audio
+    and text.
 
     Input preparation is implemented here; only the pretrained network comes
     from the optional ``imagebind`` package. Its code and weights are licensed
@@ -77,15 +83,18 @@ class ImageBind(UnimodalRepresentation):
     _MEL_MEAN = -4.268
     _MEL_STD = 9.138
     _TEXT_CONTEXT_LENGTH = 77
-    # ImageBind's text encoder uses the OpenAI CLIP BPE vocabulary.
+    _TEXT_WIDTH = 1024
+    _TEXT_MLP_WIDTH = 4096
+    _TEXT_HEADS = 16
+    _TEXT_LAYERS = 24
     _TOKENIZER_NAME = "openai/clip-vit-base-patch32"
     _CHECKPOINT_PATH = os.path.join(".checkpoints", "imagebind_huge.pth")
     _tokenizer = None
     supports_aggregation_pushdown = True
+    max_context_words = 60
     cache_in_worker = True
 
     def __init__(self, output_file=None, batch_size=8, params=None):
-        # parameters = {"batch_size": [1, 2, 4, 8, 16, 32]}
         parameters = {}
         super().__init__("ImageBind", ModalityType.EMBEDDING, parameters)
         self.params = params
@@ -98,6 +107,11 @@ class ImageBind(UnimodalRepresentation):
         self.model = None
         self.device = get_device()
         self._gpu_id = self.device.index
+        self.needs_context = True
+        self.initial_context_length = 55
+
+    def needs_context_for(self, modality_type):
+        return modality_type == ModalityType.TEXT
 
     @property
     def gpu_id(self):
@@ -111,25 +125,92 @@ class ImageBind(UnimodalRepresentation):
             self.model = self.model.to(self.device)
 
     def get_output_stats(self, input_stats) -> RepresentationStats:
+        chunked = isinstance(input_stats, RepresentationStats) and not (
+            self.params and "_pushdown_aggregation" in self.params
+        )
         return RepresentationStats(
             input_stats.num_instances,
-            (self._EMBEDDING_DIM,),
-            aggregate_dim=None,
+            (
+                (input_stats.output_shape[0], self._EMBEDDING_DIM)
+                if chunked
+                else (self._EMBEDDING_DIM,)
+            ),
+            aggregate_dim=(0,) if chunked else None,
             dtype=self.data_type,
         )
 
     def estimate_output_memory_bytes(self, input_stats) -> int:
-        return input_stats.num_instances * self._EMBEDDING_DIM * self.data_type.itemsize
+        shape = self.get_output_stats(input_stats).output_shape
+        return int(input_stats.num_instances * np.prod(shape) * self.data_type.itemsize)
+
+    @staticmethod
+    def _is_text_stats(input_stats):
+        return hasattr(input_stats, "max_words") or isinstance(
+            input_stats, RepresentationStats
+        )
+
+    def _estimate_text_peak_memory_bytes(self, input_stats, model_bytes) -> dict:
+        num_instances = max(getattr(input_stats, "num_instances", 1), 1)
+        shape = tuple(getattr(input_stats, "output_shape", ()) or ())
+        chunks_per_instance = (
+            int(shape[0])
+            if isinstance(input_stats, RepresentationStats) and len(shape) == 2
+            else 1
+        )
+        num_sequences = num_instances * max(chunks_per_instance, 1)
+        itemsize = self.data_type.itemsize
+        batch_tokens = self.batch_size * self._TEXT_CONTEXT_LENGTH
+
+        token_bytes = batch_tokens * np.dtype(np.int64).itemsize
+        activation_bytes = 4 * (
+            batch_tokens * (3 * self._TEXT_WIDTH + self._TEXT_MLP_WIDTH) * itemsize
+            + self.batch_size
+            * self._TEXT_HEADS
+            * self._TEXT_CONTEXT_LENGTH**2
+            * itemsize
+        )
+        output_bytes = (
+            num_sequences * self._EMBEDDING_DIM * itemsize
+            + self.estimate_output_memory_bytes(input_stats)
+        )
+        cuda_overhead_bytes = 512 * 1024 * 1024
+        gpu_peak = (
+            model_bytes
+            + token_bytes
+            + activation_bytes
+            + output_bytes
+            + cuda_overhead_bytes
+        )
+
+        raw_text_bytes = num_instances * max(
+            int(getattr(input_stats, "max_length", 0) or 0), 1
+        )
+        tokenizer_bytes = 64 * 1024 * 1024
+        safety_margin_bytes = 512 * 1024 * 1024
+        cpu_peak = (
+            model_bytes
+            + tokenizer_bytes
+            + raw_text_bytes
+            + num_sequences * self._TEXT_CONTEXT_LENGTH * 8
+            + output_bytes
+            + safety_margin_bytes
+        )
+        return {"cpu_peak_bytes": int(cpu_peak), "gpu_peak_bytes": int(gpu_peak)}
 
     def estimate_peak_memory_bytes(self, input_stats) -> dict:
         num_instances = max(getattr(input_stats, "num_instances", 1), 1)
 
         model_bytes = self._MODEL_PARAMETER_COUNT * self.data_type.itemsize
+        if self._is_text_stats(input_stats):
+            return self._estimate_text_peak_memory_bytes(input_stats, model_bytes)
 
+        is_image = isinstance(input_stats, ImageStats)
         clip_bytes = (
-            self._CLIPS_PER_VIDEO
-            * self._SPATIAL_CROPS
-            * self._FRAMES_PER_CLIP
+            (
+                1
+                if is_image
+                else self._CLIPS_PER_VIDEO * self._SPATIAL_CROPS * self._FRAMES_PER_CLIP
+            )
             * 3
             * self._CROP_SIZE
             * self._CROP_SIZE
@@ -142,7 +223,7 @@ class ImageBind(UnimodalRepresentation):
         output_bytes = self.estimate_output_memory_bytes(input_stats)
 
         decoded_bytes = (
-            getattr(input_stats, "max_length", 0)
+            (1 if is_image else getattr(input_stats, "max_length", 0))
             * getattr(input_stats, "max_channels", 3)
             * getattr(input_stats, "max_height", self._CROP_SIZE)
             * getattr(input_stats, "max_width", self._CROP_SIZE)
@@ -324,6 +405,34 @@ class ImageBind(UnimodalRepresentation):
 
         return torch.stack(video_outputs).to(self.device)
 
+    def _transform_image_data(self, samples):
+        transform = tv_transforms.Compose(
+            [
+                tv_transforms.Resize(
+                    self._CROP_SIZE,
+                    interpolation=tv_transforms.InterpolationMode.BICUBIC,
+                ),
+                tv_transforms.CenterCrop(self._CROP_SIZE),
+                tv_transforms.ToTensor(),
+                tv_transforms.Normalize(mean=self._PIXEL_MEAN, std=self._PIXEL_STD),
+            ]
+        )
+        image_outputs = []
+        for sample in samples:
+            image = np.asarray(sample)
+            if image.ndim == 2:
+                image = np.repeat(image[..., None], 3, axis=-1)
+            if image.ndim != 3 or image.shape[-1] != 3:
+                raise ValueError(
+                    "ImageBind image samples must have shape (height, width, 3) "
+                    "or (height, width)"
+                )
+            if not np.issubdtype(image.dtype, np.integer):
+                image = np.clip(np.rint(image * 255.0), 0, 255)
+            image_outputs.append(transform(Image.fromarray(image.astype(np.uint8))))
+
+        return torch.stack(image_outputs).to(self.device)
+
     @classmethod
     def _get_tokenizer(cls):
         if cls._tokenizer is None:
@@ -366,6 +475,8 @@ class ImageBind(UnimodalRepresentation):
             return IBModalityType.AUDIO, self._transform_audio_data(samples, metadata)
         if modality_type == ModalityType.VIDEO:
             return IBModalityType.VISION, self._transform_video_data(samples, metadata)
+        if modality_type == ModalityType.IMAGE:
+            return IBModalityType.VISION, self._transform_image_data(samples)
         raise ValueError(f"ImageBind does not support {modality_type}")
 
     def transform(self, modality, aggregation=None):

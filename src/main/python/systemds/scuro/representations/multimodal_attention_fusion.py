@@ -96,7 +96,6 @@ class AttentionFusion(Fusion):
 
         set_random_seeds()
 
-
     def _prepare_data(self, modalities: List[Modality]):
         inputs = {}
         input_dimensions = {}
@@ -120,7 +119,10 @@ class AttentionFusion(Fusion):
             input_dimensions[modality_name] = data.shape[2]  # Feature dimension
             max_sequence_length = max(max_sequence_length, data.shape[1])
 
-            inputs[modality_name] = torch.from_numpy(data.astype(np.float32))
+            data = np.nan_to_num(
+                data.astype(np.float32), nan=0.0, posinf=0.0, neginf=0.0
+            )
+            inputs[modality_name] = torch.from_numpy(data)
 
         for modality_name, tensor in inputs.items():
             if tensor.shape[1] < max_sequence_length:

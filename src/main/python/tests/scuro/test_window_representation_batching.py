@@ -27,6 +27,7 @@ from systemds.scuro.modality.type import DataLayout, ModalityType
 from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
 from systemds.scuro.representations.mfcc import MFCC
 from systemds.scuro.representations.representation import RepresentationStats
+from systemds.scuro.representations.spectrogram import Spectrogram
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.window_aggregation import (
     DynamicWindow,
@@ -127,6 +128,7 @@ class TestWindowRepresentationBatching(unittest.TestCase):
         representations = (
             MFCC(n_mfcc=4, n_mels=8, hop_length=8, n_fft=32),
             MelSpectrogram(n_mels=8, hop_length=8, n_fft=32),
+            Spectrogram(hop_length=8, n_fft=32),
         )
         for representation in representations:
             with self.subTest(representation=representation.name):

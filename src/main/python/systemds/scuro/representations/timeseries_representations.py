@@ -212,7 +212,7 @@ class Skew(TimeSeriesRepresentation):
     def compute_feature(self, signal, axis=-1):
         result = np.asarray(stats.skew(signal, axis=axis))
         zero_variance = np.std(signal, axis=axis) <= np.finfo(float).eps
-        return np.where(zero_variance, 0.0, result)
+        return np.where(zero_variance | ~np.isfinite(result), 0.0, result)
 
 
 @register_representation([ModalityType.TIMESERIES, ModalityType.PHYSIOLOGICAL])
@@ -257,7 +257,7 @@ class Kurtosis(TimeSeriesRepresentation):
     def compute_feature(self, signal, axis=-1):
         result = np.asarray(stats.kurtosis(signal, fisher=True, bias=True, axis=axis))
         zero_variance = np.std(signal, axis=axis) <= np.finfo(float).eps
-        return np.where(zero_variance, 0.0, result)
+        return np.where(zero_variance | ~np.isfinite(result), 0.0, result)
 
 
 @register_representation([ModalityType.TIMESERIES, ModalityType.PHYSIOLOGICAL])

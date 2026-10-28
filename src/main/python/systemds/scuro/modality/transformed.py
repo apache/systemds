@@ -66,6 +66,7 @@ class TransformedModality(Modality):
             else True
         )
         self.aggregate_dim = aggregate_dim
+        self.is_fused = getattr(modality, "is_fused", False)
 
         if modality.__class__.__name__ == "UnimodalModality":
             for m in self.metadata:
@@ -190,6 +191,7 @@ class TransformedModality(Modality):
         fused_modality = TransformedModality(
             self, fusion_method, ModalityType.EMBEDDING
         )
+        fused_modality.is_fused = True
         modalities = self.create_modality_list(other)
         start_time = time.time()
         fused_modality.data = fusion_method.transform(modalities)

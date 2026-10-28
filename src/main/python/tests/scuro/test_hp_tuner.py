@@ -51,6 +51,14 @@ from tests.scuro.data_generator import (
 
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.hyperparameter_tuner import HyperparameterTuner
+from systemds.scuro.drsearch.representation_dag import CSEAwareDAGBuilder
+from systemds.scuro.representations.bert import Bert
+from systemds.scuro.representations.clip import CLIPText
+from systemds.scuro.representations.image_bind import ImageBind
+from systemds.scuro.representations.text_context_with_indices import (
+    OverlappingSplitIndices,
+    SentenceBoundarySplitIndices,
+)
 
 from unittest.mock import patch
 
@@ -199,6 +207,37 @@ class TestHPTuner(unittest.TestCase):
                     )
                     == 2
                 )
+
+    def test_context_max_words_is_limited_by_the_encoder_text_window(self):
+        hp = HyperparameterTuner(
+            modalities=[],
+            tasks=[SimpleNamespace(model=SimpleNamespace(name="dummy_task"))],
+            optimization_results=None,
+            n_jobs=1,
+        )
+        for context_op in (SentenceBoundarySplitIndices, OverlappingSplitIndices):
+            domain = context_op().parameters["max_words"]
+            for encoder, expected in (
+                (ImageBind, [v for v in domain if v <= 60]),
+                (CLIPText, [v for v in domain if v <= 60]),
+                (Bert, domain),
+            ):
+                with self.subTest(
+                    context=context_op.__name__, encoder=encoder.__name__
+                ):
+                    builder = CSEAwareDAGBuilder()
+                    leaf_id = builder.create_leaf_node("text")
+                    context_id = builder.create_operation_node(
+                        context_op, [leaf_id], context_op(55).get_current_parameters()
+                    )
+                    encoder_id = builder.create_operation_node(
+                        encoder, [context_id], {}
+                    )
+                    dag = builder.build(encoder_id)
+                    params = hp._HyperparameterTuner__get_params_for_node(
+                        dag.get_node_by_id(context_id), dag
+                    )
+                    self.assertEqual(params["max_words"], expected)
 
     def test_evaluate_configs_deduplicates_candidates(self):
         class DummyOptimizationResults:

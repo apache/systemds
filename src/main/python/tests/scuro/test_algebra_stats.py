@@ -28,7 +28,6 @@ from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.representations.representation import RepresentationStats
 from tests.scuro.test_algebra_laws import _fuse
 
-# Other test modules register fusion operators of their own.
 OPERATORS = [
     op
     for op in Registry().get_fusion_operators()
@@ -51,7 +50,7 @@ class TestPredictedStats(unittest.TestCase):
                     for shape in OPERANDS[case]
                 ]
                 stats = [RepresentationStats(len(x), x.shape[1:]) for x in operands]
-                fused = _fuse(op, {}, *operands)
+                fused = np.asarray(_fuse(op, {}, *operands).data)
                 self.assertEqual(
                     tuple(op().get_output_stats(stats).output_shape), fused.shape[1:]
                 )

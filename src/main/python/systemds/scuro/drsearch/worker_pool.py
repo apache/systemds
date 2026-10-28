@@ -31,6 +31,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 import torch
 
 from systemds.scuro.utils.memory_utility import cuda_oom_peak_bytes, is_cuda_oom
+from systemds.scuro.utils.static_variables import scheduled_device
 
 _THREAD_ENV_VARS = (
     "OMP_NUM_THREADS",
@@ -127,7 +128,9 @@ def _worker_main(
             local_gpu_id = (
                 0 if physical_gpu_id is not None and job.gpu_id is not None else None
             )
-            value = dispatch[job.kind](job.payload, local_gpu_id)
+
+            with scheduled_device(local_gpu_id):
+                value = dispatch[job.kind](job.payload, local_gpu_id)
             result_q.put(_JobResult(job.job_id, True, os.getpid(), value=value))
         except Exception as e:
             cuda_oom = is_cuda_oom(e)
@@ -388,14 +391,17 @@ class PersistentWorkerPool:
         self._workers[pid]["job_q"].put(job)
         return job_id
 
-    def wait(self) -> _JobResult:
+    def wait(self, timeout: Optional[float] = None) -> Optional[_JobResult]:
+        """The next job result; None if `timeout` seconds pass without one."""
         while True:
             sentinel_to_pid = {
                 w["process"].sentinel: pid for pid, w in self._workers.items()
             }
             ready = mp_connection.wait(
-                [self._result_q._reader, *sentinel_to_pid.keys()]
+                [self._result_q._reader, *sentinel_to_pid.keys()], timeout
             )
+            if not ready:
+                return None
             if self._result_q._reader in ready:
                 jr = self._result_q.get()
                 entry = self._running.pop(jr.job_id, None)

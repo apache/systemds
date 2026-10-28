@@ -19,7 +19,11 @@
 #
 # -------------------------------------------------------------
 from systemds.scuro.utils.converter import numpy_dtype_to_torch_dtype
-from systemds.scuro.utils.torch_dataset import CustomDataset
+from systemds.scuro.utils.torch_dataset import (
+    FrameDataset,
+    FramePreprocessor,
+    collate_frames,
+)
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.dataloader.video_loader import VideoStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
@@ -39,11 +43,12 @@ from systemds.scuro.utils.static_variables import (
 from systemds.scuro.dataloader.image_loader import ImageStats
 from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.utils import (
+    LazyModelMixin,
+    build_torchvision_model,
     OwnerAccumulator,
     flatten_owned_sequences,
     get_sequence_lengths,
     inference_context,
-    move_batch_to_device,
     pin_memory_for,
 )
 
@@ -55,22 +60,20 @@ class Identity(torch.nn.Module):
 
 @register_representation([ModalityType.IMAGE, ModalityType.VIDEO])
 @register_expensive_representation([ModalityType.IMAGE, ModalityType.VIDEO])
-class VGG19(UnimodalRepresentation):
+class VGG19(LazyModelMixin, UnimodalRepresentation):
     OUTPUT_MODALITY_TYPE = ModalityType.EMBEDDING
     supports_aggregation_pushdown = True
     cache_in_worker = True
+    MODEL_BYTES = 574_668_960
 
     def __init__(
         self, layer="classifier.0", output_file=None, params=None, batch_size=32
     ):
         self.data_type = torch.bfloat16
-        self.model = None
         self._activation_hook = None
         self.activation = None
         self.gpu_id = None
         self.device = get_device()
-        self.model = models.vgg19(weights=models.VGG19_Weights.DEFAULT)
-        self.model = self.model.to(self.device)
         parameters = self._get_parameters()
         super().__init__("VGG19", self.OUTPUT_MODALITY_TYPE, parameters)
         self.params = params
@@ -79,13 +82,15 @@ class VGG19(UnimodalRepresentation):
             layer = params.get("layer_name", layer)
         self.output_file = output_file
         self.layer_name = layer
-        self.model.eval()
         self.batch_size = batch_size
 
-        for param in self.model.parameters():
+    def _build_model(self):
+        model = build_torchvision_model(models.vgg19, models.VGG19_Weights.DEFAULT)
+        model.eval()
+        for param in model.parameters():
             param.requires_grad = False
-
-        self.model.fc = Identity()
+        model.fc = Identity()
+        return model.to(self.device)
 
     @property
     def gpu_id(self):
@@ -95,7 +100,7 @@ class VGG19(UnimodalRepresentation):
     def gpu_id(self, gpu_id):
         self._gpu_id = gpu_id
         self.device = get_device(gpu_id)
-        if self.model is not None:
+        if self._model is not None:
             self.model = self.model.to(self.device)
 
     def _get_parameters(self):
@@ -141,12 +146,7 @@ class VGG19(UnimodalRepresentation):
             * input_stats.max_channels
             * self.data_type.itemsize
         )
-        model_size_bytes = sum(
-            p.nelement() * p.element_size() for p in self.model.parameters()
-        )
-        model_size_bytes += sum(
-            b.nelement() * b.element_size() for b in self.model.buffers()
-        )
+        model_size_bytes = self.MODEL_BYTES
 
         return {
             "cpu_peak_bytes": (
@@ -200,11 +200,13 @@ class VGG19(UnimodalRepresentation):
             lengths = get_sequence_lengths(modality.data, modality.metadata)
             samples, owner_ids = flatten_owned_sequences(modality.data, lengths)
 
-        dataset = CustomDataset(samples, self.data_type, "cpu")
+        dataset = FrameDataset(samples)
+        preprocess = FramePreprocessor(dtype=self.data_type)
         dataloader = torch.utils.data.DataLoader(
             dataset,
             batch_size=self.batch_size,
             shuffle=False,
+            collate_fn=collate_frames,
             pin_memory=pin_memory_for(self.device),
         )
         owner_by_chunk = torch.tensor(owner_ids, dtype=torch.long)
@@ -213,8 +215,7 @@ class VGG19(UnimodalRepresentation):
         with inference_context(self.device):
             for batch in dataloader:
                 chunk_ids = batch["id"].long()
-                batch = move_batch_to_device(batch, self.device)
-                _ = self.model(batch["data"])
+                _ = self.model(preprocess(batch["data"], self.device))
                 output = self.activation
                 if output.ndim > 2:
                     output = torch.nn.functional.adaptive_avg_pool2d(output, (1, 1))

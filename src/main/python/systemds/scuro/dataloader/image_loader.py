@@ -46,7 +46,7 @@ class ImageLoader(BaseLoader):
         self,
         source_path: str,
         indices: List[str],
-        data_type: Union[np.dtype, str] = np.float16,
+        data_type: Union[np.dtype, str] = np.uint8,
         chunk_size: Optional[int] = None,
         load=True,
         ext=".jpg",
@@ -138,6 +138,10 @@ class ImageLoader(BaseLoader):
             average_height,
             average_channels,
         )
+
+    def estimate_decoded_bytes(self, metadata=None) -> int:
+        metadata = self._all_metadata if metadata is None else metadata
+        return int(sum(int(md["height"]) * int(md["width"]) * 3 for md in metadata))
 
     def estimate_peak_memory_bytes(self) -> dict:
         n = self.chunk_size if self.chunk_size is not None else 1

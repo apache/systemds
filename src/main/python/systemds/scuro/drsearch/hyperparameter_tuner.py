@@ -19,6 +19,7 @@
 #
 # -------------------------------------------------------------
 from typing import Dict, List, Tuple, Any, Optional
+from systemds.scuro.utils.static_variables import get_global_seed
 import inspect
 import os
 import numpy as np
@@ -52,6 +53,7 @@ from systemds.scuro.drsearch.trial_result_cache import (
     trial_node_signatures,
 )
 from systemds.scuro.drsearch.process_cache import HPOExecutionCache
+from systemds.scuro.drsearch.ranking import tie_broken
 from systemds.scuro.drsearch.operator_registry import is_expensive_representation
 
 _CUDA_OOM_ERRORS = tuple(
@@ -141,6 +143,29 @@ def _expand_aggregation_param_specs(
         if spec is not None:
             specs.append(spec)
     return specs
+
+
+def _limit_context_words(node: RepresentationNode, dag, params: Dict[str, Any]):
+    """Drop max_words values longer than the consuming encoder's text window.
+
+    A text context operator's chunks are only seen in full by an encoder up to
+    its max_context_words; longer chunks are truncated, so those trials repeat
+    a shorter configuration.
+    """
+    values = params.get("max_words")
+    if dag is None or not isinstance(values, list):
+        return params
+    limits = [
+        getattr(consumer.operation, "max_context_words", None)
+        for consumer in dag.nodes
+        if node.node_id in consumer.inputs
+    ]
+    limits = [limit for limit in limits if limit is not None]
+    if not limits:
+        return params
+    limit = min(limits)
+    params["max_words"] = [value for value in values if value <= limit] or [min(values)]
+    return params
 
 
 def _is_window_operation(op: Any) -> bool:
@@ -416,7 +441,7 @@ class HyperparameterTuner:
         checkpoint_every: Optional[int] = None,
         checkpoint_dir: Optional[str] = None,
         resume: bool = False,
-        random_state: int = 42,
+        random_state: Optional[int] = None,
         exhaustive_threshold: int = 256,
         local_search_patience: int = 3,
         optuna_sampler: str = "tpe",  # "tpe" | "random" | "bayes"
@@ -446,7 +471,7 @@ class HyperparameterTuner:
         self.logger = logging.getLogger(__name__)
         self.checkpoint_every = checkpoint_every
         self.resume = resume
-        self.random_state = random_state
+        self.random_state = get_global_seed() if random_state is None else random_state
         self.exhaustive_threshold = max(1, exhaustive_threshold)
         self.local_search_patience = max(1, local_search_patience)
         self._rng = random.Random(self.random_state)
@@ -587,6 +612,26 @@ class HyperparameterTuner:
                 print(f"[hpo-cache] {task.model.name}: {self._trial_cache.summary()}")
                 self._trial_cache.clear()
             self._trial_cache = None
+            self.execution_cache.set_layer_sweeps(None)
+
+    def _layer_sweeps(self, dag, param_specs) -> Dict[str, List[Any]]:
+        """Per node, the layers a search over its layer parameter can select.
+
+        An encoder computes all of them in one pass the first time any is
+        needed, so trying another layer reuses that pass instead of running
+        the encoder again. SCURO_HPO_LAYER_SWEEP=0 turns this off.
+        """
+        if os.environ.get("SCURO_HPO_LAYER_SWEEP", "1") == "0":
+            return {}
+        sweeps = {}
+        for spec in param_specs:
+            node_id, _, param = spec["name"].rpartition("-")
+            if spec["type"] != "categorical" or len(spec["domain"]) < 2:
+                continue
+            operation = dag.get_node_by_id(node_id).operation
+            if param == getattr(operation, "layer_parameter", None):
+                sweeps[node_id] = list(spec["domain"])
+        return sweeps
 
     def _tune_dag_representation(
         self, dag, root_node_id, task, max_evals=None, mm_opt=False
@@ -622,6 +667,18 @@ class HyperparameterTuner:
             self._get_cached_modalities_for_task(task, modality_ids) if mm_opt else None
         )
 
+        param_specs = []
+        tied_params = {}
+        if hyperparams:
+            node_parameters = {
+                node_id: (dag.get_node_by_id(node_id).parameters or {})
+                for node_id in hyperparams
+            }
+            param_specs = self._build_param_specs(hyperparams, node_parameters)
+            tied_params = _tied_window_params(dag)
+            param_specs = [s for s in param_specs if s["name"] not in tied_params]
+        self.execution_cache.set_layer_sweeps(self._layer_sweeps(dag, param_specs))
+
         baseline_params, baseline_raw_scores = self.evaluate_dag_config(
             dag,
             {},
@@ -638,13 +695,6 @@ class HyperparameterTuner:
         if not hyperparams:
             all_results = [baseline]
         else:
-            node_parameters = {
-                node_id: (dag.get_node_by_id(node_id).parameters or {})
-                for node_id in hyperparams
-            }
-            param_specs = self._build_param_specs(hyperparams, node_parameters)
-            tied_params = _tied_window_params(dag)
-            param_specs = [s for s in param_specs if s["name"] not in tied_params]
             discrete_size = self._estimate_discrete_search_size(param_specs)
             n_calls = min(discrete_size, max_evals) if max_evals else discrete_size
             all_results = self._search_best_configs(
@@ -751,6 +801,7 @@ class HyperparameterTuner:
                     params[name] = (
                         op.filter_parameter_domain(name, values, input_stats) or values
                     )
+        params = _limit_context_words(node, dag, params)
         if node.parameters:
             if inspect.isclass(node.parameters.get("aggregation_function")):
                 params["aggregation_function"] = node.parameters["aggregation_function"]
@@ -1342,8 +1393,9 @@ class HyperparameterTuner:
                     )
                 return score
 
+            candidates = optimization_results[task.model.name]
             best_results = sorted(
-                optimization_results[task.model.name],
+                [candidates[i] for i in tie_broken(candidates)],
                 key=_get_metric_value,
                 reverse=self.maximize_metric,
             )[:k]

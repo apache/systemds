@@ -106,6 +106,23 @@ CASES = [
     ("concat_order_kept", C("a", "b"), C("b", "a"), ALL_LAWS, False, False),
     ("concat_perm", C("a", "b"), C("b", "a"), ALL_LAWS, True, True),
     ("concat_assoc", C(C("a", "b"), "c"), C("a", C("b", "c")), ALL_LAWS, False, True),
+    (
+        "concat_perm_flattened",
+        C(C("a", "b"), "c"),
+        C("c", C("b", "a")),
+        ALL_LAWS,
+        True,
+        True,
+    ),
+    (
+        "no_perm_below_sum",
+        S(C("a", "b"), "c"),
+        S(C("b", "a"), "c"),
+        ALL_LAWS,
+        True,
+        False,
+    ),
+    ("no_perm_below_agg", G(C("a", "b")), G(C("b", "a")), ALL_LAWS, True, False),
     ("window_concat_never_sorted", W("a", "b"), W("b", "a"), ALL_LAWS, True, False),
     (
         "window_concat_assoc",

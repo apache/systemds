@@ -34,6 +34,11 @@ import traceback
 from dataclasses import dataclass, field
 from itertools import chain
 from typing import Any, Dict, List, Optional, Tuple, Union
+from systemds.scuro.utils.static_variables import (
+    cuda_allowed,
+    deterministic_enabled,
+    get_global_seed,
+)
 
 import numpy as np
 from deap import base, tools
@@ -70,6 +75,7 @@ from systemds.scuro.drsearch.trial_result_cache import TrialNodeCache, TrialResu
 from systemds.scuro.drsearch.worker_pool import (
     PersistentWorkerPool,
     create_mp_context,
+    default_gpu_slots_per_device,
     default_threads_per_worker,
 )
 from systemds.scuro.representations.aggregated_representation import (
@@ -259,7 +265,7 @@ def _evaluate_genome_body(
     share_subtrees: bool = False,
 ) -> Tuple[Optional[Tuple[float, ...]], Optional[Dict[str, Any]]]:
     start = time.time()
-    if dag_requires_fitting(dag):
+    if dag_requires_fitting(dag, modalities):
         node_cache = _subtree_node_cache(dag, task) if share_subtrees else None
         if node_cache is not None:
             store = node_cache.store
@@ -342,6 +348,10 @@ def _evaluate_genome_body(
 
 def _dispatch_genome_evaluation(payload, _gpu_id):
     dag, task, modalities, objective_specs, *share = payload
+    allowed = os.sched_getaffinity(0)
+    if cuda_allowed():
+        cores = sorted(allowed)
+        os.sched_setaffinity(0, {cores[os.getpid() % len(cores)]})
     try:
         try:
             fitness, result = _evaluate_genome_body(
@@ -357,6 +367,7 @@ def _dispatch_genome_evaluation(payload, _gpu_id):
                 "_evaluation_error": traceback.format_exc()
             }
     finally:
+        os.sched_setaffinity(0, allowed)
         _release_cuda_memory()
 
 
@@ -370,7 +381,6 @@ class _FusionIndividual(list):
 
 
 class MultimodalDeapOptimizer:
-    # For instances made without __init__, as regret_analysis/exhaustive_enumerator.py does.
     algebra = AlgebraConfig()
 
     def __init__(
@@ -387,7 +397,7 @@ class MultimodalDeapOptimizer:
         generations: int = 20,
         crossover_probability: float = 0.7,
         mutation_probability: float = 0.4,
-        random_seed: int = 42,
+        random_seed: Optional[int] = None,
         maximize_metric: bool = True,
         elite_size: int = 2,
         max_workers: int = 1,
@@ -475,6 +485,7 @@ class MultimodalDeapOptimizer:
         self.hall_of_fame_size = max(1, hall_of_fame_size)
         self.hall_of_fame: Dict[str, List[FusionSearchResult]] = {}
         self._hof_fitness: Dict[str, List[Tuple[float, ...]]] = {}
+        random_seed = get_global_seed() if random_seed is None else random_seed
         self.rng = random.Random(random_seed)
         self._eval_counter = 0
         self._current_generation = -1
@@ -530,6 +541,7 @@ class MultimodalDeapOptimizer:
         for task in self.tasks:
             task_name = task.model.name
             self._current_task_name = task_name
+            self.rng = self._task_rng(task_name)
             self.optimization_results.setdefault(task_name, [])
             self.evaluation_errors.setdefault(task_name, 0)
             self.oversized_candidates.setdefault(task_name, 0)
@@ -597,6 +609,20 @@ class MultimodalDeapOptimizer:
                 population = self._next_generation(population, task_name, task)
 
         return self.optimization_results
+
+    def _task_rng(self, task_name: str) -> random.Random:
+        return random.Random(f"{self.random_seed}:{task_name}")
+
+    def _select_tournament(self, population: List[Any], k: int, tournsize: int):
+        """deap.tools.selTournament, but drawing from self.rng instead of the
+        global random module."""
+        return [
+            max(
+                (self.rng.choice(population) for _ in range(tournsize)),
+                key=lambda ind: ind.fitness,
+            )
+            for _ in range(k)
+        ]
 
     def _make_individual(self, genome: DagGenome):
         return _FusionIndividual([genome], self._fitness_type)
@@ -673,7 +699,7 @@ class MultimodalDeapOptimizer:
         retries = 0
         tournsize = max(1, min(3, len(population)))
         while len(next_population) < self.population_size and retries < retry_budget:
-            p1, p2 = tools.selTournament(population, 2, tournsize=tournsize)
+            p1, p2 = self._select_tournament(population, 2, tournsize)
 
             if self.rng.random() < self.crossover_probability:
                 g1, g2 = self._crossover_genomes(p1[0], p2[0])
@@ -739,9 +765,7 @@ class MultimodalDeapOptimizer:
                 ctx=create_mp_context(),
                 threads_per_worker=self.threads_per_worker,
                 gpu_devices=[info["index"] for info in gpu_memory_info()],
-                gpu_slots_per_device=int(
-                    os.environ.get("SCURO_GPU_SLOTS_PER_DEVICE", "1")
-                ),
+                gpu_slots_per_device=default_gpu_slots_per_device(),
                 gpu_demand_fraction=1.0,
             )
         except Exception:
@@ -769,6 +793,8 @@ class MultimodalDeapOptimizer:
             for gpu_id in pool.gpu_worker_devices:
                 if pool.has_idle_worker_for(gpu_id):
                     return gpu_id
+            if deterministic_enabled() and pool.gpu_worker_devices:
+                return False
             return None if pool.has_idle_cpu_worker else False
         if pool.has_idle_worker_for(None, allow_gpu_worker_for_cpu=True):
             return None
@@ -1314,11 +1340,15 @@ class MultimodalDeapOptimizer:
         c1, c2 = copy.deepcopy(g1), copy.deepcopy(g2)
 
         if c1.leaves == c2.leaves:
-            paths1 = self._internal_paths(c1.tree)
-            paths2 = self._internal_paths(c2.tree)
-            if paths1 and paths2:
-                path1 = self.rng.choice(paths1)
-                path2 = self.rng.choice(paths2)
+            pairs = [
+                (path1, path2)
+                for path1 in self._internal_paths(c1.tree)
+                for path2 in self._internal_paths(c2.tree)
+                if sorted(_collect_leaf_indices(_get_subtree(c1.tree, path1)))
+                == sorted(_collect_leaf_indices(_get_subtree(c2.tree, path2)))
+            ]
+            if pairs:
+                path1, path2 = self.rng.choice(pairs)
                 subtree1 = _get_subtree(c1.tree, path1)
                 subtree2 = _get_subtree(c2.tree, path2)
                 c1.tree = _replace_subtree(c1.tree, path1, subtree2)
@@ -1339,7 +1369,7 @@ class MultimodalDeapOptimizer:
                 )
             return c1, c2
 
-        shared_paths = set(c1.fusion_ops) & set(c2.fusion_ops)
+        shared_paths = sorted(set(c1.fusion_ops) & set(c2.fusion_ops))
         for path in shared_paths:
             if self.rng.random() < 0.5:
                 c1.fusion_ops[path], c2.fusion_ops[path] = (

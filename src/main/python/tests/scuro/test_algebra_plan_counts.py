@@ -56,11 +56,13 @@ class TestPlanCounts(unittest.TestCase):
     def test_known_values(self):
         counts = count_fusion_plans(3, [Concatenation, Sum, Average], ALL_LAWS, True)
         self.assertEqual((counts["legacy_exhaustive"], counts["ordered"]), (648, 108))
-        # comm alone divides the ordered trees by 2^(n-1)
         self.assertEqual(
             count_fusion_plans(4, COMM_ASSOC, COMM, True)["commutative"], 3240 // 8
         )
         self.assertIsNone(count_fusion_plans(5, MIXED, ALL_LAWS, True)["canonical"])
+        self.assertEqual(
+            count_fusion_plans(3, [Concatenation], COMM, True)["commutative"], 6
+        )
 
     def test_search_space_sums_over_subsets(self):
         per_size = {n: count_fusion_plans(n, MIXED, ALL_LAWS, False) for n in (2, 3)}

@@ -18,14 +18,13 @@
 # under the License.
 #
 # -------------------------------------------------------------
-import os
-import random
 
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 from typing import List, Dict, Any, Optional
 from systemds.scuro.utils.static_variables import get_device
+from systemds.scuro.utils.utils import set_random_seeds
 import numpy as np
 
 from systemds.scuro.modality.modality import Modality
@@ -36,10 +35,7 @@ from systemds.scuro.representations.representation import (
     stats_bytes,
 )
 
-from systemds.scuro.drsearch.operator_registry import register_fusion_operator
 
-
-@register_fusion_operator()
 class LSTM(Fusion):
     fit_requirement = FitRequirement.SUPERVISED
     preserves_leading_axis = True
@@ -97,16 +93,7 @@ class LSTM(Fusion):
         self.model_state = None
         self.is_multilabel = False
 
-        self._set_random_seeds()
-
-    def _set_random_seeds(self, seed=42):
-        os.environ["PYTHONHASHSEED"] = str(seed)
-        random.seed(seed)
-        np.random.seed(seed)
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed(seed)
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
+        set_random_seeds()
 
     @staticmethod
     def _shape_description(modality: Modality) -> str:
@@ -202,7 +189,9 @@ class LSTM(Fusion):
             aligned_modalities.append(data)
 
         concatenated_data = np.concatenate(aligned_modalities, axis=2)
-        return concatenated_data.astype(np.float32)
+        return np.nan_to_num(
+            concatenated_data.astype(np.float32), nan=0.0, posinf=0.0, neginf=0.0
+        )
 
     def _parameter_bytes(self, input_dim: int, num_classes: int) -> int:
         directions = 2
@@ -305,8 +294,8 @@ class LSTM(Fusion):
                 self.classifier = nn.Linear(hidden_dim * 2, num_classes)
 
             def forward(self, x):
-                lstm_out, _ = self.lstm(x)
-                last_output = lstm_out[:, -1, :]
+                _, (h_n, _) = self.lstm(x)
+                last_output = torch.cat((h_n[-2], h_n[-1]), dim=1)
                 dropped = self.dropout(last_output)
                 output = self.classifier(dropped)
 

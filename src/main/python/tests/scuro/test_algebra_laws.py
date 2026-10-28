@@ -58,16 +58,20 @@ def _operands(widths, dtypes, rank):
 def _fuse(op, params, *operands):
     modalities = []
     for data in operands:
+        if isinstance(data, Modality):
+            modalities.append(data)
+            continue
         metadata = [ModalityType.EMBEDDING.create_metadata(d) for d in data]
         modality = TransformedModality(
             Modality(ModalityType.EMBEDDING, 0, metadata), "operand"
         )
         modality.data = data
         modalities.append(modality)
-    return np.asarray(op(params).transform(modalities))
+    return modalities[0].combine(modalities[1:], op(params))
 
 
 def _assert_same(x, y, exact):
+    x, y = (np.asarray(getattr(v, "data", v)) for v in (x, y))
     assert x.shape == y.shape
     if exact:
         np.testing.assert_array_equal(x, y)
@@ -76,8 +80,8 @@ def _assert_same(x, y, exact):
 
 
 def _prepared(x, width):
-    # What _prepare_modalities hands to execute: hidden mean aggregation, then zero-padding.
     x = x.mean(axis=1) if x.ndim == 3 else x
+    x = x / np.linalg.norm(x, axis=-1, keepdims=True)
     return np.pad(x, ((0, 0), (0, width - x.shape[-1])))
 
 
@@ -98,7 +102,7 @@ def _avg_flatten(f, a, b, c, exact):
 
 
 def _concat_perm(f, a, b, c, exact):
-    _assert_same(f(a, b), np.roll(f(b, a), -b.shape[-1], axis=-1), exact=True)
+    _assert_same(f(a, b), np.roll(f(b, a).data, -b.shape[-1], axis=-1), exact=True)
 
 
 LAW_CHECKS = {
@@ -134,7 +138,8 @@ class TestAlgebraLaws(unittest.TestCase):
         a, b, _ = _operands(WIDTHS["equal"], DTYPES["float32"], rank=2)
         self.assertFalse(
             np.array_equal(
-                _fuse(Concatenation, params, a, b), _fuse(Concatenation, params, b, a)
+                _fuse(Concatenation, params, a, b).data,
+                _fuse(Concatenation, params, b, a).data,
             )
         )
         self.assertFalse({"comm", "concat_perm"} & Concatenation.algebraic_laws(params))

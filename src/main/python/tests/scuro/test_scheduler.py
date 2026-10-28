@@ -77,7 +77,7 @@ class TestNodeResourceScheduler(unittest.TestCase):
 
             def get_output_stats(self, input_stats):
                 return RepresentationStats(
-                    input_stats.num_instances, (self.dimensionality)
+                    input_stats.num_instances, (self.dimensionality,)
                 )
 
             def estimate_memory_bytes(self, input_stats):

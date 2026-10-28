@@ -18,6 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import math
 import multiprocessing as mp
 import os
 import time
@@ -26,11 +27,15 @@ from typing import Any, Dict, List, Optional, Union
 
 import torch
 
+from systemds.scuro.dataloader.base_loader import LazyFileSequence
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.drsearch.modality_result_cache import RefCountResultCache
 from systemds.scuro.drsearch.modality_shared_memory import (
+    SHARED_MEMORY_MIN_BYTES,
+    _should_offload,
     add_shared_memory_candidate,
     collect_shm_names_from_payload,
+    move_arrays_to_shared_memory,
     unlink_shm,
 )
 from systemds.scuro.drsearch.node_scheduler import MemoryAwareNodeScheduler
@@ -39,9 +44,17 @@ from systemds.scuro.drsearch.representation_dag import (
     RepresentationNode,
 )
 from systemds.scuro.drsearch.task import PerformanceMeasure
+from systemds.scuro.models.fused_mlp import (
+    candidate_bytes,
+    candidate_slots,
+    fused_gpu_bytes,
+    fused_training_enabled,
+    supports_fused_training,
+)
 from systemds.scuro.drsearch.worker_pool import (
     PersistentWorkerPool,
     create_mp_context,
+    default_gpu_slots_per_device,
     default_threads_per_worker,
 )
 from systemds.scuro.representations.aggregated_representation import (
@@ -68,6 +81,20 @@ from systemds.scuro.utils.memory_utility import (
 from systemds.scuro.utils.static_variables import DEBUG
 
 _MAX_NODE_RETRIES = int(os.environ.get("SCURO_MAX_NODE_RETRIES", "3"))
+_FUSED_CONTEXT_BYTES = 512 * 2**20
+_FUSED_WAIT_S = float(os.environ.get("SCURO_FUSED_WAIT_S", "30"))
+
+
+def _materialize_lazy_leaves() -> bool:
+    return os.environ.get("SCURO_MATERIALIZE_LAZY_LEAVES", "1") == "1"
+
+
+def _lazy_leaf_budget_fraction() -> float:
+    return float(os.environ.get("SCURO_LAZY_LEAF_BUDGET_FRACTION", "0.5"))
+
+
+def _keep_worker_models() -> bool:
+    return os.environ.get("SCURO_KEEP_WORKER_MODELS", "1") == "1"
 
 
 def _place_on_device(obj: Any, gpu_id: Optional[int]) -> None:
@@ -113,17 +140,21 @@ def _run_gpu_op(fn, gpu_id: Optional[int], cleanup_after: bool = True):
 _WORKER_OP_CACHE: Dict[str, Any] = {}
 
 
+def _operation_cache_key(node) -> Optional[str]:
+    if not getattr(node.operation, "cache_in_worker", False):
+        return None
+    try:
+        params = sorted(
+            (kv for kv in node.parameters.items() if not kv[0].startswith("_")),
+            key=lambda kv: kv[0],
+        )
+        return f"{node.operation.__module__}.{node.operation.__qualname__}|{params!r}"
+    except Exception:
+        return None
+
+
 def _instantiate_operation(node):
-    cache_key = None
-    if getattr(node.operation, "cache_in_worker", False):
-        try:
-            params_repr = repr(sorted(node.parameters.items(), key=lambda kv: kv[0]))
-            cache_key = (
-                f"{node.operation.__module__}.{node.operation.__qualname__}"
-                f"|{params_repr}"
-            )
-        except Exception:
-            cache_key = None
+    cache_key = _operation_cache_key(node)
     if cache_key is not None and cache_key in _WORKER_OP_CACHE:
         return _WORKER_OP_CACHE[cache_key]
     operation = node.operation(params=node.parameters)
@@ -242,6 +273,51 @@ def _execute_node_worker(node, input_mods: List[Any], gpu_id: Optional[int]):
     }
 
 
+def _task_data(modality, aggregation):
+    if aggregation is None:
+        return modality.data
+    return aggregation.operation(params=aggregation.parameters).transform(modality).data
+
+
+def _execute_task_batch_worker(task: Any, items: List[tuple], gpu_id: int):
+    start_time = time.perf_counter()
+    device = torch.device(f"cuda:{gpu_id}")
+    torch.cuda.set_device(device)
+    datas, failed = [], {}
+    for node_id, modality, aggregation in items:
+        try:
+            datas.append((node_id, _task_data(modality, aggregation)))
+        except Exception as e:
+            failed[node_id] = f"{type(e).__name__}: {e}"
+
+    allowed = os.sched_getaffinity(0)
+    cores = sorted(allowed)
+    os.sched_setaffinity(0, {cores[os.getpid() % len(cores)]})
+    try:
+        scores = task.run_many([data for _, data in datas], device)
+    finally:
+        os.sched_setaffinity(0, allowed)
+        cleanup_gpu(gpu_id)
+    share = (time.perf_counter() - start_time) / max(1, len(datas))
+    results = {}
+    for i, ((node_id, _), result) in enumerate(zip(datas, scores)):
+        if isinstance(result, Exception):
+            failed[node_id] = f"{type(result).__name__}: {result}"
+            continue
+        results[node_id] = {
+            "scores": result,
+            "task_time": share,
+            "task_timing": dict(task.last_run_timing),
+            "memory": None,
+            "peak_bytes": -1,
+            "gpu_peak_bytes": -1,
+            "start_time": start_time + i * share,
+            "end_time": start_time + (i + 1) * share,
+            "pid": os.getpid(),
+        }
+    return {"results": results, "failed_nodes": failed}
+
+
 def _execute_task_worker(
     task_node_id: str,
     task: Any,
@@ -261,15 +337,7 @@ def _execute_task_worker(
 
     def _run_task():
         start = time.perf_counter()
-        if aggregation is not None:
-            data = (
-                aggregation.operation(params=aggregation.parameters)
-                .transform(modality)
-                .data
-            )
-        else:
-            data = modality.data
-        scores = task.run(data)
+        scores = task.run(_task_data(modality, aggregation))
         end = time.perf_counter()
         return scores, end - start
 
@@ -347,11 +415,29 @@ def _execute_leaf_batch_worker(nodes: List[Any], modality: Any, gpu_id: Optional
     }
 
 
-def _load_leaf_worker(modality: Any) -> Dict[str, Any]:
+def _load_leaf_worker(modality: Any, materialize: bool = False) -> Dict[str, Any]:
     if hasattr(modality, "extract_raw_data") and not modality.has_data():
         modality.extract_raw_data()
 
     data = modality.data
+    if materialize and isinstance(data, LazyFileSequence):
+        arrays = data.materialize()
+        shared, shm_name, shm_bytes = move_arrays_to_shared_memory(arrays)
+        if shared is not None:
+            return {
+                "data": shared,
+                "metadata": modality.metadata,
+                "shm_name": shm_name,
+                "shm_bytes": shm_bytes,
+            }
+        if sum(getattr(a, "nbytes", 0) for a in arrays) < SHARED_MEMORY_MIN_BYTES:
+            return {
+                "data": arrays,
+                "metadata": modality.metadata,
+                "shm_name": None,
+                "materialized": True,
+            }
+
     resident_bytes = 0
     try:
         resident_bytes = modality.estimate_peak_memory_bytes()["cpu_peak_bytes"]
@@ -367,21 +453,52 @@ def _load_leaf_worker(modality: Any) -> Dict[str, Any]:
     return {"data": data, "metadata": modality.metadata, "shm_name": shm_name}
 
 
+def _retained_gpu_bytes() -> int:
+    if not torch.cuda.is_available() or not torch.cuda.is_initialized():
+        return 0
+    return int(torch.cuda.memory_allocated(0))
+
+
+def _release_worker_models() -> None:
+    _WORKER_OP_CACHE.clear()
+    if torch.cuda.is_available() and torch.cuda.is_initialized():
+        cleanup_gpu(0)
+
+
 def _dispatch_node(payload, gpu_id):
     node, input_mods = payload
+    cache_key = _operation_cache_key(node)
+    if cache_key is not None and cache_key not in _WORKER_OP_CACHE:
+        _release_worker_models()
+    keep = cache_key is not None and gpu_id is not None and _keep_worker_models()
     try:
-        return _execute_node_worker(node, input_mods, gpu_id)
+        value = _execute_node_worker(node, input_mods, gpu_id)
+    except BaseException:
+        keep = False
+        raise
     finally:
-        # CSE executes each node once; retaining its model after completion
-        # makes scheduler reservations lie about persistent worker memory.
-        _WORKER_OP_CACHE.clear()
-        if gpu_id is not None:
+        if cache_key is not None and not keep:
+            _release_worker_models()
+        elif gpu_id is not None:
             cleanup_gpu(gpu_id)
+    value["cached_operation"] = next(iter(_WORKER_OP_CACHE), None)
+    value["retained_gpu_bytes"] = _retained_gpu_bytes()
+    return value
+
+
+def _dispatch_release_models(_payload, _gpu_id):
+    _release_worker_models()
+    return {"retained_gpu_bytes": _retained_gpu_bytes()}
 
 
 def _dispatch_task(payload, gpu_id):
     task_node_id, task, modality, aggregation = payload
     return _execute_task_worker(task_node_id, task, modality, gpu_id, aggregation)
+
+
+def _dispatch_task_batch(payload, gpu_id):
+    task, items = payload
+    return _execute_task_batch_worker(task, items, gpu_id)
 
 
 def _dispatch_leaf_batch(payload, gpu_id):
@@ -390,15 +507,17 @@ def _dispatch_leaf_batch(payload, gpu_id):
 
 
 def _dispatch_load_leaf(payload, _gpu_id):
-    (modality,) = payload
-    return _load_leaf_worker(modality)
+    modality, materialize = payload
+    return _load_leaf_worker(modality, materialize)
 
 
 _WORKER_DISPATCH = {
     "node": _dispatch_node,
     "task": _dispatch_task,
+    "task_batch": _dispatch_task_batch,
     "leaf_batch": _dispatch_leaf_batch,
     "load_leaf": _dispatch_load_leaf,
+    "release_models": _dispatch_release_models,
 }
 
 
@@ -408,8 +527,19 @@ class _NodeUnit:
 
 
 @dataclass
+class _ReleaseUnit:
+    pid: int
+
+
+@dataclass
 class _BatchUnit:
     node_ids: List[str]
+
+
+@dataclass
+class _TaskBatchUnit(_BatchUnit):
+    gpu_id: int = 0
+    gpu_bytes: int = 0
 
 
 @dataclass
@@ -493,12 +623,16 @@ class NodeExecutor:
 
         self._node_attempts: Dict[str, int] = {}
 
-        self._job_units: Dict[int, Union[_NodeUnit, _BatchUnit]] = {}
+        self._job_units: Dict[int, Union[_NodeUnit, _BatchUnit, _ReleaseUnit]] = {}
+        self._worker_models: Dict[int, tuple] = {}
         self._job_retained_shm: Dict[int, List[str]] = {}
         self._leaf_shm_names: List[str] = []
         self._leaf_shm_owners: Dict[str, Any] = {}
         self._leaf_original_data: Dict[str, Any] = {}
+        self._leaf_unshared_originals: List[tuple] = []
         self._task_results: Dict[str, ResultEntry] = {}
+        self._fused_shapes: Dict[tuple, tuple] = {}
+        self._fused_ready_since: Dict[str, float] = {}
 
         self._owns_pool = worker_pool is None
         if worker_pool is None:
@@ -509,9 +643,7 @@ class NodeExecutor:
                 ctx=create_mp_context(),
                 threads_per_worker=threads_per_worker,
                 gpu_devices=list(getattr(self.scheduler, "gpu_devices", [])),
-                gpu_slots_per_device=int(
-                    os.environ.get("SCURO_GPU_SLOTS_PER_DEVICE", "1")
-                ),
+                gpu_slots_per_device=default_gpu_slots_per_device(),
                 gpu_demand_fraction=1.0,
             )
         self._pool = worker_pool
@@ -544,7 +676,7 @@ class NodeExecutor:
         return True
 
     def _release_parents(self, node_id: str) -> None:
-        for parent_id in self.scheduler.get_valid_parents(node_id):
+        for parent_id in set(self.scheduler.get_valid_parents(node_id)):
             self._result_cache.dec_ref(parent_id)
 
     def _retain_for_submit(self, parent_ids: List[str], payload: Any) -> List[str]:
@@ -557,22 +689,50 @@ class NodeExecutor:
         names = list(dict.fromkeys(names))
         return self._result_cache.retain_shm_names(names)
 
+    def _should_materialize_leaf(self, modality: Any) -> bool:
+        if not _materialize_lazy_leaves():
+            return False
+        data = modality.data if modality.has_data() else None
+        if data is not None and not isinstance(data, LazyFileSequence):
+            return False
+        estimate = getattr(
+            getattr(modality, "data_loader", None), "estimate_decoded_bytes", None
+        )
+        if not callable(estimate):
+            return False
+        metadata = None
+        if data is not None and len(modality.metadata or []) == len(data):
+            metadata = modality.metadata
+        try:
+            decoded_bytes = estimate(metadata)
+        except (KeyError, TypeError, ValueError):
+            return False
+        if not decoded_bytes:
+            return False
+        budget = self.scheduler.memory_budget["cpu"] * _lazy_leaf_budget_fraction()
+        if self._leaf_cached_bytes + decoded_bytes > budget:
+            return False
+        return decoded_bytes < SHARED_MEMORY_MIN_BYTES or _should_offload(decoded_bytes)
+
     def _load_leaf_modalities(self) -> None:
         for modality in self._modalities:
             if self._loads_in_chunks(modality):
                 continue
+            original = None
             if getattr(modality, "has_data", None) and modality.has_data():
                 original = modality.data
-                wrapped, shm_name, _, _ = add_shared_memory_candidate(original)
-                if shm_name is not None:
-                    modality._data = wrapped
-                    self._leaf_shm_names.append(shm_name)
-                    self._leaf_shm_owners[shm_name] = modality
-                    self._leaf_original_data[shm_name] = original
-                continue
+                if not isinstance(original, LazyFileSequence):
+                    wrapped, shm_name, _, _ = add_shared_memory_candidate(original)
+                    if shm_name is not None:
+                        modality._data = wrapped
+                        self._leaf_shm_names.append(shm_name)
+                        self._leaf_shm_owners[shm_name] = modality
+                        self._leaf_original_data[shm_name] = original
+                    continue
+            materialize = self._should_materialize_leaf(modality)
             attempts = 0
             while True:
-                self._pool.submit("load_leaf", (modality,), gpu_id=None)
+                self._pool.submit("load_leaf", (modality, materialize), gpu_id=None)
                 jr = self._pool.wait()
                 if jr.ok:
                     break
@@ -584,10 +744,20 @@ class NodeExecutor:
                     )
             modality._data = jr.value["data"]
             modality.metadata = jr.value["metadata"]
+            if jr.value.get("materialized"):
+                self._leaf_unshared_originals.append((modality, original))
             shm_name = jr.value.get("shm_name")
             if shm_name is not None:
                 self._leaf_shm_names.append(shm_name)
                 self._leaf_shm_owners[shm_name] = modality
+                if original is not None:
+                    self._leaf_original_data[shm_name] = original
+                shm_bytes = int(jr.value.get("shm_bytes", 0) or 0)
+                if shm_bytes:
+                    # The decoded leaf now occupies RAM (/dev/shm) for the
+                    # whole run; the scheduler only knew one lazy instance.
+                    self._leaf_cached_bytes += shm_bytes
+                    self._sync_cache_accounting()
 
     @staticmethod
     def _loads_in_chunks(modality: Any) -> bool:
@@ -607,6 +777,9 @@ class NodeExecutor:
             unlink_shm(shm_name)
         self._leaf_shm_names = []
         self._leaf_shm_owners = {}
+        for modality, original in self._leaf_unshared_originals:
+            modality._data = original
+        self._leaf_unshared_originals = []
 
     def _submit_node(
         self, node_id: str, allow_gpu_worker_for_cpu: bool = False
@@ -641,12 +814,20 @@ class NodeExecutor:
             retained = self._retain_for_submit(parent_ids, payload)
             self.scheduler.begin_execution(node_id)
             self.scheduler.move_to_running(node_id)
+            cache_key = _operation_cache_key(node)
             job_id = self._pool.submit(
                 "node",
                 (node, payload),
                 gpu_id=gpu_id,
                 allow_gpu_worker_for_cpu=allow_gpu_worker_for_cpu,
+                preferred_pids=[
+                    pid
+                    for pid, (_, _, key) in self._worker_models.items()
+                    if cache_key is not None and key == cache_key
+                ],
             )
+            if cache_key is not None:
+                self._set_worker_model(self._pool.job_pid(job_id), 0, None)
 
         self._job_units[job_id] = _NodeUnit(node_id)
         self._job_retained_shm[job_id] = retained
@@ -669,10 +850,136 @@ class NodeExecutor:
         self._job_units[job_id] = _BatchUnit(node_ids)
         self._job_retained_shm[job_id] = retained
 
+    def _set_worker_model(
+        self, pid: Optional[int], retained_bytes: int, cache_key: Optional[str]
+    ) -> None:
+        if pid is None:
+            return
+        if cache_key is None:
+            self._worker_models.pop(pid, None)
+        else:
+            self._worker_models[pid] = (
+                self._pool.worker_gpu(pid),
+                int(retained_bytes),
+                cache_key,
+            )
+        bytes_by_gpu: Dict[int, int] = {}
+        for gpu_id, nbytes, _ in self._worker_models.values():
+            if gpu_id is not None:
+                bytes_by_gpu[gpu_id] = bytes_by_gpu.get(gpu_id, 0) + nbytes
+        set_retained = getattr(self.scheduler, "set_retained_gpu_bytes", None)
+        if callable(set_retained):
+            set_retained(bytes_by_gpu)
+
+    def _submit_model_release(self, pid: int) -> int:
+        job_id = self._pool.submit_to(pid, "release_models", None)
+        self._job_units[job_id] = _ReleaseUnit(pid)
+        self._job_retained_shm[job_id] = []
+        return job_id
+
+    def _release_blocking_models(self) -> None:
+        pop_requests = getattr(self.scheduler, "pop_release_requests", None)
+        if not callable(pop_requests):
+            return
+        for gpu_id in pop_requests():
+            for pid, (worker_gpu, nbytes, _) in list(self._worker_models.items()):
+                if worker_gpu == gpu_id and nbytes > 0 and self._pool.is_idle(pid):
+                    self._submit_model_release(pid)
+
+    def _release_all_worker_models(self) -> None:
+        """Leave a reused pool's GPUs as free as the next executor measures."""
+        if self._job_units:
+            return
+        for pid in list(self._worker_models):
+            if self._pool.is_idle(pid):
+                self._submit_model_release(pid)
+        while self._job_units:
+            self._process_result(self._pool.wait())
+
+    def _fused_task_nodes(self, ready) -> List[str]:
+        if not self.scheduler.gpu_devices or not fused_training_enabled():
+            return []
+        fused = []
+        for node_id in ready:
+            if isinstance(node_id, list):
+                continue
+            node = self.scheduler.mapping[node_id]
+            if not self._is_task_node(node):
+                continue
+            task = self._tasks[int(node.parameters.get("_task_idx", 0))]
+            if not supports_fused_training(getattr(task, "model", None)):
+                continue
+            if self._fused_batch_shape(node)[1] <= fused_gpu_bytes():
+                fused.append(node_id)
+        return fused
+
+    def _fused_batch_shape(self, node) -> tuple:
+        task_idx = int(node.parameters.get("_task_idx", 0))
+        stats = self.scheduler.node_stats.get(node.inputs[0])
+        width = math.prod(getattr(stats, "output_shape", None) or (1,))
+        key = (task_idx, int(width))
+        if key not in self._fused_shapes:
+            task = self._tasks[task_idx]
+            rows = len(set(task.train_indices) | set(task.test_indices or []))
+            per_candidate = candidate_bytes(task.model, key[1], rows, task.kfold)
+            slots = candidate_slots(
+                task.model, key[1], rows, task.kfold, per_candidate=per_candidate
+            )
+            self._fused_shapes[key] = (key, per_candidate, slots)
+        return self._fused_shapes[key]
+
+    def _submit_fused_task_batches(self, node_ids: List[str]) -> None:
+        idle = all(isinstance(u, _TaskBatchUnit) for u in self._job_units.values())
+        now = time.perf_counter()
+        groups = {}
+        for node_id in node_ids:
+            self._fused_ready_since.setdefault(node_id, now)
+            shape = self._fused_batch_shape(self.scheduler.mapping[node_id])
+            groups.setdefault(shape, []).append(node_id)
+        for ((task_idx, _), per_candidate, slots), members in sorted(groups.items()):
+            task = self._tasks[task_idx]
+            gpu_bytes = slots * per_candidate + _FUSED_CONTEXT_BYTES
+            waited = now - min(self._fused_ready_since[n] for n in members)
+            for start in range(0, len(members), slots):
+                if len(members) - start < slots and not idle and waited < _FUSED_WAIT_S:
+                    break
+                gpu_id = self.scheduler.reserve_gpu(
+                    gpu_bytes,
+                    lambda g: self._pool.has_idle_worker_for(g),
+                    force=not self._job_units,
+                )
+                if gpu_id is None:
+                    return
+                batch = members[start : start + slots]
+                items, retained = [], []
+                for node_id in batch:
+                    node = self.scheduler.mapping[node_id]
+                    parent_ids = self.scheduler.get_valid_parents(node_id)
+                    payload = (
+                        self._get_cached_parent(parent_ids[0])
+                        if parent_ids
+                        else self._modalities[0]
+                    )
+                    self._task_results[node_id] = ResultEntry(
+                        dag=self._get_dag_from_node_ids(node_id),
+                        representation_time=payload.transform_time,
+                    )
+                    retained += self._retain_for_submit(parent_ids, payload)
+                    items.append((node_id, payload, node.aggregation))
+                    self._fused_ready_since.pop(node_id, None)
+                    self.scheduler.begin_execution(node_id)
+                    self.scheduler.move_to_running(node_id)
+                job_id = self._pool.submit("task_batch", (task, items), gpu_id=gpu_id)
+                self._job_units[job_id] = _TaskBatchUnit(batch, gpu_id, gpu_bytes)
+                self._job_retained_shm[job_id] = retained
+
     def _fill_pipeline(self) -> None:
         if not self._pool.has_idle_worker:
             return
         ready = self.scheduler.get_runnable().copy()
+        fused = self._fused_task_nodes(ready)
+        if fused:
+            ready = [e for e in ready if isinstance(e, list) or e not in set(fused)]
 
         def _gpu_id(entry):
             node_id = entry[0] if isinstance(entry, list) else entry
@@ -701,6 +1008,9 @@ class NodeExecutor:
                     entry,
                     allow_gpu_worker_for_cpu=allow_gpu_worker_for_cpu,
                 )
+        if fused:
+            self._submit_fused_task_batches(fused)
+        self._release_blocking_models()
 
     def _get_cached_parent(self, parent_id: str):
         try:
@@ -736,10 +1046,20 @@ class NodeExecutor:
         try:
             if unit is None:
                 return
+            if isinstance(unit, _ReleaseUnit):
+                retained_bytes = jr.value["retained_gpu_bytes"] if jr.ok else 0
+                self._set_worker_model(unit.pid, retained_bytes, None)
+                return
+            if isinstance(unit, _TaskBatchUnit):
+                self.scheduler.release_gpu(unit.gpu_id, unit.gpu_bytes)
             if not jr.ok:
                 self._handle_job_failure(unit, jr)
                 return
-            if isinstance(unit, _BatchUnit):
+            if isinstance(unit, _TaskBatchUnit):
+                for node_id, value in jr.value["results"].items():
+                    self._handle_node_success(node_id, value)
+                self._requeue_failed(jr.value["failed_nodes"])
+            elif isinstance(unit, _BatchUnit):
                 self._handle_batch_success(jr.value)
             else:
                 self._handle_node_success(unit.node_id, jr.value)
@@ -754,6 +1074,11 @@ class NodeExecutor:
         self.scheduler.set_cached_cpu_bytes(self._leaf_cached_bytes + cache_bytes)
 
     def _handle_job_failure(self, unit: Union[_NodeUnit, _BatchUnit], jr):
+        if jr.worker_died or (
+            isinstance(unit, _NodeUnit)
+            and not self._is_task_node(self.scheduler.mapping[unit.node_id])
+        ):
+            self._set_worker_model(jr.pid, 0, None)
         reason = jr.error or "unknown worker failure"
         if jr.cuda_oom:
             reason += " (CUDA out of memory)"
@@ -762,6 +1087,8 @@ class NodeExecutor:
             requeued = self._requeue_or_give_up(node_id, reason)
             if not requeued:
                 self._release_parents(node_id)
+            elif isinstance(unit, _NodeUnit) and jr.gpu_peak_bytes > 0:
+                self.scheduler.raise_gpu_estimate(node_id, jr.gpu_peak_bytes)
 
     def _handle_node_success(self, node_id: str, value: Dict[str, Any]) -> None:
         node = self.scheduler.mapping[node_id]
@@ -805,6 +1132,11 @@ class NodeExecutor:
             self._release_parents(node_id)
             self.scheduler.complete_node(node_id)
         else:
+            self._set_worker_model(
+                value.get("pid"),
+                value.get("retained_gpu_bytes", 0),
+                value.get("cached_operation"),
+            )
             self._handle_modality_result(
                 value["result"],
                 node_id,
@@ -835,7 +1167,10 @@ class NodeExecutor:
                 shm_bytes=info.get("shm_bytes", 0),
             )
 
-        for node_id, reason in value.get("failed_nodes", {}).items():
+        self._requeue_failed(value.get("failed_nodes", {}))
+
+    def _requeue_failed(self, failed_nodes: Dict[str, str]) -> None:
+        for node_id, reason in failed_nodes.items():
             if not self._requeue_or_give_up(node_id, reason):
                 self._release_parents(node_id)
 
@@ -1080,11 +1415,14 @@ class NodeExecutor:
                 self._fill_pipeline()
                 if not self._job_units:
                     continue
-                jr = self._pool.wait()
-                self._process_result(jr)
+                jr = self._pool.wait(_FUSED_WAIT_S if self._fused_ready_since else None)
+                if jr is not None:
+                    self._process_result(jr)
         finally:
             if self._owns_pool:
                 self._pool.shutdown()
+            else:
+                self._release_all_worker_models()
             self._result_cache.cleanup_all()
             self._cleanup_leaf_shared_memory()
 

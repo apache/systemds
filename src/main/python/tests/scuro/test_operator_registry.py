@@ -120,6 +120,20 @@ class TestOperatorRegistry(unittest.TestCase):
             ],
         )
 
+    def test_image_representations_in_registry(self):
+        registry = Registry()
+        self.assertCountEqual(
+            registry.get_representations(ModalityType.IMAGE),
+            [
+                ResNet,
+                OpenFace,
+                ImageBind,
+                ColorHistogram,
+                VGG19,
+                CLIPVisual,
+            ],
+        )
+
     def test_timeseries_representations_in_registry(self):
         registry = Registry()
         assert registry.get_representations(ModalityType.TIMESERIES) == [

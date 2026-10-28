@@ -35,6 +35,18 @@ def _dag_size(entry) -> int:
         return 0
 
 
+def _tie_key(entry):
+    try:
+        pipeline_id = entry.dag.pipeline_id()
+    except Exception:
+        pipeline_id = ""
+    return _dag_size(entry), pipeline_id
+
+
+def tie_broken(entries) -> list:
+    return sorted(range(len(entries)), key=lambda i: _tie_key(entries[i]))
+
+
 def rank_by_robustness(
     entries: Iterable,
     *,
@@ -113,7 +125,7 @@ def rank_by_robustness(
     else:
         keys = [(True, 0.0, float(s)) for s in robustness]
 
-    local_indices = sorted(range(len(entries)), key=lambda i: keys[i], reverse=True)
+    local_indices = sorted(tie_broken(entries), key=lambda i: keys[i], reverse=True)
     sorted_entries = [entries[i] for i in local_indices]
     sorted_indices = [original_indices[i] for i in local_indices]
 
@@ -183,19 +195,7 @@ def rank_by_tradeoff(
             else:
                 setattr(entry, score_attr, score)
 
-    sorted_entries = sorted(
-        entries,
-        key=lambda e: e.tradeoff_score if hasattr(e, "tradeoff_score") else 0.0,
-        reverse=True,
-    )
-
-    sorted_indices = [
-        i
-        for i, _ in sorted(
-            enumerate(entries),
-            key=lambda pair: pair[1].tradeoff_score if pair is not None else None,
-            reverse=True,
-        )
-    ]
+    sorted_indices = sorted(tie_broken(entries), key=lambda i: scores[i], reverse=True)
+    sorted_entries = [entries[i] for i in sorted_indices]
 
     return sorted_entries, sorted_indices

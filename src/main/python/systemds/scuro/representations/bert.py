@@ -18,6 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
+from contextlib import contextmanager
 from dataclasses import dataclass
 import numpy as np
 from systemds.scuro.modality.transformed import TransformedModality
@@ -29,6 +30,10 @@ from systemds.scuro.representations.utils import (
     LengthBucketBatchSampler,
     OwnerAccumulator,
     OwnedSequenceDataset,
+    canonical_batches,
+    capture_layer_outputs,
+    chunk_embedding_cache,
+    existing_layers,
     flatten_owned_sequences,
     move_batch_to_device,
     pin_memory_for,
@@ -50,10 +55,18 @@ from systemds.scuro.utils.torch_dataset import TextDataset, TextSpanDataset
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
+# Padded lengths of cached chunk batches are multiples of this many tokens.
+CHUNK_LENGTH_STEP = 16
+
 
 class BertFamily(UnimodalRepresentation):
     supports_aggregation_pushdown = True
     cache_in_worker = True
+    layer_parameter = "layer"
+    MODEL_BYTES = None
+    HIDDEN_SIZE = 768
+    NUM_LAYERS = 12
+    INTERMEDIATE_SIZE = 3072
 
     def __init__(
         self,
@@ -87,8 +100,6 @@ class BertFamily(UnimodalRepresentation):
         self.params = params
         self.model = None
         self.tokenizer = None
-        self.bert_output = None
-        self._activation_hook = None
         if params is not None:
             self.layer = params.get("layer", self.layer)
             self.batch_size = int((params or {}).get("batch_size", batch_size))
@@ -143,9 +154,25 @@ class BertFamily(UnimodalRepresentation):
             input_stats.num_instances * np.prod(output_stats) * self.data_type.itemsize
         )
 
-    def estimate_peak_memory_bytes(self, input_stats):
+    def _model_spec(self):
+        if self.MODEL_BYTES is not None:
+            return (
+                self.MODEL_BYTES,
+                self.HIDDEN_SIZE,
+                self.NUM_LAYERS,
+                self.INTERMEDIATE_SIZE,
+            )
         model = AutoModel.from_pretrained(self.model_name)
-        params_bytes = model.get_memory_footprint()
+        cfg = model.config
+        return (
+            model.get_memory_footprint(),
+            cfg.hidden_size,
+            cfg.num_hidden_layers,
+            getattr(cfg, "intermediate_size", 4 * cfg.hidden_size),
+        )
+
+    def estimate_peak_memory_bytes(self, input_stats):
+        params_bytes, hidden_size, num_layers, intermediate_size = self._model_spec()
         tokenizer_bytes = 60 * 1024 * 1024  # rough upper bound
 
         output_bytes = self.estimate_output_memory_bytes(input_stats)
@@ -178,11 +205,6 @@ class BertFamily(UnimodalRepresentation):
             + 128 * 1024 * 1024
         )
 
-        cfg = model.config
-        hidden_size = cfg.hidden_size
-        num_layers = cfg.num_hidden_layers
-        intermediate_size = getattr(cfg, "intermediate_size", 4 * hidden_size)
-
         batch_tokens = self.batch_size * self.max_seq_length
         activations_per_token_per_layer = (
             self.C * (hidden_size + intermediate_size) * self.data_type.itemsize
@@ -197,7 +219,16 @@ class BertFamily(UnimodalRepresentation):
         }
 
     def transform(self, modality, aggregation=None):
-        transformed_modality = TransformedModality(modality, self)
+        layers = self.transform_layers(modality, [self.layer], aggregation)
+        if self.layer not in layers:
+            raise ValueError(f"{self.name} has no layer {self.layer!r}")
+        transformed_modality = layers[self.layer]
+        if self.output_file is not None:
+            save_embeddings(transformed_modality.data, self.output_file)
+        self.assert_output_stats(transformed_modality)
+        return transformed_modality
+
+    def transform_layers(self, modality, layer_names, aggregation=None):
         if self.tokenizer is None:
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.model_name, clean_up_tokenization_spaces=True
@@ -207,53 +238,43 @@ class BertFamily(UnimodalRepresentation):
 
         self.model = self.model.to(self.device)
         self.model.eval()
-        self.bert_output = None
-
-        def get_activation(name):
-            def hook(model, input, output):
-                if isinstance(output, tuple):
-                    self.bert_output = output[0]
-                elif hasattr(output, "last_hidden_state"):
-                    self.bert_output = output.last_hidden_state
-                else:
-                    self.bert_output = output
-
-            return hook
+        existing = set(existing_layers(self.model, layer_names))
+        layer_names = [
+            name
+            for name in dict.fromkeys(layer_names)
+            if name == "cls" or name in existing
+        ]
+        if not layer_names:
+            return {}
 
         aggregate_dim = (0,)
-        if self.layer != "cls":
-            if self._activation_hook is None:
-                for name, layer in self.model.named_modules():
-                    if name == self.layer:
-                        self._activation_hook = layer.register_forward_hook(
-                            get_activation(name)
-                        )
-                        break
         if ModalityType.TEXT.has_field(modality.metadata, "text_spans"):
             chunk_groups = list(TextSpanDataset(modality.data, modality.metadata))
             chunks, owner_ids = flatten_owned_sequences(chunk_groups)
             aggregate_dim = None if aggregation is not None else (0,)
-            embeddings = self.create_embeddings(
+            embeddings = self._embeddings_by_layer(
                 chunks,
                 self.model,
                 self.tokenizer,
+                layer_names,
                 aggregation,
                 owner_ids=owner_ids,
                 num_owners=len(chunk_groups),
                 grouped=aggregation is None,
             )
         else:
-            embeddings = self.create_embeddings(
-                modality.data, self.model, self.tokenizer
+            embeddings = self._embeddings_by_layer(
+                modality.data, self.model, self.tokenizer, layer_names
             )
-        if self.output_file is not None:
-            save_embeddings(embeddings, self.output_file)
 
-        transformed_modality.data_type = np.float32
-        transformed_modality.aggregate_dim = aggregate_dim
-        transformed_modality.data = embeddings
-        self.assert_output_stats(transformed_modality)
-        return transformed_modality
+        transformed = {}
+        for name in layer_names:
+            transformed_modality = TransformedModality(modality, self)
+            transformed_modality.data_type = np.float32
+            transformed_modality.aggregate_dim = aggregate_dim
+            transformed_modality.data = embeddings.pop(name)
+            transformed[name] = transformed_modality
+        return transformed
 
     def assert_output_stats(self, transformed_modality):
         if self.stats:
@@ -281,42 +302,125 @@ class BertFamily(UnimodalRepresentation):
         num_owners=None,
         grouped=False,
     ):
+        return self._embeddings_by_layer(
+            data,
+            model,
+            tokenizer,
+            [self.layer],
+            aggregation,
+            owner_ids=owner_ids,
+            num_owners=num_owners,
+            grouped=grouped,
+        )[self.layer]
+
+    def _embeddings_by_layer(
+        self,
+        data,
+        model,
+        tokenizer,
+        layer_names,
+        aggregation=None,
+        owner_ids=None,
+        num_owners=None,
+        grouped=False,
+    ):
+        """Encode the texts once and pool each requested layer's output.
+
+        With SCURO_TEXT_CHUNK_CACHE=1, texts already encoded by this process
+        for these layers are taken from the chunk cache instead.
+        """
         texts = list(TextDataset(data))
         single_owner = owner_ids is None and aggregation is not None
         if owner_ids is None:
             owner_ids = [0] * len(texts) if single_owner else range(len(texts))
         if num_owners is None:
             num_owners = 1 if single_owner else len(texts)
-        dataset = OwnedSequenceDataset(texts, owner_ids)
+        accumulators = {
+            name: OwnerAccumulator(num_owners, len(texts), aggregation)
+            for name in layer_names
+        }
 
-        length_encoding = tokenizer(
+        cache = chunk_embedding_cache()
+        encoder_key = self._chunk_cache_key(model) if cache is not None else None
+        if encoder_key is None:
+            self._encode(texts, owner_ids, model, tokenizer, layer_names, accumulators)
+        else:
+            self._encode_cached(
+                texts,
+                owner_ids,
+                model,
+                tokenizer,
+                layer_names,
+                accumulators,
+                cache,
+                encoder_key,
+            )
+
+        embeddings = {}
+        for name in layer_names:
+            layer_embeddings = accumulators.pop(name).finalize(grouped=grouped)
+            if single_owner:
+                layer_embeddings = layer_embeddings[0]
+            elif aggregation is None and not grouped:
+                layer_embeddings = list(layer_embeddings)
+            embeddings[name] = layer_embeddings
+        return embeddings
+
+    @contextmanager
+    def _layer_pass(self, model, layer_names):
+        """Yield run(inputs) -> {layer: pooled vectors} from one forward pass.
+
+        The layer name "cls" is the CLS token of the last hidden state; any
+        other name is a submodule whose output is mean-pooled over the tokens.
+        """
+        hooked = [name for name in layer_names if name != "cls"]
+        batch_mask = {}
+
+        def pool_hooked(output):
+            return pool_transformer_output(
+                _hidden_state(output), batch_mask["attention_mask"]
+            )
+
+        with transformer_inference_context(self.device), capture_layer_outputs(
+            model, hooked, pool_hooked
+        ) as outputs:
+
+            def run(inputs):
+                batch_mask["attention_mask"] = inputs["attention_mask"]
+                model_outputs = model(**inputs)
+                if "cls" in layer_names:
+                    outputs["cls"] = pool_transformer_output(
+                        model_outputs.last_hidden_state,
+                        inputs["attention_mask"],
+                        use_cls=True,
+                    )
+                return {name: outputs[name] for name in layer_names}
+
+            yield run
+
+    def _encode(self, texts, owner_ids, model, tokenizer, layer_names, accumulators):
+        """Encode all texts in length-bucketed batches padded to their longest."""
+        encoding = tokenizer(
             texts,
             padding=False,
             truncation=True,
             max_length=self.max_seq_length,
             return_attention_mask=True,
         )
-        attention_mask = length_encoding.get("attention_mask")
-        if isinstance(attention_mask, torch.Tensor):
-            lengths = attention_mask.sum(dim=1).tolist()
-        else:
-            lengths = [sum(mask) for mask in attention_mask]
+        features = [
+            {key: values[i] for key, values in encoding.items()}
+            for i in range(len(texts))
+        ]
+        lengths = [len(ids) for ids in encoding["input_ids"]]
+        dataset = OwnedSequenceDataset(features, owner_ids)
 
         def collate(samples):
-            batch_texts, batch_owner_ids, chunk_ids = zip(*samples)
-            inputs = tokenizer(
-                list(batch_texts),
-                return_offsets_mapping=True,
-                return_tensors="pt",
-                padding=True,
-                return_attention_mask=True,
-                truncation=True,
-                max_length=self.max_seq_length,
+            batch_features, batch_owner_ids, chunk_ids = zip(*samples)
+            inputs = tokenizer.pad(
+                list(batch_features), padding=True, return_tensors="pt"
             )
-            inputs = dict(inputs)
-            inputs.pop("offset_mapping", None)
             return (
-                inputs,
+                dict(inputs),
                 torch.tensor(batch_owner_ids, dtype=torch.long),
                 torch.tensor(chunk_ids, dtype=torch.long),
             )
@@ -327,33 +431,127 @@ class BertFamily(UnimodalRepresentation):
             collate_fn=collate,
             pin_memory=pin_memory_for(self.device),
         )
-        accumulator = OwnerAccumulator(num_owners, len(dataset), aggregation)
-        with transformer_inference_context(self.device):
+        with self._layer_pass(model, layer_names) as run:
             for inputs, batch_owner_ids, chunk_ids in dataloader:
-                inputs = move_batch_to_device(inputs, self.device)
-                outputs = model(**inputs)
-                if self.layer == "cls":
-                    hidden_state = outputs.last_hidden_state
-                else:
-                    hidden_state = self.bert_output
-                pooled = pool_transformer_output(
-                    hidden_state,
-                    inputs["attention_mask"],
-                    use_cls=self.layer == "cls",
-                )
-                accumulator.update(pooled, batch_owner_ids, chunk_ids)
+                pooled = run(move_batch_to_device(inputs, self.device))
+                for name in layer_names:
+                    accumulators[name].update(pooled[name], batch_owner_ids, chunk_ids)
 
-        embeddings = accumulator.finalize(grouped=grouped)
-        if single_owner:
-            return embeddings[0]
-        if aggregation is None and not grouped:
-            return list(embeddings)
-        return embeddings
+    def _chunk_cache_key(self, model):
+        """What a cached chunk vector depends on besides its layer and text.
+
+        Only a model loaded by name is identified; others are not cached.
+        """
+        model_name = getattr(getattr(model, "config", None), "_name_or_path", "")
+        if not model_name:
+            return None
+        device = torch.device(self.device)
+        if device.type == "cuda":
+            hardware = (
+                torch.cuda.get_device_name(device),
+                torch.cuda.get_device_capability(device),
+            )
+        else:
+            hardware = (device.type,)
+        return (
+            type(self).__name__,
+            model_name,
+            self.max_seq_length,
+            self.batch_size,
+            CHUNK_LENGTH_STEP,
+            *hardware,
+        )
+
+    def _encode_cached(
+        self,
+        texts,
+        owner_ids,
+        model,
+        tokenizer,
+        layer_names,
+        accumulators,
+        cache,
+        encoder_key,
+    ):
+        """Encode only the texts not cached for every layer, then gather all.
+
+        Texts are encoded in fixed-shape batches, so a vector does not depend
+        on which texts were missing alongside it: a cached vector is exactly
+        what encoding the text again would give.
+        """
+        vectors = {}
+        missing = []
+        for text in dict.fromkeys(texts):
+            cached = [cache.get((encoder_key, name, text)) for name in layer_names]
+            if any(vector is None for vector in cached):
+                missing.append(text)
+            else:
+                for name, vector in zip(layer_names, cached):
+                    vectors[name, text] = vector
+
+        if missing:
+            encoding = tokenizer(
+                missing,
+                padding=False,
+                truncation=True,
+                max_length=self.max_seq_length,
+                return_attention_mask=True,
+            )
+            # Each batch ends with an empty text, so its attention mask always
+            # has padding: without any, transformers drops the mask and SDPA
+            # switches kernels, which changes the other rows' numerics.
+            padding_row = dict(
+                tokenizer("", truncation=True, max_length=self.max_seq_length)
+            )
+            batches = canonical_batches(
+                [len(ids) for ids in encoding["input_ids"]],
+                max(1, self.batch_size - 1),
+                CHUNK_LENGTH_STEP,
+                self.max_seq_length,
+            )
+            with self._layer_pass(model, layer_names) as run:
+                for padded_length, rows, num_real in batches:
+                    inputs = tokenizer.pad(
+                        [
+                            {key: values[i] for key, values in encoding.items()}
+                            for i in rows
+                        ]
+                        + [padding_row],
+                        padding="max_length",
+                        max_length=padded_length,
+                        return_tensors="pt",
+                    )
+                    pooled = run(move_batch_to_device(dict(inputs), self.device))
+                    for name in layer_names:
+                        batch_vectors = pooled[name][:num_real].float().cpu()
+                        for row, index in enumerate(rows[:num_real]):
+                            vector = batch_vectors[row].clone()
+                            vectors[name, missing[index]] = vector
+                            cache.put((encoder_key, name, missing[index]), vector)
+
+        if not texts:
+            return
+        owners = torch.tensor(list(owner_ids), dtype=torch.long)
+        chunk_ids = torch.arange(len(texts), dtype=torch.long)
+        for name in layer_names:
+            stacked = torch.stack([vectors[name, text] for text in texts])
+            accumulators[name].update(stacked.to(self.device), owners, chunk_ids)
+
+
+def _hidden_state(output):
+    """The token states in a layer's output, whatever form the layer returns."""
+    if isinstance(output, tuple):
+        return output[0]
+    if hasattr(output, "last_hidden_state"):
+        return output.last_hidden_state
+    return output
 
 
 @register_representation(ModalityType.TEXT)
 @register_expensive_representation(ModalityType.TEXT)
 class Bert(BertFamily):
+    MODEL_BYTES = 437_937_152
+
     def __init__(
         self,
         layer="cls",
@@ -399,6 +597,8 @@ class Bert(BertFamily):
 @register_representation(ModalityType.TEXT)
 @register_expensive_representation(ModalityType.TEXT)
 class RoBERTa(BertFamily):
+    MODEL_BYTES = 498_590_752
+
     def __init__(
         self,
         layer="cls",
@@ -424,8 +624,8 @@ class RoBERTa(BertFamily):
                 "encoder.layer.9",
                 "encoder.layer.10",
                 "encoder.layer.11",
-                "pooler",
-                "pooler.activation",
+                # No "pooler": roberta-base ships no pooler weights, so it is
+                # randomly initialized on every load.
             ]
         }
         super().__init__(
@@ -504,6 +704,8 @@ class ALBERT(BertFamily):
 
 # @register_representation(ModalityType.TEXT)
 class ELECTRA(BertFamily):
+    MODEL_BYTES = 435_574_784
+
     def __init__(
         self,
         layer="cls",

@@ -25,11 +25,13 @@ from types import SimpleNamespace
 
 import numpy as np
 from systemds.scuro.representations.color_histogram import ColorHistogram
-from systemds.scuro.drsearch.operator_registry import Registry
+from systemds.scuro.drsearch.operator_registry import Registry, load_builtin_operators
 from systemds.scuro.drsearch.node_executor import ResultEntry
 from systemds.scuro.drsearch.unimodal_optimizer import (
     UnimodalOptimizer,
     UnimodalResults,
+    _lowest_fitted_key,
+    evaluate_fitted_dags,
 )
 from systemds.scuro.representations.covarep_audio_features import ZeroCrossing
 
@@ -63,6 +65,7 @@ from systemds.scuro.dataloader.base_loader import LazyFileSequence
 from tests.scuro.data_generator import (
     ModalityRandomDataGenerator,
     TestDataLoader,
+    TestSVM,
     TestTask,
 )
 import copy
@@ -255,6 +258,124 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
         self.assertEqual(once_decodes, self.num_instances)
         for lazy_output, once_output in zip(lazy_outputs, once_outputs):
             np.testing.assert_array_equal(lazy_output, once_output)
+
+    def _text_and_two_tasks(self):
+        text_data, text_md = ModalityRandomDataGenerator().create_text_data(
+            self.num_instances, 10
+        )
+        text = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.TEXT, text_data, str, text_md
+            )
+        )
+        second = copy.copy(self.tasks[0])
+        second.model = TestSVM("Test2")
+        return text, [self.tasks[0], second]
+
+    def test_fitted_dags_fit_once_per_fold_for_all_dags_and_tasks(self):
+        text, tasks = self._text_and_two_tasks()
+        builder = RepresentationDAGBuilder()
+        tfidf = builder.create_operation_node(
+            TfIdf, [builder.create_leaf_node(text.modality_id)], {}
+        )
+        plain = builder.build(tfidf, dag_id=0)
+        reduced = builder.build(
+            builder.create_operation_node(
+                MLPAveraging, [tfidf], MLPAveraging().get_current_parameters()
+            ),
+            dag_id=1,
+        )
+        self.assertEqual(_lowest_fitted_key(plain), _lowest_fitted_key(reduced))
+
+        fit_sets, inputs = [], {}
+        tfidf_fit, svm_fit = TfIdf.fit, TestSVM.fit
+
+        def recording_fit(op, data, labels=None):
+            fit_sets.append(set(data.instance_ids))
+            return tfidf_fit(op, data, labels=labels)
+
+        def recording_svm(model, X, y, X_test, y_test):
+            inputs.setdefault(model.name, []).append(np.asarray(X))
+            return svm_fit(model, X, y, X_test, y_test)
+
+        with patch.object(TfIdf, "fit", recording_fit), patch.object(
+            TestSVM, "fit", recording_svm
+        ):
+            results = evaluate_fitted_dags([plain, reduced], text, tasks)
+            shared_inputs, inputs = inputs, {}
+            for dag in (plain, reduced):
+                SplitAwareDAGEvaluator(dag, text, tasks[0]).evaluate()
+
+        folds = [set(split.fit_indices) for split in tasks[0].evaluation_splits]
+        self.assertEqual(fit_sets[: len(folds)], folds)
+        self.assertEqual(len(fit_sets), 3 * len(folds))
+        self.assertEqual(
+            [(dag_id, task_idx) for dag_id, task_idx, _, _ in results],
+            [(0, 0), (0, 1), (1, 0), (1, 1)],
+        )
+        self.assertTrue(all(r[2].representation_time > 0 for r in results))
+        reference = inputs["Test1"]
+        for name in ("Test1", "Test2"):
+            self.assertEqual(len(shared_inputs[name]), len(reference))
+            for shared, fresh in zip(shared_inputs[name], reference):
+                np.testing.assert_array_equal(shared, fresh)
+
+    def test_fitted_dags_are_evaluated_on_executor_workers(self):
+        text, tasks = self._text_and_two_tasks()
+        load_builtin_operators((ModalityType.TEXT, ModalityType.EMBEDDING))
+        with patch.object(
+            Registry, "_representations", registry_for(ModalityType.TEXT, [TfIdf])
+        ), patch(
+            "systemds.scuro.drsearch.unimodal_optimizer.evaluate_fitted_dags",
+            side_effect=AssertionError("fitted DAGs evaluated in the driver"),
+        ):
+            optimizer = UnimodalOptimizer(
+                [text], tasks, False, max_num_workers=2, enable_checkpointing=False
+            )
+            optimizer.optimize()
+
+        fitted_ids = [
+            {
+                entry.dag.dag_id
+                for entry in optimizer.operator_performance.results[
+                    text.modality_id
+                ][task.model.name]
+                if dag_requires_fitting(entry.dag)
+            }
+            for task in tasks
+        ]
+        self.assertTrue(fitted_ids[0])
+        self.assertEqual(fitted_ids[0], fitted_ids[1])
+
+    def test_k_best_tasks_share_an_unsupervised_leaf_fit(self):
+        text, tasks = self._text_and_two_tasks()
+        results = UnimodalResults([text], tasks, k=1)
+        builder = RepresentationDAGBuilder()
+        leaf = builder.create_leaf_node(text.modality_id)
+        dag = builder.build(builder.create_operation_node(TfIdf, [leaf], {}))
+        for task in tasks:
+            results.results[text.modality_id][task.model.name].append(
+                SimpleNamespace(dag=dag, val_score={"accuracy": 0.9})
+            )
+        fits = []
+        fit_transform = SplitAwareDAGEvaluator.fit_transform
+
+        def recording(evaluator, *args):
+            fits.append(evaluator.task.model.name)
+            return fit_transform(evaluator, *args)
+
+        with patch.object(SplitAwareDAGEvaluator, "fit_transform", recording):
+            leaves = [
+                results.get_k_best_results(text, task, "accuracy")[1][0]
+                for task in tasks
+            ]
+
+        self.assertEqual(fits, ["Test1"])
+        self.assertIsNot(leaves[0], leaves[1])
+        self.assertEqual(leaves[1].fold_source, (dag, text))
+        np.testing.assert_array_equal(
+            np.asarray(leaves[0].data), np.asarray(leaves[1].data)
+        )
 
     def test_robust_results_ignore_non_finite_scores(self):
         modality = SimpleNamespace(modality_id="modality")

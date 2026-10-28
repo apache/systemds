@@ -462,11 +462,13 @@ class Task:
 
         return X_train, y_train, X_test, y_test
 
-    def run(self, data):
+    def run(self, data, representation_time=0.0):
         """
         The run method needs to be implemented by every task class
          It handles the training and validation procedures for the specific task
          :param data: The aligned data used in the prediction process
+         :param representation_time: time spent computing data, used for the
+          predicted test inference cost
          :return: the validation accuracy
         """
         self.validate_input_memory(data)
@@ -500,6 +502,7 @@ class Task:
                 float(np.mean(self.inference_time)) if self.inference_time else 0.0
             ),
             "n_test_instances": len(self.test_indices) if self.test_indices else 0,
+            **self.inference_cost_timing(representation_time / len(data)),
             **self.training_work.as_dict(),
         }
         return [

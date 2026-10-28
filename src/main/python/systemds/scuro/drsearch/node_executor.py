@@ -273,10 +273,10 @@ def _execute_node_worker(node, input_mods: List[Any], gpu_id: Optional[int]):
     }
 
 
-def _task_data(modality, aggregation):
+def _task_input(modality, aggregation):
     if aggregation is None:
-        return modality.data
-    return aggregation.operation(params=aggregation.parameters).transform(modality).data
+        return modality
+    return aggregation.operation(params=aggregation.parameters).transform(modality)
 
 
 def _execute_task_batch_worker(task: Any, items: List[tuple], gpu_id: int):
@@ -286,7 +286,7 @@ def _execute_task_batch_worker(task: Any, items: List[tuple], gpu_id: int):
     datas, failed = [], {}
     for node_id, modality, aggregation in items:
         try:
-            datas.append((node_id, _task_data(modality, aggregation)))
+            datas.append((node_id, _task_input(modality, aggregation).data))
         except Exception as e:
             failed[node_id] = f"{type(e).__name__}: {e}"
 
@@ -337,7 +337,8 @@ def _execute_task_worker(
 
     def _run_task():
         start = time.perf_counter()
-        scores = task.run(_task_data(modality, aggregation))
+        task_input = _task_input(modality, aggregation)
+        scores = task.run(task_input.data, task_input.transform_time)
         end = time.perf_counter()
         return scores, end - start
 

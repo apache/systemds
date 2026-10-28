@@ -37,23 +37,23 @@ import org.apache.sysds.utils.Explain;
 public class SparsityOptimizer extends StatementBlockRewriteRule {
 	protected static final Log LOG = LogFactory.getLog(SparsityOptimizer.class.getName());
 
-    @Override
-    public boolean createsSplitDag() {
-        return false;
-    }
+	@Override
+	public boolean createsSplitDag() {
+		return false;
+	}
 
-    @Override
-    public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state) {
-        // optimize the matrix multiplication chain if it is isolated in its own statement block
-        if(isMMChain(sb))
-            sb = optimizeMMChain(sb);
-        return Arrays.asList(sb);
-    }
+	@Override
+	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state) {
+		// optimize the matrix multiplication chain if it is isolated in its own statement block
+		if(isMMChain(sb))
+			sb = optimizeMMChain(sb);
+		return Arrays.asList(sb);
+	}
 
-    @Override
-    public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus state) {
-        return sbs;
-    }
+	@Override
+	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus state) {
+		return sbs;
+	}
 
 	private static boolean isMMChain(List<Hop> hopList) {
 		boolean ret = true;
@@ -75,7 +75,7 @@ public class SparsityOptimizer extends StatementBlockRewriteRule {
 		return hop.getInput().stream().allMatch(childHop -> HopRewriteUtils.isMatrixMultiply(childHop));
 	}
 
-    private static boolean isMMChain(StatementBlock sb) {
+	private static boolean isMMChain(StatementBlock sb) {
 		boolean ret = true;
 		for(Hop hop : sb.getHops()) {
 			ret &= allChildsAreMatrixMultiply(hop) && hop instanceof DataOp;
@@ -87,56 +87,56 @@ public class SparsityOptimizer extends StatementBlockRewriteRule {
 		return ret;
 	}
 
-    public StatementBlock optimizeMMChain(StatementBlock sb) {
-        for(Hop rootHop : sb.getHops()) {
-            List<Hop> mmChain = new ArrayList<>();
-            List<Hop> mmOperators = new ArrayList<>();
-            if(rootHop instanceof DataOp && ((DataOp)rootHop).isWrite())
-                prepareMMChain(rootHop.getInput(0), mmChain, mmOperators);
-            else
-                throw new DMLRuntimeException("This case should not occur and is not considered.");
+	public StatementBlock optimizeMMChain(StatementBlock sb) {
+		for(Hop rootHop : sb.getHops()) {
+			List<Hop> mmChain = new ArrayList<>();
+			List<Hop> mmOperators = new ArrayList<>();
+			if(rootHop instanceof DataOp && ((DataOp)rootHop).isWrite())
+				prepareMMChain(rootHop.getInput(0), mmChain, mmOperators);
+			else
+				throw new DMLRuntimeException("This case should not occur and is not considered.");
 
-            throw new NotImplementedException("TODO: Optimize the MM Chain inside the isolated statement block");
-        }
-        return sb;
-    }
+			throw new NotImplementedException("TODO: Optimize the MM Chain inside the isolated statement block");
+		}
+		return sb;
+	}
 
-    public void prepareMMChain(Hop root, List<Hop> mmChain, List<Hop> mmOperators) {
-        root.resetVisitStatus();
-        // initialize mmChain with inputs of root hop
+	public void prepareMMChain(Hop root, List<Hop> mmChain, List<Hop> mmOperators) {
+		root.resetVisitStatus();
+		// initialize mmChain with inputs of root hop
 		mmOperators.add(root);
 		for( Hop hi : root.getInput() )
 			mmChain.add(hi);
 
-        // expand each hop to find the entire matrix multiplication chain
-        int counter = 0;
-        while(counter < mmChain.size()) {
-            boolean expandable = true;
-            Hop hop = mmChain.get(counter);
+		// expand each hop to find the entire matrix multiplication chain
+		int counter = 0;
+		while(counter < mmChain.size()) {
+			boolean expandable = true;
+			Hop hop = mmChain.get(counter);
 
 			/*
 			 * Check if mmChain[i] is expandable: 
 			 * 1) It must be MATMULT
 			 * 2) It must not have been visited already
-			 *    (one MATMULT should get expanded only in one chain)
+			 *	(one MATMULT should get expanded only in one chain)
 			 * 3) Its output should not be used in multiple places
-			 *    (either within chain or outside the chain)
+			 *	(either within chain or outside the chain)
 			 */
-            expandable &= HopRewriteUtils.isMatrixMultiply(hop) && !((AggBinaryOp)hop).hasLeftPMInput();
-            expandable &= !hop.isVisited();
-            expandable &= !(hop.getParent().size() > 1);
+			expandable &= HopRewriteUtils.isMatrixMultiply(hop) && !((AggBinaryOp)hop).hasLeftPMInput();
+			expandable &= !hop.isVisited();
+			expandable &= !(hop.getParent().size() > 1);
 
-            if(!expandable) {
-                counter += 1;
-            }
-            else {
-                List<Hop> tempList = mmChain.get(counter).getInput();
-                // add current operator to mmOperators and its input nodes to mm chain
-                mmOperators.add(mmChain.get(counter));
-                mmChain.set(counter, tempList.get(0));
-                mmChain.add(counter + 1, tempList.get(1));
-            }
-        }
+			if(!expandable) {
+				counter += 1;
+			}
+			else {
+				List<Hop> tempList = mmChain.get(counter).getInput();
+				// add current operator to mmOperators and its input nodes to mm chain
+				mmOperators.add(mmChain.get(counter));
+				mmChain.set(counter, tempList.get(0));
+				mmChain.add(counter + 1, tempList.get(1));
+			}
+		}
 
 		// print the matrix multiplication chain
 		if(LOG.isTraceEnabled()) {
@@ -145,14 +145,14 @@ public class SparsityOptimizer extends StatementBlockRewriteRule {
 				logTraceHop(h, 1);
 			}
 		}
-    }
+	}
 
 	protected void logTraceHop(Hop hop, int level) {
 		if(LOG.isTraceEnabled()) {
 			String offset = Explain.getIdentation(level);
 			LOG.trace(offset + "Hop " + hop.getName() +
-                "(" + hop.getClass().getSimpleName() + ", " + hop.getHopID() + ")" + " " +
-                hop.getDim1() + "x" + hop.getDim2() + " sp" + hop.getSparsity());
+				"(" + hop.getClass().getSimpleName() + ", " + hop.getHopID() + ")" + " " +
+				hop.getDim1() + "x" + hop.getDim2() + " sp" + hop.getSparsity());
 		}
 	}
 }

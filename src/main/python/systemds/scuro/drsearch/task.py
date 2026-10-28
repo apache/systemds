@@ -130,6 +130,7 @@ class Task:
         self.cv_seed = get_global_seed() if cv_seed is None else cv_seed
         self.measure_performance = measure_performance
         self.inference_time = []
+        self.val_inference_time = []
         self.training_time = []
         self.last_run_timing = {}
         self.training_work = TrainingWorkAccumulator()
@@ -657,8 +658,24 @@ class Task:
             "inference_latency_source": source,
         }
 
+    def inference_cost_timing(self, representation_time_per_instance):
+        """Predicted test runtime: per-instance representation time plus
+        per-instance validation inference time, scaled by n_test."""
+        n_val = sum(len(fold) for fold in self.cv_val_indices)
+        inference_per_instance = sum(self.val_inference_time) / n_val
+        n_test = 0 if self.test_indices is None else len(self.test_indices)
+        return {
+            "representation_time_per_instance_s": representation_time_per_instance,
+            "val_inference_time_per_instance_s": inference_per_instance,
+            "inference_cost": (
+                representation_time_per_instance + inference_per_instance
+            )
+            * n_test,
+        }
+
     def _reset_params(self):
         self.inference_time = []
+        self.val_inference_time = []
         self.training_time = []
         self.training_work = TrainingWorkAccumulator()
         self.train_scores = PerformanceMeasure("train", self.performance_measures)
@@ -671,7 +688,9 @@ class Task:
         train_end = time.time()
         self.training_time.append(train_end - train_start)
         self.train_scores.add_scores(train_score[0])
+        val_start = time.time()
         val_score = model.test(val_X, val_y)
+        self.val_inference_time.append(time.time() - val_start)
         test_start = time.time()
         test_score = model.test(np.asarray(test_X), test_y)
         test_end = time.time()

@@ -53,6 +53,7 @@ class SplitEvaluationResult:
     scores: list
     representation_time: float
     task_time: float
+    inference_cost: float
 
 
 _REFIT_CACHE = None
@@ -367,10 +368,12 @@ class SplitAwareDAGEvaluator:
         test_scores = PerformanceMeasure("test", self.task.performance_measures)
         self.task.training_time = []
         self.task.inference_time = []
+        self.task.val_inference_time = []
         training_work = TrainingWorkAccumulator()
 
         representation_time = 0.0
         task_time = 0.0
+        n_transformed = 0
         for split in self.task.evaluation_splits:
             train = tuple(item.subset(split.fit_indices) for item in full)
             evaluation = tuple(item.subset(split.evaluation_indices) for item in full)
@@ -381,6 +384,11 @@ class SplitAwareDAGEvaluator:
                 self._execute_partitions(train, evaluation, test)
             )
             representation_time += time.perf_counter() - start
+            n_transformed += (
+                len(split.fit_indices)
+                + len(split.evaluation_indices)
+                + len(self.task.test_indices)
+            )
 
             model = self.task.create_model()
             train_X = self._partition_data(transformed_train)
@@ -400,7 +408,9 @@ class SplitAwareDAGEvaluator:
                 evaluation_y,
             )
             self.task.training_time.append(time.perf_counter() - train_start)
+            val_start = time.perf_counter()
             val_score = model.test(evaluation_X, evaluation_y)
+            self.task.val_inference_time.append(time.perf_counter() - val_start)
             test_start = time.perf_counter()
             test_score = model.test(np.asarray(test_X), test_y)
             self.task.inference_time.append(time.perf_counter() - test_start)
@@ -416,6 +426,9 @@ class SplitAwareDAGEvaluator:
                 model.clean_up()
 
         self.task.training_work = training_work
+        inference_timing = self.task.inference_cost_timing(
+            representation_time / n_transformed
+        )
         self.task.last_run_timing = {
             "train_time_per_fold_s": list(self.task.training_time),
             "test_inference_time_per_fold_s": list(self.task.inference_time),
@@ -430,6 +443,7 @@ class SplitAwareDAGEvaluator:
                 else 0.0
             ),
             "n_test_instances": len(self.task.test_indices),
+            **inference_timing,
             **training_work.as_dict(),
         }
 
@@ -441,4 +455,5 @@ class SplitAwareDAGEvaluator:
             ],
             representation_time=representation_time,
             task_time=task_time,
+            inference_cost=inference_timing["inference_cost"],
         )

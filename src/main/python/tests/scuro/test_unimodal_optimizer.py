@@ -510,7 +510,7 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
         for operation, rank in inputs:
             self.assertIs(operation, ResNet)
             self.assertGreaterEqual(rank, 2)
-            
+
     # ------------------------------------------------------------------
     # Every registered representation, run through the optimizer
     # ------------------------------------------------------------------

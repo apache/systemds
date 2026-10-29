@@ -19,11 +19,21 @@
 
 package org.apache.sysds.test.applications;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -112,5 +122,127 @@ public class PageRankTest extends AutomatedTestBase {
 
 		compareResults(0.0000001);
 	}
+	/*
+	* Twitter2010 edge list is local and not part of this repository.
+	*/
+	@Test
+	@Ignore
+	public void testPageRankTwitter2010() throws IOException {
+		// run once; this class is parameterized over several sizes
+		if (numRows != 50 || numCols != 50) {
+			return;
+		}
 
+		int maxiter = 2;
+		double alpha = 0.85;
+		int maxNodes = Integer.getInteger("sysds.test.twitter2010.maxNodes", 500);
+		int maxLines = Integer.getInteger("sysds.test.twitter2010.maxLines", 2000000);
+
+		getAndLoadTestConfiguration(TEST_NAME);
+			
+		List<String> proArgs = new ArrayList<>();
+		proArgs.add("-args");
+		proArgs.add(input("g"));
+		proArgs.add(input("p"));
+		proArgs.add(input("e"));
+		proArgs.add(input("u"));
+		proArgs.add(Double.toString(alpha));
+		proArgs.add(Integer.toString(maxiter));
+		proArgs.add(output("p"));
+		programArgs = proArgs.toArray(new String[proArgs.size()]);
+			
+		fullDMLScriptName = getScript();
+
+		double[][] g = readTwitter2010LinkMatrix(twitter2010EdgeList(), maxNodes, maxLines);
+		int rows = g.length;
+		double[][] p = getRandomMatrix(rows, 1, 1, 1, 1, -1);
+		double[][] e = getRandomMatrix(rows, 1, 1, 1, 1, -1);
+		double[][] u = getRandomMatrix(1, rows, 1, 1, 1, -1);
+		writeInputMatrixWithMTD("g", g, true);
+		writeInputMatrixWithMTD("p", p, true);
+		writeInputMatrixWithMTD("e", e, true);
+		writeInputMatrixWithMTD("u", u, true);
+
+		for (int i = 0; i < maxiter; i++) {
+			double[][] gp = TestUtils.performMatrixMultiplication(g, p);
+			double[][] eu = TestUtils.performMatrixMultiplication(e, u);
+			double[][] eup = TestUtils.performMatrixMultiplication(eu, p);
+			for (int j = 0; j < rows; j++) {
+				p[j][0] = alpha * gp[j][0] + (1 - alpha) * eup[j][0];
+			}
+		}
+
+		writeExpectedMatrix("p", p);
+
+		/*
+		* No Spark job limit for the local edge list.
+		*/
+		int expectedNumberOfJobs = -1;
+		runTest(true, EXCEPTION_NOT_EXPECTED, null, expectedNumberOfJobs);
+
+		compareResults(0.0000001);
+	}
+
+	private static File twitter2010EdgeList() {
+		String configured = System.getProperty("sysds.test.twitter2010");
+		if (configured == null || configured.isEmpty())
+			configured = System.getenv("TWITTER2010_EDGES");
+		Assert.assertTrue(
+			"Set -Dsysds.test.twitter2010 or TWITTER2010_EDGES to a local Twitter2010 edge list.",
+			configured != null && !configured.isEmpty());
+		File edgeList = new File(configured);
+		Assert.assertTrue("Twitter2010 edge list not found: " + edgeList.getAbsolutePath(), edgeList.isFile());
+		return edgeList;
+	}
+
+	// src -> dst stored as 1/outdegree in column src
+	private static double[][] readTwitter2010LinkMatrix(File edgeList, int maxNodes, int maxLines) throws IOException {
+		Map<Long, Integer> ids = new HashMap<>();
+		List<int[]> edges = new ArrayList<>();
+		Set<Long> seen = new HashSet<>();
+		int lines = 0;
+		try (BufferedReader reader = new BufferedReader(new FileReader(edgeList))) {
+			String line;
+			while ((line = reader.readLine()) != null && lines < maxLines) {
+				line = line.trim();
+				if (line.isEmpty() || line.charAt(0) == '#')
+					continue;
+				lines++;
+				String[] parts = line.split("\\s+");
+				if (parts.length < 2)
+					continue;
+				int src = internNode(ids, Long.parseLong(parts[0]), maxNodes);
+				int dst = internNode(ids, Long.parseLong(parts[1]), maxNodes);
+				if (src < 0 || dst < 0)
+					continue;
+				long key = (((long) src) << 32) | (dst & 0xffffffffL);
+				if (seen.add(key))
+					edges.add(new int[] {src, dst});
+			}
+		}
+
+		int n = ids.size();
+		Assert.assertTrue("No Twitter2010 edges were read from " + edgeList.getAbsolutePath(), n > 0 && !edges.isEmpty());
+		int[] outDegree = new int[n];
+		for (int[] edge : edges) {
+			outDegree[edge[0]]++;
+		}
+
+		double[][] link = new double[n][n];
+		for (int[] edge : edges) {
+			link[edge[1]][edge[0]] = 1.0 / outDegree[edge[0]];
+		}
+		return link;
+	}
+
+	private static int internNode(Map<Long, Integer> ids, long node, int maxNodes) {
+		Integer index = ids.get(node);
+		if (index != null)
+			return index;
+		if (ids.size() >= maxNodes)
+			return -1;
+		int assigned = ids.size();
+		ids.put(node, assigned);
+		return assigned;
+	}
 }

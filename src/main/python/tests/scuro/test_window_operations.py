@@ -162,12 +162,26 @@ class TestWindowOperations(unittest.TestCase):
                 DynamicWindow(num_windows=num_windows),
                 WindowAggregation(window_size=10),
             ]:
-                with self.subTest(dims=dims, operator=type(window_operator).__name__):
+                name = type(window_operator).__name__
+                with self.subTest(dims=dims, operator=name):
                     stats = window_operator.get_output_stats(embedding_modality.stats)
-                    self.assertEqual(stats.num_instances, self.num_instances)
-                    self.assertEqual(stats.output_shape, (num_windows,) + dims[1:])
+                    self.assertEqual(
+                        stats.num_instances,
+                        self.num_instances,
+                        f"{name}: number of instances in the stats",
+                    )
+                    self.assertEqual(
+                        stats.output_shape,
+                        (num_windows,) + dims[1:],
+                        f"{name}: output shape in the stats",
+                    )
 
-                    embedding_modality.context(window_operator)
+                    windowed = embedding_modality.context(window_operator)
+                    self.assertEqual(
+                        np.asarray(windowed.data).shape,
+                        (stats.num_instances,) + stats.output_shape,
+                        f"{name}: shape of the windowed data against the stats",
+                    )
 
     def _timeseries_modality(self, signal_length=100):
         return self.data_generator.create1DModality(

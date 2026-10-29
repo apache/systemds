@@ -22,35 +22,26 @@
 import unittest
 import numpy as np
 
-from systemds.scuro import Concatenation, RowMax, Hadamard
-from systemds.scuro.representations.average import Average
+from systemds.scuro.drsearch.operator_registry import Registry
 from tests.scuro.data_generator import ModalityRandomDataGenerator
 from systemds.scuro.modality.type import ModalityType
+
+# built-in fusions only: other test modules register their own, and a fusion
+# that needs training cannot be combined without labels
+FUSION_OPERATORS = [
+    op
+    for op in Registry().get_fusion_operators()
+    if op.__module__.startswith("systemds.") and not op().needs_training
+]
 
 
 class TestFusionOrders(unittest.TestCase):
     """
-    Tests the order properties of the fusion operators: commutativity, whether
-    the order of a pairwise chain matters, and whether a pairwise chain gives
-    the same result as the n-ary call.
+    Tests the order properties of the fusion operators against the flags they
+    declare. Swapping the inputs of a pair, or the first pair of a chain, only
+    keeps the result for a commutative operator. A pairwise chain only matches
+    the n-ary call for an associative one.
     """
-
-    # (operator, chain_order_independent, chain_equals_nary)
-    #
-    # Commutativity is not in the table. Every Fusion operator has a
-    # "commutative" attribute. It is False on the base class and a subclass
-    # can override it. The test compares the measured result with that
-    # attribute, so an operator whose attribute does not match its
-    # implementation fails here.
-    #
-    # Combining a pair is never the same as combining all three. That is
-    # checked for every operator, so it is not in the table either.
-    FUSION_PROPERTIES = [
-        (Average, True, False),
-        (Concatenation, False, True),
-        (RowMax, True, True),
-        (Hadamard, True, True),
-    ]
 
     @classmethod
     def setUpClass(cls):
@@ -76,12 +67,11 @@ class TestFusionOrders(unittest.TestCase):
         return np.array_equal(np.asarray(left.data), np.asarray(right.data))
 
     def test_fusion_order_properties(self):
-        for (
-            fusion_operator,
-            chain_order_independent,
-            chain_equals_nary,
-        ) in self.FUSION_PROPERTIES:
-            with self.subTest(fusion=fusion_operator.__name__):
+        for fusion_operator in FUSION_OPERATORS:
+            name = fusion_operator.__name__
+            commutative = fusion_operator().commutative
+            associative = fusion_operator().associative
+            with self.subTest(fusion=name):
                 r_1_r_2 = self.r_1.combine(self.r_2, fusion_operator())
                 r_2_r_1 = self.r_2.combine(self.r_1, fusion_operator())
                 r_1_r_2_r_3 = r_1_r_2.combine(self.r_3, fusion_operator())
@@ -89,10 +79,21 @@ class TestFusionOrders(unittest.TestCase):
                 r1_r2_r3 = self.r_1.combine([self.r_2, self.r_3], fusion_operator())
 
                 self.assertEqual(
-                    self._equal(r_1_r_2, r_2_r_1), fusion_operator().commutative
+                    self._equal(r_1_r_2, r_2_r_1),
+                    commutative,
+                    f"{name}: swapping the two inputs",
                 )
                 self.assertEqual(
-                    self._equal(r_1_r_2_r_3, r_2_r_1_r_3), chain_order_independent
+                    self._equal(r_1_r_2_r_3, r_2_r_1_r_3),
+                    commutative,
+                    f"{name}: swapping the first pair of a chain",
                 )
-                self.assertEqual(self._equal(r_1_r_2_r_3, r1_r2_r3), chain_equals_nary)
-                self.assertFalse(self._equal(r_1_r_2, r1_r2_r3))
+                self.assertEqual(
+                    self._equal(r_1_r_2_r_3, r1_r2_r3),
+                    associative,
+                    f"{name}: pairwise chain against the n-ary call",
+                )
+                self.assertFalse(
+                    self._equal(r_1_r_2, r1_r2_r3),
+                    f"{name}: a pair against all three inputs",
+                )

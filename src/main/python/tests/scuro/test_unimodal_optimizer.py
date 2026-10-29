@@ -337,9 +337,9 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
         fitted_ids = [
             {
                 entry.dag.dag_id
-                for entry in optimizer.operator_performance.results[
-                    text.modality_id
-                ][task.model.name]
+                for entry in optimizer.operator_performance.results[text.modality_id][
+                    task.model.name
+                ]
                 if dag_requires_fitting(entry.dag)
             }
             for task in tasks

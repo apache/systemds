@@ -44,6 +44,7 @@ from systemds.scuro.representations.representation import (
 from systemds.scuro.utils.schema_helpers import get_shape
 
 DEFAULT_MAX_ALIGNMENT_PAD_RATIO = None
+L2_NORM_EPS = 1e-12
 
 
 class FusionInputTooLargeError(ValueError):
@@ -160,7 +161,7 @@ class Fusion(Representation):
                     target_dimensions=1, aggregate_leading=True
                 )
                 agg_modality = agg_operator.transform(modality)
-            mods.append(agg_modality if agg_modality else modality)
+            mods.append(self._l2_normalize(agg_modality if agg_modality else modality))
 
         if self.needs_alignment:
             mods = [self._detached_copy(modality) for modality in mods]
@@ -172,6 +173,31 @@ class Fusion(Representation):
                 modality.pad(max_len=max_len)
 
         return mods
+
+    @classmethod
+    def _l2_normalize(cls, modality: Modality) -> Modality:
+        if getattr(modality, "is_fused", False) or not modality.has_data():
+            return modality
+
+        data = modality.data
+        try:
+            arr = np.asarray(data)
+        except ValueError:
+            arr = np.empty(0, dtype=object)
+        normalized = cls._detached_copy(modality)
+        if arr.dtype != object and arr.ndim == 1 and len(modality.metadata or []) <= 1:
+            arr = arr.reshape(1, -1)
+        if arr.dtype != object and arr.size:
+            flat = arr.reshape(len(arr), -1)
+            dtype = np.result_type(arr.dtype, np.float32)
+            norms = np.linalg.norm(flat, axis=1, keepdims=True).astype(dtype)
+            normalized.data = (flat / np.maximum(norms, L2_NORM_EPS)).reshape(arr.shape)
+        else:
+            normalized.data = [
+                np.asarray(x) / max(np.linalg.norm(np.asarray(x)), L2_NORM_EPS)
+                for x in data
+            ]
+        return normalized
 
     @staticmethod
     def _detached_copy(modality: Modality) -> Modality:
@@ -214,6 +240,8 @@ class Fusion(Representation):
     def fit(self, inputs, labels=None) -> RepresentationFitState:
         if self.fit_requirement is not FitRequirement.SUPERVISED:
             return super().fit(inputs, labels)
+        if isinstance(inputs, IndexedModality):
+            inputs = [inputs]
         instance_ids = self._validate_indexed_modalities(inputs)
         if labels is None:
             raise ValueError(f"{self.name} requires labels for fitting")
@@ -231,6 +259,8 @@ class Fusion(Representation):
         )
 
     def transform_fitted(self, inputs, fit_state, **kwargs):
+        if isinstance(inputs, IndexedModality):
+            inputs = [inputs]
         instance_ids = self._validate_indexed_modalities(inputs)
         if (
             not isinstance(fit_state, RepresentationFitState)
@@ -246,6 +276,7 @@ class Fusion(Representation):
             modalities[0], fit_state.payload, ModalityType.EMBEDDING
         )
         transformed.data = fit_state.payload.apply_representation(modalities)
+        transformed.is_fused = len(inputs) > 1
         return IndexedModality(transformed, instance_ids)
 
     def transform_data(self, modalities: List[Modality], indices=None):

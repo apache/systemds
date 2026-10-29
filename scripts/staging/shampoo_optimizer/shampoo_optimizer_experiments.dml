@@ -22,55 +22,91 @@
 source("scripts/nn/optim/shampoo.dml") as shampoo
 source("scripts/nn/optim/adagrad.dml") as adagrad
 source("scripts/nn/optim/adam.dml") as adam
+source("scripts/nn/optim/sgd.dml") as sgd
 
 source("scripts/nn/layers/conv2d_builtin.dml") as conv2d
 source("scripts/nn/layers/avg_pool2d_builtin.dml") as avg_pool2d
 source("scripts/nn/layers/relu.dml") as relu
 source("scripts/nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
 source("scripts/nn/layers/softmax.dml") as softmax
+source("scripts/nn/layers/dropout.dml") as dropout
 
 source("src/test/scripts/applications/nn/util.dml") as test_util
 
 
 # defining forward pass
-modelPredict = function(matrix[double] X, matrix[double] W1, matrix[double] b1, matrix[double] W2, matrix[double] b2, matrix[double] W_fc, matrix[double] b_fc, list[unknown] h_ins, list[unknown] w_ins, list[unknown] c_ins)
-    return(matrix[double] softMaxOut, matrix[double] X, matrix[double] convOut1, matrix[double] poolOut1, matrix[double] reluOut1, matrix[double] convOut2, matrix[double] poolOut2, matrix[double] reluOut2, matrix[double] pred){ #
+modelPredict = function(matrix[double] X, matrix[double] W1, matrix[double] b1, matrix[double] W2, matrix[double] b2, matrix[double] wFC, matrix[double] bFC, list[unknown] hIns, list[unknown] wIns, list[unknown] cIns, boolean isTraining, string datasetName)
+    return(matrix[double] softMaxOut, matrix[double] X, matrix[double] convOut1, matrix[double] poolOut1, matrix[double] reluOut1, matrix[double] convOut2, matrix[double] poolOut2, matrix[double] reluOut2, matrix[double] pred, matrix[double] mask2){ 
+    /*
+    * Forward pass for the 2-layer CNN image classifier.
+    *
+    * Computes:
+    *  - Conv2D -> AvgPool2D -> ReLU  (block 1)
+    *  - Conv2D -> AvgPool2D -> ReLU  (block 2)
+    *  - (optional) Dropout on CIFAR during training
+    *  - Linear layer (fully-connected) and Softmax
+    *
+    * Inputs:
+    *  - X: Input batch matrix (flattened images).
+    *  - W1, b1: Weights and bias for the first convolution layer.
+    *  - W2, b2: Weights and bias for the second convolution layer.
+    *  - wFC, bFC: Weights and bias for the fully-connected layer.
+    *  - hIns, wIns, cIns: Lists containing input/intermediate heights, widths, and channels
+    *                      required by the conv/pool operators.
+    *  - isTraining: If TRUE, enables training-only behavior (dropout).
+    *  - datasetName: Dataset identifier (e.g., "mnist", "cifar") to trigger dataset-specific logic.
+    *
+    * Outputs:
+    *  - softMaxOut: Softmax probabilities for each class.
+    *  - X: The input X (returned for convenience/caching).
+    *  - convOut1, poolOut1, reluOut1: Cached activations after block 1.
+    *  - convOut2, poolOut2, reluOut2: Cached activations after block 2.
+    *  - pred: Pre-softmax logits (linear layer output).
+    *  - mask2: Dropout mask (1x1 dummy matrix if dropout is not applied).
+    */
         filters = 64
-        conv_kernel = 5
-        pool_kernel = 4
-        conv_padding = 2
-        pool_padding = 1
+        convKernel = 5
+        poolKernel = 4
+        convPadding = 2
+        poolPadding = 1
 
-        h_in = as.integer(as.scalar(h_ins[1]))
-        h_in_1 = as.integer(as.scalar(h_ins[2]))
-        h_in_2 = as.integer(as.scalar(h_ins[3]))
-        h_in_3 = as.integer(as.scalar(h_ins[4]))
-        h_in_4 = as.integer(as.scalar(h_ins[5]))
+        hIn = as.integer(as.scalar(hIns[1]))
+        hIn1 = as.integer(as.scalar(hIns[2]))
+        hIn2 = as.integer(as.scalar(hIns[3]))
+        hIn3 = as.integer(as.scalar(hIns[4]))
+        hIn4 = as.integer(as.scalar(hIns[5]))
 
-        w_in = as.integer(as.scalar(w_ins[1]))
-        w_in_1 = as.integer(as.scalar(w_ins[2]))
-        w_in_2 = as.integer(as.scalar(w_ins[3]))
-        w_in_3 = as.integer(as.scalar(w_ins[4]))
-        w_in_4 = as.integer(as.scalar(w_ins[5]))
+        wIn = as.integer(as.scalar(wIns[1]))
+        wIn1 = as.integer(as.scalar(wIns[2]))
+        wIn2 = as.integer(as.scalar(wIns[3]))
+        wIn3 = as.integer(as.scalar(wIns[4]))
+        wIn4 = as.integer(as.scalar(wIns[5]))
 
-        c_in = as.integer(as.scalar(c_ins[1]))
-        c_in_1 = as.integer(as.scalar(c_ins[2]))
+        cIn = as.integer(as.scalar(cIns[1]))
+        cIn1 = as.integer(as.scalar(cIns[2]))
 
         # first block
-        [convOut1, Hout, Wout] = conv2d::forward(X, W1, b1, c_in, h_in, w_in, conv_kernel, conv_kernel, 1, 1, conv_padding, conv_padding)
+        [convOut1, Hout, Wout] = conv2d::forward(X, W1, b1, cIn, hIn, wIn, convKernel, convKernel, 1, 1, convPadding, convPadding)
 
-        [poolOut1, Hout, Wout] = avg_pool2d::forward(convOut1, c_in_1, h_in_1, w_in_1, pool_kernel, pool_kernel, 2, 2, pool_padding, pool_padding)
+        [poolOut1, Hout, Wout] = avg_pool2d::forward(convOut1, cIn1, hIn1, wIn1, poolKernel, poolKernel, 2, 2, poolPadding, poolPadding)
 
         reluOut1 = relu::forward(poolOut1)
 
         # second block
-        [convOut2, Hout, Wout] = conv2d::forward(reluOut1, W2, b2, c_in_1, h_in_2, w_in_2, conv_kernel, conv_kernel, 1, 1, conv_padding, conv_padding)
+        [convOut2, Hout, Wout] = conv2d::forward(reluOut1, W2, b2, cIn1, hIn2, wIn2, convKernel, convKernel, 1, 1, convPadding, convPadding)
 
-        [poolOut2, Hout, Wout] = avg_pool2d::forward(convOut2, c_in_1, h_in_3, w_in_3, pool_kernel, pool_kernel, 2, 2, pool_padding, pool_padding)
+        [poolOut2, Hout, Wout] = avg_pool2d::forward(convOut2, cIn1, hIn3, wIn3, poolKernel, poolKernel, 2, 2, poolPadding, poolPadding)
 
         reluOut2 = relu::forward(poolOut2)
 
-        pred = reluOut2 %*% t(W_fc) + t(b_fc)
+        mask2 = matrix(1, rows=1, cols=1)
+        if (datasetName == "cifar" & isTraining){
+            pDropout = 0.3 
+            [dropOut2, mask2] = dropout::forward(reluOut2, pDropout, -1)
+            pred = dropOut2 %*% t(wFC) + t(bFC)
+        }else{
+            pred = reluOut2 %*% t(wFC) + t(bFC)
+        }
 
         softMaxOut = softmax::forward(pred)
 
@@ -79,64 +115,127 @@ modelPredict = function(matrix[double] X, matrix[double] W1, matrix[double] b1, 
     }
 
 #defining backward pass
-modelBackward = function(matrix[double] target, matrix[double] W1, matrix[double] b1, matrix[double] W2, matrix[double] b2, matrix[double] W_fc, matrix[double] b_fc, list[unknown] h_ins, list[unknown] w_ins, list[unknown] c_ins, matrix[double] X, matrix[double] convOut1, matrix[double] poolOut1, matrix[double] reluOut1, matrix[double] convOut2, matrix[double] poolOut2, matrix[double] reluOut2, matrix[double] pred, matrix[double] softMaxOut)
-    return (matrix[double] gradient_lin_layer_W, matrix[double] gradient_lin_layer_b, matrix[double] gradient_W2, matrix[double] gradient_b2, matrix[double] gradient_W1, matrix[double] gradient_b1){
+modelBackward = function(matrix[double] target, matrix[double] W1, matrix[double] b1, matrix[double] W2, matrix[double] b2, matrix[double] wFC, matrix[double] bFC, list[unknown] hIns, list[unknown] wIns, list[unknown] cIns, matrix[double] X, matrix[double] convOut1, matrix[double] poolOut1, matrix[double] reluOut1, matrix[double] convOut2, matrix[double] poolOut2, matrix[double] reluOut2, matrix[double] pred, matrix[double] softMaxOut, matrix[double] mask2, string datasetName)
+    return (matrix[double] gradientLinLayerW, matrix[double] gradientLinLayerb, matrix[double] gradientW2, matrix[double] gradientB2, matrix[double] gradientW1, matrix[double] gradientB1){
+    /*
+    * Backward pass for the 2-layer CNN image classifier.
+    *
+    * Computes gradients for:
+    *  - Softmax + Cross-Entropy loss
+    *  - Fully-connected (linear) layer
+    *  - (optional) Dropout on CIFAR
+    *  - ReLU / AvgPool2D / Conv2D blocks (block 2 then block 1)
+    *
+    * The function expects cached forward-pass activations (conv/pool/relu outputs)
+    * to correctly propagate gradients through the network.
+    *
+    * Inputs:
+    *  - target: One-hot encoded labels for the current batch.
+    *  - W1, b1: Weights and bias for the first convolution layer.
+    *  - W2, b2: Weights and bias for the second convolution layer.
+    *  - wFC, bFC: Weights and bias for the fully-connected layer.
+    *  - hIns, wIns, cIns: Lists containing input/intermediate heights, widths, and channels
+    *                      required by the conv/pool backward operators.
+    *  - X: Original input batch (flattened images), as used in the forward pass.
+    *  - convOut1, poolOut1, reluOut1: Cached activations after block 1.
+    *  - convOut2, poolOut2, reluOut2: Cached activations after block 2.
+    *  - pred: Pre-softmax logits from the forward pass.
+    *  - softMaxOut: Softmax probabilities from the forward pass.
+    *  - mask2: Dropout mask from the forward pass (used only for CIFAR training).
+    *  - datasetName: Dataset identifier ("mnist" or "cifar") to trigger dataset-specific logic.
+    *
+    * Outputs:
+    *  - gradientLinLayerW: Gradient of the linear-layer weights (wFC).
+    *  - gradientLinLayerb: Gradient of the linear-layer bias (bFC).
+    *  - gradientW2, gradientB2: Gradients for the second conv layer (W2, b2).
+    *  - gradientW1, gradientB1: Gradients for the first conv layer (W1, b1).
+    */        
         filters = 64
-        conv_kernel = 5
-        pool_kernel = 4
-        conv_padding = 2
-        pool_padding = 1
+        convKernel = 5
+        poolKernel = 4
+        convPadding = 2
+        poolPadding = 1
 
-        h_in = as.integer(as.scalar(h_ins[1]))
-        h_in_1 = as.integer(as.scalar(h_ins[2]))
-        h_in_2 = as.integer(as.scalar(h_ins[3]))
-        h_in_3 = as.integer(as.scalar(h_ins[4]))
-        h_in_4 = as.integer(as.scalar(h_ins[5]))
+        hIn = as.integer(as.scalar(hIns[1]))
+        hIn1 = as.integer(as.scalar(hIns[2]))
+        hIn2 = as.integer(as.scalar(hIns[3]))
+        hIn3 = as.integer(as.scalar(hIns[4]))
+        hIn4 = as.integer(as.scalar(hIns[5]))
 
-        w_in = as.integer(as.scalar(w_ins[1]))
-        w_in_1 = as.integer(as.scalar(w_ins[2]))
-        w_in_2 = as.integer(as.scalar(w_ins[3]))
-        w_in_3 = as.integer(as.scalar(w_ins[4]))
-        w_in_4 = as.integer(as.scalar(w_ins[5]))
+        wIn = as.integer(as.scalar(wIns[1]))
+        wIn1 = as.integer(as.scalar(wIns[2]))
+        wIn2 = as.integer(as.scalar(wIns[3]))
+        wIn3 = as.integer(as.scalar(wIns[4]))
+        wIn4 = as.integer(as.scalar(wIns[5]))
 
-        c_in = as.integer(as.scalar(c_ins[1]))
-        c_in_1 = as.integer(as.scalar(c_ins[2]))
+        cIn = as.integer(as.scalar(cIns[1]))
+        cIn1 = as.integer(as.scalar(cIns[2]))
 
         # gradient of loss function
-        gradient_lossfn = cross_entropy_loss::backward(softMaxOut, target)
+        gradientLossfn = cross_entropy_loss::backward(softMaxOut, target)
 
         # gradient Softmax
-        gradient_softmax = softmax::backward(gradient_lossfn, pred)
+        gradientSoftmax = softmax::backward(gradientLossfn, pred)
 
         # gradients Linear layer
-        gradient_lin_layer_W = t(gradient_softmax) %*% reluOut2
-        gradient_lin_layer_b = t(colSums(gradient_softmax))
-        gradient_lin_layer_X = gradient_softmax %*% W_fc
+        gradientLinLayerW = t(gradientSoftmax) %*% reluOut2
+        gradientLinLayerb = t(colSums(gradientSoftmax))
+        gradientLinLayerX = gradientSoftmax %*% wFC
 
-        # gradient second Relu
-        gradient_relu = relu::backward(gradient_lin_layer_X, poolOut2)
+        if (datasetName == "cifar"){
+            # Dropout
+            pDropout = 0.3
+            gradientDropout = dropout::backward(gradientLinLayerX, reluOut2, pDropout, mask2)
+            gradientRelu = relu::backward(gradientDropout, poolOut2)
+        }else{
+            # gradient second Relu
+            gradientRelu = relu::backward(gradientLinLayerX, poolOut2)
+        }
 
         # gradient second pooling layer
-        gradient_second_pooling = avg_pool2d::backward(gradient_relu, h_in_4, w_in_4, convOut2, c_in_1, h_in_3, w_in_3, pool_kernel, pool_kernel, 2, 2, pool_padding, pool_padding)
+        gradientSecondPooling = avg_pool2d::backward(gradientRelu, hIn4, wIn4, convOut2, cIn1, hIn3, wIn3, poolKernel, poolKernel, 2, 2, poolPadding, poolPadding)
 
         # gradient second conv layer
-        [gradient_second_conv_X, gradient_W2, gradient_b2] = conv2d::backward(gradient_second_pooling, h_in_3, w_in_3, reluOut1, W2, b2, c_in_1, h_in_2, w_in_2, conv_kernel, conv_kernel, 1, 1, conv_padding, conv_padding)
+        [gradientSecondConvX, gradientW2, gradientB2] = conv2d::backward(gradientSecondPooling, hIn3, wIn3, reluOut1, W2, b2, cIn1, hIn2, wIn2, convKernel, convKernel, 1, 1, convPadding, convPadding)
 
         # gradient of the first Relu
-        gradient_relu = relu::backward(gradient_second_conv_X, poolOut1)
+        gradientRelu = relu::backward(gradientSecondConvX, poolOut1)
 
         # gradient first pooling layer
-        gradient_first_pooling = avg_pool2d::backward(gradient_relu, h_in_2, w_in_2, convOut1, c_in_1, h_in_1, w_in_1, pool_kernel, pool_kernel, 2, 2, pool_padding, pool_padding)
+        gradientFirstPooling = avg_pool2d::backward(gradientRelu, hIn2, wIn2, convOut1, cIn1, hIn1, wIn1, poolKernel, poolKernel, 2, 2, poolPadding, poolPadding)
 
         # gradient first conv layer
-        [gradient_first_conv_X, gradient_W1, gradient_b1] = conv2d::backward(gradient_first_pooling, h_in_1, w_in_1, X, W1, b1, c_in, h_in, w_in, conv_kernel, conv_kernel, 1, 1, conv_padding, conv_padding)
+        [gradientFirstConvX, gradientW1, gradientB1] = conv2d::backward(gradientFirstPooling, hIn1, wIn1, X, W1, b1, cIn, hIn, wIn, convKernel, convKernel, 1, 1, convPadding, convPadding)
 
     }
 
 
-definingData = function(string dataset_name)
-    return(matrix[double] X_train, matrix[double] Y_train, matrix[double] X_val, matrix[double] Y_val, matrix[double] X_test, matrix[double] Y_test){
-    if (dataset_name=="mnist"){
+definingData = function(string datasetName)
+    return(matrix[double] XTrain, matrix[double] YTrain, matrix[double] XVal, matrix[double] YVal, matrix[double] XTest, matrix[double] YTest){
+    /*
+    * Loads and prepares the dataset split (train/validation/test) for MNIST or CIFAR.
+    *
+    * For MNIST:
+    *  - Reads the CSV from the SystemDS test resources.
+    *  - Normalizes pixel intensities to [0, 1] by dividing by 255.
+    *
+    * For CIFAR:
+    *  - Reads a pre-generated CSV (created by the CIFAR conversion script).
+    *  - Note: No additional normalization is applied here (assumes preprocessing
+    *          was already handled in the CSV generation step).
+    *
+    * Inputs:
+    *  - datasetName: Dataset identifier ("mnist" or "cifar").
+    *
+    * Outputs:
+    *  - XTrain: Training feature matrix (images).
+    *  - YTrain: One-hot encoded training label matrix.
+    *  - XVal: Validation feature matrix.
+    *  - YVal: One-hot encoded validation label matrix.
+    *  - XTest: Test feature matrix.
+    *  - YTest: One-hot encoded test label matrix.
+    */
+    if (datasetName=="mnist"){
         data = read("src/test/resources/datasets/MNIST/mnist_test.csv", format="csv") 
         train = data[1:8999,]
         test = data[9000:nrow(data),] 
@@ -144,339 +243,755 @@ definingData = function(string dataset_name)
         images = train[,2:ncol(train)]
         images = images / 255.0
         labels = train[,1]
-        images_test = test[,2:ncol(test)]
-        labels_test = test[,1]
+        imagesTest = test[,2:ncol(test)]
+        imagesTest = imagesTest / 255.0
+        labelsTest = test[,1]
 
         N = nrow(images)
-        N_test = nrow(images_test)     
+        NTest = nrow(imagesTest)     
 
-        X_train = images[1001:nrow(images),]
-        labels_train = labels[1001:nrow(images),]
-        Y_train = table(seq(1, nrow(X_train)), labels_train+1, nrow(X_train), 10)      
+        XTrain = images[1001:nrow(images),]
+        labelsTrain = labels[1001:nrow(images),]
+        YTrain = table(seq(1, nrow(XTrain)), labelsTrain+1, nrow(XTrain), 10)      
 
-        X_val = images[1:1000,]
-        labels_val = labels[1:1000,]
-        Y_val = table(seq(1, nrow(X_val)), labels_val+1, nrow(X_val), 10)
+        XVal = images[1:1000,]
+        labelsVal = labels[1:1000,]
+        YVal = table(seq(1, nrow(XVal)), labelsVal+1, nrow(XVal), 10)
 
-        X_test = images_test
-        Y_test = table(seq(1, N_test), labels_test+1, N_test, 10)
+        XTest = imagesTest
+        YTest = table(seq(1, NTest), labelsTest+1, NTest, 10)
     }
-    if (dataset_name=="cifar"){
+    if (datasetName=="cifar"){
         data = read("scripts/staging/shampoo_optimizer/cifar10.csv", format="csv")
-        train = data[1:39999,]                              
-        test = data[40000:nrow(data),]  
+        train = data[1:10000,]   # data[1:40000,]                           
+        test = data[10001:15000,]  # data[40000:nrow(data),]  
 
         images = train[,2:ncol(train)]
-        images = images / 255.0
         labels = train[,1]
-        images_test = test[,2:ncol(test)]
-        labels_test = test[,1]
+        imagesTest = test[,2:ncol(test)]
+        labelsTest = test[,1]
 
         N = nrow(images)
-        N_test = nrow(images_test)
+        NTest = nrow(imagesTest)
 
-        X_train = images[5001:nrow(images),]                  
-        labels_train = labels[5001:nrow(images),] 
-        Y_train = table(seq(1, nrow(X_train)), labels_train+1, nrow(X_train), 10)
+        XTrain = images[2001:nrow(images),]                  
+        labelsTrain = labels[2001:nrow(images),] 
+        YTrain = table(seq(1, nrow(XTrain)), labelsTrain+1, nrow(XTrain), 10)
 
-        X_val = images[1:5000,]          
-        labels_val = labels[1:5000,] 
-        Y_val = table(seq(1, nrow(X_val)), labels_val+1, nrow(X_val), 10)
+        XVal = images[1:2000,]          
+        labelsVal = labels[1:2000,] 
+        YVal = table(seq(1, nrow(XVal)), labelsVal+1, nrow(XVal), 10)
 
-        X_test = images_test
-        Y_test = table(seq(1, N_test), labels_test+1, N_test, 10)
+        XTest = imagesTest
+        YTest = table(seq(1, NTest), labelsTest+1, NTest, 10)
     }
 }
 
-# Define image properties
 
-defining_image_properties = function(string dataset_name)
-    return(int h_in, int w_in, int c_in, int classes){
-    if(dataset_name=="mnist"){
-        h_in = 28       
-        w_in = 28       
-        c_in = 1        
+definingImageProperties = function(string datasetName)
+    /*
+    * Returns basic image shape metadata for the selected dataset.
+    *
+    * Provides the input height/width, number of channels, and number of classes
+    * for the supported datasets.
+    *
+    * Inputs:
+    *  - datasetName: Dataset identifier ("mnist" or "cifar").
+    *
+    * Outputs:
+    *  - hIn: Input image height.
+    *  - wIn: Input image width.
+    *  - cIn: Number of input channels.
+    *  - classes: Number of classes.
+    */
+    return(int hIn, int wIn, int cIn, int classes){
+    if(datasetName=="mnist"){
+        hIn = 28       
+        wIn = 28       
+        cIn = 1        
         classes = 10
     } 
-    if(dataset_name=="cifar"){
-        h_in = 32       
-        w_in = 32      
-        c_in = 3        
+    if(datasetName=="cifar"){
+        hIn = 32       
+        wIn = 32      
+        cIn = 3        
         classes = 10
     }
 }
 
 # Define training parameters
-defining_training_parameters = function(string optimizer)
-    return(int epochs, int batch_size, double epsilon, double lr, int diagThreshold, int rootEvery, int preconEvery){
+definingTrainingParameters = function(string optimizer, string datasetName)
+    return(int epochs, int batchSize, double epsilon, double lr, int diagThreshold, int rootEvery, int preconEvery){
+    /*
+    * Returns training hyperparameters (epochs, batch size, and optimizer-specific settings)
+    * for a given optimizer and dataset.
+    *
+    * This function provides preset hyperparameters per optimizer (Adam, Adagrad, SGD,
+    * and three Shampoo variants) and per dataset ("mnist" vs "cifar").
+    *
+    * Inputs:
+    *  - optimizer: Optimizer name.
+    *  - datasetName: Dataset identifier ("mnist" or "cifar").
+    *
+    * Outputs:
+    *  - epochs: Number of training epochs.
+    *  - batchSize: Mini-batch size.
+    *  - epsilon: Numerical stability constant for the selected optimizer/dataset.
+    *  - lr: Learning rate for the selected optimizer/dataset.
+    *  - diagThreshold: Shampoo diagonalization threshold
+    *  - rootEvery: Frequency for computing matrix roots in Shampoo heuristic.
+    *  - preconEvery: Frequency for updating preconditioners in heuristic Shampoo.
+    */
+    lr = 0.001
     if(optimizer=="adam"){
-        epsilon = 1e-8
-        lr = 0.001         
+        if(datasetName=="cifar"){
+            epsilon = 1e-7
+            lr = 5.0e-4 
+        }else{
+            epsilon = 1e-4
+            lr = 0.0015  
+        } 
+    } 
+    else if(optimizer=="adagrad"){
+        if(datasetName=="cifar"){
+            epsilon = 1.0e-5
+            lr = 0.007           
+        }else{
+            epsilon = 1e-5
+            lr = 0.002
+        }
+    } 
+    else if(optimizer=="sgd"){
+        if(datasetName=="cifar"){
+            epsilon = 1.0e-8
+            lr = 0.1    
+        }else{
+            epsilon = 1e-6
+            lr = 0.03              
+        }
     } 
     else if((optimizer == "shampoo_heuristic") | (optimizer == "shampoo_heuristic_diagonal")){
-        epsilon = 1e-5
-        lr = 0.005       
+        if(datasetName=="cifar"){
+            epsilon = 0.09
+            lr = 0.2    
+        } else{
+            epsilon = 0.001
+            lr = 0.1   
+        }
     } 
-    else{
-        epsilon = 1e-3 
-        lr = 0.6
+    else if((optimizer == "shampoo_momentum") | (optimizer == "shampoo_momentum_diagonal")){
+        if(datasetName=="cifar"){
+            epsilon = 1.0e-7
+            lr = 0.3    
+        } else{
+            epsilon = 1e-4 
+            lr = 0.55    
+        }
+    } 
+    else if((optimizer == "shampoo") | (optimizer == "shampoo_diagonal")){
+        if(datasetName=="cifar"){
+            epsilon = 0.09
+            lr = 0.2    
+        } else{
+            epsilon = 0.2 
+            lr = 0.6    
+        }
+    } 
+
+    if(datasetName=="cifar"){
+        epochs = 200     
+    } else{
+        epochs = 30    
     }
-    epochs = 60 
-    batch_size = 64
-    diagThreshold = 1200
-    rootEvery = 10  
+    batchSize = 64
+    rootEvery = 8  
     preconEvery = 2
+    if ((optimizer == "shampoo_diagonal") | (optimizer == "shampoo_momentum_diagonal") | (optimizer == "shampoo_heuristic_diagonal")){
+        diagThreshold = 1
+    } else{
+        diagThreshold = 1200
+    }
 }
 
-defining_model_parameters = function()
-    return(int filters, int conv_kernel, int pool_kernel, int conv_padding, int pool_padding, int seed){
+definingModelParameters = function()
+    /*
+    * Defines and returns fixed model hyperparameters for the CNN architecture.
+    *
+    * This function centralizes the configuration of convolution/pooling settings
+    * and the random seed used for weight initialization.
+    *
+    * Outputs:
+    *  - filters: Number of convolution filters per conv layer.
+    *  - convKernel: Convolution kernel size.
+    *  - poolKernel: Pooling kernel size.
+    *  - convPadding: Padding applied in convolution layers.
+    *  - poolPadding: Padding applied in pooling layers.
+    *  - seed: Random seed for reproducible initialization.
+    */
+    return(int filters, int convKernel, int poolKernel, int convPadding, int poolPadding, int seed){
     
     filters = 64
-    conv_kernel = 5
-    pool_kernel = 4
-    conv_padding = 2
-    pool_padding = 1
+    convKernel = 5
+    poolKernel = 4
+    convPadding = 2
+    poolPadding = 1
     seed = 42    
 }
 
-# create simple nn for image classification
-defining_nn_image_classification = function(int h_in, int w_in, int c_in, int classes, int filters, int conv_kernel, int pool_kernel, int conv_padding, int pool_padding, int seed)
-    return(list[unknown] h_ins, list[unknown] w_ins, list[unknown] c_ins, matrix[double] W1, matrix[double] b1, matrix[double] W2, matrix[double] b2, matrix[double] W_fc, matrix[double] b_fc){
+
+definingNNImageClassification = function(int hIn, int wIn, int cIn, int classes, int filters, int convKernel, int poolKernel, int convPadding, int poolPadding, int seed)
+    return(list[unknown] hIns, list[unknown] wIns, list[unknown] cIns, matrix[double] W1, matrix[double] b1, matrix[double] W2, matrix[double] b2, matrix[double] wFC, matrix[double] bFC){
+    /*
+    * Initializes a simple 2-layer CNN for image classification and returns
+    * all learnable parameters plus cached shape metadata for forward/backward passes.
+    *
+    * Architecture:
+    *  - Conv2D (filters, convKernel, padding=convPadding) + bias
+    *  - AvgPool2D (poolKernel, stride=2, padding=poolPadding)
+    *  - ReLU
+    *  - Conv2D (filters, convKernel, padding=convPadding) + bias
+    *  - AvgPool2D (poolKernel, stride=2, padding=poolPadding)
+    *  - ReLU
+    *  - Fully-connected layer to `classes`
+    *
+    * Inputs:
+    *  - hIn, wIn, cIn: Input image height/width/channels
+    *  - classes: Number of output classes
+    *  - filters: Number of conv filters per layer
+    *  - convKernel: Convolution kernel size
+    *  - poolKernel: Pooling kernel size
+    *  - convPadding: Padding for convolution layers
+    *  - poolPadding: Padding for pooling layers
+    *  - seed: Random seed for reproducible initialization
+    *
+    * Outputs:
+    *  - hIns: List of intermediate heights (hIn, hIn1, hIn2, hIn3, hIn4)
+    *  - wIns: List of intermediate widths  (wIn, wIn1, wIn2, wIn3, wIn4)
+    *  - cIns: List of channel sizes (cIn, cIn1)
+    *  - W1, b1: Weights/bias of first conv layer
+    *  - W2, b2: Weights/bias of second conv layer
+    *  - wFC, bFC: Weights/bias of final linear layer
+    */
 
     # convolution layer 1
-    [W1, b1] = conv2d::init(filters, c_in, conv_kernel, conv_kernel, seed)
-    h_in_1 = h_in + conv_padding*2 - (conv_kernel - 1)
-    w_in_1 = w_in + conv_padding*2 - (conv_kernel - 1)
-    c_in_1 = filters
+    [W1, b1] = conv2d::init(filters, cIn, convKernel, convKernel, seed)
+    hIn1 = hIn + convPadding*2 - (convKernel - 1)
+    wIn1 = wIn + convPadding*2 - (convKernel - 1)
+    cIn1 = filters
     # pooling
-    h_in_2 = floor((h_in_1 + pool_padding*2 - pool_kernel)/2)+1
-    w_in_2 = floor((w_in_1 + pool_padding*2 - pool_kernel)/2)+1
+    hIn2 = floor((hIn1 + poolPadding*2 - poolKernel)/2)+1
+    wIn2 = floor((wIn1 + poolPadding*2 - poolKernel)/2)+1
     # relu
 
     # convolution layer 2
-    [W2, b2] = conv2d::init(filters, c_in_1, conv_kernel, conv_kernel, seed)
-    h_in_3 = h_in_2 + conv_padding*2 - (conv_kernel - 1)
-    w_in_3 = w_in_2 + conv_padding*2 - (conv_kernel - 1)
-    c_in_1 = filters
+    [W2, b2] = conv2d::init(filters, cIn1, convKernel, convKernel, seed)
+    hIn3 = hIn2 + convPadding*2 - (convKernel - 1)
+    wIn3 = wIn2 + convPadding*2 - (convKernel - 1)
+    cIn1 = filters
     # pooling
-    h_in_4 = floor((h_in_3 + pool_padding*2 - pool_kernel)/2)+1
-    w_in_4 = floor((w_in_3 + pool_padding*2 - pool_kernel)/2)+1
+    hIn4 = floor((hIn3 + poolPadding*2 - poolKernel)/2)+1
+    wIn4 = floor((wIn3 + poolPadding*2 - poolKernel)/2)+1
     # relu
 
     # Linear
-    W_fc = rand(rows=classes, cols=h_in_4*w_in_4*c_in_1, pdf="uniform", min=-0.1, max=0.1, seed=seed)
-    b_fc = matrix(0, rows=classes, cols=1)
+    wFC = rand(rows=classes, cols=hIn4*wIn4*cIn1, pdf="uniform", min=-0.1, max=0.1, seed=seed)
+    bFC = matrix(0, rows=classes, cols=1)
 
-    h_ins = list(h_in, h_in_1, h_in_2, h_in_3, h_in_4)
-    w_ins = list(w_in, w_in_1, w_in_2, w_in_3, w_in_4)
-    c_ins = list(c_in, c_in_1)    
+    hIns = list(hIn, hIn1, hIn2, hIn3, hIn4)
+    wIns = list(wIn, wIn1, wIn2, wIn3, wIn4)
+    cIns = list(cIn, cIn1)    
 }
 
-get_optimizer = function(int optimizer_index)
+getOptimizer = function(int optimizerIndex)
     return(string optimizer){
-
-        if (optimizer_index==4)
+    /*
+    * Maps an integer index to an optimizer name string used throughout the
+    * experiment pipeline.
+    *
+    * Inputs:
+    *  - optimizerIndex: Integer identifier of the optimizer (1..9)
+    *
+    * Outputs:
+    *  - optimizer: Optimizer name corresponding to the index.
+    */
+        if (optimizerIndex==1)
         {
             optimizer = "adam"
         }
-        if (optimizer_index==1)
+        if (optimizerIndex==2)
         {
             optimizer = "shampoo"
         }
-        if (optimizer_index==5)
+        if (optimizerIndex==3)
         {
             optimizer = "shampoo_diagonal"
         }
-        if (optimizer_index==2)
+        if (optimizerIndex==4)
         {
             optimizer = "shampoo_momentum"
         }
-        if (optimizer_index==6)
+        if (optimizerIndex==5)
         {
             optimizer = "shampoo_momentum_diagonal"
         }
-        if (optimizer_index==3)
+        if (optimizerIndex==6)
         {
             optimizer = "shampoo_heuristic"
         }
-        if (optimizer_index==7)
+        if (optimizerIndex==7)
         {
             optimizer = "shampoo_heuristic_diagonal"
         }
+        if (optimizerIndex==8)
+        {
+            optimizer = "adagrad"
+        }
+        if (optimizerIndex==9)
+        {
+            optimizer = "sgd"
+        }
 }
 
-# set parameters for the experiments
-#############################################################################################
-dataset_name = "mnist" #Alternatives: "mnist" or "cifar"
-optimizers_to_experiment = list("shampoo", "shampoo_momentum", "shampoo_heuristic", "adam")
-# Alternatives: ("shampoo", "shampoo_diagonal", "shampoo_momentum", 
-#           "shampoo_momentum_diagonal", "shampoo_heuristic", "shampoo_heuristic_diagonal", "adam")
-#############################################################################################
+runTraining = function(string type, double epsilon, double lr, int rootEvery, int preconEvery, int epochs, string datasetName, int optimizersToExperiment)
+    return(double loss, double accuracy){
+    /*
+    * Trains the two-layer CNN for one or multiple optimizers and returns the
+    * final test loss/accuracy of the last executed optimizer.
+    *
+    * This function:
+    *  - Loads and splits the requested dataset (MNIST/CIFAR)
+    *  - Initializes model weights and optimizer state
+    *  - Runs minibatch training for the specified number of epochs
+    *  - Tracks train/validation loss and accuracy per epoch
+    *  - Measures wall-clock time per epoch (seconds)
+    *  - Evaluates on the test set and optionally writes metrics to CSV
+    *
+    * Inputs:
+    *  - type: Experiment mode string:
+    *      - "training": use standard tuned params from definingTrainingParameters
+    *      - "finetuning": override rootEvery/preconEvery from caller, keep eps/lr from tuning loop
+    *      - "finetuningShampooHeuristics": tune eps/lr/rootEvery/preconEvery externally, do not override from definingTrainingParameters
+    *  - epsilon: Epsilon value potentially provided by hyperparameter tuning (may be overwritten depending on type)
+    *  - lr: Learning rate potentially provided by hyperparameter tuning (may be overwritten depending on type)
+    *  - rootEvery: Shampoo heuristic parameter (may be overwritten depending on type)
+    *  - preconEvery: Shampoo heuristic parameter (may be overwritten depending on type)
+    *  - epochs: Number of epochs (may be overwritten depending on type/dataset)
+    *  - datasetName: Dataset identifier ("mnist" or "cifar")
+    *  - optimizersToExperiment: Number of optimizers to run (iterates optimizerIndex=1..optimizersToExperiment)
+    *
+    * Outputs:
+    *  - loss: Final test loss of the last optimizer run
+    *  - accuracy: Final test accuracy of the last optimizer run
+    */
+    for (optimizerIndex in 1:optimizersToExperiment){
+        optimizer = getOptimizer(optimizerIndex)
+        print("Starting with " + optimizer)
 
-for (optimizer_index in 1:length(optimizers_to_experiment)){
-    optimizer = get_optimizer(optimizer_index)
-    print("Starting with " + optimizer)
+        # get the data
+        [XTrain, YTrain, XVal, YVal, XTest, YTest] = definingData(datasetName)
 
-    # get the data
-    [X_train, Y_train, X_val, Y_val, X_test, Y_test] = definingData(dataset_name)
+        # get image properties
+        [hIn, wIn, cIn, classes] = definingImageProperties(datasetName)
 
-    # get image properties
-    [h_in, w_in, c_in, classes] = defining_image_properties(dataset_name)
+        # get model parameters
+        [filters, convKernel, poolKernel, convPadding, poolPadding, seed] = definingModelParameters()
 
-    # get model parameters
-    [filters, conv_kernel, pool_kernel, conv_padding, pool_padding, seed] = defining_model_parameters()
+        #get model weights
+        [hIns, wIns, cIns, W1, b1, W2, b2, wFC, bFC] = definingNNImageClassification(hIn, wIn, cIn, classes, filters, convKernel, poolKernel, convPadding, poolPadding, seed)
 
-    #get model weights
-    [h_ins, w_ins, c_ins, W1, b1, W2, b2, W_fc, b_fc] = defining_nn_image_classification(h_in, w_in, c_in, classes, filters, conv_kernel, pool_kernel, conv_padding, pool_padding, seed)
-
-    # get training parameters
-    [epochs, batch_size, epsilon, lr, diagThreshold, rootEvery, preconEvery]= defining_training_parameters(optimizer)
-
-
-    if ((optimizer == "shampoo") | (optimizer == "shampoo_diagonal")){
-        [preconL_W1, preconR_W1, useDiag_W1] = shampoo::init(W1, epsilon, diagThreshold)
-        [preconL_b1, preconR_b1, useDiag_b1] = shampoo::init(b1, epsilon, diagThreshold)
-        [preconL_W2, preconR_W2, useDiag_W2] = shampoo::init(W2, epsilon, diagThreshold)
-        [preconL_b2, preconR_b2, useDiag_b2] = shampoo::init(b2, epsilon, diagThreshold)
-        [preconL_W_fc, preconR_W_fc, useDiag_W_fc] = shampoo::init(W_fc, epsilon, diagThreshold)
-        [preconL_b_fc, preconR_b_fc, useDiag_b_fc] = shampoo::init(b_fc, epsilon, diagThreshold)
-    }
-    if ((optimizer == "shampoo_momentum") | (optimizer == "shampoo_momentum_diagonal")){
-        [preconL_W1, preconR_W1, momentum_W1, useDiag_W1] = shampoo::init_momentum(W1, epsilon, diagThreshold)
-        [preconL_b1, preconR_b1, momentum_b1, useDiag_b1] = shampoo::init_momentum(b1, epsilon, diagThreshold)
-        [preconL_W2, preconR_W2, momentum_W2, useDiag_W2] = shampoo::init_momentum(W2, epsilon, diagThreshold)
-        [preconL_b2, preconR_b2, momentum_b2, useDiag_b2] = shampoo::init_momentum(b2, epsilon, diagThreshold)
-        [preconL_W_fc, preconR_W_fc, momentum_W_fc, useDiag_W_fc] = shampoo::init_momentum(W_fc, epsilon, diagThreshold)
-        [preconL_b_fc, preconR_b_fc, momentum_b_fc, useDiag_b_fc] = shampoo::init_momentum(b_fc, epsilon, diagThreshold)
-    }
-    if ((optimizer == "shampoo_heuristic") | (optimizer == "shampoo_heuristic_diagonal")){
-        [preconL_W1, preconR_W1, stepCounter_W1, bufferL_W1, bufferR_W1, momentum_W1, preconLInvPowerRoot_W1, preconRInvPowerRoot_W1, useDiag_W1] = shampoo::init_heuristic(W1, epsilon, diagThreshold)
-        [preconL_b1, preconR_b1, stepCounter_b1, bufferL_b1, bufferR_b1, momentum_b1, preconLInvPowerRoot_b1, preconRInvPowerRoot_b1, useDiag_b1] = shampoo::init_heuristic(b1, epsilon, diagThreshold)
-        [preconL_W2, preconR_W2, stepCounter_W2, bufferL_W2, bufferR_W2, momentum_W2, preconLInvPowerRoot_W2, preconRInvPowerRoot_W2, useDiag_W2] = shampoo::init_heuristic(W2, epsilon, diagThreshold)
-        [preconL_b2, preconR_b2, stepCounter_b2, bufferL_b2, bufferR_b2, momentum_b2, preconLInvPowerRoot_b2, preconRInvPowerRoot_b2, useDiag_b2] = shampoo::init_heuristic(b2, epsilon, diagThreshold)
-        [preconL_W_fc, preconR_W_fc, stepCounter_W_fc, bufferL_W_fc, bufferR_W_fc, momentum_W_fc, preconLInvPowerRoot_W_fc, preconRInvPowerRoot_W_fc, useDiag_W_fc] = shampoo::init_heuristic(W_fc, epsilon, diagThreshold)
-        [preconL_b_fc, preconR_b_fc, stepCounter_b_fc, bufferL_b_fc, bufferR_b_fc, momentum_b_fc, preconLInvPowerRoot_b_fc, preconRInvPowerRoot_b_fc, useDiag_b_fc] = shampoo::init_heuristic(b_fc, epsilon, diagThreshold)
-    }
-    if (optimizer == "adam"){
-        [m_W1, v_W1] = adam::init(W1)
-        [m_b1, v_b1] = adam::init(b1)
-        [m_W2, v_W2] = adam::init(W2)
-        [m_b2, v_b2] = adam::init(b2)
-        [m_W_fc, v_W_fc] = adam::init(W_fc)
-        [m_b_fc, v_b_fc] = adam::init(b_fc)
-    }
-
-    data_val_X = X_val
-    data_val_Y = Y_val
-
-    # define the training
-
-    train_losses = matrix(0, rows=epochs, cols=1)
-    train_accuracies = matrix(0, rows=epochs, cols=1)
-    val_accuracies = matrix(0, rows=epochs, cols=1)
-    val_losses = matrix(0, rows=epochs, cols=1)
-    Ntrain = nrow(X_train)
-
-    timestep = 0
-
-    for(epoch in 1:epochs){
-
-        print("Epoch " + epoch + " of " + epochs + " epochs")
-
-        accuracy_value = 0
-        accuracy_count = 0
-        loss_value = 0
-        loss_count = 0
+        # get training parameters
+        if (type == "finetuningShampooHeuristics"){
+            [tmpEpochs, batchSize, tmpEps, tmpLr, diagThreshold, tmpRoot, tmpPrecon]= definingTrainingParameters(optimizer, datasetName)
+        }else if (type == "finetuning"){
+            [tmpEpochs, batchSize, tmpEps, tmpLr, diagThreshold, rootEvery, preconEvery]= definingTrainingParameters(optimizer, datasetName)
+        } else{
+            [epochs, batchSize, epsilon, lr, diagThreshold, rootEvery, preconEvery]= definingTrainingParameters(optimizer, datasetName)
+        }
         
 
-        for(start_index in seq(1, Ntrain, batch_size)){
-            #start_index = (i - 1) * batch_size + 1
-            end_index = min(start_index + batch_size - 1, Ntrain)
-            data_train_X = X_train[start_index:end_index,]
-            data_train_Y = Y_train[start_index:end_index,]
 
-            [softMaxOut, X, convOut1, poolOut1, reluOut1, convOut2, poolOut2, reluOut2, pred] = modelPredict(data_train_X, W1, b1, W2, b2, W_fc, b_fc, h_ins, w_ins, c_ins)
+        if ((optimizer == "shampoo") | (optimizer == "shampoo_diagonal")){
+            [preconLW1, preconRW1, useDiagW1] = shampoo::init(W1, epsilon, diagThreshold)
+            [preconLB1, preconRB1, useDiagB1] = shampoo::init(b1, epsilon, diagThreshold)
+            [preconLW2, preconRW2, useDiagW2] = shampoo::init(W2, epsilon, diagThreshold)
+            [preconLB2, preconRB2, useDiagB2] = shampoo::init(b2, epsilon, diagThreshold)
+            [preconLWFC, preconRWFC, useDiagWFC] = shampoo::init(wFC, epsilon, diagThreshold)
+            [preconLBFC, preconRBFC, useDiagBFC] = shampoo::init(bFC, epsilon, diagThreshold)
+        }
+        if ((optimizer == "shampoo_momentum") | (optimizer == "shampoo_momentum_diagonal")){
+            [preconLW1, preconRW1, momentumW1, useDiagW1] = shampoo::init_momentum(W1, epsilon, diagThreshold)
+            [preconLB1, preconRB1, momentumB1, useDiagB1] = shampoo::init_momentum(b1, epsilon, diagThreshold)
+            [preconLW2, preconRW2, momentumW2, useDiagW2] = shampoo::init_momentum(W2, epsilon, diagThreshold)
+            [preconLB2, preconRB2, momentumB2, useDiagB2] = shampoo::init_momentum(b2, epsilon, diagThreshold)
+            [preconLWFC, preconRWFC, momentumWFC, useDiagWFC] = shampoo::init_momentum(wFC, epsilon, diagThreshold)
+            [preconLBFC, preconRBFC, momentumBFC, useDiagBFC] = shampoo::init_momentum(bFC, epsilon, diagThreshold)
+        }
+        if ((optimizer == "shampoo_heuristic") | (optimizer == "shampoo_heuristic_diagonal")){
+            [preconLW1, preconRW1, stepCounterW1, bufferLW1, bufferRW1, momentumW1, preconLInvPowerRootW1, preconRInvPowerRootW1, useDiagW1] = shampoo::init_heuristic(W1, epsilon, diagThreshold)
+            [preconLB1, preconRB1, stepCounterB1, bufferLB1, bufferRB1, momentumB1, preconLInvPowerRootB1, preconRInvPowerRootB1, useDiagB1] = shampoo::init_heuristic(b1, epsilon, diagThreshold)
+            [preconLW2, preconRW2, stepCounterW2, bufferLW2, bufferRW2, momentumW2, preconLInvPowerRootW2, preconRInvPowerRootW2, useDiagW2] = shampoo::init_heuristic(W2, epsilon, diagThreshold)
+            [preconLB2, preconRB2, stepCounterB2, bufferLB2, bufferRB2, momentumB2, preconLInvPowerRootB2, preconRInvPowerRootB2, useDiagB2] = shampoo::init_heuristic(b2, epsilon, diagThreshold)
+            [preconLWFC, preconRWFC, stepCounterWFC, bufferLWFC, bufferRWFC, momentumWFC, preconLInvPowerRootWFC, preconRInvPowerRootWFC, useDiagWFC] = shampoo::init_heuristic(wFC, epsilon, diagThreshold)
+            [preconLBFC, preconRBFC, stepCounterBFC, bufferLBFC, bufferRBFC, momentumBFC, preconLInvPowerRootBFC, preconRInvPowerRootBFC, useDiagBFC] = shampoo::init_heuristic(bFC, epsilon, diagThreshold)
+        }
+        if (optimizer == "adam"){
+            [mW1, vW1] = adam::init(W1)
+            [mB1, vB1] = adam::init(b1)
+            [mW2, vW2] = adam::init(W2)
+            [mB2, vB2] = adam::init(b2)
+            [mWFC, vWFC] = adam::init(wFC)
+            [mBFC, vBFC] = adam::init(bFC)
+        }
+        if (optimizer == "adagrad"){
+            cacheW1 = adagrad::init(W1)
+            cacheB1 = adagrad::init(b1)
+            cacheW2 = adagrad::init(W2)
+            cacheB2 = adagrad::init(b2)
+            cacheWFC = adagrad::init(wFC)
+            cacheBFC = adagrad::init(bFC)
+        }
 
-            predicted_value = rowIndexMax(softMaxOut) - 1
-            accuracy = sum(predicted_value==rowIndexMax(data_train_Y)-1) / length(predicted_value)
-            accuracy_value = accuracy_value + accuracy
-            accuracy_count = accuracy_count + 1
+        dataValX = XVal
+        dataValY = YVal
 
-            loss = cross_entropy_loss::forward(softMaxOut, data_train_Y)
-            loss_value = loss_value + loss
-            loss_count = loss_count + 1
+        # define the training
+
+        trainLosses = matrix(0, rows=epochs, cols=1)
+        trainAccuracies = matrix(0, rows=epochs, cols=1)
+        valAccuracies = matrix(0, rows=epochs, cols=1)
+        valLosses = matrix(0, rows=epochs, cols=1)
+        times = matrix(0, rows=epochs, cols=1)
+        Ntrain = nrow(XTrain)
+
+        timestep = 0
+
+        for(epoch in 1:epochs){
+            t0 = time()
+            if (datasetName == "cifar"){
+                if (epoch > 1 & (epoch-1) %% 20 == 0) {
+                        lr = lr * 0.5
+                        print("Learning rate decayed to: " + lr)
+                    }
+            }
+
+            print("Epoch " + epoch + " of " + epochs + " epochs")
+
+            accuracyValue = 0
+            accuracyCount = 0
+            lossValue = 0
+            lossCount = 0
             
 
-            [gradient_lin_layer_W, gradient_lin_layer_b, gradient_W2, gradient_b2, gradient_W1, gradient_b1] = modelBackward(data_train_Y, W1, b1, W2, b2, W_fc, b_fc, h_ins, w_ins, c_ins, X, convOut1, poolOut1, reluOut1, convOut2, poolOut2, reluOut2, pred, softMaxOut)
+            for(start_index in seq(1, Ntrain, batchSize)){
+                #start_index = (i - 1) * batchSize + 1
+                end_index = min(start_index + batchSize - 1, Ntrain)
+                data_train_X = XTrain[start_index:end_index,]
+                dataTrainY = YTrain[start_index:end_index,]
 
-            if ((optimizer == "shampoo") | (optimizer == "shampoo_diagonal")){
-                [W1, preconL_W1, preconR_W1] = shampoo::update(W1, gradient_W1, lr, preconL_W1, preconR_W1, useDiag_W1)
-                [b1, preconL_b1, preconR_b1] = shampoo::update(b1, gradient_b1, lr, preconL_b1, preconR_b1, useDiag_b1)
-                [W2, preconL_W2, preconR_W2] = shampoo::update(W2, gradient_W2, lr, preconL_W2, preconR_W2, useDiag_W2)
-                [b2, preconL_b2, preconR_b2] = shampoo::update(b2, gradient_b2, lr, preconL_b2, preconR_b2, useDiag_b2)
-                [W_fc, preconL_W_fc, preconR_W_fc] = shampoo::update(W_fc, gradient_lin_layer_W, lr, preconL_W_fc, preconR_W_fc, useDiag_W_fc)
-                [b_fc, preconL_b_fc, preconR_b_fc] = shampoo::update(b_fc, gradient_lin_layer_b, lr, preconL_b_fc, preconR_b_fc, useDiag_b_fc)
+                [softMaxOut, X, convOut1, poolOut1, reluOut1, convOut2, poolOut2, reluOut2, pred, mask2] = modelPredict(data_train_X, W1, b1, W2, b2, wFC, bFC, hIns, wIns, cIns, TRUE, datasetName)
+
+                predictedValue = rowIndexMax(softMaxOut) - 1
+                accuracy = sum(predictedValue==rowIndexMax(dataTrainY)-1) / length(predictedValue)
+                accuracyValue = accuracyValue + accuracy
+                accuracyCount = accuracyCount + 1
+
+                loss = cross_entropy_loss::forward(softMaxOut, dataTrainY)
+                lossValue = lossValue + loss
+                lossCount = lossCount + 1
+                
+
+                [gradientLinLayerW, gradientLinLayerb, gradientW2, gradientB2, gradientW1, gradientB1] = modelBackward(dataTrainY, W1, b1, W2, b2, wFC, bFC, hIns, wIns, cIns, X, convOut1, poolOut1, reluOut1, convOut2, poolOut2, reluOut2, pred, softMaxOut, mask2, datasetName)
+
+                if ((optimizer == "shampoo") | (optimizer == "shampoo_diagonal")){
+                    [W1, preconLW1, preconRW1] = shampoo::update(W1, gradientW1, lr, preconLW1, preconRW1, useDiagW1)
+                    [b1, preconLB1, preconRB1] = shampoo::update(b1, gradientB1, lr, preconLB1, preconRB1, useDiagB1)
+                    [W2, preconLW2, preconRW2] = shampoo::update(W2, gradientW2, lr, preconLW2, preconRW2, useDiagW2)
+                    [b2, preconLB2, preconRB2] = shampoo::update(b2, gradientB2, lr, preconLB2, preconRB2, useDiagB2)
+                    [wFC, preconLWFC, preconRWFC] = shampoo::update(wFC, gradientLinLayerW, lr, preconLWFC, preconRWFC, useDiagWFC)
+                    [bFC, preconLBFC, preconRBFC] = shampoo::update(bFC, gradientLinLayerb, lr, preconLBFC, preconRBFC, useDiagBFC)
+                }
+                if ((optimizer == "shampoo_momentum") | (optimizer == "shampoo_momentum_diagonal")){
+                    [W1, preconLW1, preconRW1, momentumW1] = shampoo::update_momentum(W1, gradientW1, lr, preconLW1, preconRW1, momentumW1, useDiagW1)
+                    [b1, preconLB1, preconRB1, momentumB1] = shampoo::update_momentum(b1, gradientB1, lr, preconLB1, preconRB1, momentumB1, useDiagB1)
+                    [W2, preconLW2, preconRW2, momentumW2] = shampoo::update_momentum(W2, gradientW2, lr, preconLW2, preconRW2, momentumW2, useDiagW2)
+                    [b2, preconLB2, preconRB2, momentumB2] = shampoo::update_momentum(b2, gradientB2, lr, preconLB2, preconRB2, momentumB2, useDiagB2)
+                    [wFC, preconLWFC, preconRWFC, momentumWFC] = shampoo::update_momentum(wFC, gradientLinLayerW, lr, preconLWFC, preconRWFC, momentumWFC, useDiagWFC)
+                    [bFC, preconLBFC, preconRBFC, momentumBFC] = shampoo::update_momentum(bFC, gradientLinLayerb, lr, preconLBFC, preconRBFC, momentumBFC, useDiagBFC)
+                }
+                if ((optimizer == "shampoo_heuristic") | (optimizer == "shampoo_heuristic_diagonal")){
+                    [W1, preconLW1, preconRW1, momentumW1, stepCounterW1, bufferLW1, bufferRW1, preconLInvPowerRootW1, preconRInvPowerRootW1] = shampoo::update_heuristic(W1, gradientW1, lr, preconLW1, preconRW1, momentumW1, stepCounterW1, rootEvery, preconEvery, bufferLW1, bufferRW1, preconLInvPowerRootW1, preconRInvPowerRootW1, useDiagW1)
+                    [b1, preconLB1, preconRB1, momentumB1, stepCounterB1, bufferLB1, bufferRB1, preconLInvPowerRootB1, preconRInvPowerRootB1] = shampoo::update_heuristic(b1, gradientB1, lr, preconLB1, preconRB1, momentumB1, stepCounterB1, rootEvery, preconEvery, bufferLB1, bufferRB1, preconLInvPowerRootB1, preconRInvPowerRootB1, useDiagB1)
+                    [W2, preconLW2, preconRW2, momentumW2, stepCounterW2, bufferLW2, bufferRW2, preconLInvPowerRootW2, preconRInvPowerRootW2] = shampoo::update_heuristic(W2, gradientW2, lr, preconLW2, preconRW2, momentumW2, stepCounterW2, rootEvery, preconEvery, bufferLW2, bufferRW2, preconLInvPowerRootW2, preconRInvPowerRootW2, useDiagW2)
+                    [b2, preconLB2, preconRB2, momentumB2, stepCounterB2, bufferLB2, bufferRB2, preconLInvPowerRootB2, preconRInvPowerRootB2] = shampoo::update_heuristic(b2, gradientB2, lr, preconLB2, preconRB2, momentumB2, stepCounterB2, rootEvery, preconEvery, bufferLB2, bufferRB2, preconLInvPowerRootB2, preconRInvPowerRootB2, useDiagB2)
+                    [wFC, preconLWFC, preconRWFC, momentumWFC, stepCounterWFC, bufferLWFC, bufferRWFC, preconLInvPowerRootWFC, preconRInvPowerRootWFC] = shampoo::update_heuristic(wFC, gradientLinLayerW, lr, preconLWFC, preconRWFC, momentumWFC, stepCounterWFC, rootEvery, preconEvery, bufferLWFC, bufferRWFC, preconLInvPowerRootWFC, preconRInvPowerRootWFC, useDiagWFC)
+                    [bFC, preconLBFC, preconRBFC, momentumBFC, stepCounterBFC, bufferLBFC, bufferRBFC, preconLInvPowerRootBFC, preconRInvPowerRootBFC] = shampoo::update_heuristic(bFC, gradientLinLayerb, lr, preconLBFC, preconRBFC, momentumBFC, stepCounterBFC, rootEvery, preconEvery, bufferLBFC, bufferRBFC, preconLInvPowerRootBFC, preconRInvPowerRootBFC, useDiagBFC)
+                }
+                if (optimizer == "adam"){
+                    [W1, mW1, vW1] = adam::update(W1, gradientW1, lr, 0.9, 0.999, epsilon, timestep, mW1, vW1)
+                    [b1, mB1, vB1] = adam::update(b1, gradientB1, lr, 0.9, 0.999, epsilon, timestep, mB1, vB1)
+                    [W2, mW2, vW2] = adam::update(W2, gradientW2, lr, 0.9, 0.999, epsilon, timestep, mW2, vW2)
+                    [b2, mB2, vB2] = adam::update(b2, gradientB2, lr, 0.9, 0.999, epsilon, timestep, mB2, vB2)
+                    [wFC, mWFC, vWFC] = adam::update(wFC, gradientLinLayerW, lr, 0.9, 0.999, epsilon, timestep, mWFC, vWFC)
+                    [bFC, mBFC, vBFC] = adam::update(bFC, gradientLinLayerb, lr, 0.9, 0.999, epsilon, timestep, mBFC, vBFC)
+                    timestep = timestep + 1
+                }
+                if (optimizer == "adagrad"){
+                    [W1, cacheW1] = adagrad::update(W1, gradientW1, lr, epsilon, cacheW1)
+                    [b1, cacheB1] = adagrad::update(b1, gradientB1, lr, epsilon, cacheB1)
+                    [W2, cacheW2] = adagrad::update(W2, gradientW2, lr, epsilon, cacheW2)
+                    [b2, cacheB2] = adagrad::update(b2, gradientB2, lr, epsilon, cacheB2)
+                    [wFC, cacheWFC] = adagrad::update(wFC, gradientLinLayerW, lr, epsilon, cacheWFC)
+                    [bFC, cacheBFC] = adagrad::update(bFC, gradientLinLayerb, lr, epsilon, cacheBFC)
+                }
+                if (optimizer == "sgd"){
+                    W1 = sgd::update(W1, gradientW1, lr)
+                    b1 = sgd::update(b1, gradientB1, lr)
+                    W2 = sgd::update(W2, gradientW2, lr)
+                    b2 = sgd::update(b2, gradientB2, lr)
+                    wFC = sgd::update(wFC, gradientLinLayerW, lr)
+                    bFC = sgd::update(bFC, gradientLinLayerb, lr)
+                }
             }
-            if ((optimizer == "shampoo_momentum") | (optimizer == "shampoo_momentum_diagonal")){
-                [W1, preconL_W1, preconR_W1, momentum_W1] = shampoo::update_momentum(W1, gradient_W1, lr, preconL_W1, preconR_W1, momentum_W1, useDiag_W1)
-                [b1, preconL_b1, preconR_b1, momentum_b1] = shampoo::update_momentum(b1, gradient_b1, lr, preconL_b1, preconR_b1, momentum_b1, useDiag_b1)
-                [W2, preconL_W2, preconR_W2, momentum_W2] = shampoo::update_momentum(W2, gradient_W2, lr, preconL_W2, preconR_W2, momentum_W2, useDiag_W2)
-                [b2, preconL_b2, preconR_b2, momentum_b2] = shampoo::update_momentum(b2, gradient_b2, lr, preconL_b2, preconR_b2, momentum_b2, useDiag_b2)
-                [W_fc, preconL_W_fc, preconR_W_fc, momentum_W_fc] = shampoo::update_momentum(W_fc, gradient_lin_layer_W, lr, preconL_W_fc, preconR_W_fc, momentum_W_fc, useDiag_W_fc)
-                [b_fc, preconL_b_fc, preconR_b_fc, momentum_b_fc] = shampoo::update_momentum(b_fc, gradient_lin_layer_b, lr, preconL_b_fc, preconR_b_fc, momentum_b_fc, useDiag_b_fc)
-            }
-            if ((optimizer == "shampoo_heuristic") | (optimizer == "shampoo_heuristic_diagonal")){
-                [W1, preconL_W1, preconR_W1, momentum_W1, stepCounter_W1, bufferL_W1, bufferR_W1, preconLInvPowerRoot_W1, preconRInvPowerRoot_W1] = shampoo::update_heuristic(W1, gradient_W1, lr, preconL_W1, preconR_W1, momentum_W1, stepCounter_W1, rootEvery, preconEvery, bufferL_W1, bufferR_W1, preconLInvPowerRoot_W1, preconRInvPowerRoot_W1, useDiag_W1)
-                [b1, preconL_b1, preconR_b1, momentum_b1, stepCounter_b1, bufferL_b1, bufferR_b1, preconLInvPowerRoot_b1, preconRInvPowerRoot_b1] = shampoo::update_heuristic(b1, gradient_b1, lr, preconL_b1, preconR_b1, momentum_b1, stepCounter_b1, rootEvery, preconEvery, bufferL_b1, bufferR_b1, preconLInvPowerRoot_b1, preconRInvPowerRoot_b1, useDiag_b1)
-                [W2, preconL_W2, preconR_W2, momentum_W2, stepCounter_W2, bufferL_W2, bufferR_W2, preconLInvPowerRoot_W2, preconRInvPowerRoot_W2] = shampoo::update_heuristic(W2, gradient_W2, lr, preconL_W2, preconR_W2, momentum_W2, stepCounter_W2, rootEvery, preconEvery, bufferL_W2, bufferR_W2, preconLInvPowerRoot_W2, preconRInvPowerRoot_W2, useDiag_W2)
-                [b2, preconL_b2, preconR_b2, momentum_b2, stepCounter_b2, bufferL_b2, bufferR_b2, preconLInvPowerRoot_b2, preconRInvPowerRoot_b2] = shampoo::update_heuristic(b2, gradient_b2, lr, preconL_b2, preconR_b2, momentum_b2, stepCounter_b2, rootEvery, preconEvery, bufferL_b2, bufferR_b2, preconLInvPowerRoot_b2, preconRInvPowerRoot_b2, useDiag_b2)
-                [W_fc, preconL_W_fc, preconR_W_fc, momentum_W_fc, stepCounter_W_fc, bufferL_W_fc, bufferR_W_fc, preconLInvPowerRoot_W_fc, preconRInvPowerRoot_W_fc] = shampoo::update_heuristic(W_fc, gradient_lin_layer_W, lr, preconL_W_fc, preconR_W_fc, momentum_W_fc, stepCounter_W_fc, rootEvery, preconEvery, bufferL_W_fc, bufferR_W_fc, preconLInvPowerRoot_W_fc, preconRInvPowerRoot_W_fc, useDiag_W_fc)
-                [b_fc, preconL_b_fc, preconR_b_fc, momentum_b_fc, stepCounter_b_fc, bufferL_b_fc, bufferR_b_fc, preconLInvPowerRoot_b_fc, preconRInvPowerRoot_b_fc] = shampoo::update_heuristic(b_fc, gradient_lin_layer_b, lr, preconL_b_fc, preconR_b_fc, momentum_b_fc, stepCounter_b_fc, rootEvery, preconEvery, bufferL_b_fc, bufferR_b_fc, preconLInvPowerRoot_b_fc, preconRInvPowerRoot_b_fc, useDiag_b_fc)
-            }
-            if (optimizer == "adam"){
-                [W1, m_W1, v_W1] = adam::update(W1, gradient_W1, lr, 0.9, 0.999, epsilon, timestep, m_W1, v_W1)
-                [b1, m_b1, v_b1] = adam::update(b1, gradient_b1, lr, 0.9, 0.999, epsilon, timestep, m_b1, v_b1)
-                [W2, m_W2, v_W2] = adam::update(W2, gradient_W2, lr, 0.9, 0.999, epsilon, timestep, m_W2, v_W2)
-                [b2, m_b2, v_b2] = adam::update(b2, gradient_b2, lr, 0.9, 0.999, epsilon, timestep, m_b2, v_b2)
-                [W_fc, m_W_fc, v_W_fc] = adam::update(W_fc, gradient_lin_layer_W, lr, 0.9, 0.999, epsilon, timestep, m_W_fc, v_W_fc)
-                [b_fc, m_b_fc, v_b_fc] = adam::update(b_fc, gradient_lin_layer_b, lr, 0.9, 0.999, epsilon, timestep, m_b_fc, v_b_fc)
-                timestep = timestep + 1
+            t1= time()
+            times[epoch,1] = (t1 - t0) / 1000000000
+
+
+            trainLosses[epoch,1] = lossValue / lossCount
+            trainAccuracies[epoch,1] = accuracyValue/accuracyCount
+
+            #print("Train Loss of " + optimizer + " = " + (lossValue / lossCount))
+            #print("Train Accuracy of " + optimizer + " = " + (accuracyValue/accuracyCount))
+
+            [softMaxOutVal, XVal, convOut1Val, poolOut1Val, reluOut1Val, convOut2Val, poolOut2Val, reluOut2Val, predVal, mask2Ignore] = modelPredict(XVal, W1, b1, W2, b2, wFC, bFC, hIns, wIns, cIns, FALSE, datasetName)
+
+
+            predictedValueVal = rowIndexMax(softMaxOutVal) - 1
+            accuracyVal = sum(predictedValueVal==rowIndexMax(YVal)-1) / length(predictedValueVal)
+
+            valAccuracies[epoch,1] = accuracyVal
+
+            loss = cross_entropy_loss::forward(softMaxOutVal, YVal)
+            valLosses[epoch,1] = loss
+
+            #print("Val Loss of " + optimizer + " = " + loss)
+            #print("Val Accuracy of " + optimizer + " = " + accuracyVal)
+        }
+
+
+        # define the testing
+
+        [softMaxOutTest, XTest, convOut1Test, poolOut1Test, reluOut1Test, convOut2Test, poolOut2Test, reluOut2Test, predTest, mask2Ignore] = modelPredict(XTest, W1, b1, W2, b2, wFC, bFC, hIns, wIns, cIns, FALSE, datasetName)
+
+        predictedValue = rowIndexMax(softMaxOutTest) - 1
+        accuracy = sum(predictedValue==rowIndexMax(YTest)-1) / length(predictedValue)
+
+        loss = cross_entropy_loss::forward(softMaxOutTest, YTest)
+
+        outDir = "scripts/staging/shampoo_optimizer/metrics"
+        epochs = nrow(trainLosses)
+        epochCol = seq(1, epochs)         
+        M = cbind(epochCol, trainLosses, trainAccuracies, valLosses, valAccuracies, times)
+        if ((type != "finetuning") & (type != "finetuningShampooHeuristics")){
+            write(M, outDir + "/metrics" + "_" + optimizer + "_" + datasetName + ".csv", format="csv")
+        }
+        
+        print("Test Accuracy of " + optimizer + " on " + datasetName + " = " + accuracy)
+        print("Test Loss of " + optimizer + " on " + datasetName + " = " + loss)
+
+    }    
+}
+
+logRow = function(matrix[double] L, int run, int roundID, int paramID,
+                   double candidate, double loss, double epsilon, double lr,
+                   int rootEvery, int preconEvery)
+    return(matrix[double] L) {
+/*
+ * Writes one hyperparameter-evaluation record into the tuning log matrix.
+ *
+ * Inputs:
+ *  - L: Tuning log matrix to update (nEval × 8)
+ *  - run: 1-based row index in L to write to
+ *  - roundID: Current tuning round identifier
+ *  - paramID: Identifier of the tuned parameter:
+ *      - 1: epsilon
+ *      - 2: lr
+ *      - 3: rootEvery
+ *      - 4: preconEvery
+ *  - candidate: Candidate value tested for the parameter indicated by paramID
+ *  - loss: Observed loss for this evaluation (e.g., validation loss)
+ *  - epsilon: Epsilon used in the evaluated run
+ *  - lr: Learning rate used in the evaluated run
+ *  - rootEvery: rootEvery used in the evaluated run
+ *  - preconEvery: preconEvery used in the evaluated run
+ *
+ * Output:
+ *  - L: Updated tuning log matrix (with row `run` filled)
+ */
+    L[run,1] = as.double(roundID)
+    L[run,2] = as.double(paramID)
+    L[run,3] = candidate
+    L[run,4] = loss
+    L[run,5] = epsilon
+    L[run,6] = lr
+    L[run,7] = as.double(rootEvery)
+    L[run,8] = as.double(preconEvery)
+}
+
+startHyperparameterTuning = function(string type, string datasetName, list[unknown] epsilonList, list[unknown] lrList, list[unknown] rootEveryList, list[unknown] preconEveryList, 
+    double epsilon, double lr, int rootEvery, int preconEvery, int epochs, int rounds)
+    return(){
+    /*
+    * Runs multi-round sequential hyperparameter tuning for the selected training setup.
+    *
+    * The tuning procedure iterates for `rounds` rounds and evaluates candidate values
+    * from the provided lists. Within each round it tunes in sequence:
+    *  1: epsilon (always)
+    *  2: lr (always)
+    *  3: rootEvery (only if type == "finetuningShampooHeuristics")
+    *  4: preconEvery (only if type == "finetuningShampooHeuristics")
+    *
+    * For each candidate, it calls `runTraining(...)` (with optimizersToExperiment=1),
+    * logs the evaluation via `logRow(...)`, and keeps the candidate with the lowest loss.
+    *
+    * Inputs:
+    *  - type: Experiment mode ("finetuning" or "finetuningShampooHeuristics")
+    *  - datasetName: Dataset identifier (e.g., "mnist", "cifar")
+    *  - epsilonList: Candidate epsilons to test
+    *  - lrList: Candidate learning rates to test
+    *  - rootEveryList: Candidate rootEvery values to test (heuristic tuning only)
+    *  - preconEveryList: Candidate preconEvery values to test (heuristic tuning only)
+    *  - epsilon: Initial epsilon (starting point for tuning)
+    *  - lr: Initial learning rate (starting point for tuning)
+    *  - rootEvery: Initial rootEvery (starting point for tuning)
+    *  - preconEvery: Initial preconEvery (starting point for tuning)
+    *  - epochs: Number of epochs used per evaluation run
+    *  - rounds: Number of tuning rounds to perform
+    *
+    * Outputs:
+    *  - None (side effects: prints progress, runs training evaluations, and builds `tuningLog`).
+    *    At the end, `bestParams` contains the best found (epsilon, lr, rootEvery, preconEvery).
+    */
+    nEval = rounds * ( length(epsilonList) + length(lrList) + length(rootEveryList) + length(preconEveryList) )  
+    tuningLog = matrix(0, rows=nEval, cols=8)    
+    run = 0
+
+    for (round in 1:rounds) {
+        print("=== Round " + round + " ===")
+    
+        # tuning epsilon
+        bestLoss = 10000;
+        bestEpsilon = epsilon;
+
+        for (i in 1:length(epsilonList)) {
+            candidate = as.double(as.scalar(epsilonList[i]))
+            [loss, accuracy] = runTraining(type, candidate, lr, rootEvery, preconEvery, epochs, datasetName, 1)
+
+            run = run + 1
+            tuningLog = logRow(tuningLog, run, round, 1, candidate, loss, candidate, lr, rootEvery, preconEvery)
+
+            if (loss < bestLoss) {
+                bestLoss = loss
+                bestEpsilon = candidate
             }
         }
 
-        train_losses[epoch,1] = loss_value / loss_count
-        train_accuracies[epoch,1] = accuracy_value/accuracy_count
+        epsilon = bestEpsilon;
+        print("best epsilon = " + epsilon + " (loss=" + bestLoss + ")")
 
-        [softMaxOut_val, X_val, convOut1_val, poolOut1_val, reluOut1_val, convOut2_val, poolOut2_val, reluOut2_val, pred_val] = modelPredict(X_val, W1, b1, W2, b2, W_fc, b_fc, h_ins, w_ins, c_ins)
+        # tuning lr
+        bestLoss = 10000
+        bestLr = lr
+
+        for (i in 1:length(lrList)) {
+            candidate = as.double(as.scalar(lrList[i]))
+            [loss, accuracy] = runTraining(type, epsilon, candidate, rootEvery, preconEvery, epochs, datasetName, 1)
+
+            run = run + 1;
+            tuningLog = logRow(tuningLog, run, round, 2, candidate, loss, candidate, lr, rootEvery, preconEvery)
+
+            if (loss < bestLoss) {
+                bestLoss = loss
+                bestLr = candidate
+            }
+        }
+        lr = bestLr
+        print("best lr = " + lr + " (loss=" + bestLoss + ")")
 
 
-        predicted_value_val = rowIndexMax(softMaxOut_val) - 1
-        accuracy_val = sum(predicted_value_val==rowIndexMax(Y_val)-1) / length(predicted_value_val)
+        if (type == "finetuningShampooHeuristics"){
 
-        val_accuracies[epoch,1] = accuracy_val
+            # tuning rootEvery
+            bestLoss = 10000;
+            bestRoot = rootEvery;
 
-        loss = cross_entropy_loss::forward(softMaxOut_val, Y_val)
-        val_losses[epoch,1] = loss
+            for (i in 1:length(rootEveryList)) {
+                candidate = as.integer(as.scalar(rootEveryList[i]))
+                [loss, accuracy] = runTraining(type, epsilon, lr, candidate, preconEvery, epochs, datasetName, 1)
+
+                run = run + 1
+                tuningLog = logRow(tuningLog, run, round, 3, candidate, loss, candidate, lr, rootEvery, preconEvery)
+
+                if (loss < bestLoss) {
+                    bestLoss = loss
+                    bestRoot = candidate
+                }
+            }
+            rootEvery = bestRoot
+            print("best rootEvery = " + rootEvery + " (loss=" + bestLoss + ")")
+
+            # tuning preconEvery
+            bestLoss = 1e9;
+            bestPrecon = preconEvery;
+
+            for (i in 1:length(preconEveryList)) {
+                candidate = as.integer(as.scalar(preconEveryList[i]))
+                [loss, accuracy] = runTraining(type, epsilon, lr, rootEvery, candidate, epochs, datasetName, 1)
+
+                run = run + 1;
+                tuningLog = logRow(tuningLog, run, round, 4, candidate, loss, candidate, lr, rootEvery, preconEvery)
+
+                if (loss < bestLoss) {
+                    bestLoss = loss
+                    bestPrecon = candidate
+                }   
+            }
+            preconEvery = bestPrecon
+            print("best preconEvery = " + preconEvery + " (loss=" + bestLoss + ")")
+        }
+        print("Round " + round + " params: eps=" + epsilon + ", lr=" + lr +
+            ", rootEvery=" + rootEvery + ", preconEvery=" + preconEvery)
     }
-
-
-    # define the testing
-
-    [softMaxOut_test, X_test, convOut1_test, poolOut1_test, reluOut1_test, convOut2_test, poolOut2_test, reluOut2_test, pred_test] = modelPredict(X_test, W1, b1, W2, b2, W_fc, b_fc, h_ins, w_ins, c_ins)
-
-    predicted_value = rowIndexMax(softMaxOut_test) - 1
-    accuracy = sum(predicted_value==rowIndexMax(Y_test)-1) / length(predicted_value)
-
-    loss = cross_entropy_loss::forward(softMaxOut_test, Y_test)
-
-    outDir = "scripts/staging/shampoo_optimizer/metrics"
-    epochs = nrow(train_losses)
-    epoch_col = seq(1, epochs)         
-    M = cbind(epoch_col, train_losses, train_accuracies, val_losses, val_accuracies)
-    write(M, outDir + "/metrics" + "_" + optimizer + "_" + dataset_name + ".csv", format="csv")
-
-    print("Test Accuracy of " + optimizer + " on " + dataset_name + " = " + accuracy)
-    print("Test Loss of " + optimizer + " on " + dataset_name + " = " + loss)
-
+    bestParams = list(epsilon, lr, rootEvery, preconEvery) 
 }
 
+
+
+#############################################################################################
+datasetName = "cifar" #Alternatives: "mnist" or "cifar"
+optimizersToExperiment = 9 # There are up to 9 optimizers available
+#############################################################################################
+# standard experiment
+loss = runTraining("training", 0, 0, 0, 0, 0, datasetName, optimizersToExperiment)
+
+
+#############################################################################################
+datasetName = "cifar" #Alternatives: "mnist" or "cifar"
+type = "finetuningShampooHeuristics" # "finetuning" or "finetuningShampooHeuristics"
+
+# finetuning list
+epsilonList =  list(0.09, 0.08, 0.07, 0.06, 0.05)
+lrList = list(0.5, 0.4, 0.3, 0.2) 
+rootEveryList = list(4, 8, 12)
+preconEveryList = list(2, 4)
+
+# standard values
+epsilon = 0.1
+lr = 0.3
+rootEvery = 4
+preconEvery = 2
+epochs = 30
+
+rounds = 2
+#############################################################################################
+# hyperparameter tuning
+# startHyperparameterTuning(type, datasetName, epsilonList, lrList, rootEveryList, preconEveryList, epsilon, lr, rootEvery, preconEvery, epochs, rounds)

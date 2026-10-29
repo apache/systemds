@@ -35,6 +35,8 @@ from systemds.scuro.drsearch.operator_registry import (
 )
 from systemds.scuro.dataloader.video_loader import VideoStats
 from systemds.scuro.representations.utils import (
+    LazyModelMixin,
+    build_torchvision_model,
     OwnerAccumulator,
     get_sequence_lengths,
     transformer_inference_context,
@@ -45,7 +47,11 @@ from systemds.scuro.representations.video_batching import (
     VideoMemoryProfile,
 )
 
-from systemds.scuro.utils.torch_dataset import CustomDataset
+from systemds.scuro.utils.torch_dataset import (
+    FrameDataset,
+    FramePreprocessor,
+    collate_frames,
+)
 from systemds.scuro.utils.static_variables import (
     get_device,
     get_device_for_model,
@@ -54,9 +60,12 @@ from systemds.scuro.utils.static_variables import (
 
 @register_representation([ModalityType.VIDEO])
 @register_expensive_representation([ModalityType.VIDEO])
-class SwinVideoTransformer(FrameBudgetedVideoModel, UnimodalRepresentation):
+class SwinVideoTransformer(
+    LazyModelMixin, FrameBudgetedVideoModel, UnimodalRepresentation
+):
     OUTPUT_MODALITY_TYPE = ModalityType.EMBEDDING
     _EMBED_DIM = 768
+    MODEL_BYTES = 127_384_024
     cache_in_worker = True
     _MEMORY_PROFILE = VideoMemoryProfile(
         clip_frame_bytes=1 * MIB,
@@ -89,14 +98,26 @@ class SwinVideoTransformer(FrameBudgetedVideoModel, UnimodalRepresentation):
         self.batch_size = batch_size
         # 32 clips of 300 frames would need ~175 GiB; see FrameBudgetedVideoModel.
         self.max_batch_frames = max_batch_frames
-        self.model = swin3d_t(weights=models.video.Swin3D_T_Weights.KINETICS400_V1)
-        self.device = get_device_for_model(self.model, memory_factor=1.5)
-        self._gpu_id = self.device.index
+        self.device = get_device()
+        self._gpu_id = None
+        # Until the scheduler places it, the model picks a device when built.
+        self._placed = False
         self._activation_hook = None
-        self.model = self.model.to(self.device)
-        self.model.eval()
-        for param in self.model.parameters():
+
+    def _build_model(self):
+        model = build_torchvision_model(
+            swin3d_t, models.video.Swin3D_T_Weights.KINETICS400_V1
+        )
+        if not self._placed:
+            self.device = get_device_for_model(model, memory_factor=1.5)
+            self._gpu_id = self.device.index
+        model.eval()
+        for param in model.parameters():
             param.requires_grad = False
+        return model.to(self.device)
+
+    def _model_bytes(self) -> int:
+        return self.MODEL_BYTES
 
     @property
     def gpu_id(self):
@@ -105,6 +126,7 @@ class SwinVideoTransformer(FrameBudgetedVideoModel, UnimodalRepresentation):
     @gpu_id.setter
     def gpu_id(self, gpu_id):
         self._gpu_id = gpu_id
+        self._placed = True
         self.device = get_device(gpu_id)
 
     def get_output_stats(self, input_stats) -> RepresentationStats:
@@ -139,13 +161,15 @@ class SwinVideoTransformer(FrameBudgetedVideoModel, UnimodalRepresentation):
                     )
                     break
 
-        dataset = CustomDataset(modality.data, self.data_type, "cpu")
+        dataset = FrameDataset(modality.data, video=True)
+        preprocess = FramePreprocessor(dtype=self.data_type)
         lengths = get_sequence_lengths(modality.data, modality.metadata)
         accumulator = OwnerAccumulator(len(dataset), len(dataset), aggregation)
 
         def forward(model, batch):
             video_ids = batch["id"].long()
-            _ = model(batch["data"].permute(0, 2, 1, 3, 4))
+            frames = preprocess(batch["data"], next(model.parameters()).device)
+            _ = model(frames.permute(0, 2, 1, 3, 4))
             values = self.swin_output
             if isinstance(values, tuple):
                 values = values[0]
@@ -160,7 +184,7 @@ class SwinVideoTransformer(FrameBudgetedVideoModel, UnimodalRepresentation):
             accumulator.update(pooled.to(self.device), video_ids, video_ids)
 
         with transformer_inference_context(self.device):
-            self._run_batches(dataset, lengths, forward)
+            self._run_batches(dataset, lengths, forward, collate_fn=collate_frames)
 
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type

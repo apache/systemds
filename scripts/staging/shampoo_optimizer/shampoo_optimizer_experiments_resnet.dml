@@ -1,0 +1,734 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/networks/resnet34.dml") as resnet34
+source("scripts/nn/networks/resnet18.dml") as resnet18
+
+source("scripts/nn/optim/shampoo.dml") as shampoo
+source("scripts/nn/optim/adagrad.dml") as adagrad
+source("scripts/nn/optim/adam.dml") as adam
+source("scripts/nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
+source("scripts/nn/layers/softmax.dml") as softmax
+
+initShampooHelper = function(string optimizer, matrix[double] weights, double epsilon, int diagThreshold)
+    return(list[unknown] paramsOptimizerLayer) {
+    /*
+    * Initializes and packs the per-layer optimizer state for a Shampoo variant.
+    *
+    * Based on `optimizer`, this function calls the corresponding Shampoo initializer
+    * and returns a `paramsOptimizerLayer` list that contains all state needed for
+    * subsequent update steps.
+    *
+    * Inputs:
+    *  - optimizer: Shampoo variant identifier ("shampoo", "shampoo_momentum", "shampoo_heuristic")
+    *  - weights: Parameter matrix of the current layer
+    *  - epsilon: Numerical stability constant for preconditioner initialization
+    *  - diagThreshold: Dimension threshold controlling whether diagonal preconditioning is used
+    *
+    * Outputs:
+    *  - paramsOptimizerLayer: Optimizer state list for this layer, with layout depending on variant:
+    *      - "shampoo":
+    *          [preconL, preconR, useDiag]
+    *      - "shampoo_momentum":
+    *          [preconL, preconR, momentum, useDiag]
+    *      - "shampoo_heuristic":
+    *          [preconL, preconR, stepCounter, bufferL, bufferR, momentum,
+    *           preconLinvPowerRoot, preconRinvPowerRoot, useDiag]
+    */
+    if (optimizer=="shampoo") {
+        [preconL, preconR, useDiag] = shampoo::init(weights, epsilon, diagThreshold)
+        paramsOptimizerLayer = list(preconL, preconR, useDiag)
+    }
+    if (optimizer=="shampoo_momentum"){
+        [preconL, preconR, momentum, useDiag] = shampoo::init_momentum(weights, epsilon, diagThreshold)
+        paramsOptimizerLayer = list(preconL, preconR, momentum, useDiag)
+    }
+    if (optimizer=="shampoo_heuristic"){
+        [preconL, preconR, stepCounter, bufferL, bufferR, momentum, preconLinvPowerRoot, preconRinvPowerRoot, useDiag] = shampoo::init_heuristic(weights, epsilon, diagThreshold)
+        paramsOptimizerLayer = list(preconL, preconR, stepCounter, bufferL, bufferR, momentum, preconLinvPowerRoot, preconRinvPowerRoot, useDiag)
+    }
+}
+
+initShampooForModel = function(string optimizer, list[unknown] model, double epsilon, int diagThreshold)
+    /*
+    * Initializes Shampoo optimizer state for an entire ResNet-style model and
+    * returns it in a structure that mirrors the model's parameter layout.
+    *
+    * This function iterates over all model parameter groups:
+    *  - layers 1..3 (stem / early layers),
+    *  - residual layers 4..7 (each a list of blocks, each block a list of params),
+    *  - layers 8..9 (final fully-connected layers),
+    * and calls `initShampooHelper` for every parameter matrix.
+    *
+    * Inputs:
+    *  - optimizer: Shampoo variant identifier ("shampoo", "shampoo_momentum", "shampoo_heuristic")
+    *  - model: Model parameter list (ResNet-style layout)
+    *  - epsilon: Numerical stability constant for preconditioner initialization
+    *  - diagThreshold: Dimension threshold controlling whether diagonal preconditioning is used
+    *
+    * Outputs:
+    *  - paramsOptimizer: Nested list of optimizer states with the same outer indexing scheme as `model`.
+    */
+    return(list[unknown] paramsOptimizer) {
+
+    paramsOptimizerLayer1 = initShampooHelper(optimizer, as.matrix(model[1]), epsilon, diagThreshold)
+    paramsOptimizerLayer2 = initShampooHelper(optimizer, as.matrix(model[2]), epsilon, diagThreshold)
+    paramsOptimizerLayer3 = initShampooHelper(optimizer, as.matrix(model[3]), epsilon, diagThreshold)
+
+    # 4 to 7: residual layers (each is list of blocks)
+    residualLayersParams = list()   # will hold 4 entries
+
+    for(layerIndex in 4:7) {
+        layer = as.list(model[layerIndex])     # list of blocks
+        layer_blocks = list()
+
+        for(blockIndex in 1:length(layer)) {
+            blockParameters = as.list(layer[blockIndex])   # list of params in this block
+            parameters = list()
+
+            for(parameterIndex in 1:length(blockParameters)) {
+                parameter = as.matrix(blockParameters[parameterIndex])
+                tmp = initShampooHelper(optimizer, parameter, epsilon, diagThreshold)
+                parameters = append(parameters, tmp)
+            }
+
+            layer_blocks = append(layer_blocks, parameters)
+        }
+
+        residualLayersParams = append(residualLayersParams, layer_blocks)
+    }
+
+    # 8..9: fully connected
+    paramsOptimizerLayer8 = initShampooHelper(optimizer, as.matrix(model[8]), epsilon, diagThreshold)
+    paramsOptimizerLayer9 = initShampooHelper(optimizer, as.matrix(model[9]), epsilon, diagThreshold)
+
+    # pack state with same outer indexing scheme
+    paramsOptimizer = list(
+    paramsOptimizerLayer1, paramsOptimizerLayer2, paramsOptimizerLayer3,
+    as.list(residualLayersParams[1]), as.list(residualLayersParams[2]), as.list(residualLayersParams[3]), as.list(residualLayersParams[4]),
+    paramsOptimizerLayer8, paramsOptimizerLayer9
+    )
+}
+
+
+updateShampooHelper = function(string optimizer, matrix[double] weight, list[unknown] paramsOptimizerLayer, matrix[double] gradient, double lr, int rootEvery, int preconEvery)
+    return (matrix[double] updatedWeight, list[unknown] paramsOptimizerLayer){
+    /*
+    * Applies one Shampoo update step to a single parameter matrix and updates the
+    * corresponding optimizer state for the selected Shampoo variant.
+    *
+    * Depending on `optimizer`, this function dispatches to:
+    *  - shampoo::update (classic Shampoo),
+    *  - shampoo::update_momentum (Shampoo with momentum),
+    *  - shampoo::update_heuristic (heuristic variant with cached inverse roots and periodic updates).
+    *
+    * Inputs:
+    *  - optimizer: Shampoo variant identifier ("shampoo", "shampoo_momentum", "shampoo_heuristic")
+    *  - weight: Current parameter matrix to update
+    *  - paramsOptimizerLayer: Optimizer state for this parameter (layout depends on variant)
+    *  - gradient: Gradient matrix for `weight`
+    *  - lr: Learning rate
+    *  - rootEvery: (heuristic only) Frequency for recomputing inverse roots
+    *  - preconEvery: (heuristic only) Frequency for updating preconditioners
+    *
+    * Outputs:
+    *  - updatedWeight: Updated parameter matrix after one optimization step
+    *  - paramsOptimizerLayer: Updated optimizer state for this parameter, re-packed as a list
+    */
+    if (optimizer=="shampoo") {
+        preconL = as.matrix(paramsOptimizerLayer[1])
+        preconR = as.matrix(paramsOptimizerLayer[2])
+        useDiag = as.boolean(as.scalar(paramsOptimizerLayer[3]))
+        [updatedWeight, preconL, preconR] = shampoo::update(weight, gradient, lr, preconL, preconR, useDiag)
+        paramsOptimizerLayer = list(preconL, preconR, useDiag)
+    }
+    if (optimizer=="shampoo_momentum"){
+        preconL = as.matrix(paramsOptimizerLayer[1])
+        preconR = as.matrix(paramsOptimizerLayer[2])
+        momentum = as.matrix(paramsOptimizerLayer[3])
+        useDiag = as.boolean(as.scalar(paramsOptimizerLayer[4]))
+        [updatedWeight, preconL, preconR, momentum] = shampoo::update_momentum(weight, gradient, lr, preconL, preconR, momentum, useDiag)
+        paramsOptimizerLayer = list(preconL, preconR, momentum, useDiag)
+    }
+    if (optimizer=="shampoo_heuristic"){
+        preconL = as.matrix(paramsOptimizerLayer[1])
+        preconR = as.matrix(paramsOptimizerLayer[2])
+        stepCounter = as.integer(as.scalar(paramsOptimizerLayer[3]))
+        bufferL = as.matrix(paramsOptimizerLayer[4])
+        bufferR = as.matrix(paramsOptimizerLayer[5])
+        momentum = as.matrix(paramsOptimizerLayer[6])
+        preconLinvPowerRoot = as.matrix(paramsOptimizerLayer[7])
+        preconRinvPowerRoot = as.matrix(paramsOptimizerLayer[8])
+        useDiag = as.boolean(as.scalar(paramsOptimizerLayer[9]))
+        [updatedWeight, preconL, preconR, momentum, stepCounter, bufferL, bufferR, preconLinvPowerRoot, preconRinvPowerRoot] = shampoo::update_heuristic(weight, gradient, lr, preconL, preconR, momentum, stepCounter, rootEvery, preconEvery, bufferL, bufferR, preconLinvPowerRoot, preconRinvPowerRoot, useDiag)
+        paramsOptimizerLayer = list(preconL, preconR, stepCounter, bufferL, bufferR, momentum, preconLinvPowerRoot, preconRinvPowerRoot, useDiag)
+    }
+}
+
+
+updateShampooForModel = function(string optimizer, list[unknown] model, list[unknown] paramsOptimizer, list[unknown] gradients, double lr, int rootEvery, int preconEvery)
+    return(list[unknown] model, list[unknown] paramsOptimizer){
+    /*
+    * Applies a Shampoo update step to all parameters of a ResNet-style model and
+    * updates the corresponding optimizer state tree.
+    *
+    * The function iterates over:
+    *  - Top-level layers 1..3 (single matrices),
+    *  - Residual layers 4..7 (lists of blocks, each block is a list of parameter matrices),
+    *  - Fully connected layers 8..9 (single matrices),
+    * and calls `updateShampooHelper` for each parameter using the matching gradient
+    * and per-parameter optimizer state.
+    *
+    * Inputs:
+    *  - optimizer: Shampoo variant identifier ("shampoo", "shampoo_momentum", "shampoo_heuristic")
+    *  - model: Model parameter structure (same indexing scheme as ResNet init/forward/backward)
+    *  - paramsOptimizer: Optimizer state structure aligned with `model`
+    *  - gradients: Gradient structure aligned with `model`
+    *  - lr: Learning rate
+    *  - rootEvery: (heuristic only) Frequency for recomputing inverse roots
+    *  - preconEvery: (heuristic only) Frequency for updating preconditioners
+    *
+    * Outputs:
+    *  - model: Updated model parameters after applying one optimizer step
+    *  - paramsOptimizer: Updated optimizer state tree after applying one optimizer step
+    */
+
+    [updatedWeightLayer1, paramsOptimizerLayer1] = updateShampooHelper(optimizer, as.matrix(model[1]), as.list(paramsOptimizer[1]), as.matrix(gradients[1]), lr, rootEvery, preconEvery)
+    model[1] = updatedWeightLayer1
+    paramsOptimizer[1] = list(paramsOptimizerLayer1)
+    [updatedWeightLayer2, paramsOptimizerLayer2] = updateShampooHelper(optimizer, as.matrix(model[2]), as.list(paramsOptimizer[2]), as.matrix(gradients[2]), lr, rootEvery, preconEvery)
+    model[2] = updatedWeightLayer2
+    paramsOptimizer[2] = list(paramsOptimizerLayer2)
+    [updatedWeightLayer3, paramsOptimizerLayer3] = updateShampooHelper(optimizer, as.matrix(model[3]), as.list(paramsOptimizer[3]), as.matrix(gradients[3]), lr, rootEvery, preconEvery)
+    model[3] = updatedWeightLayer3
+    paramsOptimizer[3] = list(paramsOptimizerLayer3)
+
+    # 4 to 7: residual layers (each is list of blocks)
+    residualLayersParams = list()
+    residualLayersWeights = list()
+
+    for(layerIndex in 4:7) {
+        layerParameters = as.list(paramsOptimizer[layerIndex])
+        layerWeights = as.list(model[layerIndex])  
+        layerGradients = as.list(gradients[layerIndex])  
+
+        for(blockIndex in 1:length(layerParameters)) {
+            blockParameters = as.list(layerParameters[blockIndex])   # list of params in this block
+            blockWeights = as.list(layerWeights[blockIndex])
+            blockGradients = as.list(layerGradients[blockIndex])
+
+            for(parameterIndex in 1:length(blockParameters)) {
+                parameter = as.list(blockParameters[parameterIndex])
+                weight = as.matrix(blockWeights[parameterIndex])
+                gradient = as.matrix(blockGradients[parameterIndex])
+                [updatedWeight, updatedParameter] = updateShampooHelper(optimizer, weight, parameter, gradient, lr, rootEvery, preconEvery)
+
+                blockWeights[parameterIndex] = updatedWeight
+                blockParameters[parameterIndex] = list(updatedParameter)
+            }
+            layerWeights[blockIndex] = list(blockWeights)
+            layerParameters[blockIndex] = list(blockParameters)
+        }
+        model[layerIndex] = list(layerWeights)
+        paramsOptimizer[layerIndex] = list(layerParameters)
+    }
+
+    # 8..9: fully connected
+    [updatedWeightLayer8, paramsOptimizerLayer8]= updateShampooHelper(optimizer, as.matrix(model[8]), as.list(paramsOptimizer[8]), as.matrix(gradients[8]), lr, rootEvery, preconEvery)
+    model[8] = updatedWeightLayer8
+    paramsOptimizer[8] = list(paramsOptimizerLayer8)
+    [updatedWeightLayer9, paramsOptimizerLayer9] = updateShampooHelper(optimizer, as.matrix(model[9]), as.list(paramsOptimizer[9]), as.matrix(gradients[9]), lr, rootEvery, preconEvery)
+    model[9] = updatedWeightLayer9
+    paramsOptimizer[9] = list(paramsOptimizerLayer9)
+
+}
+
+addL2Regularization = function(list[unknown] model, list[unknown] gradients, double weightDecay)
+    return (list[unknown] gradients) {
+    /*
+    * Adds L2 regularization (weight decay) to a model's gradients in-place.
+    *
+    * For each eligible weight matrix W, the gradient is adjusted as:
+    *   G <- G + weightDecay * W
+    *
+    * The function applies weight decay to:
+    *  - Layer 1 (always),
+    *  - Residual layers 4..7 (all block parameters with nrow(W)>1 and ncol(W)>1),
+    *  - Layer 8 (always),
+    * and leaves bias-like parameters (vectors / 1D shapes) unchanged.
+    *
+    * Inputs:
+    *  - model: Model parameter structure (ResNet-style indexing)
+    *  - gradients: Gradient structure aligned with `model`
+    *  - weightDecay: L2 regularization coefficient
+    *
+    * Outputs:
+    *  - gradients: Updated gradients with weight decay added to selected parameters
+    */
+
+    g1 = as.matrix(gradients[1]) + weightDecay * as.matrix(model[1])
+    gradients[1] = g1
+
+    for(layerIndex in 4:7) {
+        layerWeights = as.list(model[layerIndex])
+        layerGrads = as.list(gradients[layerIndex])
+
+        for(blockIndex in 1:length(layerGrads)) {
+            blockWeights = as.list(layerWeights[blockIndex])
+            blockGrads = as.list(layerGrads[blockIndex])
+
+            for(paramIndex in 1:length(blockGrads)) {
+                W = as.matrix(blockWeights[paramIndex])
+                G = as.matrix(blockGrads[paramIndex])
+
+                if (nrow(W) > 1 & ncol(W) > 1) {
+                    g = G + weightDecay * W
+                    blockGrads[paramIndex] = g
+                } else {
+                    blockGrads[paramIndex] = G
+                }
+            }
+
+            layerGrads[blockIndex] = list(blockGrads)  
+        }
+
+        gradients[layerIndex] = list(layerGrads)   
+    }
+
+    g8 = as.matrix(gradients[8]) + weightDecay * as.matrix(model[8])
+    gradients[8] = g8
+}
+
+definingData = function(string datasetName)
+    return(matrix[double] XTrain, matrix[double] YTrain, matrix[double] XVal, matrix[double] YVal, matrix[double] XTest, matrix[double] YTest){
+    /*
+    * Loads and prepares train/validation/test splits for MNIST or CIFAR-10.
+    *
+    * MNIST:
+    *  - Reads `mnist_test.csv`, splits into train/test by row ranges.
+    *  - Normalizes pixel values to [0,1] by dividing by 255.
+    *  - Creates a validation set from the first 1000 training rows.
+    *  - One-hot encodes labels into 10 classes.
+    *
+    * CIFAR-10:
+    *  - Reads `cifar10.csv` (custom preprocessed CSV with label in column 1).
+    *  - Uses rows 1..20000 for training pool and 20001..30000 for test.
+    *  - Creates a validation set from the first 5000 training rows and
+    *    uses the remainder for training.
+    *  - One-hot encodes labels into 10 classes.
+    *  - Prints dataset size diagnostics (row counts and min/max for XTrain).
+    *
+    * Inputs:
+    *  - datasetName: "mnist" or "cifar"
+    *
+    * Outputs:
+    *  - XTrain, YTrain: Training features and one-hot labels
+    *  - XVal, YVal: Validation features and one-hot labels
+    *  - XTest, YTest: Test features and one-hot labels
+    */
+
+    if (datasetName=="mnist"){
+        data = read("src/test/resources/datasets/MNIST/mnist_test.csv", format="csv") 
+        train = data[1:8999,]
+        test = data[9000:nrow(data),] 
+
+        images = train[,2:ncol(train)]
+        images = images / 255.0
+        labels = train[,1]
+        imagesTest = test[,2:ncol(test)]
+        imagesTest = imagesTest / 255.0
+        labelsTest = test[,1]
+
+        N = nrow(images)
+        nTest = nrow(imagesTest)     
+
+        XTrain = images[1001:nrow(images),]
+        labelsTrain = labels[1001:nrow(images),]
+        YTrain = table(seq(1, nrow(XTrain)), labelsTrain+1, nrow(XTrain), 10)      
+
+        XVal = images[1:1000,]
+        labelsVal = labels[1:1000,]
+        YVal = table(seq(1, nrow(XVal)), labelsVal+1, nrow(XVal), 10)
+
+        XTest = imagesTest
+        YTest = table(seq(1, nTest), labelsTest+1, nTest, 10)
+    }
+    if (datasetName=="cifar"){
+        data = read("scripts/staging/shampoo_optimizer/cifar10.csv", format="csv")
+
+        train = data[1:20000,] 
+        test = data[20001:30000,]
+
+        images = train[,2:ncol(train)]
+        labels = train[,1]
+        imagesTest = test[,2:ncol(test)]
+        labelsTest = test[,1]
+
+        N = nrow(images)
+        nTest = nrow(imagesTest)     
+
+        XTrain = images[5001:nrow(images),]
+        labelsTrain = labels[5001:nrow(images),]
+        YTrain = table(seq(1, nrow(XTrain)), labelsTrain+1, nrow(XTrain), 10)      
+        XVal = images[1:5000,]
+        labelsVal = labels[1:5000,]
+        YVal = table(seq(1, nrow(XVal)), labelsVal+1, nrow(XVal), 10)
+
+        XTest = imagesTest
+        YTest = table(seq(1, nTest), labelsTest+1, nTest, 10)
+
+        #train = data[1:39999,]                              
+        #test = data[40000:nrow(data),]  
+
+        #images = train[,2:ncol(train)]
+        #images = images / 255.0
+        #labels = train[,1]
+        #imagesTest = test[,2:ncol(test)]
+        #labelsTest = test[,1]
+
+        #N = nrow(images)
+        #nTest = nrow(imagesTest)
+
+        #XTrain = images[5001:nrow(images),]                  
+        #labelsTrain = labels[5001:nrow(images),] 
+        #YTrain = table(seq(1, nrow(XTrain)), labelsTrain+1, nrow(XTrain), 10)
+
+        #XVal = images[1:5000,]          
+        #labelsVal = labels[1:5000,] 
+        #YVal = table(seq(1, nrow(XVal)), labelsVal+1, nrow(XVal), 10)
+
+        #XTest = imagesTest
+        #YTest = table(seq(1, nTest), labelsTest+1, nTest, 10)
+    }
+}
+
+# Define image properties
+
+definingImageProperties = function(string datasetName)
+    return(int hIn, int wIn, int cIn, int classes){
+    /*
+    * Returns basic image shape metadata for the selected dataset.
+    *
+    * Provides the input height/width, number of channels, and number of classes
+    * for the supported datasets.
+    *
+    * Inputs:
+    *  - datasetName: Dataset identifier ("mnist" or "cifar").
+    *
+    * Outputs:
+    *  - hIn: Input image height.
+    *  - wIn: Input image width.
+    *  - cIn: Number of input channels.
+    *  - classes: Number of classes.
+    */
+    if(datasetName=="mnist"){
+        hIn = 28       
+        wIn = 28       
+        cIn = 1        
+        classes = 10
+    } 
+    if(datasetName=="cifar"){
+        hIn = 32       
+        wIn = 32      
+        cIn = 3        
+        classes = 10
+    }
+}
+
+
+# Define training parameters
+definingTrainingParameters = function(string optimizer, string datasetName)
+    return(int epochs, int batchSize, double epsilon, double lr, int diagThreshold, int rootEvery, int preconEvery){
+    /*
+    * Returns training hyperparameters (epochs, batch size, and optimizer-specific settings)
+    * for a given optimizer and dataset.
+    *
+    * This function provides preset hyperparameters per optimizer (Adam, Adagrad, SGD,
+    * and three Shampoo variants) and per dataset ("mnist" vs "cifar").
+    *
+    * Inputs:
+    *  - optimizer: Optimizer name.
+    *  - datasetName: Dataset identifier ("mnist" or "cifar").
+    *
+    * Outputs:
+    *  - epochs: Number of training epochs.
+    *  - batchSize: Mini-batch size.
+    *  - epsilon: Numerical stability constant for the selected optimizer/dataset.
+    *  - lr: Learning rate for the selected optimizer/dataset.
+    *  - diagThreshold: Shampoo diagonalization threshold
+    *  - rootEvery: Frequency for computing matrix roots in Shampoo heuristic.
+    *  - preconEvery: Frequency for updating preconditioners in heuristic Shampoo.
+    */
+    lr = 0.001
+    if(optimizer=="adam"){
+        if(datasetName=="cifar"){
+            epsilon = 1e-7
+            lr = 5.0e-4 
+        }else{
+            epsilon = 1e-4
+            lr = 0.0015  
+        } 
+    } 
+    else if(optimizer=="adagrad"){
+        if(datasetName=="cifar"){
+            epsilon = 1.0e-5
+            lr = 0.007           
+        }else{
+            epsilon = 1e-5
+            lr = 0.002
+        }
+    } 
+    else if(optimizer=="sgd"){
+        if(datasetName=="cifar"){
+            epsilon = 1.0e-8
+            lr = 0.1    
+        }else{
+            epsilon = 1e-6
+            lr = 0.03              
+        }
+    } 
+    else if((optimizer == "shampoo_heuristic") | (optimizer == "shampoo_heuristic_diagonal")){
+        if(datasetName=="cifar"){
+            epsilon = 0.09
+            lr = 0.2    
+        } else{
+            epsilon = 0.001
+            lr = 0.1   
+        }
+    } 
+    else if((optimizer == "shampoo_momentum") | (optimizer == "shampoo_momentum_diagonal")){
+        if(datasetName=="cifar"){
+            epsilon = 1.0e-7
+            lr = 0.3    
+        } else{
+            epsilon = 1e-4 
+            lr = 0.55    
+        }
+    } 
+    else if((optimizer == "shampoo") | (optimizer == "shampoo_diagonal")){
+        if(datasetName=="cifar"){
+            epsilon = 0.09
+            lr = 0.2    
+        } else{
+            epsilon = 0.2 
+            lr = 0.6    
+        }
+    } 
+
+    if(datasetName=="cifar"){
+        epochs = 200     
+    } else{
+        epochs = 30    
+    }
+    batchSize = 64
+    rootEvery = 8  
+    preconEvery = 2
+    if ((optimizer == "shampoo_diagonal") | (optimizer == "shampoo_momentum_diagonal") | (optimizer == "shampoo_heuristic_diagonal")){
+        diagThreshold = 1
+    } else{
+        diagThreshold = 1200
+    }
+}
+
+getOptimizer = function(int optimizerIndex)
+    return(string optimizer){
+    /*
+    * Maps an integer index to an optimizer name string used throughout the
+    * experiment pipeline.
+    *
+    * Inputs:
+    *  - optimizerIndex: Integer identifier of the optimizer (1..6)
+    *
+    * Outputs:
+    *  - optimizer: Optimizer name corresponding to the index.
+    */
+        if (optimizerIndex==1)
+        {
+            optimizer = "shampoo"
+        }
+        if (optimizerIndex==2)
+        {
+            optimizer = "shampoo_momentum"
+        }
+        if (optimizerIndex==3)
+        {
+            optimizer = "shampoo_heuristic"
+        }
+        if (optimizerIndex==4)
+        {
+            optimizer = "adam"
+        }
+        if (optimizerIndex==5)
+        {
+            optimizer = "sgd"
+        }
+        if (optimizerIndex==6)
+        {
+            optimizer = "adagrad"
+        }
+}
+
+# set parameters for the experiments
+#############################################################################################
+datasetName = "cifar" #Alternatives: "mnist" or "cifar"
+optimizersToExperiment = 6
+# Alternatives: ("shampoo", "shampoo_momentum", "shampoo_heuristic", "adam", "sgd", "adagrad")
+#############################################################################################
+
+
+for (optimizerIndex in 1:optimizersToExperiment){
+    optimizer = getOptimizer(optimizerIndex)
+    print("Starting with " + optimizer)
+    seed = 42
+    # get the data
+    [XTrain, YTrain, XVal, YVal, XTest, YTest] = definingData(datasetName)
+
+    # get image properties
+    [hIn, wIn, cIn, classes] = definingImageProperties(datasetName)
+
+    # get training parameters
+    [epochs, batchSize, epsilon, lr, diagThreshold, rootEvery, preconEvery]= definingTrainingParameters(optimizer, datasetName)
+
+    # init the model
+
+    [model, emas] = resnet18::init(classes, seed)
+
+    # init the optimizer
+
+    if ((optimizer  == "shampoo") | (optimizer == "shampoo_momentum") | (optimizer == "shampoo_heuristic")){
+        paramsOptimizer = initShampooForModel(optimizer, model, epsilon, diagThreshold)
+    }
+    if (optimizer  == "adam"){
+        paramsOptimizer = resnet18::init_adam_optim_params(classes)
+    }
+    if (optimizer  == "adagrad"){
+        paramsOptimizer = resnet18::init_adagrad_optim_params(classes)
+    }
+    if (optimizer  == "sgd"){
+        # not needed to init
+    }
+
+    trainLosses = matrix(0, rows=epochs, cols=1)
+    trainAccuracies = matrix(0, rows=epochs, cols=1)
+    valAccuracies = matrix(0, rows=epochs, cols=1)
+    valLosses = matrix(0, rows=epochs, cols=1)
+    Ntrain = nrow(XTrain)
+
+    # train the model
+    t = 0
+    for(epoch in 1:epochs){
+
+        print("Epoch " + epoch + " of " + epochs + " epochs")
+
+        accuracyValue = 0
+        accuracyCount = 0
+        lossValue = 0
+        lossCount = 0
+        
+        numBatches = as.integer(ceil(Ntrain / batchSize))
+        batchID = 0
+
+        for(startIndex in seq(1, Ntrain, batchSize)){
+            endIndex = min(startIndex + batchSize - 1, Ntrain)
+            dataTrainX = XTrain[startIndex:endIndex,]
+            dataTrainY = YTrain[startIndex:endIndex,]
+
+            batchID = batchID + 1
+            #print("Batch " + batchID + " of " + numBatches + " Batches")
+
+            [out, emas, cachedOut, cachedMeansVars] = resnet18::forward(dataTrainX, hIn, wIn, model, "train", emas)
+
+            predictedValue = rowIndexMax(out) - 1
+            accuracy = sum(predictedValue==rowIndexMax(dataTrainY)-1) / length(predictedValue)
+            accuracyValue = accuracyValue + accuracy
+            accuracyCount = accuracyCount + 1
+
+            probs = softmax::forward(out)
+            loss = cross_entropy_loss::forward(probs, dataTrainY)
+            dLossDProbs = cross_entropy_loss::backward(probs, dataTrainY)
+            dOut = softmax::backward(dLossDProbs, out)
+
+            lossValue = lossValue + loss
+            lossCount = lossCount + 1
+
+            [dX, gradients] = resnet18::backward(dOut, cachedOut, model, cachedMeansVars)
+
+
+            weightDecay = 1e-3
+            gradients = addL2Regularization(model, gradients, weightDecay)
+
+            # optimizing
+            if ((optimizer  == "shampoo") | (optimizer  == "shampoo_momentum") | (optimizer  == "shampoo_heuristic")){
+                [model, paramsOptimizer] = updateShampooForModel(optimizer, model, paramsOptimizer, gradients, lr, rootEvery, preconEvery)
+            }
+            if (optimizer  == "adam"){
+                [model, paramsOptimizer] = resnet18::update_params_with_adam(model, gradients, lr, 0.9, 0.999, 1e-8, t, paramsOptimizer)
+                t = t+1
+            }
+            if (optimizer  == "adagrad"){
+                [model, paramsOptimizer] = resnet18::update_params_with_adagrad(model, gradients, lr, epsilon, paramsOptimizer)
+            }
+            if (optimizer  == "sgd"){
+                model = resnet18::update_params_with_sgd(model, gradients, lr)
+            }
+        }
+
+        trainLosses[epoch,1] = lossValue / lossCount
+        trainAccuracies[epoch,1] = accuracyValue/accuracyCount
+
+        print("Train Loss of " + optimizer + " = " + (lossValue / lossCount))
+        print("Train Accuracy of " + optimizer + " = " + (accuracyValue/accuracyCount))
+
+        # val loss
+        [outVal, emaMeansVarsUpdVal, cachedOutVal, cachedMeansVarsVal] = resnet18::forward(XVal, hIn, wIn, model, "test", emas)
+
+        predictedValueVal = rowIndexMax(outVal) - 1
+        accuracyVal = sum(predictedValueVal==rowIndexMax(YVal)-1) / length(predictedValueVal)
+
+        valAccuracies[epoch,1] = accuracyVal
+        probsVal = softmax::forward(outVal)
+        loss = cross_entropy_loss::forward(probsVal, YVal)
+        valLosses[epoch,1] = loss
+        print("Val Loss of " + optimizer + " = " + loss)
+        print("Val Accuracy of " + optimizer + " = " + accuracyVal)
+
+    }
+
+    # define the testing
+
+    [outTest, emaMeansVarsUpdTest, cachedOutTest, cachedMeansVarsTest] = resnet18::forward(XTest, hIn, wIn, model, "test", emas)
+
+    predictedValue = rowIndexMax(outTest) - 1
+    accuracy = sum(predictedValue==rowIndexMax(YTest)-1) / length(predictedValue)
+
+    probs_test = softmax::forward(outTest)
+    loss = cross_entropy_loss::forward(probs_test, YTest)
+
+    outDir = "scripts/staging/shampoo_optimizer/metrics"
+    epochs = nrow(trainLosses)
+    epoch_col = seq(1, epochs)         
+    M = cbind(epoch_col, trainLosses, trainAccuracies, valLosses, valAccuracies)
+    write(M, outDir + "/metrics" + "_" + optimizer + "_" + datasetName + ".csv", format="csv")
+
+    print("Test Accuracy of " + optimizer + " on " + datasetName + " = " + accuracy)
+    print("Test Loss of " + optimizer + " on " + datasetName + " = " + loss)
+
+}

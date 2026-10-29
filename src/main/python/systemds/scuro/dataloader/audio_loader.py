@@ -20,12 +20,11 @@
 # -------------------------------------------------------------
 from dataclasses import dataclass
 import math
-import os
 from typing import List, Optional, Union
 import librosa
 import numpy as np
 
-from systemds.scuro.dataloader.base_loader import BaseLoader
+from systemds.scuro.dataloader.base_loader import BaseLoader, LazyFileSequence
 from systemds.scuro.modality.type import ModalityType
 
 
@@ -51,34 +50,53 @@ class AudioLoader(BaseLoader):
         chunk_size: Optional[int] = None,
         normalize: bool = True,
         load=True,
+        sampling_rate: Optional[int] = None,
     ):
         super().__init__(
             source_path, indices, data_type, chunk_size, ModalityType.AUDIO
         )
         self.normalize = normalize
         self.load_data_from_file = load
+        self.sampling_rate = sampling_rate
         files = self.get_file_names(self.indices)
         self.stats = self.cached_stats(
             files,
-            {"dtype": str(data_type), "normalize": normalize},
+            {
+                "dtype": str(data_type),
+                "normalize": normalize,
+                "sampling_rate": sampling_rate,
+            },
             lambda: self.get_stats(source_path),
         )
 
-    def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
+    def _load(self, indices: List[str]):
+        if self.data is not None and len(self.data) == len(indices):
+            return self.data, self.metadata
+
+        file_names = self.get_file_names(indices)
+        if isinstance(file_names, str):
+            file_names = [file_names]
+        decoded = LazyFileSequence(file_names, self._decode_file).materialize()
+        self.data = [audio for audio, _ in decoded]
+        self.metadata = [metadata for _, metadata in decoded]
+        return self.data, self.metadata
+
+    def _decode_file(self, file: str):
         self.file_sanity_check(file)
         if not self.load_data_from_file:
-            import numpy as np
-
             audio = np.array([0])
             sr = 1000
         else:
-            audio, sr = librosa.load(file, dtype=self._data_type)
+            audio, sr = librosa.load(file, sr=self.sampling_rate, dtype=self._data_type)
 
             if self.normalize:
                 audio = librosa.util.normalize(audio)
 
-        self.metadata.append(self.modality_type.create_metadata(sr, audio))
+        return audio, self.modality_type.create_metadata(sr, audio)
 
+    def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
+        audio, metadata = self._decode_file(file)
+        self.metadata.append(metadata)
         self.data.append(audio)
 
     def get_stats(self, source_path: str):
@@ -92,10 +110,12 @@ class AudioLoader(BaseLoader):
             self.file_sanity_check(file)
             try:
                 info = soundfile.info(file)
-                sr = 22050
+                sr = self.sampling_rate or info.samplerate
                 length = math.ceil(info.frames * sr / info.samplerate)
             except (RuntimeError, TypeError):
-                audio, sr = librosa.load(file, dtype=self._data_type)
+                audio, sr = librosa.load(
+                    file, sr=self.sampling_rate, dtype=self._data_type
+                )
                 length = audio.shape[0]
             num_instances += 1
             sampling_rate = max(sampling_rate, sr)

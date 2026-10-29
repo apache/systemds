@@ -19,8 +19,6 @@
 #
 # -------------------------------------------------------------
 
-import os
-import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -35,6 +33,7 @@ from systemds.scuro.representations.representation import (
     stats_bytes,
 )
 from systemds.scuro.utils.static_variables import get_device
+from systemds.scuro.utils.utils import set_random_seeds
 
 
 @register_fusion_operator()
@@ -55,7 +54,7 @@ class AttentionFusion(Fusion):
     ):
         parameters = {
             "hidden_dim": [32, 128, 256, 384, 512, 768],
-            "num_heads": [2, 4, 8, 12],
+            "num_heads": [2, 4, 8],
             "dropout": [0.0, 0.1, 0.2, 0.3, 0.4],
             # "batch_size": [8, 16, 32, 64, 128],
             "num_epochs": [10, 20, 50, 100, 150, 200],
@@ -95,16 +94,7 @@ class AttentionFusion(Fusion):
         self.model_state = None
         self.is_multilabel = False
 
-        self._set_random_seeds()
-
-    def _set_random_seeds(self, seed=42):
-        os.environ["PYTHONHASHSEED"] = str(seed)
-        random.seed(seed)
-        np.random.seed(seed)
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed(seed)
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
+        set_random_seeds()
 
     def _prepare_data(self, modalities: List[Modality]):
         inputs = {}
@@ -129,7 +119,10 @@ class AttentionFusion(Fusion):
             input_dimensions[modality_name] = data.shape[2]  # Feature dimension
             max_sequence_length = max(max_sequence_length, data.shape[1])
 
-            inputs[modality_name] = torch.from_numpy(data.astype(np.float32))
+            data = np.nan_to_num(
+                data.astype(np.float32), nan=0.0, posinf=0.0, neginf=0.0
+            )
+            inputs[modality_name] = torch.from_numpy(data)
 
         for modality_name, tensor in inputs.items():
             if tensor.shape[1] < max_sequence_length:

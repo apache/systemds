@@ -20,7 +20,9 @@
 # -------------------------------------------------------------
 import os
 import pickle
+import threading
 from bisect import bisect_right
+from collections import OrderedDict
 from collections.abc import Sequence
 from contextlib import contextmanager
 
@@ -175,6 +177,105 @@ class FlattenedSequence(Sequence):
         return self.offsets[-1]
 
 
+class LazyModelMixin:
+    """Loads the pretrained model on first use of ``self.model``.
+
+    The optimizer and scheduler instantiate operators in the main process only
+    to read their parameter grids, output shapes and memory estimates, so
+    those must come from class-level constants rather than the model.
+    """
+
+    _model = None
+
+    def _build_model(self):
+        raise NotImplementedError
+
+    @property
+    def model(self):
+        if self._model is None:
+            self._model = self._build_model()
+        return self._model
+
+    @model.setter
+    def model(self, model):
+        self._model = model
+
+
+@contextmanager
+def _parameters_on_meta():
+    """Move every parameter to the meta device as soon as it is registered.
+
+    Weight initializers then run on meta tensors and cost nothing. Buffers stay
+    real because some modules compute them in ``__init__`` (e.g. ImageBind's
+    causal mask) and a non-persistent buffer is never restored from a
+    checkpoint. Whole-module ``torch.device("meta")`` would also break modules
+    that call ``.item()`` on tensors during construction.
+    """
+    register_parameter = torch.nn.Module.register_parameter
+
+    def register_on_meta(module, name, param):
+        register_parameter(module, name, param)
+        if param is not None and not param.is_meta:
+            module._parameters[name] = torch.nn.Parameter(
+                param.to("meta"), requires_grad=param.requires_grad
+            )
+
+    torch.nn.Module.register_parameter = register_on_meta
+    try:
+        yield
+    finally:
+        torch.nn.Module.register_parameter = register_parameter
+
+
+def build_pretrained(build_fn, state_dict):
+    """Build ``build_fn()`` without random weight init and load ``state_dict``.
+
+    Initializing a large model only to overwrite every weight from the
+    checkpoint dominates load time (about 12 s of ImageBind's 20 s).
+    """
+    with _parameters_on_meta():
+        model = build_fn()
+    model.load_state_dict(state_dict, strict=True, assign=True)
+    missing = [
+        name
+        for name, tensor in [*model.named_parameters(), *model.named_buffers()]
+        if tensor.is_meta
+    ]
+    if missing:
+        raise RuntimeError(f"Checkpoint did not provide weights for {missing}")
+    return model
+
+
+def load_checkpoint(path):
+    """Load a state dict on the CPU, memory-mapped when the format allows it."""
+    try:
+        return torch.load(path, map_location="cpu", mmap=True, weights_only=True)
+    except RuntimeError as error:
+        # Checkpoints in the legacy (pre zip) format cannot be memory-mapped.
+        if "mmap" not in str(error):
+            raise
+        return torch.load(path, map_location="cpu", weights_only=True)
+
+
+def torchvision_state_dict(weights):
+    """Load torchvision ``weights`` from the torch hub cache."""
+    from urllib.parse import urlparse
+
+    file_name = os.path.basename(urlparse(weights.url).path)
+    path = os.path.join(torch.hub.get_dir(), "checkpoints", file_name)
+    if not os.path.exists(path):
+        return weights.get_state_dict(progress=False, check_hash=True)
+    return load_checkpoint(path)
+
+
+def build_torchvision_model(factory, weights, **kwargs):
+    """Equivalent to ``factory(weights=weights, **kwargs)`` without random init."""
+    kwargs.setdefault("num_classes", len(weights.meta["categories"]))
+    return build_pretrained(
+        lambda: factory(weights=None, **kwargs), torchvision_state_dict(weights)
+    )
+
+
 def get_sequence_lengths(sequences, metadata):
     if len(metadata) == len(sequences) and all("length" in md for md in metadata):
         return [int(md["length"]) for md in metadata]
@@ -226,6 +327,43 @@ def inference_context(device):
 
 
 transformer_inference_context = inference_context
+
+
+def existing_layers(model, layer_names):
+    """Return the requested layer names that name a submodule of ``model``.
+
+    The empty name, which ``named_modules`` gives the model itself, is not a layer.
+    """
+    modules = dict(model.named_modules())
+    return [name for name in dict.fromkeys(layer_names) if name and name in modules]
+
+
+@contextmanager
+def capture_layer_outputs(model, layer_names, reduce):
+    """Hook every named layer and keep ``reduce(output)`` of the latest forward.
+
+    One forward pass then yields the features of all layers. Reducing inside
+    the hook keeps only the pooled vectors on the device instead of every full
+    activation map until the pass ends; no hooked layer's output is modified
+    in place later in the pass, so this equals reducing after the pass.
+    """
+    modules = dict(model.named_modules())
+    outputs = {}
+    handles = []
+
+    def hook_for(name):
+        def hook(_module, _input, output):
+            outputs[name] = reduce(output)
+
+        return hook
+
+    try:
+        for name in layer_names:
+            handles.append(modules[name].register_forward_hook(hook_for(name)))
+        yield outputs
+    finally:
+        for handle in handles:
+            handle.remove()
 
 
 class OwnerAccumulator:
@@ -290,7 +428,16 @@ class OwnerAccumulator:
             0, owner_ids, torch.ones_like(owner_ids, dtype=torch.long)
         )
         if name in ("mean", "sum"):
-            self._values.index_add_(0, owner_ids, vectors)
+            owners, inverse = owner_ids.unique(return_inverse=True)
+            one_hot = torch.zeros(
+                (len(owners), len(owner_ids)),
+                device=vectors.device,
+                dtype=vectors.dtype,
+            )
+            one_hot[inverse, torch.arange(len(owner_ids), device=vectors.device)] = 1
+            with torch.autocast(device_type=vectors.device.type, enabled=False):
+                sums = one_hot @ vectors
+            self._values.index_add_(0, owners, sums)
         elif name in ("max", "min"):
             indices = owner_ids[:, None].expand_as(vectors)
             self._values.scatter_reduce_(
@@ -325,6 +472,98 @@ class OwnerAccumulator:
             return values
         owner_ids = self._owner_ids.cpu().numpy()
         return [values[owner_ids == owner] for owner in range(self.num_owners)]
+
+
+class ChunkEmbeddingCache:
+    """Process-wide LRU of pooled text-chunk vectors, bounded in bytes.
+
+    Text-context configurations split the same texts into largely the same
+    chunks, so across a search the encoder sees most chunks many times. A
+    vector is only reusable if it does not depend on the batch it was encoded
+    in; under mixed precision it does depend on the batch shape, so encoders
+    that use this cache encode in fixed-shape batches (see ``canonical_batches``).
+    """
+
+    def __init__(self, max_bytes):
+        self.max_bytes = int(max_bytes)
+        self._entries = OrderedDict()
+        self._bytes = 0
+        self._lock = threading.Lock()
+
+    def get(self, key):
+        with self._lock:
+            value = self._entries.get(key)
+            if value is not None:
+                self._entries.move_to_end(key)
+            return value
+
+    def put(self, key, value):
+        size = value.element_size() * value.nelement()
+        if size > self.max_bytes:
+            return
+        with self._lock:
+            previous = self._entries.pop(key, None)
+            if previous is not None:
+                self._bytes -= previous.element_size() * previous.nelement()
+            self._entries[key] = value
+            self._bytes += size
+            while self._bytes > self.max_bytes:
+                _, evicted = self._entries.popitem(last=False)
+                self._bytes -= evicted.element_size() * evicted.nelement()
+
+    def clear(self):
+        with self._lock:
+            self._entries.clear()
+            self._bytes = 0
+
+    def __len__(self):
+        return len(self._entries)
+
+
+_CHUNK_EMBEDDING_CACHE = None
+_CHUNK_EMBEDDING_CACHE_LOCK = threading.Lock()
+
+
+def chunk_embedding_cache():
+    """The process's chunk cache, or None unless SCURO_TEXT_CHUNK_CACHE=1.
+
+    SCURO_TEXT_CHUNK_CACHE_MB bounds it (default 512 MB per process).
+    """
+    global _CHUNK_EMBEDDING_CACHE
+    if os.environ.get("SCURO_TEXT_CHUNK_CACHE", "0") != "1":
+        return None
+    with _CHUNK_EMBEDDING_CACHE_LOCK:
+        if _CHUNK_EMBEDDING_CACHE is None:
+            max_mb = float(os.environ.get("SCURO_TEXT_CHUNK_CACHE_MB", "512"))
+            _CHUNK_EMBEDDING_CACHE = ChunkEmbeddingCache(max_mb * 1024 * 1024)
+        return _CHUNK_EMBEDDING_CACHE
+
+
+def canonical_batches(lengths, batch_size, length_step, max_length=None):
+    """Group sequences into batches of exactly ``batch_size`` rows each.
+
+    Each batch holds sequences of one padded length, ``lengths`` rounded up to
+    a multiple of ``length_step`` (at most ``max_length``). A partial batch is
+    filled up by repeating
+    its last index. Returns [(padded length, indices, number of real rows)].
+
+    With every batch of the same shape, a sequence's output depends only on
+    its own tokens and padded length, not on which others share its batch.
+    """
+    buckets = {}
+    for index, length in sorted(enumerate(lengths), key=lambda item: item[1]):
+        padded = max(1, -(-int(length) // length_step)) * length_step
+        if max_length is not None:
+            padded = min(padded, int(max_length))
+        buckets.setdefault(padded, []).append(index)
+    batches = []
+    for padded, indices in sorted(buckets.items()):
+        for start in range(0, len(indices), batch_size):
+            rows = indices[start : start + batch_size]
+            batches.append(
+                (padded, rows + [rows[-1]] * (batch_size - len(rows)), len(rows))
+            )
+    return batches
 
 
 def dense_instance_batch(data):

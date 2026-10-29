@@ -56,6 +56,7 @@ import org.apache.sysds.runtime.ooc.primitives.MappingOOCPrimitive;
 import org.apache.sysds.runtime.ooc.primitives.NaryJoinOOCPrimitive;
 import org.apache.sysds.runtime.ooc.primitives.PlannableDataGenOOCPrimitive;
 import org.apache.sysds.runtime.ooc.primitives.ReduceOOCPrimitive;
+import org.apache.sysds.runtime.ooc.primitives.ReshapeOOCPrimitive;
 import org.apache.sysds.runtime.ooc.primitives.TSMMOOCPrimitive;
 import org.apache.sysds.runtime.ooc.primitives.TransposeOOCPrimitive;
 import org.apache.sysds.runtime.ooc.stats.OOCEventLog;
@@ -170,6 +171,11 @@ public final class OOCInstructionUtils {
 	public static <I, O> void reduce(OOCStreamable<I> input, OOCStream<O> output, Function<I, O> partial,
 		BiFunction<O, O, O> merge, ToLongFunction<O> size, StreamContext context) {
 		output.assignPrimitive(new ReduceOOCPrimitive<>(input, output, partial, merge, size, context));
+	}
+
+	public static void reshape(OOCStreamable<IndexedMatrixValue> input, OOCStream<IndexedMatrixValue> output,
+		long rows, long cols, boolean byRow, StreamContext context) {
+		output.assignPrimitive(new ReshapeOOCPrimitive(input, output, rows, cols, byRow, context));
 	}
 
 	public static int getComputeInFlight() {

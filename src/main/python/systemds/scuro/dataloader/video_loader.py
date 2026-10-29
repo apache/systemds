@@ -69,7 +69,7 @@ class VideoLoader(BaseLoader):
         self,
         source_path: str,
         indices: List[str],
-        data_type: Union[np.dtype, str] = np.float16,
+        data_type: Union[np.dtype, str] = np.uint8,
         chunk_size: Optional[int] = None,
         load=True,
         fps=None,
@@ -158,7 +158,8 @@ class VideoLoader(BaseLoader):
             frame_interval = self._frame_interval(source_fps)
             stored_fps = source_fps / frame_interval if source_fps else source_fps
 
-            scale_denominator = np.dtype(self._data_type).type(255.0)
+            data_type = np.dtype(self._data_type)
+            scale_denominator = data_type.type(255.0) if data_type.kind == "f" else None
             frames = []
             idx = 0
             while True:
@@ -168,7 +169,10 @@ class VideoLoader(BaseLoader):
                 if idx % frame_interval == 0:
                     frame = self._fit_frame(frame)
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    frame = frame.astype(self._data_type) / scale_denominator
+                    if scale_denominator is not None:
+                        frame = frame.astype(data_type) / scale_denominator
+                    elif data_type != frame.dtype:
+                        frame = frame.astype(data_type)
                     frames.append(frame)
                 idx += 1
         finally:
@@ -257,6 +261,20 @@ class VideoLoader(BaseLoader):
             num_instances,
             num_total_instances,
             shape_variance,
+        )
+
+    def estimate_decoded_bytes(self, metadata=None) -> int:
+        itemsize = np.dtype(self._data_type).itemsize
+        metadata = self._all_metadata if metadata is None else metadata
+        return int(
+            sum(
+                int(md["length"])
+                * int(md["height"])
+                * int(md["width"])
+                * int(md["num_channels"])
+                for md in metadata
+            )
+            * itemsize
         )
 
     def estimate_peak_memory_bytes(self) -> dict:

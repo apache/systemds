@@ -18,10 +18,12 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import functools
+
 import numpy as np
 from transformers import Wav2Vec2Processor, Wav2Vec2Model
-import librosa
 import torch
+import torchaudio
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.transformed import TransformedModality
 
@@ -36,7 +38,6 @@ from systemds.scuro.representations.utils import (
     LengthBucketBatchSampler,
     OwnerAccumulator,
     OwnedSequenceDataset,
-    move_batch_to_device,
     pin_memory_for,
     pool_transformer_output,
     transformer_inference_context,
@@ -46,6 +47,8 @@ from torch.utils.data import DataLoader
 from transformers.utils import logging as transformers_logging
 
 transformers_logging.set_verbosity_error()
+
+_TARGET_SAMPLING_RATE = 16000
 
 
 @register_representation(ModalityType.AUDIO)
@@ -98,30 +101,22 @@ class Wav2Vec(UnimodalRepresentation):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )
-        samples = [
-            librosa.resample(
-                np.asarray(sample),
-                orig_sr=modality.metadata[owner_id]["frequency"],
-                target_sr=16000,
-            )
-            for owner_id, sample in enumerate(modality.data)
+        # Resampling and normalization run on self.device, so the raw
+        # signals are what crosses to the GPU.
+        sampling_rates = [
+            int(modality.metadata[owner_id]["frequency"])
+            for owner_id in range(len(modality.data))
         ]
-        dataset = OwnedSequenceDataset(samples)
-        lengths = [len(sample) for sample in samples]
+        dataset = OwnedSequenceDataset(modality.data)
+        lengths = [
+            _resampled_length(len(sample), sr)
+            for sample, sr in zip(modality.data, sampling_rates)
+        ]
 
         def collate(batch):
             audio, owner_ids, chunk_ids = zip(*batch)
-            inputs = self.processor(
-                list(audio),
-                sampling_rate=16000,
-                return_tensors="pt",
-                padding=True,
-                return_attention_mask=True,
-            )
-            inputs = dict(inputs)
-            inputs["input_values"] = inputs["input_values"].float()
             return (
-                inputs,
+                [torch.from_numpy(np.asarray(a, dtype=np.float32)) for a in audio],
                 torch.tensor(owner_ids, dtype=torch.long),
                 torch.tensor(chunk_ids, dtype=torch.long),
             )
@@ -137,10 +132,11 @@ class Wav2Vec(UnimodalRepresentation):
         accumulator = OwnerAccumulator(len(dataset), len(dataset), aggregation)
 
         with transformer_inference_context(self.device):
-            for inputs, owner_ids, chunk_ids in dataloader:
-                inputs = move_batch_to_device(inputs, self.device)
-                outputs = model(**inputs)
-                features = outputs.extract_features
+            for audio, owner_ids, chunk_ids in dataloader:
+                inputs = self._prepare_inputs(
+                    audio, [sampling_rates[i] for i in owner_ids.tolist()]
+                )
+                features = _extract_features(model, inputs["input_values"])
                 attention_mask = inputs.get("attention_mask")
                 if attention_mask is not None and hasattr(
                     model, "_get_feature_vector_attention_mask"
@@ -161,6 +157,38 @@ class Wav2Vec(UnimodalRepresentation):
         transformed_modality.data_type = np.float32
         return transformed_modality
 
+    def _prepare_inputs(self, audio, sampling_rates):
+        """Wav2Vec2Processor's padded, normalized batch, computed on self.device.
+
+        Each signal is resampled to 16 kHz, zero-padded to the longest one
+        and normalized to zero mean and unit variance over its own samples.
+        """
+        non_blocking = pin_memory_for(self.device)
+        waveforms = [
+            _resample(waveform.to(self.device, non_blocking=non_blocking), sr)
+            for waveform, sr in zip(audio, sampling_rates)
+        ]
+        lengths = torch.tensor([len(w) for w in waveforms], device=self.device)
+        input_values = torch.nn.utils.rnn.pad_sequence(waveforms, batch_first=True)
+        attention_mask = (
+            torch.arange(input_values.shape[1], device=self.device)[None, :]
+            < lengths[:, None]
+        )
+        feature_extractor = self.processor.feature_extractor
+        if feature_extractor.do_normalize:
+            mask = attention_mask.to(input_values.dtype)
+            count = lengths.clamp(min=1)[:, None].to(input_values.dtype)
+            mean = (input_values * mask).sum(dim=1, keepdim=True) / count
+            var = (((input_values - mean) * mask) ** 2).sum(dim=1, keepdim=True) / count
+            input_values = (input_values - mean) / torch.sqrt(var + 1e-7)
+        input_values = input_values.masked_fill(
+            ~attention_mask, feature_extractor.padding_value
+        )
+        return {
+            "input_values": input_values,
+            "attention_mask": attention_mask.long(),
+        }
+
     def get_output_stats(self, input_stats) -> RepresentationStats:
         num_instances = getattr(input_stats, "num_instances", 0)
         embedding_dim = 512
@@ -177,14 +205,11 @@ class Wav2Vec(UnimodalRepresentation):
             signal_len = 16000
         signal_len = max(signal_len, 1)
 
-        hidden = 768
-        stride = 320  # conv frontend effective stride
-        frames = max(1, int(np.ceil(signal_len / stride)))
-
         model_resident = 420 * 1024 * 1024  # ~420 MB
         batch = min(max(1, self.batch_size), max(1, n))
-        activation_bytes = int(batch * frames * hidden * 4 * 24)
-        attention_bytes = int(batch * 12 * frames * frames * 4)
+        # Only the CNN front end runs. Its first conv layer (512 channels,
+        # stride 5) dominates: measured peaks are ~1 KB per input sample.
+        activation_bytes = int(batch * signal_len * 1024)
         io_temp = int(signal_len * 4 * 4) + 16 * 1024 * 1024
 
         output_bytes = n * 512 * 4
@@ -193,10 +218,42 @@ class Wav2Vec(UnimodalRepresentation):
             (model_resident + activation_bytes + io_temp + output_bytes) * 1.25
         )
 
-        gpu_peak = int(
-            (model_resident + activation_bytes + attention_bytes + batch * io_temp)
-            * 1.25
-        )
+        gpu_peak = int((model_resident + activation_bytes + batch * io_temp) * 1.25)
         cpu_peak = max(cpu_peak, 600 * 1024 * 1024)
 
         return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": gpu_peak}
+
+
+def _resampled_length(length, sampling_rate):
+    return -(-int(length) * _TARGET_SAMPLING_RATE // int(sampling_rate))
+
+
+@functools.lru_cache(maxsize=32)
+def _resampler(sampling_rate, device):
+    # librosa's former "kaiser_best" filter, the closest torchaudio match to
+    # the soxr_hq resampler librosa uses by default.
+    return torchaudio.transforms.Resample(
+        sampling_rate,
+        _TARGET_SAMPLING_RATE,
+        resampling_method="sinc_interp_kaiser",
+        lowpass_filter_width=64,
+        rolloff=0.9475937167399596,
+        beta=14.769656459379492,
+    ).to(device)
+
+
+def _resample(waveform, sampling_rate):
+    if sampling_rate == _TARGET_SAMPLING_RATE:
+        return waveform
+    return _resampler(sampling_rate, waveform.device)(waveform)
+
+
+def _extract_features(model, input_values):
+    """``Wav2Vec2Model(...).extract_features`` without running the encoder.
+
+    That output is the layer-normed CNN front end, which the transformer
+    encoder does not change, so computing only the front end gives the same
+    features at a fraction of the cost.
+    """
+    features = model.feature_extractor(input_values).transpose(1, 2)
+    return model.feature_projection.layer_norm(features)

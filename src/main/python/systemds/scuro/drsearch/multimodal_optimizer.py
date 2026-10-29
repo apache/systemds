@@ -72,7 +72,7 @@ def _evaluate_dag_worker(dag_pickle, task_pickle, modalities_pickle, debug=False
                 f"[DEBUG][worker] pid={os.getpid()} evaluating dag_root={getattr(dag, 'root_node_id', None)} task={getattr(task.model, 'name', None)}"
             )
 
-        if dag_requires_fitting(dag):
+        if dag_requires_fitting(dag, modalities_for_dag):
             evaluation = SplitAwareDAGEvaluator(
                 dag, modalities_for_dag, task
             ).evaluate()
@@ -491,7 +491,7 @@ class MultimodalOptimizer:
                     self.k_best_representations[task.model.name].values()
                 )
             )
-            if dag_requires_fitting(dag):
+            if dag_requires_fitting(dag, modalities_for_dag):
                 evaluation = SplitAwareDAGEvaluator(
                     dag, modalities_for_dag, task
                 ).evaluate()

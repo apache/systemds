@@ -34,15 +34,21 @@ from systemds.scuro.drsearch.representation_dag import (
     RepresentationDAGBuilder,
 )
 from systemds.scuro.modality.type import ModalityType
+from systemds.scuro.representations.aggregated_representation import (
+    AggregatedRepresentation,
+)
 from systemds.scuro.representations.bow import BoW
 from systemds.scuro.representations.concatenation import Concatenation
 from systemds.scuro.representations.mfcc import MFCC
+from systemds.scuro.representations.mlp_averaging import MLPAveraging
 from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.sum import Sum
+from systemds.scuro.representations.window_aggregation import WindowAggregation
 from tests.scuro.test_multimodal_ga_optimizer import _FakeUnimodalResults, _make_task
 
-TEXT, EMB = ModalityType.TEXT, ModalityType.EMBEDDING
+TEXT, EMB, TS = ModalityType.TEXT, ModalityType.EMBEDDING, ModalityType.TIMESERIES
 SEQ, VEC = RepresentationStats(5, (4, 8)), RepresentationStats(5, (3,))
+RAW = SimpleNamespace(output_shape=(100,), max_length=100)  # a loader's raw signal
 
 
 def _check(op, params, leaves, with_stats=True):
@@ -74,6 +80,15 @@ VIOLATION_CASES = [
         [("implicit", "hidden_aggregation")],
     ),
     (Concatenation, {"preserve_leading_axis": True}, [(EMB, SEQ), (EMB, SEQ)], []),
+    (WindowAggregation, {}, [(TS, None)], []),
+    (WindowAggregation, {}, [(TS, RAW)], []),
+    (AggregatedRepresentation, {}, [(TS, RAW)], []),
+    (WindowAggregation, {}, [(EMB, SEQ)], []),
+    (WindowAggregation, {}, [(EMB, VEC)], [("error", "rank")]),
+    (AggregatedRepresentation, {}, [(EMB, SEQ)], []),
+    (AggregatedRepresentation, {}, [(EMB, VEC)], [("error", "rank")]),
+    (MLPAveraging, {}, [(EMB, VEC)], []),
+    (MLPAveraging, {}, [(EMB, SEQ)], [("error", "rank")]),
 ]
 
 
@@ -86,6 +101,17 @@ class TestTypecheck(unittest.TestCase):
     def test_shapes_unknown_without_leaf_stats(self):
         violations = _check(Sum, {}, [(EMB, SEQ), (EMB, VEC)], with_stats=False)
         self.assertEqual(violations, [])
+
+    def test_rank_follows_the_declared_output_rank(self):
+        builder = RepresentationDAGBuilder()
+        agg = builder.create_operation_node(
+            AggregatedRepresentation, [builder.create_leaf_node("hr", 0)], {}
+        )
+        dag = builder.build(builder.create_operation_node(WindowAggregation, [agg], {}))
+        violations = typecheck(dag, {("hr", 0): TS})
+        self.assertEqual(
+            [(v.kind, v.operator) for v in violations], [("rank", "WindowAggregation")]
+        )
 
     def test_builder_modes(self):
         for mode, raises, counted in [

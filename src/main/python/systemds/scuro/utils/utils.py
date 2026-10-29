@@ -22,9 +22,11 @@ import os
 import torch
 import random
 import numpy as np
+from systemds.scuro.utils.static_variables import get_global_seed
 
 
-def set_random_seeds(seed=42):
+def set_random_seeds(seed=None):
+    seed = get_global_seed() if seed is None else seed
     os.environ["PYTHONHASHSEED"] = str(seed)
     random.seed(seed)
     np.random.seed(seed)

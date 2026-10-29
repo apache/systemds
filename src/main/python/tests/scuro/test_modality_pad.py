@@ -96,8 +96,10 @@ class TestModalityPad(unittest.TestCase):
         fused = Sum().transform([modality_a, modality_b])
 
         self.assertEqual(fused.shape, (1, 6))
-        np.testing.assert_array_equal(
-            fused[0], np.array([2.0, 4.0, 6.0, 8.0, 5.0, 6.0], dtype=np.float32)
+        a = np.array([1.0, 2.0, 3.0, 4.0, 0.0, 0.0])
+        b = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+        np.testing.assert_allclose(
+            fused[0], a / np.linalg.norm(a) + b / np.linalg.norm(b), rtol=1e-6
         )
 
 

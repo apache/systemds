@@ -42,13 +42,8 @@ import org.apache.sysds.parser.VariableSet;
  * mtd has unknown size (which can only happen for CSV). 
  * 
  */
-public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
+public class RewriteSplitDagUnknownCSVRead extends SplitStatementBlockRewriteRule
 {
-	@Override
-	public boolean createsSplitDag() {
-		return true;
-	}
-	
 	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
 	{

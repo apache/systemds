@@ -22,17 +22,23 @@ from systemds.scuro.dataloader.image_loader import ImageStats
 from systemds.scuro.dataloader.video_loader import VideoStats
 from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.utils import (
+    LazyModelMixin,
+    build_torchvision_model,
+    capture_layer_outputs,
+    existing_layers,
     OwnerAccumulator,
     flatten_owned_sequences,
     get_sequence_lengths,
     inference_context,
-    move_batch_to_device,
     pin_memory_for,
 )
-from systemds.scuro.utils.torch_dataset import CustomDataset
+from systemds.scuro.utils.torch_dataset import (
+    FrameDataset,
+    FramePreprocessor,
+    collate_frames,
+)
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
-from typing import Tuple, Any
 from systemds.scuro.drsearch.operator_registry import (
     register_representation,
     register_expensive_representation,
@@ -52,9 +58,17 @@ class Identity(torch.nn.Module):
 
 @register_representation([ModalityType.IMAGE, ModalityType.VIDEO])
 @register_expensive_representation([ModalityType.IMAGE, ModalityType.VIDEO])
-class ResNet(UnimodalRepresentation):
+class ResNet(LazyModelMixin, UnimodalRepresentation):
     supports_aggregation_pushdown = True
     cache_in_worker = True
+    layer_parameter = "layer_name"
+    MODEL_BYTES = {
+        "ResNet18": 46_796_608,
+        "ResNet34": 87_259_072,
+        "ResNet50": 102_441_032,
+        "ResNet101": 178_618_848,
+        "ResNet152": 241_378_168,
+    }
 
     def __init__(
         self,
@@ -65,9 +79,6 @@ class ResNet(UnimodalRepresentation):
         params=None,
     ):
         self.data_type = torch.float32
-        self.model = None
-        self._activation_hook = None
-        self.activation = None
         self.gpu_id = None
         self.device = get_device()
         if params is not None:
@@ -83,11 +94,6 @@ class ResNet(UnimodalRepresentation):
         self.params = params
 
         self.output_file = output_file
-        self.model.eval()
-        for param in self.model.parameters():
-            param.requires_grad = False
-
-        self.model.fc = Identity()
 
     @property
     def gpu_id(self):
@@ -97,7 +103,7 @@ class ResNet(UnimodalRepresentation):
     def gpu_id(self, gpu_id):
         self._gpu_id = gpu_id
         self.device = get_device(gpu_id)
-        if self.model is not None:
+        if self._model is not None:
             self.model = self.model.to(self.device)
 
     @property
@@ -106,32 +112,25 @@ class ResNet(UnimodalRepresentation):
 
     @model_name.setter
     def model_name(self, model_name):
-        self._model_name = model_name
-        if model_name == "ResNet18":
-            model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
-            self.model = model.to(self.device)
-            self.model = self.model.to(self.data_type)
-
-        elif model_name == "ResNet34":
-            model = models.resnet34(weights=models.ResNet34_Weights.DEFAULT)
-            self.model = model.to(self.device)
-            self.model = self.model.to(self.data_type)
-        elif model_name == "ResNet50":
-            model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
-            self.model = model.to(self.device)
-            self.model = self.model.to(self.data_type)
-
-        elif model_name == "ResNet101":
-            model = models.resnet101(weights=models.ResNet101_Weights.DEFAULT)
-            self.model = model.to(self.device)
-            self.model = self.model.to(self.data_type)
-
-        elif model_name == "ResNet152":
-            model = models.resnet152(weights=models.ResNet152_Weights.DEFAULT)
-            self.model = model.to(self.device)
-            self.model = self.model.to(self.data_type)
-        else:
+        if model_name not in self.MODEL_BYTES:
             raise NotImplementedError
+        self._model_name = model_name
+        self._model = None
+
+    def _build_model(self):
+        factory, weights = {
+            "ResNet18": (models.resnet18, models.ResNet18_Weights),
+            "ResNet34": (models.resnet34, models.ResNet34_Weights),
+            "ResNet50": (models.resnet50, models.ResNet50_Weights),
+            "ResNet101": (models.resnet101, models.ResNet101_Weights),
+            "ResNet152": (models.resnet152, models.ResNet152_Weights),
+        }[self.model_name]
+        model = build_torchvision_model(factory, weights.DEFAULT)
+        model.eval()
+        for param in model.parameters():
+            param.requires_grad = False
+        model.fc = Identity()
+        return model.to(self.device).to(self.data_type)
 
     def estimate_output_memory_bytes(self, input_stats: ImageStats) -> int:
         shape = self.get_output_stats(input_stats).output_shape
@@ -174,15 +173,7 @@ class ResNet(UnimodalRepresentation):
 
         safety_margin_bytes = 100 * 1024 * 1024
 
-        param_size = 0
-        for param in self.model.parameters():
-            param_size += param.nelement() * param.element_size()
-
-        buffer_size = 0
-        for buffer in self.model.buffers():
-            buffer_size += buffer.nelement() * buffer.element_size()
-
-        size_all_bytes = param_size + buffer_size
+        size_all_bytes = self.MODEL_BYTES[self.model_name]
 
         cpu_peak = (
             size_all_bytes * 2 * self.data_type.itemsize
@@ -218,27 +209,19 @@ class ResNet(UnimodalRepresentation):
         return parameters
 
     def transform(self, modality, aggregation=None):
+        layers = self.transform_layers(modality, [self.layer_name], aggregation)
+        if self.layer_name not in layers:
+            raise ValueError(f"{self.model_name} has no layer {self.layer_name!r}")
+        return layers[self.layer_name]
+
+    def transform_layers(self, modality, layer_names, aggregation=None):
         if next(self.model.parameters()).dtype != self.data_type:
             self.model = self.model.to(self.data_type)
         self.model = self.model.to(self.device)
         self.model.eval()
-        self.activation = None
-
-        def get_features(name_):
-            def hook(
-                _module: torch.nn.Module, input_: Tuple[torch.Tensor], output: Any
-            ):
-                self.activation = output
-
-            return hook
-
-        if self.layer_name and self._activation_hook is None:
-            for name, layer in self.model.named_modules():
-                if name == self.layer_name:
-                    self._activation_hook = layer.register_forward_hook(
-                        get_features(name)
-                    )
-                    break
+        layer_names = existing_layers(self.model, layer_names)
+        if not layer_names:
+            return {}
 
         is_image = modality.modality_type == ModalityType.IMAGE
         if is_image:
@@ -248,40 +231,52 @@ class ResNet(UnimodalRepresentation):
             lengths = get_sequence_lengths(modality.data, modality.metadata)
             samples, owner_ids = flatten_owned_sequences(modality.data, lengths)
 
-        dataset = CustomDataset(samples, self.data_type, "cpu")
+        dataset = FrameDataset(samples)
+        preprocess = FramePreprocessor(dtype=self.data_type)
         dataloader = torch.utils.data.DataLoader(
             dataset,
             batch_size=self.batch_size,
             shuffle=False,
+            collate_fn=collate_frames,
             pin_memory=pin_memory_for(self.device),
         )
         owner_by_chunk = torch.tensor(owner_ids, dtype=torch.long)
-        accumulator = OwnerAccumulator(len(modality.data), len(dataset), aggregation)
+        accumulators = {
+            name: OwnerAccumulator(len(modality.data), len(dataset), aggregation)
+            for name in layer_names
+        }
 
-        with inference_context(self.device):
+        with inference_context(self.device), capture_layer_outputs(
+            self.model, layer_names, _pooled_features
+        ) as outputs:
             for batch in dataloader:
                 chunk_ids = batch["id"].long()
-                batch = move_batch_to_device(batch, self.device)
-                _ = self.model(batch["data"])
-                output = self.activation
-                if output.ndim > 2:
-                    output = torch.nn.functional.adaptive_avg_pool2d(output, (1, 1))
-                accumulator.update(
-                    torch.flatten(output, 1),
-                    owner_by_chunk.index_select(0, chunk_ids),
-                    chunk_ids,
-                )
+                self.model(preprocess(batch["data"], self.device))
+                owners = owner_by_chunk.index_select(0, chunk_ids)
+                for name in layer_names:
+                    accumulators[name].update(outputs[name], owners, chunk_ids)
 
-        embeddings = accumulator.finalize(grouped=not is_image and aggregation is None)
-        if is_image and aggregation is None:
-            embeddings = list(embeddings)
+        transformed = {}
+        for name in layer_names:
+            embeddings = accumulators.pop(name).finalize(
+                grouped=not is_image and aggregation is None
+            )
+            if is_image and aggregation is None:
+                embeddings = list(embeddings)
 
-        transformed_modality = TransformedModality(
-            modality, self, self.output_modality_type
-        )
-        transformed_modality.data_type = np.float32
-        transformed_modality.aggregate_dim = (
-            None if aggregation is not None or is_image else (0,)
-        )
-        transformed_modality.data = embeddings
-        return transformed_modality
+            transformed_modality = TransformedModality(
+                modality, self, self.output_modality_type
+            )
+            transformed_modality.data_type = np.float32
+            transformed_modality.aggregate_dim = (
+                None if aggregation is not None or is_image else (0,)
+            )
+            transformed_modality.data = embeddings
+            transformed[name] = transformed_modality
+        return transformed
+
+
+def _pooled_features(output: torch.Tensor) -> torch.Tensor:
+    if output.ndim > 2:
+        output = torch.nn.functional.adaptive_avg_pool2d(output, (1, 1))
+    return torch.flatten(output, 1)

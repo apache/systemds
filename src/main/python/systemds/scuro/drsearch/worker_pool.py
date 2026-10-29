@@ -26,11 +26,12 @@ import queue
 import signal
 import time
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import torch
 
-from systemds.scuro.utils.memory_utility import is_cuda_oom
+from systemds.scuro.utils.memory_utility import cuda_oom_peak_bytes, is_cuda_oom
+from systemds.scuro.utils.static_variables import scheduled_device
 
 _THREAD_ENV_VARS = (
     "OMP_NUM_THREADS",
@@ -54,6 +55,19 @@ def _resolve_thread_count(num_threads: int) -> int:
 
 def default_threads_per_worker() -> int:
     return _resolve_thread_count(1)
+
+
+DEFAULT_GPU_SLOTS_PER_DEVICE = 4
+
+
+def default_gpu_slots_per_device() -> int:
+    explicit = os.environ.get("SCURO_GPU_SLOTS_PER_DEVICE")
+    if explicit:
+        try:
+            return max(1, int(explicit))
+        except ValueError:
+            pass
+    return DEFAULT_GPU_SLOTS_PER_DEVICE
 
 
 def set_thread_env_before_spawn(num_threads: int) -> None:
@@ -89,6 +103,7 @@ class _JobResult:
     error: Optional[str] = None
     cuda_oom: bool = False
     worker_died: bool = False
+    gpu_peak_bytes: int = -1
 
 
 def _worker_main(
@@ -113,16 +128,20 @@ def _worker_main(
             local_gpu_id = (
                 0 if physical_gpu_id is not None and job.gpu_id is not None else None
             )
-            value = dispatch[job.kind](job.payload, local_gpu_id)
+
+            with scheduled_device(local_gpu_id):
+                value = dispatch[job.kind](job.payload, local_gpu_id)
             result_q.put(_JobResult(job.job_id, True, os.getpid(), value=value))
         except Exception as e:
+            cuda_oom = is_cuda_oom(e)
             result_q.put(
                 _JobResult(
                     job.job_id,
                     False,
                     os.getpid(),
                     error=f"{type(e).__name__}: {e}",
-                    cuda_oom=is_cuda_oom(e),
+                    cuda_oom=cuda_oom,
+                    gpu_peak_bytes=cuda_oom_peak_bytes(e) if cuda_oom else -1,
                 )
             )
 
@@ -303,11 +322,31 @@ class PersistentWorkerPool:
     def num_in_flight(self) -> int:
         return len(self._running)
 
+    def worker_gpu(self, pid: int) -> Optional[int]:
+        worker = self._workers.get(pid)
+        return None if worker is None else worker["gpu_id"]
+
+    def is_idle(self, pid: int) -> bool:
+        gpu_id = self.worker_gpu(pid)
+        idle = self._idle_pids if gpu_id is None else self._idle_gpu_pids[gpu_id]
+        return pid in self._workers and pid in idle
+
+    def job_pid(self, job_id: int) -> Optional[int]:
+        entry = self._running.get(job_id)
+        return None if entry is None else entry[0]
+
     def _take_worker(
-        self, gpu_id: Optional[int], allow_gpu_worker_for_cpu: bool
+        self,
+        gpu_id: Optional[int],
+        allow_gpu_worker_for_cpu: bool,
+        preferred_pids: Sequence[int] = (),
     ) -> Tuple[int, Optional[int]]:
         if gpu_id is not None:
             gpu_idle = self._idle_gpu_pids.get(gpu_id, [])
+            for pid in preferred_pids:
+                if pid in gpu_idle:
+                    gpu_idle.remove(pid)
+                    return pid, gpu_id
             if gpu_idle:
                 return gpu_idle.pop(), gpu_id
             if not self.gpu_devices and self._idle_pids:
@@ -326,24 +365,43 @@ class PersistentWorkerPool:
         payload: tuple,
         gpu_id: Optional[int] = None,
         allow_gpu_worker_for_cpu: bool = False,
+        preferred_pids: Sequence[int] = (),
     ) -> int:
+        """Run a job on an idle worker, choosing from ``preferred_pids`` first."""
         if not self.has_idle_worker_for(gpu_id, allow_gpu_worker_for_cpu):
             raise RuntimeError("submit() called with no idle worker available")
+        pid, dispatched_gpu_id = self._take_worker(
+            gpu_id, allow_gpu_worker_for_cpu, preferred_pids
+        )
+        return self._enqueue(pid, kind, payload, dispatched_gpu_id)
+
+    def submit_to(self, pid: int, kind: str, payload: Any) -> int:
+        """Run a job on the idle worker ``pid`` on its own device."""
+        if not self.is_idle(pid):
+            raise RuntimeError(f"submit_to() called for busy worker {pid}")
+        gpu_id = self.worker_gpu(pid)
+        idle = self._idle_pids if gpu_id is None else self._idle_gpu_pids[gpu_id]
+        idle.remove(pid)
+        return self._enqueue(pid, kind, payload, gpu_id)
+
+    def _enqueue(self, pid: int, kind: str, payload: Any, gpu_id: Optional[int]) -> int:
         job_id = next(self._job_counter)
-        pid, dispatched_gpu_id = self._take_worker(gpu_id, allow_gpu_worker_for_cpu)
-        job = _Job(job_id, kind, payload, dispatched_gpu_id)
+        job = _Job(job_id, kind, payload, gpu_id)
         self._running[job_id] = (pid, job)
         self._workers[pid]["job_q"].put(job)
         return job_id
 
-    def wait(self) -> _JobResult:
+    def wait(self, timeout: Optional[float] = None) -> Optional[_JobResult]:
+        """The next job result; None if `timeout` seconds pass without one."""
         while True:
             sentinel_to_pid = {
                 w["process"].sentinel: pid for pid, w in self._workers.items()
             }
             ready = mp_connection.wait(
-                [self._result_q._reader, *sentinel_to_pid.keys()]
+                [self._result_q._reader, *sentinel_to_pid.keys()], timeout
             )
+            if not ready:
+                return None
             if self._result_q._reader in ready:
                 jr = self._result_q.get()
                 entry = self._running.pop(jr.job_id, None)

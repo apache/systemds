@@ -144,7 +144,7 @@ def _output_type(op_cls):
 
 class Violation(NamedTuple):
     severity: str  # error | implicit
-    kind: str  # input_type | arity | hidden_aggregation | zero_padding
+    kind: str  # input_type | arity | rank | hidden_aggregation | zero_padding
     node_id: str
     operator: str
     detail: str
@@ -176,6 +176,24 @@ def typecheck(dag, leaf_types, leaf_stats=None) -> list:
             if len(set(widths)) > 1:
                 flag("implicit", "zero_padding", node, f"operand widths {widths}")
 
+    def rank(nid):
+        """seq or vector, None if unknown. Raw modalities declare a max_length."""
+        node = nodes[nid]
+        if node.inputs and node.operation is not None:
+            declared = operator_signature(node.operation, node.parameters).output_rank
+            if declared != "any":
+                return "vector" if declared == "vector" else "seq"
+        s = stats(nid)
+        if s is None or not s.output_shape:
+            return None
+        seq = len(s.output_shape) > 1 or getattr(s, "max_length", None) is not None
+        return "seq" if seq else "vector"
+
+    def check_rank(node, sig):
+        got = rank(node.inputs[0])
+        if got is not None and (got == "vector") != (sig.input_rank == "vector"):
+            flag("error", "rank", node, f"{got} input, expects {sig.input_rank}")
+
     def out_type(nid):
         if nid in types:
             return types[nid]
@@ -193,6 +211,8 @@ def typecheck(dag, leaf_types, leaf_stats=None) -> list:
         for t in in_types:
             if t is not None and t not in sig.input_types:
                 flag("error", "input_type", node, f"{t.name} input")
+        if sig.arity == 1 and len(node.inputs) == 1 and sig.input_rank != "any":
+            check_rank(node, sig)
         if sig.kind == "fuse" and leaf_stats is not None:
             check_fusion(node)
         types[nid] = sig.output_type or in_types[0]
@@ -419,7 +439,8 @@ def _signature(view, root, laws, invariant) -> tuple:
         if not inputs:
             return ("leaf", modality_id, representation_index)
 
-        children = [sig(i, laws & EXACT_LAWS if _fitted(op) else laws) for i in inputs]
+        below = laws & EXACT_LAWS if _fitted(op) else laws - {"concat_perm"}
+        children = [sig(i, below) for i in inputs]
         params = dict(params)
         pushed = (
             params.pop("_pushdown_aggregation", None)
@@ -462,7 +483,7 @@ def _signature(view, root, laws, invariant) -> tuple:
 def count_fusion_plans(n, fusion_ops, laws, invariant) -> dict:
     heads = _fusion_heads(fusion_ops, laws)
     f = len(heads)
-    reorders = sum(_reorders(op_laws, invariant) for *_, op_laws in heads)
+    reorders = sum(_reorders(op_laws, False) for *_, op_laws in heads)
     ordered = factorial(2 * n - 2) // factorial(n - 1) * f ** (n - 1)
     if n == 1:
         canonical = 1
@@ -503,19 +524,21 @@ def _fitted(op) -> bool:
 
 def _commutative_plans(n, heads, invariant) -> int:
     plans = {(1, True): 1, (1, False): 1}
+
+    def count(m, free, invariant):
+        total = 0
+        for *_, op, _, op_laws in heads:
+            below = free and not _fitted(op)
+            splits = sum(
+                comb(m, k) * plans[k, below] * plans[m - k, below] for k in range(1, m)
+            )
+            total += splits // (2 if free and _reorders(op_laws, invariant) else 1)
+        return total
+
     for m in range(2, n + 1):
         for free in (True, False):
-            plans[m, free] = 0
-            for *_, op, _, op_laws in heads:
-                below = free and not _fitted(op)
-                splits = sum(
-                    comb(m, k) * plans[k, below] * plans[m - k, below]
-                    for k in range(1, m)
-                )
-                plans[m, free] += splits // (
-                    2 if free and _reorders(op_laws, invariant) else 1
-                )
-    return plans[n, True]
+            plans[m, free] = count(m, free, False)
+    return count(n, True, invariant) if n > 1 else 1
 
 
 def _reorders(op_laws, invariant) -> bool:

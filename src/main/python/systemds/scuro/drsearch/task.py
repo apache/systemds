@@ -22,7 +22,14 @@ import copy
 import os
 import time
 from typing import List
+from systemds.scuro.utils.static_variables import get_global_seed, get_train_seed
 from systemds.scuro.models.model import Model
+from systemds.scuro.models.fused_mlp import (
+    candidate_slots,
+    fit_folds,
+    fused_training_enabled,
+    supports_fused_training,
+)
 from systemds.scuro.models.training_stats import TrainingWorkAccumulator
 import numpy as np
 from sklearn.model_selection import (
@@ -37,6 +44,11 @@ from systemds.scuro.representations.representation import RepresentationStats
 _GPU_CONTEXT_FLOOR_BYTES = (
     int(os.environ.get("SCURO_GPU_CONTEXT_FLOOR_MB", "512")) * 1024 * 1024
 )
+
+
+def _as_features(X):
+    X = np.asarray(X, dtype=np.float32)
+    return X.reshape(len(X), -1)
 
 
 class PerformanceMeasure:
@@ -95,7 +107,7 @@ class Task:
         performance_measures=["accuracy"],
         groups=None,
         allow_group_overlap=False,
-        cv_seed=11,
+        cv_seed=None,
     ):
         """
         Parent class for the prediction task that is performed on top of the aligned representation
@@ -115,7 +127,7 @@ class Task:
         self.kfold = kfold
         self.groups = None if groups is None else np.asarray(groups)
         self.allow_group_overlap = allow_group_overlap
-        self.cv_seed = cv_seed
+        self.cv_seed = get_global_seed() if cv_seed is None else cv_seed
         self.measure_performance = measure_performance
         self.inference_time = []
         self.training_time = []
@@ -198,6 +210,8 @@ class Task:
         uses_gpu = getattr(self.model, "uses_gpu", None)
         if uses_gpu is None:
             uses_gpu = model_peak_memory_gpu > 0
+        if fused_training_enabled() and supports_fused_training(self.model):
+            uses_gpu = False
 
         gpu_peak_bytes = int(model_peak_memory_gpu * 1.4) if uses_gpu else 0
         if uses_gpu and gpu_peak_bytes <= 0:
@@ -492,6 +506,71 @@ class Task:
             self.val_scores.compute_averages(),
             self.test_scores.compute_averages(),
         ]
+
+    def run_many(self, datas, device):
+        model = self.create_model()
+        rows = list(
+            dict.fromkeys(list(self.train_indices) + list(self.test_indices or []))
+        )
+        local = {row: i for i, row in enumerate(rows)}
+        splits = [
+            ([local[i] for i in fit], [local[i] for i in val])
+            for fit, val in zip(self.cv_train_indices, self.cv_val_indices)
+        ]
+        test = [local[i] for i in self.test_indices or []]
+        labels = np.asarray(self._gather_by_indices(self.labels, rows))
+        prepare = getattr(model, "prepare_features", None) or _as_features
+
+        results, by_width = [None] * len(datas), {}
+        for c, data in enumerate(datas):
+            try:
+                X = prepare(self._gather_by_indices(data, rows))
+                if not np.isfinite(X).all():
+                    raise ValueError("non-finite input features")
+                by_width.setdefault(X.shape[1], []).append((c, X))
+            except Exception as e:
+                results[c] = e
+
+        seed = getattr(model, "seed", None)
+        seed = get_train_seed(get_global_seed() if seed is None else seed)
+        outputs = {}
+        start = time.perf_counter()
+        for width, group in by_width.items():
+            slots = candidate_slots(model, width, len(rows), self.kfold)
+            for i in range(0, len(group), slots):
+                chunk = group[i : i + slots]
+                fitted = fit_folds(
+                    model, [X for _, X in chunk], labels, splits, seed, device
+                )
+                outputs.update(zip([c for c, _ in chunk], fitted))
+        per_fit_s = (time.perf_counter() - start) / max(1, len(outputs) * self.kfold)
+
+        for c, out in outputs.items():
+            if not np.isfinite(out).all():
+                results[c] = ValueError("training diverged: non-finite model output")
+                continue
+            self._reset_params()
+            for k, (fit, val) in enumerate(splits):
+                for measure, idx in (
+                    (self.train_scores, fit),
+                    (self.val_scores, val),
+                    (self.test_scores, test),
+                ):
+                    measure.add_scores(
+                        model.scores_from_output(out[k][idx], labels[idx])[0]
+                    )
+            self.last_run_timing = {
+                "train_time_per_fold_s": [per_fit_s] * self.kfold,
+                "train_time_mean_s": per_fit_s,
+                "n_test_instances": len(test),
+                "fused_batch_candidates": len(outputs),
+            }
+            results[c] = [
+                self.train_scores.compute_averages(),
+                self.val_scores.compute_averages(),
+                self.test_scores.compute_averages(),
+            ]
+        return results
 
     def fit_once_and_time_inference(
         self, data, latency_repeats: int = 200, latency_warmup: int = 20

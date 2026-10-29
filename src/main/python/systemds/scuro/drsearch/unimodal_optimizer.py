@@ -29,7 +29,13 @@ from typing import List, Any, Optional, Dict
 from functools import lru_cache
 
 from systemds.scuro.modality.type import ModalityType
-from systemds.scuro.drsearch.node_executor import NodeExecutor, ResultEntry
+from systemds.scuro.drsearch.node_executor import (
+    NodeExecutor,
+    ResultEntry,
+    _lazy_leaf_budget_fraction,
+)
+from systemds.scuro.dataloader.base_loader import LazyFileSequence
+from systemds.scuro.utils.memory_utility import cpu_memory_budget_bytes
 from systemds.scuro.drsearch.split_aware_evaluator import (
     SplitAwareDAGEvaluator,
     dag_requires_fitting,
@@ -48,6 +54,7 @@ from systemds.scuro.modality.modality import Modality
 from systemds.scuro.drsearch.algebra import AlgebraConfig
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.representations.window_aggregation import WindowAggregation
+from systemds.scuro.representations.lstm import LSTM
 from systemds.scuro.utils.checkpointing import CheckpointManager
 from systemds.scuro.drsearch.representation_dag import (
     RepresentationDag,
@@ -413,8 +420,14 @@ class UnimodalOptimizer:
         if fitted_dags:
             fitted_task_dags = self._expand_dags_with_task_roots(fitted_dags)
             for dag in fitted_dags:
+                eval_dag, eval_modality, encode_time = self._encode_below_lstm(
+                    dag, modality
+                )
                 for task_idx, task in enumerate(self.tasks):
-                    evaluation = SplitAwareDAGEvaluator(dag, modality, task).evaluate()
+                    evaluation = SplitAwareDAGEvaluator(
+                        eval_dag, eval_modality, task
+                    ).evaluate()
+                    evaluation.representation_time += encode_time
                     result_dag = next(
                         task_dag
                         for task_dag in fitted_task_dags
@@ -533,11 +546,10 @@ class UnimodalOptimizer:
                     local_results.wall_clock_s.get(modality_id, 0.0)
                 )
 
-    def add_dimensionality_reduction_operators(self, builder, current_node_id):
+    def add_dimensionality_reduction_operators(self, builder, current_node_id, rep_dag):
         dags = []
-        modality_type = (
-            builder.get_node(current_node_id).operation().output_modality_type
-        )
+        rep_operation = builder.get_node(current_node_id).operation
+        modality_type = rep_operation().output_modality_type
 
         if modality_type is not ModalityType.EMBEDDING:
             return None
@@ -545,6 +557,21 @@ class UnimodalOptimizer:
         dimensionality_reduction_operators = (
             self._get_dimensionality_reduction_operators(modality_type)
         )
+
+        if self._dag_output_has_time_axis(rep_dag):
+            for dimensionality_reduction_op in dimensionality_reduction_operators:
+                self.pruned.append(
+                    {
+                        "operation": dimensionality_reduction_op.__name__,
+                        "input": rep_operation.__name__,
+                        "reason": (
+                            "representation output is a sequence; dimensionality "
+                            "reduction only applies to rank-1 vectors"
+                        ),
+                    }
+                )
+            return None
+
         for dimensionality_reduction_op in dimensionality_reduction_operators:
             dimensionality_reduction_node_id = builder.create_operation_node(
                 dimensionality_reduction_op,
@@ -573,12 +600,12 @@ class UnimodalOptimizer:
             dags.append(rep_dag)
 
         dimensionality_reduction_dags = self.add_dimensionality_reduction_operators(
-            builder, current_node_id
+            builder, current_node_id, rep_dag
         )
         if dimensionality_reduction_dags is not None:
             dags.extend(dimensionality_reduction_dags)
 
-        if operator.needs_context:
+        if operator.needs_context_for(modality.modality_type):
             context_operators = self._get_context_operators(modality.modality_type)
             for context_op in context_operators:
                 if operator.initial_context_length is not None:
@@ -695,27 +722,50 @@ class UnimodalOptimizer:
     def _aggregation_needed(self, dag: RepresentationDag) -> bool:
         return len(self._node_output_stats(dag)[dag.root_node_id].output_shape) > 1
 
+    def _is_vector_sequence(self, dag: RepresentationDag) -> bool:
+        return len(self._node_output_stats(dag)[dag.root_node_id].output_shape) == 2
+
     def add_aggregation_operator(self, builder, dags):
+        aggregate = self._tasks_require_same_dims and self.expected_dimensions == 1
         new_dags = []
-        if self._tasks_require_same_dims and self.expected_dimensions == 1:
-            aggregated_dags = []
-            for dag in dags:
-                if self._aggregation_needed(dag):
-                    agg_op = AggregatedRepresentation(
-                        target_dimensions=self.expected_dimensions
-                    )
-                    agg_node_id = builder.create_operation_node(
-                        agg_op.__class__,
-                        [dag.root_node_id],
-                        agg_op.get_current_parameters(),
-                    )
-                    aggregated_dags.append(builder.build(agg_node_id, dag.dag_id))
-                else:
-                    aggregated_dags.append(dag)
-            new_dags = aggregated_dags
-        else:
-            new_dags = dags
+        for dag in dags:
+            if aggregate and self._aggregation_needed(dag):
+                agg_op = AggregatedRepresentation(
+                    target_dimensions=self.expected_dimensions,
+                    aggregate_leading=True,
+                )
+                agg_node_id = builder.create_operation_node(
+                    agg_op.__class__,
+                    [dag.root_node_id],
+                    agg_op.get_current_parameters(),
+                )
+                new_dags.append(builder.build(agg_node_id, dag.dag_id))
+            else:
+                new_dags.append(dag)
+            if self._is_vector_sequence(dag):
+                new_dags.append(self._lstm_aggregation(builder, dag.root_node_id))
         return new_dags
+
+    @staticmethod
+    def _lstm_aggregation(builder, node_id):
+        lstm_node_id = builder.create_operation_node(
+            LSTM, [node_id], LSTM().get_current_parameters()
+        )
+        return builder.build(lstm_node_id)
+
+    @staticmethod
+    def _encode_below_lstm(dag, modality):
+        root = dag.get_node_by_id(dag.root_node_id)
+        below = RepresentationDag(dag.nodes, root.inputs[0])
+        if root.operation is not LSTM or dag_requires_fitting(below):
+            return dag, modality, 0.0
+        start = time.perf_counter()
+        encoded = below.execute([modality])
+        leaf = RepresentationNode("lstm_input", None, [], modality.modality_id)
+        lstm = copy.copy(root)
+        lstm.inputs = [leaf.node_id]
+        dag = RepresentationDag([leaf, lstm], lstm.node_id, dag.dag_id)
+        return dag, encoded, time.perf_counter() - start
 
     def default_context_operators(
         self, modality, builder, leaf_id, rep_dag, apply_context_to_leaf=False
@@ -728,6 +778,19 @@ class UnimodalOptimizer:
                 and modality.modality_type != ModalityType.IMAGE
             ):
                 context_operators = self._get_context_operators(modality.modality_type)
+                if self._leaf_is_vector(modality):
+                    for context_op in context_operators:
+                        self.pruned.append(
+                            {
+                                "operation": context_op.__name__,
+                                "input": "leaf",
+                                "reason": (
+                                    "leaf is a rank-1 feature vector "
+                                    "with no time axis to window over"
+                                ),
+                            }
+                        )
+                    context_operators = []
                 for context_op in context_operators:
                     context_node_id = builder.create_operation_node(
                         context_op,
@@ -769,6 +832,16 @@ class UnimodalOptimizer:
                 dags.append(builder.build(context_node_id))
 
         return dags
+
+    @staticmethod
+    def _leaf_is_vector(modality) -> bool:
+        stats = getattr(modality, "stats", None)
+        shape = getattr(stats, "output_shape", None)
+        return (
+            shape is not None
+            and len(shape) == 1
+            and getattr(stats, "max_length", None) is None
+        )
 
     def _size_context_operator(self, context_operator_instance, output_length) -> bool:
         parameter = getattr(context_operator_instance, "granularity_parameter", None)
@@ -908,6 +981,9 @@ class UnimodalOptimizer:
                     dags.append(
                         builder.build(chain_tip if summary_id is None else summary_id)
                     )
+
+                if start == 0 and self._is_vector_sequence(builder.build(chain_tip)):
+                    dags.append(self._lstm_aggregation(builder, chain_tip))
         return dags
 
     def _summarize_windows(self, builder, node_id):
@@ -1132,17 +1208,24 @@ class UnimodalResults:
                 task_cache = None
             if not task_cache:
                 cache = []
-                for result in results:
-                    if dag_requires_fitting(result.dag):
-                        transformed = SplitAwareDAGEvaluator(
-                            result.dag, modality, task
-                        ).fit_transform(
-                            task.train_indices,
-                            range(len(modality.data)),
-                        )
-                        cache.append(transformed.modality)
-                    else:
-                        cache.append(result.dag.execute([modality]))
+                lazy_data = self._decode_lazy_leaf_once(modality, results)
+                try:
+                    for result in results:
+                        if dag_requires_fitting(result.dag):
+                            SplitAwareDAGEvaluator.materialize(modality)
+                            transformed = SplitAwareDAGEvaluator(
+                                result.dag, modality, task
+                            ).fit_transform(
+                                task.train_indices,
+                                range(len(modality.data)),
+                            )
+                            transformed.modality.fold_source = (result.dag, modality)
+                            cache.append(transformed.modality)
+                        else:
+                            cache.append(result.dag.execute([modality]))
+                finally:
+                    if lazy_data is not None:
+                        modality._data = lazy_data
 
             elif isinstance(task_cache, list):
                 cache = task_cache
@@ -1168,6 +1251,28 @@ class UnimodalResults:
                 ] = cache
 
         return results, cache
+
+    @staticmethod
+    def _decode_lazy_leaf_once(modality, results):
+        data = modality.data if modality.has_data() else None
+        if not isinstance(data, LazyFileSequence):
+            return None
+        if sum(not dag_requires_fitting(result.dag) for result in results) < 2:
+            return None
+        estimate = getattr(modality.data_loader, "estimate_decoded_bytes", None)
+        metadata = (
+            modality.metadata if len(modality.metadata or []) == len(data) else None
+        )
+        decoded_bytes = estimate(metadata) if callable(estimate) else None
+        budget = cpu_memory_budget_bytes(modality.modality_type.name)
+        if not decoded_bytes or decoded_bytes > budget * _lazy_leaf_budget_fraction():
+            return None
+        arrays = data.materialize()
+        for array in arrays:
+            if hasattr(array, "flags"):
+                array.flags.writeable = False
+        modality._data = arrays
+        return data
 
     def get_k_most_robust_results(
         self,

@@ -75,9 +75,50 @@ class TestDataLoadersLoadFromFiles(unittest.TestCase):
 
         self.assertIsInstance(stats, AudioStats)
         self.assertEqual(stats.num_instances, 2)
-        self.assertEqual(stats.sampling_rate, 22050)
-        self.assertEqual(stats.max_length, 44100)
-        self.assertAlmostEqual(stats.avg_length, (44100 * 2) / 2.0)
+        self.assertEqual(stats.sampling_rate, 16000)
+        self.assertEqual(stats.max_length, 32000)
+        self.assertAlmostEqual(stats.avg_length, 32000)
+
+    def test_audio_loader_keeps_native_rate(self):
+        loader = AudioLoader(
+            self.data_generator.get_modality_path(ModalityType.AUDIO),
+            self.data_generator.indices,
+        )
+        data, metadata = loader.load()
+
+        for arr, md in zip(data, metadata):
+            self.assertEqual(md["frequency"], 16000)
+            self.assertEqual(md["length"], arr.shape[0])
+            self.assertEqual(arr.shape[0], loader.stats.max_length)
+
+    def test_audio_loader_resamples_on_request(self):
+        loader = AudioLoader(
+            self.data_generator.get_modality_path(ModalityType.AUDIO),
+            self.data_generator.indices,
+            sampling_rate=22050,
+        )
+        data, metadata = loader.load()
+
+        self.assertEqual(loader.stats.sampling_rate, 22050)
+        self.assertEqual(loader.stats.max_length, 44100)
+        for arr, md in zip(data, metadata):
+            self.assertEqual(md["frequency"], 22050)
+            self.assertEqual(arr.shape[0], 44100)
+
+    def test_audio_loader_chunked_matches_full_load(self):
+        path = self.data_generator.get_modality_path(ModalityType.AUDIO)
+        full_data, full_metadata = AudioLoader(path, self.data_generator.indices).load()
+        chunked = AudioLoader(path, self.data_generator.indices, chunk_size=1)
+
+        chunks = list(chunked.iter_loaded_chunks())
+
+        self.assertEqual(len(chunks), self.num_instances)
+        for (data, metadata, _), expected, expected_md in zip(
+            chunks, full_data, full_metadata
+        ):
+            self.assertEqual(len(data), 1)
+            np.testing.assert_array_equal(data[0], expected)
+            self.assertEqual(metadata[0]["frequency"], expected_md["frequency"])
 
     def test_video_loader_loads_all_instances(self):
         loader = VideoLoader(

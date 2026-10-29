@@ -51,12 +51,13 @@ import java.util.stream.Stream;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class RewriteSplitDagUnknownNnzReadTest extends AutomatedTestBase {
+public class RewriteSplitDagSparsityRecompileTest extends AutomatedTestBase {
 
-	private static final String TEST_NAME = "RewriteSplitDagUnknownNnz";
+	private static final String TEST_NAME_READ = "RewriteSplitDagSparsityRecompileRead";
+	private static final String TEST_NAME_MMCHAIN = "RewriteSplitDagSparsityRecompileMMChain";
 	private static final String TEST_DIR = "functions/rewrite/";
 	private static final String TEST_CLASS_DIR =
-		TEST_DIR + RewriteSplitDagUnknownNnzReadTest.class.getSimpleName() + "/";
+		TEST_DIR + RewriteSplitDagSparsityRecompileTest.class.getSimpleName() + "/";
 	private static final String PACKAGE_REWRITE = "org.apache.sysds.hops.rewrite.HopRewriteRule";
 	private static final String PACKAGE_RECOMPILE = "org.apache.sysds.hops.rewrite.StatementBlockRewriteRule";
 	private static Level _oldLevelRewrite;
@@ -80,7 +81,7 @@ public class RewriteSplitDagUnknownNnzReadTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
-			// {rows, cols, sparsities, eps},
+			// {rows, cols, sparsities, eps, tsmm},
 			{1000, 300, new double[] {0.10d, 0.10d}, Math.pow(10, -10), false},
 			{5, 3, new double[] {0.1, 1}, Math.pow(10, -10), true},});
 	}
@@ -88,7 +89,8 @@ public class RewriteSplitDagUnknownNnzReadTest extends AutomatedTestBase {
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME_READ, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_READ, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME_MMCHAIN, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_MMCHAIN, new String[] {"R"}));
 		_oldLevelRewrite = Logger.getLogger(PACKAGE_REWRITE).getLevel();
 		Logger.getLogger(PACKAGE_REWRITE).setLevel(Level.TRACE);
 		_oldLevelRecompile = Logger.getLogger(PACKAGE_RECOMPILE).getLevel();
@@ -103,22 +105,33 @@ public class RewriteSplitDagUnknownNnzReadTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testSplitDagUnknownNnzRead() {
+	public void testSplitDagSparsityRecompileRead() {
+		testSplitDagSparsityRecompile(TEST_NAME_READ, 4);
+	}
+
+	@Test
+	public void testSplitDagSparsityRecompileMMChain() {
+		testSplitDagSparsityRecompile(TEST_NAME_MMCHAIN, 4);
+	}
+
+	private void testSplitDagSparsityRecompile(String testName, int numSBs) {
 		boolean oldFlag1 = OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES;
 		boolean oldFlag2 = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
+		boolean oldFlag3 = OptimizerUtils.ALLOW_SPLIT_HOP_DAGS;
 		DMLConfig oldDMLConfig = ConfigurationManager.getDMLConfig();
 
 		try {
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			TestConfiguration config = getTestConfiguration(testName);
 			loadTestConfiguration(config);
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+			fullDMLScriptName = HOME + testName + ".dml";
 			programArgs = new String[] {"-explain", "hops", "-stats",
 				"-args", input("X"), input("Y"), output("R")};
 
 			OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES = true;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = true;
+			OptimizerUtils.ALLOW_SPLIT_HOP_DAGS = true;
 
 			double[][] X = getRandomMatrix(rows, cols, -1, 1, sparsities[0], 7);
 			double[][] Y = getRandomMatrix(cols, 1, -1, 1, sparsities[1], 3);
@@ -163,18 +176,20 @@ public class RewriteSplitDagUnknownNnzReadTest extends AutomatedTestBase {
 			// check original log output
 			String log_original_string = String.join(DELIMITER,
 				log_original.stream().map(l -> l.getMessage().toString()).toArray(String[]::new));
-			Assert.assertTrue(log_original_string.contains("Applied splitDagUnknownNnzRead."));
+			Assert.assertTrue(log_original_string.contains("RewriteSplitDagSparsityRecompile: Split DAG into " +
+				numSBs + " statement blocks."));
 			Assert.assertTrue(log_original_string.contains("mmchainoptsparse"));
 			Assert.assertTrue(log_original_string.contains("Optimal Sparse MM Chain:"));
 			// check reference log output
 			String log_reference_string = String.join(DELIMITER,
 				log_reference.stream().map(l -> l.getMessage().toString()).toArray(String[]::new));
-			Assert.assertFalse(log_reference_string.contains("splitDagUnknownNnzRead"));
+			Assert.assertFalse(log_reference_string.contains("RewriteSplitDagSparsityRecompile"));
 			Assert.assertFalse(log_reference_string.contains("mmchainoptsparse"));
 		}
 		finally {
 			OptimizerUtils.ALLOW_TRANSPOSE_MMCHAIN_REWRITES = oldFlag1;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = oldFlag2;
+			OptimizerUtils.ALLOW_SPLIT_HOP_DAGS = oldFlag3;
 			try {
 				overwriteCurrentConfig(oldDMLConfig);
 			}

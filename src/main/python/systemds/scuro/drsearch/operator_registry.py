@@ -43,7 +43,14 @@ _BUILTIN_MODULES = {
         "tfidf",
         "word2vec",
     ),
-    ModalityType.IMAGE: ("clip", "color_histogram", "openface", "resnet", "vgg"),
+    ModalityType.IMAGE: (
+        "clip",
+        "color_histogram",
+        "image_bind",
+        "openface",
+        "resnet",
+        "vgg",
+    ),
     ModalityType.VIDEO: (
         "openface",
         "clip",
@@ -72,7 +79,6 @@ _FUSION_MODULES = (
     "average",
     "concatenation",
     "hadamard",
-    "lstm",
     "max",
     "multimodal_attention_fusion",
     "sum",

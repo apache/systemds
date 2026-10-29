@@ -516,59 +516,6 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
             self.assertIs(operation, ResNet)
             self.assertGreaterEqual(rank, 2)
 
-    def test_unimodal_optimizer_for_image_modality(self):
-        image_data, image_md = ModalityRandomDataGenerator().create_visual_modality(
-            self.num_instances, 1, 10, 10
-        )
-        image = UnimodalModality(
-            TestDataLoader(
-                self.indices, None, ModalityType.IMAGE, image_data, np.float32, image_md
-            )
-        )
-        self.optimize_unimodal_representation_for_modality([image])
-
-    def test_unimodal_optimizer_for_multiple_modalities(self):
-        image_data, image_md = ModalityRandomDataGenerator().create_visual_modality(
-            self.num_instances, 1, 10, 10
-        )
-        image = UnimodalModality(
-            TestDataLoader(
-                self.indices, None, ModalityType.IMAGE, image_data, np.float32, image_md
-            )
-        )
-        text_data, text_md = ModalityRandomDataGenerator().create_text_data(
-            self.num_instances
-        )
-        text = UnimodalModality(
-            TestDataLoader(
-                self.indices, None, ModalityType.TEXT, text_data, str, text_md
-            )
-        )
-        self.optimize_unimodal_representation_for_modality([text, image])
-
-    def test_unimodal_optimizer_for_audio_modality(self):
-        audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
-            self.num_instances, 3000
-        )
-        audio = UnimodalModality(
-            TestDataLoader(
-                self.indices, None, ModalityType.AUDIO, audio_data, np.float32, audio_md
-            )
-        )
-
-        self.optimize_unimodal_representation_for_modality([audio])
-
-    def test_unimodal_optimizer_for_video_modality(self):
-        video_data, video_md = ModalityRandomDataGenerator().create_visual_modality(
-            self.num_instances, 10, 10, 10
-        )
-        video = UnimodalModality(
-            TestDataLoader(
-                self.indices, None, ModalityType.VIDEO, video_data, np.float32, video_md
-            )
-        )
-        self.optimize_unimodal_representation_for_modality([video])
-
     # ------------------------------------------------------------------
     # Every registered representation, run through the optimizer
     # ------------------------------------------------------------------

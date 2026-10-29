@@ -21,12 +21,14 @@
 import copy
 from collections import Counter
 import math
+import os
 import pickle
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import multiprocessing as mp
 from typing import List, Any, Optional, Dict
 from functools import lru_cache
+from weakref import WeakValueDictionary
 
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.node_executor import (
@@ -40,7 +42,11 @@ from systemds.scuro.drsearch.split_aware_evaluator import (
     SplitAwareDAGEvaluator,
     dag_requires_fitting,
 )
-from systemds.scuro.representations.representation import RepresentationStats
+from systemds.scuro.drsearch.trial_result_cache import TrialNodeCache, TrialResultCache
+from systemds.scuro.representations.representation import (
+    FitRequirement,
+    RepresentationStats,
+)
 from systemds.scuro.drsearch.ranking import rank_by_tradeoff, rank_by_robustness
 from systemds.scuro.drsearch.task import PerformanceMeasure
 from systemds.scuro.representations.concatenation import Concatenation
@@ -51,7 +57,7 @@ from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
 from systemds.scuro.modality.modality import Modality
-from systemds.scuro.drsearch.algebra import AlgebraConfig
+from systemds.scuro.drsearch.algebra import AlgebraConfig, canonical_signature
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.representations.window_aggregation import WindowAggregation
 from systemds.scuro.representations.lstm import LSTM
@@ -63,6 +69,69 @@ from systemds.scuro.drsearch.representation_dag import (
     pushdown_aggregation,
 )
 from bisect import bisect_left
+
+
+def _fit_requirement(node):
+    return getattr(node.operation, "fit_requirement", FitRequirement.NONE)
+
+
+def _lowest_fitted_key(dag: RepresentationDag) -> str:
+    keys = set()
+
+    def visit(node_id):
+        node = dag.get_node_by_id(node_id)
+        below = [visit(input_id) for input_id in node.inputs]
+        fitted = _fit_requirement(node) is not FitRequirement.NONE
+        if fitted and not any(below):
+            keys.add(repr(canonical_signature(dag, frozenset(), False, node_id)))
+        return fitted or any(below)
+
+    visit(dag.root_node_id)
+    return repr(sorted(keys))
+
+
+def _task_uses_gpu(task) -> bool:
+    uses_gpu = getattr(task.model, "uses_gpu", None)
+    if uses_gpu is not None:
+        return bool(uses_gpu)
+    device = getattr(task.model, "device", None)
+    return str(getattr(device, "type", device) or "").startswith("cuda")
+
+
+def evaluate_fitted_dags(dags, modality, tasks) -> list:
+    budget_gb = float(os.environ.get("SCURO_FITTED_DAG_CACHE_GB", "4"))
+    store = TrialResultCache(int(budget_gb * 1024**3), min_compute_seconds=0)
+    results = []
+    for dag in dags:
+        eval_dag, eval_modality, encode_time = UnimodalOptimizer._encode_below_lstm(
+            dag, modality
+        )
+        supervised = any(
+            _fit_requirement(node) is FitRequirement.SUPERVISED
+            for node in eval_dag.nodes
+        )
+        for task_idx, task in enumerate(tasks):
+            owner = task_idx if supervised else None
+            signatures = {
+                node.node_id: (
+                    owner,
+                    canonical_signature(eval_dag, frozenset(), False, node.node_id),
+                )
+                for node in eval_dag.nodes
+                if node.inputs
+            }
+            saved = store.saved_seconds
+            evaluation = SplitAwareDAGEvaluator(
+                eval_dag,
+                eval_modality,
+                task,
+                node_cache=TrialNodeCache(store, signatures),
+                share_fitted=True,
+            ).evaluate()
+            evaluation.representation_time += encode_time + store.saved_seconds - saved
+            timing = dict(getattr(task, "last_run_timing", {}))
+            results.append((dag.dag_id, task_idx, evaluation, timing))
+    return results
 
 
 class UnimodalOptimizer:
@@ -386,10 +455,19 @@ class UnimodalOptimizer:
 
         task_results = []
         statistics = {"worker_stats": {}, "node_stats": {}, "reuse": {}}
+        split_jobs = []
         if fitted_dags:
             SplitAwareDAGEvaluator.materialize(modality)
+            groups = {}
+            for dag in fitted_dags:
+                groups.setdefault(_lowest_fitted_key(dag), []).append(dag)
+            uses_gpu = any(_task_uses_gpu(task) for task in self.tasks)
+            split_jobs = [
+                ((group, modality, self.tasks), uses_gpu) for group in groups.values()
+            ]
 
-        if stateless_task_dags:
+        split_results = []
+        if stateless_task_dags or split_jobs:
             node_executor = NodeExecutor(
                 stateless_task_dags,
                 [modality],
@@ -399,12 +477,14 @@ class UnimodalOptimizer:
                 enable_checkpointing=self.enable_checkpointing,
                 worker_pool=self._persistent_worker_pool,
                 search_start=self._search_start,
+                split_jobs=split_jobs,
             )
             if self._reuse_worker_pool and self._persistent_worker_pool is None:
                 self._persistent_worker_pool = node_executor.detach_worker_pool()
             exec_out = node_executor.run()
             task_results.extend(exec_out["task_results"])
             statistics = exec_out["statistics"]
+            split_results = exec_out["split_results"]
             reuse = statistics.get("reuse", {})
             planned = reuse.get("planned_task_nodes", 0)
             completed = reuse.get("completed_task_nodes", planned)
@@ -419,15 +499,23 @@ class UnimodalOptimizer:
 
         if fitted_dags:
             fitted_task_dags = self._expand_dags_with_task_roots(fitted_dags)
+            evaluations = {}
+            for (payload, _), result in zip(split_jobs, split_results):
+                if isinstance(result, list):
+                    for dag_id, task_idx, evaluation, timing in result:
+                        evaluations[dag_id, task_idx] = evaluation, timing
+                else:
+                    print(
+                        f"[unimodal] WARNING: modality {modality.modality_id} "
+                        f"fitted DAGs {[dag.dag_id for dag in payload[0]]} "
+                        f"failed: {result}",
+                        flush=True,
+                    )
             for dag in fitted_dags:
-                eval_dag, eval_modality, encode_time = self._encode_below_lstm(
-                    dag, modality
-                )
                 for task_idx, task in enumerate(self.tasks):
-                    evaluation = SplitAwareDAGEvaluator(
-                        eval_dag, eval_modality, task
-                    ).evaluate()
-                    evaluation.representation_time += encode_time
+                    if (dag.dag_id, task_idx) not in evaluations:
+                        continue
+                    evaluation, timing = evaluations[dag.dag_id, task_idx]
                     result_dag = next(
                         task_dag
                         for task_dag in fitted_task_dags
@@ -445,7 +533,7 @@ class UnimodalOptimizer:
                             train_score_stds=evaluation.scores[0].score_stds(),
                             val_score_stds=evaluation.scores[1].score_stds(),
                             test_score_stds=evaluation.scores[2].score_stds(),
-                            task_timing=getattr(task, "last_run_timing", {}),
+                            task_timing=timing,
                             representation_time=evaluation.representation_time,
                             task_time=evaluation.task_time,
                             dag=result_dag,
@@ -1212,15 +1300,9 @@ class UnimodalResults:
                 try:
                     for result in results:
                         if dag_requires_fitting(result.dag):
-                            SplitAwareDAGEvaluator.materialize(modality)
-                            transformed = SplitAwareDAGEvaluator(
-                                result.dag, modality, task
-                            ).fit_transform(
-                                task.train_indices,
-                                range(len(modality.data)),
+                            cache.append(
+                                self._fit_k_best_leaf(result.dag, modality, task)
                             )
-                            transformed.modality.fold_source = (result.dag, modality)
-                            cache.append(transformed.modality)
                         else:
                             cache.append(result.dag.execute([modality]))
                 finally:
@@ -1251,6 +1333,31 @@ class UnimodalResults:
                 ] = cache
 
         return results, cache
+
+    def _fit_k_best_leaf(self, dag, modality, task):
+        supervised = any(
+            _fit_requirement(node) is FitRequirement.SUPERVISED for node in dag.nodes
+        )
+        key = (
+            repr(canonical_signature(dag, frozenset(), False)),
+            str(modality.modality_id),
+            tuple(task.train_indices),
+            task.model.name if supervised else None,
+        )
+        leaves = self.__dict__.setdefault("_fitted_leaves", WeakValueDictionary())
+        leaf = leaves.get(key)
+        if leaf is None:
+            SplitAwareDAGEvaluator.materialize(modality)
+            leaf = (
+                SplitAwareDAGEvaluator(dag, modality, task)
+                .fit_transform(task.train_indices, range(len(modality.data)))
+                .modality
+            )
+            leaves[key] = leaf
+        else:
+            leaf = copy.copy(leaf)
+        leaf.fold_source = (dag, modality)
+        return leaf
 
     @staticmethod
     def _decode_lazy_leaf_once(modality, results):

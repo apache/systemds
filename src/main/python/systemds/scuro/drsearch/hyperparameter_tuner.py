@@ -19,6 +19,7 @@
 #
 # -------------------------------------------------------------
 from typing import Dict, List, Tuple, Any, Optional
+from systemds.scuro.utils.static_variables import get_global_seed
 import inspect
 import os
 import numpy as np
@@ -31,15 +32,35 @@ import itertools
 import math
 import random
 from systemds.scuro.drsearch.representation_dag import (
-    RepresentationDAGBuilder,
     RepresentationNode,
+    get_modality_by_id_and_instance_id,
 )
+from systemds.scuro.representations.representation import infer_stats_from_data
+from systemds.scuro.utils.memory_utility import cpu_memory_budget_bytes
 from systemds.scuro.modality.modality import Modality
+from systemds.scuro.drsearch.split_aware_evaluator import (
+    SplitAwareDAGEvaluator,
+    dag_requires_fitting,
+)
 from systemds.scuro.drsearch.task import PerformanceMeasure
 import pickle
+import torch
 from systemds.scuro.utils.checkpointing import CheckpointManager
+from systemds.scuro.drsearch.node_executor import _place_on_device
+from systemds.scuro.drsearch.trial_result_cache import (
+    TrialNodeCache,
+    TrialResultCache,
+    trial_node_signatures,
+)
 from systemds.scuro.drsearch.process_cache import HPOExecutionCache
+from systemds.scuro.drsearch.ranking import tie_broken
 from systemds.scuro.drsearch.operator_registry import is_expensive_representation
+
+_CUDA_OOM_ERRORS = tuple(
+    e
+    for e in (getattr(torch, "OutOfMemoryError", None), torch.cuda.OutOfMemoryError)
+    if e is not None
+) or (RuntimeError,)
 
 
 def _wandb_safe_tag(s: str, max_len: int = 64) -> str:
@@ -124,6 +145,29 @@ def _expand_aggregation_param_specs(
     return specs
 
 
+def _limit_context_words(node: RepresentationNode, dag, params: Dict[str, Any]):
+    """Drop max_words values longer than the consuming encoder's text window.
+
+    A text context operator's chunks are only seen in full by an encoder up to
+    its max_context_words; longer chunks are truncated, so those trials repeat
+    a shorter configuration.
+    """
+    values = params.get("max_words")
+    if dag is None or not isinstance(values, list):
+        return params
+    limits = [
+        getattr(consumer.operation, "max_context_words", None)
+        for consumer in dag.nodes
+        if node.node_id in consumer.inputs
+    ]
+    limits = [limit for limit in limits if limit is not None]
+    if not limits:
+        return params
+    limit = min(limits)
+    params["max_words"] = [value for value in values if value <= limit] or [min(values)]
+    return params
+
+
 def _is_window_operation(op: Any) -> bool:
     if not inspect.isclass(op):
         return False
@@ -133,6 +177,65 @@ def _is_window_operation(op: Any) -> bool:
         return issubclass(op, Window)
     except ImportError:
         return False
+
+
+def _is_leading_axis_concatenation(node: RepresentationNode) -> bool:
+    from systemds.scuro.representations.concatenation import Concatenation
+
+    return (
+        inspect.isclass(node.operation)
+        and issubclass(node.operation, Concatenation)
+        and bool((node.parameters or {}).get("preserve_leading_axis"))
+    )
+
+
+def _tied_window_params(dag) -> Dict[str, str]:
+    parent = {}
+
+    def find(node_id):
+        while parent[node_id] != node_id:
+            node_id = parent[node_id]
+        return node_id
+
+    def windows_under(node_id):
+        node = dag.get_node_by_id(node_id)
+        if _is_window_operation(node.operation):
+            return [node_id]
+        if _is_leading_axis_concatenation(node):
+            return [w for input_id in node.inputs for w in windows_under(input_id)]
+        return []
+
+    for node in dag.nodes:
+        if not _is_leading_axis_concatenation(node):
+            continue
+        windows = windows_under(node.node_id)
+        for window_id in windows:
+            parent.setdefault(window_id, window_id)
+        for window_id in windows[1:]:
+            parent[find(window_id)] = find(windows[0])
+
+    tied = {}
+    canonical = {}
+    for window_id in parent:
+        name = dag.get_node_by_id(window_id).operation.granularity_parameter
+        if name is None:
+            continue
+        key = (find(window_id), name)
+        canonical.setdefault(key, f"{window_id}-{name}")
+        if canonical[key] != f"{window_id}-{name}":
+            tied[f"{window_id}-{name}"] = canonical[key]
+    return tied
+
+
+def _expand_tied_params(
+    config: Dict[str, Any], tied_params: Dict[str, str]
+) -> Dict[str, Any]:
+    return {
+        **config,
+        **{
+            alias: config[name] for alias, name in tied_params.items() if name in config
+        },
+    }
 
 
 def _materialize_node_params(
@@ -231,12 +334,40 @@ def _apply_trial_params_to_node(
     return {**base_params, **trial_params}
 
 
+class HyperparamEvaluationScores(list):
+    """Backward-compatible score triple with complete CV details."""
+
+    def __init__(self, scores, metric):
+        split_names = ("train", "val", "test")
+        for split_name, score in zip(split_names, scores):
+            if isinstance(score, PerformanceMeasure):
+                averages = dict(score.average_scores or {})
+                fold_scores = score.fold_scores()
+                score_stds = score.score_stds()
+            else:
+                value = float(score)
+                averages = {metric: value}
+                fold_scores = {metric: [value]}
+                score_stds = {metric: 0.0}
+            setattr(self, f"all_{split_name}_scores", averages)
+            setattr(self, f"{split_name}_fold_scores", fold_scores)
+            setattr(self, f"{split_name}_score_stds", score_stds)
+
+        super().__init__(
+            [
+                self.all_train_scores.get(metric, np.nan),
+                self.val_fold_scores.get(metric, []),
+                self.all_test_scores.get(metric, np.nan),
+            ]
+        )
+
+
 @dataclass
 class HyperparamResult:
     representation_name: str
     best_params: Dict[str, Any]
     best_score: float
-    all_results: List[Tuple[Dict[str, Any], float]]
+    all_results: List[Tuple[Dict[str, Any], Any]]
     tuning_time: float
     modality_id: int
     task_name: str
@@ -274,25 +405,23 @@ class HyperparamResults:
         results = self.results[task.model.name][modality.modality_id]
         dags = []
         for result in results:
-            dag_with_best_params = RepresentationDAGBuilder()
-            prev_node_id = None
-            for node in result.dag.nodes:
-                if node.operation is not None and node.parameters:
-                    params = _apply_trial_params_to_node(node, result.best_params)
-                    prev_node_id = dag_with_best_params.create_operation_node(
-                        node.operation, [prev_node_id], params
+            dag_with_best_params = copy.deepcopy(result.dag)
+            for node in dag_with_best_params.nodes:
+                if node.operation is not None:
+                    node.parameters = _apply_trial_params_to_node(
+                        node, result.best_params
                     )
-                else:  # it is a leaf node
-                    prev_node_id = dag_with_best_params.create_leaf_node(
-                        node.modality_id
-                    )
-
-            dags.append(dag_with_best_params.build(prev_node_id))
+            dags.append(dag_with_best_params)
         return results, dags
 
     def get_k_best_results(self, modality, task, performance_metric_name):
         results, dags = self.get_k_best_dags(modality, task)
-        representations = [list(dag.execute([modality]).values())[-1] for dag in dags]
+        representations = []
+        for dag in dags:
+            representation = dag.execute([modality])
+            if isinstance(representation, dict):
+                representation = representation[list(representation.keys())[-1]]
+            representations.append(representation)
         return results, representations
 
 
@@ -310,8 +439,9 @@ class HyperparameterTuner:
         save_results: bool = False,
         debug: bool = False,
         checkpoint_every: Optional[int] = None,
-        resume: bool = True,
-        random_state: int = 42,
+        checkpoint_dir: Optional[str] = None,
+        resume: bool = False,
+        random_state: Optional[int] = None,
         exhaustive_threshold: int = 256,
         local_search_patience: int = 3,
         optuna_sampler: str = "tpe",  # "tpe" | "random" | "bayes"
@@ -341,12 +471,12 @@ class HyperparameterTuner:
         self.logger = logging.getLogger(__name__)
         self.checkpoint_every = checkpoint_every
         self.resume = resume
-        self.random_state = random_state
+        self.random_state = get_global_seed() if random_state is None else random_state
         self.exhaustive_threshold = max(1, exhaustive_threshold)
         self.local_search_patience = max(1, local_search_patience)
         self._rng = random.Random(self.random_state)
         self._checkpoint_manager = CheckpointManager(
-            os.getcwd(),
+            checkpoint_dir or os.getcwd(),
             "hyperparam_checkpoint_",
             checkpoint_every=self.checkpoint_every,
             resume=self.resume,
@@ -427,15 +557,14 @@ class HyperparameterTuner:
             self.optimization_results.results = results
 
     def tune_unimodal_representations(self, max_eval_per_rep: Optional[int] = None):
-        # self.resume_from_checkpoint()
+        self.resume_from_checkpoint()
         for task in self.tasks:
             reps = self.k_best_representations[task.model.name]
-            skip_remaining = 0
-            # skip_remaining = self._checkpoint_manager.skip_remaining_by_key.get(
-            #     task.model.name, 0
-            # )
-            # if skip_remaining >= len(reps):
-            #     continue
+            skip_remaining = self._checkpoint_manager.skip_remaining_by_key.get(
+                task.model.name, 0
+            )
+            if skip_remaining >= len(reps):
+                continue
 
             chunk_size = self.checkpoint_every or len(reps)
             for start_idx in range(skip_remaining, len(reps), chunk_size):
@@ -469,6 +598,44 @@ class HyperparameterTuner:
     def tune_dag_representation(
         self, dag, root_node_id, task, max_evals=None, mm_opt=False
     ):
+        self._trial_cache = TrialResultCache.from_env()
+        try:
+            return self._tune_dag_representation(
+                dag, root_node_id, task, max_evals, mm_opt
+            )
+        finally:
+            if self._trial_cache is not None:
+                self.logger.info(
+                    f"trial cache for {dag.get_represntation_names()} / "
+                    f"{task.model.name}: {self._trial_cache.summary()}"
+                )
+                print(f"[hpo-cache] {task.model.name}: {self._trial_cache.summary()}")
+                self._trial_cache.clear()
+            self._trial_cache = None
+            self.execution_cache.set_layer_sweeps(None)
+
+    def _layer_sweeps(self, dag, param_specs) -> Dict[str, List[Any]]:
+        """Per node, the layers a search over its layer parameter can select.
+
+        An encoder computes all of them in one pass the first time any is
+        needed, so trying another layer reuses that pass instead of running
+        the encoder again. SCURO_HPO_LAYER_SWEEP=0 turns this off.
+        """
+        if os.environ.get("SCURO_HPO_LAYER_SWEEP", "1") == "0":
+            return {}
+        sweeps = {}
+        for spec in param_specs:
+            node_id, _, param = spec["name"].rpartition("-")
+            if spec["type"] != "categorical" or len(spec["domain"]) < 2:
+                continue
+            operation = dag.get_node_by_id(node_id).operation
+            if param == getattr(operation, "layer_parameter", None):
+                sweeps[node_id] = list(spec["domain"])
+        return sweeps
+
+    def _tune_dag_representation(
+        self, dag, root_node_id, task, max_evals=None, mm_opt=False
+    ):
         hyperparams = {}
         reps = []
         modality_ids = []
@@ -484,7 +651,7 @@ class HyperparameterTuner:
                 visit_node(input_id)
             visited.add(node_id)
             if node.operation is not None:
-                params = self.__get_params_for_node(node)
+                params = self.__get_params_for_node(node, dag)
                 if params:
                     hyperparams[node_id] = params
                 reps.append(node.operation)
@@ -500,6 +667,18 @@ class HyperparameterTuner:
             self._get_cached_modalities_for_task(task, modality_ids) if mm_opt else None
         )
 
+        param_specs = []
+        tied_params = {}
+        if hyperparams:
+            node_parameters = {
+                node_id: (dag.get_node_by_id(node_id).parameters or {})
+                for node_id in hyperparams
+            }
+            param_specs = self._build_param_specs(hyperparams, node_parameters)
+            tied_params = _tied_window_params(dag)
+            param_specs = [s for s in param_specs if s["name"] not in tied_params]
+        self.execution_cache.set_layer_sweeps(self._layer_sweeps(dag, param_specs))
+
         baseline_params, baseline_raw_scores = self.evaluate_dag_config(
             dag,
             {},
@@ -510,21 +689,12 @@ class HyperparameterTuner:
         )
         baseline = (
             baseline_params,
-            [
-                self._score_value(baseline_raw_scores[0]),
-                self._score_value_list(baseline_raw_scores[1]),
-                self._score_value(baseline_raw_scores[2]),
-            ],
+            HyperparamEvaluationScores(baseline_raw_scores, self.scoring_metric),
         )
 
         if not hyperparams:
             all_results = [baseline]
         else:
-            node_parameters = {
-                node_id: (dag.get_node_by_id(node_id).parameters or {})
-                for node_id in hyperparams
-            }
-            param_specs = self._build_param_specs(hyperparams, node_parameters)
             discrete_size = self._estimate_discrete_search_size(param_specs)
             n_calls = min(discrete_size, max_evals) if max_evals else discrete_size
             all_results = self._search_best_configs(
@@ -537,6 +707,7 @@ class HyperparameterTuner:
                 budget=n_calls,
                 initial_config=None,
                 rep_name=rep_name,
+                tied_params=tied_params,
             )
             all_results.append(baseline)
 
@@ -595,7 +766,22 @@ class HyperparameterTuner:
 
         return best_result
 
-    def __get_params_for_node(self, node: RepresentationNode) -> Dict[str, Any]:
+    def _leaf_input_stats(self, node: RepresentationNode, dag) -> Any:
+        if dag is None or len(node.inputs) != 1:
+            return None
+        try:
+            input_node = dag.get_node_by_id(node.inputs[0])
+        except Exception:
+            return None
+        if input_node is None or input_node.operation is not None:
+            return None
+        modalities = self.get_modalities_by_id([input_node.modality_id])
+        get_stats = getattr(modalities[0], "get_stats", None) if modalities else None
+        return get_stats() if callable(get_stats) else None
+
+    def __get_params_for_node(
+        self, node: RepresentationNode, dag=None
+    ) -> Dict[str, Any]:
         try:
             if node.parameters:
                 op = node.operation(params=node.parameters)
@@ -608,6 +794,14 @@ class HyperparameterTuner:
             return None
 
         params = copy.deepcopy(op.parameters)
+        input_stats = self._leaf_input_stats(node, dag)
+        if input_stats is not None:
+            for name, values in list(params.items()):
+                if isinstance(values, list):
+                    params[name] = (
+                        op.filter_parameter_domain(name, values, input_stats) or values
+                    )
+        params = _limit_context_words(node, dag, params)
         if node.parameters:
             if inspect.isclass(node.parameters.get("aggregation_function")):
                 params["aggregation_function"] = node.parameters["aggregation_function"]
@@ -846,6 +1040,7 @@ class HyperparameterTuner:
         budget: int,
         initial_config: Optional[Dict[str, Any]],
         rep_name: str = "",
+        tied_params: Optional[Dict[str, str]] = None,
     ) -> List[Tuple[Dict[str, Any], Any]]:
         import optuna
         from optuna.trial import TrialState
@@ -924,10 +1119,24 @@ class HyperparameterTuner:
         trial_results: List[Tuple[Dict[str, Any], Any]] = []
 
         def objective(trial: optuna.Trial) -> float:
-            config = self._suggest_config_from_specs(trial, param_specs)
+            config = _expand_tied_params(
+                self._suggest_config_from_specs(trial, param_specs), tied_params or {}
+            )
             key = self._config_key(config)
             if key in seen:
                 trial.set_user_attr("duplicate", True)
+                raise optuna.TrialPruned()
+
+            estimate = self._estimate_trial_peak_bytes(
+                dag, config, modality_ids, task, modalities_override
+            )
+            budget_bytes = cpu_memory_budget_bytes()
+            if estimate is not None and estimate > budget_bytes:
+                self.logger.warning(
+                    f"{rep_name}: skipping trial estimated at {estimate / 1024**3:.1f} GB "
+                    f"(budget {budget_bytes / 1024**3:.1f} GB): {config}"
+                )
+                trial.set_user_attr("over_memory_budget", True)
                 raise optuna.TrialPruned()
 
             params, scores = self.evaluate_dag_config(
@@ -938,21 +1147,15 @@ class HyperparameterTuner:
                 task,
                 modalities_override=modalities_override,
             )
-            train_score = self._score_value(scores[0])
             val_score = self._score_value(scores[1])
-            test_score = self._score_value(scores[2])
             if np.isnan(val_score):
                 raise optuna.TrialPruned()
 
-            seen[self._config_key(params)] = (
-                params,
-                [train_score, self._score_value_list(scores[1]), test_score],
-            )
+            evaluation_scores = HyperparamEvaluationScores(scores, self.scoring_metric)
+            seen[self._config_key(params)] = (params, evaluation_scores)
 
-            trial_results.append(
-                (params, [train_score, self._score_value_list(scores[1]), test_score])
-            )
-            val_folds = self._score_value_list(scores[1])
+            trial_results.append((params, evaluation_scores))
+            val_folds = evaluation_scores.val_fold_scores.get(self.scoring_metric, [])
             if val_folds is not None and len(val_folds) > 1:
                 lam = 0.5
                 robust_val = np.mean(val_folds) - lam * np.std(val_folds, ddof=1)
@@ -1000,27 +1203,170 @@ class HyperparameterTuner:
             )
         return cached_modalities
 
+    def _estimate_trial_peak_bytes(
+        self, dag, params, modality_ids, task, modalities_override=None
+    ) -> Optional[int]:
+        modalities = (
+            modalities_override
+            if modalities_override is not None
+            else self.get_modalities_by_id(modality_ids)
+        )
+        stats = {}
+
+        def visit(node_id):
+            if node_id in stats:
+                return stats[node_id]
+            node = dag.get_node_by_id(node_id)
+            if not node.inputs:
+                modality = get_modality_by_id_and_instance_id(
+                    modalities, int(node.modality_id), node.representation_index
+                )
+                stats[node_id] = (
+                    modality.get_stats()
+                    if hasattr(modality, "get_stats")
+                    else infer_stats_from_data(modality.data)
+                )
+                return stats[node_id]
+            inputs = [visit(input_id) for input_id in node.inputs]
+            if any(s is None for s in inputs):
+                stats[node_id] = None
+                return None
+            inputs = inputs[0] if len(inputs) == 1 else inputs
+            operation = node.operation(params=_apply_trial_params_to_node(node, params))
+            peaks.append(operation.estimate_peak_memory_bytes(inputs)["cpu_peak_bytes"])
+            stats[node_id] = operation.get_output_stats(inputs)
+            return stats[node_id]
+
+        peaks = []
+        output_stats = visit(dag.root_node_id)
+        if output_stats is None:
+            return None
+        peaks.append(task.estimate_peak_memory_bytes(output_stats)["cpu_peak_bytes"])
+        return int(max(peaks))
+
+    def _trial_node_cache(self, dag, params):
+        store = getattr(self, "_trial_cache", None)
+        if store is None:
+            return None
+        return TrialNodeCache(store, trial_node_signatures(dag, params))
+
+    def _evaluate_dag_once(
+        self,
+        dag,
+        params,
+        node_order,
+        modality_ids,
+        task,
+        modalities_override=None,
+        on_cpu=False,
+        node_cache=None,
+    ):
+        dag_copy = copy.deepcopy(dag)
+        for node_id in node_order:
+            node = dag_copy.get_node_by_id(node_id)
+            if node.operation is not None:
+                node.parameters = _apply_trial_params_to_node(node, params)
+            if on_cpu and node.operation is not None:
+                _place_on_device(node.operation, None)
+
+        modalities = (
+            modalities_override
+            if modalities_override is not None
+            else self.get_modalities_by_id(modality_ids)
+        )
+        if on_cpu:
+            _place_on_device(getattr(task, "model", task), None)
+
+        if dag_requires_fitting(dag_copy):
+            evaluation = SplitAwareDAGEvaluator(
+                dag_copy, modalities, task, node_cache=node_cache
+            ).evaluate()
+            return params, evaluation.scores
+        modified_modality = dag_copy.execute(
+            modalities,
+            task,
+            node_cache=node_cache,
+            execution_cache=self.execution_cache,
+        )
+        return params, task.run(modified_modality.data)
+
+    def _evaluate_dag_trial(
+        self,
+        dag,
+        params,
+        node_order,
+        modality_ids,
+        task,
+        modalities_override=None,
+        on_cpu=False,
+    ):
+        node_cache = self._trial_node_cache(dag, params)
+        if node_cache is None:
+            return self._evaluate_dag_once(
+                dag,
+                params,
+                node_order,
+                modality_ids,
+                task,
+                modalities_override,
+                on_cpu=on_cpu,
+            )
+        try:
+            return self._evaluate_dag_once(
+                dag,
+                params,
+                node_order,
+                modality_ids,
+                task,
+                modalities_override,
+                on_cpu=on_cpu,
+                node_cache=node_cache,
+            )
+        except _CUDA_OOM_ERRORS:
+            raise
+        except Exception as error:
+            if node_cache.hits == 0:
+                raise
+            self.logger.warning(
+                f"Trial with {node_cache.hits} cached result(s) failed ({error}); "
+                "repeating it without the cache"
+            )
+            return self._evaluate_dag_once(
+                dag,
+                params,
+                node_order,
+                modality_ids,
+                task,
+                modalities_override,
+                on_cpu=on_cpu,
+            )
+
     def evaluate_dag_config(
         self, dag, params, node_order, modality_ids, task, modalities_override=None
     ):
         try:
-            dag_copy = copy.deepcopy(dag)
-            for node_id in node_order:
-                node = dag_copy.get_node_by_id(node_id)
-                if node.operation is not None:
-                    node.parameters = _apply_trial_params_to_node(node, params)
-
-            modalities = (
-                modalities_override
-                if modalities_override is not None
-                else self.get_modalities_by_id(modality_ids)
-            )
-            modified_modality = dag_copy.execute(
-                modalities, task, execution_cache=self.execution_cache
-            )
-            score = task.run(modified_modality.data)
-
-            return params, score
+            try:
+                return self._evaluate_dag_trial(
+                    dag, params, node_order, modality_ids, task, modalities_override
+                )
+            except _CUDA_OOM_ERRORS as oom:
+                self.logger.warning(
+                    f"Trial ran out of GPU memory ({oom}); retrying on the CPU"
+                )
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                result = self._evaluate_dag_trial(
+                    dag,
+                    params,
+                    node_order,
+                    modality_ids,
+                    task,
+                    modalities_override,
+                    on_cpu=True,
+                )
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                return result
         except Exception as e:
             self.logger.warning("Skipping invalid DAG candidate %s: %s", params, e)
             return params, [np.nan, np.nan, np.nan]
@@ -1047,8 +1393,9 @@ class HyperparameterTuner:
                     )
                 return score
 
+            candidates = optimization_results[task.model.name]
             best_results = sorted(
-                optimization_results[task.model.name],
+                [candidates[i] for i in tie_broken(candidates)],
                 key=_get_metric_value,
                 reverse=self.maximize_metric,
             )[:k]

@@ -18,14 +18,28 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import hashlib
+import json
 import os
+import pickle
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
+from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Iterator, List, Optional, Tuple, Union
 import math
 from numbers import Integral
 
 import numpy as np
+
+
+def decode_threads() -> int:
+    explicit = os.environ.get("SCURO_DECODE_THREADS")
+    if explicit:
+        try:
+            return max(1, int(explicit))
+        except ValueError:
+            pass
+    return max(1, min(16, os.cpu_count() or 1))
 
 
 class LazyFileSequence(Sequence):
@@ -45,6 +59,13 @@ class LazyFileSequence(Sequence):
 
     def subset(self, indices):
         return type(self)([self.file_names[i] for i in indices], self.decoder)
+
+    def materialize(self, num_threads: Optional[int] = None) -> list:
+        num_threads = decode_threads() if num_threads is None else int(num_threads)
+        if num_threads <= 1 or len(self) <= 1:
+            return [self.decoder(file_name) for file_name in self.file_names]
+        with ThreadPoolExecutor(max_workers=min(num_threads, len(self))) as pool:
+            return list(pool.map(self.decoder, self.file_names))
 
 
 class BaseLoader(ABC):
@@ -76,6 +97,50 @@ class BaseLoader(ABC):
         self._ext = ext
         self.stats = None
         self.chunk_size = chunk_size
+
+    def cached_stats(self, files, options, compute):
+        if os.environ.get("SCURO_DISABLE_STATS_CACHE", "0") == "1":
+            return compute()
+        if isinstance(files, (str, os.PathLike)):
+            files = [files]
+        fingerprint = []
+        for file in files:
+            path = os.path.realpath(os.fspath(file))
+            stat = os.stat(path)
+            fingerprint.append((path, stat.st_size, stat.st_mtime_ns))
+        key = json.dumps(
+            {
+                "schema": 2,
+                "loader": f"{type(self).__module__}.{type(self).__qualname__}",
+                "files": fingerprint,
+                "options": options,
+            },
+            sort_keys=True,
+            default=str,
+        ).encode()
+        digest = hashlib.sha256(key).hexdigest()
+        cache_root = os.environ.get("SCURO_STATS_CACHE_DIR")
+        if cache_root is None:
+            cache_root = os.path.join(
+                os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")),
+                "scuro",
+                "loader_stats",
+            )
+        cache_path = os.path.join(cache_root, f"{digest}.pkl")
+        try:
+            with open(cache_path, "rb") as cache_file:
+                return pickle.load(cache_file)
+        except (FileNotFoundError, EOFError, OSError, pickle.PickleError):
+            stats = compute()
+        try:
+            os.makedirs(cache_root, exist_ok=True)
+            temporary_path = f"{cache_path}.{os.getpid()}.tmp"
+            with open(temporary_path, "wb") as cache_file:
+                pickle.dump(stats, cache_file, protocol=pickle.HIGHEST_PROTOCOL)
+            os.replace(temporary_path, cache_path)
+        except OSError:
+            pass
+        return stats
 
     @property
     def chunk_size(self):
@@ -207,6 +272,13 @@ class BaseLoader(ABC):
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         pass
 
+    def estimate_decoded_bytes(self, metadata=None) -> Optional[int]:
+        """
+        Bytes of all instances once decoded (of the instances `metadata`
+        describes, if given), or None if not known before decoding.
+        """
+        return None
+
     @staticmethod
     def file_sanity_check(file):
         """
@@ -224,6 +296,7 @@ class BaseLoader(ABC):
     def resolve_data_type(data_type):
         if isinstance(data_type, str):
             if data_type.lower() in [
+                "uint8",
                 "float16",
                 "float32",
                 "float64",
@@ -235,6 +308,7 @@ class BaseLoader(ABC):
             else:
                 raise ValueError(f"Unsupported data_type string: {data_type}")
         elif data_type in [
+            np.uint8,
             np.float16,
             np.float32,
             np.float64,

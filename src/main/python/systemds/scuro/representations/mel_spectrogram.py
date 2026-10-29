@@ -18,18 +18,19 @@
 # under the License.
 #
 # -------------------------------------------------------------
-import librosa
 import numpy as np
 
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.transformed import TransformedModality
 
 from systemds.scuro.representations.representation import RepresentationStats
+from systemds.scuro.representations.spectral import mel_spectrogram
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.drsearch.operator_registry import (
     register_representation,
     register_context_representation_operator,
 )
+from systemds.scuro.drsearch.process_cache import data_fingerprint
 from systemds.scuro.utils.static_variables import (
     NP_ARRAY_HEADER_BYTES,
     PY_LIST_HEADER_BYTES,
@@ -43,6 +44,51 @@ warnings.filterwarnings(
     message=r"n_fft=\d+ is too (?:small|large) for input signal",
     module=r"librosa",
 )
+
+
+def power_mel_spectrogram(instance, sr, n_mels, hop_length, n_fft):
+    """Power mel spectrogram of one signal, shaped (..., n_mels, frames)."""
+    S = mel_spectrogram(
+        np.asarray(instance, dtype=np.float32),
+        22050 if sr is None else sr,
+        n_fft,
+        hop_length,
+        n_mels,
+    )
+    return np.swapaxes(S, -2, -1)
+
+
+def mel_spectrograms(modality, n_mels, hop_length, n_fft, cache=None):
+    """Power mel spectrogram of every instance of ``modality``.
+
+    MFCC and MelSpectrogram configurations with equal (n_fft, hop_length,
+    n_mels) need the same spectrograms, and they are most of an MFCC's cost.
+    With ``cache`` (a BoundedProcessCache) they are computed once per data
+    chunk and reused by every such configuration. Callers must not modify
+    the returned arrays.
+    """
+    samples = modality.data
+    srs = [
+        modality.metadata[i]["frequency"] if modality.metadata else None
+        for i in range(len(samples))
+    ]
+
+    def compute():
+        return [
+            power_mel_spectrogram(sample, sr, n_mels, hop_length, n_fft)
+            for sample, sr in zip(samples, srs)
+        ]
+
+    if cache is None:
+        return compute()
+    key = (
+        "mel_spectrogram",
+        int(n_fft),
+        int(hop_length),
+        int(n_mels),
+        data_fingerprint(samples, srs),
+    )
+    return cache.get_or_compute(key, compute)
 
 
 @register_representation(ModalityType.AUDIO)
@@ -70,29 +116,24 @@ class MelSpectrogram(UnimodalRepresentation):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )
-        result = []
-
-        for i, sample in enumerate(modality.data):
-            sr = modality.metadata[i]["frequency"]
-            computed_feature = self.compute_feature(sample, sr)
-            result.append(computed_feature)
-
+        spectrograms = mel_spectrograms(
+            modality,
+            self.n_mels,
+            self.hop_length,
+            self.n_fft,
+            self.intermediate_cache,
+        )
+        result = [np.swapaxes(S, -2, -1) for S in spectrograms]
+        if self.intermediate_cache is not None:
+            # Do not hand out views of cached spectrograms.
+            result = [S.copy() for S in result]
         transformed_modality.data = result
         return transformed_modality
 
     def compute_feature(self, instance, sr=None):
-        if sr is None:
-            sr = 22050
-        S = librosa.feature.melspectrogram(
-            y=np.asarray(instance),
-            sr=sr,
-            n_mels=self.n_mels,
-            hop_length=self.hop_length,
-            n_fft=self.n_fft,
+        S = power_mel_spectrogram(
+            instance, sr, self.n_mels, self.hop_length, self.n_fft
         )
-        if instance.ndim == 1:
-            return S.T
-
         return np.swapaxes(S, -2, -1)
 
     def compute_features_batched(self, data, sr=None):

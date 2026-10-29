@@ -34,6 +34,7 @@ from systemds.scuro.drsearch.operator_registry import (
 from systemds.scuro.representations.dimensionality_reduction import (
     DimensionalityReduction,
 )
+from systemds.scuro.representations.representation import FitRequirement
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.utils.utils import set_random_seeds
 
@@ -49,6 +50,8 @@ class MLPLearnedDimReduction(DimensionalityReduction):
     :param learning_rate: The learning rate to use for training
     :param epochs: The number of epochs to train for
     """
+
+    fit_requirement = FitRequirement.SUPERVISED
 
     def __init__(self, output_dim=256, batch_size=32, learning_rate=0.001, epochs=5):
         parameters = {
@@ -69,7 +72,7 @@ class MLPLearnedDimReduction(DimensionalityReduction):
         self.epochs = epochs
         self.model = None
 
-    def execute_with_training(self, data, labels):
+    def execute(self, data, labels=None):
         if labels is None:
             raise ValueError("MLP labels requires labels for training")
 
@@ -86,13 +89,11 @@ class MLPLearnedDimReduction(DimensionalityReduction):
             self.num_classes = len(np.unique(y))
 
         input_dim = X.shape[1]
-        self.device = get_device_for_model(self.model, memory_factor=1.5)
-        self.model = self.model.to(self.device)
         self.is_trained = False
 
-        self.model = self._build_model(input_dim, self.output_dim, self.num_classes).to(
-            self.device
-        )
+        self.model = self._build_model(input_dim, self.output_dim, self.num_classes)
+        self.device = get_device_for_model(self.model, memory_factor=1.5)
+        self.model = self.model.to(self.device)
         if self.is_multilabel:
             criterion = nn.BCEWithLogitsLoss()
         else:
@@ -105,7 +106,7 @@ class MLPLearnedDimReduction(DimensionalityReduction):
         else:
             y_tensor = torch.LongTensor(y)
 
-        sample = data[0] if data else ""
+        sample = data[0] if len(data) > 0 else ""
         self.batch_size = compute_batch_size(
             model=self.model,
             device=self.device,

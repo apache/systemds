@@ -34,6 +34,14 @@ from systemds.scuro.drsearch.operator_registry import register_fusion_operator
 
 @register_fusion_operator()
 class Concatenation(Fusion):
+    _laws = frozenset({"assoc", "concat_perm"})
+
+    @classmethod
+    def algebraic_laws(cls, parameters: dict) -> frozenset:
+        if parameters.get("preserve_leading_axis"):
+            return frozenset({"assoc"})
+        return cls._laws
+
     def __init__(self, params=None, preserve_leading_axis=False):
         super().__init__("Concatenation")
         if params is not None:

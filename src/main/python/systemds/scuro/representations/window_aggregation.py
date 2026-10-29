@@ -251,8 +251,9 @@ class Window(Context):
             assert (
                 windowed_data.shape[1] == self.stats.output_shape[0]
             ), f"Output shape: {windowed_data.shape}, Expected shape: {self.stats.output_shape}"
-            assert (
-                windowed_data.shape[2:] == self.stats.output_shape[1:]
+            feat_shape, bound = windowed_data.shape[2:], self.stats.output_shape[1:]
+            assert len(feat_shape) == len(bound) and all(
+                s <= b for s, b in zip(feat_shape, bound)
             ), f"Output shape: {windowed_data.shape}, Expected shape: {self.stats.output_shape}"
 
     @staticmethod
@@ -379,6 +380,7 @@ class WindowAggregation(Window):
         return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}
 
     def execute(self, modality):
+        self.valid_windows = None
         batch = self._dense_batch(modality)
         if batch is not None:
             windowed_data = self.window_aggregate_single_level_batched(batch)
@@ -415,7 +417,8 @@ class WindowAggregation(Window):
             target_length = max(original_lengths)
 
             padded_features = np.zeros(
-                (len(windowed_data), target_length, *windowed_data[0].shape[1:])
+                (len(windowed_data), target_length, *windowed_data[0].shape[1:]),
+                dtype=np.result_type(*windowed_data),
             )
             for i, features in enumerate(windowed_data):
                 if padded_features.ndim == 3:
@@ -423,19 +426,11 @@ class WindowAggregation(Window):
                 else:
                     padded_features[i, : features.shape[0]] = features
 
-            # attention_masks = np.zeros((len(windowed_data), target_length))
-            # for i, length in enumerate(original_lengths):
-            #     actual_length = min(length, target_length)
-            #     attention_masks[i, :actual_length] = 1
-
-            # ModalityType(modality.modality_type).add_field_for_instances(
-            #     modality.metadata, "attention_masks", attention_masks
-            # )
-
+            self.valid_windows = [(n, target_length) for n in original_lengths]
             windowed_data = padded_features
             data_type = modality.metadata[0]["data_layout"]["type"]
             if data_type != "str":
-                windowed_data = windowed_data.astype(data_type)
+                windowed_data = windowed_data.astype(data_type, copy=False)
 
         self.assert_output_stats(windowed_data)
         return windowed_data
@@ -689,14 +684,30 @@ class DynamicWindow(Window):
         sizes[-1] += length - int(sizes.sum())
         return sizes
 
+    def _max_window_size(self, max_length: int) -> int:
+        # Upper bound on every window of every instance with at most max_length
+        # elements. Window i < q-1 holds more than w_i (L - q) elements, so the
+        # last one (which also takes the rounding remainder) holds fewer than
+        # q + w_last (L - q); and no window exceeds L - q + 1.
+        num_windows = self._effective_num_windows(max_length)
+        length = max(int(max_length), num_windows)
+        weights = np.geomspace(4, 256, num=num_windows)
+        last_share = weights[-1] / np.sum(weights)
+        geometric_bound = int(
+            np.ceil(num_windows + last_share * (length - num_windows))
+        )
+        return max(1, min(length - num_windows + 1, geometric_bound))
+
     def _feature_shape(self, in_shape):
         if isinstance(self.aggregation_function, Aggregation):
             return in_shape[1:]
         length = in_shape[0] if in_shape else 0
-        approx_window_size = (
-            max(1, int(length / self._effective_num_windows(length))) if in_shape else 1
-        )
-        return self._per_window_feature_shape(approx_window_size)
+        # Window sizes grow geometrically and _pad_stack pads every window's
+        # features to the largest one, so size them from an upper bound on the
+        # largest window (about 4x the mean) over all lengths up to L, not the
+        # mean: a shorter instance can have a longer last window.
+        max_window_size = self._max_window_size(length) if in_shape else 1
+        return self._per_window_feature_shape(max_window_size)
 
     def get_output_stats(self, input_stats: RepresentationStats) -> tuple:
         in_shape = tuple(int(s) for s in input_stats.output_shape)

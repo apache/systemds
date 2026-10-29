@@ -18,13 +18,13 @@
 # under the License.
 #
 # -------------------------------------------------------------
-import librosa
 import numpy as np
 
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.transformed import TransformedModality
 
 from systemds.scuro.representations.representation import RepresentationStats
+from systemds.scuro.representations.spectral import power_spectrogram, power_to_db
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.drsearch.operator_registry import (
     register_representation,
@@ -50,6 +50,9 @@ class Spectrogram(UnimodalRepresentation):
     def __init__(self, hop_length=512, n_fft=2048, params=None):
         parameters = {"hop_length": [256, 512, 1024, 2048], "n_fft": [1024, 2048, 4096]}
         super().__init__("Spectrogram", ModalityType.TIMESERIES, parameters, False)
+        if params is not None:
+            hop_length = params.get("hop_length", hop_length)
+            n_fft = params.get("n_fft", n_fft)
         self.hop_length = int(hop_length)
         self.n_fft = int(n_fft)
         self.window_size = self.n_fft
@@ -68,14 +71,18 @@ class Spectrogram(UnimodalRepresentation):
         return transformed_modality
 
     def compute_feature(self, instance):
-        data = np.array(instance)
-        spectrogram = librosa.stft(
-            y=np.abs(data), hop_length=self.hop_length, n_fft=self.n_fft
-        )
-        if data.ndim == 1:
-            return librosa.amplitude_to_db(np.abs(spectrogram)).T
+        """dB magnitude spectrogram, shaped (..., frames, 1 + n_fft // 2).
 
-        return librosa.amplitude_to_db(np.abs(spectrogram)).transpose(0, 2, 1)
+        Equal to librosa.amplitude_to_db(np.abs(librosa.stft(...))) per
+        signal; leading axes are a batch of independent signals.
+        """
+        power = power_spectrogram(
+            np.abs(np.asarray(instance)), self.n_fft, self.hop_length
+        )
+        return power_to_db(power)
+
+    def compute_features_batched(self, data):
+        return self.compute_feature(np.asarray(data))
 
     def estimate_peak_memory_bytes(self, input_stats) -> dict:
         # TODO: validate this function

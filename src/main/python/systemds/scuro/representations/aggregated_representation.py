@@ -24,7 +24,7 @@ from systemds.scuro.representations.representation import (
     Representation,
     RepresentationStats,
 )
-from systemds.scuro.representations.aggregate import Aggregation
+from systemds.scuro.representations.aggregate import Aggregation, set_valid_windows
 import time
 import numpy as np
 
@@ -124,6 +124,7 @@ class AggregatedRepresentation(Representation):
         )
 
         aggregated_modality.data = aggregated_data
+        set_valid_windows(aggregated_modality)
         end = time.perf_counter()
         aggregated_modality.transform_time += end - start
 

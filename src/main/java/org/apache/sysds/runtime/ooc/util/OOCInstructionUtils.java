@@ -34,6 +34,7 @@ import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.ooc.OOCStreamable;
@@ -55,6 +56,8 @@ import org.apache.sysds.runtime.ooc.primitives.MappingOOCPrimitive;
 import org.apache.sysds.runtime.ooc.primitives.NaryJoinOOCPrimitive;
 import org.apache.sysds.runtime.ooc.primitives.PlannableDataGenOOCPrimitive;
 import org.apache.sysds.runtime.ooc.primitives.ReduceOOCPrimitive;
+import org.apache.sysds.runtime.ooc.primitives.ReshapeOOCPrimitive;
+import org.apache.sysds.runtime.ooc.primitives.TSMMOOCPrimitive;
 import org.apache.sysds.runtime.ooc.primitives.TransposeOOCPrimitive;
 import org.apache.sysds.runtime.ooc.stats.OOCEventLog;
 import org.apache.sysds.runtime.ooc.store.MaterializedStore;
@@ -133,6 +136,11 @@ public final class OOCInstructionUtils {
 			new NaryJoinOOCPrimitive(inputs, output, key, size, operation, inputBytes, joinBytes, context));
 	}
 
+	public static void tsmm(OOCStreamable<IndexedMatrixValue> input, OOCStream<IndexedMatrixValue> output,
+		MMTSJType type, AggregateBinaryOperator multiply, BinaryOperator plus, StreamContext context) {
+		output.assignPrimitive(new TSMMOOCPrimitive(input, output, type, multiply, plus, context));
+	}
+
 	public static void matrixMultiply(OOCStreamable<IndexedMatrixValue> left, OOCStreamable<IndexedMatrixValue> right,
 		OOCStream<IndexedMatrixValue> output, AggregateBinaryOperator multiply, BinaryOperator plus,
 		StreamContext context) {
@@ -163,6 +171,11 @@ public final class OOCInstructionUtils {
 	public static <I, O> void reduce(OOCStreamable<I> input, OOCStream<O> output, Function<I, O> partial,
 		BiFunction<O, O, O> merge, ToLongFunction<O> size, StreamContext context) {
 		output.assignPrimitive(new ReduceOOCPrimitive<>(input, output, partial, merge, size, context));
+	}
+
+	public static void reshape(OOCStreamable<IndexedMatrixValue> input, OOCStream<IndexedMatrixValue> output,
+		long rows, long cols, boolean byRow, StreamContext context) {
+		output.assignPrimitive(new ReshapeOOCPrimitive(input, output, rows, cols, byRow, context));
 	}
 
 	public static int getComputeInFlight() {

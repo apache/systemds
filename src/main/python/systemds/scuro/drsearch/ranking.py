@@ -24,18 +24,6 @@ from typing import Callable, Iterable, Optional
 import numpy as np
 
 
-def _operator_signature(entry) -> frozenset:
-    """Set of operator class names in an entry's DAG, ignoring hyperparameters."""
-    try:
-        return frozenset(
-            node.operation.__name__
-            for node in entry.dag.nodes
-            if getattr(node, "operation", None) is not None
-        )
-    except Exception:
-        return frozenset()
-
-
 def _dag_size(entry) -> int:
     try:
         return sum(
@@ -47,12 +35,23 @@ def _dag_size(entry) -> int:
         return 0
 
 
+def _tie_key(entry):
+    try:
+        pipeline_id = entry.dag.pipeline_id()
+    except Exception:
+        pipeline_id = ""
+    return _dag_size(entry), pipeline_id
+
+
+def tie_broken(entries) -> list:
+    return sorted(range(len(entries)), key=lambda i: _tie_key(entries[i]))
+
+
 def rank_by_robustness(
     entries: Iterable,
     *,
     performance_metric_name: str = "accuracy",
-    neighbourhood_weight: float = 0.5,
-    sharpness: int = 4,
+    standard_deviation_weight: float = 1.0,
     one_se_parsimony: bool = True,
     cache_scores: bool = True,
     score_attr: str = "robustness_score",
@@ -60,6 +59,9 @@ def rank_by_robustness(
     entries = list(entries)
     if not entries:
         return [], []
+
+    if not np.isfinite(standard_deviation_weight) or standard_deviation_weight < 0:
+        raise ValueError("standard_deviation_weight must be finite and non-negative")
 
     def perf_of(entry):
         if entry is None:
@@ -78,60 +80,52 @@ def rank_by_robustness(
     if not indexed_entries:
         return [], []
 
+    def variation_of(entry):
+        try:
+            fold_values = np.asarray(
+                entry.val_fold_scores[performance_metric_name], dtype=float
+            )
+            fold_values = fold_values[np.isfinite(fold_values)]
+        except (AttributeError, KeyError, TypeError, ValueError):
+            fold_values = np.array([], dtype=float)
+
+        if fold_values.size > 1:
+            return float(fold_values.std(ddof=1)), int(fold_values.size)
+
+        try:
+            std = float(entry.val_score_stds[performance_metric_name])
+        except (AttributeError, KeyError, TypeError, ValueError):
+            std = 0.0
+        if not np.isfinite(std) or std < 0:
+            std = 0.0
+        return std, max(1, int(fold_values.size))
+
     original_indices, entries, performance = zip(*indexed_entries)
     entries = list(entries)
     perf = np.array(performance, dtype=float)
     sizes = np.array([_dag_size(e) if e is not None else 0 for e in entries], float)
-
-    smoothed = perf
-    if neighbourhood_weight > 0.0 and len(entries) > 1:
-        signatures = [
-            _operator_signature(e) if e is not None else frozenset() for e in entries
-        ]
-        vocabulary = sorted({op for sig in signatures for op in sig})
-        if vocabulary:
-            position = {op: i for i, op in enumerate(vocabulary)}
-            membership = np.zeros((len(entries), len(vocabulary)), dtype=np.float32)
-            for row, sig in enumerate(signatures):
-                for op in sig:
-                    membership[row, position[op]] = 1.0
-            intersection = membership @ membership.T
-            counts = membership.sum(1)
-            union = counts[:, None] + counts[None, :] - intersection
-            jaccard = np.divide(
-                intersection,
-                union,
-                out=np.zeros_like(intersection),
-                where=union > 0,
-            )
-            weights = jaccard**sharpness
-            denominator = weights.sum(1)
-            neighbourhood = np.divide(
-                (weights * perf[None, :].astype(np.float32)).sum(1),
-                denominator,
-                out=perf.astype(np.float32).copy(),
-                where=denominator > 0,
-            )
-            smoothed = (
-                1.0 - neighbourhood_weight
-            ) * perf + neighbourhood_weight * neighbourhood
+    variations = [variation_of(entry) for entry in entries]
+    stds = np.array([variation[0] for variation in variations], dtype=float)
+    fold_counts = np.array([variation[1] for variation in variations], dtype=int)
+    robustness = perf - standard_deviation_weight * stds
 
     if cache_scores:
-        for entry, score in zip(entries, smoothed):
+        for entry, score in zip(entries, robustness):
             if entry is not None:
                 setattr(entry, score_attr, float(score))
 
     if one_se_parsimony and len(entries) > 1:
-        standard_error = float(smoothed.std()) / np.sqrt(len(smoothed))
-        threshold = float(smoothed.max()) - standard_error
+        best_index = int(np.argmax(robustness))
+        standard_error = stds[best_index] / np.sqrt(fold_counts[best_index])
+        threshold = float(robustness[best_index] - standard_error)
         keys = [
             (True, -sz, float(s)) if s >= threshold else (False, 0.0, float(s))
-            for s, sz in zip(smoothed, sizes)
+            for s, sz in zip(robustness, sizes)
         ]
     else:
-        keys = [(True, 0.0, float(s)) for s in smoothed]
+        keys = [(True, 0.0, float(s)) for s in robustness]
 
-    local_indices = sorted(range(len(entries)), key=lambda i: keys[i], reverse=True)
+    local_indices = sorted(tie_broken(entries), key=lambda i: keys[i], reverse=True)
     sorted_entries = [entries[i] for i in local_indices]
     sorted_indices = [original_indices[i] for i in local_indices]
 
@@ -201,19 +195,7 @@ def rank_by_tradeoff(
             else:
                 setattr(entry, score_attr, score)
 
-    sorted_entries = sorted(
-        entries,
-        key=lambda e: e.tradeoff_score if hasattr(e, "tradeoff_score") else 0.0,
-        reverse=True,
-    )
-
-    sorted_indices = [
-        i
-        for i, _ in sorted(
-            enumerate(entries),
-            key=lambda pair: pair[1].tradeoff_score if pair is not None else None,
-            reverse=True,
-        )
-    ]
+    sorted_indices = sorted(tie_broken(entries), key=lambda i: scores[i], reverse=True)
+    sorted_entries = [entries[i] for i in sorted_indices]
 
     return sorted_entries, sorted_indices

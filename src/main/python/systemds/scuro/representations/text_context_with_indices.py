@@ -94,6 +94,9 @@ class WordCountSplitIndices(Context):
             "overlap": [0, 10, 20, 30],
         }
         super().__init__("WordCountSplit", parameters)
+        if params is not None:
+            max_words = params.get("max_words", max_words)
+            overlap = params.get("overlap", overlap)
         self.max_words = int(max_words)
         self.overlap = max(0, int(overlap))
 

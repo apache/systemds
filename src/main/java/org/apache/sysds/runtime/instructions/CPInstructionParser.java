@@ -226,7 +226,7 @@ public class CPInstructionParser extends InstructionParser {
 			
 			case EINSUM:
 				return EinsumCPInstruction.parseInstruction(str);
-				
+
 			default:
 				throw new DMLRuntimeException("Invalid CP Instruction Type: " + cptype );
 		}

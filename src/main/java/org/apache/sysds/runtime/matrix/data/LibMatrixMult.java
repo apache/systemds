@@ -1544,6 +1544,156 @@ public class LibMatrixMult
 		}
 	}
 
+	public static void matrixMultDenseSparseMM(DenseBlock a, SparseBlock b, DenseBlock c,
+		boolean transA, boolean transB, int n, int cd, int rl, int ru)
+	{
+		if(!transA && !transB){
+			final int m = c.numRows();
+			// dispatcher parameter mismatch necessitates dummy wrappers
+			MatrixBlock m1 = new MatrixBlock(m, cd, false);
+			m1.setDenseBlock(a);
+
+			MatrixBlock m2 = new MatrixBlock(cd, n, true);
+			m2.setSparseBlock(b);
+
+			MatrixBlock ret = new MatrixBlock(m, n, false);
+			ret.setDenseBlock(c);
+
+			matrixMultDenseSparseOutDense(m1, m2, ret, false, rl, ru);
+		}
+		else if(transA && !transB)
+			multDenseSparseTransA(a, b, c, n, cd, rl, ru);
+		else if(!transA && transB)
+			multDenseSparseTransB(a, b, c, n, cd, rl, ru);
+		else
+			multDenseSparseTransATransB(a, b, c, n, cd, rl, ru);
+	}
+
+	private static void multDenseSparseTransA(DenseBlock a, SparseBlock b, DenseBlock c,
+		int n, int cd, int rl, int ru)
+	{
+		final int blocksizeJ = 1024;
+		for(int k = 0; k < cd; k++) {
+			if(b.isEmpty(k))
+				continue;
+			final int bpos = b.pos(k);
+			final int blen = b.size(k);
+			final int[] bix = b.indexes(k);
+			final double[] bvals = b.values(k);
+
+			final double[] arow = a.values(k);
+			final int apos = a.pos(k);
+
+			for(int bj = 0; bj < n; bj += blocksizeJ) {
+				int p1 = (bj == 0) ? bpos : ((b.posFIndexGTE(k, bj) >= 0) ?
+					bpos + b.posFIndexGTE(k, bj) : bpos + blen);
+				int p2 = ((b.posFIndexGTE(k, bj + blocksizeJ) >= 0) ?
+					bpos + b.posFIndexGTE(k, bj + blocksizeJ) : bpos + blen);
+				if(p1 >= p2)
+					continue;
+
+				for(int i = rl; i < ru; i++) {
+					final double aval = arow[apos + i];
+					if(aval == 0)
+						continue;
+					final double[] cvals = c.values(i);
+					final int cix = c.pos(i);
+					vectMultiplyAdd(aval, bvals, cvals, bix, p1, cix, p2 - p1);
+				}
+			}
+		}
+	}
+
+	private static void multDenseSparseTransB(DenseBlock a, SparseBlock b, DenseBlock c,
+		int n, int cd, int rl, int ru)
+	{
+		if( a.isContiguous() ) {
+			final double[] adata = a.values(0);
+			for(int i = rl; i < ru; i++) {
+				final int apos = i * cd;
+				final double[] cvals = c.values(i);
+				final int cix = c.pos(i);
+				for(int j = 0; j < n; j++) {
+					if(b.isEmpty(j))
+						continue;
+					final int bpos = b.pos(j);
+					final int blen = b.size(j);
+					final int[] bix = b.indexes(j);
+					final double[] bvals = b.values(j);
+					cvals[cix + j] = dotProduct(bvals, adata, bix, bpos, apos, blen);
+				}
+			}
+		}
+		else {
+			for(int i = rl; i < ru; i++) {
+				final double[] arow = a.values(i);
+				final int apos = a.pos(i);
+				final double[] cvals = c.values(i);
+				final int cix = c.pos(i);
+				for(int j = 0; j < n; j++) {
+					if(b.isEmpty(j))
+						continue;
+					final int bpos = b.pos(j);
+					final int blen = b.size(j);
+					final int[] bix = b.indexes(j);
+					final double[] bvals = b.values(j);
+					cvals[cix + j] = dotProduct(bvals, arow, bix, bpos, apos, blen);
+				}
+			}
+		}
+	}
+
+	private static void multDenseSparseTransATransB(DenseBlock a, SparseBlock b, DenseBlock c,
+		int n, int cd, int rl, int ru)
+	{
+		final int m = a.numCols();
+		if( a.isContiguous() && c.isContiguous() ) {
+			final double[] adata = a.values(0);
+			final double[] cvals = c.values(0);
+			for(int j = 0; j < n; j++) {
+				if(b.isEmpty(j))
+					continue;
+				final int bpos = b.pos(j);
+				final int blen = b.size(j);
+				final int[] bix = b.indexes(j);
+				final double[] bvals = b.values(j);
+				for(int p = bpos; p < bpos + blen; p++) {
+					final int k = bix[p];
+					final double bval = bvals[p];
+					if (bval == 0)
+						continue;
+					final int apos = k * m;
+					for(int i = rl; i < ru; i++) {
+						cvals[i * n + j] += bval * adata[apos + i];
+					}
+				}
+			}
+		}
+		else {
+			for(int j = 0; j < n; j++) {
+				if(b.isEmpty(j))
+					continue;
+				final int bpos = b.pos(j);
+				final int blen = b.size(j);
+				final int[] bix = b.indexes(j);
+				final double[] bvals = b.values(j);
+				for(int p = bpos; p < bpos + blen; p++) {
+					final int k = bix[p];
+					final double bval = bvals[p];
+					if (bval == 0)
+						continue;
+					final double[] arow = a.values(k);
+					final int apos = a.pos(k);
+					for(int i = rl; i < ru; i++) {
+						final double[] cvals = c.values(i);
+						final int cix = c.pos(i);
+						cvals[cix + j] += bval * arow[apos + i];
+					}
+				}
+			}
+		}
+	}
+
 	private static void matrixMultDenseSparseOutSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2,
 		int rl, int ru) {
 		final DenseBlock a = m1.getDenseBlock();
@@ -1751,6 +1901,176 @@ public class LibMatrixMult
 					}
 				}
 		}
+	}
+
+	public static void matrixMultSparseDenseMM(SparseBlock a, DenseBlock b, DenseBlock c,
+		boolean transA, boolean transB, int n, int cd, long xsp, int rl, int ru) {
+		if(!transA && !transB)
+			matrixMultSparseDenseMM(a, b, c, n, cd, xsp, rl, ru);
+		else if(transA && !transB)
+			multSparseDenseTransA(a, b, c, n, cd, xsp, rl, ru);
+		else if(!transA && transB)
+			multSparseDenseTransB(a, b, c, n, cd, xsp, rl, ru);
+		else
+			multSparseDenseTransATransB(a, b, c, n, cd, xsp, rl, ru);
+	}
+
+	private static void multSparseDenseTransA(SparseBlock a, DenseBlock b, DenseBlock c, int n, int cd, long xsp, int rl, int ru) {
+		final int blocksizeK = (int) (8L*xsp);
+		final int blocksizeJ = 1024;
+
+		for(int bk = 0; bk < cd; bk += blocksizeK) {
+			final int bkmin = Math.min(cd, bk + blocksizeK);
+
+			for(int bj = 0; bj < n; bj += blocksizeJ) {
+				final int bjlen = Math.min(n, bj + blocksizeJ) - bj;
+				final boolean contiguous = b.isContiguous(bk, bkmin - 1);
+				final double[] bvals = contiguous ? b.values(bk) : null;
+
+				for(int k = bk; k < bkmin; k++) {
+					if(a.isEmpty(k))
+						continue;
+
+					final int apos = a.pos(k);
+					final int alen = a.size(k);
+					final int[] aix = a.indexes(k);
+					final double[] avals = a.values(k);
+
+					int p1 = (rl == 0) ? 0 : a.posFIndexGTE(k, rl);
+					p1 = (p1 >= 0) ? apos + p1 : apos + alen;
+
+					int p2 = a.posFIndexGTE(k, ru);
+					p2 = (p2 >= 0) ? apos + p2 : apos + alen;
+
+					if(p1 >= p2)
+						continue;
+
+					if(contiguous) {
+						final int bpos = b.pos(k, bj);
+
+						for(int p = p1; p < p2; p++) {
+							final double aval = avals[p];
+							if(aval != 0) {
+								final int row = aix[p];
+								final double[] cvals = c.values(row);
+								final int cix = c.pos(row, bj);
+								vectMultiplyAdd(aval, bvals, cvals, bpos, cix, bjlen);
+							}
+						}
+					}
+					else {
+						final double[] kbvals = b.values(k);
+						final int bix = b.pos(k, bj);
+
+						for(int p = p1; p < p2; p++) {
+							final double aval = avals[p];
+							if(aval != 0) {
+								final int row = aix[p];
+								final double[] cvals = c.values(row);
+								final int cix = c.pos(row, bj);
+								vectMultiplyAdd(aval, kbvals, cvals, bix, cix, bjlen);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private static void multSparseDenseTransB(SparseBlock a, DenseBlock b, DenseBlock c, int n, int cd, long xsp, int rl, int ru) {
+		final int blocksizeK = 24;
+		final int blocksizeJ = Math.min(1024, (int)(8L*xsp));
+		final double[] bufB = new double[blocksizeK * blocksizeJ];
+		final int lenI = ru - rl;
+		final int[] p1s = new int[lenI];
+		final int[] p2s = new int[lenI];
+
+		for( int bk = 0; bk < cd; bk += blocksizeK ) {
+			final int bkmin = Math.min(cd, bk + blocksizeK);
+			final int bklen = bkmin - bk;
+
+			for( int i = rl; i < ru; i++ ) {
+				int idx = i - rl;
+				if( a.isEmpty(i) ) {
+					p1s[idx] = 0;
+					p2s[idx] = 0;
+					continue;
+				}
+				int p1 = a.posFIndexGTE(i, bk);
+				if( p1 < 0 ) {
+					p1s[idx] = 0;
+					p2s[idx] = 0;
+					continue;
+				}
+				int p2 = a.posFIndexGTE(i, bkmin);
+				p1s[idx] = a.pos(i) + p1;
+				p2s[idx] = (p2 >= 0) ? a.pos(i) + p2 : a.pos(i) + a.size(i);
+			}
+
+			for( int bj = 0; bj < n; bj += blocksizeJ ) {
+				final int bjmin = Math.min(n, bj + blocksizeJ);
+				final int bjlen = bjmin - bj;
+
+				for( int j = bj; j < bjmin; j++ ) {
+					final double[] bvals = b.values(j);
+					final int bpos = b.pos(j);
+					final int joff = j - bj;
+
+					for( int k = 0; k < bklen; k++ )
+						bufB[k * bjlen + joff] = bvals[bpos + bk + k];
+				}
+
+
+				for( int i = rl; i < ru; i++ ) {
+					int idx = i - rl;
+					int p1 = p1s[idx];
+					int p2 = p2s[idx];
+
+					if( p1 >= p2 )
+						continue;
+
+					final int[] aix = a.indexes(i);
+					final double[] avals = a.values(i);
+					final double[] cvals = c.values(i);
+					final int cix = c.pos(i, bj);
+
+					for( int p = p1; p < p2; p++ ) {
+						final int k = aix[p];
+						final double aval = avals[p];
+						final int koff = (k - bk) * bjlen;
+						vectMultiplyAdd(aval, bufB, cvals, koff, cix, bjlen);
+					}
+				}
+			}
+		}
+	}
+
+	private static void multSparseDenseTransATransB(SparseBlock a, DenseBlock b, DenseBlock c, int n, int cd, long xsp, int rl, int ru) {
+		final int blocksizeK = 24;
+		final int blocksizeJ = Math.min(1024, (int)(8L*xsp));
+
+		final DenseBlock tB = new DenseBlockFP64(new int[] {cd, n});
+		final double[] tBvals = tB.values(0);
+
+		for( int bj = 0; bj < n; bj += blocksizeJ ) {
+			final int bjmin = Math.min(n, bj + blocksizeJ);
+
+			for( int bk = 0; bk < cd; bk += blocksizeK ) {
+				final int bkmin = Math.min(cd, bk + blocksizeK);
+				final int bklen = bkmin - bk;
+
+				for( int j = bj; j < bjmin; j++ ) {
+					final double[] bvals = b.values(j);
+					final int bpos = b.pos(j);
+					final int joff = j - bj;
+
+					for( int k = 0; k < bklen; k++ )
+						tBvals[(bk + k) * n + bj + joff] = bvals[bpos + bk + k];
+				}
+			}
+		}
+
+		multSparseDenseTransA(a, tB, c, n, cd, xsp, rl, ru);
 	}
 
 	private static void matrixMultSparseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2, int rl, int ru) {
@@ -2051,7 +2371,7 @@ public class LibMatrixMult
 				int blen = b.size(aix[k]);
 				int[] bix = b.indexes(aix[k]);
 				double[] bvals = b.values(aix[k]);
-				vectMultiplyAdd(avals[k], bvals, cvals, bix, bpos, 0, blen);
+				vectMultiplyAddScatter(avals[k], bvals, cvals, bix, bpos, 0, blen);
 			}
 	}
 	
@@ -2069,7 +2389,7 @@ public class LibMatrixMult
 			for(int k = apos; k < apos+alen; k++) {
 				int aixk = aix[k];
 				if( b.isEmpty(aixk) ) continue;
-				vectMultiplyAdd(avals[k], b.values(aixk), tmp,
+				vectMultiplyAddScatter(avals[k], b.values(aixk), tmp,
 					b.indexes(aixk), b.pos(aixk), 0, b.size(aixk));
 				hitNonEmpty = true;
 			}
@@ -2100,8 +2420,220 @@ public class LibMatrixMult
 			for(int k = apos; k < apos+alen; k++) {
 				int aixk = aix[k];
 				if( b.isEmpty(aixk) ) continue;
-				vectMultiplyAdd(avals[k], b.values(aixk), cvals,
+				vectMultiplyAddScatter(avals[k], b.values(aixk), cvals,
 					b.indexes(aixk), b.pos(aixk), cix, b.size(aixk));
+			}
+		}
+	}
+
+	public static void matrixMultSparseSparseMM(SparseBlock a, SparseBlock b, DenseBlock c, boolean transA,
+		boolean transB, int m, int n, int cd, int rl, int ru) {
+		if( !transA && !transB )
+			matrixMultSparseSparseMM(a, b, c, m, cd, a.size(), rl, ru);
+		else if( transA && !transB )
+			matrixMultSparseSparseTransA(a, b, c, cd, rl, ru);
+		else if( !transA )
+			matrixMultSparseSparseTransB(a, b, c, n, rl, ru);
+		else
+			matrixMultSparseSparseTransATransB(a, b, c, n, rl, ru);
+	}
+
+	private static void matrixMultSparseSparseTransA(SparseBlock a, SparseBlock b, DenseBlock c, int cd, int rl, int ru) {
+		final int kmax = Math.min(cd, Math.min(a.numRows(), b.numRows()));
+		final long nnzA = Math.max(1, a.size());
+		final int blocksizeK = Math.max(32, Math.min(1024, UtilFunctions.nextIntPow2(
+			(int)Math.max(1, Math.pow((double)a.numRows()*Math.max(1, ru-rl)/nnzA, 2)))));
+		for( int bk=0; bk<kmax; bk+=blocksizeK ) {
+			int bkmax = Math.min(kmax, bk+blocksizeK);
+			for( int k=bk; k<bkmax; k++ ) {
+				if( a.isEmpty(k) || b.isEmpty(k) )
+					continue;
+
+				final int apos = a.pos(k);
+				final int alen = a.size(k);
+				int aixPos = (rl == 0) ? 0 : a.posFIndexGTE(k, rl);
+				if( aixPos < 0 )
+					continue;
+
+				int[] aix = a.indexes(k);
+				double[] avals = a.values(k);
+				double[] bvals = b.values(k);
+				int[] bix = b.indexes(k);
+				int bpos = b.pos(k);
+				int blen = b.size(k);
+
+				int p = apos + aixPos;
+				if( blen >= 32 ) {
+					final int end = apos + alen;
+					for( ; p+3<end && aix[p+3]<ru; p+=4 )
+						vectMultiplyAddToRows4(avals[p], avals[p+1], avals[p+2], avals[p+3], bvals, bix, bpos, blen,
+							c, aix[p], aix[p+1], aix[p+2], aix[p+3]);
+					if( p+2<end && aix[p+2]<ru ) {
+						vectMultiplyAddToRows3(avals[p], avals[p+1], avals[p+2], bvals, bix, bpos, blen,
+							c, aix[p], aix[p+1], aix[p+2]);
+						p += 3;
+					}
+					else if( p+1<end && aix[p+1]<ru ) {
+						vectMultiplyAddToRows2(avals[p], avals[p+1], bvals, bix, bpos, blen, c, aix[p], aix[p+1]);
+						p += 2;
+					}
+				}
+				for( ; p<apos+alen && aix[p]<ru; p++ )
+					vectMultiplyAdd(avals[p], bvals, c.values(aix[p]), bix, bpos, c.pos(aix[p]), blen);
+			}
+		}
+	}
+
+	private static void vectMultiplyAddToRows2(double aval1, double aval2, double[] b, int[] bix, int bpos, int blen,
+		DenseBlock c, int r1, int r2) {
+		double[] cvals1 = c.values(r1);
+		double[] cvals2 = c.values(r2);
+		int cpos1 = c.pos(r1);
+		int cpos2 = c.pos(r2);
+		for( int j=bpos; j<bpos+blen; j++ ) {
+			double bval = b[j];
+			int bixj = bix[j];
+			cvals1[cpos1+bixj] += aval1 * bval;
+			cvals2[cpos2+bixj] += aval2 * bval;
+		}
+	}
+
+	private static void vectMultiplyAddToRows3(double aval1, double aval2, double aval3, double[] b, int[] bix,
+		int bpos, int blen, DenseBlock c, int r1, int r2, int r3) {
+		double[] cvals1 = c.values(r1);
+		double[] cvals2 = c.values(r2);
+		double[] cvals3 = c.values(r3);
+		int cpos1 = c.pos(r1);
+		int cpos2 = c.pos(r2);
+		int cpos3 = c.pos(r3);
+		for( int j=bpos; j<bpos+blen; j++ ) {
+			double bval = b[j];
+			int bixj = bix[j];
+			cvals1[cpos1+bixj] += aval1 * bval;
+			cvals2[cpos2+bixj] += aval2 * bval;
+			cvals3[cpos3+bixj] += aval3 * bval;
+		}
+	}
+
+	private static void vectMultiplyAddToRows4(double aval1, double aval2, double aval3, double aval4, double[] b,
+		int[] bix, int bpos, int blen, DenseBlock c, int r1, int r2, int r3, int r4) {
+		double[] cvals1 = c.values(r1);
+		double[] cvals2 = c.values(r2);
+		double[] cvals3 = c.values(r3);
+		double[] cvals4 = c.values(r4);
+		int cpos1 = c.pos(r1);
+		int cpos2 = c.pos(r2);
+		int cpos3 = c.pos(r3);
+		int cpos4 = c.pos(r4);
+		for( int j=bpos; j<bpos+blen; j++ ) {
+			double bval = b[j];
+			int bixj = bix[j];
+			cvals1[cpos1+bixj] += aval1 * bval;
+			cvals2[cpos2+bixj] += aval2 * bval;
+			cvals3[cpos3+bixj] += aval3 * bval;
+			cvals4[cpos4+bixj] += aval4 * bval;
+		}
+	}
+
+	private static void matrixMultSparseSparseTransB(SparseBlock a, SparseBlock b, DenseBlock c, int n, int rl, int ru) {
+		final int blocksize = 256;
+		final int rmax = Math.min(ru, a.numRows());
+		final int cmax = Math.min(n, b.numRows());
+		for( int bi=rl; bi<rmax; bi+=blocksize ) {
+			int bimax = Math.min(rmax, bi+blocksize);
+			for( int bj=0; bj<cmax; bj+=blocksize ) {
+				int bjmax = Math.min(cmax, bj+blocksize);
+				for( int i=bi; i<bimax; i++ ) {
+					if( a.isEmpty(i) )
+						continue;
+
+					int apos = a.pos(i);
+					int alen = a.size(i);
+					int[] aix = a.indexes(i);
+					double[] avals = a.values(i);
+					double[] cvals = c.values(i);
+					int cix = c.pos(i);
+					for( int j=bj; j<bjmax; j++ ) {
+						if( b.isEmpty(j) )
+							continue;
+
+						double val = sparseRowDot(avals, aix, apos, alen, b.values(j), b.indexes(j), b.pos(j), b.size(j));
+						if( val != 0 )
+							cvals[cix+j] += val;
+					}
+				}
+			}
+		}
+	}
+
+	private static double sparseRowDot(double[] a, int[] aix, int apos, int alen, double[] b, int[] bix, int bpos, int blen) {
+		if( alen == 0 || blen == 0 )
+			return 0;
+		final int aend = apos + alen;
+		final int bend = bpos + blen;
+		if( aix[apos] > bix[bend-1] || aix[aend-1] < bix[bpos] )
+			return 0;
+
+		if( alen * 8 < blen )
+			return sparseRowDotBinarySearch(a, aix, apos, aend, b, bix, bpos, bend);
+		else if( blen * 8 < alen )
+			return sparseRowDotBinarySearch(b, bix, bpos, bend, a, aix, apos, aend);
+		return dotProduct(a, aix, apos, alen, b, bix, bpos, blen);
+	}
+
+	private static double sparseRowDotBinarySearch(double[] a, int[] aix, int apos, int aend,
+		double[] b, int[] bix, int bpos, int bend) {
+		double ret = 0;
+		for( int i=apos; i<aend; i++ ) {
+			int k = Arrays.binarySearch(bix, bpos, bend, aix[i]);
+			if( k >= 0 )
+				ret += a[i] * b[k];
+		}
+		return ret;
+	}
+
+	private static void matrixMultSparseSparseTransATransB(SparseBlock a, SparseBlock b, DenseBlock c, int n, int rl, int ru) {
+		final int blocksizeJ = 256;
+		final int kmax = a.numRows();
+		final long nnzB = Math.max(1, b.size());
+		final int blocksizeK = Math.max(32, Math.min(1024, UtilFunctions.nextIntPow2(
+			(int)Math.max(1, Math.pow((double)b.numRows()*Math.max(1, kmax)/nnzB, 2)))));
+		final int cmax = Math.min(n, b.numRows());
+		for( int bj=0; bj<cmax; bj+=blocksizeJ ) {
+			int bjmax = Math.min(cmax, bj+blocksizeJ);
+			for( int bk=0; bk<kmax; bk+=blocksizeK ) {
+				int bkmax = Math.min(kmax, bk+blocksizeK);
+				for( int j=bj; j<bjmax; j++ ) {
+					if( b.isEmpty(j) )
+						continue;
+
+					int bpos = b.pos(j);
+					int blen = b.size(j);
+					int[] bix = b.indexes(j);
+					double[] bvals = b.values(j);
+					int q = (bk == 0) ? 0 : b.posFIndexGTE(j, bk);
+					if( q < 0 )
+						continue;
+
+					for( q+=bpos; q<bpos+blen && bix[q]<bkmax; q++ ) {
+						int k = bix[q];
+						if( k >= a.numRows() || a.isEmpty(k) )
+							continue;
+
+						int apos = a.pos(k);
+						int alen = a.size(k);
+						int aixPos = (rl == 0) ? 0 : a.posFIndexGTE(k, rl);
+						if( aixPos < 0 )
+							continue;
+
+						int[] aix = a.indexes(k);
+						double[] avals = a.values(k);
+						for( int p=apos+aixPos; p<apos+alen && aix[p]<ru; p++ ) {
+							double[] cvals = c.values(aix[p]);
+							cvals[c.pos(aix[p])+j] += avals[p] * bvals[q];
+						}
+					}
+				}
 			}
 		}
 	}
@@ -2132,7 +2664,7 @@ public class LibMatrixMult
 					int k = curk[i-bi] + apos;
 					for(; k < apos+alen && aix[k]<bkmin; k++) {
 						if( b.isEmpty(aix[k]) ) continue;
-						vectMultiplyAdd(avals[k], b.values(aix[k]), cvals,
+						vectMultiplyAddScatter(avals[k], b.values(aix[k]), cvals,
 							b.indexes(aix[k]), b.pos(aix[k]), cix, b.size(aix[k]));
 					}
 					curk[i-bi] = k - apos;
@@ -4301,15 +4833,9 @@ public class LibMatrixMult
 		}
 	}
 
-	private static void vectMultiplyAddScatter(
-		final double aval,
-		double[] b,
-		double[] c,
-		int[] bix,
-		final int bi,
-		final int ci,
-		final int len
-	) {
+	private static void vectMultiplyAddScatter(final double aval, 
+		double[] b, double[] c, int[] bix, final int bi, final int ci, final int len)
+	{
 		final int bn = len % vLen;
 
 		// Scalar tail for remaining elements

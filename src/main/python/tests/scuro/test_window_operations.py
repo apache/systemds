@@ -30,6 +30,9 @@ from tests.scuro.data_generator import ModalityRandomDataGenerator, TestDataLoad
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.aggregate import Aggregation
+from systemds.scuro.representations.aggregated_representation import (
+    AggregatedRepresentation,
+)
 from systemds.scuro.representations.timeseries_representations import (
     FrequencyMagnitude,
     Mean,
@@ -258,6 +261,30 @@ class TestWindowOperations(unittest.TestCase):
         for instance in windowed:
             self.assertEqual(np.asarray(instance).shape, (10,))
 
+    def test_aggregation_skips_zero_padded_windows(self):
+        """Ragged instances are padded to the longest window count; Agg over
+        the windows must see only an instance's own windows."""
+        modality = self._timeseries_modality(10)
+        modality.data = [np.arange(n, dtype=np.float32) + 1 for n in (40, 25, 10)]
+        modality.metadata = [
+            ModalityType.TIMESERIES.create_metadata(["signal"], x)
+            for x in modality.data
+        ]
+        unpadded = WindowAggregation("mean", window_size=10, pad=False).execute(
+            modality
+        )
+        windowed = modality.context(WindowAggregation("mean", window_size=10))
+        self.assertEqual(np.asarray(windowed.data).shape, (3, 4))
+
+        for aggregation in ["mean", "min", "sum"]:
+            with self.subTest(aggregation=aggregation):
+                aggregated = AggregatedRepresentation(aggregation).transform(windowed)
+                expected = [getattr(np, aggregation)(w) for w in unpadded]
+                np.testing.assert_allclose(
+                    np.asarray(aggregated.data).ravel(), expected, rtol=1e-6
+                )
+                self.assertNotIn("valid_windows", aggregated.metadata[0])
+
     # ------------------------------------------------------------------
     # Preconditions
     # ------------------------------------------------------------------
@@ -337,6 +364,30 @@ class TestWindowOperations(unittest.TestCase):
             ),
             (signal_length,),
         )
+
+    def test_dynamic_window_stats_bound_the_largest_window(self):
+        """A shorter instance can have a longer last window (it takes the
+        rounding remainder), so the declared per-window feature shape must
+        bound the largest window over every length up to L, and by L - q + 1."""
+        for num_windows in [5, 16, 100]:
+            operator = DynamicWindow(FrequencyMagnitude(), num_windows=num_windows)
+            largest = 0
+            for length in range(num_windows, 3000):
+                largest = max(largest, int(operator._window_sizes(length).max()))
+                bound = operator._max_window_size(length)
+                self.assertGreaterEqual(bound, largest)
+                self.assertLessEqual(bound, length - num_windows + 1)
+                self.assertLessEqual(bound - largest, num_windows)
+
+        num_windows = 16
+        instances = [
+            np.random.rand(length).astype(np.float32) for length in (1005, 1007)
+        ]
+        operator = DynamicWindow(FrequencyMagnitude(), num_windows=num_windows)
+        stats = operator.get_output_stats(RepresentationStats(len(instances), (1007,)))
+        windowed = np.asarray(operator.execute(_FakeModality(instances)))
+        self.assertEqual(windowed.shape[:2], (len(instances), num_windows))
+        self.assertLessEqual(windowed.shape[2], stats.output_shape[1])
 
     def test_window_operators_on_variable_length_instances(self):
         """A window *count* is length-independent, so ragged instances still

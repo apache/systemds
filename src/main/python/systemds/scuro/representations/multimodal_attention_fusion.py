@@ -19,8 +19,6 @@
 #
 # -------------------------------------------------------------
 
-import os
-import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -28,12 +26,20 @@ from typing import List, Dict, Optional, Any
 import numpy as np
 from systemds.scuro.drsearch.operator_registry import register_fusion_operator
 from systemds.scuro.modality.modality import Modality
-from systemds.scuro.representations.fusion import Fusion
+from systemds.scuro.representations.fusion import Fusion, FusionInputTooLargeError
+from systemds.scuro.representations.representation import (
+    FitRequirement,
+    RepresentationStats,
+    stats_bytes,
+)
 from systemds.scuro.utils.static_variables import get_device
+from systemds.scuro.utils.utils import set_random_seeds
 
 
 @register_fusion_operator()
 class AttentionFusion(Fusion):
+    fit_requirement = FitRequirement.SUPERVISED
+
     def __init__(
         self,
         hidden_dim=256,
@@ -42,11 +48,13 @@ class AttentionFusion(Fusion):
         batch_size=32,
         num_epochs=20,
         learning_rate=0.001,
+        max_input_dim=16384,
+        max_parameter_bytes=1024**3,
         params=None,
     ):
         parameters = {
             "hidden_dim": [32, 128, 256, 384, 512, 768],
-            "num_heads": [2, 4, 8, 12],
+            "num_heads": [2, 4, 8],
             "dropout": [0.0, 0.1, 0.2, 0.3, 0.4],
             # "batch_size": [8, 16, 32, 64, 128],
             "num_epochs": [10, 20, 50, 100, 150, 200],
@@ -67,6 +75,13 @@ class AttentionFusion(Fusion):
             self.batch_size = int((params or {}).get("batch_size", batch_size))
             self.num_epochs = int(params.get("num_epochs", self.num_epochs))
             self.learning_rate = float(params.get("learning_rate", self.learning_rate))
+            max_input_dim = params.get("max_input_dim", max_input_dim)
+            max_parameter_bytes = params.get("max_parameter_bytes", max_parameter_bytes)
+
+        self.max_input_dim = None if max_input_dim is None else int(max_input_dim)
+        self.max_parameter_bytes = (
+            None if max_parameter_bytes is None else int(max_parameter_bytes)
+        )
 
         self.needs_training = True
         self.needs_alignment = True
@@ -79,16 +94,7 @@ class AttentionFusion(Fusion):
         self.model_state = None
         self.is_multilabel = False
 
-        self._set_random_seeds()
-
-    def _set_random_seeds(self, seed=42):
-        os.environ["PYTHONHASHSEED"] = str(seed)
-        random.seed(seed)
-        np.random.seed(seed)
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed(seed)
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
+        set_random_seeds()
 
     def _prepare_data(self, modalities: List[Modality]):
         inputs = {}
@@ -113,7 +119,10 @@ class AttentionFusion(Fusion):
             input_dimensions[modality_name] = data.shape[2]  # Feature dimension
             max_sequence_length = max(max_sequence_length, data.shape[1])
 
-            inputs[modality_name] = torch.from_numpy(data.astype(np.float32))
+            data = np.nan_to_num(
+                data.astype(np.float32), nan=0.0, posinf=0.0, neginf=0.0
+            )
+            inputs[modality_name] = torch.from_numpy(data)
 
         for modality_name, tensor in inputs.items():
             if tensor.shape[1] < max_sequence_length:
@@ -123,6 +132,114 @@ class AttentionFusion(Fusion):
                 )
 
         return inputs, input_dimensions, max_sequence_length
+
+    def _parameter_bytes(
+        self,
+        input_dimensions: Dict[str, int],
+        max_sequence_length: int,
+        num_classes: int,
+    ) -> int:
+        hidden = self.hidden_dim
+        projections = sum((dim + 1) * hidden for dim in input_dimensions.values())
+        positional = max_sequence_length * hidden
+        attention = 2 * (4 * hidden * hidden + 4 * hidden)
+        modality_attention = hidden + 1
+        final_projection = hidden * hidden + hidden
+        head_width = hidden // 2
+        classification = hidden * head_width + head_width
+        classification += head_width * num_classes + num_classes
+        return int(
+            (
+                projections
+                + positional
+                + attention
+                + modality_attention
+                + final_projection
+                + classification
+            )
+            * np.dtype(np.float32).itemsize
+        )
+
+    def _validate_model_size(
+        self,
+        input_dimensions: Dict[str, int],
+        max_sequence_length: int,
+        num_classes: int,
+    ) -> None:
+        total_input_dim = sum(input_dimensions.values())
+        if self.max_input_dim is not None and total_input_dim > self.max_input_dim:
+            raise FusionInputTooLargeError(
+                f"AttentionFusion input feature dimension {total_input_dim:,} exceeds "
+                f"the configured maximum {self.max_input_dim:,}; per-modality "
+                f"dimensions: {input_dimensions}. Apply aggregation or dimensionality "
+                "reduction before attention fusion."
+            )
+
+        parameter_bytes = self._parameter_bytes(
+            input_dimensions, max_sequence_length, num_classes
+        )
+        if (
+            self.max_parameter_bytes is not None
+            and parameter_bytes > self.max_parameter_bytes
+        ):
+            raise FusionInputTooLargeError(
+                "AttentionFusion parameters require approximately "
+                f"{parameter_bytes / 1024**3:.2f} GiB, exceeding the configured "
+                f"maximum {self.max_parameter_bytes / 1024**3:.2f} GiB."
+            )
+
+    def input_size_violation(self, input_stats) -> Optional[str]:
+        widths = self._operand_widths(input_stats)
+        if widths is None:
+            return None
+        dimensions = {f"modality_{i}": width for i, width in enumerate(widths)}
+        try:
+            # Sequence length and class count are not known from shapes; the
+            # width limit is what wide operands hit first.
+            self._validate_model_size(dimensions, 1, 2)
+        except FusionInputTooLargeError as error:
+            return str(error)
+        return None
+
+    def get_output_stats(self, input_stats) -> RepresentationStats:
+        stats_list = self._as_stats_list(input_stats)
+        num_instances = max((stats.num_instances for stats in stats_list), default=0)
+        return RepresentationStats(
+            num_instances,
+            (self.hidden_dim,),
+            output_shape_is_known=all(
+                stats.output_shape_is_known for stats in stats_list
+            ),
+            dtype=np.float32,
+        )
+
+    def estimate_peak_memory_bytes(self, input_stats) -> dict:
+        stats_list = self._as_stats_list(input_stats)
+        dimensions = {}
+        max_sequence_length = 1
+        for index, stats in enumerate(stats_list):
+            shape = tuple(stats.output_shape)
+            if len(shape) == 1:
+                dimensions[f"modality_{index}"] = shape[0]
+            elif len(shape) == 2:
+                max_sequence_length = max(max_sequence_length, shape[0])
+                dimensions[f"modality_{index}"] = shape[1]
+            else:
+                return {"cpu_peak_bytes": 0, "gpu_peak_bytes": 2**63 - 1}
+
+        parameter_bytes = self._parameter_bytes(dimensions, max_sequence_length, 2)
+        input_bytes = sum(stats_bytes(stats) for stats in stats_list)
+        batch_activations = (
+            self.batch_size
+            * max_sequence_length
+            * max(1, len(stats_list))
+            * self.hidden_dim
+            * np.dtype(np.float32).itemsize
+        )
+        return {
+            "cpu_peak_bytes": input_bytes + parameter_bytes,
+            "gpu_peak_bytes": 4 * parameter_bytes + 4 * batch_activations,
+        }
 
     def execute(self, modalities: List[Modality], labels: np.ndarray = None):
         if labels is None:
@@ -142,6 +259,9 @@ class AttentionFusion(Fusion):
 
         self.input_dim = input_dimensions
         self.max_sequence_length = max_sequence_length
+        self._validate_model_size(
+            self.input_dim, self.max_sequence_length, self.num_classes
+        )
 
         self.encoder = MultiModalAttentionFusion(
             self.input_dim,
@@ -306,6 +426,9 @@ class AttentionFusion(Fusion):
         self.max_sequence_length = state["max_sequence_length"]
         self.num_classes = state["num_classes"]
         self.is_multilabel = state.get("is_multilabel", False)
+        self._validate_model_size(
+            self.input_dim, self.max_sequence_length, self.num_classes
+        )
 
         self.encoder = MultiModalAttentionFusion(
             self.input_dim,

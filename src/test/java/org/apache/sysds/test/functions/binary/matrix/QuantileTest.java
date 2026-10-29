@@ -21,7 +21,6 @@ package org.apache.sysds.test.functions.binary.matrix;
 
 import java.util.HashMap;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
@@ -187,35 +186,68 @@ public class QuantileTest extends AutomatedTestBase
 	}
 
 	@Test
-	@Ignore // FIXME: fix SYSTEMDS-3953
 	public void testQuartileArrayCP() {
 		runQuantileTest(TEST_NAME6, 0, false, ExecType.CP);
 	}
 
 	@Test
-	@Ignore // FIXME: fix SYSTEMDS-3953
 	public void testQuartileArraySP() {
 		runQuantileTest(TEST_NAME6, 0, false, ExecType.SPARK);
 	}
 
-	private void runQuantileTest( String TEST_NAME, double p, boolean sparse, ExecType et)
-	{
+	// SYSTEMDS-3953: even-length quantile picks must match R type 7 at p != 0.5. The odd-length TEST_NAME1
+	// cases above cannot exercise interpolation because at classical p the rank lands on an integer for odd n.
+	@Test
+	public void testQuantileEven1CP() {
+		runQuantileTest(TEST_NAME1, 0.25, false, ExecType.CP, 128);
+	}
+
+	@Test
+	public void testQuantileEven2CP() {
+		runQuantileTest(TEST_NAME1, 0.50, false, ExecType.CP, 128);
+	}
+
+	@Test
+	public void testQuantileEven3CP() {
+		runQuantileTest(TEST_NAME1, 0.75, false, ExecType.CP, 128);
+	}
+
+	@Test
+	public void testQuantileEven1SP() {
+		runQuantileTest(TEST_NAME1, 0.25, false, ExecType.SPARK, 128);
+	}
+
+	@Test
+	public void testQuantileEven2SP() {
+		runQuantileTest(TEST_NAME1, 0.50, false, ExecType.SPARK, 128);
+	}
+
+	@Test
+	public void testQuantileEven3SP() {
+		runQuantileTest(TEST_NAME1, 0.75, false, ExecType.SPARK, 128);
+	}
+
+	private void runQuantileTest(String TEST_NAME, double p, boolean sparse, ExecType et) {
+		runQuantileTest(TEST_NAME, p, sparse, et, rows);
+	}
+
+	private void runQuantileTest(String TEST_NAME, double p, boolean sparse, ExecType et, int rowCount) {
 		ExecMode platformOld = setExecMode(et);
-	
+
 		try
 		{
 			getAndLoadTestConfiguration(TEST_NAME);
-			
+
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", input("A"), Double.toString(p), output("R")};
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + p + " "+ expectedDir();
-	
+
 			//generate actual dataset (always dense because values <=0 invalid)
 			if( !TEST_NAME.equals(TEST_NAME4) ) {
 				double sparsitya = sparse ? sparsity2 : sparsity1;
-				double[][] A = getRandomMatrix(rows, 1, 1, maxVal, sparsitya, 1236); 
+				double[][] A = getRandomMatrix(rowCount, 1, 1, maxVal, sparsitya, 1236);
 				writeInputMatrixWithMTD("A", A, true);
 			}
 			

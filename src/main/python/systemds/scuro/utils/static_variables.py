@@ -18,9 +18,11 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import os
+from contextlib import contextmanager
 import numpy as np
 import torch
-from typing import Tuple
+from typing import Optional, Tuple
 
 PY_LIST_HEADER_BYTES = 56
 PY_LIST_SLOT_BYTES = 8
@@ -28,7 +30,54 @@ NP_ARRAY_HEADER_BYTES = 112
 
 DEBUG = False
 
-global_rng = np.random.default_rng(42)
+SEED = int(os.environ.get("SCURO_SEED", 42))
+global_rng = np.random.default_rng(SEED)
+
+
+def set_seed(seed: int):
+    """Set the root seed that all scuro seeds (CV folds, search, model init) default to."""
+    global SEED, global_rng
+    SEED = seed
+    os.environ["SCURO_SEED"] = str(seed)
+    global_rng = np.random.default_rng(seed)
+
+
+def get_global_seed() -> int:
+    return SEED
+
+
+def get_train_seed(default: int) -> int:
+    value = os.environ.get("SCURO_TRAIN_SEED", "").strip()
+    return int(value) if value else default
+
+
+def deterministic_enabled() -> bool:
+    return os.environ.get("SCURO_DETERMINISTIC", "0").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+
+
+_CPU_JOB = False
+
+
+@contextmanager
+def scheduled_device(gpu_id: Optional[int]):
+    """Runs a worker job on the device it was scheduled for: gpu_id None is a
+    CPU job."""
+    global _CPU_JOB
+    previous = _CPU_JOB
+    _CPU_JOB = gpu_id is None and deterministic_enabled()
+    try:
+        yield
+    finally:
+        _CPU_JOB = previous
+
+
+def cuda_allowed() -> bool:
+    return not _CPU_JOB and torch.cuda.is_available()
 
 
 def get_seed():
@@ -65,8 +114,10 @@ def get_best_gpu() -> Tuple[int, float]:
 def get_device_for_model(
     model: torch.nn.Module, memory_factor: float = 1.5
 ) -> torch.device:
-    if not torch.cuda.is_available():
+    if not cuda_allowed():
         return torch.device("cpu")
+    if deterministic_enabled():
+        return torch.device(f"cuda:{torch.cuda.current_device()}")
 
     model_mb = get_model_size_mb(model)
     required_mb = model_mb * memory_factor
@@ -115,7 +166,7 @@ def compute_batch_size(
     memory_fraction: float = 0.8,
 ) -> int:
 
-    if device.type == "cpu":
+    if device.type == "cpu" or deterministic_enabled():
         return max_batch_size
 
     gpu_idx = device.index if device.index is not None else 0
@@ -139,4 +190,4 @@ def compute_batch_size(
 def get_device(gpu_id: int = None):
     if gpu_id is not None:
         return torch.device(f"cuda:{gpu_id}")
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    return torch.device("cuda" if cuda_allowed() else "cpu")

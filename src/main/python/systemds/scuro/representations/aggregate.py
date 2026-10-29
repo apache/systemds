@@ -20,8 +20,33 @@
 # -------------------------------------------------------------
 import numpy as np
 
-from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations import utils
+
+VALID_WINDOWS_KEY = "valid_windows"
+
+
+def set_valid_windows(modality, valid_windows=None):
+    """Record the valid window counts per instance; None clears stale ones."""
+    metadata = modality.metadata
+    if not metadata:
+        return
+    if valid_windows is not None and len(valid_windows) != len(metadata):
+        valid_windows = None
+    for i, md in enumerate(metadata):
+        if not isinstance(md, dict):
+            continue
+        md = {k: v for k, v in md.items() if k != VALID_WINDOWS_KEY}
+        if valid_windows is not None:
+            md[VALID_WINDOWS_KEY] = valid_windows[i]
+        metadata[i] = md
+
+
+def _drop_padded_windows(instance, metadata, i):
+    md = metadata[i] if metadata is not None and i < len(metadata) else None
+    counts = md.get(VALID_WINDOWS_KEY) if isinstance(md, dict) else None
+    if counts is not None and len(instance) == counts[1]:
+        return instance[: counts[0]]
+    return instance
 
 
 class Aggregation:
@@ -52,18 +77,22 @@ class Aggregation:
         if arr.ndim == 1:
             values, counts = np.unique(arr, return_counts=True)
             return values[np.argmax(counts)]
-        moved = np.moveaxis(arr, axis, -1)
-        flat = moved.reshape(-1, moved.shape[-1])
+        axes = tuple(
+            a % arr.ndim for a in (axis if isinstance(axis, tuple) else (axis,))
+        )
+        moved = np.moveaxis(arr, axes, tuple(range(arr.ndim - len(axes), arr.ndim)))
+        kept = moved.shape[: arr.ndim - len(axes)]
+        flat = moved.reshape(int(np.prod(kept)), -1)
         modes = np.empty(flat.shape[0], dtype=arr.dtype)
         for i in range(flat.shape[0]):
             values, counts = np.unique(flat[i], return_counts=True)
             modes[i] = values[np.argmax(counts)]
-        return modes.reshape(moved.shape[:-1])
+        return modes.reshape(kept)
 
     @staticmethod
     def _normalize_axis(aggregate_dim):
         if isinstance(aggregate_dim, tuple):
-            return aggregate_dim[0] if aggregate_dim else 0
+            return aggregate_dim if aggregate_dim else 0
         return aggregate_dim
 
     _aggregation_function = {
@@ -101,15 +130,12 @@ class Aggregation:
     def execute(self, modality, aggregate_dim=(0,), squeeze_singleton=True):
         data = []
         max_len = 0
+        axes = aggregate_dim if isinstance(aggregate_dim, tuple) else (aggregate_dim,)
+        metadata = getattr(modality, "metadata", None) if 0 in axes else None
         for i, instance in enumerate(modality.data):
             data.append([])
             if isinstance(instance, np.ndarray) or isinstance(instance, list):
                 if (
-                    modality.modality_type == ModalityType.IMAGE
-                    or modality.modality_type == ModalityType.VIDEO
-                ) and instance.ndim > 2:
-                    aggregated_data = instance.flatten()
-                elif (
                     squeeze_singleton
                     and isinstance(instance, np.ndarray)
                     and instance.ndim == 2
@@ -117,6 +143,7 @@ class Aggregation:
                 ):
                     aggregated_data = instance.flatten()
                 else:
+                    instance = _drop_padded_windows(instance, metadata, i)
                     aggregated_data = self._aggregation_func(instance, aggregate_dim)
             else:
                 aggregated_data = []

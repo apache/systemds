@@ -24,6 +24,10 @@ from systemds.scuro.representations.representation import Representation
 
 
 class UnimodalRepresentation(Representation):
+    layer_parameter = None
+    intermediate_cache = None
+    max_context_words = None
+
     def __init__(
         self, name: str, output_modality_type, parameters=None, self_contained=True
     ):
@@ -41,10 +45,22 @@ class UnimodalRepresentation(Representation):
         self.needs_context = False
         self.initial_context_length = None
 
+    def needs_context_for(self, modality_type):
+        return self.needs_context
+
     @abc.abstractmethod
     def transform(self, data, aggregation=None):
         # TODO: check if there is a way to time the transformation in here (needed for chunked execution)
         raise f"Not implemented for {self.name}"
+
+    def transform_layers(self, data, layer_names, aggregation=None):
+        """Return {layer name: transformed modality} from one pass over the data.
+
+        Layers that the model does not have are left out of the result.
+        """
+        raise NotImplementedError(
+            f"transform_layers is not implemented for {self.name}"
+        )
 
 
 class PixelRepresentation(UnimodalRepresentation):

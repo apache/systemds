@@ -22,13 +22,16 @@ import itertools
 import multiprocessing as mp
 import multiprocessing.connection as mp_connection
 import os
+import queue
 import signal
+import time
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import torch
 
-from systemds.scuro.utils.memory_utility import is_cuda_oom
+from systemds.scuro.utils.memory_utility import cuda_oom_peak_bytes, is_cuda_oom
+from systemds.scuro.utils.static_variables import scheduled_device
 
 _THREAD_ENV_VARS = (
     "OMP_NUM_THREADS",
@@ -41,13 +44,30 @@ _THREAD_ENV_VARS = (
 
 
 def _resolve_thread_count(num_threads: int) -> int:
-    explicit = os.environ.get("OMP_NUM_THREADS")
+    explicit = os.environ.get("SCURO_THREADS_PER_WORKER")
     if explicit:
         try:
             num_threads = int(explicit)
         except ValueError:
             pass
     return max(1, int(num_threads))
+
+
+def default_threads_per_worker() -> int:
+    return _resolve_thread_count(1)
+
+
+DEFAULT_GPU_SLOTS_PER_DEVICE = 4
+
+
+def default_gpu_slots_per_device() -> int:
+    explicit = os.environ.get("SCURO_GPU_SLOTS_PER_DEVICE")
+    if explicit:
+        try:
+            return max(1, int(explicit))
+        except ValueError:
+            pass
+    return DEFAULT_GPU_SLOTS_PER_DEVICE
 
 
 def set_thread_env_before_spawn(num_threads: int) -> None:
@@ -83,6 +103,7 @@ class _JobResult:
     error: Optional[str] = None
     cuda_oom: bool = False
     worker_died: bool = False
+    gpu_peak_bytes: int = -1
 
 
 def _worker_main(
@@ -90,12 +111,15 @@ def _worker_main(
     result_q,
     dispatch: Dict[str, Callable],
     num_threads: int,
+    ready_q,
     physical_gpu_id: Optional[int],
 ) -> None:
     os.environ["CUDA_VISIBLE_DEVICES"] = (
         "" if physical_gpu_id is None else str(physical_gpu_id)
     )
     _worker_initializer(num_threads)
+    if ready_q is not None:
+        ready_q.put(os.getpid())
     while True:
         job = job_q.get()
         if job is None:
@@ -104,16 +128,20 @@ def _worker_main(
             local_gpu_id = (
                 0 if physical_gpu_id is not None and job.gpu_id is not None else None
             )
-            value = dispatch[job.kind](job.payload, local_gpu_id)
+
+            with scheduled_device(local_gpu_id):
+                value = dispatch[job.kind](job.payload, local_gpu_id)
             result_q.put(_JobResult(job.job_id, True, os.getpid(), value=value))
         except Exception as e:
+            cuda_oom = is_cuda_oom(e)
             result_q.put(
                 _JobResult(
                     job.job_id,
                     False,
                     os.getpid(),
                     error=f"{type(e).__name__}: {e}",
-                    cuda_oom=is_cuda_oom(e),
+                    cuda_oom=cuda_oom,
+                    gpu_peak_bytes=cuda_oom_peak_bytes(e) if cuda_oom else -1,
                 )
             )
 
@@ -161,6 +189,7 @@ class PersistentWorkerPool:
         self.gpu_devices = list(dict.fromkeys(gpu_devices or []))
         self.gpu_slots_per_device = max(1, int(gpu_slots_per_device))
         self._result_q = self._ctx.Queue()
+        self._ready_q = self._ctx.Queue()
         self._job_counter = itertools.count()
         self._workers: Dict[int, Dict[str, Any]] = {}
         self._idle_pids: List[int] = []
@@ -184,6 +213,7 @@ class PersistentWorkerPool:
             self._spawn_worker(gpu_id)
         for _ in range(self._cpu_worker_count):
             self._spawn_worker(None)
+        self._wait_for_workers_ready(n_workers)
 
     @property
     def gpu_worker_devices(self) -> List[int]:
@@ -196,11 +226,15 @@ class PersistentWorkerPool:
         )
 
     def _spawn_worker(self, physical_gpu_id: Optional[int]) -> None:
+        previous_threads = {var: os.environ.get(var) for var in _THREAD_ENV_VARS}
         set_thread_env_before_spawn(self._threads_per_worker)
         job_q = self._ctx.Queue()
         previous_visible = os.environ.get("CUDA_VISIBLE_DEVICES")
+        visible_id = physical_gpu_id
+        if physical_gpu_id is not None and previous_visible:
+            visible_id = previous_visible.split(",")[physical_gpu_id].strip()
         os.environ["CUDA_VISIBLE_DEVICES"] = (
-            "" if physical_gpu_id is None else str(physical_gpu_id)
+            "" if visible_id is None else str(visible_id)
         )
         p = self._ctx.Process(
             target=_worker_main,
@@ -209,21 +243,50 @@ class PersistentWorkerPool:
                 self._result_q,
                 self._dispatch,
                 self._threads_per_worker,
-                physical_gpu_id,
+                getattr(self, "_ready_q", None),
+                visible_id,
             ),
             daemon=True,
         )
-        p.start()
-        if previous_visible is None:
-            os.environ.pop("CUDA_VISIBLE_DEVICES", None)
-        else:
-            os.environ["CUDA_VISIBLE_DEVICES"] = previous_visible
+        try:
+            p.start()
+        finally:
+            if previous_visible is None:
+                os.environ.pop("CUDA_VISIBLE_DEVICES", None)
+            else:
+                os.environ["CUDA_VISIBLE_DEVICES"] = previous_visible
+            for var, value in previous_threads.items():
+                if value is None:
+                    os.environ.pop(var, None)
+                else:
+                    os.environ[var] = value
         self._workers[p.pid] = {
             "process": p,
             "job_q": job_q,
             "gpu_id": physical_gpu_id,
         }
-        self._mark_idle(p.pid)
+
+    def _wait_for_workers_ready(self, count: int) -> None:
+        deadline = time.monotonic() + float(
+            os.environ.get("SCURO_WORKER_START_TIMEOUT_SEC", "300")
+        )
+        ready = set()
+        while len(ready) < count:
+            for pid, worker in self._workers.items():
+                if pid not in ready and not worker["process"].is_alive():
+                    raise RuntimeError(f"SCURO worker {pid} exited during startup")
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError(
+                    "Timed out waiting for SCURO workers to become ready"
+                )
+            try:
+                pid = self._ready_q.get(timeout=min(0.1, remaining))
+            except queue.Empty:
+                continue
+            if pid in self._workers and pid not in ready:
+                ready.add(pid)
+                self._mark_idle(pid)
 
     def _mark_idle(self, pid: int) -> None:
         worker = self._workers.get(pid)
@@ -259,11 +322,31 @@ class PersistentWorkerPool:
     def num_in_flight(self) -> int:
         return len(self._running)
 
+    def worker_gpu(self, pid: int) -> Optional[int]:
+        worker = self._workers.get(pid)
+        return None if worker is None else worker["gpu_id"]
+
+    def is_idle(self, pid: int) -> bool:
+        gpu_id = self.worker_gpu(pid)
+        idle = self._idle_pids if gpu_id is None else self._idle_gpu_pids[gpu_id]
+        return pid in self._workers and pid in idle
+
+    def job_pid(self, job_id: int) -> Optional[int]:
+        entry = self._running.get(job_id)
+        return None if entry is None else entry[0]
+
     def _take_worker(
-        self, gpu_id: Optional[int], allow_gpu_worker_for_cpu: bool
+        self,
+        gpu_id: Optional[int],
+        allow_gpu_worker_for_cpu: bool,
+        preferred_pids: Sequence[int] = (),
     ) -> Tuple[int, Optional[int]]:
         if gpu_id is not None:
             gpu_idle = self._idle_gpu_pids.get(gpu_id, [])
+            for pid in preferred_pids:
+                if pid in gpu_idle:
+                    gpu_idle.remove(pid)
+                    return pid, gpu_id
             if gpu_idle:
                 return gpu_idle.pop(), gpu_id
             if not self.gpu_devices and self._idle_pids:
@@ -282,24 +365,43 @@ class PersistentWorkerPool:
         payload: tuple,
         gpu_id: Optional[int] = None,
         allow_gpu_worker_for_cpu: bool = False,
+        preferred_pids: Sequence[int] = (),
     ) -> int:
+        """Run a job on an idle worker, choosing from ``preferred_pids`` first."""
         if not self.has_idle_worker_for(gpu_id, allow_gpu_worker_for_cpu):
             raise RuntimeError("submit() called with no idle worker available")
+        pid, dispatched_gpu_id = self._take_worker(
+            gpu_id, allow_gpu_worker_for_cpu, preferred_pids
+        )
+        return self._enqueue(pid, kind, payload, dispatched_gpu_id)
+
+    def submit_to(self, pid: int, kind: str, payload: Any) -> int:
+        """Run a job on the idle worker ``pid`` on its own device."""
+        if not self.is_idle(pid):
+            raise RuntimeError(f"submit_to() called for busy worker {pid}")
+        gpu_id = self.worker_gpu(pid)
+        idle = self._idle_pids if gpu_id is None else self._idle_gpu_pids[gpu_id]
+        idle.remove(pid)
+        return self._enqueue(pid, kind, payload, gpu_id)
+
+    def _enqueue(self, pid: int, kind: str, payload: Any, gpu_id: Optional[int]) -> int:
         job_id = next(self._job_counter)
-        pid, dispatched_gpu_id = self._take_worker(gpu_id, allow_gpu_worker_for_cpu)
-        job = _Job(job_id, kind, payload, dispatched_gpu_id)
+        job = _Job(job_id, kind, payload, gpu_id)
         self._running[job_id] = (pid, job)
         self._workers[pid]["job_q"].put(job)
         return job_id
 
-    def wait(self) -> _JobResult:
+    def wait(self, timeout: Optional[float] = None) -> Optional[_JobResult]:
+        """The next job result; None if `timeout` seconds pass without one."""
         while True:
             sentinel_to_pid = {
                 w["process"].sentinel: pid for pid, w in self._workers.items()
             }
             ready = mp_connection.wait(
-                [self._result_q._reader, *sentinel_to_pid.keys()]
+                [self._result_q._reader, *sentinel_to_pid.keys()], timeout
             )
+            if not ready:
+                return None
             if self._result_q._reader in ready:
                 jr = self._result_q.get()
                 entry = self._running.pop(jr.job_id, None)
@@ -351,6 +453,7 @@ class PersistentWorkerPool:
             self._running.pop(failed_job_id, None)
 
         self._spawn_worker(physical_gpu_id)
+        self._wait_for_workers_ready(1)
 
         if failed_job_id is None:
             return None
@@ -382,6 +485,11 @@ class PersistentWorkerPool:
                 w["job_q"].join_thread()
             except Exception:
                 pass
+        try:
+            self._ready_q.close()
+            self._ready_q.join_thread()
+        except Exception:
+            pass
         try:
             self._result_q.close()
             self._result_q.join_thread()

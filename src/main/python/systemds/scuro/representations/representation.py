@@ -20,6 +20,7 @@
 # -------------------------------------------------------------
 import abc
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any, Optional
 
 import numpy as np
@@ -31,6 +32,32 @@ CONTAINER_LIST = "list_of_ndarray"
 CONTAINER_RAGGED = "ragged"
 NDARRAY_OBJECT_OVERHEAD_BYTES = 112
 DEFAULT_DTYPE = np.dtype(np.float32)
+
+
+class FitRequirement(str, Enum):
+    """Data required to fit a representation before it can transform inputs."""
+
+    NONE = "none"
+    UNSUPERVISED = "unsupervised"
+    SUPERVISED = "supervised"
+
+
+@dataclass(frozen=True)
+class RepresentationFitState:
+    """State learned by a representation from a specific set of instances."""
+
+    fit_requirement: FitRequirement
+    fit_instance_ids: tuple = ()
+    payload: Any = None
+
+    def __post_init__(self):
+        fit_requirement = FitRequirement(self.fit_requirement)
+        fit_instance_ids = tuple(int(i) for i in self.fit_instance_ids)
+        if len(set(fit_instance_ids)) != len(fit_instance_ids):
+            raise ValueError("fit_instance_ids contains duplicate instance IDs")
+
+        object.__setattr__(self, "fit_requirement", fit_requirement)
+        object.__setattr__(self, "fit_instance_ids", fit_instance_ids)
 
 
 @dataclass
@@ -154,6 +181,8 @@ def derive_stats(stats: RepresentationStats, **overrides) -> RepresentationStats
 
 
 class Representation:
+    fit_requirement = FitRequirement.NONE
+
     def __init__(self, name, parameters):
         self.name = name
         self._parameters = parameters
@@ -180,6 +209,16 @@ class Representation:
     def set_parameters(self, parameters):
         for parameter in parameters:
             setattr(self, parameter, parameters[parameter])
+
+    def fit(self, inputs, labels=None) -> RepresentationFitState:
+        if self.fit_requirement is not FitRequirement.NONE:
+            raise NotImplementedError(f"fit is not implemented for {self.name}")
+        return RepresentationFitState(FitRequirement.NONE)
+
+    def transform_fitted(self, inputs, fit_state, **kwargs):
+        raise NotImplementedError(
+            f"transform_fitted is not implemented for {self.name}"
+        )
 
     def check_preconditions(self, input_stats) -> Optional[str]:
         return None

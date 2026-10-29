@@ -1995,7 +1995,7 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			}
 			break;
 		case LOCAL:
-			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_LOCAL_COMMAND){
+			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_LOCAL_COMMAND) {
 				checkNumParameters(1);
 				checkMatrixParam(getFirstExpr());
 				output.setDataType(DataType.MATRIX);
@@ -2003,8 +2003,32 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 				output.setBlocksize (id.getBlocksize());
 				output.setValueType(id.getValueType());
 			}
-			else 
+			else {
 				raiseValidateError("Local instruction not allowed in dml script");
+			}
+			break;
+		case DP_SET_BUDGET: {
+			checkNumParameters(2);
+			checkScalarParam(getFirstExpr());
+			checkScalarParam(getSecondExpr());
+			// resolved entirely at compile time (see DMLTranslator), so both
+			// arguments must be known before the HOP DAG is built.
+			if (!isConstant(getFirstExpr()) || !isConstant(getSecondExpr()))
+				raiseValidateError(getOpCode() + ": 'epsilon' and 'delta' must be compile-time numeric literals",
+					false, LanguageErrorCodes.INVALID_PARAMETERS);
+			double dpSetBudgetEpsilon = getDoubleValue(getFirstExpr());
+			double dpSetBudgetDelta = getDoubleValue(getSecondExpr());
+			if (dpSetBudgetEpsilon <= 0)
+				raiseValidateError(getOpCode() + ": epsilon must be > 0, got " + dpSetBudgetEpsilon,
+					false, LanguageErrorCodes.INVALID_PARAMETERS);
+			if ((dpSetBudgetDelta <= 0) || (dpSetBudgetDelta >= 1))
+				raiseValidateError(getOpCode() + ": delta must be in (0,1), got " + dpSetBudgetDelta,
+					false, LanguageErrorCodes.INVALID_PARAMETERS);
+			output.setDataType(DataType.SCALAR);
+			output.setValueType(ValueType.FP64);
+			output.setDimensions(0, 0);
+			break;
+		}
 		case COMPRESS:
 		case DECOMPRESS:
 			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND){
@@ -2143,9 +2167,9 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 
 			output.setDataType(dims.getRight());
 			output.setDimensions(dims.getLeft(), dims.getMiddle());
-		}else{
+		}
+		else{
 			DataType dataType = EinsumEquationValidator.validateEinsumEquationNoDimensions(equationString, _args.length - 1);
-
 			output.setDataType(dataType);
 			output.setDimensions(-1l, -1l);
 		}
@@ -2170,19 +2194,36 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 	}
 	
 	private void setTernaryOutputProperties(DataIdentifier output, boolean conditional) {
-		DataType dt1 = getFirstExpr().getOutput().getDataType();
-		DataType dt2 = getSecondExpr().getOutput().getDataType();
-		DataType dt3 = getThirdExpr().getOutput().getDataType();
-		DataType dtOut = (dt1.isMatrix() || dt2.isMatrix() || dt3.isMatrix()) ?
-			DataType.MATRIX : DataType.SCALAR;
-		if( dt1==DataType.MATRIX && dt2==DataType.MATRIX )
-			checkMatchingDimensions(getFirstExpr(), getSecondExpr(), false, conditional);
-		if( dt1==DataType.MATRIX && dt3==DataType.MATRIX )
-			checkMatchingDimensions(getFirstExpr(), getThirdExpr(), false, conditional);
-		if( dt2==DataType.MATRIX && dt3==DataType.MATRIX )
-			checkMatchingDimensions(getSecondExpr(), getThirdExpr(), false, conditional);
+		Expression expr1 = getFirstExpr();
+		Expression expr2 = getSecondExpr();
+		Expression expr3 = getThirdExpr();
+		DataType dt1 = expr1.getOutput().getDataType();
+		DataType dt2 = expr2.getOutput().getDataType();
+		DataType dt3 = expr3.getOutput().getDataType();
+		final long r1 = expr1.getOutput().getDim1();
+		final long r2 = expr2.getOutput().getDim1();
+		final long r3 = expr3.getOutput().getDim1();
+		final long c1 = expr1.getOutput().getDim2();
+		final long c2 = expr2.getOutput().getDim2();
+		final long c3 = expr3.getOutput().getDim2();
+		final long m = Math.max(Math.max(r1, r2), r3);
+		final long n = Math.max(Math.max(c1, c2), c3);
+
+		boolean unknownDim = (r1 == -1 || r2 == -1 || r3 == -1 || c1 == -1 || c2 == -1 || c3 == -1);
+		if (!unknownDim && ((dt1 == DataType.MATRIX && r1 != 1 && r1 != m)
+			|| (dt2 == DataType.MATRIX && r2 != 1 && r2 != m)
+			|| (dt3 == DataType.MATRIX && r3 != 1 && r3 != m)
+			|| (dt1 == DataType.MATRIX && c1 != 1 && c1 != n)
+			|| (dt2 == DataType.MATRIX && c2 != 1 && c2 != n)
+			|| (dt3 == DataType.MATRIX && c3 != 1 && c3 != n))) {
+			raiseValidateError("Mismatch in matrix dimensions of parameters for function "
+					+ this.getOpCode(), conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+
 		MatrixCharacteristics dims1 = getBinaryMatrixCharacteristics(getFirstExpr(), getSecondExpr());
 		MatrixCharacteristics dims2 = getBinaryMatrixCharacteristics(getSecondExpr(), getThirdExpr());
+		DataType dtOut = (dt1.isMatrix() || dt2.isMatrix() || dt3.isMatrix()) ?
+			DataType.MATRIX : DataType.SCALAR;
 		output.setDataType(dtOut);
 		output.setValueType(dtOut==DataType.MATRIX ? ValueType.FP64 :
 			computeValueType(getSecondExpr(), getThirdExpr(), true));

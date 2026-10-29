@@ -31,9 +31,10 @@ Y = X
 
 for (j in 1:ncol(X)) {
   col = X[, j]
-  med = quantile(col, probs=0.5, type=1, names=FALSE, na.rm=FALSE)
-  q1  = quantile(col, probs=0.25, type=1, names=FALSE, na.rm=FALSE)
-  q3  = quantile(col, probs=0.75, type=1, names=FALSE, na.rm=FALSE)
+  # DML quantile corresponds to R quantile type 7 (matching R's own default).
+  med = quantile(col, probs=0.5, type=7, names=FALSE, na.rm=FALSE)
+  q1  = quantile(col, probs=0.25, type=7, names=FALSE, na.rm=FALSE)
+  q3  = quantile(col, probs=0.75, type=7, names=FALSE, na.rm=FALSE)
   iqr = q3 - q1
   if (iqr == 0 || is.nan(iqr)) iqr = 1
   Y[, j] = (col - med) / iqr

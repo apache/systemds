@@ -26,11 +26,18 @@ public enum OOCStoreLayout {
 	ROW_MAJOR, COL_MAJOR;
 
 	public int linearize(MatrixIndexes indexes, DataCharacteristics characteristics) {
+		return linearize(indexes.getRowIndex(), indexes.getColumnIndex(), characteristics);
+	}
+
+	public int linearize(long row, long col, DataCharacteristics characteristics) {
+		checkCharacteristics(characteristics);
+		long index = this == ROW_MAJOR ? (row - 1) * characteristics.getNumColBlocks() + col -
+			1 : (col - 1) * characteristics.getNumRowBlocks() + row - 1;
+		return Math.toIntExact(index);
+	}
+
+	private static void checkCharacteristics(DataCharacteristics characteristics) {
 		if(characteristics == null || !characteristics.dimsKnown() || characteristics.getBlocksize() <= 0)
 			throw new IllegalArgumentException("Materialized store layout requires known dimensions and block size.");
-		long index = this == ROW_MAJOR ? (indexes.getRowIndex() - 1) * characteristics.getNumColBlocks() +
-			indexes.getColumnIndex() -
-			1 : (indexes.getColumnIndex() - 1) * characteristics.getNumRowBlocks() + indexes.getRowIndex() - 1;
-		return Math.toIntExact(index);
 	}
 }

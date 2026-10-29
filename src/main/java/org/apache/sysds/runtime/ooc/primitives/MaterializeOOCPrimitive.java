@@ -19,8 +19,11 @@
 
 package org.apache.sysds.runtime.ooc.primitives;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
 
 import org.apache.sysds.runtime.instructions.ooc.CachingStream;
@@ -43,6 +46,8 @@ public final class MaterializeOOCPrimitive extends OOCPrimitive {
 	private final OOCFuture<MaterializedStore<IndexedMatrixValue>> _store;
 	private final AtomicBoolean _finished;
 	private final boolean _reusable;
+	private final List<Consumer<OOCStream.QueueCallback<IndexedMatrixValue>>> _liveConsumers;
+	private MaterializedStore<IndexedMatrixValue> _materializedStore;
 	private int _expectedReaders;
 	private int _consumers;
 
@@ -59,21 +64,32 @@ public final class MaterializeOOCPrimitive extends OOCPrimitive {
 		_store = new OOCFuture<>();
 		_finished = new AtomicBoolean();
 		_reusable = reusable;
+		_liveConsumers = new ArrayList<>();
 	}
 
 	public static MaterializeOOCPrimitive reusable(OOCStreamable<IndexedMatrixValue> source) {
-		return new MaterializeOOCPrimitive(source, OOCStoreLayout.ROW_MAJOR, null, true);
+		return reusable(source, OOCStoreLayout.ROW_MAJOR);
 	}
 
-	public synchronized void registerRequest(int expectedReaders) {
-		if(_reusable)
-			throw new IllegalStateException("Reusable materialization registers readers dynamically.");
+	public static MaterializeOOCPrimitive reusable(OOCStreamable<IndexedMatrixValue> source, OOCStoreLayout layout) {
+		return new MaterializeOOCPrimitive(source, layout, null, true);
+	}
+
+	public synchronized boolean registerRequest(int expectedReaders,
+		Consumer<OOCStream.QueueCallback<IndexedMatrixValue>> liveConsumer) {
 		if(expectedReaders <= 0)
 			throw new IllegalArgumentException("Materialization request requires at least one reader.");
-		if(hasStartedExecution())
-			throw new IllegalStateException("Cannot register a consumer after materialization started.");
-		_expectedReaders = Math.addExact(_expectedReaders, expectedReaders);
-		_consumers = Math.addExact(_consumers, 1);
+		boolean live = !hasStartedExecution();
+		if(_materializedStore == null) {
+			if(!_reusable)
+				_expectedReaders = Math.addExact(_expectedReaders, expectedReaders);
+			_consumers = Math.addExact(_consumers, 1);
+		}
+		else
+			_materializedStore.registerConsumer(expectedReaders);
+		if(live && liveConsumer != null)
+			_liveConsumers.add(liveConsumer);
+		return live;
 	}
 
 	public OOCFuture<MaterializedStore<IndexedMatrixValue>> store() {
@@ -99,19 +115,24 @@ public final class MaterializeOOCPrimitive extends OOCPrimitive {
 	protected void startExecution() {
 		try {
 			OOCStream<IndexedMatrixValue> source = getInputReadStream(0);
-			MaterializedStore<IndexedMatrixValue> store = _reusable ? new MaterializedStore<>(
-				OOCCacheManager.getGlobalCache(),
-				CachingStream._streamSeq.getNextID()) : new MaterializedStore<>(OOCCacheManager.getGlobalCache(),
-					CachingStream._streamSeq.getNextID(), _expectedReaders, _consumers);
 			DataCharacteristics characteristics = _source.getDataCharacteristics();
+			boolean logicalLayout = characteristics != null && characteristics.dimsKnown() &&
+				characteristics.getBlocksize() > 0;
+			ToIntFunction<MatrixIndexes> linearize = logicalLayout ? indexes -> _layout.linearize(indexes,
+				characteristics) : null;
+			MaterializedStore<IndexedMatrixValue> store;
+			synchronized(this) {
+				int consumers = _reusable ? 1 + _consumers : _consumers;
+				store = new MaterializedStore<>(OOCCacheManager.getGlobalCache(), CachingStream._streamSeq.getNextID(),
+					_reusable ? -1 : _expectedReaders, consumers, logicalLayout ? _layout : null,
+					logicalLayout ? characteristics : null);
+				_materializedStore = store;
+			}
 			AtomicInteger nextIndex = new AtomicInteger();
-			ToIntFunction<MatrixIndexes> linearize;
-			if(_reusable &&
-				(characteristics == null || !characteristics.dimsKnown() || characteristics.getBlocksize() <= 0))
-				linearize = ignored -> nextIndex.getAndIncrement();
-			else
-				linearize = indexes -> _layout.linearize(indexes, characteristics);
-			OOCStreamMaterializer materializer = new OOCStreamMaterializer(store, linearize, _allowance);
+			ToIntFunction<MatrixIndexes> publicationIndex = linearize != null ? linearize : ignored -> nextIndex
+				.getAndIncrement();
+			OOCStreamMaterializer materializer = new OOCStreamMaterializer(store, publicationIndex, _allowance,
+				_liveConsumers);
 			materializer.completion().whenComplete((ignored, error) -> {
 				if(error != null)
 					fail(error);

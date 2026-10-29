@@ -1,0 +1,174 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/optim/shampoo.dml") as shampoo
+source("scripts/nn/optim/adagrad.dml") as adagrad
+source("scripts/nn/optim/adam.dml") as adam
+source("scripts/nn/optim/sgd.dml") as sgd
+
+
+getOptimizer = function(int optimizerIndex)
+    return(string optimizer){
+    /*
+    * Maps an integer index to an optimizer name string used throughout the
+    * experiment pipeline.
+    *
+    * Inputs:
+    *  - optimizerIndex: Integer identifier of the optimizer (1..9)
+    *
+    * Outputs:
+    *  - optimizer: Optimizer name corresponding to the index.
+    */
+        if (optimizerIndex==1)
+        {
+            optimizer = "adam"
+        }
+        if (optimizerIndex==2)
+        {
+            optimizer = "shampoo"
+        }
+        if (optimizerIndex==3)
+        {
+            optimizer = "shampoo_momentum"
+        }
+        if (optimizerIndex==4)
+        {
+            optimizer = "shampoo_heuristic"
+        }
+        if (optimizerIndex==5)
+        {
+            optimizer = "adagrad"
+        }
+        if (optimizerIndex==6)
+        {
+            optimizer = "sgd"
+        }
+}
+
+optimizersToExperiment = list("shampoo", "shampoo_momentum", "shampoo_heuristic","adam",
+            "adagrad", "sgd")
+
+epsilon = 1e-4
+lr = 0.005
+rootEvery=10
+preconEvery=10
+
+X0  = rand(rows=100, cols=100, min=-1, max=1, pdf="uniform", sparsity=1.0, seed=7)
+dX0 = rand(rows=100, cols=100, min=-1, max=1, pdf="uniform", sparsity=1.0, seed=8)
+
+nSteps = 5000
+
+results = matrix(0, rows=length(optimizersToExperiment) * 2, cols=4)
+row = 0
+
+for (optimizerIndex in 1:length(optimizersToExperiment)) {
+
+  optimizer = getOptimizer(optimizerIndex)
+
+  # two modes: diagonal vs non-diagonal
+  for (diagThreshold in seq(1, 1000, 999)) {
+
+    X  = X0
+    dX = dX0
+
+    timestep = 0
+
+    # init state
+    if ((optimizer == "shampoo") | (optimizer == "shampoo_diagonal")) {
+      [preconL, preconR, useDiag] = shampoo::init(X, epsilon, diagThreshold)
+    } else if ((optimizer == "shampoo_momentum") | (optimizer == "shampoo_momentum_diagonal")) {
+      [preconL, preconR, momentum, useDiag] = shampoo::init_momentum(X, epsilon, diagThreshold)
+    } else if ((optimizer == "shampoo_heuristic") | (optimizer == "shampoo_heuristic_diagonal")) {
+      [preconL, preconR, stepCounter, bufferL, bufferR, momentum, preconLInvPowerRoot, preconRInvPowerRoot, useDiag] = shampoo::init_heuristic(X, epsilon, diagThreshold)
+    } else if (optimizer == "adam") {
+      [m, v] = adam::init(X)
+    } else if (optimizer == "adagrad") {
+      cache = adagrad::init(X)
+    }
+
+    # warmup
+    if (optimizer == "sgd") {
+      X = sgd::update(X, dX, lr)
+    } else if (optimizer == "adagrad") {
+      [X, cache] = adagrad::update(X, dX, lr, epsilon, cache)
+    } else if (optimizer == "adam") {
+      [X, m, v] = adam::update(X, dX, lr, 0.9, 0.999, epsilon, timestep, m, v)
+      timestep = timestep + 1
+    } else if ((optimizer == "shampoo") | (optimizer == "shampoo_diagonal")) {
+      [X, preconL, preconR] = shampoo::update(X, dX, lr, preconL, preconR, useDiag)
+    } else if ((optimizer == "shampoo_momentum") | (optimizer == "shampoo_momentum_diagonal")) {
+      [X, preconL, preconR, momentum] = shampoo::update_momentum(X, dX, lr, preconL, preconR, momentum, useDiag)
+    } else if ((optimizer == "shampoo_heuristic") | (optimizer == "shampoo_heuristic_diagonal")) {
+      [X, preconL, preconR, momentum, stepCounter, bufferL, bufferR, preconLInvPowerRoot, preconRInvPowerRoot] = shampoo::update_heuristic(X, dX, lr, preconL, preconR, momentum, stepCounter, rootEvery, preconEvery, bufferL, bufferR, preconLInvPowerRoot, preconRInvPowerRoot, useDiag)
+    }
+
+    # timed loop
+    t0 = time()
+    
+    if (optimizer == "sgd") {
+      for (step in 1:nSteps) {
+        X = sgd::update(X, dX, lr)
+      }
+    } else if (optimizer == "adagrad") {
+      for (step in 1:nSteps) {
+        [X, cache] = adagrad::update(X, dX, lr, epsilon, cache)
+      }
+    } else if (optimizer == "adam") {
+      for (step in 1:nSteps) {
+        [X, m, v] = adam::update(X, dX, lr, 0.9, 0.999, epsilon, timestep, m, v)
+        timestep = timestep + 1
+      }
+    } else if ((optimizer == "shampoo") | (optimizer == "shampoo_diagonal")) {
+      for (step in 1:nSteps) {
+        [X, preconL, preconR] = shampoo::update(X, dX, lr, preconL, preconR, useDiag)
+      }
+    } else if ((optimizer == "shampoo_momentum") | (optimizer == "shampoo_momentum_diagonal")) {
+      for (step in 1:nSteps) {
+        [X, preconL, preconR, momentum] = shampoo::update_momentum(X, dX, lr, preconL, preconR, momentum, useDiag)
+      }
+    } else if ((optimizer == "shampoo_heuristic") | (optimizer == "shampoo_heuristic_diagonal")) {
+      for (step in 1:nSteps) {
+        [X, preconL, preconR, momentum, stepCounter, bufferL, bufferR, preconLInvPowerRoot, preconRInvPowerRoot] = shampoo::update_heuristic(X, dX, lr, preconL, preconR, momentum, stepCounter, rootEvery, preconEvery, bufferL, bufferR, preconLInvPowerRoot, preconRInvPowerRoot, useDiag)
+      }
+    }
+    
+    t1 = time()
+
+    diagonal = 0 
+    if (diagThreshold == 1){ 
+      diagonal = 1 
+    } else { 
+      diagonal = 0
+    }
+ 
+    timeSec = (t1 - t0) / 1000000000 / nSteps
+
+    row = row + 1
+    results[row,1] = optimizerIndex
+    results[row,2] = diagThreshold
+    results[row,3] = diagonal
+    results[row,4] = timeSec
+
+    print("Time per update (" + optimizer + ", " + diagonal + ") = " + timeSec + " sec")
+  }
+}
+outDir = "scripts/staging/shampoo_optimizer/metrics"
+write(results, outDir + "/update_step_times.csv", format="csv")

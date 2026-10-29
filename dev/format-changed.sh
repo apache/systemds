@@ -43,6 +43,14 @@
 #
 set -euo pipefail
 
-cd "$(git rev-parse --show-toplevel)"
+if [ $# -ne 0 ]; then
+if [[ "$1" == "--force" ]]; then
+    shift;
+    echo "Please check the resulting changes very carefully, as they might contain undesired modifications to the code.";
+    cd "$(git rev-parse --show-toplevel)";
+    exec python3 dev/format_changed.py --fix "$@";
+fi
+fi
 
-exec python3 dev/format_changed.py --fix "$@"
+echo "The formatting script is currently not supported, as it performs undesired modifications of code. You can still run this script with the '--force' flag. However, please double check the results very carefully." >&2;
+exit 1;

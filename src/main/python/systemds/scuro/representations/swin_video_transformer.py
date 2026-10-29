@@ -35,15 +35,23 @@ from systemds.scuro.drsearch.operator_registry import (
 )
 from systemds.scuro.dataloader.video_loader import VideoStats
 from systemds.scuro.representations.utils import (
-    LengthBucketBatchSampler,
+    LazyModelMixin,
+    build_torchvision_model,
     OwnerAccumulator,
     get_sequence_lengths,
-    move_batch_to_device,
-    pin_memory_for,
     transformer_inference_context,
 )
+from systemds.scuro.representations.video_batching import (
+    MIB,
+    FrameBudgetedVideoModel,
+    VideoMemoryProfile,
+)
 
-from systemds.scuro.utils.torch_dataset import CustomDataset
+from systemds.scuro.utils.torch_dataset import (
+    FrameDataset,
+    FramePreprocessor,
+    collate_frames,
+)
 from systemds.scuro.utils.static_variables import (
     get_device,
     get_device_for_model,
@@ -52,11 +60,22 @@ from systemds.scuro.utils.static_variables import (
 
 @register_representation([ModalityType.VIDEO])
 @register_expensive_representation([ModalityType.VIDEO])
-class SwinVideoTransformer(UnimodalRepresentation):
+class SwinVideoTransformer(
+    LazyModelMixin, FrameBudgetedVideoModel, UnimodalRepresentation
+):
+    OUTPUT_MODALITY_TYPE = ModalityType.EMBEDDING
     _EMBED_DIM = 768
+    MODEL_BYTES = 127_384_024
     cache_in_worker = True
+    _MEMORY_PROFILE = VideoMemoryProfile(
+        clip_frame_bytes=1 * MIB,
+        batch_frame_bytes=19 * MIB,
+        cpu_frame_bytes=24 * MIB,
+    )
 
-    def __init__(self, layer_name="avgpool", batch_size=8, params=None):
+    def __init__(
+        self, layer_name="avgpool", batch_size=8, params=None, max_batch_frames=None
+    ):
         parameters = {
             "layer_name": [
                 "features",
@@ -71,20 +90,34 @@ class SwinVideoTransformer(UnimodalRepresentation):
             # "batch_size": [1, 2, 4, 8, 16, 32],
         }
         self.data_type = torch.float32
-        super().__init__("SwinVideoTransformer", ModalityType.EMBEDDING, parameters)
+        super().__init__("SwinVideoTransformer", self.OUTPUT_MODALITY_TYPE, parameters)
         if params is not None:
             layer_name = params.get("layer_name", layer_name)
             batch_size = int(params.get("batch_size", batch_size))
         self.layer_name = layer_name
         self.batch_size = batch_size
-        self.model = swin3d_t(weights=models.video.Swin3D_T_Weights.KINETICS400_V1)
-        self.device = get_device_for_model(self.model, memory_factor=1.5)
-        self._gpu_id = self.device.index
+        # 32 clips of 300 frames would need ~175 GiB; see FrameBudgetedVideoModel.
+        self.max_batch_frames = max_batch_frames
+        self.device = get_device()
+        self._gpu_id = None
+        # Until the scheduler places it, the model picks a device when built.
+        self._placed = False
         self._activation_hook = None
-        self.model = self.model.to(self.device)
-        self.model.eval()
-        for param in self.model.parameters():
+
+    def _build_model(self):
+        model = build_torchvision_model(
+            swin3d_t, models.video.Swin3D_T_Weights.KINETICS400_V1
+        )
+        if not self._placed:
+            self.device = get_device_for_model(model, memory_factor=1.5)
+            self._gpu_id = self.device.index
+        model.eval()
+        for param in model.parameters():
             param.requires_grad = False
+        return model.to(self.device)
+
+    def _model_bytes(self) -> int:
+        return self.MODEL_BYTES
 
     @property
     def gpu_id(self):
@@ -93,6 +126,7 @@ class SwinVideoTransformer(UnimodalRepresentation):
     @gpu_id.setter
     def gpu_id(self, gpu_id):
         self._gpu_id = gpu_id
+        self._placed = True
         self.device = get_device(gpu_id)
 
     def get_output_stats(self, input_stats) -> RepresentationStats:
@@ -103,43 +137,8 @@ class SwinVideoTransformer(UnimodalRepresentation):
         dt = int(torch.tensor([], dtype=self.data_type).element_size())
         return input_stats.num_instances * self._EMBED_DIM * dt
 
-    def estimate_peak_memory_bytes(self, input_stats: VideoStats) -> dict:
-        dt = int(torch.tensor([], dtype=self.data_type).element_size())
-        temporal = max(input_stats.max_length, 1)
-        input_bytes = (
-            dt
-            * input_stats.max_channels
-            * temporal
-            * input_stats.max_height
-            * input_stats.max_width
-        )
-        output_bytes = self.estimate_output_memory_bytes(input_stats)
-        n = max(input_stats.num_instances, 1)
-        output_bytes_batch = output_bytes / n
-
-        batch_peak_bytes = (input_bytes + self._EMBED_DIM * dt) * 2
-
-        safety_margin_bytes = 100 * 1024 * 1024
-
-        param_size = 0
-        for param in self.model.parameters():
-            param_size += param.nelement() * param.element_size()
-
-        buffer_size = 0
-        for buffer in self.model.buffers():
-            buffer_size += buffer.nelement() * buffer.element_size()
-
-        size_all_bytes = param_size + buffer_size
-
-        cpu_peak = (
-            size_all_bytes * 2 * dt
-            + output_bytes_batch
-            + output_bytes
-            + input_bytes
-            + safety_margin_bytes
-        )
-        gpu_peak = (size_all_bytes * dt + batch_peak_bytes) * 6
-        return {"cpu_peak_bytes": int(cpu_peak), "gpu_peak_bytes": int(gpu_peak)}
+    def _memory_profile(self) -> VideoMemoryProfile:
+        return self._MEMORY_PROFILE
 
     def transform(self, modality, aggregation=None):
         self.model = self.model.to(self.device)
@@ -162,33 +161,30 @@ class SwinVideoTransformer(UnimodalRepresentation):
                     )
                     break
 
-        dataset = CustomDataset(modality.data, self.data_type, "cpu")
+        dataset = FrameDataset(modality.data, video=True)
+        preprocess = FramePreprocessor(dtype=self.data_type)
         lengths = get_sequence_lengths(modality.data, modality.metadata)
-        dataloader = torch.utils.data.DataLoader(
-            dataset,
-            batch_sampler=LengthBucketBatchSampler(
-                lengths, self.batch_size, exact=True
-            ),
-            pin_memory=pin_memory_for(self.device),
-        )
         accumulator = OwnerAccumulator(len(dataset), len(dataset), aggregation)
 
+        def forward(model, batch):
+            video_ids = batch["id"].long()
+            frames = preprocess(batch["data"], next(model.parameters()).device)
+            _ = model(frames.permute(0, 2, 1, 3, 4))
+            values = self.swin_output
+            if isinstance(values, tuple):
+                values = values[0]
+            if values.ndim == 2:
+                pooled = values
+            elif self.layer_name.startswith("features"):
+                pooled = values.mean(dim=tuple(range(1, values.ndim - 1)))
+            else:
+                pooled = values.mean(dim=tuple(range(2, values.ndim)))
+            # A batch run on the CPU accumulates on the representation's device.
+            video_ids = video_ids.to(self.device)
+            accumulator.update(pooled.to(self.device), video_ids, video_ids)
+
         with transformer_inference_context(self.device):
-            for batch in dataloader:
-                batch = move_batch_to_device(batch, self.device)
-                video_ids = batch["id"].long()
-                frames = batch["data"].permute(0, 2, 1, 3, 4)
-                _ = self.model(frames)
-                values = self.swin_output
-                if isinstance(values, tuple):
-                    values = values[0]
-                if values.ndim == 2:
-                    pooled = values
-                elif self.layer_name.startswith("features"):
-                    pooled = values.mean(dim=tuple(range(1, values.ndim - 1)))
-                else:
-                    pooled = values.mean(dim=tuple(range(2, values.ndim)))
-                accumulator.update(pooled, video_ids, video_ids)
+            self._run_batches(dataset, lengths, forward, collate_fn=collate_frames)
 
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type

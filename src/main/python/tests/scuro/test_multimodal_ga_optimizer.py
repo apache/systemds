@@ -23,6 +23,8 @@ import copy
 import os
 import pickle
 import random
+import subprocess
+import sys
 import tempfile
 import unittest
 from types import SimpleNamespace
@@ -34,8 +36,10 @@ from systemds.scuro.drsearch.multimodal_ga_optimizer import (
     DagGenome,
     MultimodalDeapOptimizer,
     _collect_leaf_indices,
+    _dispatch_genome_evaluation,
     _failure_fitness,
     _objective_value,
+    _task_uses_gpu,
 )
 from systemds.scuro.drsearch.operator_registry import Registry, register_fusion_operator
 from systemds.scuro.modality.type import ModalityType
@@ -110,10 +114,20 @@ def _fake_success_body(_dag, _task, _modalities, _objective_specs, value=0.5):
 class _SynchronousPool:
     instances = []
 
-    def __init__(self, n_workers, dispatch, ctx=None, threads_per_worker=1):
+    def __init__(
+        self,
+        n_workers,
+        dispatch,
+        ctx=None,
+        threads_per_worker=1,
+        gpu_devices=None,
+        gpu_slots_per_device=1,
+        gpu_demand_fraction=1.0,
+    ):
         self.n_workers = n_workers
         self.dispatch = dispatch
         self.threads_per_worker = threads_per_worker
+        self.gpu_devices = list(gpu_devices or [])
         self.pending = None
         self.next_job_id = 0
         self.shutdown_called = False
@@ -123,7 +137,18 @@ class _SynchronousPool:
     def has_idle_worker(self):
         return self.pending is None
 
-    def submit(self, kind, payload, gpu_id=None):
+    @property
+    def has_idle_cpu_worker(self):
+        return self.pending is None
+
+    @property
+    def gpu_worker_devices(self):
+        return []
+
+    def has_idle_worker_for(self, gpu_id, allow_gpu_worker_for_cpu=False):
+        return self.pending is None
+
+    def submit(self, kind, payload, gpu_id=None, allow_gpu_worker_for_cpu=False):
         job_id = self.next_job_id
         self.next_job_id += 1
         try:
@@ -573,6 +598,26 @@ class TestCrossover(unittest.TestCase):
                 set(child.fusion_ops.keys()), set(optimizer._internal_paths(child.tree))
             )
 
+    def test_subtree_swap_keeps_every_leaf_exactly_once(self):
+        """Swapping subtrees with different leaf sets used to duplicate one
+        leaf and drop another from the child's tree."""
+        optimizer, _, task = _make_optimizer(
+            n_modalities=4, reps_per_modality=2, min_modalities=4, max_modalities=4
+        )
+        optimizer.fusion_operators = [Concatenation, Average]
+        optimizer.rng = random.Random(0)
+        for _ in range(100):
+            g1 = optimizer._random_genome(task.model.name)
+            g2 = copy.deepcopy(g1)
+            g2.tree = optimizer._random_binary_tree(len(g2.leaves))
+            g2.fusion_ops = {}
+            optimizer._assign_fusion_ops(g2.tree, g2.fusion_ops, "")
+            for child in optimizer._crossover_genomes(g1, g2):
+                self.assertEqual(
+                    sorted(_collect_leaf_indices(child.tree)),
+                    list(range(len(child.leaves))),
+                )
+
     def test_mismatched_leaves_still_recombines(self):
         """Regression test: the original crossover returned both parents
         completely unchanged whenever they didn't select the exact same
@@ -605,6 +650,49 @@ class TestCrossover(unittest.TestCase):
         # leaves/tree topology are untouched by the op-only fallback
         self.assertEqual(c1.leaves, g1.leaves)
         self.assertEqual(c2.leaves, g2.leaves)
+
+    def test_mismatched_leaves_crossover_is_independent_of_hash_seed(self):
+        """Regression test: the op-only fallback iterated a set of path
+        strings while drawing from the rng, so every process (PYTHONHASHSEED)
+        paired the paths with different draws and two runs of the same seed
+        bred different children."""
+        script = (
+            "import json, random\n"
+            "from tests.scuro.test_multimodal_ga_optimizer import _make_optimizer\n"
+            "from systemds.scuro.representations.average import Average\n"
+            "from systemds.scuro.representations.concatenation import Concatenation\n"
+            "from systemds.scuro.representations.sum import Sum\n"
+            "opt, _, task = _make_optimizer(n_modalities=6, reps_per_modality=2,\n"
+            "                               min_modalities=4, max_modalities=6)\n"
+            "opt.fusion_operators = [Concatenation, Average, Sum]\n"
+            "opt.rng = random.Random(0)\n"
+            "children = []\n"
+            "for _ in range(100):\n"
+            "    g1 = opt._random_genome(task.model.name)\n"
+            "    g2 = opt._random_genome(task.model.name)\n"
+            "    for c in opt._crossover_genomes(g1, g2):\n"
+            "        children.append(sorted((p, op.__name__) for p, op in c.fusion_ops.items()))\n"
+            "print(json.dumps(children))\n"
+        )
+        root = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        )
+        outputs = set()
+        for seed in ("0", "1", "2", "3"):
+            env = dict(os.environ, PYTHONHASHSEED=seed)
+            env["PYTHONPATH"] = os.pathsep.join(
+                filter(None, [root, env.get("PYTHONPATH")])
+            )
+            result = subprocess.run(
+                [sys.executable, "-c", script],
+                cwd=root,
+                env=env,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            outputs.add(result.stdout.strip().splitlines()[-1])
+        self.assertEqual(len(outputs), 1)
 
 
 class TestGenomeSignature(unittest.TestCase):
@@ -914,6 +1002,58 @@ class TestStoreResults(unittest.TestCase):
             self.assertEqual(os.listdir(d), [])
 
 
+class TestSearchReproducibility(unittest.TestCase):
+    def _run(self, first_task_offset, global_seed):
+        """Searches two tasks and returns the genomes evaluated per task. The
+        first task's scores are shifted by `first_task_offset`; the global
+        random module is seeded with `global_seed`."""
+        tasks = [_make_task("first"), _make_task("second")]
+        modalities = [_FakeModality(f"m{i}") for i in range(4)]
+        reps = {m.modality_id: [object() for _ in range(3)] for m in modalities}
+        optimizer = MultimodalDeapOptimizer(
+            modalities,
+            _FakeUnimodalResults(reps),
+            tasks,
+            debug=False,
+            population_size=8,
+            generations=4,
+            early_stopping_patience=None,
+            random_seed=7,
+        )
+        optimizer.fusion_operators = [Concatenation, Average, Sum]
+        evaluated = {"first": [], "second": []}
+
+        def evaluate(population, task):
+            for ind in population:
+                key = (
+                    tuple(ind[0].leaves),
+                    tuple(
+                        sorted((p, c.__name__) for p, c in ind[0].fusion_ops.items())
+                    ),
+                )
+                value = (hash(repr(key)) % 1000) / 1000.0
+                if task.model.name == "first":
+                    value = (value + first_task_offset) % 1.0
+                ind.fitness.values = (value,)
+                evaluated[task.model.name].append(key)
+
+        random.seed(global_seed)
+        with patch.object(optimizer, "_evaluate_population", side_effect=evaluate):
+            optimizer._optimize()
+        return evaluated
+
+    def test_a_task_search_ignores_earlier_tasks_and_global_random(self):
+        a = self._run(first_task_offset=0.0, global_seed=0)
+        b = self._run(first_task_offset=0.37, global_seed=1)
+        self.assertNotEqual(
+            a["first"], b["first"], "test setup needs diverging first task"
+        )
+        self.assertEqual(a["second"], b["second"])
+
+    def test_same_scores_give_the_same_search(self):
+        self.assertEqual(self._run(0.0, 0), self._run(0.0, 1))
+
+
 class TestRealFusionIntegration(unittest.TestCase):
     """Exercises the actual RepresentationDag.execute() path end-to-end,
     including across process boundaries for the parallel case (a spawned
@@ -1214,6 +1354,54 @@ class TestMultiObjective(unittest.TestCase):
         self.assertGreater(len(results[task.model.name]), 0)
         for result in results[task.model.name]:
             self.assertGreaterEqual(result.runtime, 0.0)
+
+
+class _LanePool:
+    """Idle-worker bookkeeping of PersistentWorkerPool, without processes."""
+
+    def __init__(self, idle_gpu, idle_cpu):
+        self.idle_gpu = set(idle_gpu)
+        self.idle_cpu = idle_cpu
+        self.gpu_worker_devices = [0, 1]
+
+    @property
+    def has_idle_cpu_worker(self):
+        return self.idle_cpu
+
+    def has_idle_worker_for(self, gpu_id, allow_gpu_worker_for_cpu=False):
+        if gpu_id is not None:
+            return gpu_id in self.idle_gpu
+        return self.idle_cpu or (allow_gpu_worker_for_cpu and bool(self.idle_gpu))
+
+
+class TestGpuLanes(unittest.TestCase):
+    def _lane(self, pool, uses_gpu):
+        return MultimodalDeapOptimizer._idle_lane(
+            SimpleNamespace(_worker_pool=pool), uses_gpu
+        )
+
+    def test_gpu_task_prefers_idle_gpu_worker(self):
+        self.assertEqual(self._lane(_LanePool({1}, idle_cpu=True), True), 1)
+
+    def test_gpu_task_overflows_to_cpu_worker(self):
+        self.assertIsNone(self._lane(_LanePool(set(), idle_cpu=True), True))
+
+    def test_cpu_task_may_take_gpu_worker(self):
+        self.assertIsNone(self._lane(_LanePool({0}, idle_cpu=False), False))
+
+    def test_no_idle_worker(self):
+        self.assertIs(self._lane(_LanePool(set(), idle_cpu=False), True), False)
+        self.assertIs(self._lane(_LanePool(set(), idle_cpu=False), False), False)
+
+    def test_task_uses_gpu_from_flag_or_device(self):
+        def task(**model_attrs):
+            return SimpleNamespace(model=SimpleNamespace(**model_attrs))
+
+        self.assertTrue(_task_uses_gpu(task(uses_gpu=True)))
+        self.assertFalse(_task_uses_gpu(task(uses_gpu=False, device="cuda")))
+        self.assertTrue(_task_uses_gpu(task(device=SimpleNamespace(type="cuda"))))
+        self.assertFalse(_task_uses_gpu(task(device=SimpleNamespace(type="cpu"))))
+        self.assertFalse(_task_uses_gpu(task()))
 
 
 if __name__ == "__main__":

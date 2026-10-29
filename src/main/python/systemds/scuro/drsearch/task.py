@@ -22,14 +22,33 @@ import copy
 import os
 import time
 from typing import List
+from systemds.scuro.utils.static_variables import get_global_seed, get_train_seed
 from systemds.scuro.models.model import Model
+from systemds.scuro.models.fused_mlp import (
+    candidate_slots,
+    fit_folds,
+    fused_training_enabled,
+    supports_fused_training,
+)
+from systemds.scuro.models.training_stats import TrainingWorkAccumulator
 import numpy as np
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import (
+    GroupKFold,
+    KFold,
+    StratifiedGroupKFold,
+    StratifiedKFold,
+)
+from systemds.scuro.drsearch.evaluation_split import EvaluationSplit
 from systemds.scuro.representations.representation import RepresentationStats
 
 _GPU_CONTEXT_FLOOR_BYTES = (
     int(os.environ.get("SCURO_GPU_CONTEXT_FLOOR_MB", "512")) * 1024 * 1024
 )
+
+
+def _as_features(X):
+    X = np.asarray(X, dtype=np.float32)
+    return X.reshape(len(X), -1)
 
 
 class PerformanceMeasure:
@@ -86,7 +105,9 @@ class Task:
         kfold=5,
         measure_performance=True,
         performance_measures=["accuracy"],
-        fusion_train_split=0.8,
+        groups=None,
+        allow_group_overlap=False,
+        cv_seed=None,
     ):
         """
         Parent class for the prediction task that is performed on top of the aligned representation
@@ -104,16 +125,19 @@ class Task:
         self.train_indices = train_indices
         self.test_indices = val_indices
         self.kfold = kfold
+        self.groups = None if groups is None else np.asarray(groups)
+        self.allow_group_overlap = allow_group_overlap
+        self.cv_seed = get_global_seed() if cv_seed is None else cv_seed
         self.measure_performance = measure_performance
         self.inference_time = []
         self.training_time = []
         self.last_run_timing = {}
+        self.training_work = TrainingWorkAccumulator()
         self.expected_dim = 1
         self.performance_measures = performance_measures
         self.train_scores = PerformanceMeasure("train", performance_measures)
         self.val_scores = PerformanceMeasure("val", performance_measures)
         self.test_scores = PerformanceMeasure("test", performance_measures)
-        self.fusion_train_indices = None
         self._create_cv_splits()
 
     def get_output_stats(self, input_stats):
@@ -150,11 +174,6 @@ class Task:
             + n_test
             + sum(len(fold) for fold in self.cv_train_indices)
             + sum(len(fold) for fold in self.cv_val_indices)
-            + (
-                len(self.fusion_train_indices)
-                if self.fusion_train_indices is not None
-                else 0
-            )
         )
         index_bytes = total_index_entries * np.dtype(np.int64).itemsize
 
@@ -191,6 +210,8 @@ class Task:
         uses_gpu = getattr(self.model, "uses_gpu", None)
         if uses_gpu is None:
             uses_gpu = model_peak_memory_gpu > 0
+        if fused_training_enabled() and supports_fused_training(self.model):
+            uses_gpu = False
 
         gpu_peak_bytes = int(model_peak_memory_gpu * 1.4) if uses_gpu else 0
         if uses_gpu and gpu_peak_bytes <= 0:
@@ -209,31 +230,164 @@ class Task:
         )
         fold_sizes = [len(fold) for fold in self.cv_train_indices]
         n_fold_train = max(fold_sizes, default=len(self.train_indices or []))
+        num_steps = getattr(self.model, "num_steps", None)
+        if num_steps is not None:
+            batch_size = max(1, int(getattr(self.model, "batch_size", 1) or 1))
+            samples = max(1, int(num_steps)) * batch_size
+            return float(max(1, self.kfold) * samples * max(1, feature_dim))
         passes = max(1, int(getattr(self.model, "epochs", 1) or 1))
         return float(
             max(1, self.kfold) * passes * max(1, n_fold_train) * max(1, feature_dim)
         )
 
+    def validate_input_memory(self, data, gpu_memory_fraction: float = 0.9) -> None:
+        if data is None or len(data) == 0:
+            return
+
+        if isinstance(data, np.ndarray):
+            num_instances = int(data.shape[0]) if data.ndim else 1
+            output_shape = tuple(data.shape[1:]) if data.ndim > 1 else (1,)
+            dtype = data.dtype
+        else:
+            sample = np.asarray(data[0])
+            num_instances = len(data)
+            output_shape = tuple(sample.shape) if sample.ndim else (1,)
+            dtype = sample.dtype
+
+        estimate = self.estimate_peak_memory_bytes(
+            RepresentationStats(
+                num_instances,
+                output_shape,
+                output_shape_is_known=True,
+                dtype=dtype,
+            )
+        )
+        required = int(estimate.get("gpu_peak_bytes", 0))
+        if required <= 0:
+            return
+
+        try:
+            import torch
+
+            if not torch.cuda.is_available():
+                return
+            device = getattr(self.model, "device", torch.device("cuda"))
+            device_index = (
+                device.index if getattr(device, "index", None) is not None else 0
+            )
+            free, total = torch.cuda.mem_get_info(device_index)
+            cached = torch.cuda.memory_reserved(
+                device_index
+            ) - torch.cuda.memory_allocated(device_index)
+        except (ImportError, RuntimeError):
+            return
+
+        available = int((free + max(cached, 0)) * gpu_memory_fraction)
+        if required > available:
+            feature_dim = int(np.prod(output_shape)) if output_shape else 0
+            raise MemoryError(
+                f"{self.model.name} estimated CUDA peak "
+                f"{required / 1024**3:.2f} GiB for input_dim={feature_dim:,}, but "
+                f"only {free / 1024**3:.2f} GiB is free "
+                f"({total / 1024**3:.2f} GiB total). Rejecting this candidate "
+                "before allocating CUDA tensors."
+            )
+
+    @staticmethod
+    def _stratification_target(labels_array):
+        if labels_array.ndim == 1:
+            return labels_array
+        return None
+
+    def _fold_candidates(self, y, n_units):
+        n_splits = max(2, min(self.kfold, int(n_units)))
+        stratify_on = self._stratification_target(y)
+        candidates = []
+        if self.groups is not None:
+            if stratify_on is not None:
+                candidates.append(
+                    (
+                        StratifiedGroupKFold(
+                            n_splits=n_splits, shuffle=True, random_state=self.cv_seed
+                        ),
+                        stratify_on,
+                    )
+                )
+            candidates.append((GroupKFold(n_splits=n_splits), None))
+        else:
+            if stratify_on is not None:
+                candidates.append(
+                    (
+                        StratifiedKFold(
+                            n_splits=n_splits, shuffle=True, random_state=self.cv_seed
+                        ),
+                        stratify_on,
+                    )
+                )
+            candidates.append(
+                (
+                    KFold(n_splits=n_splits, shuffle=True, random_state=self.cv_seed),
+                    None,
+                )
+            )
+        return candidates
+
+    def _check_train_test_groups(self):
+        if self.groups is None or not len(self.test_indices or []):
+            return
+        train_groups = set(self.groups[np.asarray(self.train_indices)].tolist())
+        test_groups = set(self.groups[np.asarray(self.test_indices)].tolist())
+        shared = train_groups & test_groups
+        if shared and not self.allow_group_overlap:
+            raise ValueError(
+                f"{self.name}: train and test share {len(shared)} group(s) "
+                f"(e.g. {sorted(map(str, shared))[:5]}). Use a group-disjoint "
+                "outer split, or pass allow_group_overlap=True to declare a "
+                "group-dependent protocol explicitly."
+            )
+        self.train_test_group_overlap = sorted(map(str, shared))
+
     def _create_cv_splits(self):
-        train_labels = [self.labels[i] for i in self.train_indices]
-        train_labels_array = np.array(train_labels)
+        self._check_train_test_groups()
 
-        train_indices_array = np.array(self.train_indices)
+        train_indices_array = np.asarray(self.train_indices)
+        y = np.asarray([self.labels[i] for i in self.train_indices])
+        fold_groups = None if self.groups is None else self.groups[train_indices_array]
 
+        n_units = (
+            len(train_indices_array)
+            if fold_groups is None
+            else len(set(fold_groups.tolist()))
+        )
+        folds = None
+        reason = None
+        for splitter, stratify_on in self._fold_candidates(y, n_units):
+            try:
+                folds = list(
+                    splitter.split(train_indices_array, stratify_on, groups=fold_groups)
+                )
+            except ValueError as error:
+                reason = f"{type(splitter).__name__}: {error}"
+                continue
+            self.cv_stratified = stratify_on is not None
+            self.cv_fallback_reason = reason
+            break
+        if folds is None:
+            raise ValueError(
+                f"{self.name}: cannot build {self.kfold} folds over "
+                f"{len(train_indices_array)} training instances "
+                f"({n_units} unit(s)): {reason}"
+            )
+
+        self.kfold = len(folds)
+
+        self.cv_grouped = self.groups is not None
         self.cv_train_indices = []
         self.cv_val_indices = []
 
-        for fold_idx in range(self.kfold):
-            fold_train_indices_array, fold_val_indices_array, _, _ = train_test_split(
-                train_indices_array,
-                train_labels_array,
-                test_size=0.2,
-                shuffle=True,
-                random_state=11 + fold_idx,
-            )
-
-            fold_train_indices = fold_train_indices_array.tolist()
-            fold_val_indices = fold_val_indices_array.tolist()
+        for fold_idx, (fit_positions, val_positions) in enumerate(folds):
+            fold_train_indices = train_indices_array[fit_positions].tolist()
+            fold_val_indices = train_indices_array[val_positions].tolist()
 
             self.cv_train_indices.append(fold_train_indices)
             self.cv_val_indices.append(fold_val_indices)
@@ -244,13 +398,47 @@ class Task:
                     f"Fold {fold_idx}: Overlap detected between train and val indices: {overlap}"
                 )
 
-        all_val_indices = set()
-        for val_indices in self.cv_val_indices:
-            all_val_indices.update(val_indices)
+            if fold_groups is not None:
+                shared_groups = set(fold_groups[fit_positions].tolist()) & set(
+                    fold_groups[val_positions].tolist()
+                )
+                if shared_groups:
+                    raise ValueError(
+                        f"Fold {fold_idx}: groups appear in both the fit and the "
+                        f"validation part: {sorted(map(str, shared_groups))[:5]}"
+                    )
 
-        self.fusion_train_indices = [
-            idx for idx in self.train_indices if idx not in all_val_indices
-        ]
+        self.evaluation_splits = tuple(
+            EvaluationSplit(train_indices, val_indices, name=f"fold_{fold_idx}")
+            for fold_idx, (train_indices, val_indices) in enumerate(
+                zip(self.cv_train_indices, self.cv_val_indices)
+            )
+        )
+
+    def split_report(self):
+        report = {
+            "task": self.name,
+            "n_train": len(self.train_indices),
+            "n_test": 0 if self.test_indices is None else len(self.test_indices),
+            "kfold": self.kfold,
+            "grouped": bool(getattr(self, "cv_grouped", False)),
+            "stratified": bool(getattr(self, "cv_stratified", False)),
+            "cv_seed": self.cv_seed,
+        }
+        if self.groups is not None:
+            report["n_groups_train"] = len(
+                set(self.groups[np.asarray(self.train_indices)].tolist())
+            )
+            if len(self.test_indices or []):
+                report["n_groups_test"] = len(
+                    set(self.groups[np.asarray(self.test_indices)].tolist())
+                )
+            report["train_test_group_overlap"] = len(
+                getattr(self, "train_test_group_overlap", [])
+            )
+        if getattr(self, "cv_fallback_reason", None):
+            report["stratification_fallback"] = self.cv_fallback_reason
+        return report
 
     def create_model(self):
         """
@@ -280,6 +468,7 @@ class Task:
          :param data: The aligned data used in the prediction process
          :return: the validation accuracy
         """
+        self.validate_input_memory(data)
         self._reset_params()
         model = self.create_model()
 
@@ -310,12 +499,78 @@ class Task:
                 float(np.mean(self.inference_time)) if self.inference_time else 0.0
             ),
             "n_test_instances": len(self.test_indices) if self.test_indices else 0,
+            **self.training_work.as_dict(),
         }
         return [
             self.train_scores.compute_averages(),
             self.val_scores.compute_averages(),
             self.test_scores.compute_averages(),
         ]
+
+    def run_many(self, datas, device):
+        model = self.create_model()
+        rows = list(
+            dict.fromkeys(list(self.train_indices) + list(self.test_indices or []))
+        )
+        local = {row: i for i, row in enumerate(rows)}
+        splits = [
+            ([local[i] for i in fit], [local[i] for i in val])
+            for fit, val in zip(self.cv_train_indices, self.cv_val_indices)
+        ]
+        test = [local[i] for i in self.test_indices or []]
+        labels = np.asarray(self._gather_by_indices(self.labels, rows))
+        prepare = getattr(model, "prepare_features", None) or _as_features
+
+        results, by_width = [None] * len(datas), {}
+        for c, data in enumerate(datas):
+            try:
+                X = prepare(self._gather_by_indices(data, rows))
+                if not np.isfinite(X).all():
+                    raise ValueError("non-finite input features")
+                by_width.setdefault(X.shape[1], []).append((c, X))
+            except Exception as e:
+                results[c] = e
+
+        seed = getattr(model, "seed", None)
+        seed = get_train_seed(get_global_seed() if seed is None else seed)
+        outputs = {}
+        start = time.perf_counter()
+        for width, group in by_width.items():
+            slots = candidate_slots(model, width, len(rows), self.kfold)
+            for i in range(0, len(group), slots):
+                chunk = group[i : i + slots]
+                fitted = fit_folds(
+                    model, [X for _, X in chunk], labels, splits, seed, device
+                )
+                outputs.update(zip([c for c, _ in chunk], fitted))
+        per_fit_s = (time.perf_counter() - start) / max(1, len(outputs) * self.kfold)
+
+        for c, out in outputs.items():
+            if not np.isfinite(out).all():
+                results[c] = ValueError("training diverged: non-finite model output")
+                continue
+            self._reset_params()
+            for k, (fit, val) in enumerate(splits):
+                for measure, idx in (
+                    (self.train_scores, fit),
+                    (self.val_scores, val),
+                    (self.test_scores, test),
+                ):
+                    measure.add_scores(
+                        model.scores_from_output(out[k][idx], labels[idx])[0]
+                    )
+            self.last_run_timing = {
+                "train_time_per_fold_s": [per_fit_s] * self.kfold,
+                "train_time_mean_s": per_fit_s,
+                "n_test_instances": len(test),
+                "fused_batch_candidates": len(outputs),
+            }
+            results[c] = [
+                self.train_scores.compute_averages(),
+                self.val_scores.compute_averages(),
+                self.test_scores.compute_averages(),
+            ]
+        return results
 
     def fit_once_and_time_inference(
         self, data, latency_repeats: int = 200, latency_warmup: int = 20
@@ -405,6 +660,7 @@ class Task:
     def _reset_params(self):
         self.inference_time = []
         self.training_time = []
+        self.training_work = TrainingWorkAccumulator()
         self.train_scores = PerformanceMeasure("train", self.performance_measures)
         self.val_scores = PerformanceMeasure("val", self.performance_measures)
         self.test_scores = PerformanceMeasure("test", self.performance_measures)
@@ -422,6 +678,8 @@ class Task:
         self.inference_time.append(test_end - test_start)
         self.val_scores.add_scores(val_score[0])
         self.test_scores.add_scores(test_score[0])
+        # No-op for the non-neural models that share this machinery.
+        self.training_work.add(model)
 
     @staticmethod
     def _gather_by_indices(values, indices):

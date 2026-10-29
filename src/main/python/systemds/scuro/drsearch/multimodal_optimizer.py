@@ -24,21 +24,36 @@ import multiprocessing as mp
 import itertools
 import threading
 from dataclasses import dataclass
-from typing import List, Dict, Any, Generator
+from typing import List, Dict, Any, Generator, Optional
 from systemds.scuro.drsearch.task import Task, PerformanceMeasure
 from systemds.scuro.drsearch.representation_dag import (
     RepresentationDag,
     RepresentationDAGBuilder,
 )
+from systemds.scuro.drsearch.split_aware_evaluator import (
+    SplitAwareDAGEvaluator,
+    dag_requires_fitting,
+)
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
+)
+from systemds.scuro.drsearch.algebra import (
+    AlgebraConfig,
+    canonical_id,
+    count_explicit_prep,
+    explicit_fusion_operands,
+    explicit_prep_on,
+    order_invariant,
+    sample_stats,
 )
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.utils.schema_helpers import get_shape
 
 from concurrent.futures import ProcessPoolExecutor, wait, FIRST_COMPLETED
+import math
 import pickle
 import copy
+from collections import Counter
 import time
 import traceback
 from itertools import chain
@@ -55,6 +70,22 @@ def _evaluate_dag_worker(dag_pickle, task_pickle, modalities_pickle, debug=False
         if debug:
             print(
                 f"[DEBUG][worker] pid={os.getpid()} evaluating dag_root={getattr(dag, 'root_node_id', None)} task={getattr(task.model, 'name', None)}"
+            )
+
+        if dag_requires_fitting(dag, modalities_for_dag):
+            evaluation = SplitAwareDAGEvaluator(
+                dag, modalities_for_dag, task
+            ).evaluate()
+            total_time = evaluation.representation_time + evaluation.task_time
+            return OptimizationResult(
+                dag=dag,
+                train_score=evaluation.scores[0].average_scores,
+                val_score=evaluation.scores[1].average_scores,
+                test_score=evaluation.scores[2].average_scores,
+                runtime=total_time,
+                task_name=task.model.name,
+                task_time=evaluation.task_time,
+                representation_time=evaluation.representation_time,
             )
 
         fused_representation = dag.execute(modalities_for_dag, task)
@@ -106,7 +137,9 @@ class MultimodalOptimizer:
         max_modalities: int = None,
         metric: str = "accuracy",
         checkpoint_every: int = None,
-        resume: bool = True,
+        checkpoint_dir: Optional[str] = None,
+        resume: bool = False,
+        algebra: Optional[AlgebraConfig] = None,
     ):
         self.modalities = modalities
         self.tasks = tasks
@@ -114,6 +147,9 @@ class MultimodalOptimizer:
         self.debug = debug
         self.min_modalities = max(2, min_modalities)
         self.max_modalities = max_modalities or len(modalities)
+        self.algebra = algebra or AlgebraConfig()
+        self.algebra_stats = Counter()
+        self._order_invariant = order_invariant(self.algebra, tasks)
 
         self.operator_registry = Registry()
         self.fusion_operators = self.operator_registry.get_fusion_operators()
@@ -126,7 +162,7 @@ class MultimodalOptimizer:
         self.checkpoint_every = checkpoint_every
         self.resume = resume
         self._checkpoint_manager = CheckpointManager(
-            os.getcwd(),
+            checkpoint_dir or os.getcwd(),
             "multimodal_checkpoint_",
             checkpoint_every=self.checkpoint_every,
             resume=self.resume,
@@ -196,7 +232,7 @@ class MultimodalOptimizer:
                             break
 
                         for dag in self._generate_fusion_dags(
-                            modality_subset, repr_combo
+                            modality_subset, repr_combo, task.model.name
                         ):
                             if max_combinations and evaluated_count >= max_combinations:
                                 stop_generation = True
@@ -332,9 +368,20 @@ class MultimodalOptimizer:
             }
 
     def _generate_fusion_dags(
-        self, modality_subset: List[str], representation_combo: Dict[str, int]
+        self,
+        modality_subset: List[str],
+        representation_combo: Dict[str, int],
+        task_name: str = None,
     ) -> Generator[RepresentationDag, None, None]:
         leaf_infos = [(m, representation_combo[m]) for m in modality_subset]
+        leaf_stats = (
+            {
+                (m, i): sample_stats(self.k_best_representations[task_name][m][i])
+                for m, i in leaf_infos
+            }
+            if explicit_prep_on(self.algebra) and task_name is not None
+            else None
+        )
 
         def gen_trees(indices: List[int]):
             if len(indices) == 1:
@@ -372,18 +419,35 @@ class MultimodalOptimizer:
                     for fusion_op_class in self.fusion_operators:
                         new_builder = copy.deepcopy(right_builder)
                         fusion_op = fusion_op_class()
+                        params = fusion_op.get_current_parameters()
+                        inputs = [left_root, right_root]
+                        if leaf_stats is not None:
+                            inputs = explicit_fusion_operands(
+                                new_builder,
+                                fusion_op.__class__,
+                                params,
+                                inputs,
+                                leaf_stats,
+                                self.algebra,
+                            )
                         fusion_id = new_builder.create_operation_node(
-                            fusion_op.__class__,
-                            [left_root, right_root],
-                            fusion_op.get_current_parameters(),
+                            fusion_op.__class__, inputs, params
                         )
                         variants.append((new_builder, fusion_id))
 
             return variants
 
         n = len(leaf_infos)
+        dedup_permutations = self.algebra.exhaustive_dedup_permutations
+        # gen_trees already yields every leaf order, so permuting the leaves repeats each tree n! times.
+        leaf_orders = (
+            [leaf_infos]
+            if dedup_permutations
+            else itertools.permutations(leaf_infos, n)
+        )
+        seen_canonical = set()
 
-        for permuted_leaf_infos in itertools.permutations(leaf_infos, n):
+        for permuted_leaf_infos in leaf_orders:
             base_builder = RepresentationDAGBuilder()
             leaf_id_map = {}
             for idx, (modality_id, repr_idx) in enumerate(permuted_leaf_infos):
@@ -395,16 +459,53 @@ class MultimodalOptimizer:
             for tree in gen_trees(indices):
                 variants = build_variants(tree, base_builder, leaf_id_map)
                 for builder_variant, root_id in variants:
+                    self.algebra_stats["exhaustive_generated"] += (
+                        math.factorial(n) if dedup_permutations else 1
+                    )
+                    if dedup_permutations:
+                        self.algebra_stats["exhaustive_after_permutation_dedup"] += 1
                     try:
-                        yield builder_variant.build(root_id)
+                        dag = builder_variant.build(root_id)
                     except ValueError:
                         if self.debug:
                             print(f"[DEBUG] Skipping invalid DAG for root {root_id}")
                         continue
+                    if self.algebra.exhaustive_canonical:
+                        cid = canonical_id(
+                            dag, self.algebra.laws, self._order_invariant
+                        )
+                        if cid in seen_canonical:
+                            continue
+                        seen_canonical.add(cid)
+                        self.algebra_stats["exhaustive_after_canonical"] += 1
+                    if leaf_stats is not None:
+                        count_explicit_prep(self.algebra_stats, dag)
+                    yield dag
 
     def _evaluate_dag(self, dag: RepresentationDag, task: Task) -> "OptimizationResult":
         start_time = time.time()
         try:
+
+            modalities_for_dag = list(
+                chain.from_iterable(
+                    self.k_best_representations[task.model.name].values()
+                )
+            )
+            if dag_requires_fitting(dag, modalities_for_dag):
+                evaluation = SplitAwareDAGEvaluator(
+                    dag, modalities_for_dag, task
+                ).evaluate()
+                total_time = evaluation.representation_time + evaluation.task_time
+                return OptimizationResult(
+                    dag=dag,
+                    train_score=evaluation.scores[0].average_scores,
+                    val_score=evaluation.scores[1].average_scores,
+                    test_score=evaluation.scores[2].average_scores,
+                    runtime=total_time,
+                    representation_time=evaluation.representation_time,
+                    task_name=task.model.name,
+                    task_time=evaluation.task_time,
+                )
 
             fused_representation = dag.execute(
                 list(
@@ -483,7 +584,9 @@ class MultimodalOptimizer:
                     modality_subset, task.model.name
                 ):
 
-                    for dag in self._generate_fusion_dags(modality_subset, repr_combo):
+                    for dag in self._generate_fusion_dags(
+                        modality_subset, repr_combo, task.model.name
+                    ):
                         if max_combinations and evaluated_count >= max_combinations:
                             break
                         if skip_remaining > 0:

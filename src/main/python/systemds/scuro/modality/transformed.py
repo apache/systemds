@@ -25,6 +25,7 @@ from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.window_aggregation import WindowAggregation
+from systemds.scuro.representations.aggregate import set_valid_windows
 import time
 import sys
 
@@ -65,6 +66,7 @@ class TransformedModality(Modality):
             else True
         )
         self.aggregate_dim = aggregate_dim
+        self.is_fused = getattr(modality, "is_fused", False)
 
         if modality.__class__.__name__ == "UnimodalModality":
             for m in self.metadata:
@@ -129,6 +131,7 @@ class TransformedModality(Modality):
         )
         start = time.time()
         transformed_modality.data = w.execute(self)
+        set_valid_windows(transformed_modality, w.valid_windows)
         transformed_modality.transform_time += time.time() - start
         return transformed_modality
 
@@ -138,6 +141,9 @@ class TransformedModality(Modality):
         )
         start = time.time()
         transformed_modality.data = context_operator.execute(self)
+        set_valid_windows(
+            transformed_modality, getattr(context_operator, "valid_windows", None)
+        )
         transformed_modality.transform_time += time.time() - start
         return transformed_modality
 
@@ -185,26 +191,14 @@ class TransformedModality(Modality):
         fused_modality = TransformedModality(
             self, fusion_method, ModalityType.EMBEDDING
         )
-        start_time = time.time()
-        fused_modality.data = fusion_method.transform(self.create_modality_list(other))
-        end_time = time.time()
-        fused_modality.transform_time = end_time - start_time
-        return fused_modality
-
-    def combine_with_training(
-        self, other: Union[Modality, List[Modality]], fusion_method, task
-    ):
-        fused_modality = TransformedModality(
-            self, fusion_method, ModalityType.EMBEDDING
-        )
+        fused_modality.is_fused = True
         modalities = self.create_modality_list(other)
         start_time = time.time()
-        fused_modality.data = fusion_method.transform_with_training(modalities, task)
+        fused_modality.data = fusion_method.transform(modalities)
         end_time = time.time()
-        fused_modality.transform_time = (
-            end_time - start_time
-        )  # Note: this incldues the training time
-
+        fused_modality.transform_time += (end_time - start_time) + sum(
+            getattr(m, "transform_time", 0) or 0 for m in modalities[1:]
+        )
         return fused_modality
 
     def create_modality_list(self, other: Union[Modality, List[Modality]]):

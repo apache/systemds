@@ -22,6 +22,8 @@
 from __future__ import annotations
 
 import copy
+from collections import Counter
+import gc
 import os
 import pickle
 import random
@@ -32,7 +34,13 @@ import traceback
 from dataclasses import dataclass, field
 from itertools import chain
 from typing import Any, Dict, List, Optional, Tuple, Union
+from systemds.scuro.utils.static_variables import (
+    cuda_allowed,
+    deterministic_enabled,
+    get_global_seed,
+)
 
+import numpy as np
 from deap import base, tools
 
 from systemds.scuro.drsearch.modality_shared_memory import (
@@ -40,19 +48,46 @@ from systemds.scuro.drsearch.modality_shared_memory import (
     unlink_shm,
 )
 
+from systemds.scuro.drsearch.algebra import (
+    AlgebraConfig,
+    canonical_id,
+    canonical_signature,
+    count_explicit_prep,
+    count_violations,
+    explicit_fusion_operands,
+    explicit_prep_on,
+    order_invariant,
+    sample_stats,
+    typecheck,
+)
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.drsearch.representation_dag import (
     RepresentationDAGBuilder,
     RepresentationDag,
+    compose_dag_leaves,
 )
 from systemds.scuro.drsearch.task import Task
-from systemds.scuro.drsearch.worker_pool import PersistentWorkerPool, create_mp_context
+from systemds.scuro.drsearch.split_aware_evaluator import (
+    SplitAwareDAGEvaluator,
+    dag_requires_fitting,
+)
+from systemds.scuro.drsearch.trial_result_cache import TrialNodeCache, TrialResultCache
+from systemds.scuro.drsearch.worker_pool import (
+    PersistentWorkerPool,
+    create_mp_context,
+    default_gpu_slots_per_device,
+    default_threads_per_worker,
+)
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
+from systemds.scuro.representations.fusion import FusionInputTooLargeError
+from systemds.scuro.utils.memory_utility import gpu_memory_info
 from systemds.scuro.utils.schema_helpers import get_shape
 
 Tree = Union[int, Tuple["Tree", "Tree"]]
+
+DEFAULT_MAX_FUSED_FEATURE_DIM = 100_000
 
 
 def _collect_internal_paths(tree: Tree, path: str = "") -> List[str]:
@@ -140,6 +175,9 @@ class FusionSearchResult:
     val_fold_scores: dict = field(default_factory=dict)
     train_fold_scores: dict = field(default_factory=dict)
     test_fold_scores: dict = field(default_factory=dict)
+    train_score_stds: dict = field(default_factory=dict)
+    val_score_stds: dict = field(default_factory=dict)
+    test_score_stds: dict = field(default_factory=dict)
 
     task_timing: dict = field(default_factory=dict)
 
@@ -157,6 +195,7 @@ class DagGenome:
 
 
 _TIMING_OBJECTIVES = {"runtime", "task_time", "representation_time"}
+_MAX_ERROR_SAMPLES = 5
 
 ObjectiveSpec = Tuple[str, str]  # (name, "max" | "min")
 
@@ -169,6 +208,14 @@ def _objective_value(
     return val_score[name]
 
 
+def _task_uses_gpu(task: Task) -> bool:
+    uses_gpu = getattr(task.model, "uses_gpu", None)
+    if uses_gpu is not None:
+        return bool(uses_gpu)
+    device = getattr(task.model, "device", None)
+    return str(getattr(device, "type", device) or "").startswith("cuda")
+
+
 def _failure_fitness(objective_specs: List[ObjectiveSpec]) -> Tuple[float, ...]:
     return tuple(
         float("-inf") if direction == "max" else float("inf")
@@ -176,11 +223,38 @@ def _failure_fitness(objective_specs: List[ObjectiveSpec]) -> Tuple[float, ...]:
     )
 
 
-def _fold_scores(performance_measure) -> Dict[str, List[float]]:
-    return {
-        metric: [float(value) for value in values]
-        for metric, values in performance_measure.scores.items()
+def _release_cuda_memory() -> None:
+    gc.collect()
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    except (ImportError, RuntimeError):
+        pass
+
+
+_SUBTREE_CACHE: Optional[TrialResultCache] = None
+
+
+def _subtree_cache() -> TrialResultCache:
+    global _SUBTREE_CACHE
+    if _SUBTREE_CACHE is None:
+        gb = float(os.environ.get("SCURO_GA_SUBTREE_CACHE_GB", "2"))
+        _SUBTREE_CACHE = TrialResultCache(int(gb * 1024**3))
+    return _SUBTREE_CACHE
+
+
+def _subtree_node_cache(dag: RepresentationDag, task: Task) -> TrialNodeCache:
+    signatures = {
+        node.node_id: (
+            task.model.name,
+            canonical_signature(dag, frozenset(), False, node.node_id),
+        )
+        for node in dag.nodes
+        if node.inputs
     }
+    return TrialNodeCache(_subtree_cache(), signatures)
 
 
 def _evaluate_genome_body(
@@ -188,8 +262,50 @@ def _evaluate_genome_body(
     task: Task,
     modalities: List[Any],
     objective_specs: List[ObjectiveSpec],
+    share_subtrees: bool = False,
 ) -> Tuple[Optional[Tuple[float, ...]], Optional[Dict[str, Any]]]:
     start = time.time()
+    if dag_requires_fitting(dag, modalities):
+        node_cache = _subtree_node_cache(dag, task) if share_subtrees else None
+        if node_cache is not None:
+            store = node_cache.store
+            before = store.hits, store.misses, store.saved_seconds
+        evaluation = SplitAwareDAGEvaluator(
+            dag, modalities, task, node_cache=node_cache, share_fitted=share_subtrees
+        ).evaluate()
+        scores = evaluation.scores
+        total = evaluation.representation_time + evaluation.task_time
+        val_score = scores[1].average_scores
+        timing = {
+            "runtime": total,
+            "task_time": evaluation.task_time,
+            "representation_time": evaluation.representation_time,
+        }
+        fitness = tuple(
+            _objective_value(name, val_score, timing) for name, _ in objective_specs
+        )
+        payload = {
+            "train_score": scores[0].average_scores,
+            "val_score": val_score,
+            "test_score": scores[2].average_scores,
+            "train_fold_scores": scores[0].fold_scores(),
+            "val_fold_scores": scores[1].fold_scores(),
+            "test_fold_scores": scores[2].fold_scores(),
+            "train_score_stds": scores[0].score_stds(),
+            "val_score_stds": scores[1].score_stds(),
+            "test_score_stds": scores[2].score_stds(),
+            "task_timing": getattr(task, "last_run_timing", {}),
+            **timing,
+        }
+        if node_cache is not None:
+            payload["subtree_cache"] = {
+                "hits": store.hits - before[0],
+                "misses": store.misses - before[1],
+                "saved_seconds": store.saved_seconds - before[2],
+                "bytes": store.bytes,
+            }
+        return fitness, payload
+
     fused = dag.execute(modalities, task, enable_cache=False)
     if fused is None:
         return None, None
@@ -218,9 +334,12 @@ def _evaluate_genome_body(
         "train_score": scores[0].average_scores,
         "val_score": val_score,
         "test_score": scores[2].average_scores,
-        "train_fold_scores": _fold_scores(scores[0]),
-        "val_fold_scores": _fold_scores(scores[1]),
-        "test_fold_scores": _fold_scores(scores[2]),
+        "train_fold_scores": scores[0].fold_scores(),
+        "val_fold_scores": scores[1].fold_scores(),
+        "test_fold_scores": scores[2].fold_scores(),
+        "train_score_stds": scores[0].score_stds(),
+        "val_score_stds": scores[1].score_stds(),
+        "test_score_stds": scores[2].score_stds(),
         "task_timing": getattr(task, "last_run_timing", {}),
         **timing,
     }
@@ -228,11 +347,28 @@ def _evaluate_genome_body(
 
 
 def _dispatch_genome_evaluation(payload, _gpu_id):
-    dag, task, modalities, objective_specs = payload
-    fitness, result = _evaluate_genome_body(dag, task, modalities, objective_specs)
-    if fitness is None:
-        fitness = _failure_fitness(objective_specs)
-    return fitness, result
+    dag, task, modalities, objective_specs, *share = payload
+    allowed = os.sched_getaffinity(0)
+    if cuda_allowed():
+        cores = sorted(allowed)
+        os.sched_setaffinity(0, {cores[os.getpid() % len(cores)]})
+    try:
+        try:
+            fitness, result = _evaluate_genome_body(
+                dag, task, modalities, objective_specs, *share
+            )
+            if fitness is None:
+                fitness = _failure_fitness(objective_specs)
+            return fitness, result
+        except FusionInputTooLargeError as error:
+            return _failure_fitness(objective_specs), {"_oversized": str(error)}
+        except Exception:
+            return _failure_fitness(objective_specs), {
+                "_evaluation_error": traceback.format_exc()
+            }
+    finally:
+        os.sched_setaffinity(0, allowed)
+        _release_cuda_memory()
 
 
 _WORKER_DISPATCH = {"genome": _dispatch_genome_evaluation}
@@ -245,6 +381,8 @@ class _FusionIndividual(list):
 
 
 class MultimodalDeapOptimizer:
+    algebra = AlgebraConfig()
+
     def __init__(
         self,
         modalities: List[Any],
@@ -259,7 +397,7 @@ class MultimodalDeapOptimizer:
         generations: int = 20,
         crossover_probability: float = 0.7,
         mutation_probability: float = 0.4,
-        random_seed: int = 42,
+        random_seed: Optional[int] = None,
         maximize_metric: bool = True,
         elite_size: int = 2,
         max_workers: int = 1,
@@ -270,11 +408,22 @@ class MultimodalDeapOptimizer:
         hall_of_fame_size: int = 5,
         allow_repeated_modalities: bool = False,
         threads_per_worker: Optional[int] = None,
+        max_feature_dim: Optional[int] = DEFAULT_MAX_FUSED_FEATURE_DIM,
+        algebra: Optional[AlgebraConfig] = None,
     ):
         self.modalities = modalities
         self.tasks = tasks
         self.debug = debug
         self.allow_repeated_modalities = allow_repeated_modalities
+        self.max_feature_dim = None if max_feature_dim is None else int(max_feature_dim)
+        self.oversized_candidates: Dict[str, int] = {}
+        self.algebra = algebra or AlgebraConfig()
+        self.algebra_stats = Counter()
+        self._order_invariant = order_invariant(self.algebra, tasks)
+        self._canonical_signatures: Dict[Tuple, Tuple] = {}
+        self._seen_legacy_signatures: set = set()
+        # (task, canonical signature) -> [first evaluation runtime, evaluations avoided]
+        self._canonical_classes: Dict[Tuple, List] = {}
 
         self.min_modalities = max(1, min_modalities)
         requested_max = max_modalities or len(modalities)
@@ -324,16 +473,19 @@ class MultimodalDeapOptimizer:
                 "MultimodalDeapOptimizer requires at least one registered "
                 "fusion operator."
             )
+        self.k_best_dags = {}
         self.k_best_representations = self._extract_k_best(
             unimodal_optimization_results
         )
 
         self.optimization_results: Dict[str, List[FusionSearchResult]] = {}
         self.evaluation_errors: Dict[str, int] = {}
+        self.evaluation_error_samples: Dict[str, List[str]] = {}
 
         self.hall_of_fame_size = max(1, hall_of_fame_size)
         self.hall_of_fame: Dict[str, List[FusionSearchResult]] = {}
         self._hof_fitness: Dict[str, List[Tuple[float, ...]]] = {}
+        random_seed = get_global_seed() if random_seed is None else random_seed
         self.rng = random.Random(random_seed)
         self._eval_counter = 0
         self._current_generation = -1
@@ -348,13 +500,12 @@ class MultimodalDeapOptimizer:
         self.elite_size = max(0, min(elite_size, self.population_size - 1))
         self.max_workers = max(1, max_workers)
         self.batch_size = max(1, batch_size or self.max_workers)
-        cpu_count = os.cpu_count() or 1
         self.threads_per_worker = max(
             1,
             (
                 threads_per_worker
                 if threads_per_worker is not None
-                else cpu_count // self.max_workers
+                else default_threads_per_worker()
             ),
         )
         self.early_stopping_patience = early_stopping_patience
@@ -390,8 +541,10 @@ class MultimodalDeapOptimizer:
         for task in self.tasks:
             task_name = task.model.name
             self._current_task_name = task_name
+            self.rng = self._task_rng(task_name)
             self.optimization_results.setdefault(task_name, [])
             self.evaluation_errors.setdefault(task_name, 0)
+            self.oversized_candidates.setdefault(task_name, 0)
 
             self._eval_counter = 0
             self._search_start = time.perf_counter()
@@ -437,7 +590,8 @@ class MultimodalDeapOptimizer:
                     print(
                         f"[GA] task={task_name} gen={gen} {debug_msg} "
                         f"no_improve={no_improve} "
-                        f"errors={self.evaluation_errors.get(task_name, 0)}"
+                        f"errors={self.evaluation_errors.get(task_name, 0)} "
+                        f"oversized={self.oversized_candidates.get(task_name, 0)}"
                     )
 
                 stagnated = (
@@ -455,6 +609,20 @@ class MultimodalDeapOptimizer:
                 population = self._next_generation(population, task_name, task)
 
         return self.optimization_results
+
+    def _task_rng(self, task_name: str) -> random.Random:
+        return random.Random(f"{self.random_seed}:{task_name}")
+
+    def _select_tournament(self, population: List[Any], k: int, tournsize: int):
+        """deap.tools.selTournament, but drawing from self.rng instead of the
+        global random module."""
+        return [
+            max(
+                (self.rng.choice(population) for _ in range(tournsize)),
+                key=lambda ind: ind.fitness,
+            )
+            for _ in range(k)
+        ]
 
     def _make_individual(self, genome: DagGenome):
         return _FusionIndividual([genome], self._fitness_type)
@@ -531,7 +699,7 @@ class MultimodalDeapOptimizer:
         retries = 0
         tournsize = max(1, min(3, len(population)))
         while len(next_population) < self.population_size and retries < retry_budget:
-            p1, p2 = tools.selTournament(population, 2, tournsize=tournsize)
+            p1, p2 = self._select_tournament(population, 2, tournsize)
 
             if self.rng.random() < self.crossover_probability:
                 g1, g2 = self._crossover_genomes(p1[0], p2[0])
@@ -589,11 +757,16 @@ class MultimodalDeapOptimizer:
                     shared_modality._data = wrapped
                     shm_names.append(shm_name)
                 shared_modalities.append(shared_modality)
+            # Workers are spawned with CUDA_VISIBLE_DEVICES="" unless they get
+            # a GPU lane, so without these a CUDA task model cannot run at all.
             worker_pool = PersistentWorkerPool(
                 self.max_workers,
                 _WORKER_DISPATCH,
                 ctx=create_mp_context(),
                 threads_per_worker=self.threads_per_worker,
+                gpu_devices=[info["index"] for info in gpu_memory_info()],
+                gpu_slots_per_device=default_gpu_slots_per_device(),
+                gpu_demand_fraction=1.0,
             )
         except Exception:
             for shm_name in shm_names:
@@ -613,6 +786,19 @@ class MultimodalDeapOptimizer:
         for shm_name in self._parallel_shm_names:
             unlink_shm(shm_name)
         self._parallel_shm_names = []
+
+    def _idle_lane(self, uses_gpu: bool):
+        pool = self._worker_pool
+        if uses_gpu:
+            for gpu_id in pool.gpu_worker_devices:
+                if pool.has_idle_worker_for(gpu_id):
+                    return gpu_id
+            if deterministic_enabled() and pool.gpu_worker_devices:
+                return False
+            return None if pool.has_idle_cpu_worker else False
+        if pool.has_idle_worker_for(None, allow_gpu_worker_for_cpu=True):
+            return None
+        return False
 
     def _evaluate_individuals_parallel(
         self, individuals: List[Any], task: Task
@@ -636,21 +822,30 @@ class MultimodalDeapOptimizer:
             if sig in pending_followers:
                 pending_followers[sig].append(ind)
                 continue
+            reason = self._oversized_reason(task_name, genome)
+            if reason is not None:
+                ind.fitness.values = self._reject_oversized(task_name, genome, reason)
+                continue
             dag = self._genome_to_dag(genome)
+            if explicit_prep_on(self.algebra):
+                count_explicit_prep(self.algebra_stats, dag)
             pending_followers[sig] = []
             pending_work.append((ind, dag, sig))
 
+        uses_gpu = _task_uses_gpu(task)
         try:
             while pending_work or jobs:
-                while (
-                    pending_work
-                    and self._worker_pool.has_idle_worker
-                    and len(jobs) < self.batch_size
-                ):
+                while pending_work and len(jobs) < self.batch_size:
+                    lane = self._idle_lane(uses_gpu)
+                    if lane is False:
+                        break
                     ind, dag, sig = pending_work.pop(0)
                     job_id = self._worker_pool.submit(
                         "genome",
-                        (dag, task, self._parallel_modalities, self.objective_specs),
+                        (dag, task, self._parallel_modalities, self.objective_specs)
+                        + self._share_args(),
+                        gpu_id=lane,
+                        allow_gpu_worker_for_cpu=not uses_gpu,
                     )
                     jobs[job_id] = (ind, dag, sig)
 
@@ -658,7 +853,20 @@ class MultimodalDeapOptimizer:
                 ind, dag, sig = jobs.pop(jr.job_id)
                 if jr.ok:
                     fitness, payload = jr.value
-                    error = None
+                    if isinstance(payload, dict) and "_oversized" in payload:
+                        ind.fitness.values = self._reject_oversized(
+                            task_name, None, payload["_oversized"], sig
+                        )
+                        for follower in pending_followers.pop(sig, []):
+                            follower.fitness.values = ind.fitness.values
+                        continue
+                    error = (
+                        payload.get("_evaluation_error")
+                        if isinstance(payload, dict)
+                        else None
+                    )
+                    if error is not None:
+                        payload = None
                 else:
                     fitness = _failure_fitness(self.objective_specs)
                     payload = None
@@ -684,12 +892,21 @@ class MultimodalDeapOptimizer:
             self.evaluation_errors[task_name] = (
                 self.evaluation_errors.get(task_name, 0) + 1
             )
-            if self.debug and error is not None:
-                last_line = error.strip().splitlines()[-1] if error.strip() else error
-                print(
-                    f"[GA] genome evaluation failed for task={task_name}: {last_line}"
-                )
+            samples = self.evaluation_error_samples.setdefault(task_name, [])
+            if error is not None and len(samples) < _MAX_ERROR_SAMPLES:
+                spec = dag.to_spec() if dag is not None else None
+                samples.append(f"{spec}\n{error}")
+            if error is not None and (self.debug or len(samples) == 1):
+                print(f"[GA] genome evaluation failed for task={task_name}:\n{error}")
             return
+
+        cache_stats = payload.get("subtree_cache")
+        if cache_stats:
+            for key in ("hits", "misses", "saved_seconds"):
+                self.algebra_stats[f"subtree_cache_{key}"] += cache_stats[key]
+            self.algebra_stats["subtree_cache_max_bytes"] = max(
+                self.algebra_stats["subtree_cache_max_bytes"], cache_stats["bytes"]
+            )
 
         result = FusionSearchResult(
             dag=dag,
@@ -699,6 +916,9 @@ class MultimodalDeapOptimizer:
             train_fold_scores=payload.get("train_fold_scores", {}),
             val_fold_scores=payload.get("val_fold_scores", {}),
             test_fold_scores=payload.get("test_fold_scores", {}),
+            train_score_stds=payload.get("train_score_stds", {}),
+            val_score_stds=payload.get("val_score_stds", {}),
+            test_score_stds=payload.get("test_score_stds", {}),
             task_timing=payload.get("task_timing", {}),
             runtime=payload["runtime"],
             task_time=payload["task_time"],
@@ -711,6 +931,13 @@ class MultimodalDeapOptimizer:
         )
         self.optimization_results.setdefault(task_name, []).append(result)
         self._update_hall_of_fame(task_name, result)
+        if self.algebra.ga_canonical_dedup:
+            cls = self._canonical_classes.setdefault(
+                (task_name, self._canonical_signature(dag)), [None, 0]
+            )
+            if cls[0] is None:
+                cls[0] = result.runtime
+                self.algebra_stats["ga_seconds_avoided"] += cls[0] * cls[1]
         self._eval_counter += 1
 
     def _dominates(self, a: Tuple[float, ...], b: Tuple[float, ...]) -> bool:
@@ -764,12 +991,45 @@ class MultimodalDeapOptimizer:
         for task in self.tasks:
             name = task.model.name
             k_best[name] = {}
+            self.k_best_dags[name] = {}
             for modality in self.modalities:
-                _, cached_data = unimodal_results.get_k_best_results(
+                results, cached_data = unimodal_results.get_k_best_results(
                     modality, task, self.metric_name
                 )
+                if hasattr(unimodal_results, "get_k_best_dags"):
+                    _, source_dags = unimodal_results.get_k_best_dags(modality, task)
+                else:
+                    source_dags = [getattr(result, "dag", None) for result in results]
+                if len(source_dags) != len(cached_data):
+                    raise ValueError(
+                        "Unimodal result DAGs and cached representations are misaligned"
+                    )
                 k_best[name][modality.modality_id] = cached_data
+                self.k_best_dags[name][modality.modality_id] = source_dags
         return k_best
+
+    def compose_end_to_end_dag(self, dag, task):
+        """Expand fusion leaves into the selected unimodal representation DAGs."""
+        task_name = task.model.name if hasattr(task, "model") else str(task)
+        leaf_dags = {}
+        for leaf_id in dag.get_leaf_nodes():
+            leaf = dag.get_node_by_id(leaf_id)
+            representation_index = int(leaf.representation_index)
+            try:
+                source_dag = self.k_best_dags[task_name][leaf.modality_id][
+                    representation_index
+                ]
+            except (KeyError, IndexError, TypeError) as exc:
+                raise KeyError(
+                    "No selected unimodal DAG for multimodal leaf "
+                    f"({leaf.modality_id}, {leaf.representation_index})"
+                ) from exc
+            if source_dag is None:
+                raise ValueError(
+                    "The unimodal result source does not expose representation DAGs"
+                )
+            leaf_dags[(leaf.modality_id, leaf.representation_index)] = source_dag
+        return compose_dag_leaves(dag, leaf_dags)
 
     def _available_modality_ids(self, task_name: str) -> List[Any]:
         reps = self.k_best_representations[task_name]
@@ -842,18 +1102,35 @@ class MultimodalDeapOptimizer:
             builder.create_leaf_node(mod_id, repr_idx)
             for mod_id, repr_idx in genome.leaves
         ]
+        leaf_stats = (
+            {
+                leaf: self._leaf_stats(self._current_task_name, leaf)
+                for leaf in genome.leaves
+            }
+            if self is not None
+            and explicit_prep_on(self.algebra)
+            and self._current_task_name is not None
+            else None
+        )
 
         def build(subtree: Tree, path: str) -> str:
             if isinstance(subtree, int):
                 return leaf_ids[subtree]
             left, right = subtree
-            left_id = build(left, path + "L")
-            right_id = build(right, path + "R")
+            inputs = [build(left, path + "L"), build(right, path + "R")]
             op_cls = genome.fusion_ops[path]
             op = op_cls()
-            return builder.create_operation_node(
-                op.__class__, [left_id, right_id], op.get_current_parameters()
-            )
+            params = op.get_current_parameters()
+            if leaf_stats is not None:
+                inputs = explicit_fusion_operands(
+                    builder,
+                    op.__class__,
+                    params,
+                    inputs,
+                    leaf_stats,
+                    self.algebra,
+                )
+            return builder.create_operation_node(op.__class__, inputs, params)
 
         return builder.build(build(genome.tree, ""))
 
@@ -861,11 +1138,160 @@ class MultimodalDeapOptimizer:
         def norm(t: Tree):
             return t if isinstance(t, int) else (norm(t[0]), norm(t[1]))
 
-        return (
+        legacy = (
             tuple(g.leaves),
             norm(g.tree),
             tuple(sorted((p, c.__name__) for p, c in g.fusion_ops.items())),
         )
+        if not self.algebra.ga_canonical_dedup:
+            return legacy
+        canon = self._canonical_signatures.get(legacy)
+        if canon is None:
+            canon = self._canonical_signature(self._genome_to_dag(g))
+            self._canonical_signatures[legacy] = canon
+        self._count_signature_request(legacy, canon)
+        return canon
+
+    def _canonical_signature(self, dag: RepresentationDag) -> Tuple:
+        return (
+            "canon",
+            canonical_id(dag, self.algebra.laws, self._order_invariant),
+        )
+
+    def _count_signature_request(self, legacy: Tuple, canon: Tuple) -> None:
+        task_name = self._current_task_name
+        self.algebra_stats["ga_signature_requests"] += 1
+        if (task_name, legacy) in self._seen_legacy_signatures:
+            return
+        self._seen_legacy_signatures.add((task_name, legacy))
+        self.algebra_stats["ga_unique_legacy"] += 1
+        cls = self._canonical_classes.get((task_name, canon))
+        if cls is None:
+            self._canonical_classes[(task_name, canon)] = [None, 0]
+            self.algebra_stats["ga_unique_canonical"] += 1
+            return
+        cls[1] += 1
+        self.algebra_stats["ga_evaluations_avoided"] += 1
+        self.algebra_stats["ga_seconds_avoided"] += cls[0] or 0.0
+
+    def _leaf_stats(self, task_name: str, leaf: Tuple[Any, int]):
+        """Shape of one candidate leaf representation, or None if unknown."""
+        modality_id, representation_index = leaf
+        try:
+            modality = self.k_best_representations[task_name][modality_id][
+                representation_index
+            ]
+        except (KeyError, IndexError, TypeError):
+            return None
+        return sample_stats(modality)
+
+    def _predicted_feature_dim(
+        self, task_name: str, genome: DagGenome
+    ) -> Optional[int]:
+        if task_name is None:
+            return None
+
+        leaf_stats = [self._leaf_stats(task_name, leaf) for leaf in genome.leaves]
+        if any(stats is None for stats in leaf_stats):
+            return None
+
+        def walk(subtree: Tree, path: str):
+            if isinstance(subtree, int):
+                return leaf_stats[subtree]
+            left = walk(subtree[0], path + "L")
+            right = walk(subtree[1], path + "R")
+            if left is None or right is None:
+                return None
+            return genome.fusion_ops[path]().get_output_stats([left, right])
+
+        try:
+            root = walk(genome.tree, "")
+        except Exception:
+            return None
+        if root is None or not root.output_shape:
+            return None
+        return int(np.prod(root.output_shape))
+
+    def _operator_input_violation(
+        self, task_name: str, genome: DagGenome
+    ) -> Optional[str]:
+        """First fusion node whose operands its operator cannot take, if any.
+
+        Checked per node, since an operator's limit applies to its own inputs
+        (LSTM and AttentionFusion build a model over the operand width), not
+        to the width of the final fused representation.
+        """
+        if task_name is None:
+            return None
+        leaf_stats = [self._leaf_stats(task_name, leaf) for leaf in genome.leaves]
+
+        def walk(subtree: Tree, path: str):
+            if isinstance(subtree, int):
+                return leaf_stats[subtree], None
+            left, reason = walk(subtree[0], path + "L")
+            if reason is not None:
+                return None, reason
+            right, reason = walk(subtree[1], path + "R")
+            if reason is not None:
+                return None, reason
+            if left is None or right is None:
+                return None, None
+            operator = genome.fusion_ops[path]()
+            reason = operator.input_size_violation([left, right])
+            if reason is not None:
+                return None, reason
+            return operator.get_output_stats([left, right]), None
+
+        try:
+            return walk(genome.tree, "")[1]
+        except Exception:
+            return None
+
+    def _type_error(self, task_name: str, genome: DagGenome) -> Optional[str]:
+        reps = self.k_best_representations[task_name]
+        types = {
+            (mid, idx): getattr(reps[mid][idx], "modality_type", None)
+            for mid, idx in genome.leaves
+        }
+        stats = {leaf: self._leaf_stats(task_name, leaf) for leaf in genome.leaves}
+        violations = typecheck(self._genome_to_dag(genome), types, stats)
+        errors = count_violations(self.algebra_stats, violations)
+        if errors and self.algebra.typecheck == "strict":
+            return f"type_error: {errors}"
+        return None
+
+    def _oversized_reason(self, task_name: str, genome: DagGenome) -> Optional[str]:
+        if self.algebra.typecheck != "off" and task_name is not None:
+            reason = self._type_error(task_name, genome)
+            if reason is not None:
+                return reason
+        reason = self._operator_input_violation(task_name, genome)
+        if reason is not None:
+            return f"{reason}; candidate rejected before execution"
+        if not self.max_feature_dim:
+            return None
+        predicted = self._predicted_feature_dim(task_name, genome)
+        if predicted is None or predicted <= self.max_feature_dim:
+            return None
+        return (
+            f"fused representation would have {predicted:,} features, above the "
+            f"configured maximum of {self.max_feature_dim:,}; candidate rejected "
+            "before execution"
+        )
+
+    def _reject_oversized(
+        self, task_name: str, genome: Optional[DagGenome], reason: str, signature=None
+    ) -> Tuple[float, ...]:
+        self.oversized_candidates[task_name] = (
+            self.oversized_candidates.get(task_name, 0) + 1
+        )
+        if self.debug:
+            print(f"[GA] task={task_name} skipped candidate: {reason}")
+        fitness = _failure_fitness(self.objective_specs)
+        if signature is None:
+            signature = self._genome_signature(genome)
+        self._fitness_cache.setdefault(task_name, {})[signature] = fitness
+        return fitness
 
     def _evaluate_genome(self, genome: DagGenome, task: Task) -> Tuple[float, ...]:
         task_name = task.model.name
@@ -874,25 +1300,39 @@ class MultimodalDeapOptimizer:
         if sig in cache:
             return cache[sig]
 
+        reason = self._oversized_reason(task_name, genome)
+        if reason is not None:
+            return self._reject_oversized(task_name, genome, reason)
+
         dag = self._genome_to_dag(genome)
+        if explicit_prep_on(self.algebra):
+            count_explicit_prep(self.algebra_stats, dag)
         modalities = list(
             chain.from_iterable(self.k_best_representations[task_name].values())
         )
 
         try:
             fitness, payload = _evaluate_genome_body(
-                dag, task, modalities, self.objective_specs
+                dag, task, modalities, self.objective_specs, *self._share_args()
             )
             error = None
             if fitness is None:
                 fitness = _failure_fitness(self.objective_specs)
+        except FusionInputTooLargeError as too_large:
+            return self._reject_oversized(task_name, genome, str(too_large), sig)
         except Exception:
             fitness = _failure_fitness(self.objective_specs)
             payload, error = None, traceback.format_exc()
+        finally:
+            _release_cuda_memory()
 
         self._record_evaluation(task_name, dag, payload, error)
         cache[sig] = fitness
         return fitness
+
+    def _share_args(self) -> Tuple:
+        # Legacy passes no extra argument, so 4-argument overrides keep working.
+        return (True,) if self.algebra.share_fused_subtrees else ()
 
     def _crossover_genomes(
         self, g1: DagGenome, g2: DagGenome
@@ -900,11 +1340,15 @@ class MultimodalDeapOptimizer:
         c1, c2 = copy.deepcopy(g1), copy.deepcopy(g2)
 
         if c1.leaves == c2.leaves:
-            paths1 = self._internal_paths(c1.tree)
-            paths2 = self._internal_paths(c2.tree)
-            if paths1 and paths2:
-                path1 = self.rng.choice(paths1)
-                path2 = self.rng.choice(paths2)
+            pairs = [
+                (path1, path2)
+                for path1 in self._internal_paths(c1.tree)
+                for path2 in self._internal_paths(c2.tree)
+                if sorted(_collect_leaf_indices(_get_subtree(c1.tree, path1)))
+                == sorted(_collect_leaf_indices(_get_subtree(c2.tree, path2)))
+            ]
+            if pairs:
+                path1, path2 = self.rng.choice(pairs)
                 subtree1 = _get_subtree(c1.tree, path1)
                 subtree2 = _get_subtree(c2.tree, path2)
                 c1.tree = _replace_subtree(c1.tree, path1, subtree2)
@@ -925,7 +1369,7 @@ class MultimodalDeapOptimizer:
                 )
             return c1, c2
 
-        shared_paths = set(c1.fusion_ops) & set(c2.fusion_ops)
+        shared_paths = sorted(set(c1.fusion_ops) & set(c2.fusion_ops))
         for path in shared_paths:
             if self.rng.random() < 0.5:
                 c1.fusion_ops[path], c2.fusion_ops[path] = (

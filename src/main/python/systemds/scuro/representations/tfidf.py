@@ -22,8 +22,13 @@ import numpy as np
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from systemds.scuro.dataloader.text_loader import TextStats
+from systemds.scuro.modality.indexed import IndexedModality
 from systemds.scuro.modality.transformed import TransformedModality
-from systemds.scuro.representations.representation import RepresentationStats
+from systemds.scuro.representations.representation import (
+    FitRequirement,
+    RepresentationFitState,
+    RepresentationStats,
+)
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import save_embeddings
 
@@ -33,6 +38,8 @@ from systemds.scuro.drsearch.operator_registry import register_representation
 
 @register_representation(ModalityType.TEXT)
 class TfIdf(UnimodalRepresentation):
+    fit_requirement = FitRequirement.UNSUPERVISED
+
     def __init__(self, min_df=2, output_file=None, params=None):
         parameters = {"min_df": [min_df, 4, 8]}
         super().__init__("TF-IDF", ModalityType.EMBEDDING, parameters)
@@ -66,15 +73,50 @@ class TfIdf(UnimodalRepresentation):
         cpu_peak = int(dense_bytes * 2.2 + 32 * 1024 * 1024)
         return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}
 
-    def transform(self, modality, aggregation=None):
+    def _create_vectorizer(self):
+        return TfidfVectorizer(min_df=self.min_df)
+
+    def fit(self, inputs, labels=None) -> RepresentationFitState:
+        if not isinstance(inputs, IndexedModality):
+            raise TypeError("TfIdf.fit expects an IndexedModality")
+
+        vectorizer = self._create_vectorizer()
+        vectorizer.fit(inputs.modality.data)
+        return RepresentationFitState(
+            self.fit_requirement,
+            fit_instance_ids=inputs.instance_ids,
+            payload=vectorizer,
+        )
+
+    def _to_modality(self, modality, matrix):
         transformed_modality = TransformedModality(modality, self)
-
-        vectorizer = TfidfVectorizer(min_df=self.min_df)
-
-        X = vectorizer.fit_transform(modality.data).astype(np.float32, copy=False)
+        X = matrix.astype(np.float32, copy=False)
         if self.output_file is not None:
             save_embeddings(X, self.output_file)
 
         transformed_modality.data_type = self.data_type
         transformed_modality.data = X.toarray()
         return transformed_modality
+
+    def transform_fitted(self, inputs, fit_state, aggregation=None):
+        if not isinstance(inputs, IndexedModality):
+            raise TypeError("TfIdf.transform_fitted expects an IndexedModality")
+        if (
+            not isinstance(fit_state, RepresentationFitState)
+            or fit_state.fit_requirement is not self.fit_requirement
+            or type(fit_state.payload) is not TfidfVectorizer
+        ):
+            raise ValueError("TfIdf requires a compatible fitted state")
+
+        transformed = self._to_modality(
+            inputs.modality,
+            fit_state.payload.transform(inputs.modality.data),
+        )
+        return IndexedModality(transformed, inputs.instance_ids)
+
+    def transform(self, modality, aggregation=None):
+        vectorizer = self._create_vectorizer()
+        return self._to_modality(
+            modality,
+            vectorizer.fit_transform(modality.data),
+        )

@@ -36,7 +36,19 @@ from systemds.scuro.representations.dimensionality_reduction import (
     DimensionalityReduction,
 )
 from systemds.scuro.utils.identifier import get_op_id, get_node_id
-from collections import OrderedDict, defaultdict, deque
+from systemds.scuro.drsearch.algebra import (
+    ALL_LAWS,
+    AlgebraConfig,
+    canonical_id,
+    count_explicit_prep,
+    count_violations,
+    explicit_fusion_operands,
+    explicit_prep_on,
+    typecheck,
+)
+from systemds.scuro.representations.fusion import Fusion
+import time
+from collections import Counter, OrderedDict, defaultdict, deque
 
 
 def pushdown_aggregation_for_node(
@@ -154,6 +166,9 @@ class RepresentationDag:
     def pipeline_id(self) -> str:
         blob = json.dumps(self.to_spec(), sort_keys=True, separators=(",", ":"))
         return hashlib.sha1(blob.encode()).hexdigest()[:16]
+
+    def canonical_id(self, laws=ALL_LAWS, invariant=False) -> str:
+        return canonical_id(self, laws, invariant)
 
     def _topological_order(self) -> List[str]:
         node_map = {node.node_id: node for node in self.nodes}
@@ -330,6 +345,7 @@ class RepresentationDag:
         rep_cache: Dict[Any, TransformedModality] = None,
         consumer_count: Dict[str, int] = None,
         gpu_id: int = None,
+        node_cache=None,
         execution_cache=None,
     ) -> Union[Dict[str, TransformedModality], TransformedModality]:
 
@@ -356,6 +372,21 @@ class RepresentationDag:
             return key
 
         def execute_node(node_id: str, task) -> TransformedModality:
+            if (
+                node_cache is None
+                or node_id == self.root_node_id
+                or not self.get_node_by_id(node_id).inputs
+            ):
+                return compute_node(node_id, task)
+            cached = node_cache.get(node_id)
+            if cached is not None:
+                return cached
+            start = time.perf_counter()
+            result = compute_node(node_id, task)
+            node_cache.put(node_id, result, time.perf_counter() - start)
+            return result
+
+        def compute_node(node_id: str, task) -> TransformedModality:
             if external_cache is not None:
                 cached = external_cache.get(node_id)
                 if cached is not None:
@@ -377,6 +408,10 @@ class RepresentationDag:
                 node_operation = node.operation(params=node.parameters)
                 if gpu_id is not None and hasattr(node_operation, "gpu_id"):
                     node_operation.gpu_id = gpu_id
+                if execution_cache is not None and hasattr(
+                    node_operation, "intermediate_cache"
+                ):
+                    node_operation.intermediate_cache = execution_cache.intermediates
                 if len(input_mods) == 1:
                     # It's a unimodal operation
                     if isinstance(node_operation, Context):
@@ -396,18 +431,38 @@ class RepresentationDag:
                 else:
                     # It's a fusion operation
                     fusion_op = node_operation
-                    if (
-                        hasattr(fusion_op, "needs_training")
-                        and fusion_op.needs_training
-                    ):
-                        result = input_mods[0].combine_with_training(
-                            input_mods[1:], fusion_op, task
+                    if getattr(fusion_op, "needs_training", False):
+                        raise RuntimeError(
+                            "Fitted representations require SplitAwareDAGEvaluator"
                         )
-                    else:
-                        return input_mods[0].combine(input_mods[1:], fusion_op)
+                    result = input_mods[0].combine(input_mods[1:], fusion_op)
                 return result
 
-            if execution_cache is not None and is_unimodal:
+            def run_layers(layer_names):
+                node_operation = node.operation(params=node.parameters)
+                if gpu_id is not None and hasattr(node_operation, "gpu_id"):
+                    node_operation.gpu_id = gpu_id
+                return input_mods[0].apply_representation_layers(
+                    node_operation,
+                    layer_names,
+                    aggregation=pushdown_aggregation_for_node(node.parameters),
+                )
+
+            layer_sweep = (
+                execution_cache.layer_sweep(node_id)
+                if execution_cache is not None and is_unimodal and rep_cache is None
+                else None
+            )
+            if layer_sweep and hasattr(input_mods[0], "apply_representation_layers"):
+                result = execution_cache.get_or_compute_layer(
+                    node.operation,
+                    node.parameters,
+                    [execution_key(input_id) for input_id in node.inputs],
+                    layer_sweep,
+                    run_layers,
+                    run_operation,
+                )
+            elif execution_cache is not None and is_unimodal:
                 result = execution_cache.get_or_compute_representation(
                     node.operation, execution_key(node_id), run_operation
                 )
@@ -466,6 +521,58 @@ class RepresentationDag:
             if not node.inputs:
                 return node.node_id
         return None
+
+
+def compose_dag_leaves(
+    dag: RepresentationDag, leaf_dags: Dict[Tuple[Any, Any], RepresentationDag]
+) -> RepresentationDag:
+    """Replace indexed leaves with their complete source representation DAGs."""
+    composed_nodes = []
+    replacement_roots = {}
+
+    for leaf_id in dag.get_leaf_nodes():
+        leaf = dag.get_node_by_id(leaf_id)
+        key = (leaf.modality_id, leaf.representation_index)
+        source_dag = leaf_dags.get(key)
+        if source_dag is None:
+            raise KeyError(
+                f"No source representation DAG found for multimodal leaf {key}"
+            )
+
+        id_map = {
+            node.node_id: f"{leaf.node_id}__{node.node_id}" for node in source_dag.nodes
+        }
+        for source_node in source_dag.nodes:
+            cloned = copy.deepcopy(source_node)
+            cloned.node_id = id_map[source_node.node_id]
+            cloned.inputs = [id_map[input_id] for input_id in source_node.inputs]
+            composed_nodes.append(cloned)
+        replacement_roots[leaf.node_id] = id_map[source_dag.root_node_id]
+
+    internal_nodes = [node for node in dag.nodes if node.inputs]
+    internal_ids = {node.node_id: f"fusion__{node.node_id}" for node in internal_nodes}
+    for node in internal_nodes:
+        cloned = copy.deepcopy(node)
+        cloned.node_id = internal_ids[node.node_id]
+        cloned.inputs = [
+            (
+                replacement_roots[input_id]
+                if input_id in replacement_roots
+                else internal_ids[input_id]
+            )
+            for input_id in node.inputs
+        ]
+        composed_nodes.append(cloned)
+
+    root_node_id = (
+        replacement_roots[dag.root_node_id]
+        if dag.root_node_id in replacement_roots
+        else internal_ids[dag.root_node_id]
+    )
+    composed = RepresentationDag(composed_nodes, root_node_id, dag_id=dag.dag_id)
+    if not composed.validate():
+        raise ValueError("Composed representation DAG is invalid")
+    return composed
 
 
 def _spec_safe(value):
@@ -569,7 +676,21 @@ def get_consumer_count(dags: List[RepresentationDag]) -> Dict[str, int]:
     return consumer_count
 
 
+def _consumers_by_node(
+    dag_group: List[RepresentationDag],
+) -> Dict[str, set]:
+    consumers: Dict[str, set] = defaultdict(set)
+    for dag in dag_group:
+        consumers[dag.root_node_id].add(None)
+        for node in dag.nodes:
+            for input_id in node.inputs:
+                consumers[input_id].add(node.node_id)
+    return consumers
+
+
 def pushdown_aggregation(dag_group: List[RepresentationDag]) -> List[RepresentationDag]:
+    consumers = _consumers_by_node(dag_group)
+    changed = False
     for dag in dag_group:
         agg_nodes = [
             n
@@ -594,18 +715,30 @@ def pushdown_aggregation(dag_group: List[RepresentationDag]) -> List[Representat
             ):
                 continue
 
+            if consumers[input_id] != {agg_node.node_id}:
+                continue
+
             aggregation_parameters = copy.deepcopy(agg_node.parameters)
             agg_node.operation = input_node.operation
             agg_node.inputs = list(input_node.inputs)
             agg_node.parameters = copy.deepcopy(input_node.parameters)
             agg_node.parameters["_pushdown_aggregation"] = aggregation_parameters
+            changed = True
+
+    if changed:
+        for dag in dag_group:
             dag.nodes = dag.filter_connected_nodes(dag.nodes)
 
     return dag_group
 
 
 class CSEAwareDAGBuilder:
-    def __init__(self):
+    def __init__(self, algebra: Optional[AlgebraConfig] = None, tasks=None, leaves=()):
+        self.algebra = algebra or AlgebraConfig()
+        self.leaves = leaves
+        self.algebra_stats = Counter()
+        self._seen_ordered = set()
+        self._seen_legacy = set()
         self.global_nodes: List[RepresentationNode] = []
         self.signature_to_node: Dict[Hashable, str] = {}
         self.node_to_signature: Dict[str, Hashable] = {}
@@ -616,11 +749,29 @@ class CSEAwareDAGBuilder:
     def _compute_node_signature(
         self, operation: Any, inputs: List[str], parameters: Dict[str, Any] = None
     ) -> Hashable:
-        ip = [self.node_to_signature[inp] for inp in inputs]
-        input_sigs = tuple(sorted(ip, key=repr)) if inputs else ()
+        input_sigs = tuple(self.node_to_signature[inp] for inp in inputs)
         op_cls = operation().name
         params_items = tuple(sorted((parameters or {}).items()))
+        if self._may_reorder(operation, parameters):
+            input_sigs = tuple(sorted(input_sigs, key=repr))
         return ("op", op_cls, params_items, input_sigs)
+
+    def _may_reorder(self, operation: Any, parameters: Dict[str, Any]) -> bool:
+        if not issubclass(operation, Fusion):
+            return False
+        return "comm" in operation.algebraic_laws(parameters or {})
+
+    def _count_law_merges(self, signature: Hashable, inputs: List[str]):
+        ip = tuple(self.node_to_signature[inp] for inp in inputs)
+        ordered = signature[:3] + (ip,)
+        legacy = signature[:3] + (tuple(sorted(ip, key=repr)),)
+        if signature in self.signature_to_node:
+            if ordered not in self._seen_ordered:
+                self.algebra_stats["cse_merges_by_law"] += 1
+        elif legacy in self._seen_legacy:
+            self.algebra_stats["cse_unsafe_merges_prevented"] += 1
+        self._seen_ordered.add(ordered)
+        self._seen_legacy.add(legacy)
 
     def _compute_leaf_signature(
         self, modality_id: str, representation_index: int = -1
@@ -640,6 +791,8 @@ class CSEAwareDAGBuilder:
             signature = self._compute_leaf_signature(modality_id, representation_index)
         else:
             signature = self._compute_node_signature(operation, inputs, parameters)
+            if self.algebra.cse_law_aware:
+                self._count_law_merges(signature, inputs)
 
         try:
             if signature in self.signature_to_node:
@@ -686,6 +839,15 @@ class CSEAwareDAGBuilder:
     def create_operation_node(
         self, operation: Any, inputs: List[str], parameters: Dict[str, Any] = None
     ):
+        if explicit_prep_on(self.algebra):
+            inputs = explicit_fusion_operands(
+                self,
+                operation,
+                parameters,
+                inputs,
+                self._leaf_stats(),
+                self.algebra,
+            )
         return self._get_or_create_node(
             operation=operation, inputs=inputs, parameters=parameters, is_leaf=False
         )
@@ -704,10 +866,30 @@ class CSEAwareDAGBuilder:
         self.dag_counter += 1
         if not dag.validate():
             raise ValueError("Invalid DAG construction")
+        if self.algebra.typecheck != "off":
+            self._typecheck(dag)
+        if explicit_prep_on(self.algebra):
+            count_explicit_prep(self.algebra_stats, dag)
 
         if dag_id is None:
             self._dag_by_root[root_node_id] = dag
         return dag
+
+    def _leaf_stats(self) -> Dict[Hashable, Any]:
+        return {(m.modality_id, -1): getattr(m, "stats", None) for m in self.leaves}
+
+    def _typecheck(self, dag: RepresentationDag) -> None:
+        violations = typecheck(
+            dag,
+            {
+                (m.modality_id, -1): getattr(m, "modality_type", None)
+                for m in self.leaves
+            },
+            self._leaf_stats(),
+        )
+        errors = count_violations(self.algebra_stats, violations)
+        if errors and self.algebra.typecheck == "strict":
+            raise ValueError(f"Ill-typed plan: {errors}")
 
     def get_node(self, node_id: str) -> Optional[RepresentationNode]:
         for node in self.global_nodes:

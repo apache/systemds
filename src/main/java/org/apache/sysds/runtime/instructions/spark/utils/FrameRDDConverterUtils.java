@@ -663,9 +663,8 @@ public class FrameRDDConverterUtils
 			//handle header information and frame meta data
 			if( ix==1 ) {
 				if( _props.hasHeader() ) {
-					for(int j = 1; j <= blk.getNumColumns(); j++) {
-						sb.append(blk.getColumnNames()[j] 
-							+ ((j<blk.getNumColumns()-1)?_props.getDelim():""));
+					for(int j = 0; j < blk.getNumColumns(); j++) {
+						sb.append(blk.getColumnNames()[j]).append(j < blk.getNumColumns() - 1 ? _props.getDelim() : "");
 					}
 					ret.add(sb.toString());
 					sb.setLength(0); //reset

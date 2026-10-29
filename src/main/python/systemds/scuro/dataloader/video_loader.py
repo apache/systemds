@@ -40,6 +40,7 @@ class VideoStats:
     num_instances: int
     num_total_instances: int
     shape_variance: float = 0.0
+    lengths: Optional[Tuple[int, ...]] = None
 
     @property
     def output_shape(self):
@@ -68,7 +69,7 @@ class VideoLoader(BaseLoader):
         self,
         source_path: str,
         indices: List[str],
-        data_type: Union[np.dtype, str] = np.float16,
+        data_type: Union[np.dtype, str] = np.uint8,
         chunk_size: Optional[int] = None,
         load=True,
         fps=None,
@@ -81,7 +82,18 @@ class VideoLoader(BaseLoader):
         self.fps = fps
         self.target_size = tuple(int(v) for v in target_size) if target_size else None
         self._all_metadata = []
-        self.stats = self.get_stats(source_path)
+        files = self.get_file_names(self.indices)
+        self.stats, self._all_metadata = self.cached_stats(
+            files,
+            {
+                "dtype": str(data_type),
+                "fps": fps,
+                "target_size": self.target_size,
+                "frame_count": "decodable",
+            },
+            lambda: (self.get_stats(source_path), self._all_metadata),
+        )
+        self.stats.lengths = tuple(int(md["length"]) for md in self._all_metadata)
 
     def load(self):
         if self.chunk_size:
@@ -100,6 +112,13 @@ class VideoLoader(BaseLoader):
         if self.fps and source_fps and self.fps < source_fps:
             return max(1, int(round(source_fps / self.fps)))
         return 1
+
+    @staticmethod
+    def _decodable_frame_count(cap) -> int:
+        count = 0
+        while cap.grab():
+            count += 1
+        return count
 
     def _stored_length(self, source_length: int, source_fps: float) -> int:
         interval = self._frame_interval(source_fps)
@@ -139,7 +158,8 @@ class VideoLoader(BaseLoader):
             frame_interval = self._frame_interval(source_fps)
             stored_fps = source_fps / frame_interval if source_fps else source_fps
 
-            scale_denominator = np.dtype(self._data_type).type(255.0)
+            data_type = np.dtype(self._data_type)
+            scale_denominator = data_type.type(255.0) if data_type.kind == "f" else None
             frames = []
             idx = 0
             while True:
@@ -149,7 +169,10 @@ class VideoLoader(BaseLoader):
                 if idx % frame_interval == 0:
                     frame = self._fit_frame(frame)
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    frame = frame.astype(self._data_type) / scale_denominator
+                    if scale_denominator is not None:
+                        frame = frame.astype(data_type) / scale_denominator
+                    elif data_type != frame.dtype:
+                        frame = frame.astype(data_type)
                     frames.append(frame)
                 idx += 1
         finally:
@@ -188,10 +211,10 @@ class VideoLoader(BaseLoader):
             if not cap.isOpened():
                 raise ValueError(f"Could not read video at path: {file}")
             try:
-                source_length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
                 source_fps = cap.get(cv2.CAP_PROP_FPS)
                 width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                 height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                source_length = self._decodable_frame_count(cap)
             finally:
                 cap.release()
 
@@ -238,6 +261,20 @@ class VideoLoader(BaseLoader):
             num_instances,
             num_total_instances,
             shape_variance,
+        )
+
+    def estimate_decoded_bytes(self, metadata=None) -> int:
+        itemsize = np.dtype(self._data_type).itemsize
+        metadata = self._all_metadata if metadata is None else metadata
+        return int(
+            sum(
+                int(md["length"])
+                * int(md["height"])
+                * int(md["width"])
+                * int(md["num_channels"])
+                for md in metadata
+            )
+            * itemsize
         )
 
     def estimate_peak_memory_bytes(self) -> dict:

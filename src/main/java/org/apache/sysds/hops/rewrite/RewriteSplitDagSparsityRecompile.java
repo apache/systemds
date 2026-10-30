@@ -45,6 +45,14 @@ public class RewriteSplitDagSparsityRecompile extends SplitStatementBlockRewrite
 		return rRewriteStatementBlock(sb, state);
 	}
 
+	private static Hop getFirstTransientWriteParent(Hop hop) {
+		for(Hop p : hop.getParent()) {
+			if(p instanceof DataOp && ((DataOp)p).getOp() == OpOpData.TRANSIENTWRITE)
+				return p;
+		}
+		return null;
+	}
+
 	public List<StatementBlock> rRewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state) {
 		// split only if sparsity rewrites are enabled (splitting is pointless w/o rewrite)
 		if(!ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.SPARSITY_REWRITES))
@@ -78,21 +86,32 @@ public class RewriteSplitDagSparsityRecompile extends SplitStatementBlockRewrite
 			ArrayList<Hop> sbSplitHops = new ArrayList<>();
 			for(Hop cHop : cand) {
 				// create new transient read
-				String varname = createCutVarName(false);
+				String varname;
+				DataOp tWrite = (DataOp)getFirstTransientWriteParent(cHop);
+				if(cHop instanceof DataOp && ((DataOp)cHop).isRead() && tWrite != null) {
+					varname = tWrite.getName();
+				}
+				else {
+					varname = createCutVarName(false);
+				}
 				DataOp tRead = HopRewriteUtils.createTransientRead(varname, cHop);
 				tRead.setRequiresRecompile();
 
-				// replace persistent read with transient read
+				// replace hop with transient read operation
 				ArrayList<Hop> parents = new ArrayList<>(cHop.getParent());
 				for(int i = 0; i < parents.size(); i++) {
 					// prevent concurrent modification by index access
 					Hop parent = parents.get(i);
-					if(!candChilds.contains(parent)) // anomaly filter
-						HopRewriteUtils.replaceChildReference(parent, cHop, tRead);
+					if(!candChilds.contains(parent)) { // anomaly filter
+						if(parent != tWrite)
+							HopRewriteUtils.replaceChildReference(parent, cHop, tRead);
+						else
+							sb.getHops().remove(parent);
+					}
 				}
 
-				// add reblock sub dag to first statement block
-				DataOp tWrite = HopRewriteUtils.createTransientWrite(varname, cHop);
+				if(tWrite == null)
+					tWrite = HopRewriteUtils.createTransientWrite(varname, cHop);
 				sbSplitHops.add(tWrite);
 
 				// update live in and out of new statement block (for piggybacking)

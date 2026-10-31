@@ -72,7 +72,7 @@ class LinearRegression {
 public class EMAUtils {
 
 	public static FrameBlock exponentialMovingAverageImputation(FrameBlock block, int search_iterations, String mode,
-		int freq, Double alpha, Double beta, Double gamma) {
+																int freq, Double alpha, Double beta, Double gamma) {
 		int cols = block.getNumColumns();
 		int rows = block.getNumRows();
 
@@ -145,7 +145,32 @@ public class EMAUtils {
 		double rsme;
 	}
 
+	public static void validateRange(Double... values) {
+		if (values == null || values.length == 0){
+			throw new IllegalArgumentException("No arguments provided");
+		}
+		for (Double value : values) {
+			if (value > 1 || value < 0) {
+				throw new IllegalArgumentException(
+						"Input is out of range [0,1]"
+				);
+			}
+		}
+
+	}
+
+	public static void validateFrequency(int freq, Double[] data){
+		if (freq <= 0){
+			throw new IllegalArgumentException("Value too low");
+		} else if (2*freq >= data.length) {
+			throw new ArrayIndexOutOfBoundsException("Frequency too high");
+		}
+
+	}
 	public static Container single_exponential_smoothing(Double[] data, Double alpha) {
+
+		validateRange(alpha);
+
 		int n = data.length;
 
 		Double[] pred = new Double[n];
@@ -186,12 +211,26 @@ public class EMAUtils {
 	}
 
 	public static Container double_exponential_smoothing(Double[] data, Double alpha, Double beta) {
+
+		// Exception handling
+		validateRange(alpha, beta);
+
+		if (data == null || data.length < 3) {
+			throw new IllegalArgumentException("At least three observations are needed to calculate RMSE");
+		}
+
+		if (data[0] == null || data[1] == null || Double.isNaN(data[0]) || Double.isNaN(data[1])) {
+			throw new IllegalArgumentException("The first two observations must not be missing");
+		}
+
+		// Initializing variables
 		int n = data.length;
 
 		ArrayList<Double> pred = new ArrayList<>(n-1);
 		Double[] s = new Double[n-1];
 		Double[] b = new Double[n-1];
 
+		// Setting up s_0, b_0, y_0
 		s[0] = data[1];
 		b[0] = data[1] - data[0];
 		pred.add(s[0] + b[0]);
@@ -202,7 +241,9 @@ public class EMAUtils {
 		ArrayList<Double> not_missing_pred = new ArrayList<>();
 		int n_size = 0;
 
+		// Iterative updating of the model
 		for (int i = 1; i < n-1; i++) {
+			// Imputes missing data
 			if (Double.isNaN(data[i + 1])) {
 				val = pred.get(i - 1);
 			} else {
@@ -211,11 +252,15 @@ public class EMAUtils {
 
 			s[i] = alpha * val + (1 - alpha) * (s[i-1] + b[i-1]);
 			b[i] = beta * (s[i] - s[i-1]) + (1 - beta) * b[i-1];
-			pred.add(s[i] + b[i]);
-		}
+			if (i < n - 2){
+				pred.add(s[i] + b[i]);
+			}
 
+		}
+		pred.add(0, data[1]);
 		pred.add(0, data[0]);
 
+		// Initializing the data for calculation of RMSE
 		for (int i = 0; i < data.length; i++) {
 			if (!Double.isNaN(data[i])) {
 				not_missing.add(data[i]);
@@ -224,6 +269,7 @@ public class EMAUtils {
 			}
 		}
 
+		// Calculation of RMSE
 		double sum = .0;
 		for (int i = 0; i < not_missing.size(); i++) {
 			sum += Math.pow(not_missing.get(i) - not_missing_pred.get(i), 2);
@@ -235,7 +281,13 @@ public class EMAUtils {
 	}
 
 	public static Container triple_exponential_smoothing(Double[] data, Double alpha, Double beta,
-		Double gamma, Integer freq) {
+														 Double gamma, Integer freq) {
+
+		// Exception handling
+		validateRange(alpha, beta, gamma);
+		validateFrequency(freq, data);
+
+		//Initialization data
 		double l = freq * 2;
 		ArrayList<Double> start_data = new ArrayList<>();
 
@@ -243,11 +295,15 @@ public class EMAUtils {
 			start_data.add(data[i]);
 		}
 
+		// Building a centered moving average for the inititialization of the level variable
 		ArrayList<Double> filt = new ArrayList<>();
 		ArrayList<Double> trend = new ArrayList<>();
 
 		double len = freq;
 
+		// To set up the centered moving average filter, there is two cases, odd and even frequency.
+		// For the odd frequency, there is a true center point, so the filter weights are the same.
+		// For the even frequency, there is no center point, therefore, the edge weights are halved.
 		if (freq % 2 == 0) {
 			len = freq - 1;
 		}
@@ -261,9 +317,11 @@ public class EMAUtils {
 			filt.add(0.5/freq);
 		}
 
+		// Applying the CMA filter to the trend
 		double trend_len = l - filt.size() + 1;
 
-		for (int i = 0; i < l - trend_len; i++) {
+		// Goes through the start data, and sums the average trend over the first to seasons.
+		for (int i = 0; i < trend_len; i++) {
 			double sum = 0;
 			for (int j = i; j < i + filt.size(); j++) {
 				sum += start_data.get(j) * filt.get(j - i);
@@ -272,6 +330,7 @@ public class EMAUtils {
 			trend.add(sum);
 		}
 
+		// Removing the trend, to reveal the seasonal pattern
 		int cut = (int) (l - trend.size()) / 2;
 
 		ArrayList<Double> season_tmp = new ArrayList<>();
@@ -282,6 +341,7 @@ public class EMAUtils {
 
 		Double[] season = new Double[freq];
 
+		// Average by season position
 		for (int i = 0; i < freq; i++) {
 			double combined = 0;
 			if (i + freq < trend.size()) {
@@ -293,6 +353,7 @@ public class EMAUtils {
 			season[(i + (freq / 2)) % freq] = combined;
 		}
 
+		// Preparing the data for linear regression, in order to  initialize level
 		double sum = 0;
 		for (int i = 0; i < season.length; i++) {
 			sum += season[i];
@@ -316,6 +377,8 @@ public class EMAUtils {
 
 		int n = data.length;
 
+
+		// Initalize arrays and create first forecast
 		double[] s = new double[n - freq];
 		s[0] = linreg.intercept();
 
@@ -338,6 +401,7 @@ public class EMAUtils {
 
 		int n_size = 0;
 
+		// Update the model per data point
 		for (int i = 1; i < n - freq; i++) {
 			if (Double.isNaN(data[i + freq - 1] )) {
 				val = pred.get(i - 1);
@@ -356,6 +420,7 @@ public class EMAUtils {
 			pred.add(i, data[i]);
 		}
 
+		// Initialize data for the RMSE calculation
 		for (int i = 0; i < data.length; i++) {
 			if (!Double.isNaN(data[i])) {
 				not_missing.add(data[i]);
@@ -364,6 +429,7 @@ public class EMAUtils {
 			}
 		}
 
+		// Calculate the RMSE
 		sum = .0;
 		for (int i = 0; i < not_missing.size(); i++) {
 			sum += Math.pow(not_missing.get(i) - not_missing_pred.get(i), 2);

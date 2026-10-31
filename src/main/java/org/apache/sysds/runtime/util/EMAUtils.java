@@ -72,7 +72,7 @@ class LinearRegression {
 public class EMAUtils {
 
 	public static FrameBlock exponentialMovingAverageImputation(FrameBlock block, int search_iterations, String mode,
-		int freq, Double alpha, Double beta, Double gamma) {
+																int freq, Double alpha, Double beta, Double gamma) {
 		int cols = block.getNumColumns();
 		int rows = block.getNumRows();
 
@@ -149,13 +149,13 @@ public class EMAUtils {
 		if (values == null || values.length == 0){
 			throw new IllegalArgumentException("No arguments provided");
 		}
-        for (Double value : values) {
-            if (value > 1 || value < 0) {
-                throw new IllegalArgumentException(
-                        "Input is out of range [0,1]"
-                );
-            }
-        }
+		for (Double value : values) {
+			if (value > 1 || value < 0) {
+				throw new IllegalArgumentException(
+						"Input is out of range [0,1]"
+				);
+			}
+		}
 
 	}
 
@@ -215,6 +215,14 @@ public class EMAUtils {
 		// Exception handling
 		validateRange(alpha, beta);
 
+		if (data == null || data.length < 3) {
+			throw new IllegalArgumentException("At least three observations are needed to calculate RMSE");
+		}
+
+		if (data[0] == null || data[1] == null || Double.isNaN(data[0]) || Double.isNaN(data[1])) {
+			throw new IllegalArgumentException("The first two observations must not be missing");
+		}
+
 		// Initializing variables
 		int n = data.length;
 
@@ -244,9 +252,12 @@ public class EMAUtils {
 
 			s[i] = alpha * val + (1 - alpha) * (s[i-1] + b[i-1]);
 			b[i] = beta * (s[i] - s[i-1]) + (1 - beta) * b[i-1];
-			pred.add(s[i] + b[i]);
-		}
+			if (i < n - 2){
+				pred.add(s[i] + b[i]);
+			}
 
+		}
+		pred.add(0, data[1]);
 		pred.add(0, data[0]);
 
 		// Initializing the data for calculation of RMSE
@@ -270,7 +281,7 @@ public class EMAUtils {
 	}
 
 	public static Container triple_exponential_smoothing(Double[] data, Double alpha, Double beta,
-		Double gamma, Integer freq) {
+														 Double gamma, Integer freq) {
 
 		// Exception handling
 		validateRange(alpha, beta, gamma);

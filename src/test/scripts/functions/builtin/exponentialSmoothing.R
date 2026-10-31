@@ -37,51 +37,47 @@ ts_data <- c(
 )
 
 if (mode == "double") {
-  hw_model <- stats::HoltWinters(ts_data, beta = NULL, gamma = FALSE)
+  hw_model <- stats::HoltWinters(
+    ts_data,
+    alpha=0.3,
+    beta = 0.1,
+    gamma = FALSE)
   fit_vals <- as.numeric(fitted(hw_model)[, "xhat"])
 
-  res_matrix <- matrix(0, nrow = length(fit_vals), ncol = 3)
-  res_matrix[, 1] <- hw_model$alpha
-  res_matrix[, 2] <- hw_model$beta
-  res_matrix[, 3] <- fit_vals
+  res_matrix <- matrix(0, nrow = length(fit_vals), ncol = 1)
+  res_matrix[, 1] <- fit_vals
 
 } else if (mode == "triple") {
    ts_obj <- ts(ts_data, frequency = 12)
 
    hw_model <- stats::HoltWinters(
      ts_obj,
-     alpha = NULL,
-     beta = NULL,
-     gamma = NULL,
+     alpha = 0.3,
+     beta = 0.1,
+     gamma = 0.2,
      seasonal = "additive"
    )
 
    fit_vals <- as.numeric(fitted(hw_model)[, "xhat"])
 
-   res_matrix <- matrix(0, nrow = length(fit_vals), ncol = 4)
-   res_matrix[, 1] <- hw_model$alpha
-   res_matrix[, 2] <- hw_model$beta
-   res_matrix[, 3] <- hw_model$gamma
-   res_matrix[, 4] <- fit_vals
+   res_matrix <- matrix(0, nrow = length(fit_vals), ncol = 1)
+   res_matrix[, 1] <- fit_vals
 
 } else if (mode == "odd_triple") {
      ts_obj <- ts(ts_data, frequency = 7)
 
      hw_model <- stats::HoltWinters(
-       ts_obj,
-       alpha = NULL,
-       beta = NULL,
-       gamma = NULL,
-       seasonal = "additive"
-     )
+          ts_obj,
+          alpha = 0.3,
+          beta = 0.1,
+          gamma = 0.2,
+          seasonal = "additive"
+        )
 
      fit_vals <- as.numeric(fitted(hw_model)[, "xhat"])
 
-     res_matrix <- matrix(0, nrow = length(fit_vals), ncol = 4)
-     res_matrix[, 1] <- hw_model$alpha
-     res_matrix[, 2] <- hw_model$beta
-     res_matrix[, 3] <- hw_model$gamma
-     res_matrix[, 4] <- fit_vals
+     res_matrix <- matrix(0, nrow = length(fit_vals), ncol = 1)
+     res_matrix[, 1] <- fit_vals
 
   } else {
   stop(paste("Unknown smoothing mode:", mode))

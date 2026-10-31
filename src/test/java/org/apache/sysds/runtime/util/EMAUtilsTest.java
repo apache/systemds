@@ -60,19 +60,14 @@ public class EMAUtilsTest extends AutomatedTestBase {
         HashMap<MatrixValue.CellIndex, Double> rOutput = readRMatrixFromFS(resultPath);
         Assert.assertFalse("R output should contain values", rOutput.isEmpty());
 
-        // 1. Extract optimized parameters
-        double rAlpha = rOutput.getOrDefault(new MatrixValue.CellIndex(1, 1),0.0);
-        double rBeta  = rOutput.getOrDefault(new MatrixValue.CellIndex(1, 2),0.0);
-
-        // 2. Extract the entire sequence of fitted values
         int numRows = (int) rOutput.keySet().stream().mapToLong(idx -> idx.row).max().orElse(0);
         double[] rFittedValues = new double[numRows];
         for (int i = 1; i <= numRows; i++) {
-            rFittedValues[i - 1] = rOutput.get(new MatrixValue.CellIndex(i, 3));
+            rFittedValues[i - 1] = rOutput.get(new MatrixValue.CellIndex(i, 1));
         }
 
 
-        Container javaFittedValues = double_exponential_smoothing(TS_DATA, rAlpha, rBeta);
+        Container javaFittedValues = double_exponential_smoothing(TS_DATA, 0.3, 0.1);
 
         Assert.assertEquals("Array length mismatch", rFittedValues.length, javaFittedValues.values.length-2);
         for (int i = 0; i < rFittedValues.length; i++) {
@@ -95,13 +90,6 @@ public class EMAUtilsTest extends AutomatedTestBase {
                 rOutputTriple.isEmpty()
         );
 
-        double rAlpha = rOutputTriple.getOrDefault(
-                new MatrixValue.CellIndex(1, 1), 0.0);
-        double rBeta = rOutputTriple.getOrDefault(
-                new MatrixValue.CellIndex(1, 2), 0.0);
-        double rGamma = rOutputTriple.getOrDefault(
-                new MatrixValue.CellIndex(1, 3), 0.0);
-
         int numRows = (int) rOutputTriple.keySet().stream()
                 .mapToLong(idx -> idx.row)
                 .max()
@@ -111,11 +99,11 @@ public class EMAUtilsTest extends AutomatedTestBase {
 
         for (int i = 0; i < numRows; i++) {
             rFittedValues[i] = rOutputTriple.getOrDefault(
-                    new MatrixValue.CellIndex(i + 1, 4), 0.0);
+                    new MatrixValue.CellIndex(i + 1, 1), 0.0);
         }
 
         Container javaResult = triple_exponential_smoothing(
-                TS_DATA, rAlpha, rBeta, rGamma, freq);
+                TS_DATA, 0.3, 0.1, 0.2, freq);
 
         Assert.assertEquals("Array length mismatch", rFittedValues.length, javaResult.values.length - freq);
 
@@ -139,13 +127,6 @@ public class EMAUtilsTest extends AutomatedTestBase {
                 rOutputTriple.isEmpty()
         );
 
-        double rAlpha = rOutputTriple.getOrDefault(
-                new MatrixValue.CellIndex(1, 1), 0.0);
-        double rBeta = rOutputTriple.getOrDefault(
-                new MatrixValue.CellIndex(1, 2), 0.0);
-        double rGamma = rOutputTriple.getOrDefault(
-                new MatrixValue.CellIndex(1, 3), 0.0);
-
         int numRows = (int) rOutputTriple.keySet().stream()
                 .mapToLong(idx -> idx.row)
                 .max()
@@ -155,11 +136,11 @@ public class EMAUtilsTest extends AutomatedTestBase {
 
         for (int i = 0; i < numRows; i++) {
             rFittedValues[i] = rOutputTriple.getOrDefault(
-                    new MatrixValue.CellIndex(i + 1, 4), 0.0);
+                    new MatrixValue.CellIndex(i + 1, 1), 0.0);
         }
 
         Container javaResult = triple_exponential_smoothing(
-                TS_DATA, rAlpha, rBeta, rGamma, freq);
+                TS_DATA, 0.3, 0.1, 0.2, freq);
 
         Assert.assertEquals("Array length mismatch", rFittedValues.length, javaResult.values.length - freq);
 

@@ -20,6 +20,8 @@
 # -------------------------------------------------------------
 
 
+import os
+import time
 import unittest
 from types import SimpleNamespace
 
@@ -27,6 +29,7 @@ import numpy as np
 from systemds.scuro.representations.color_histogram import ColorHistogram
 from systemds.scuro.drsearch.operator_registry import Registry, load_builtin_operators
 from systemds.scuro.drsearch.node_executor import ResultEntry
+from systemds.scuro.drsearch.task import INFERENCE_TIME
 from systemds.scuro.drsearch.unimodal_optimizer import (
     UnimodalOptimizer,
     UnimodalResults,
@@ -232,6 +235,7 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
 
             def decode(name):
                 decoded.append(name)
+                time.sleep(0.001)
                 return images[int(name)].copy()
 
             lazy = LazyFileSequence([str(i) for i in self.indices], decode)
@@ -248,8 +252,12 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
                 results.results[image.modality_id][task.model.name].append(
                     SimpleNamespace(dag=dag, val_score={"accuracy": accuracy})
                 )
-            _, cache = results.get_k_best_results(image, task, "accuracy")
+            with patch.dict(os.environ, {"SCURO_DECODE_THREADS": "1"}):
+                _, cache = results.get_k_best_results(image, task, "accuracy")
             self.assertIs(image.data, lazy)
+            self.assertEqual(image.transform_time, 0)
+            for c in cache:
+                self.assertGreaterEqual(c.transform_time, 0.001 * self.num_instances)
             return len(decoded), [np.asarray(c.data) for c in cache]
 
         lazy_decodes, lazy_outputs = k_best(None)
@@ -924,3 +932,25 @@ class TestSelectionStrategies(unittest.TestCase):
     def test_unknown_strategy_is_rejected(self):
         with self.assertRaises(ValueError):
             self.results.with_selection_strategy("cheapest")
+
+    def test_two_objectives_select_from_the_pareto_front(self):
+        seconds = {"noisy_slow": 2.0, "stable_fast": 0.5, "weak_fastest": 0.6}
+        for name, entry in self.entries.items():
+            entry.val_score[INFERENCE_TIME] = seconds[name]
+        results = UnimodalResults(
+            [self.modality],
+            [self.task],
+            k=3,
+            objectives=[("accuracy", "max"), (INFERENCE_TIME, "min")],
+        )
+        results.results["m1"]["t1"] = list(self.entries.values())
+
+        self.assertEqual(results.selection_strategy, "pareto")
+        ranked, _ = results.get_k_best_results(
+            self.modality, self.task, "accuracy", cache_needed=False
+        )
+        self.assertIs(ranked[-1], self.entries["weak_fastest"])
+        self.assertEqual(
+            results.get_pareto_front(self.modality, self.task),
+            ranked[:2],
+        )

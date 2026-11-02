@@ -51,6 +51,7 @@ from tests.scuro.data_generator import (
 
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.hyperparameter_tuner import HyperparameterTuner
+from systemds.scuro.drsearch.objectives import INFERENCE_TIME, dominates
 from systemds.scuro.drsearch.representation_dag import CSEAwareDAGBuilder
 from systemds.scuro.representations.bert import Bert
 from systemds.scuro.representations.clip import CLIPText
@@ -92,6 +93,53 @@ class TestHPTuner(unittest.TestCase):
             )
         )
         self.run_hp_for_modality([text])
+
+    def test_multi_objective_hp_tuning_keeps_a_pareto_front(self):
+        objectives = [("accuracy", "max"), (INFERENCE_TIME, "min")]
+        text_data, text_md = ModalityRandomDataGenerator().create_text_data(
+            self.num_instances
+        )
+        text = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.TEXT, text_data, str, text_md
+            )
+        )
+        with patch.object(
+            Registry, "_representations", {ModalityType.TEXT: [BoW, W2V]}
+        ), patch.object(Registry, "_fusion_operators", []):
+            unimodal_optimizer = UnimodalOptimizer(
+                [text], self.tasks, False, k=2, max_num_workers=1, objectives=objectives
+            )
+            unimodal_optimizer.optimize()
+            hp = HyperparameterTuner(
+                [text],
+                self.tasks,
+                unimodal_optimizer.operator_performance,
+                k=2,
+                n_jobs=1,
+                objectives=objectives,
+            )
+            hp.tune_unimodal_representations(max_eval_per_rep=4)
+
+        for task in self.tasks:
+            results = hp.optimization_results.results[task.model.name][
+                text.modality_id
+            ]
+            self.assertTrue(results)
+            for result in results:
+                front = result.pareto_results
+                self.assertTrue(front)
+                self.assertIn(result.best_params, [params for params, _ in front])
+                vectors = [
+                    tuple(scores.all_val_scores[name] for name, _ in objectives)
+                    for _, scores in front
+                ]
+                for a in vectors:
+                    self.assertFalse(
+                        any(dominates(b, a, objectives) for b in vectors)
+                    )
+            _, dags = hp.optimization_results.get_k_best_dags(text, task)
+            self.assertLessEqual(len(dags), 2 * len(results))
 
     # TODO: Add once the final multimodal optimizer is implemented
     # def test_multimodal_hp_tuning(self):

@@ -173,6 +173,32 @@ script.
 EOF
 }
 
+# verify that $1 is a port that a server can be bound to, otherwise abort with an error.
+# $2 names the server the port is meant for.
+function checkPort {
+  local port=$1
+  local target=$2
+  local re='^[0-9]+$'
+  if ! [[ $port =~ $re ]] ; then
+    echo "error: Port '$port' for the $target is not a number"
+    printUsage
+    exit 1
+  fi
+  # drop leading zeros, so that the length check below is not fooled by e.g. 0000080505
+  local num=$port
+  while [[ ${#num} -gt 1 && $num == 0* ]] ; do num=${num#0} ; done
+  # more than 5 digits is out of range by definition, and comparing it would silently
+  # overflow the 64 bit integers of the shell for very long inputs
+  if [ ${#num} -gt 5 ] || [ "$num" -lt 1 ] || [ "$num" -gt 65535 ] ; then
+    echo "error: Port $port for the $target is out of range, expected a port in [1, 65535]"
+    printUsage
+    exit 1
+  fi
+  if [ "$num" -lt 1024 ] ; then
+    echo "warning: Port $port for the $target is a reserved system port, binding it requires elevated privileges"
+  fi
+}
+
 # print an error if no argument is supplied.
 if [ -z "$1" ] ; then
     echo "Wrong Usage. Add -help for additional parameters.";
@@ -242,11 +268,7 @@ elif echo "$1" | grep -q "WORKER"; then
     shift
   fi
   PORT=$1
-  re='^[0-9]+$'
-  if ! [[ $PORT =~ $re ]] ; then
-    echo "error: Port is not a number"
-    printUsage
-  fi
+  checkPort "$PORT" "federated worker"
   shift
 elif echo "$1" | grep -q "FEDMONITORING"; then
   FEDMONITORING=1
@@ -256,11 +278,7 @@ elif echo "$1" | grep -q "FEDMONITORING"; then
     shift
   fi
   PORT=$1
-  re='^[0-9]+$'
-  if ! [[ $PORT =~ $re ]] ; then
-    echo "error: Port is not a number"
-    printUsage
-  fi
+  checkPort "$PORT" "federated monitoring backend"
   shift
 else
   # handle optional '-f' before DML file (for consistency)

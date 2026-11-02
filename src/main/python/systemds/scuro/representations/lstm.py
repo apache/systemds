@@ -23,7 +23,11 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 from typing import List, Dict, Any, Optional
-from systemds.scuro.utils.static_variables import get_device
+from systemds.scuro.utils.static_variables import (
+    get_device,
+    get_global_seed,
+    get_train_seed,
+)
 from systemds.scuro.utils.utils import set_random_seeds
 import numpy as np
 
@@ -93,7 +97,7 @@ class LSTM(Fusion):
         self.model_state = None
         self.is_multilabel = False
 
-        set_random_seeds()
+        set_random_seeds(get_train_seed(get_global_seed()))
 
     @staticmethod
     def _shape_description(modality: Modality) -> str:

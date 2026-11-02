@@ -511,6 +511,28 @@ def _dispatch_load_leaf(payload, _gpu_id):
     return _load_leaf_worker(modality, materialize)
 
 
+def _dispatch_split_dags(payload, gpu_id):
+    from systemds.scuro.drsearch.unimodal_optimizer import evaluate_fitted_dags
+
+    start_time = time.perf_counter()
+    allowed = os.sched_getaffinity(0)
+    if gpu_id is not None:
+        cores = sorted(allowed)
+        os.sched_setaffinity(0, {cores[os.getpid() % len(cores)]})
+    try:
+        results = evaluate_fitted_dags(*payload)
+    finally:
+        os.sched_setaffinity(0, allowed)
+        if gpu_id is not None:
+            cleanup_gpu(gpu_id)
+    return {
+        "results": results,
+        "start_time": start_time,
+        "end_time": time.perf_counter(),
+        "pid": os.getpid(),
+    }
+
+
 _WORKER_DISPATCH = {
     "node": _dispatch_node,
     "task": _dispatch_task,
@@ -518,6 +540,7 @@ _WORKER_DISPATCH = {
     "leaf_batch": _dispatch_leaf_batch,
     "load_leaf": _dispatch_load_leaf,
     "release_models": _dispatch_release_models,
+    "split_dags": _dispatch_split_dags,
 }
 
 
@@ -540,6 +563,12 @@ class _BatchUnit:
 class _TaskBatchUnit(_BatchUnit):
     gpu_id: int = 0
     gpu_bytes: int = 0
+
+
+@dataclass
+class _SplitUnit:
+    index: int
+    gpu_id: Optional[int] = None
 
 
 @dataclass
@@ -576,6 +605,7 @@ class NodeExecutor:
         enable_checkpointing: bool = False,
         worker_pool: Optional[PersistentWorkerPool] = None,
         search_start: Optional[float] = None,
+        split_jobs: Optional[List[tuple]] = None,
     ):
         self.enable_checkpointing = enable_checkpointing
         available_total_cpu = cpu_memory_budget_bytes(
@@ -633,6 +663,8 @@ class NodeExecutor:
         self._task_results: Dict[str, ResultEntry] = {}
         self._fused_shapes: Dict[tuple, tuple] = {}
         self._fused_ready_since: Dict[str, float] = {}
+        self._split_pending = list(enumerate(split_jobs or []))
+        self._split_results: List[Any] = [None] * len(self._split_pending)
 
         self._owns_pool = worker_pool is None
         if worker_pool is None:
@@ -973,9 +1005,30 @@ class NodeExecutor:
                 self._job_units[job_id] = _TaskBatchUnit(batch, gpu_id, gpu_bytes)
                 self._job_retained_shm[job_id] = retained
 
+    def _submit_split_jobs(self) -> None:
+        while self._split_pending and self._pool.has_idle_worker:
+            index, (payload, uses_gpu) = self._split_pending[0]
+            gpu_id = None
+            if uses_gpu and self.scheduler.gpu_devices:
+                gpu_id = self.scheduler.reserve_gpu(
+                    _FUSED_CONTEXT_BYTES,
+                    lambda g: self._pool.has_idle_worker_for(g),
+                    force=not self._job_units,
+                )
+                if gpu_id is None and self._job_units:
+                    return
+            if gpu_id is None and not self._pool.has_idle_worker_for(None, True):
+                return
+            self._split_pending.pop(0)
+            job_id = self._pool.submit(
+                "split_dags", payload, gpu_id=gpu_id, allow_gpu_worker_for_cpu=True
+            )
+            self._job_units[job_id] = _SplitUnit(index, gpu_id)
+
     def _fill_pipeline(self) -> None:
         if not self._pool.has_idle_worker:
             return
+        self._submit_split_jobs()
         ready = self.scheduler.get_runnable().copy()
         fused = self._fused_task_nodes(ready)
         if fused:
@@ -1052,6 +1105,21 @@ class NodeExecutor:
                 return
             if isinstance(unit, _TaskBatchUnit):
                 self.scheduler.release_gpu(unit.gpu_id, unit.gpu_bytes)
+            if isinstance(unit, _SplitUnit):
+                if unit.gpu_id is not None:
+                    self.scheduler.release_gpu(unit.gpu_id, _FUSED_CONTEXT_BYTES)
+                if jr.ok:
+                    value = jr.value
+                    self._record_stats(
+                        f"split_{unit.index}",
+                        value["pid"],
+                        value["start_time"],
+                        value["end_time"],
+                    )
+                    self._split_results[unit.index] = value["results"]
+                else:
+                    self._split_results[unit.index] = jr.error or "worker failure"
+                return
             if not jr.ok:
                 self._handle_job_failure(unit, jr)
                 return
@@ -1411,7 +1479,11 @@ class NodeExecutor:
         self._task_results = {}
         try:
             self._load_leaf_modalities()
-            while self._job_units or not self.scheduler.is_finished():
+            while (
+                self._job_units
+                or self._split_pending
+                or not self.scheduler.is_finished()
+            ):
                 self._fill_pipeline()
                 if not self._job_units:
                     continue
@@ -1436,6 +1508,7 @@ class NodeExecutor:
         return {
             "task_results": list(self._task_results.values()),
             "statistics": self.statistics,
+            "split_results": self._split_results,
         }
 
     def _reuse_report(self) -> Dict[str, Any]:

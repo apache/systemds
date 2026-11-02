@@ -55,6 +55,7 @@ public class RewriteSplitDagSparsityRecompileTest extends AutomatedTestBase {
 
 	private static final String TEST_NAME_READ = "RewriteSplitDagSparsityRecompileRead";
 	private static final String TEST_NAME_MMCHAIN = "RewriteSplitDagSparsityRecompileMMChain";
+	private static final String TEST_NAME_MMCHAIN2 = "RewriteSplitDagSparsityRecompileMMChain2";
 	private static final String TEST_DIR = "functions/rewrite/";
 	private static final String TEST_CLASS_DIR =
 		TEST_DIR + RewriteSplitDagSparsityRecompileTest.class.getSimpleName() + "/";
@@ -91,6 +92,7 @@ public class RewriteSplitDagSparsityRecompileTest extends AutomatedTestBase {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME_READ, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_READ, new String[] {"R"}));
 		addTestConfiguration(TEST_NAME_MMCHAIN, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_MMCHAIN, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME_MMCHAIN2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_MMCHAIN2, new String[] {"R"}));
 		_oldLevelRewrite = Logger.getLogger(PACKAGE_REWRITE).getLevel();
 		Logger.getLogger(PACKAGE_REWRITE).setLevel(Level.TRACE);
 		_oldLevelRecompile = Logger.getLogger(PACKAGE_RECOMPILE).getLevel();
@@ -112,6 +114,11 @@ public class RewriteSplitDagSparsityRecompileTest extends AutomatedTestBase {
 	@Test
 	public void testSplitDagSparsityRecompileMMChain() {
 		testSplitDagSparsityRecompile(TEST_NAME_MMCHAIN, 4);
+	}
+
+	@Test
+	public void testSplitDagSparsityRecompileMMChain2() {
+		testSplitDagSparsityRecompile(TEST_NAME_MMCHAIN2, 4);
 	}
 
 	private void testSplitDagSparsityRecompile(String testName, int numSBs) {

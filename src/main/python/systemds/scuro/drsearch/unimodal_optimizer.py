@@ -30,6 +30,7 @@ from typing import List, Any, Optional, Dict
 from functools import lru_cache
 from weakref import WeakValueDictionary
 
+from systemds.scuro.dataloader.base_loader import LazyFileSequence
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.node_executor import (
     NodeExecutor,
@@ -40,6 +41,7 @@ from systemds.scuro.drsearch.split_aware_evaluator import (
     SplitAwareDAGEvaluator,
     dag_requires_fitting,
 )
+
 from systemds.scuro.drsearch.test_set_evaluation import measure_inference_time
 from systemds.scuro.drsearch.trial_result_cache import TrialNodeCache, TrialResultCache
 from systemds.scuro.representations.representation import (
@@ -1386,6 +1388,18 @@ class UnimodalResults:
             leaf = copy.copy(leaf)
         leaf.fold_source = (dag, modality)
         return leaf
+
+    @staticmethod
+    def _decode_lazy_leaf_once(modality, results):
+        data = modality.data if modality.has_data() else None
+        if not isinstance(data, LazyFileSequence):
+            return None
+        if sum(not dag_requires_fitting(result.dag) for result in results) < 2:
+            return None
+        estimate = getattr(modality.data_loader, "estimate_decoded_bytes", None)
+        metadata = (
+            modality.metadata if len(modality.metadata or []) == len(data) else None
+        )
 
     def get_k_most_robust_results(
         self,

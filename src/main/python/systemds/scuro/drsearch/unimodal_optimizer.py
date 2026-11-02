@@ -34,20 +34,25 @@ from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.node_executor import (
     NodeExecutor,
     ResultEntry,
-    _lazy_leaf_budget_fraction,
+    decoded_lazy_leaves,
 )
-from systemds.scuro.dataloader.base_loader import LazyFileSequence
-from systemds.scuro.utils.memory_utility import cpu_memory_budget_bytes
 from systemds.scuro.drsearch.split_aware_evaluator import (
     SplitAwareDAGEvaluator,
     dag_requires_fitting,
 )
+from systemds.scuro.drsearch.test_set_evaluation import measure_inference_time
 from systemds.scuro.drsearch.trial_result_cache import TrialNodeCache, TrialResultCache
 from systemds.scuro.representations.representation import (
     FitRequirement,
     RepresentationStats,
 )
 from systemds.scuro.drsearch.ranking import rank_by_tradeoff, rank_by_robustness
+from systemds.scuro.drsearch.objectives import (
+    pareto_front,
+    rank_by_pareto,
+    retime_front,
+    validate_objectives,
+)
 from systemds.scuro.drsearch.task import PerformanceMeasure
 from systemds.scuro.representations.concatenation import Concatenation
 from systemds.scuro.representations.hadamard import Hadamard
@@ -144,6 +149,7 @@ class UnimodalOptimizer:
         result_path=None,
         k=2,
         metric_name="accuracy",
+        objectives=None,
         checkpoint_every: Optional[int] = 1,
         resume: bool = False,
         max_num_workers: int = -1,
@@ -187,7 +193,7 @@ class UnimodalOptimizer:
 
         self.operator_registry = Registry()
         self.operator_performance = UnimodalResults(
-            modalities, tasks, debug, True, k, self.metric_name
+            modalities, tasks, debug, True, k, self.metric_name, objectives=objectives
         )
         self._tasks_require_same_dims = True
         self.expected_dimensions = tasks[0].expected_dim
@@ -1088,7 +1094,7 @@ class UnimodalOptimizer:
         )
 
 
-SELECTION_STRATEGIES = ("performance", "robustness", "tradeoff")
+SELECTION_STRATEGIES = ("performance", "robustness", "tradeoff", "pareto")
 
 
 class UnimodalResults:
@@ -1104,6 +1110,7 @@ class UnimodalResults:
         tradeoff_weights=(0.5, 0.5),
         robustness_std_weight=1.0,
         robustness_one_se_parsimony=True,
+        objectives=None,
     ):
         self.modality_ids = [modality.modality_id for modality in modalities]
         self.task_names = [task.model.name for task in tasks]
@@ -1113,6 +1120,13 @@ class UnimodalResults:
         self.store_cache = store_cache
         self.k = k
         self.metric_name = metric_name
+        self.objectives = (
+            [(metric_name, "max")]
+            if objectives is None
+            else validate_objectives(objectives)
+        )
+        if len(self.objectives) > 1 and selection_strategy == "performance":
+            selection_strategy = "pareto"
         self.set_selection_strategy(
             selection_strategy,
             tradeoff_weights=tradeoff_weights,
@@ -1242,6 +1256,8 @@ class UnimodalResults:
 
     def _rank_entries(self, task_results, performance_metric_name):
         strategy = getattr(self, "selection_strategy", "performance")
+        if strategy == "pareto":
+            return rank_by_pareto(task_results, self.objectives)
         if strategy == "robustness":
             return rank_by_robustness(
                 task_results,
@@ -1296,8 +1312,7 @@ class UnimodalResults:
                 task_cache = None
             if not task_cache:
                 cache = []
-                lazy_data = self._decode_lazy_leaf_once(modality, results)
-                try:
+                with decoded_lazy_leaves([modality]):
                     for result in results:
                         if dag_requires_fitting(result.dag):
                             cache.append(
@@ -1305,9 +1320,6 @@ class UnimodalResults:
                             )
                         else:
                             cache.append(result.dag.execute([modality]))
-                finally:
-                    if lazy_data is not None:
-                        modality._data = lazy_data
 
             elif isinstance(task_cache, list):
                 cache = task_cache
@@ -1334,6 +1346,22 @@ class UnimodalResults:
 
         return results, cache
 
+    def get_pareto_front(self, modality, task, retime_repeats: int = 0):
+        """Non-dominated results of ``modality`` for ``task`` under ``self.objectives``.
+
+        With ``retime_repeats`` > 0 the front is re-timed serially first (see
+        ``retime_front``), which updates the re-timed results in place.
+        """
+        results = self.results[modality.modality_id][task.model.name]
+        if retime_repeats <= 0:
+            return pareto_front(results, self.objectives)
+        return retime_front(
+            results,
+            self.objectives,
+            lambda entry: measure_inference_time(entry.dag, [modality], task),
+            retime_repeats,
+        )
+
     def _fit_k_best_leaf(self, dag, modality, task):
         supervised = any(
             _fit_requirement(node) is FitRequirement.SUPERVISED for node in dag.nodes
@@ -1358,28 +1386,6 @@ class UnimodalResults:
             leaf = copy.copy(leaf)
         leaf.fold_source = (dag, modality)
         return leaf
-
-    @staticmethod
-    def _decode_lazy_leaf_once(modality, results):
-        data = modality.data if modality.has_data() else None
-        if not isinstance(data, LazyFileSequence):
-            return None
-        if sum(not dag_requires_fitting(result.dag) for result in results) < 2:
-            return None
-        estimate = getattr(modality.data_loader, "estimate_decoded_bytes", None)
-        metadata = (
-            modality.metadata if len(modality.metadata or []) == len(data) else None
-        )
-        decoded_bytes = estimate(metadata) if callable(estimate) else None
-        budget = cpu_memory_budget_bytes(modality.modality_type.name)
-        if not decoded_bytes or decoded_bytes > budget * _lazy_leaf_budget_fraction():
-            return None
-        arrays = data.materialize()
-        for array in arrays:
-            if hasattr(array, "flags"):
-                array.flags.writeable = False
-        modality._data = arrays
-        return data
 
     def get_k_most_robust_results(
         self,

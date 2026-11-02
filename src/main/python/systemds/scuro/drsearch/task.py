@@ -46,6 +46,9 @@ _GPU_CONTEXT_FLOOR_BYTES = (
 )
 
 
+INFERENCE_TIME = "inference_time_per_instance_s"
+
+
 def _as_features(X):
     X = np.asarray(X, dtype=np.float32)
     return X.reshape(len(X), -1)
@@ -58,6 +61,7 @@ class PerformanceMeasure:
         self.metrics = metrics
         self.higher_is_better = higher_is_better
         self.scores = {}
+        self.time_per_instance = []
 
         if isinstance(metrics, list):
             for metric in metrics:
@@ -72,25 +76,33 @@ class PerformanceMeasure:
         else:
             self.scores[self.metrics].append(scores[self.metrics])
 
+    def add_time_per_instance(self, seconds):
+        """Representation + model inference seconds for one instance in one fold."""
+        self.time_per_instance.append(float(seconds))
+
+    def _values(self):
+        values = dict(self.scores)
+        if self.time_per_instance:
+            values[INFERENCE_TIME] = self.time_per_instance
+        return values
+
     def compute_averages(self):
-        self.average_scores = {}
-        if isinstance(self.metrics, list):
-            for metric in self.metrics:
-                self.average_scores[metric] = np.mean(self.scores[metric])
-        else:
-            self.average_scores[self.metrics] = np.mean(self.scores[self.metrics])
+        self.average_scores = {
+            metric: np.mean(values) for metric, values in self._values().items()
+        }
         return self
 
     def fold_scores(self):
         return {
-            metric: [float(v) for v in values] for metric, values in self.scores.items()
+            metric: [float(v) for v in values]
+            for metric, values in self._values().items()
         }
 
     def score_stds(self):
         """Per-metric standard deviation across folds (0.0 for a single fold)."""
         return {
             metric: (float(np.std(values, ddof=1)) if len(values) > 1 else 0.0)
-            for metric, values in self.scores.items()
+            for metric, values in self._values().items()
         }
 
 
@@ -474,6 +486,7 @@ class Task:
         self.validate_input_memory(data)
         self._reset_params()
         model = self.create_model()
+        representation_time_per_instance = representation_time / len(data)
 
         test_X = self._gather_by_indices(data, self.test_indices)
         test_y = self._gather_by_indices(self.labels, self.test_indices)
@@ -488,6 +501,12 @@ class Task:
             val_y = self._gather_by_indices(self.labels, fold_val_indices)
 
             self._run_fold(model, train_X, train_y, val_X, val_y, test_X, test_y)
+            self.record_time_per_instance(
+                representation_time_per_instance,
+                representation_time_per_instance,
+                len(val_X),
+                len(test_X),
+            )
         if hasattr(model, "clean_up"):
             model.clean_up()
             del model
@@ -502,7 +521,7 @@ class Task:
                 float(np.mean(self.inference_time)) if self.inference_time else 0.0
             ),
             "n_test_instances": len(self.test_indices) if self.test_indices else 0,
-            **self.inference_cost_timing(representation_time / len(data)),
+            **self.inference_cost_timing(representation_time_per_instance),
             **self.training_work.as_dict(),
         }
         return [
@@ -511,7 +530,7 @@ class Task:
             self.test_scores.compute_averages(),
         ]
 
-    def run_many(self, datas, device):
+    def run_many(self, datas, device, representation_times=None):
         model = self.create_model()
         rows = list(
             dict.fromkeys(list(self.train_indices) + list(self.test_indices or []))
@@ -537,23 +556,28 @@ class Task:
 
         seed = getattr(model, "seed", None)
         seed = get_train_seed(get_global_seed() if seed is None else seed)
-        outputs = {}
+        outputs, inference_per_instance = {}, {}
         start = time.perf_counter()
         for width, group in by_width.items():
             slots = candidate_slots(model, width, len(rows), self.kfold)
             for i in range(0, len(group), slots):
                 chunk = group[i : i + slots]
-                fitted = fit_folds(
+                fitted, per_row_s = fit_folds(
                     model, [X for _, X in chunk], labels, splits, seed, device
                 )
                 outputs.update(zip([c for c, _ in chunk], fitted))
+                inference_per_instance.update((c, per_row_s) for c, _ in chunk)
         per_fit_s = (time.perf_counter() - start) / max(1, len(outputs) * self.kfold)
 
+        if representation_times is None:
+            representation_times = [0.0] * len(datas)
         for c, out in outputs.items():
             if not np.isfinite(out).all():
                 results[c] = ValueError("training diverged: non-finite model output")
                 continue
             self._reset_params()
+            representation_per_instance = representation_times[c] / len(datas[c])
+            time_per_instance = representation_per_instance + inference_per_instance[c]
             for k, (fit, val) in enumerate(splits):
                 for measure, idx in (
                     (self.train_scores, fit),
@@ -563,11 +587,16 @@ class Task:
                     measure.add_scores(
                         model.scores_from_output(out[k][idx], labels[idx])[0]
                     )
+                self.val_scores.add_time_per_instance(time_per_instance)
+                if test:
+                    self.test_scores.add_time_per_instance(time_per_instance)
             self.last_run_timing = {
                 "train_time_per_fold_s": [per_fit_s] * self.kfold,
                 "train_time_mean_s": per_fit_s,
                 "n_test_instances": len(test),
                 "fused_batch_candidates": len(outputs),
+                "representation_time_per_instance_s": representation_per_instance,
+                "val_inference_time_per_instance_s": inference_per_instance[c],
             }
             results[c] = [
                 self.train_scores.compute_averages(),
@@ -676,6 +705,19 @@ class Task:
             * n_test,
         }
 
+    def record_time_per_instance(
+        self, val_representation_time, test_representation_time, n_val, n_test
+    ):
+        """Add the last fold's per-instance time (representation + model
+        inference) to the val and test measures."""
+        self.val_scores.add_time_per_instance(
+            val_representation_time + self.val_inference_time[-1] / n_val
+        )
+        if n_test:
+            self.test_scores.add_time_per_instance(
+                test_representation_time + self.inference_time[-1] / n_test
+            )
+
     def _reset_params(self):
         self.inference_time = []
         self.val_inference_time = []
@@ -686,18 +728,16 @@ class Task:
         self.test_scores = PerformanceMeasure("test", self.performance_measures)
 
     def _run_fold(self, model, train_X, train_y, val_X, val_y, test_X, test_y):
-        train_start = time.time()
+        train_start = time.perf_counter()
         train_score = model.fit(train_X, train_y, val_X, val_y)
-        train_end = time.time()
-        self.training_time.append(train_end - train_start)
+        self.training_time.append(time.perf_counter() - train_start)
         self.train_scores.add_scores(train_score[0])
-        val_start = time.time()
+        val_start = time.perf_counter()
         val_score = model.test(val_X, val_y)
-        self.val_inference_time.append(time.time() - val_start)
-        test_start = time.time()
+        self.val_inference_time.append(time.perf_counter() - val_start)
+        test_start = time.perf_counter()
         test_score = model.test(np.asarray(test_X), test_y)
-        test_end = time.time()
-        self.inference_time.append(test_end - test_start)
+        self.inference_time.append(time.perf_counter() - test_start)
         self.val_scores.add_scores(val_score[0])
         self.test_scores.add_scores(test_score[0])
         # No-op for the non-neural models that share this machinery.

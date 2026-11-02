@@ -60,6 +60,12 @@ from systemds.scuro.drsearch.algebra import (
     sample_stats,
     typecheck,
 )
+from systemds.scuro.drsearch.objectives import (
+    dominates,
+    objective_vector,
+    retime_front,
+    validate_objectives,
+)
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.drsearch.representation_dag import (
     RepresentationDAGBuilder,
@@ -67,6 +73,7 @@ from systemds.scuro.drsearch.representation_dag import (
     compose_dag_leaves,
 )
 from systemds.scuro.drsearch.task import Task
+from systemds.scuro.drsearch.test_set_evaluation import measure_inference_time
 from systemds.scuro.drsearch.split_aware_evaluator import (
     SplitAwareDAGEvaluator,
     dag_requires_fitting,
@@ -317,7 +324,7 @@ def _evaluate_genome_body(
         fused = AggregatedRepresentation().transform(fused)
 
     t0 = time.time()
-    scores = task.run(fused.data)
+    scores = task.run(fused.data, fused.transform_time)
     task_time = time.time() - t0
     total = time.time() - start
 
@@ -441,17 +448,7 @@ class MultimodalDeapOptimizer:
         self.maximize_metric = maximize_metric
 
         if objectives is not None:
-            if len(objectives) < 1:
-                raise ValueError(
-                    "objectives must contain at least one (name, direction) pair"
-                )
-            for name, direction in objectives:
-                if direction not in ("max", "min"):
-                    raise ValueError(
-                        f"objective direction must be 'max' or 'min', got "
-                        f"{direction!r} for objective {name!r}"
-                    )
-            self.objective_specs: List[ObjectiveSpec] = list(objectives)
+            self.objective_specs: List[ObjectiveSpec] = validate_objectives(objectives)
             self.metric_name = self.objective_specs[0][0]
             self.maximize_metric = self.objective_specs[0][1] == "max"
         else:
@@ -942,11 +939,7 @@ class MultimodalDeapOptimizer:
 
     def _dominates(self, a: Tuple[float, ...], b: Tuple[float, ...]) -> bool:
         """True if objective tuple `a` Pareto-dominates `b`, direction-aware."""
-        wa = [w * v for w, v in zip(self._objective_weights, a)]
-        wb = [w * v for w, v in zip(self._objective_weights, b)]
-        return all(x >= y for x, y in zip(wa, wb)) and any(
-            x > y for x, y in zip(wa, wb)
-        )
+        return dominates(a, b, self.objective_specs)
 
     def _update_hall_of_fame(self, task_name: str, result: FusionSearchResult) -> None:
         timing = {
@@ -985,6 +978,27 @@ class MultimodalDeapOptimizer:
 
     def get_hall_of_fame(self, task_name: str) -> List[FusionSearchResult]:
         return list(self.hall_of_fame.get(task_name, []))
+
+    def retime_hall_of_fame(
+        self, task: Task, repeats: int = 3
+    ) -> List[FusionSearchResult]:
+        """Re-time the Pareto front serially (see ``retime_front``) and rebuild
+        the multi-objective hall of fame from the re-timed front."""
+        task_name = task.model.name
+        front = retime_front(
+            self.optimization_results.get(task_name, []),
+            self.objective_specs,
+            lambda result: measure_inference_time(
+                self.compose_end_to_end_dag(result.dag, task), self.modalities, task
+            ),
+            repeats,
+        )
+        if self.is_multi_objective:
+            self.hall_of_fame[task_name] = list(front)
+            self._hof_fitness[task_name] = [
+                objective_vector(result, self.objective_specs) for result in front
+            ]
+        return front
 
     def _extract_k_best(self, unimodal_results) -> Dict[str, Dict[str, List[Any]]]:
         k_best = {}

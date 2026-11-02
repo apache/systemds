@@ -20,15 +20,21 @@
 # -------------------------------------------------------------
 from __future__ import annotations
 
+import copy
 import time
 from typing import Any, Dict, List
 
 from systemds.scuro.modality.modality import Modality
-from systemds.scuro.drsearch.representation_dag import RepresentationDag
+from systemds.scuro.drsearch.node_executor import decoded_lazy_leaves
+from systemds.scuro.drsearch.representation_dag import (
+    RepresentationDag,
+    pushdown_aggregation,
+)
 from systemds.scuro.drsearch.split_aware_evaluator import (
     SplitAwareDAGEvaluator,
     dag_requires_fitting,
 )
+from systemds.scuro.drsearch.task import INFERENCE_TIME
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
@@ -51,6 +57,28 @@ def _match_expected_dim(modality, task):
     return modality
 
 
+def measure_inference_time(
+    dag: RepresentationDag, modalities: List[Modality], task
+) -> float:
+    """Validation inference time per instance of ``dag``, measured alone.
+
+    ``dag`` must start from the raw ``modalities`` (for a fused result, use the
+    optimizer's end-to-end DAG). The DAG and the task run in this process, one
+    after the other, so the value is free of contention from parallel workers.
+    """
+    (dag,) = pushdown_aggregation([copy.deepcopy(dag)])
+    task = copy.copy(task)
+    with decoded_lazy_leaves(modalities):
+        if dag_requires_fitting(dag, modalities):
+            scores = SplitAwareDAGEvaluator(dag, modalities, task).evaluate().scores
+        else:
+            output = _match_expected_dim(
+                _unwrap(dag.execute(modalities, task, enable_cache=False)), task
+            )
+            scores = task.run(output.data, output.transform_time)
+    return float(scores[1].average_scores[INFERENCE_TIME])
+
+
 def measure_representation_time_on_test_set(
     dag: RepresentationDag,
     modalities: List[Modality],
@@ -67,14 +95,16 @@ def measure_representation_time_on_test_set(
         if dag_requires_fitting(dag):
             if task is None:
                 raise ValueError("A task is required to fit the representation DAG")
-            transformed = SplitAwareDAGEvaluator(dag, modalities, task).fit_transform(
-                task.train_indices, test_indices
-            )
+            with decoded_lazy_leaves(modalities):
+                transformed = SplitAwareDAGEvaluator(
+                    dag, modalities, task
+                ).fit_transform(task.train_indices, test_indices)
             output = _match_expected_dim(transformed.modality, task)
         else:
-            output = _match_expected_dim(
-                _unwrap(dag.execute(subsets, task, enable_cache=False)), task
-            )
+            with decoded_lazy_leaves(subsets):
+                output = _match_expected_dim(
+                    _unwrap(dag.execute(subsets, task, enable_cache=False)), task
+                )
         timings.append(time.perf_counter() - t0)
 
     timings.sort()
@@ -115,15 +145,16 @@ def measure_test_set_application(
 
     if full_data is None:
         t0 = time.perf_counter()
-        if dag_requires_fitting(dag):
-            transformed = SplitAwareDAGEvaluator(dag, modalities, task).fit_transform(
-                task.train_indices, range(len(modalities[0].data))
-            )
-            output = _match_expected_dim(transformed.modality, task)
-        else:
-            output = _match_expected_dim(
-                _unwrap(dag.execute(modalities, task, enable_cache=False)), task
-            )
+        with decoded_lazy_leaves(modalities):
+            if dag_requires_fitting(dag):
+                transformed = SplitAwareDAGEvaluator(
+                    dag, modalities, task
+                ).fit_transform(task.train_indices, range(len(modalities[0].data)))
+                output = _match_expected_dim(transformed.modality, task)
+            else:
+                output = _match_expected_dim(
+                    _unwrap(dag.execute(modalities, task, enable_cache=False)), task
+                )
         record["full_representation_time_s"] = time.perf_counter() - t0
         full_data = None if output is None else output.data
 

@@ -46,6 +46,7 @@ from systemds.scuro.drsearch.algebra import (
     order_invariant,
     sample_stats,
 )
+from systemds.scuro.drsearch.objectives import pareto_front, validate_objectives
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.utils.schema_helpers import get_shape
 
@@ -105,7 +106,9 @@ def _evaluate_dag_worker(dag_pickle, task_pickle, modalities_pickle, debug=False
             final_representation = agg_operator.transform(final_representation)
 
         eval_start = time.time()
-        scores = task.run(final_representation.data)
+        scores = task.run(
+            final_representation.data, final_representation.transform_time
+        )
         eval_time = time.time() - eval_start
         total_time = time.time() - start_time
 
@@ -140,8 +143,12 @@ class MultimodalOptimizer:
         checkpoint_dir: Optional[str] = None,
         resume: bool = False,
         algebra: Optional[AlgebraConfig] = None,
+        objectives=None,
     ):
         self.modalities = modalities
+        self.objectives = (
+            [(metric, "max")] if objectives is None else validate_objectives(objectives)
+        )
         self.tasks = tasks
         self.k = k
         self.debug = debug
@@ -180,6 +187,10 @@ class MultimodalOptimizer:
         if loaded:
             results, _, _ = loaded
             self.optimization_results = results
+
+    def get_pareto_front(self, task_name: str) -> List["OptimizationResult"]:
+        """Non-dominated results for ``task_name`` under ``self.objectives``."""
+        return pareto_front(self.optimization_results[task_name], self.objectives)
 
     def _ensure_results_initialized(self) -> Dict[str, List["OptimizationResult"]]:
         if not isinstance(self.optimization_results, dict):
@@ -527,7 +538,9 @@ class MultimodalOptimizer:
                 fused_representation = agg_operator.transform(fused_representation)
 
             eval_start = time.time()
-            scores = task.run(fused_representation.data)
+            scores = task.run(
+                fused_representation.data, fused_representation.transform_time
+            )
             eval_time = time.time() - eval_start
 
             total_time = time.time() - start_time

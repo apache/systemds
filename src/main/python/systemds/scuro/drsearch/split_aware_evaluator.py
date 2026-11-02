@@ -168,7 +168,9 @@ class SplitAwareDAGEvaluator:
         result = transform(partition_input)
         elapsed = time.perf_counter() - start
         inputs = (
-            partition_input if isinstance(partition_input, tuple) else (partition_input,)
+            partition_input
+            if isinstance(partition_input, tuple)
+            else (partition_input,)
         )
         return replace(
             result,
@@ -445,8 +447,7 @@ class SplitAwareDAGEvaluator:
                 + self.task.val_inference_time[-1] / len(evaluation_X)
             )
             test_scores.add_time_per_instance(
-                representation_per_instance
-                + self.task.inference_time[-1] / len(test_X)
+                representation_per_instance + self.task.inference_time[-1] / len(test_X)
             )
 
             training_work.add(model)

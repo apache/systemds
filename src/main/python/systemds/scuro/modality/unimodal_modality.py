@@ -284,7 +284,9 @@ class UnimodalModality(Modality):
 
         # Each key is charged its own transform time plus the shared chunk loading,
         # i.e. what it would cost if it ran alone.
-        transform_seconds = dict.fromkeys(transformed_modalities_per_representation, 0.0)
+        transform_seconds = dict.fromkeys(
+            transformed_modalities_per_representation, 0.0
+        )
         load_seconds = 0.0
         with (
             ThreadPoolExecutor(max_workers=len(units))
@@ -373,7 +375,9 @@ class UnimodalModality(Modality):
                 )
                 transformed_modalities_per_representation[
                     representation_key
-                ].transform_time += (transform_seconds[representation_key] + load_seconds)
+                ].transform_time += (
+                    transform_seconds[representation_key] + load_seconds
+                )
                 transformed_modalities_per_representation[
                     representation_key
                 ].self_contained = representation.self_contained

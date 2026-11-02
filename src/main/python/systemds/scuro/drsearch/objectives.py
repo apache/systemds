@@ -25,6 +25,7 @@ An objective is a ``(name, direction)`` pair with direction ``"max"`` or
 the task and ``INFERENCE_TIME`` can be used, e.g.
 ``[("accuracy", "max"), (INFERENCE_TIME, "min")]``.
 """
+
 import math
 from typing import Callable, Dict, List, Sequence, Tuple
 

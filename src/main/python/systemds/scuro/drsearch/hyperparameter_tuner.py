@@ -387,9 +387,7 @@ def _val_scores(scores) -> Dict[str, float]:
     the tuner stores them."""
     if isinstance(scores, HyperparamEvaluationScores):
         return scores.all_val_scores
-    if isinstance(scores, (list, tuple)) and isinstance(
-        scores[1], PerformanceMeasure
-    ):
+    if isinstance(scores, (list, tuple)) and isinstance(scores[1], PerformanceMeasure):
         return scores[1].average_scores
     return {}
 
@@ -816,9 +814,7 @@ class HyperparameterTuner:
             SimpleNamespace(params=params, scores=scores, val_score=_val_scores(scores))
             for params, scores in all_results
         ]
-        return [
-            (c.params, c.scores) for c in pareto_front(candidates, self.objectives)
-        ]
+        return [(c.params, c.scores) for c in pareto_front(candidates, self.objectives)]
 
     def _leaf_input_stats(self, node: RepresentationNode, dag) -> Any:
         if dag is None or len(node.inputs) != 1:

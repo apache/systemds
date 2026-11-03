@@ -139,6 +139,7 @@ public class SparsityOptimizerTest extends AutomatedTestBase {
 			try {
 				DMLConfig dmlConfig = new DMLConfig(getCurConfigFile().getPath());
 				dmlConfig.setTextValue(DMLConfig.SPARSITY_RECOMPILE, "true");
+				dmlConfig.setTextValue(DMLConfig.SPARSITY_ESTIMATOR, "BASIC_AVG");
 				overwriteCurrentConfig(dmlConfig);
 			}
 			catch(FileNotFoundException fnfe) {

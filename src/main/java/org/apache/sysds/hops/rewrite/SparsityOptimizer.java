@@ -144,7 +144,7 @@ public class SparsityOptimizer extends HopRewriteRule {
 			String offset = Explain.getIdentation(level);
 			LOG.trace(offset + "Hop " + hop.getName() +
 				"(" + hop.getClass().getSimpleName() + ", " + hop.getHopID() + ")" + " " +
-				hop.getDim1() + "x" + hop.getDim2() + " sp" + hop.getSparsity());
+				hop.getDim1() + "x" + hop.getDim2() + " sparsity" + hop.getSparsity());
 		}
 	}
 }

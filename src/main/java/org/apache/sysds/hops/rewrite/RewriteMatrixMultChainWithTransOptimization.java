@@ -121,7 +121,7 @@ public class RewriteMatrixMultChainWithTransOptimization extends HopRewriteRule 
 			mmChain.add(currentRoot.getInput().get(1));
 		}
 
-		// store, wether matrices need to be transposed
+		// store, whether matrices need to be transposed
 		isTransposedChain.add(isRootTranspose);
 		isTransposedChain.add(isRootTranspose);
 

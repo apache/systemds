@@ -60,7 +60,7 @@ public class SparkDataPartitioner implements Serializable {
 				break;
 			case OVERLAP_RESHUFFLE:
 				_scheme = new ORSparkScheme();
-				// Create the global permutation seperately for each worker
+				// Create the global permutation separately for each worker
 				createGlobalPermutations(sec, numEntries, numWorkers);
 				break;
 		}

@@ -20,39 +20,36 @@
 package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.shaded.org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.Hop;
-import org.apache.sysds.parser.StatementBlock;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.utils.Explain;
 
-public class SparsityOptimizer extends StatementBlockRewriteRule {
+public class SparsityOptimizer extends HopRewriteRule {
 	protected static final Log LOG = LogFactory.getLog(SparsityOptimizer.class.getName());
 
 	@Override
-	public boolean createsSplitDag() {
-		return false;
+	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
+		ArrayList<Hop> ret = new ArrayList<Hop>();
+		for(Hop rootHop : roots)
+			ret.add(rewriteHopDAG(rootHop, state));
+		return ret;
 	}
 
 	@Override
-	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state) {
-		// optimize the matrix multiplication chain if it is isolated in its own statement block
-		if(isMMChain(sb))
-			sb = optimizeMMChain(sb);
-		return Arrays.asList(sb);
-	}
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
+		if(root.isVisited())
+			return root;
 
-	@Override
-	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus state) {
-		return sbs;
+		if(root instanceof DataOp && ((DataOp)root).isWrite() && root.getInput().size() > 0 &&
+			HopRewriteUtils.isMatrixMultiply(root.getInput(0)) && isMMChain(root.getInput()))
+			return optimizeMMChain(root);
+		return root;
 	}
 
 	private static boolean isMMChain(List<Hop> hopList) {
@@ -71,34 +68,27 @@ public class SparsityOptimizer extends StatementBlockRewriteRule {
 		return false;
 	}
 
-	private static boolean allChildsAreMatrixMultiply(Hop hop) {
-		return hop.getInput().stream().allMatch(childHop -> HopRewriteUtils.isMatrixMultiply(childHop));
-	}
+	public Hop optimizeMMChain(Hop rootHop) {
+		List<Hop> mmChain = new ArrayList<>();
+		List<Hop> mmOperators = new ArrayList<>();
+		Hop mmHop = rootHop.getInput(0);
+		prepareMMChain(mmHop, mmChain, mmOperators);
 
-	private static boolean isMMChain(StatementBlock sb) {
-		boolean ret = true;
-		for(Hop hop : sb.getHops()) {
-			ret &= allChildsAreMatrixMultiply(hop) && hop instanceof DataOp;
-			ret &= (hop.getInput().size() > 0);
-			if(!ret)
-				return false;
-			ret &= isMMChain(hop.getInput());
+		Hop newMMHop = sculptMMChain(mmHop, mmChain, mmOperators);
+		if(newMMHop != null) {
+			HopRewriteUtils.replaceChildReference(rootHop, mmHop, newMMHop);
+			mmHop = newMMHop;
 		}
-		return ret;
-	}
 
-	public StatementBlock optimizeMMChain(StatementBlock sb) {
-		for(Hop rootHop : sb.getHops()) {
-			List<Hop> mmChain = new ArrayList<>();
-			List<Hop> mmOperators = new ArrayList<>();
-			if(rootHop instanceof DataOp && ((DataOp)rootHop).isWrite())
-				prepareMMChain(rootHop.getInput(0), mmChain, mmOperators);
-			else
-				throw new DMLRuntimeException("This case should not occur and is not considered.");
-
-			throw new NotImplementedException("TODO: Optimize the MM Chain inside the isolated statement block");
+		// print the matrix multiplication chain
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("SparsityOptimizer: Identified and optimized MM Chain: ");
+			for(Hop h : mmChain) {
+				logTraceHop(h, 1);
+			}
 		}
-		return sb;
+
+		return rootHop;
 	}
 
 	public void prepareMMChain(Hop root, List<Hop> mmChain, List<Hop> mmOperators) {
@@ -126,6 +116,8 @@ public class SparsityOptimizer extends StatementBlockRewriteRule {
 			expandable &= !hop.isVisited();
 			expandable &= !(hop.getParent().size() > 1);
 
+			hop.setVisited();
+
 			if(!expandable) {
 				counter += 1;
 			}
@@ -137,14 +129,14 @@ public class SparsityOptimizer extends StatementBlockRewriteRule {
 				mmChain.add(counter + 1, tempList.get(1));
 			}
 		}
+	}
 
-		// print the matrix multiplication chain
-		if(LOG.isTraceEnabled()) {
-			LOG.trace("Identified MM Chain: ");
-			for(Hop h : mmChain) {
-				logTraceHop(h, 1);
-			}
-		}
+	// Optimize the matrix multiplication chain by rewriting it
+	// This method can modify the mm chain completely, even re-creating it from scratch is allowed.
+	// NOTE: This method should return the new mm hop when re-creating it from scratch.
+	private Hop sculptMMChain(Hop mmHop, List<Hop> mmChain, List<Hop> mmOperators) {
+		(new RewriteMatrixMultChainOptimizationSparse()).optimizeMMChain(mmHop, mmChain, mmOperators, null);
+		return null;
 	}
 
 	protected void logTraceHop(Hop hop, int level) {

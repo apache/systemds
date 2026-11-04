@@ -128,7 +128,7 @@ class TestHPOCache(unittest.TestCase):
         dag = builder.build(scaling_id)
         task = SimpleNamespace(
             model=SimpleNamespace(name="cache_task"),
-            run=lambda data: [float(np.mean(data))] * 3,
+            run=lambda data, representation_time=0.0: [float(np.mean(data))] * 3,
         )
         tuner = HyperparameterTuner(
             [modality],

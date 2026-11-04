@@ -41,6 +41,7 @@ from systemds.scuro.drsearch.multimodal_ga_optimizer import (
     _objective_value,
     _task_uses_gpu,
 )
+from systemds.scuro.drsearch.task import INFERENCE_TIME
 from systemds.scuro.drsearch.operator_registry import Registry, register_fusion_operator
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations.average import Average
@@ -571,6 +572,62 @@ class TestHallOfFame(unittest.TestCase):
             for r in optimizer.get_hall_of_fame(name)
         }
         self.assertEqual(front, {(0.9, 10.0), (0.5, 1.0)})
+
+    def test_retime_hall_of_fame_rebuilds_the_front_from_serial_times(self):
+        optimizer, _, task = _make_optimizer(
+            objectives=[("accuracy", "max"), (INFERENCE_TIME, "min")]
+        )
+        optimizer.fusion_operators = [Concatenation]
+        name = task.model.name
+
+        # (accuracy, search time, serial time); "noisy_fast" dominates both
+        # others during the search, "hidden" only reaches the front once
+        # "steady" has been re-timed.
+        points = {
+            "noisy_fast": (0.9, 1.0, 3.0),
+            "steady": (0.85, 2.0, 2.6),
+            "hidden": (0.8, 2.5, 1.5),
+        }
+        serial = {}
+        for label, (accuracy, seconds, serial_seconds) in points.items():
+            genome = optimizer._random_genome(name)
+
+            def body(dag, *_a, acc=accuracy, sec=seconds, **_kw):
+                return (acc, sec), {
+                    "train_score": {},
+                    "val_score": {"accuracy": acc, INFERENCE_TIME: sec},
+                    "test_score": {},
+                    "runtime": 0.0,
+                    "task_time": 0.0,
+                    "representation_time": 0.0,
+                }
+
+            with patch(f"{MODULE}._evaluate_genome_body", side_effect=body):
+                optimizer._evaluate_genome(genome, task)
+            serial[id(optimizer.optimization_results[name][-1].dag)] = (
+                label,
+                serial_seconds,
+            )
+        self.assertEqual(len(optimizer.optimization_results[name]), 3)
+        self.assertEqual(len(optimizer.get_hall_of_fame(name)), 1)
+
+        with patch.object(
+            optimizer, "compose_end_to_end_dag", side_effect=lambda dag, _task: dag
+        ), patch(
+            f"{MODULE}.measure_inference_time",
+            side_effect=lambda dag, _mods, _task: serial[id(dag)][1],
+        ):
+            optimizer.retime_hall_of_fame(task, repeats=1)
+
+        hof = optimizer.get_hall_of_fame(name)
+        self.assertEqual(
+            {serial[id(r.dag)][0]: r.val_score[INFERENCE_TIME] for r in hof},
+            {"noisy_fast": 3.0, "steady": 2.6, "hidden": 1.5},
+        )
+        self.assertEqual(
+            sorted(optimizer._hof_fitness[name]),
+            [(0.8, 1.5), (0.85, 2.6), (0.9, 3.0)],
+        )
 
     def test_failed_evaluations_never_enter_the_hall_of_fame(self):
         optimizer, _, task = _make_optimizer()

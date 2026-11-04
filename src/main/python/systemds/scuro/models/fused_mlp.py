@@ -46,6 +46,7 @@ result, depend on the number of groups.
 
 import math
 import os
+import time
 
 import numpy as np
 import torch
@@ -164,7 +165,8 @@ def fit_folds(model, features, labels, splits, seed, device, eval_elements=2**27
 
     features: C arrays of shape rows x d (one d for all), labels: rows (x O),
     splits: K (fit_positions, val_positions) into the rows. Returns the
-    eval-mode outputs, C x K x rows x O, as a numpy array.
+    eval-mode outputs, C x K x rows x O, as a numpy array, and the seconds the
+    eval pass spent per row and model (an amortized inference estimate).
     """
     n_candidates, n_folds = len(features), len(splits)
     n_rows, dim = features[0].shape
@@ -247,9 +249,13 @@ def fit_folds(model, features, labels, splits, seed, device, eval_elements=2**27
         [dim] + [layer[1].shape[-1] for layer in net.layers if layer[0] == "linear"]
     )
     chunk = max(1, eval_elements // (groups * widest))
+    eval_start = time.perf_counter()
     with torch.no_grad():
         for start in range(0, n_rows, chunk):
             xb = (X[cand, start : start + chunk] - mu) / sd
             outputs.append(net.forward(xb).cpu())
+    eval_seconds = time.perf_counter() - eval_start
     out = torch.cat(outputs, dim=1)[: n_candidates * n_folds].numpy()
-    return out.reshape(n_candidates, n_folds, n_rows, -1)
+    return out.reshape(n_candidates, n_folds, n_rows, -1), eval_seconds / (
+        groups * n_rows
+    )

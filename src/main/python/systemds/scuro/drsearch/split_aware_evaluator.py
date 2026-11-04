@@ -21,7 +21,7 @@
 import copy
 import os
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import numpy as np
 
@@ -53,6 +53,7 @@ class SplitEvaluationResult:
     scores: list
     representation_time: float
     task_time: float
+    inference_cost: float
 
 
 _REFIT_CACHE = None
@@ -111,16 +112,17 @@ class SplitAwareDAGEvaluator:
         if loader is None:
             raise ValueError("Split-aware evaluation requires materialized data")
 
+        start = time.perf_counter()
         if getattr(loader, "chunk_size", None) is None:
             modality.extract_raw_data()
-            return
-
-        full_loader = copy.copy(loader)
-        full_loader.chunk_size = None
-        full_loader.reset()
-        data, metadata = full_loader.load()
-        modality._data = data
-        modality.metadata = metadata
+        else:
+            full_loader = copy.copy(loader)
+            full_loader.chunk_size = None
+            full_loader.reset()
+            data, metadata = full_loader.load()
+            modality._data = data
+            modality.metadata = metadata
+        modality.transform_time += time.perf_counter() - start
 
     @staticmethod
     def _wrap(transformed, instance_ids) -> IndexedModality:
@@ -159,6 +161,21 @@ class SplitAwareDAGEvaluator:
             )
 
         return self._wrap(transformed, inputs.instance_ids)
+
+    @staticmethod
+    def _timed(transform, partition_input) -> IndexedModality:
+        start = time.perf_counter()
+        result = transform(partition_input)
+        elapsed = time.perf_counter() - start
+        inputs = (
+            partition_input
+            if isinstance(partition_input, tuple)
+            else (partition_input,)
+        )
+        return replace(
+            result,
+            transform_seconds=elapsed + sum(item.transform_seconds for item in inputs),
+        )
 
     @staticmethod
     def _align_partition_shapes(result):
@@ -292,16 +309,19 @@ class SplitAwareDAGEvaluator:
                 fit_state = operation.fit(fit_input, labels=labels)
                 aggregation = pushdown_aggregation_for_node(node.parameters)
                 result = tuple(
-                    operation.transform_fitted(
+                    self._timed(
+                        lambda p: operation.transform_fitted(
+                            p, fit_state, aggregation=aggregation
+                        ),
                         partition,
-                        fit_state,
-                        aggregation=aggregation,
                     )
                     for partition in input_partitions
                 )
             else:
                 result = tuple(
-                    self._apply_stateless(operation, partition, node)
+                    self._timed(
+                        lambda p: self._apply_stateless(operation, p, node), partition
+                    )
                     for partition in input_partitions
                 )
                 result = self._align_partition_shapes(result)
@@ -341,7 +361,11 @@ class SplitAwareDAGEvaluator:
         full = []
         for modality in self.modalities:
             self.materialize(modality)
-            full.append(IndexedModality(modality, range(len(modality.data))))
+            full.append(
+                IndexedModality(
+                    modality, range(len(modality.data)), modality.transform_time
+                )
+            )
         self._full = tuple(full)
         return self._full
 
@@ -367,20 +391,27 @@ class SplitAwareDAGEvaluator:
         test_scores = PerformanceMeasure("test", self.task.performance_measures)
         self.task.training_time = []
         self.task.inference_time = []
+        self.task.val_inference_time = []
         training_work = TrainingWorkAccumulator()
 
         representation_time = 0.0
         task_time = 0.0
+        transform_seconds = 0.0
+        n_transformed = 0
         for split in self.task.evaluation_splits:
             train = tuple(item.subset(split.fit_indices) for item in full)
             evaluation = tuple(item.subset(split.evaluation_indices) for item in full)
             test = tuple(item.subset(self.task.test_indices) for item in full)
 
             start = time.perf_counter()
-            transformed_train, transformed_evaluation, transformed_test = (
-                self._execute_partitions(train, evaluation, test)
-            )
+            transformed = self._execute_partitions(train, evaluation, test)
             representation_time += time.perf_counter() - start
+            transformed_train, transformed_evaluation, transformed_test = transformed
+            fold_transform_seconds = sum(p.transform_seconds for p in transformed)
+            fold_instances = sum(len(p) for p in transformed)
+            transform_seconds += fold_transform_seconds
+            n_transformed += fold_instances
+            representation_per_instance = fold_transform_seconds / fold_instances
 
             model = self.task.create_model()
             train_X = self._partition_data(transformed_train)
@@ -400,7 +431,9 @@ class SplitAwareDAGEvaluator:
                 evaluation_y,
             )
             self.task.training_time.append(time.perf_counter() - train_start)
+            val_start = time.perf_counter()
             val_score = model.test(evaluation_X, evaluation_y)
+            self.task.val_inference_time.append(time.perf_counter() - val_start)
             test_start = time.perf_counter()
             test_score = model.test(np.asarray(test_X), test_y)
             self.task.inference_time.append(time.perf_counter() - test_start)
@@ -409,6 +442,13 @@ class SplitAwareDAGEvaluator:
             train_scores.add_scores(train_score[0])
             val_scores.add_scores(val_score[0])
             test_scores.add_scores(test_score[0])
+            val_scores.add_time_per_instance(
+                representation_per_instance
+                + self.task.val_inference_time[-1] / len(evaluation_X)
+            )
+            test_scores.add_time_per_instance(
+                representation_per_instance + self.task.inference_time[-1] / len(test_X)
+            )
 
             training_work.add(model)
 
@@ -416,6 +456,9 @@ class SplitAwareDAGEvaluator:
                 model.clean_up()
 
         self.task.training_work = training_work
+        inference_timing = self.task.inference_cost_timing(
+            transform_seconds / n_transformed
+        )
         self.task.last_run_timing = {
             "train_time_per_fold_s": list(self.task.training_time),
             "test_inference_time_per_fold_s": list(self.task.inference_time),
@@ -430,6 +473,7 @@ class SplitAwareDAGEvaluator:
                 else 0.0
             ),
             "n_test_instances": len(self.task.test_indices),
+            **inference_timing,
             **training_work.as_dict(),
         }
 
@@ -441,4 +485,5 @@ class SplitAwareDAGEvaluator:
             ],
             representation_time=representation_time,
             task_time=task_time,
+            inference_cost=inference_timing["inference_cost"],
         )

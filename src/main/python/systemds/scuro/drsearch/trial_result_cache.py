@@ -58,7 +58,9 @@ def _nbytes(value: Any) -> int:
 
 def _clone(value: Any) -> Any:
     if isinstance(value, IndexedModality):
-        return IndexedModality(_clone(value.modality), value.instance_ids)
+        return IndexedModality(
+            _clone(value.modality), value.instance_ids, value.transform_seconds
+        )
     if isinstance(value, tuple):
         return tuple(_clone(item) for item in value)
     if hasattr(value, "_data"):

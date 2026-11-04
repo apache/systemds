@@ -37,6 +37,14 @@ from systemds.scuro.representations.representation import (
 )
 from systemds.scuro.utils.identifier import Identifier
 
+_NO_CHUNK = object()
+
+
+def _timed_call(transform):
+    start = time.perf_counter()
+    result = transform()
+    return result, time.perf_counter() - start
+
 
 class UnimodalModality(Modality):
 
@@ -274,21 +282,28 @@ class UnimodalModality(Modality):
                 padding_per_representation[representation_key] = False
                 original_lengths_per_representation[representation_key] = []
 
-        start = (
-            time.time()
-        )  # TODO: should be repalced in unimodal_representation.transform
+        # Each key is charged its own transform time plus the shared chunk loading,
+        # i.e. what it would cost if it ran alone.
+        transform_seconds = dict.fromkeys(
+            transformed_modalities_per_representation, 0.0
+        )
+        load_seconds = 0.0
         with (
             ThreadPoolExecutor(max_workers=len(units))
             if parallel and len(units) > 1
             else nullcontext()
         ) as executor:
             time_s = time.time()
-            chunks = (
+            chunks = iter(
                 (None,)
                 if not self.data_loader.is_chunked and self.has_data()
                 else self.iter_raw_data_chunks(reset=True)
             )
-            for _ in chunks:
+            while True:
+                load_start = time.perf_counter()
+                if next(chunks, _NO_CHUNK) is _NO_CHUNK:
+                    break
+                load_seconds += time.perf_counter() - load_start
                 representations_futures = {}
                 serial_transforms = []
                 for keys, _, transform in units:
@@ -298,11 +313,13 @@ class UnimodalModality(Modality):
                     if not pending_keys:
                         continue
                     if executor is None:
-                        serial_transforms.append((pending_keys, transform))
-                    else:
-                        representations_futures[executor.submit(transform)] = (
-                            pending_keys
+                        serial_transforms.append(
+                            (pending_keys, partial(_timed_call, transform))
                         )
+                    else:
+                        representations_futures[
+                            executor.submit(_timed_call, transform)
+                        ] = pending_keys
                 completed = (
                     (
                         (representations_futures[future], future.result)
@@ -313,12 +330,13 @@ class UnimodalModality(Modality):
                 )
                 for pending_keys, transform in completed:
                     try:
-                        transformed_chunks = transform()
+                        transformed_chunks, seconds = transform()
                     except Exception as e:
                         for representation_key in pending_keys:
                             failed_representations[representation_key] = e
                         continue
                     for representation_key in pending_keys:
+                        transform_seconds[representation_key] += seconds
                         transformed_chunk = transformed_chunks.get(representation_key)
                         if transformed_chunk is None:
                             failed_representations[representation_key] = ValueError(
@@ -357,7 +375,9 @@ class UnimodalModality(Modality):
                 )
                 transformed_modalities_per_representation[
                     representation_key
-                ].transform_time += (time.time() - start)
+                ].transform_time += (
+                    transform_seconds[representation_key] + load_seconds
+                )
                 transformed_modalities_per_representation[
                     representation_key
                 ].self_contained = representation.self_contained

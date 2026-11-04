@@ -24,7 +24,8 @@ import inspect
 import os
 import numpy as np
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from types import SimpleNamespace
 import time
 import copy
 from joblib import Parallel, delayed
@@ -42,7 +43,12 @@ from systemds.scuro.drsearch.split_aware_evaluator import (
     SplitAwareDAGEvaluator,
     dag_requires_fitting,
 )
-from systemds.scuro.drsearch.task import PerformanceMeasure
+from systemds.scuro.drsearch.task import INFERENCE_TIME, PerformanceMeasure
+from systemds.scuro.drsearch.objectives import (
+    pareto_front,
+    rank_by_pareto,
+    validate_objectives,
+)
 import pickle
 import torch
 from systemds.scuro.utils.checkpointing import CheckpointManager
@@ -53,7 +59,6 @@ from systemds.scuro.drsearch.trial_result_cache import (
     trial_node_signatures,
 )
 from systemds.scuro.drsearch.process_cache import HPOExecutionCache
-from systemds.scuro.drsearch.ranking import tie_broken
 from systemds.scuro.drsearch.operator_registry import is_expensive_representation
 
 _CUDA_OOM_ERRORS = tuple(
@@ -373,12 +378,25 @@ class HyperparamResult:
     task_name: str
     dag: Any
     mm_opt: bool = False
+    # Non-dominated (params, scores) in multi-objective mode, best first.
+    pareto_results: List[Tuple[Dict[str, Any], Any]] = field(default_factory=list)
+
+
+def _val_scores(scores) -> Dict[str, float]:
+    """Mean validation scores of one evaluated config, in any of the forms
+    the tuner stores them."""
+    if isinstance(scores, HyperparamEvaluationScores):
+        return scores.all_val_scores
+    if isinstance(scores, (list, tuple)) and isinstance(scores[1], PerformanceMeasure):
+        return scores[1].average_scores
+    return {}
 
 
 class HyperparamResults:
-    def __init__(self, tasks, modalities):
+    def __init__(self, tasks, modalities, k=None):
         self.tasks = tasks
         self.modalities = modalities
+        self.k = k
         self.results = {}
         for task in tasks:
             self.results[task.model.name] = {
@@ -402,17 +420,20 @@ class HyperparamResults:
                 self.results[task.model.name] = {"mm_results": []}
 
     def get_k_best_dags(self, modality, task):
-        results = self.results[task.model.name][modality.modality_id]
+        """One DAG per tuned representation with its best params, or in
+        multi-objective mode one per Pareto config (at most k per representation)."""
+        configs = []
+        for result in self.results[task.model.name][modality.modality_id]:
+            front = [params for params, _ in result.pareto_results][: self.k]
+            configs.extend((result, params) for params in front or [result.best_params])
         dags = []
-        for result in results:
-            dag_with_best_params = copy.deepcopy(result.dag)
-            for node in dag_with_best_params.nodes:
+        for result, params in configs:
+            dag_with_params = copy.deepcopy(result.dag)
+            for node in dag_with_params.nodes:
                 if node.operation is not None:
-                    node.parameters = _apply_trial_params_to_node(
-                        node, result.best_params
-                    )
-            dags.append(dag_with_best_params)
-        return results, dags
+                    node.parameters = _apply_trial_params_to_node(node, params)
+            dags.append(dag_with_params)
+        return [result for result, _ in configs], dags
 
     def get_k_best_results(self, modality, task, performance_metric_name):
         results, dags = self.get_k_best_dags(modality, task)
@@ -452,10 +473,23 @@ class HyperparameterTuner:
         wandb_tags: Optional[List[str]] = None,
         enable_checkpointing: bool = False,
         representation_cache_size: int = 128,
+        objectives=None,
     ):
+        """
+        :param objectives: [(name, "max" | "min"), ...] read from the validation
+          scores, e.g. [("accuracy", "max"), (INFERENCE_TIME, "min")]. The first
+          one replaces scoring_metric/maximize_metric. Defaults to
+          [(scoring_metric, "max" if maximize_metric else "min")].
+        """
+        if objectives is None:
+            objectives = [(scoring_metric, "max" if maximize_metric else "min")]
+        self.objectives = validate_objectives(objectives)
+        self.is_multi_objective = len(self.objectives) > 1
+        scoring_metric, direction = self.objectives[0]
+        maximize_metric = direction == "max"
         self.tasks = tasks
         self.unimodal_optimization_results = optimization_results
-        self.optimization_results = HyperparamResults(tasks, modalities)
+        self.optimization_results = HyperparamResults(tasks, modalities, k)
         self.n_jobs = n_jobs
         self.scoring_metric = scoring_metric
         self.maximize_metric = maximize_metric
@@ -490,9 +524,13 @@ class HyperparameterTuner:
         self._wandb_run = None
         self.enable_checkpointing = enable_checkpointing
 
+        # Shared intermediates (e.g. mel spectrograms) would make the reusing
+        # representation look faster than it is, so they are off when time is optimized.
+        timed = any(name == INFERENCE_TIME for name, _ in self.objectives)
         self.execution_cache = HPOExecutionCache(
             representation_entries=representation_cache_size,
             should_cache_representation=self._should_cache_representation,
+            intermediate_bytes=0 if timed else None,
         )
 
     def _should_cache_representation(self, operation: Any) -> bool:
@@ -725,13 +763,17 @@ class HyperparameterTuner:
                 score = np.mean(score)
             return score
 
-        best_params, best_score = all_results[0][0], get_score(all_results[0])
-        for params, score in all_results[1:]:
+        pareto_results = (
+            self._pareto_results(all_results) if self.is_multi_objective else []
+        )
+        candidates = pareto_results or all_results
+        best_params, best_score = candidates[0][0], get_score(candidates[0])
+        for params, score in candidates[1:]:
             candidate_score = get_score((params, score))
             if self._is_better(candidate_score, best_score):
                 best_params, best_score = params, candidate_score
 
-        if hyperparams and best_params != baseline_params:
+        if hyperparams and best_params != baseline_params and not pareto_results:
             baseline_folds = self._score_value_list(baseline_raw_scores[1])
             candidate_folds = next(s for p, s in all_results if p == best_params)[1]
 
@@ -762,9 +804,17 @@ class HyperparameterTuner:
             task_name=task.model.name,
             dag=dag,
             mm_opt=mm_opt,
+            pareto_results=pareto_results,
         )
 
         return best_result
+
+    def _pareto_results(self, all_results):
+        candidates = [
+            SimpleNamespace(params=params, scores=scores, val_score=_val_scores(scores))
+            for params, scores in all_results
+        ]
+        return [(c.params, c.scores) for c in pareto_front(candidates, self.objectives)]
 
     def _leaf_input_stats(self, node: RepresentationNode, dag) -> Any:
         if dag is None or len(node.inputs) != 1:
@@ -1043,7 +1093,6 @@ class HyperparameterTuner:
         tied_params: Optional[Dict[str, str]] = None,
     ) -> List[Tuple[Dict[str, Any], Any]]:
         import optuna
-        from optuna.trial import TrialState
 
         optuna.logging.set_verbosity(
             optuna.logging.INFO if self.debug else optuna.logging.WARNING
@@ -1069,7 +1118,10 @@ class HyperparameterTuner:
         if budget <= 0:
             return all_results
 
-        direction = "maximize" if self.maximize_metric else "minimize"
+        directions = [
+            "maximize" if direction == "max" else "minimize"
+            for _, direction in self.objectives
+        ]
         sampler = (
             optuna.samplers.TPESampler(seed=self.random_state)
             if self.optuna_sampler == "tpe"
@@ -1077,7 +1129,7 @@ class HyperparameterTuner:
         )
 
         study = optuna.create_study(
-            direction=direction,
+            directions=directions,
             sampler=sampler,
             study_name=f"{task.model.name}-{rep_name}"[:64],
         )
@@ -1105,7 +1157,7 @@ class HyperparameterTuner:
                     },
                 }
                 wandb_cb = WeightsAndBiasesCallback(
-                    metric_name=self.scoring_metric,
+                    metric_name=[name for name, _ in self.objectives],
                     wandb_kwargs=wandb_kwargs["wandb_kwargs"],
                 )
             except ImportError:
@@ -1158,10 +1210,21 @@ class HyperparameterTuner:
             val_folds = evaluation_scores.val_fold_scores.get(self.scoring_metric, [])
             if val_folds is not None and len(val_folds) > 1:
                 lam = 0.5
-                robust_val = np.mean(val_folds) - lam * np.std(val_folds, ddof=1)
-                return robust_val
+                val_score = np.mean(val_folds) - lam * np.std(val_folds, ddof=1)
+            if not self.is_multi_objective:
+                return val_score
 
-            return val_score
+            values = tuple(
+                (
+                    val_score
+                    if name == self.scoring_metric
+                    else float(evaluation_scores.all_val_scores.get(name, np.nan))
+                )
+                for name, _ in self.objectives
+            )
+            if np.isnan(values).any():
+                raise optuna.TrialPruned()
+            return values
 
         callbacks = [c for c in [wandb_cb] if c is not None]
         n_jobs = 1 if self.n_jobs == 0 else max(1, abs(self.n_jobs))
@@ -1179,17 +1242,6 @@ class HyperparameterTuner:
                 wandb.run.finish()
 
         all_results.extend(trial_results)
-
-        for trial in study.trials:
-            if trial.state != TrialState.COMPLETE:
-                continue
-            config = trial.params
-            key = self._config_key(config)
-            if key in seen:
-                all_results.append(seen[key])
-            else:
-                pass
-
         return all_results
 
     def _get_cached_modalities_for_task(self, task, modality_ids):
@@ -1261,6 +1313,8 @@ class HyperparameterTuner:
         on_cpu=False,
         node_cache=None,
     ):
+        # Task.run keeps per-run state on the task; trials may run in threads.
+        task = copy.copy(task)
         dag_copy = copy.deepcopy(dag)
         for node_id in node_order:
             node = dag_copy.get_node_by_id(node_id)
@@ -1288,7 +1342,9 @@ class HyperparameterTuner:
             node_cache=node_cache,
             execution_cache=self.execution_cache,
         )
-        return params, task.run(modified_modality.data)
+        return params, task.run(
+            modified_modality.data, modified_modality.transform_time
+        )
 
     def _evaluate_dag_trial(
         self,
@@ -1381,24 +1437,10 @@ class HyperparameterTuner:
         self.resume_from_checkpoint()
         self.optimization_results.setup_mm(optimize_unimodal)
         for task in self.tasks:
-
-            def _get_metric_value(result):
-                score = result.val_score
-                if isinstance(score, PerformanceMeasure):
-                    score = score.average_scores
-                if isinstance(score, dict):
-                    return score.get(
-                        self.scoring_metric,
-                        float("-inf") if self.maximize_metric else float("inf"),
-                    )
-                return score
-
-            candidates = optimization_results[task.model.name]
-            best_results = sorted(
-                [candidates[i] for i in tie_broken(candidates)],
-                key=_get_metric_value,
-                reverse=self.maximize_metric,
-            )[:k]
+            best_results, _ = rank_by_pareto(
+                optimization_results[task.model.name], self.objectives
+            )
+            best_results = best_results[:k]
             best_optimization_results = best_results
             skip_remaining = self._checkpoint_manager.skip_remaining_by_key.get(
                 task.model.name, 0

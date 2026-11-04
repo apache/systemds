@@ -25,10 +25,15 @@ from systemds.scuro.modality.modality import Modality
 
 @dataclass(frozen=True)
 class IndexedModality:
-    """A modality partition paired with its global instance IDs."""
+    """A modality partition paired with its global instance IDs.
+
+    ``transform_seconds`` is the time spent transforming this partition,
+    summed over every node up to it (fitting excluded).
+    """
 
     modality: Modality
     instance_ids: tuple
+    transform_seconds: float = 0.0
 
     def __post_init__(self):
         instance_ids = tuple(int(i) for i in self.instance_ids)
@@ -72,4 +77,5 @@ class IndexedModality:
         return IndexedModality(
             self.modality.subset(local_indices),
             requested_ids,
+            self.transform_seconds * len(requested_ids) / max(1, len(self)),
         )

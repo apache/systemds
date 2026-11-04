@@ -1600,7 +1600,7 @@ public class OptimizerRuleBased extends Optimizer {
 		if( apply ) 
 		{
 			//add result vars to result and set state
-			//will be serialized and transfered via symbol table 
+			//will be serialized and transferred via symbol table 
 			for( ResultVar var : retVars ){
 				Data dat = vars.get(var._name);
 				if( dat instanceof MatrixObject )

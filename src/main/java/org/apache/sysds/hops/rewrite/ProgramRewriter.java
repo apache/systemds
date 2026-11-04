@@ -149,6 +149,9 @@ public class ProgramRewriter{
 			if(ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.SPARSITY_REWRITES)) {
 				_dagRuleSet.add( new RewriteMatrixMultChainOptimizationSparse()         );
 			}
+			if( ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.SPARSITY_RECOMPILE) ) {
+				_dagRuleSet.add(new SparsityOptimizer());
+			}
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION ) {
 				_dagRuleSet.add( new RewriteAlgebraicSimplificationDynamic()      ); //dependencies: cse
 				_dagRuleSet.add( new RewriteAlgebraicSimplificationStatic()       ); //dependencies: cse

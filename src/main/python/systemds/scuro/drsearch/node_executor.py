@@ -22,6 +22,7 @@ import math
 import multiprocessing as mp
 import os
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 
@@ -91,6 +92,58 @@ def _materialize_lazy_leaves() -> bool:
 
 def _lazy_leaf_budget_fraction() -> float:
     return float(os.environ.get("SCURO_LAZY_LEAF_BUDGET_FRACTION", "0.5"))
+
+
+def _decoded_leaf_fits_cpu_budget(modality: Any, data: LazyFileSequence) -> bool:
+    estimate = getattr(modality.data_loader, "estimate_decoded_bytes", None)
+    if not callable(estimate):
+        return False
+    metadata = modality.metadata if len(modality.metadata or []) == len(data) else None
+    decoded_bytes = estimate(metadata)
+    budget = cpu_memory_budget_bytes(modality.modality_type.name)
+    return (
+        bool(decoded_bytes) and decoded_bytes <= budget * _lazy_leaf_budget_fraction()
+    )
+
+
+@contextmanager
+def decoded_lazy_leaves(modalities: List[Any]):
+    """Load leaves and decode lazy ones in threads, like the executor's leaf load.
+
+    The load and decode time is added to each leaf's transform_time. Leaves that
+    do not fit the CPU budget stay lazy and decode inside the transform. Data,
+    metadata and transform_time are restored on exit.
+    """
+    restore = []
+    try:
+        for modality in modalities:
+            loader = getattr(modality, "data_loader", None)
+            if loader is None or loader.chunk_size is not None:
+                continue
+            restore.append(
+                (modality, modality._data, modality.metadata, modality.transform_time)
+            )
+            start = time.perf_counter()
+            if not modality.has_data():
+                modality.extract_raw_data()
+            data = modality.data
+            if (
+                isinstance(data, LazyFileSequence)
+                and _materialize_lazy_leaves()
+                and _decoded_leaf_fits_cpu_budget(modality, data)
+            ):
+                arrays = data.materialize()
+                for array in arrays:
+                    if hasattr(array, "flags"):
+                        array.flags.writeable = False
+                modality._data = arrays
+            modality.transform_time += time.perf_counter() - start
+        yield
+    finally:
+        for modality, data, metadata, transform_time in reversed(restore):
+            modality._data = data
+            modality.metadata = metadata
+            modality.transform_time = transform_time
 
 
 def _keep_worker_models() -> bool:
@@ -273,10 +326,10 @@ def _execute_node_worker(node, input_mods: List[Any], gpu_id: Optional[int]):
     }
 
 
-def _task_data(modality, aggregation):
+def _task_input(modality, aggregation):
     if aggregation is None:
-        return modality.data
-    return aggregation.operation(params=aggregation.parameters).transform(modality).data
+        return modality
+    return aggregation.operation(params=aggregation.parameters).transform(modality)
 
 
 def _execute_task_batch_worker(task: Any, items: List[tuple], gpu_id: int):
@@ -286,7 +339,8 @@ def _execute_task_batch_worker(task: Any, items: List[tuple], gpu_id: int):
     datas, failed = [], {}
     for node_id, modality, aggregation in items:
         try:
-            datas.append((node_id, _task_data(modality, aggregation)))
+            task_input = _task_input(modality, aggregation)
+            datas.append((node_id, task_input.data, task_input.transform_time))
         except Exception as e:
             failed[node_id] = f"{type(e).__name__}: {e}"
 
@@ -294,13 +348,17 @@ def _execute_task_batch_worker(task: Any, items: List[tuple], gpu_id: int):
     cores = sorted(allowed)
     os.sched_setaffinity(0, {cores[os.getpid() % len(cores)]})
     try:
-        scores = task.run_many([data for _, data in datas], device)
+        scores = task.run_many(
+            [data for _, data, _ in datas],
+            device,
+            [seconds for _, _, seconds in datas],
+        )
     finally:
         os.sched_setaffinity(0, allowed)
         cleanup_gpu(gpu_id)
     share = (time.perf_counter() - start_time) / max(1, len(datas))
     results = {}
-    for i, ((node_id, _), result) in enumerate(zip(datas, scores)):
+    for i, ((node_id, _, _), result) in enumerate(zip(datas, scores)):
         if isinstance(result, Exception):
             failed[node_id] = f"{type(result).__name__}: {result}"
             continue
@@ -337,7 +395,8 @@ def _execute_task_worker(
 
     def _run_task():
         start = time.perf_counter()
-        scores = task.run(_task_data(modality, aggregation))
+        task_input = _task_input(modality, aggregation)
+        scores = task.run(task_input.data, task_input.transform_time)
         end = time.perf_counter()
         return scores, end - start
 
@@ -416,12 +475,17 @@ def _execute_leaf_batch_worker(nodes: List[Any], modality: Any, gpu_id: Optional
 
 
 def _load_leaf_worker(modality: Any, materialize: bool = False) -> Dict[str, Any]:
+    # load_seconds covers only reading/decoding, so it can be charged to the
+    # leaf like the timed load in apply_representations.
+    start = time.perf_counter()
     if hasattr(modality, "extract_raw_data") and not modality.has_data():
         modality.extract_raw_data()
+    load_seconds = time.perf_counter() - start
 
     data = modality.data
     if materialize and isinstance(data, LazyFileSequence):
         arrays = data.materialize()
+        decode_seconds = time.perf_counter() - start
         shared, shm_name, shm_bytes = move_arrays_to_shared_memory(arrays)
         if shared is not None:
             return {
@@ -429,6 +493,7 @@ def _load_leaf_worker(modality: Any, materialize: bool = False) -> Dict[str, Any
                 "metadata": modality.metadata,
                 "shm_name": shm_name,
                 "shm_bytes": shm_bytes,
+                "load_seconds": decode_seconds,
             }
         if sum(getattr(a, "nbytes", 0) for a in arrays) < SHARED_MEMORY_MIN_BYTES:
             return {
@@ -436,6 +501,7 @@ def _load_leaf_worker(modality: Any, materialize: bool = False) -> Dict[str, Any
                 "metadata": modality.metadata,
                 "shm_name": None,
                 "materialized": True,
+                "load_seconds": decode_seconds,
             }
 
     resident_bytes = 0
@@ -450,7 +516,12 @@ def _load_leaf_worker(modality: Any, materialize: bool = False) -> Dict[str, Any
     if wrapped is not None:
         data = wrapped
 
-    return {"data": data, "metadata": modality.metadata, "shm_name": shm_name}
+    return {
+        "data": data,
+        "metadata": modality.metadata,
+        "shm_name": shm_name,
+        "load_seconds": load_seconds,
+    }
 
 
 def _retained_gpu_bytes() -> int:
@@ -511,6 +582,28 @@ def _dispatch_load_leaf(payload, _gpu_id):
     return _load_leaf_worker(modality, materialize)
 
 
+def _dispatch_split_dags(payload, gpu_id):
+    from systemds.scuro.drsearch.unimodal_optimizer import evaluate_fitted_dags
+
+    start_time = time.perf_counter()
+    allowed = os.sched_getaffinity(0)
+    if gpu_id is not None:
+        cores = sorted(allowed)
+        os.sched_setaffinity(0, {cores[os.getpid() % len(cores)]})
+    try:
+        results = evaluate_fitted_dags(*payload)
+    finally:
+        os.sched_setaffinity(0, allowed)
+        if gpu_id is not None:
+            cleanup_gpu(gpu_id)
+    return {
+        "results": results,
+        "start_time": start_time,
+        "end_time": time.perf_counter(),
+        "pid": os.getpid(),
+    }
+
+
 _WORKER_DISPATCH = {
     "node": _dispatch_node,
     "task": _dispatch_task,
@@ -518,6 +611,7 @@ _WORKER_DISPATCH = {
     "leaf_batch": _dispatch_leaf_batch,
     "load_leaf": _dispatch_load_leaf,
     "release_models": _dispatch_release_models,
+    "split_dags": _dispatch_split_dags,
 }
 
 
@@ -540,6 +634,12 @@ class _BatchUnit:
 class _TaskBatchUnit(_BatchUnit):
     gpu_id: int = 0
     gpu_bytes: int = 0
+
+
+@dataclass
+class _SplitUnit:
+    index: int
+    gpu_id: Optional[int] = None
 
 
 @dataclass
@@ -576,6 +676,7 @@ class NodeExecutor:
         enable_checkpointing: bool = False,
         worker_pool: Optional[PersistentWorkerPool] = None,
         search_start: Optional[float] = None,
+        split_jobs: Optional[List[tuple]] = None,
     ):
         self.enable_checkpointing = enable_checkpointing
         available_total_cpu = cpu_memory_budget_bytes(
@@ -630,9 +731,12 @@ class NodeExecutor:
         self._leaf_shm_owners: Dict[str, Any] = {}
         self._leaf_original_data: Dict[str, Any] = {}
         self._leaf_unshared_originals: List[tuple] = []
+        self._leaf_load_seconds: Dict[int, float] = {}
         self._task_results: Dict[str, ResultEntry] = {}
         self._fused_shapes: Dict[tuple, tuple] = {}
         self._fused_ready_since: Dict[str, float] = {}
+        self._split_pending = list(enumerate(split_jobs or []))
+        self._split_results: List[Any] = [None] * len(self._split_pending)
 
         self._owns_pool = worker_pool is None
         if worker_pool is None:
@@ -744,6 +848,8 @@ class NodeExecutor:
                     )
             modality._data = jr.value["data"]
             modality.metadata = jr.value["metadata"]
+            modality.transform_time += jr.value["load_seconds"]
+            self._leaf_load_seconds[id(modality)] = jr.value["load_seconds"]
             if jr.value.get("materialized"):
                 self._leaf_unshared_originals.append((modality, original))
             shm_name = jr.value.get("shm_name")
@@ -774,12 +880,16 @@ class NodeExecutor:
                 if callable(close):
                     close()
                 modality._data = self._leaf_original_data.pop(shm_name, None)
+                modality.transform_time -= self._leaf_load_seconds.pop(id(modality), 0)
             unlink_shm(shm_name)
         self._leaf_shm_names = []
         self._leaf_shm_owners = {}
         for modality, original in self._leaf_unshared_originals:
             modality._data = original
+            modality.transform_time -= self._leaf_load_seconds.pop(id(modality), 0)
         self._leaf_unshared_originals = []
+        # Leaves whose loaded data stays attached keep their load time.
+        self._leaf_load_seconds = {}
 
     def _submit_node(
         self, node_id: str, allow_gpu_worker_for_cpu: bool = False
@@ -973,9 +1083,30 @@ class NodeExecutor:
                 self._job_units[job_id] = _TaskBatchUnit(batch, gpu_id, gpu_bytes)
                 self._job_retained_shm[job_id] = retained
 
+    def _submit_split_jobs(self) -> None:
+        while self._split_pending and self._pool.has_idle_worker:
+            index, (payload, uses_gpu) = self._split_pending[0]
+            gpu_id = None
+            if uses_gpu and self.scheduler.gpu_devices:
+                gpu_id = self.scheduler.reserve_gpu(
+                    _FUSED_CONTEXT_BYTES,
+                    lambda g: self._pool.has_idle_worker_for(g),
+                    force=not self._job_units,
+                )
+                if gpu_id is None and self._job_units:
+                    return
+            if gpu_id is None and not self._pool.has_idle_worker_for(None, True):
+                return
+            self._split_pending.pop(0)
+            job_id = self._pool.submit(
+                "split_dags", payload, gpu_id=gpu_id, allow_gpu_worker_for_cpu=True
+            )
+            self._job_units[job_id] = _SplitUnit(index, gpu_id)
+
     def _fill_pipeline(self) -> None:
         if not self._pool.has_idle_worker:
             return
+        self._submit_split_jobs()
         ready = self.scheduler.get_runnable().copy()
         fused = self._fused_task_nodes(ready)
         if fused:
@@ -1052,6 +1183,21 @@ class NodeExecutor:
                 return
             if isinstance(unit, _TaskBatchUnit):
                 self.scheduler.release_gpu(unit.gpu_id, unit.gpu_bytes)
+            if isinstance(unit, _SplitUnit):
+                if unit.gpu_id is not None:
+                    self.scheduler.release_gpu(unit.gpu_id, _FUSED_CONTEXT_BYTES)
+                if jr.ok:
+                    value = jr.value
+                    self._record_stats(
+                        f"split_{unit.index}",
+                        value["pid"],
+                        value["start_time"],
+                        value["end_time"],
+                    )
+                    self._split_results[unit.index] = value["results"]
+                else:
+                    self._split_results[unit.index] = jr.error or "worker failure"
+                return
             if not jr.ok:
                 self._handle_job_failure(unit, jr)
                 return
@@ -1411,7 +1557,11 @@ class NodeExecutor:
         self._task_results = {}
         try:
             self._load_leaf_modalities()
-            while self._job_units or not self.scheduler.is_finished():
+            while (
+                self._job_units
+                or self._split_pending
+                or not self.scheduler.is_finished()
+            ):
                 self._fill_pipeline()
                 if not self._job_units:
                     continue
@@ -1436,6 +1586,7 @@ class NodeExecutor:
         return {
             "task_results": list(self._task_results.values()),
             "statistics": self.statistics,
+            "split_results": self._split_results,
         }
 
     def _reuse_report(self) -> Dict[str, Any]:

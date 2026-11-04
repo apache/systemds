@@ -20,13 +20,10 @@
 package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
 import org.apache.sysds.common.Types.OpOpData;
-import org.apache.sysds.conf.ConfigurationManager;
-import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.Hop;
@@ -45,11 +42,15 @@ public class RewriteSplitDagSparsityRecompile extends SplitStatementBlockRewrite
 		return rRewriteStatementBlock(sb, state);
 	}
 
-	public List<StatementBlock> rRewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state) {
-		// split only if sparsity rewrites are enabled (splitting is pointless w/o rewrite)
-		if(!ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.SPARSITY_REWRITES))
-			return Arrays.asList(sb);
+	private static Hop getFirstTransientWriteParent(Hop hop) {
+		for(Hop p : hop.getParent()) {
+			if(p instanceof DataOp && ((DataOp)p).getOp() == OpOpData.TRANSIENTWRITE)
+				return p;
+		}
+		return null;
+	}
 
+	public List<StatementBlock> rRewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state) {
 		ArrayList<StatementBlock> ret = new ArrayList<>();
 
 		// collect all candidate hops in levels based on their data dependencies
@@ -78,21 +79,32 @@ public class RewriteSplitDagSparsityRecompile extends SplitStatementBlockRewrite
 			ArrayList<Hop> sbSplitHops = new ArrayList<>();
 			for(Hop cHop : cand) {
 				// create new transient read
-				String varname = createCutVarName(false);
+				String varname;
+				DataOp tWrite = (DataOp)getFirstTransientWriteParent(cHop);
+				if(cHop instanceof DataOp && ((DataOp)cHop).isRead() && tWrite != null) {
+					varname = tWrite.getName();
+				}
+				else {
+					varname = createCutVarName(false);
+				}
 				DataOp tRead = HopRewriteUtils.createTransientRead(varname, cHop);
 				tRead.setRequiresRecompile();
 
-				// replace persistent read with transient read
+				// replace hop with transient read operation
 				ArrayList<Hop> parents = new ArrayList<>(cHop.getParent());
 				for(int i = 0; i < parents.size(); i++) {
 					// prevent concurrent modification by index access
 					Hop parent = parents.get(i);
-					if(!candChilds.contains(parent)) // anomaly filter
-						HopRewriteUtils.replaceChildReference(parent, cHop, tRead);
+					if(!candChilds.contains(parent)) { // anomaly filter
+						if(parent != tWrite)
+							HopRewriteUtils.replaceChildReference(parent, cHop, tRead);
+						else
+							sb.getHops().remove(parent);
+					}
 				}
 
-				// add reblock sub dag to first statement block
-				DataOp tWrite = HopRewriteUtils.createTransientWrite(varname, cHop);
+				if(tWrite == null)
+					tWrite = HopRewriteUtils.createTransientWrite(varname, cHop);
 				sbSplitHops.add(tWrite);
 
 				// update live in and out of new statement block (for piggybacking)
@@ -139,23 +151,19 @@ public class RewriteSplitDagSparsityRecompile extends SplitStatementBlockRewrite
 		}
 	}
 
-	public static boolean anyParentIsMatrixMultiply(Hop hop) {
+	private static boolean anyParentIsMatrixMultiply(Hop hop) {
 		return hop.getParent().stream().anyMatch(parentHop -> HopRewriteUtils.isMatrixMultiply(parentHop));
 	}
 
-	public static boolean allParentsAreMatrixMultiply(Hop hop) {
+	private static boolean allParentsAreMatrixMultiply(Hop hop) {
 		return hop.getParent().stream().allMatch(parentHop -> HopRewriteUtils.isMatrixMultiply(parentHop));
 	}
 
-	public static boolean anyChildIsMatrixMultiply(Hop hop) {
+	private static boolean anyChildIsMatrixMultiply(Hop hop) {
 		return hop.getInput().stream().anyMatch(childHop -> HopRewriteUtils.isMatrixMultiply(childHop));
 	}
 
-	public static boolean allChildsAreMatrixMultiply(Hop hop) {
-		return hop.getInput().stream().allMatch(childHop -> HopRewriteUtils.isMatrixMultiply(childHop));
-	}
-
-	public static boolean isMMChain(Hop hop) {
+	private static boolean isPartOfMMChain(Hop hop) {
 		// hop is part of mm chain with at least two matrix multplications
 		return HopRewriteUtils.isMatrixMultiply(hop)
 			&& (anyParentIsMatrixMultiply(hop) || anyChildIsMatrixMultiply(hop));
@@ -165,7 +173,7 @@ public class RewriteSplitDagSparsityRecompile extends SplitStatementBlockRewrite
 		List<Hop> parentHops = hop.getParent();
 		if(parentHops == null)
 			return false;
-		return parentHops.stream().anyMatch(pHop -> isMMChain(pHop));
+		return parentHops.stream().anyMatch(pHop -> isPartOfMMChain(pHop));
 	}
 
 	private void rCollectNnzComputationCandidates(Hop hop, ArrayList<Hop> cand, Hop parentHop) {
@@ -186,7 +194,7 @@ public class RewriteSplitDagSparsityRecompile extends SplitStatementBlockRewrite
 				cand.add(hop);
 			}
 			else if((!HopRewriteUtils.isMatrixMultiply(parentHop) || !allParentsAreMatrixMultiply(hop))
-				&& isMMChain(hop) // split only mm chains (i.e., at least two matrix multiplications)
+				&& isPartOfMMChain(hop) // split only mm chains (i.e., at least two matrix multiplications)
 				&& !((AggBinaryOp) hop).hasLeftPMInput()) {
 				// split after mm chain to force the mm chain into a separate statment block for isolated optimization
 				cand.add(hop);

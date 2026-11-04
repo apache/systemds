@@ -21,27 +21,40 @@
 import copy
 from collections import Counter
 import math
+import os
 import pickle
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import multiprocessing as mp
 from typing import List, Any, Optional, Dict
 from functools import lru_cache
+from weakref import WeakValueDictionary
 
+from systemds.scuro.dataloader.base_loader import LazyFileSequence
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.node_executor import (
     NodeExecutor,
     ResultEntry,
-    _lazy_leaf_budget_fraction,
+    decoded_lazy_leaves,
 )
-from systemds.scuro.dataloader.base_loader import LazyFileSequence
-from systemds.scuro.utils.memory_utility import cpu_memory_budget_bytes
 from systemds.scuro.drsearch.split_aware_evaluator import (
     SplitAwareDAGEvaluator,
     dag_requires_fitting,
 )
-from systemds.scuro.representations.representation import RepresentationStats
+
+from systemds.scuro.drsearch.test_set_evaluation import measure_inference_time
+from systemds.scuro.drsearch.trial_result_cache import TrialNodeCache, TrialResultCache
+from systemds.scuro.representations.representation import (
+    FitRequirement,
+    RepresentationStats,
+)
 from systemds.scuro.drsearch.ranking import rank_by_tradeoff, rank_by_robustness
+from systemds.scuro.drsearch.objectives import (
+    pareto_front,
+    rank_by_pareto,
+    retime_front,
+    validate_objectives,
+)
 from systemds.scuro.drsearch.task import PerformanceMeasure
 from systemds.scuro.representations.concatenation import Concatenation
 from systemds.scuro.representations.hadamard import Hadamard
@@ -51,7 +64,7 @@ from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
 from systemds.scuro.modality.modality import Modality
-from systemds.scuro.drsearch.algebra import AlgebraConfig
+from systemds.scuro.drsearch.algebra import AlgebraConfig, canonical_signature
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.representations.window_aggregation import WindowAggregation
 from systemds.scuro.representations.lstm import LSTM
@@ -65,6 +78,69 @@ from systemds.scuro.drsearch.representation_dag import (
 from bisect import bisect_left
 
 
+def _fit_requirement(node):
+    return getattr(node.operation, "fit_requirement", FitRequirement.NONE)
+
+
+def _lowest_fitted_key(dag: RepresentationDag) -> str:
+    keys = set()
+
+    def visit(node_id):
+        node = dag.get_node_by_id(node_id)
+        below = [visit(input_id) for input_id in node.inputs]
+        fitted = _fit_requirement(node) is not FitRequirement.NONE
+        if fitted and not any(below):
+            keys.add(repr(canonical_signature(dag, frozenset(), False, node_id)))
+        return fitted or any(below)
+
+    visit(dag.root_node_id)
+    return repr(sorted(keys))
+
+
+def _task_uses_gpu(task) -> bool:
+    uses_gpu = getattr(task.model, "uses_gpu", None)
+    if uses_gpu is not None:
+        return bool(uses_gpu)
+    device = getattr(task.model, "device", None)
+    return str(getattr(device, "type", device) or "").startswith("cuda")
+
+
+def evaluate_fitted_dags(dags, modality, tasks) -> list:
+    budget_gb = float(os.environ.get("SCURO_FITTED_DAG_CACHE_GB", "4"))
+    store = TrialResultCache(int(budget_gb * 1024**3), min_compute_seconds=0)
+    results = []
+    for dag in dags:
+        eval_dag, eval_modality, encode_time = UnimodalOptimizer._encode_below_lstm(
+            dag, modality
+        )
+        supervised = any(
+            _fit_requirement(node) is FitRequirement.SUPERVISED
+            for node in eval_dag.nodes
+        )
+        for task_idx, task in enumerate(tasks):
+            owner = task_idx if supervised else None
+            signatures = {
+                node.node_id: (
+                    owner,
+                    canonical_signature(eval_dag, frozenset(), False, node.node_id),
+                )
+                for node in eval_dag.nodes
+                if node.inputs
+            }
+            saved = store.saved_seconds
+            evaluation = SplitAwareDAGEvaluator(
+                eval_dag,
+                eval_modality,
+                task,
+                node_cache=TrialNodeCache(store, signatures),
+                share_fitted=True,
+            ).evaluate()
+            evaluation.representation_time += encode_time + store.saved_seconds - saved
+            timing = dict(getattr(task, "last_run_timing", {}))
+            results.append((dag.dag_id, task_idx, evaluation, timing))
+    return results
+
+
 class UnimodalOptimizer:
     def __init__(
         self,
@@ -75,6 +151,7 @@ class UnimodalOptimizer:
         result_path=None,
         k=2,
         metric_name="accuracy",
+        objectives=None,
         checkpoint_every: Optional[int] = 1,
         resume: bool = False,
         max_num_workers: int = -1,
@@ -118,7 +195,7 @@ class UnimodalOptimizer:
 
         self.operator_registry = Registry()
         self.operator_performance = UnimodalResults(
-            modalities, tasks, debug, True, k, self.metric_name
+            modalities, tasks, debug, True, k, self.metric_name, objectives=objectives
         )
         self._tasks_require_same_dims = True
         self.expected_dimensions = tasks[0].expected_dim
@@ -386,10 +463,19 @@ class UnimodalOptimizer:
 
         task_results = []
         statistics = {"worker_stats": {}, "node_stats": {}, "reuse": {}}
+        split_jobs = []
         if fitted_dags:
             SplitAwareDAGEvaluator.materialize(modality)
+            groups = {}
+            for dag in fitted_dags:
+                groups.setdefault(_lowest_fitted_key(dag), []).append(dag)
+            uses_gpu = any(_task_uses_gpu(task) for task in self.tasks)
+            split_jobs = [
+                ((group, modality, self.tasks), uses_gpu) for group in groups.values()
+            ]
 
-        if stateless_task_dags:
+        split_results = []
+        if stateless_task_dags or split_jobs:
             node_executor = NodeExecutor(
                 stateless_task_dags,
                 [modality],
@@ -399,12 +485,14 @@ class UnimodalOptimizer:
                 enable_checkpointing=self.enable_checkpointing,
                 worker_pool=self._persistent_worker_pool,
                 search_start=self._search_start,
+                split_jobs=split_jobs,
             )
             if self._reuse_worker_pool and self._persistent_worker_pool is None:
                 self._persistent_worker_pool = node_executor.detach_worker_pool()
             exec_out = node_executor.run()
             task_results.extend(exec_out["task_results"])
             statistics = exec_out["statistics"]
+            split_results = exec_out["split_results"]
             reuse = statistics.get("reuse", {})
             planned = reuse.get("planned_task_nodes", 0)
             completed = reuse.get("completed_task_nodes", planned)
@@ -419,15 +507,23 @@ class UnimodalOptimizer:
 
         if fitted_dags:
             fitted_task_dags = self._expand_dags_with_task_roots(fitted_dags)
+            evaluations = {}
+            for (payload, _), result in zip(split_jobs, split_results):
+                if isinstance(result, list):
+                    for dag_id, task_idx, evaluation, timing in result:
+                        evaluations[dag_id, task_idx] = evaluation, timing
+                else:
+                    print(
+                        f"[unimodal] WARNING: modality {modality.modality_id} "
+                        f"fitted DAGs {[dag.dag_id for dag in payload[0]]} "
+                        f"failed: {result}",
+                        flush=True,
+                    )
             for dag in fitted_dags:
-                eval_dag, eval_modality, encode_time = self._encode_below_lstm(
-                    dag, modality
-                )
                 for task_idx, task in enumerate(self.tasks):
-                    evaluation = SplitAwareDAGEvaluator(
-                        eval_dag, eval_modality, task
-                    ).evaluate()
-                    evaluation.representation_time += encode_time
+                    if (dag.dag_id, task_idx) not in evaluations:
+                        continue
+                    evaluation, timing = evaluations[dag.dag_id, task_idx]
                     result_dag = next(
                         task_dag
                         for task_dag in fitted_task_dags
@@ -445,7 +541,7 @@ class UnimodalOptimizer:
                             train_score_stds=evaluation.scores[0].score_stds(),
                             val_score_stds=evaluation.scores[1].score_stds(),
                             test_score_stds=evaluation.scores[2].score_stds(),
-                            task_timing=getattr(task, "last_run_timing", {}),
+                            task_timing=timing,
                             representation_time=evaluation.representation_time,
                             task_time=evaluation.task_time,
                             dag=result_dag,
@@ -1000,7 +1096,7 @@ class UnimodalOptimizer:
         )
 
 
-SELECTION_STRATEGIES = ("performance", "robustness", "tradeoff")
+SELECTION_STRATEGIES = ("performance", "robustness", "tradeoff", "pareto")
 
 
 class UnimodalResults:
@@ -1016,6 +1112,7 @@ class UnimodalResults:
         tradeoff_weights=(0.5, 0.5),
         robustness_std_weight=1.0,
         robustness_one_se_parsimony=True,
+        objectives=None,
     ):
         self.modality_ids = [modality.modality_id for modality in modalities]
         self.task_names = [task.model.name for task in tasks]
@@ -1025,6 +1122,13 @@ class UnimodalResults:
         self.store_cache = store_cache
         self.k = k
         self.metric_name = metric_name
+        self.objectives = (
+            [(metric_name, "max")]
+            if objectives is None
+            else validate_objectives(objectives)
+        )
+        if len(self.objectives) > 1 and selection_strategy == "performance":
+            selection_strategy = "pareto"
         self.set_selection_strategy(
             selection_strategy,
             tradeoff_weights=tradeoff_weights,
@@ -1154,6 +1258,8 @@ class UnimodalResults:
 
     def _rank_entries(self, task_results, performance_metric_name):
         strategy = getattr(self, "selection_strategy", "performance")
+        if strategy == "pareto":
+            return rank_by_pareto(task_results, self.objectives)
         if strategy == "robustness":
             return rank_by_robustness(
                 task_results,
@@ -1208,24 +1314,14 @@ class UnimodalResults:
                 task_cache = None
             if not task_cache:
                 cache = []
-                lazy_data = self._decode_lazy_leaf_once(modality, results)
-                try:
+                with decoded_lazy_leaves([modality]):
                     for result in results:
                         if dag_requires_fitting(result.dag):
-                            SplitAwareDAGEvaluator.materialize(modality)
-                            transformed = SplitAwareDAGEvaluator(
-                                result.dag, modality, task
-                            ).fit_transform(
-                                task.train_indices,
-                                range(len(modality.data)),
+                            cache.append(
+                                self._fit_k_best_leaf(result.dag, modality, task)
                             )
-                            transformed.modality.fold_source = (result.dag, modality)
-                            cache.append(transformed.modality)
                         else:
                             cache.append(result.dag.execute([modality]))
-                finally:
-                    if lazy_data is not None:
-                        modality._data = lazy_data
 
             elif isinstance(task_cache, list):
                 cache = task_cache
@@ -1252,6 +1348,47 @@ class UnimodalResults:
 
         return results, cache
 
+    def get_pareto_front(self, modality, task, retime_repeats: int = 0):
+        """Non-dominated results of ``modality`` for ``task`` under ``self.objectives``.
+
+        With ``retime_repeats`` > 0 the front is re-timed serially first (see
+        ``retime_front``), which updates the re-timed results in place.
+        """
+        results = self.results[modality.modality_id][task.model.name]
+        if retime_repeats <= 0:
+            return pareto_front(results, self.objectives)
+        return retime_front(
+            results,
+            self.objectives,
+            lambda entry: measure_inference_time(entry.dag, [modality], task),
+            retime_repeats,
+        )
+
+    def _fit_k_best_leaf(self, dag, modality, task):
+        supervised = any(
+            _fit_requirement(node) is FitRequirement.SUPERVISED for node in dag.nodes
+        )
+        key = (
+            repr(canonical_signature(dag, frozenset(), False)),
+            str(modality.modality_id),
+            tuple(task.train_indices),
+            task.model.name if supervised else None,
+        )
+        leaves = self.__dict__.setdefault("_fitted_leaves", WeakValueDictionary())
+        leaf = leaves.get(key)
+        if leaf is None:
+            SplitAwareDAGEvaluator.materialize(modality)
+            leaf = (
+                SplitAwareDAGEvaluator(dag, modality, task)
+                .fit_transform(task.train_indices, range(len(modality.data)))
+                .modality
+            )
+            leaves[key] = leaf
+        else:
+            leaf = copy.copy(leaf)
+        leaf.fold_source = (dag, modality)
+        return leaf
+
     @staticmethod
     def _decode_lazy_leaf_once(modality, results):
         data = modality.data if modality.has_data() else None
@@ -1263,16 +1400,6 @@ class UnimodalResults:
         metadata = (
             modality.metadata if len(modality.metadata or []) == len(data) else None
         )
-        decoded_bytes = estimate(metadata) if callable(estimate) else None
-        budget = cpu_memory_budget_bytes(modality.modality_type.name)
-        if not decoded_bytes or decoded_bytes > budget * _lazy_leaf_budget_fraction():
-            return None
-        arrays = data.materialize()
-        for array in arrays:
-            if hasattr(array, "flags"):
-                array.flags.writeable = False
-        modality._data = arrays
-        return data
 
     def get_k_most_robust_results(
         self,

@@ -153,7 +153,7 @@ class InstanceCountingTask:
     def get_output_stats(self, input_stats):
         return RepresentationStats(input_stats.num_instances, (1,))
 
-    def run(self, data):
+    def run(self, data, representation_time=0.0):
         count = float(len(data))
         scores = []
         for split in ("train", "val", "test"):

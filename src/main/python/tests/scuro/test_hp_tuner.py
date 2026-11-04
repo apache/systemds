@@ -122,9 +122,7 @@ class TestHPTuner(unittest.TestCase):
             hp.tune_unimodal_representations(max_eval_per_rep=4)
 
         for task in self.tasks:
-            results = hp.optimization_results.results[task.model.name][
-                text.modality_id
-            ]
+            results = hp.optimization_results.results[task.model.name][text.modality_id]
             self.assertTrue(results)
             for result in results:
                 front = result.pareto_results
@@ -135,9 +133,7 @@ class TestHPTuner(unittest.TestCase):
                     for _, scores in front
                 ]
                 for a in vectors:
-                    self.assertFalse(
-                        any(dominates(b, a, objectives) for b in vectors)
-                    )
+                    self.assertFalse(any(dominates(b, a, objectives) for b in vectors))
             _, dags = hp.optimization_results.get_k_best_dags(text, task)
             self.assertLessEqual(len(dags), 2 * len(results))
 

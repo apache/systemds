@@ -23,6 +23,7 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 public abstract class UniqueBase extends AutomatedTestBase {
 
@@ -40,8 +41,34 @@ public abstract class UniqueBase extends AutomatedTestBase {
 
 	protected void uniqueTest(double[][] inputMatrix, double[][] expectedMatrix,
 							Types.ExecType instType, double epsilon) {
+		uniqueTest(inputMatrix, expectedMatrix, instType, epsilon, -1, -1);
+	}
+
+	/**
+	 * Runs the unique script with a fixed degree of parallelism and a reduced local memory budget. The multi-threaded
+	 * unique implementation derives the budget for its thread-local deduplication from the local memory and compares it
+	 * against the number of threads, so pinning both makes the memory-aware batched path selected deterministically,
+	 * independently of the machine the test runs on.
+	 *
+	 * @param localMaxMemory local memory budget in bytes, or -1 to keep the current one
+	 * @param localPar       degree of parallelism, or -1 to keep the current one
+	 */
+	protected void uniqueTestConstrainedMemory(double[][] inputMatrix, double[][] expectedMatrix,
+		Types.ExecType instType, double epsilon, long localMaxMemory, int localPar) {
+		uniqueTest(inputMatrix, expectedMatrix, instType, epsilon, localMaxMemory, localPar);
+	}
+
+	private void uniqueTest(double[][] inputMatrix, double[][] expectedMatrix, Types.ExecType instType, double epsilon,
+		long localMaxMemory, int localPar) {
 		Types.ExecMode platformOld = setExecMode(instType);
+		long localMaxMemoryOld = InfrastructureAnalyzer.getLocalMaxMemory();
+		int localParOld = InfrastructureAnalyzer.getLocalParallelism();
 		try {
+			if(localMaxMemory > 0)
+				InfrastructureAnalyzer.setLocalMaxMemory(localMaxMemory);
+			if(localPar > 0)
+				InfrastructureAnalyzer.setLocalPar(localPar);
+
 			loadTestConfiguration(getTestConfiguration(getTestName()));
 			String HOME = SCRIPT_DIR + getTestDir();
 			fullDMLScriptName = HOME + getTestName() + ".dml";
@@ -55,6 +82,8 @@ public abstract class UniqueBase extends AutomatedTestBase {
 			compareResultsRowsOutOfOrder(epsilon);
 		}
 		finally {
+			InfrastructureAnalyzer.setLocalMaxMemory(localMaxMemoryOld);
+			InfrastructureAnalyzer.setLocalPar(localParOld);
 			rtplatform = platformOld;
 		}
 	}

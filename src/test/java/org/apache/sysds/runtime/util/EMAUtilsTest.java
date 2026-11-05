@@ -24,11 +24,15 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.junit.Assert;
 import org.junit.Test;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import java.util.HashMap;
 
 import static org.apache.sysds.test.TestUtils.readRMatrixFromFS;
-import static  org.apache.sysds.runtime.util.EMAUtils.*;
+import static  org.apache.sysds.runtime.util.EMAUtils.double_exponential_smoothing;
+import static  org.apache.sysds.runtime.util.EMAUtils.triple_exponential_smoothing;
+import static  org.apache.sysds.runtime.util.EMAUtils.Container;
 
 public class EMAUtilsTest extends AutomatedTestBase {
     private static final String TEST_NAME = "exponentialSmoothing";
@@ -49,12 +53,18 @@ public class EMAUtilsTest extends AutomatedTestBase {
                 new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "R_double", "R_triple", "R_triple_odd" }));
     }
 
+    private static String toRCsv() {
+        return Arrays.stream(EMAUtilsTest.TS_DATA)
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
+    }
+
     @Test
     public void testDoubleExponentialSmoothing() {
         fullRScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME + ".R";
         String resultPath = output("R_double");
 
-        rCmd = getRCmd("double", resultPath);
+        rCmd = getRCmd("double", resultPath, toRCsv());
         runRScript(true);
 
         HashMap<MatrixValue.CellIndex, Double> rOutput = readRMatrixFromFS(resultPath);
@@ -81,7 +91,7 @@ public class EMAUtilsTest extends AutomatedTestBase {
         fullRScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME + ".R";
         String resultPath = output("R_triple");
 
-        rCmd = getRCmd("triple", resultPath);
+        rCmd = getRCmd("triple", resultPath, toRCsv());
         runRScript(true);
 
         HashMap<MatrixValue.CellIndex, Double> rOutputTriple = readRMatrixFromFS(resultPath);
@@ -118,7 +128,7 @@ public class EMAUtilsTest extends AutomatedTestBase {
         fullRScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME + ".R";
         String resultPath = output("R_triple_odd");
 
-        rCmd = getRCmd("odd_triple", resultPath);
+        rCmd = getRCmd("odd_triple", resultPath, toRCsv());
         runRScript(true);
 
         HashMap<MatrixValue.CellIndex, Double> rOutputTriple = readRMatrixFromFS(resultPath);

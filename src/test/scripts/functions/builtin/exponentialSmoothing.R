@@ -21,20 +21,24 @@
 
 args <- commandArgs(trailingOnly = TRUE)
 
-if (length(args) != 2L) {
-  stop("Expected arguments: <double|triple> <output_path>")
+if (length(args) != 3L) {
+  stop("Expected arguments: <mode> <output_path> <data>")
 }
 
 mode <- args[1]
 output_path <- args[2]
 
-ts_data <- c(
-  112, 118, 132, 129, 121, 135, 148, 148, 136, 119, 104, 118,
-  115, 126, 141, 135, 125, 149, 170, 170, 158, 133, 114, 140,
-  145, 150, 178, 163, 172, 178, 199, 199, 184, 162, 146, 166,
-  171, 180, 193, 181, 183, 218, 230, 242, 209, 191, 172, 194,
-  196, 196, 236, 235, 229, 243, 264, 272, 237, 211, 180, 201
+ts_data <- scan(
+  text = args[3],
+  what = double(),
+  sep = ",",
+  quiet = TRUE
 )
+
+if (length(ts_data) == 0L || any(!is.finite(ts_data))) {
+  stop("Input data must contain finite numeric values")
+}
+
 
 if (mode == "double") {
   hw_model <- stats::HoltWinters(

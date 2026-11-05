@@ -17,7 +17,7 @@
  * under the License.
  */
 
-
+// Testing for the utils can be found at src\test\java\org\apache\sysds\test\functions\builtin\part1
 package org.apache.sysds.runtime.util;
 
 import java.util.ArrayList;
@@ -71,8 +71,7 @@ class LinearRegression {
 
 public class EMAUtils {
 
-	public static FrameBlock exponentialMovingAverageImputation(FrameBlock block, int search_iterations, String mode,
-																int freq, Double alpha, Double beta, Double gamma) {
+	public static FrameBlock exponentialMovingAverageImputation(FrameBlock block, int search_iterations, String mode, int freq, Double alpha, Double beta, Double gamma) {
 		int cols = block.getNumColumns();
 		int rows = block.getNumRows();
 

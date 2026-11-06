@@ -149,7 +149,7 @@ public class Utility
 					debugPrint(Constants.DEBUG_INFO2, "StdOut: " + strLine);
 			}
 		} catch (IOException ioe) {
-			debugPrint(Constants.DEBUG_ERROR, "Exception occured while reading from process output: " + ioe, strOutputFile);
+			debugPrint(Constants.DEBUG_ERROR, "Exception occurred while reading from process output: " + ioe, strOutputFile);
 		}
 		if(bWriteOutToFile && writerOut != null)
 			writerOut.close();

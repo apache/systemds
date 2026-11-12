@@ -1,0 +1,15 @@
+# gen_X
+setwd(".");
+
+rows = as.integer($ROWS)
+cols = as.integer($COLS)
+
+# Dense random in [0,1)
+X = rand(rows=rows, cols=cols, min=0, max=1)
+
+# make it more “autoencoder-like” noisy reconstruction task
+# noise = rand(rows=rows, cols=cols, min=-0.05, max=0.05)
+# X = pmin(pmax(X + noise, 0), 1)
+
+# Write as SystemDS binary fast + safe
+write(X, $OUT, format="binary")

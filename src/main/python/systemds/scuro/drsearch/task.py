@@ -25,8 +25,10 @@ from typing import List
 from systemds.scuro.utils.static_variables import get_global_seed, get_train_seed
 from systemds.scuro.models.model import Model
 from systemds.scuro.models.fused_mlp import (
+    candidate_bytes,
     candidate_slots,
     fit_folds,
+    fused_gpu_bytes,
     fused_training_enabled,
     supports_fused_training,
 )
@@ -157,6 +159,15 @@ class Task:
         # TODO: Implement a default estimate of the output stats for the task
         return RepresentationStats(0, (0,))
 
+    def trains_fused(self, feature_dim: int) -> bool:
+        if not (fused_training_enabled() and supports_fused_training(self.model)):
+            return False
+        if feature_dim <= 0:
+            return True
+        rows = len(set(self.train_indices) | set(self.test_indices or []))
+        per_candidate = candidate_bytes(self.model, feature_dim, rows, self.kfold)
+        return per_candidate <= fused_gpu_bytes()
+
     def estimate_peak_memory_bytes(self, input_stats):
         labels_array = np.asarray(self.labels)
         n_instances = int(input_stats.num_instances)
@@ -223,7 +234,7 @@ class Task:
         uses_gpu = getattr(self.model, "uses_gpu", None)
         if uses_gpu is None:
             uses_gpu = model_peak_memory_gpu > 0
-        if fused_training_enabled() and supports_fused_training(self.model):
+        if self.trains_fused(feature_dim):
             uses_gpu = False
 
         gpu_peak_bytes = int(model_peak_memory_gpu * 1.4) if uses_gpu else 0

@@ -75,15 +75,40 @@ from systemds.scuro.utils.memory_utility import (
     MemoryMeasurement,
     cleanup_gpu,
     cpu_memory_budget_bytes,
-    estimate_modality_bytes,
     is_cuda_oom,
     measure_memory_during,
+    split_modality_bytes,
 )
 from systemds.scuro.utils.static_variables import DEBUG
 
 _MAX_NODE_RETRIES = int(os.environ.get("SCURO_MAX_NODE_RETRIES", "3"))
 _FUSED_CONTEXT_BYTES = 512 * 2**20
 _FUSED_WAIT_S = float(os.environ.get("SCURO_FUSED_WAIT_S", "30"))
+_DISPATCH_DIAG_DIR = os.environ.get("SCURO_DISPATCH_DIAG")
+
+
+def _diag(kind: str, record: dict) -> None:
+    if not _DISPATCH_DIAG_DIR:
+        return
+    import json
+
+    os.makedirs(_DISPATCH_DIAG_DIR, exist_ok=True)
+    record = {"t": time.perf_counter(), "pid": os.getpid(), **record}
+    path = os.path.join(_DISPATCH_DIAG_DIR, f"{kind}_{os.getpid()}.jsonl")
+    with open(path, "a") as f:
+        f.write(json.dumps(record, default=str) + "\n")
+
+
+def _diag_width(data) -> int:
+    """Per-instance feature count of a task input, -1 if it is ragged."""
+    try:
+        first = data[0]
+        shape = getattr(first, "shape", None)
+        if shape is None:
+            shape = (len(first),) if hasattr(first, "__len__") else ()
+        return int(math.prod(shape)) if shape else 1
+    except Exception:
+        return -1
 
 
 def _materialize_lazy_leaves() -> bool:
@@ -294,10 +319,11 @@ def _execute_node_worker(node, input_mods: List[Any], gpu_id: Optional[int]):
     gpu_peak_bytes = -1
     measurement = None
     if _measure_memory():
-        input_resident = sum(estimate_modality_bytes(m) for m in input_mods)
+        input_split = [split_modality_bytes(m) for m in input_mods]
         result, measurement = measure_memory_during(
             lambda: _run_gpu_op(_run_node_op, gpu_id, cleanup_after=False),
-            input_resident_bytes=input_resident,
+            input_resident_bytes=sum(p for p, _ in input_split),
+            input_shared_bytes=sum(s for _, s in input_split),
             sample_s=0.01,
         )
         gpu_peak_bytes = (
@@ -309,6 +335,8 @@ def _execute_node_worker(node, input_mods: List[Any], gpu_id: Optional[int]):
     shm_name, resident_bytes, shm_bytes, actual_stats = _offload_to_shared_memory(
         result
     )
+    if measurement is not None:
+        measurement.output_shm_bytes = int(shm_bytes or 0)
     end_time = time.perf_counter()
     return {
         "result": result,
@@ -343,10 +371,12 @@ def _execute_task_batch_worker(task: Any, items: List[tuple], gpu_id: int):
             datas.append((node_id, task_input.data, task_input.transform_time))
         except Exception as e:
             failed[node_id] = f"{type(e).__name__}: {e}"
+    input_done = time.perf_counter()
 
     allowed = os.sched_getaffinity(0)
     cores = sorted(allowed)
-    os.sched_setaffinity(0, {cores[os.getpid() % len(cores)]})
+    pinned_core = cores[os.getpid() % len(cores)]
+    os.sched_setaffinity(0, {pinned_core})
     try:
         scores = task.run_many(
             [data for _, data, _ in datas],
@@ -354,9 +384,28 @@ def _execute_task_batch_worker(task: Any, items: List[tuple], gpu_id: int):
             [seconds for _, _, seconds in datas],
         )
     finally:
+        fit_done = time.perf_counter()
         os.sched_setaffinity(0, allowed)
         cleanup_gpu(gpu_id)
-    share = (time.perf_counter() - start_time) / max(1, len(datas))
+    end = time.perf_counter()
+    share = (end - start_time) / max(1, len(datas))
+    _diag(
+        "worker",
+        {
+            "path": "batch",
+            "gpu": gpu_id,
+            "n": len(items),
+            "nodes": [node_id for node_id, _, _ in items],
+            "widths": [_diag_width(data) for _, data, _ in datas],
+            "start": start_time,
+            "input_s": input_done - start_time,
+            "fit_s": fit_done - input_done,
+            "cleanup_s": end - fit_done,
+            "pinned_core": pinned_core,
+            "n_allowed_cores": len(cores),
+            "timing": dict(getattr(task, "last_run_timing", {}) or {}),
+        },
+    )
     results = {}
     for i, ((node_id, _, _), result) in enumerate(zip(datas, scores)):
         if isinstance(result, Exception):
@@ -396,16 +445,34 @@ def _execute_task_worker(
     def _run_task():
         start = time.perf_counter()
         task_input = _task_input(modality, aggregation)
+        input_done = time.perf_counter()
         scores = task.run(task_input.data, task_input.transform_time)
         end = time.perf_counter()
+        _diag(
+            "worker",
+            {
+                "path": "single",
+                "gpu": gpu_id,
+                "n": 1,
+                "nodes": [task_node_id],
+                "widths": [_diag_width(task_input.data)],
+                "start": start,
+                "input_s": input_done - start,
+                "fit_s": end - input_done,
+                "n_allowed_cores": len(os.sched_getaffinity(0)),
+                "timing": dict(getattr(task, "last_run_timing", {}) or {}),
+            },
+        )
         return scores, end - start
 
     gpu_peak_bytes = -1
     measurement = None
     if _measure_memory():
+        input_private, input_shared = split_modality_bytes(modality)
         result, measurement = measure_memory_during(
             lambda: _run_gpu_op(_run_task, gpu_id),
-            input_resident_bytes=estimate_modality_bytes(modality),
+            input_resident_bytes=input_private,
+            input_shared_bytes=input_shared,
             sample_s=0.01,
         )
         gpu_peak_bytes = (
@@ -590,8 +657,14 @@ def _dispatch_split_dags(payload, gpu_id):
     if gpu_id is not None:
         cores = sorted(allowed)
         os.sched_setaffinity(0, {cores[os.getpid() % len(cores)]})
+    measurement = None
     try:
-        results = evaluate_fitted_dags(*payload)
+        if _measure_memory():
+            results, measurement = measure_memory_during(
+                lambda: evaluate_fitted_dags(*payload), sample_s=0.05
+            )
+        else:
+            results = evaluate_fitted_dags(*payload)
     finally:
         os.sched_setaffinity(0, allowed)
         if gpu_id is not None:
@@ -601,6 +674,7 @@ def _dispatch_split_dags(payload, gpu_id):
         "start_time": start_time,
         "end_time": time.perf_counter(),
         "pid": os.getpid(),
+        "memory": measurement,
     }
 
 
@@ -677,6 +751,7 @@ class NodeExecutor:
         worker_pool: Optional[PersistentWorkerPool] = None,
         search_start: Optional[float] = None,
         split_jobs: Optional[List[tuple]] = None,
+        split_job_memory: Optional[List[int]] = None,
     ):
         self.enable_checkpointing = enable_checkpointing
         available_total_cpu = cpu_memory_budget_bytes(
@@ -734,9 +809,12 @@ class NodeExecutor:
         self._leaf_load_seconds: Dict[int, float] = {}
         self._task_results: Dict[str, ResultEntry] = {}
         self._fused_shapes: Dict[tuple, tuple] = {}
+        self._fused_widths: Dict[str, int] = {}
+        self._last_dispatch_log = 0.0
         self._fused_ready_since: Dict[str, float] = {}
         self._split_pending = list(enumerate(split_jobs or []))
         self._split_results: List[Any] = [None] * len(self._split_pending)
+        self._split_job_memory = list(split_job_memory or [])
 
         self._owns_pool = worker_pool is None
         if worker_pool is None:
@@ -1023,11 +1101,19 @@ class NodeExecutor:
                 fused.append(node_id)
         return fused
 
+    def _fused_input_width(self, node) -> int:
+        width = self._fused_widths.get(node.node_id)
+        if width is None:
+            stats = self.scheduler.task_input_stats(
+                node.node_id, self.scheduler.node_stats.get(node.inputs[0])
+            )
+            width = int(math.prod(getattr(stats, "output_shape", None) or (1,)))
+            self._fused_widths[node.node_id] = width
+        return width
+
     def _fused_batch_shape(self, node) -> tuple:
         task_idx = int(node.parameters.get("_task_idx", 0))
-        stats = self.scheduler.node_stats.get(node.inputs[0])
-        width = math.prod(getattr(stats, "output_shape", None) or (1,))
-        key = (task_idx, int(width))
+        key = (task_idx, self._fused_input_width(node))
         if key not in self._fused_shapes:
             task = self._tasks[task_idx]
             rows = len(set(task.train_indices) | set(task.test_indices or []))
@@ -1046,12 +1132,72 @@ class NodeExecutor:
             self._fused_ready_since.setdefault(node_id, now)
             shape = self._fused_batch_shape(self.scheduler.mapping[node_id])
             groups.setdefault(shape, []).append(node_id)
-        for ((task_idx, _), per_candidate, slots), members in sorted(groups.items()):
+        diag = (
+            {"submitted": [], "held": 0, "stop": None} if _DISPATCH_DIAG_DIR else None
+        )
+        try:
+            self._submit_fused_groups(groups, idle, now, diag)
+        finally:
+            if diag is not None:
+                self._log_dispatch(node_ids, groups, idle, diag)
+
+    def _log_dispatch(self, node_ids, groups, idle, diag) -> None:
+        now = time.perf_counter()
+        if not diag["submitted"] and now - self._last_dispatch_log < 0.5:
+            return
+        self._last_dispatch_log = now
+        sched = self.scheduler
+        roots = sched.roots
+        units = {}
+        for unit in self._job_units.values():
+            units[type(unit).__name__] = units.get(type(unit).__name__, 0) + 1
+        _diag(
+            "dispatch",
+            {
+                "fused_ready": len(node_ids),
+                "groups": len(groups),
+                "group_sizes": sorted((len(m) for m in groups.values()), reverse=True),
+                "idle_flag": idle,
+                "submitted": diag["submitted"],
+                "held_for_siblings": diag["held"],
+                "stop": diag["stop"],
+                "tasks_awaiting_admission": sum(
+                    1 for n in sched._candidates if n in roots
+                ),
+                "tasks_admitted": sum(
+                    1
+                    for n in sched.ready_nodes
+                    if not isinstance(n, list) and n in roots
+                ),
+                "tasks_running": sum(1 for n in sched.running_nodes if n in roots),
+                "job_units": units,
+                "idle_cpu_workers": len(self._pool._idle_pids),
+                "gpus": {
+                    g: {
+                        "slots_used": sched.gpu_slots_in_use.get(g, 0),
+                        "slots": sched.gpu_slots_per_device,
+                        "free_gb": sched._free_gpu_bytes(g, {}) / 2**30,
+                        "in_use_gb": sched.memory_stats["gpu_in_use"].get(g, 0) / 2**30,
+                        "retained_gb": sched.memory_stats["gpu_retained"].get(g, 0)
+                        / 2**30,
+                        "idle_workers": len(self._pool._idle_gpu_pids.get(g, [])),
+                    }
+                    for g in sched.gpu_devices
+                },
+            },
+        )
+
+    def _submit_fused_groups(self, groups, idle, now, diag) -> None:
+        for ((task_idx, width), per_candidate, slots), members in sorted(
+            groups.items()
+        ):
             task = self._tasks[task_idx]
             gpu_bytes = slots * per_candidate + _FUSED_CONTEXT_BYTES
             waited = now - min(self._fused_ready_since[n] for n in members)
             for start in range(0, len(members), slots):
                 if len(members) - start < slots and not idle and waited < _FUSED_WAIT_S:
+                    if diag is not None:
+                        diag["held"] += len(members) - start
                     break
                 gpu_id = self.scheduler.reserve_gpu(
                     gpu_bytes,
@@ -1059,7 +1205,24 @@ class NodeExecutor:
                     force=not self._job_units,
                 )
                 if gpu_id is None:
+                    if diag is not None:
+                        diag["stop"] = {
+                            "reason": "reserve_failed",
+                            "width": width,
+                            "need_gb": gpu_bytes / 2**30,
+                            "waiting_in_group": len(members) - start,
+                        }
                     return
+                if diag is not None:
+                    diag["submitted"].append(
+                        {
+                            "gpu": gpu_id,
+                            "width": width,
+                            "n": min(slots, len(members) - start),
+                            "slots": slots,
+                            "reserved_gb": gpu_bytes / 2**30,
+                        }
+                    )
                 batch = members[start : start + slots]
                 items, retained = [], []
                 for node_id in batch:
@@ -1086,6 +1249,9 @@ class NodeExecutor:
     def _submit_split_jobs(self) -> None:
         while self._split_pending and self._pool.has_idle_worker:
             index, (payload, uses_gpu) = self._split_pending[0]
+            cpu_bytes = self._split_cpu_bytes(index)
+            if not self.scheduler.can_reserve_external_cpu(cpu_bytes):
+                return
             gpu_id = None
             if uses_gpu and self.scheduler.gpu_devices:
                 gpu_id = self.scheduler.reserve_gpu(
@@ -1098,10 +1264,16 @@ class NodeExecutor:
             if gpu_id is None and not self._pool.has_idle_worker_for(None, True):
                 return
             self._split_pending.pop(0)
+            self.scheduler.reserve_external_cpu(f"split_{index}", cpu_bytes)
             job_id = self._pool.submit(
                 "split_dags", payload, gpu_id=gpu_id, allow_gpu_worker_for_cpu=True
             )
             self._job_units[job_id] = _SplitUnit(index, gpu_id)
+
+    def _split_cpu_bytes(self, index: int) -> int:
+        if index < len(self._split_job_memory):
+            return int(self._split_job_memory[index] or 0)
+        return 0
 
     def _fill_pipeline(self) -> None:
         if not self._pool.has_idle_worker:
@@ -1126,7 +1298,15 @@ class NodeExecutor:
                 gpu_id,
                 allow_gpu_worker_for_cpu=allow_gpu_worker_for_cpu,
             ):
-                continue
+                if gpu_id is None or isinstance(entry, list):
+                    continue
+                if (
+                    self.scheduler.rebind_gpu(
+                        entry, lambda g: self._pool.has_idle_worker_for(g)
+                    )
+                    is None
+                ):
+                    continue
             if isinstance(entry, list):
                 self._submit_leaf_batch(
                     entry,
@@ -1184,16 +1364,32 @@ class NodeExecutor:
             if isinstance(unit, _TaskBatchUnit):
                 self.scheduler.release_gpu(unit.gpu_id, unit.gpu_bytes)
             if isinstance(unit, _SplitUnit):
+                split_key = f"split_{unit.index}"
+                self.scheduler.release_external_cpu(split_key)
                 if unit.gpu_id is not None:
                     self.scheduler.release_gpu(unit.gpu_id, _FUSED_CONTEXT_BYTES)
                 if jr.ok:
                     value = jr.value
                     self._record_stats(
-                        f"split_{unit.index}",
+                        split_key,
                         value["pid"],
                         value["start_time"],
                         value["end_time"],
                     )
+                    measurement = value.get("memory")
+                    if self.enable_checkpointing:
+                        self._checkpoint_memory_usage(
+                            split_key,
+                            measurement.increment_bytes if measurement else -1,
+                            -1,
+                            "split_dags",
+                            None,
+                            measurement=measurement,
+                            estimated_resources=(
+                                self._split_cpu_bytes(unit.index),
+                                0,
+                            ),
+                        )
                     self._split_results[unit.index] = value["results"]
                 else:
                     self._split_results[unit.index] = jr.error or "worker failure"
@@ -1397,7 +1593,10 @@ class NodeExecutor:
         actual_stats: Optional[RepresentationStats],
         measurement: Optional[MemoryMeasurement] = None,
         estimated_stats: Optional[RepresentationStats] = None,
+        estimated_resources: Optional[tuple] = None,
     ):
+        if estimated_resources is None:
+            estimated_resources = self.scheduler.node_resources[node_id]
         if self.enable_checkpointing:
             self._memory_usage_checkpoint.increment(node_id)
         if estimated_stats is None:
@@ -1409,7 +1608,7 @@ class NodeExecutor:
         shape = None
         if DEBUG:
             shape = self._print_node_stats(node_id, actual_stats, operation_name)
-            est_cpu, est_gpu = self.scheduler.node_resources[node_id]
+            est_cpu, est_gpu = estimated_resources
             if peak_bytes is not None and peak_bytes >= 0:
                 if peak_bytes > est_cpu:
                     print(
@@ -1437,8 +1636,8 @@ class NodeExecutor:
                 "cpu_peak_bytes": peak_bytes if peak_bytes is not None else -1,
                 "gpu_peak_bytes": gpu_peak_bytes if gpu_peak_bytes is not None else -1,
                 "operation_name": operation_name,
-                "estimated_cpu_bytes": self.scheduler.node_resources[node_id][0],
-                "estimated_gpu_bytes": self.scheduler.node_resources[node_id][1],
+                "estimated_cpu_bytes": estimated_resources[0],
+                "estimated_gpu_bytes": estimated_resources[1],
                 "shape": shape,
                 "cpu_increment_bytes": (
                     measurement.increment_bytes if measurement else -1
@@ -1453,6 +1652,27 @@ class NodeExecutor:
                     measurement.traced_peak_bytes if measurement else -1
                 ),
                 "rss_delta_bytes": measurement.rss_delta_bytes if measurement else -1,
+                "input_shared_bytes": (
+                    measurement.input_shared_bytes if measurement else -1
+                ),
+                "shared_rss_delta_bytes": (
+                    measurement.shared_rss_delta_bytes if measurement else -1
+                ),
+                "output_shm_bytes": (
+                    measurement.output_shm_bytes if measurement else -1
+                ),
+                "pid": measurement.pid if measurement else -1,
+                "t_start_unix": measurement.t_start_unix if measurement else -1.0,
+                "t_end_unix": measurement.t_end_unix if measurement else -1.0,
+                "peak_abs_rss_bytes": (
+                    measurement.peak_abs_rss_bytes if measurement else -1
+                ),
+                "baseline_private_rss_bytes": (
+                    measurement.baseline_private_rss_bytes if measurement else -1
+                ),
+                "peak_private_rss_bytes": (
+                    measurement.peak_private_rss_bytes if measurement else -1
+                ),
                 "num_instances": getattr(actual_stats, "num_instances", None),
                 "output_shape": getattr(actual_stats, "output_shape", None),
                 "estimated_output_shape": getattr(
@@ -1607,6 +1827,7 @@ class NodeExecutor:
                 "cpu_fallback_nodes": len(
                     getattr(self.scheduler, "cpu_fallback_nodes", []) or []
                 ),
+                "gpu_rebinds": getattr(self.scheduler, "gpu_rebinds", 0),
                 "planned_task_nodes": len(getattr(self.scheduler, "roots", ()) or ()),
                 "completed_task_nodes": self._eval_counter,
                 "exclusive_memory_nodes": len(

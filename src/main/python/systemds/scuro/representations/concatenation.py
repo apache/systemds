@@ -27,7 +27,10 @@ from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.utils import pad_sequences
 
 from systemds.scuro.representations.fusion import Fusion
-from systemds.scuro.representations.representation import RepresentationStats
+from systemds.scuro.representations.representation import (
+    RepresentationStats,
+    stats_itemsize,
+)
 
 from systemds.scuro.drsearch.operator_registry import register_fusion_operator
 
@@ -164,6 +167,25 @@ class Concatenation(Fusion):
         stats_list = self._as_stats_list(input_stats)
         input_bytes = sum(self._stats_bytes(s) for s in stats_list)
         output_bytes = self._stats_bytes(self.get_output_stats(input_stats))
+
+        if self.preserve_leading_axis:
+            num_windows = self.get_output_stats(input_stats).output_shape[0]
+            padded_bytes = 0
+            for stats in stats_list:
+                windows, features = self._flatten_feature_shape(
+                    tuple(stats.output_shape)
+                )
+                if windows < num_windows:
+                    padded_bytes += (
+                        int(stats.num_instances)
+                        * int(num_windows)
+                        * int(features)
+                        * stats_itemsize(stats)
+                    )
+            cpu_peak = (
+                int((input_bytes + padded_bytes + output_bytes) * 1.1) + 8 * 1024 * 1024
+            )
+            return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}
 
         raw_bytes = self._raw_input_bytes(input_stats)
         cpu_peak = (

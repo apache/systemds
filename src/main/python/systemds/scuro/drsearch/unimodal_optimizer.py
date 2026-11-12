@@ -37,6 +37,8 @@ from systemds.scuro.drsearch.node_executor import (
     ResultEntry,
     decoded_lazy_leaves,
 )
+from systemds.scuro.drsearch.node_scheduler import MemoryAwareNodeScheduler
+from systemds.scuro.utils.memory_utility import gpu_memory_info, release_freed_heap
 from systemds.scuro.drsearch.split_aware_evaluator import (
     SplitAwareDAGEvaluator,
     dag_requires_fitting,
@@ -105,6 +107,14 @@ def _task_uses_gpu(task) -> bool:
     return str(getattr(device, "type", device) or "").startswith("cuda")
 
 
+def _trains_representation(dags) -> bool:
+    return any(
+        _fit_requirement(node) is FitRequirement.SUPERVISED
+        for dag in dags
+        for node in dag.nodes
+    )
+
+
 def evaluate_fitted_dags(dags, modality, tasks) -> list:
     budget_gb = float(os.environ.get("SCURO_FITTED_DAG_CACHE_GB", "4"))
     store = TrialResultCache(int(budget_gb * 1024**3), min_compute_seconds=0)
@@ -113,6 +123,7 @@ def evaluate_fitted_dags(dags, modality, tasks) -> list:
         eval_dag, eval_modality, encode_time = UnimodalOptimizer._encode_below_lstm(
             dag, modality
         )
+        release_freed_heap()
         supervised = any(
             _fit_requirement(node) is FitRequirement.SUPERVISED
             for node in eval_dag.nodes
@@ -139,6 +150,153 @@ def evaluate_fitted_dags(dags, modality, tasks) -> list:
             timing = dict(getattr(task, "last_run_timing", {}))
             results.append((dag.dag_id, task_idx, evaluation, timing))
     return results
+
+
+_FIT_PHASE_FACTOR = 6
+_ENCODE_PHASE_MARGIN = 1.2
+_GPU_USABLE_FRACTION = float(os.environ.get("SCURO_GPU_USABLE_FRACTION", "0.9"))
+
+
+def _fitted_dag_cache_bytes() -> int:
+    return int(float(os.environ.get("SCURO_FITTED_DAG_CACHE_GB", "4")) * 1024**3)
+
+
+def _encodes_below_lstm(dag: RepresentationDag) -> bool:
+    root = dag.get_node_by_id(dag.root_node_id)
+    if root.operation is not LSTM:
+        return False
+    return not dag_requires_fitting(RepresentationDag(dag.nodes, root.inputs[0]))
+
+
+def estimate_fitted_dag_memory(
+    dag: RepresentationDag,
+    modality,
+    tasks,
+    task_dags: List[RepresentationDag],
+) -> Dict[str, int]:
+    scheduler = MemoryAwareNodeScheduler(task_dags, [modality], tasks, float("inf"))
+    resources = scheduler.node_resources
+    leaves = scheduler.leaves
+    tasks_ids = scheduler.roots
+    leaf_bytes = sum(int(resources[leaf][0]) for leaf in leaves)
+
+    def output_bytes(node_id: str) -> int:
+        if node_id in leaves:
+            return 0
+        return MemoryAwareNodeScheduler._stats_to_bytes(
+            scheduler.node_stats.get(node_id)
+        )
+
+    task_peak = max((int(resources[n][0]) for n in tasks_ids), default=0)
+    violation = _fitted_input_violation(scheduler)
+    gpu_peak = max(
+        (int(resources[n][1]) for n in scheduler.mapping if n not in leaves),
+        default=0,
+    )
+
+    root = dag.get_node_by_id(dag.root_node_id)
+    if _encodes_below_lstm(dag):
+
+        def chain_peak(node_id: str) -> tuple:
+            node = scheduler.mapping[node_id]
+            if not node.inputs:
+                return 0, 0
+            held, peak = 0, 0
+            for input_id in node.inputs:
+                input_peak, input_out = chain_peak(input_id)
+                peak = max(peak, held + input_peak)
+                held += input_out
+            out = output_bytes(node_id)
+            peak = max(peak, int(resources[node_id][0]), held + out)
+            return peak, out
+
+        encode_peak, encoded = chain_peak(root.inputs[0])
+        encode_peak = int(_ENCODE_PHASE_MARGIN * encode_peak)
+        lstm_own = max(0, int(resources[root.node_id][0]) - encoded)
+        fit_peak = _FIT_PHASE_FACTOR * encoded + lstm_own + task_peak
+        cpu_peak = leaf_bytes + max(encode_peak, fit_peak)
+        return {
+            "cpu_peak_bytes": int(cpu_peak),
+            "gpu_peak_bytes": int(gpu_peak),
+            "encode_peak_bytes": int(encode_peak),
+            "fit_peak_bytes": int(fit_peak),
+            "input_violation": violation,
+        }
+    else:
+        representation_ids = [
+            n for n in scheduler.mapping if n not in leaves and n not in tasks_ids
+        ]
+        live = sum(output_bytes(n) for n in representation_ids)
+        transient = max(
+            (int(resources[n][0]) for n in scheduler.mapping if n not in leaves),
+            default=0,
+        )
+        fit_input = 0
+        for node_id in representation_ids:
+            node = scheduler.mapping[node_id]
+            if _fit_requirement(node) is FitRequirement.NONE:
+                continue
+            fit_input += 2 * sum(
+                output_bytes(p) if p not in leaves else int(resources[p][0])
+                for p in node.inputs
+            )
+        cpu_peak = leaf_bytes + live + transient + fit_input
+    return {
+        "cpu_peak_bytes": int(cpu_peak),
+        "gpu_peak_bytes": int(gpu_peak),
+        "input_violation": violation,
+    }
+
+
+def _fitted_input_violation(scheduler) -> Optional[str]:
+    for node_id in scheduler.topo_order:
+        node = scheduler.mapping[node_id]
+        if not node.inputs or _fit_requirement(node) is FitRequirement.NONE:
+            continue
+        operation = node.operation(params=node.parameters)
+        check = getattr(operation, "input_size_violation", None)
+        if not callable(check):
+            continue
+        stats = [scheduler.node_stats.get(input_id) for input_id in node.inputs]
+        if any(s is None for s in stats):
+            continue
+        reason = check(stats[0] if len(stats) == 1 else stats)
+        if reason:
+            return reason
+    return None
+
+
+def _drop_infeasible_fitted_dags(dags, memory, modality) -> list:
+    feasible = []
+    for dag in dags:
+        reason = memory[dag.dag_id].get("input_violation")
+        if reason:
+            print(
+                f"[unimodal] WARNING: modality {modality.modality_id} skips fitted "
+                f"DAG {dag.dag_id}: {reason}",
+                flush=True,
+            )
+            continue
+        feasible.append(dag)
+    dags = feasible
+    largest = max((int(info["total_b"]) for info in gpu_memory_info()), default=0)
+    if largest <= 0:
+        return list(dags)
+    usable = int(largest * _GPU_USABLE_FRACTION)
+    kept = []
+    for dag in dags:
+        need = memory[dag.dag_id]["gpu_peak_bytes"]
+        if need > usable:
+            print(
+                f"[unimodal] WARNING: modality {modality.modality_id} skips fitted "
+                f"DAG {dag.dag_id}: its model needs about {need / 1024**3:.1f} GB "
+                f"of GPU memory per training batch, more than the usable "
+                f"{usable / 1024**3:.1f} GB of the largest GPU",
+                flush=True,
+            )
+            continue
+        kept.append(dag)
+    return kept
 
 
 class UnimodalOptimizer:
@@ -464,14 +622,30 @@ class UnimodalOptimizer:
         task_results = []
         statistics = {"worker_stats": {}, "node_stats": {}, "reuse": {}}
         split_jobs = []
+        split_job_memory = []
         if fitted_dags:
             SplitAwareDAGEvaluator.materialize(modality)
+            memory = {
+                dag.dag_id: estimate_fitted_dag_memory(
+                    dag, modality, self.tasks, self._expand_dags_with_task_roots([dag])
+                )
+                for dag in fitted_dags
+            }
             groups = {}
-            for dag in fitted_dags:
+            for dag in _drop_infeasible_fitted_dags(fitted_dags, memory, modality):
                 groups.setdefault(_lowest_fitted_key(dag), []).append(dag)
-            uses_gpu = any(_task_uses_gpu(task) for task in self.tasks)
+            tasks_use_gpu = any(_task_uses_gpu(task) for task in self.tasks)
             split_jobs = [
-                ((group, modality, self.tasks), uses_gpu) for group in groups.values()
+                (
+                    (group, modality, self.tasks),
+                    tasks_use_gpu or _trains_representation(group),
+                )
+                for group in groups.values()
+            ]
+            split_job_memory = [
+                max(memory[dag.dag_id]["cpu_peak_bytes"] for dag in group)
+                + _fitted_dag_cache_bytes()
+                for group in groups.values()
             ]
 
         split_results = []
@@ -486,6 +660,7 @@ class UnimodalOptimizer:
                 worker_pool=self._persistent_worker_pool,
                 search_start=self._search_start,
                 split_jobs=split_jobs,
+                split_job_memory=split_job_memory,
             )
             if self._reuse_worker_pool and self._persistent_worker_pool is None:
                 self._persistent_worker_pool = node_executor.detach_worker_pool()
@@ -580,6 +755,8 @@ class UnimodalOptimizer:
     def _effective_window_length(context_operator, window_size, num_window, signal_len):
         if context_operator.granularity_kind == "count":
             return max(1, int(math.ceil(signal_len / max(1, int(num_window)))))
+        if context_operator.granularity_kind == "fixed":
+            return max(1, int(signal_len))
         return max(1, int(window_size))
 
     def _build_execution_dags_for_modality(
@@ -982,7 +1159,12 @@ class UnimodalOptimizer:
             return []
         dags = []
         for context_operator in context_operators:
-            for window_size, num_window in zip(window_lengths, num_windows):
+            granularities = (
+                [(None, None)]
+                if getattr(context_operator, "granularity_kind", None) == "fixed"
+                else list(zip(window_lengths, num_windows))
+            )
+            for window_size, num_window in granularities:
                 window_node_ids = []
                 for agg in aggregators:
                     aggregation_instance = agg()
@@ -1043,6 +1225,8 @@ class UnimodalOptimizer:
     def _apply_granularity(context_operator_instance, window_size, num_window):
         parameter = getattr(context_operator_instance, "granularity_parameter", None)
         kind = getattr(context_operator_instance, "granularity_kind", None)
+        if kind == "fixed":
+            return
         if parameter is None or kind not in ("length", "count"):
             raise ValueError(
                 f"{type(context_operator_instance).__name__} is registered as a "

@@ -18,6 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import ctypes
 import os
 import re
 import resource
@@ -221,9 +222,47 @@ def log_memory(operation_name: str, device: torch.device):
     )
 
 
+def _shared_container_bytes(data) -> Optional[int]:
+    if getattr(data, "shm_name", None) is None:
+        return None
+    payload = getattr(data, "payload_nbytes", None)  # SharedStringList
+    if payload is not None:
+        return int(payload)
+    dtype = getattr(data, "_dtype", None)
+    if dtype is None:
+        return 0
+    total_elems = getattr(data, "total_elems", None)  # Shared(Grouped)ArrayList
+    if total_elems is None:
+        total_elems = int(np.prod(getattr(data, "shape", ())))  # SharedNDArray
+    return int(total_elems) * int(np.dtype(dtype).itemsize)
+
+
+def split_numpy_like_bytes(data) -> Tuple[int, int]:
+    if data is None:
+        return 0, 0
+    shared = _shared_container_bytes(data)
+    if shared is not None:
+        return 0, shared
+    if isinstance(data, dict):
+        values = data.values()
+    elif isinstance(data, (list, tuple)):
+        values = data
+    else:
+        return estimate_numpy_like_bytes(data), 0
+    private = shared = 0
+    for v in values:
+        p, s = split_numpy_like_bytes(v)
+        private += p
+        shared += s
+    return int(private), int(shared)
+
+
 def estimate_numpy_like_bytes(data) -> int:
     if data is None:
         return 0
+    shared = _shared_container_bytes(data)
+    if shared is not None:
+        return shared
     if isinstance(data, np.ndarray):
         return int(data.nbytes)
     if isinstance(data, torch.Tensor):
@@ -248,6 +287,14 @@ def estimate_modality_bytes(modality) -> int:
     return int(data_bytes + metadata_bytes)
 
 
+def split_modality_bytes(modality) -> Tuple[int, int]:
+    if modality is None:
+        return 0, 0
+    data_p, data_s = split_numpy_like_bytes(getattr(modality, "data", None))
+    meta_p, meta_s = split_numpy_like_bytes(getattr(modality, "metadata", None))
+    return int(data_p + meta_p), int(data_s + meta_s)
+
+
 def is_cuda_oom(exc: BaseException) -> bool:
     if isinstance(exc, torch.cuda.OutOfMemoryError):
         return True
@@ -270,6 +317,14 @@ def cuda_oom_peak_bytes(exc: BaseException) -> int:
     return int(peak)
 
 
+def release_freed_heap() -> None:
+    gc.collect()
+    try:
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except (OSError, AttributeError):
+        pass
+
+
 def cleanup_gpu(gpu_id: Optional[int]) -> None:
     if gpu_id is None or not torch.cuda.is_available():
         return
@@ -288,6 +343,14 @@ class MemoryMeasurement:
     traced_peak_bytes: int
     rss_delta_bytes: int
     peak_abs_rss_bytes: int
+    input_shared_bytes: int = 0
+    shared_rss_delta_bytes: int = 0
+    output_shm_bytes: int = 0
+    pid: int = -1
+    t_start_unix: float = -1.0
+    t_end_unix: float = -1.0
+    baseline_private_rss_bytes: int = -1
+    peak_private_rss_bytes: int = -1
 
 
 def merge_memory_measurements(
@@ -303,23 +366,44 @@ def merge_memory_measurements(
         traced_peak_bytes=max(m.traced_peak_bytes for m in present),
         rss_delta_bytes=max(m.rss_delta_bytes for m in present),
         peak_abs_rss_bytes=max(m.peak_abs_rss_bytes for m in present),
+        input_shared_bytes=max(m.input_shared_bytes for m in present),
+        shared_rss_delta_bytes=max(m.shared_rss_delta_bytes for m in present),
+        output_shm_bytes=max(m.output_shm_bytes for m in present),
+        pid=present[0].pid,
+        t_start_unix=min(m.t_start_unix for m in present),
+        t_end_unix=max(m.t_end_unix for m in present),
+        baseline_private_rss_bytes=min(m.baseline_private_rss_bytes for m in present),
+        peak_private_rss_bytes=max(m.peak_private_rss_bytes for m in present),
     )
 
 
 def measure_memory_during(
-    fn, *args, input_resident_bytes: int = 0, sample_s: float = 0.01, **kwargs
+    fn,
+    *args,
+    input_resident_bytes: int = 0,
+    input_shared_bytes: int = 0,
+    sample_s: float = 0.01,
+    **kwargs,
 ):
     proc = psutil.Process(os.getpid())
-    baseline_rss = proc.memory_info().rss
-    peak_rss = baseline_rss
+
+    def _sample():
+        mi = proc.memory_info()
+        shared = getattr(mi, "shared", 0)
+        return int(mi.rss), int(mi.rss - shared), int(shared)
+
+    t_start_unix = time.time()
+    baseline_rss, baseline_priv, baseline_shared = _sample()
+    peak_rss, peak_priv, peak_shared = baseline_rss, baseline_priv, baseline_shared
     stop = threading.Event()
 
     def sampler():
-        nonlocal peak_rss
+        nonlocal peak_rss, peak_priv, peak_shared
         while not stop.is_set():
-            rss = proc.memory_info().rss
-            if rss > peak_rss:
-                peak_rss = rss
+            rss, priv, shared = _sample()
+            peak_rss = max(peak_rss, rss)
+            peak_priv = max(peak_priv, priv)
+            peak_shared = max(peak_shared, shared)
             time.sleep(sample_s)
 
     owns_tracing = not tracemalloc.is_tracing()
@@ -341,7 +425,7 @@ def measure_memory_during(
             tracemalloc.stop()
 
     traced_increment = max(int(traced_peak) - int(traced_baseline), 0)
-    rss_delta = max(int(peak_rss) - int(baseline_rss), 0)
+    rss_delta = max(int(peak_priv) - int(baseline_priv), 0)
     increment = max(traced_increment, rss_delta)
 
     return out, MemoryMeasurement(
@@ -351,4 +435,11 @@ def measure_memory_during(
         traced_peak_bytes=traced_increment,
         rss_delta_bytes=rss_delta,
         peak_abs_rss_bytes=int(peak_rss),
+        input_shared_bytes=int(input_shared_bytes),
+        shared_rss_delta_bytes=max(int(peak_shared) - int(baseline_shared), 0),
+        pid=os.getpid(),
+        t_start_unix=t_start_unix,
+        t_end_unix=time.time(),
+        baseline_private_rss_bytes=int(baseline_priv),
+        peak_private_rss_bytes=int(peak_priv),
     )

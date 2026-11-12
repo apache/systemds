@@ -52,6 +52,9 @@ from tests.scuro.data_generator import (
 )
 
 from systemds.scuro.modality.type import ModalityType
+from systemds.scuro.drsearch.hyperparameter_tuner import HyperparameterTuner
+from systemds.scuro.drsearch.objectives import INFERENCE_TIME, dominates
+from systemds.scuro.drsearch.representation_dag import CSEAwareDAGBuilder
 from systemds.scuro.drsearch.hyperparameter_tuner import (
     HyperparamResult,
     HyperparamResults,

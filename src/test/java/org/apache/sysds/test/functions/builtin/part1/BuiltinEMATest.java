@@ -21,11 +21,15 @@ package org.apache.sysds.test.functions.builtin.part1;
 
 import static org.junit.Assert.assertTrue;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.TreeMap;
+
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
-import org.apache.sysds.runtime.io.FrameWriterFactory;
+import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -40,6 +44,10 @@ public class BuiltinEMATest extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinEMATest.class.getSimpleName() + "/";
 	private static final double e = 0.00001;
+
+	private Double[] DATA = new Double[]{41.7275, 24.0418, 32.3281, 37.3287, 46.2132, 29.3463, 36.4829, 42.9777, 48.9015,
+		31.1802, 37.7179, 40.4202, 51.2069, 31.8872, 40.9783, 43.7725, 55.5586, 33.8509, 42.0764, 45.6423, 59.7668,
+		35.1919, 44.3197, 47.9137};
 
 	@BeforeClass
 	public static void init() {
@@ -56,7 +64,7 @@ public class BuiltinEMATest extends AutomatedTestBase {
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"}));
+		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"B"}));
 		if (TEST_CACHE_ENABLED) {
 			setOutAndExpectedDeletionDisabled(true);
 		}
@@ -119,62 +127,48 @@ public class BuiltinEMATest extends AutomatedTestBase {
 			461.,499.016129,535.,622.,606.,508.,461.,390.,432.};
 		Double[][] values = new Double[][]{data};
 		FrameBlock f = generateBlock(data.length, 1, values);
-		runTest(f, ExecType.CP,  100, "triple", 4, Double.NaN, Double.NaN, Double.NaN,
+		runTest(f, ExecType.CP,  100, "triple", 4, 0.5, Double.NaN, Double.NaN,
 			na_ma_ref, 200);
 	}
 
 	@Test
-	public void checkSingleRData() {
-		Double[] data= new Double[]{41.7275, 24.0418, 32.3281, 37.3287, 46.2132, 29.3463, 36.4829, 42.9777, 48.9015,
-			31.1802, 37.7179, 40.4202, 51.2069, 31.8872, 40.9783, 43.7725, 55.5586, 33.8509, 42.0764, 45.6423, 59.7668,
-			35.1919, 44.3197, 47.9137};
-		Double[] na_ma_ref = new Double[]{41.7275, 32.88465, 32.606375, 34.9675375, 40.590368749999996, 34.968334375,
-			35.7256171875, 39.35165859375, 44.126579296875, 37.653389648437496, 37.68564482421875, 39.052922412109375,
-			45.129911206054686, 38.50855560302735, 39.743427801513675, 41.757963900756835, 48.65828195037842, 41.25459097518921,
-			41.665495487594605, 43.6538977437973, 51.71034887189865, 43.451124435949325, 43.88541221797466, 45.899556108987326};
-		Double[][] values = new Double[][]{data};
-		FrameBlock f = generateBlock(data.length, 1, values);
-		runTest(f, ExecType.CP,  100, "single", 4, 0.5, Double.NaN, Double.NaN, na_ma_ref, e);
+	public void testSimpleExponentialSmoothing() {
+		Double[][] values = new Double[][]{DATA};
+		FrameBlock f = generateBlock(DATA.length, 1, values);
+		runTest(f, ExecType.CP,  100, "single", 4, 0.5, Double.NaN, Double.NaN, null, e);
 	}
 
 	@Test
-	public void checkDoubleRData() {
-		Double[] data= new Double[]{41.7275, 24.0418, 32.3281, 37.3287, 46.2132, 29.3463, 36.4829, 42.9777, 48.9015,
-			31.1802, 37.7179, 40.4202, 51.2069, 31.8872, 40.9783, 43.7725, 55.5586, 33.8509, 42.0764, 45.6423, 59.7668,
-			35.1919, 44.3197, 47.9137};
-		Double[] na_ma_ref = new Double[]{41.7275, 6.356099999999998, 8.149399999999998, 18.841175, 35.47231874999999,
-			33.82293593749999, 37.231535546874994, 43.619776464843746, 51.09622780761718, 40.99479652709961, 38.39370675506592,
-			38.95093518028259, 47.68689059782028, 38.44509565713406, 39.003049272507425, 41.87148876206725, 52.620536316330345,
-			42.448801014379306, 41.38258310980896, 43.697353380071554, 55.93435017018497, 44.57978602269542, 43.40138244327679,
-			45.73726004274828};
-		Double[][] values = new Double[][]{data};
-		FrameBlock f = generateBlock(data.length, 1, values);
-		runTest(f, ExecType.CP,  100, "double", 4, 0.5, 0.5, Double.NaN, na_ma_ref, e);
+	public void testDoubleExponentialSmoothing() {
+		Double[][] values = new Double[][]{DATA};
+		FrameBlock f = generateBlock(DATA.length, 1, values);
+		runTest(f, ExecType.CP,  100, "double", 4, 0.5, 0.5, Double.NaN, null, e);
 	}
 
 	@Test
-	public void checkTripleRData() {
-		Double[] data= new Double[]{41.7275, 24.0418, 32.3281, 37.3287, 46.2132, 29.3463, 36.4829, 42.9777, 48.9015, 31.1802,
-			37.7179, 40.4202, 51.2069, 31.8872, 40.9783, 43.7725, 55.5586, 33.8509, 42.0764, 45.6423, 59.7668, 35.1919,
-			44.3197, 47.9137};
-		Double[] na_ma_ref = new Double[]{41.7275, 24.0418, 32.3281, 37.3287, 43.73937749999999, 28.710109375, 37.62691046875001,
-			42.5309708984375, 52.88580151367188, 33.15671534912109, 38.65758862487794, 42.44805077255249, 48.22574473186493,
-			31.990608629751197, 38.66479375649214, 44.60066332877576, 53.321224908427446, 36.84788508769925, 42.86094393343228,
-			45.86929170959124, 55.2140372941347, 38.72586172952057, 45.025358876239984, 48.23407483458373};
-		Double[][] values = new Double[][]{data};
-		FrameBlock f = generateBlock(data.length, 1, values);
-		runTest(f, ExecType.CP,  100, "triple", 4, 0.5, 0.5, 0.5, na_ma_ref, e);
+	public void testTripleExponentialSmoothing() {
+		Double[][] values = new Double[][]{DATA};
+		FrameBlock f = generateBlock(DATA.length, 1, values);
+		runTest(f, ExecType.CP,  100, "triple", 4, 0.5, 0.5, 0.5, null, e);
+	}
+
+	@Test
+	public void testTripleExponentialSmoothingOddFreq() {
+		Double[][] values = new Double[][]{DATA};
+		FrameBlock f = generateBlock(DATA.length, 1, values);
+		runTest(f, ExecType.CP,  100, "triple", 7, 0.5, 0.5, 0.5, null, e);
 	}
 
 	private static double calcRMSE(Double[] list1, Double[] list2) {
 		double sum = 0;
-		for(int i =0; i< list1.length; i++)
-			sum += Math.pow(list1[i] - list2[i], 2);
-		return Math.sqrt(sum / list1.length);
+		int minLen = Math.min(list1.length, list2.length);
+		for(int counter = 0; counter < minLen; counter++)
+			sum += Math.pow(list1[counter] - list2[counter], 2);
+		return Math.sqrt(sum / minLen);
 	}
 
 	private void runTest(FrameBlock test_frame, ExecType et, Integer search_iterations, String mode, Integer freq,
-		Double alpha, Double beta, Double gamma, Double[] reference, double max_error)
+		double alpha, double beta, double gamma, Double[] reference, double max_error)
 	{
 		Types.ExecMode platformOld = setExecMode(et);
 
@@ -183,13 +177,17 @@ public class BuiltinEMATest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-nvargs", "F=" + input("F"), "O=" + output("O"), "search_iterations=" +
-				search_iterations, "mode=" + mode, "freq=" + freq, "alpha=" + alpha, "beta=" + beta, "gamma=" + gamma};
-
-			FrameWriterFactory.createFrameWriter(Types.FileFormat.CSV).
-					writeFrameToHDFS(test_frame, input("F"), test_frame.getNumRows(), test_frame.getNumColumns());
+			programArgs = new String[] {"-nvargs", "F=" + input("F"), "O=" + output("O"),
+				"search_iterations=" + search_iterations, "mode=" + mode, "freq=" + freq,
+				"alpha=" + alpha, "beta=" + beta, "gamma=" + gamma};
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = getRCmd(inputDir(), expectedDir(), mode, freq.toString(), Double.toString(alpha),
+				Double.toString(beta), Double.toString(gamma));
+			Types.ValueType[] schema = new Types.ValueType[]{Types.ValueType.STRING};
+			writeInputFrameWithMTD("F", test_frame, true, schema, Types.FileFormat.CSV);
 
 			runTest(true, false, null, -1);
+			runRScript(true);
 
 			FrameBlock outputFrame = readDMLFrameFromHDFS("O", Types.FileFormat.CSV);
 			Array<?> values =  outputFrame.getColumn(0);
@@ -197,8 +195,16 @@ public class BuiltinEMATest extends AutomatedTestBase {
 			for(int i = 0; i < values.size(); i++)
 				data[i] = Double.valueOf(values.get(i).toString());
 
+			if(reference == null) {
+				HashMap<CellIndex, Double> rfile = readRMatrixFromExpectedDir("O");
+				TreeMap<Integer, Double> treemap = new TreeMap<>();
+				for(CellIndex ci : rfile.keySet())
+					treemap.put(ci.row, rfile.get(ci));
+				reference = treemap.values().toArray(Double[]::new);
+			}
 
-			assertTrue(calcRMSE(data, reference) <= max_error);
+			double rmse = calcRMSE(data, reference);
+			assertTrue(rmse <= max_error);
 		}
 		catch (Exception ex) {
 			ex.printStackTrace();

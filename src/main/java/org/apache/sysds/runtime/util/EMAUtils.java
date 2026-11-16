@@ -73,7 +73,6 @@ public class EMAUtils {
 
 	public static FrameBlock exponentialMovingAverageImputation(FrameBlock block, int search_iterations, String mode, int freq, Double alpha, Double beta, Double gamma) {
 		int cols = block.getNumColumns();
-		int rows = block.getNumRows();
 
 		ArrayList<Double[]> data_list = new ArrayList<>();
 
@@ -112,8 +111,8 @@ public class EMAUtils {
 			}
 		}
 
-		Double[][] values = new Double[][]{};
-		FrameBlock new_block = generateBlock(rows, cols, data_list.toArray(values));
+		Double[][] values = data_list.toArray(Double[][]::new);
+		FrameBlock new_block = generateBlock(values[0].length, values.length, values);
 		return new_block;
 	}
 
@@ -268,6 +267,9 @@ public class EMAUtils {
 			}
 		}
 
+		pred.remove(0); // removing the first two element again which were copied from the input data
+		pred.remove(0);
+
 		// Calculation of RMSE
 		double sum = .0;
 		for (int i = 0; i < not_missing.size(); i++) {
@@ -280,7 +282,7 @@ public class EMAUtils {
 	}
 
 	public static Container triple_exponential_smoothing(Double[] data, Double alpha, Double beta,
-														 Double gamma, Integer freq) {
+			Double gamma, Integer freq) {
 
 		// Exception handling
 		validateRange(alpha, beta, gamma);
@@ -352,7 +354,7 @@ public class EMAUtils {
 			season[(i + (freq / 2)) % freq] = combined;
 		}
 
-		// Preparing the data for linear regression, in order to  initialize level
+		// Preparing the data for linear regression, in order to initialize level
 		double sum = 0;
 		for (int i = 0; i < season.length; i++) {
 			sum += season[i];
@@ -426,6 +428,10 @@ public class EMAUtils {
 				not_missing_pred.add(pred.get(i));
 				n_size++;
 			}
+		}
+
+		for(int i = 0; i < freq; i++) {
+			pred.remove(0);
 		}
 
 		// Calculate the RMSE

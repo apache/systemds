@@ -39,6 +39,13 @@ if(mode == "double") {
   }
 }
 
+if(is.na(alpha))
+  alpha = FALSE;
+if(is.na(beta))
+  beta = FALSE;
+if(is.na(gamma))
+  gamma = FALSE;
+
 ema_model = stats::HoltWinters(x=ts(X, frequency=freq), alpha=alpha, beta=beta, gamma=gamma);
 R = as.numeric(ema_model$fitted[, "xhat"]);
 writeMM(as(R, "CsparseMatrix"), paste(output_path, "O", sep=""));

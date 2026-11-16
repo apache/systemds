@@ -79,21 +79,28 @@ public class EMAUtils {
 		for (int j = 0; j < cols; j++) {
 			String[] values = (String[]) block.getColumnData(j);
 			Double[] data = new Double[values.length];
-			for (int i = 0; i< values.length; i++) data[i] = Double.valueOf(values[i]);
+			for(int i = 0; i< values.length; i++)
+				data[i] = Double.valueOf(values[i]);
 			Container best_cont = new Container(new Double[]{.0}, 1000);
 
 			Random rand = new Random();
 			Container lst = null;
 
+			boolean alphaIsNan = Double.isNaN(alpha);
+			boolean betaIsNan = Double.isNaN(beta);
+			boolean gammaIsNan = Double.isNaN(gamma);
+			if(!alphaIsNan && !betaIsNan && !gammaIsNan)
+				search_iterations = 1;
+
 			for (int i = 0; i < search_iterations; i++) {
-				if (Double.isNaN(alpha))
+				if(alphaIsNan)
 					alpha = rand.nextDouble();
-				if (Double.isNaN(beta))
+				if(betaIsNan)
 					beta = rand.nextDouble();
-				if (Double.isNaN(gamma))
+				if(gammaIsNan)
 					gamma = rand.nextDouble();
 
-				if (mode.equals("single")) {
+				if(mode.equals("single")) {
 					lst = single_exponential_smoothing(data, alpha);
 				} else if (mode.equals("double")) {
 					lst = double_exponential_smoothing(data, alpha, beta);
@@ -103,7 +110,7 @@ public class EMAUtils {
 
 				if(lst == null)
 					throw new DMLRuntimeException("invalid null pointer");
-				else if (i == 0 || lst.rsme < best_cont.rsme) {
+				else if(i == 0 || lst.rsme < best_cont.rsme) {
 					best_cont = lst;
 					data_list.add(best_cont.values);
 				}

@@ -65,6 +65,17 @@ public class EstimatorBasicWorst extends SparsityEstimator
 		return estimIntern(m.getDataCharacteristics(), null, op).getSparsity();
 	}
 
+	protected void obtainSparsityInformation(MMNode node) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public MMNode getInputMMNode(MatrixBlock mb) {
+		MMNode node = new MMNode(mb);
+		obtainSparsityInformation(node);
+		return node;
+	}
+
 	private DataCharacteristics estimIntern(DataCharacteristics mc1, DataCharacteristics mc2, OpCode op) {
 		switch (op) {
 			case MM:

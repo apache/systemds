@@ -57,6 +57,26 @@ public class EstimatorBasicAvg extends SparsityEstimator
 		return estimIntern(m.getDataCharacteristics(), null, op).getSparsity();
 	}
 
+	protected void obtainSparsityInformation(MMNode node) {
+		MatrixBlock mb = node.getData();
+		if(mb != null && mb.getDataCharacteristics().getSparsity() == -1) {
+			if(mb.getNonZeros() != 0) {
+				mb.getDataCharacteristics().setNonZeros(mb.getNonZeros());
+			}
+			else {
+				mb.recomputeNonZeros();
+				mb.getDataCharacteristics().setNonZeros(mb.getNonZeros());
+			}
+		}
+	}
+
+	@Override
+	public MMNode getInputMMNode(MatrixBlock mb) {
+		MMNode node = new MMNode(mb);
+		obtainSparsityInformation(node);
+		return node;
+	}
+
 	private DataCharacteristics estimIntern(DataCharacteristics dc1, DataCharacteristics dc2, OpCode op) {
 		switch (op) {
 			case MM:

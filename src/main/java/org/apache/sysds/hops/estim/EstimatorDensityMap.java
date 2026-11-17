@@ -88,7 +88,14 @@ public class EstimatorDensityMap extends SparsityEstimator
 	public double estim(MatrixBlock m, OpCode op) {
 		return estim(m, null, op);
 	}
-	
+
+	@Override
+	public MMNode getInputMMNode(MatrixBlock mb) {
+		MMNode node = new MMNode(mb);
+		getCachedSynopsis(node);
+		return node;
+	}
+
 	private DensityMap getCachedSynopsis(MMNode node) {
 		if( node == null )
 			return null;

@@ -22,6 +22,7 @@ package org.apache.sysds.hops.estim;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
@@ -105,7 +106,14 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		MatrixHistogram h1 = new MatrixHistogram(m1, _useExtended);
 		return estimIntern(h1, null, op, null);
 	}
-	
+
+	@Override
+	public MMNode getInputMMNode(MatrixBlock mb) {
+		MMNode node = new MMNode(mb);
+		getCachedSynopsis(node);
+		return node;
+	}
+
 	private MatrixHistogram getCachedSynopsis(MMNode node) {
 		if( node == null )
 			return null;
@@ -116,7 +124,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			estim(node, false); //recursively obtain synopsis
 		return (MatrixHistogram) node.getSynopsis();
 	}
-	
+
 	public double estimIntern(MatrixHistogram h1, MatrixHistogram h2, OpCode op, long[] misc) {
 		double msize = (double)h1.getRows()*h1.getCols();
 		switch (op) {
@@ -314,6 +322,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 					}
 				}
 			}
+			in.setNonZeros(IntStream.of(cNnz).sum());
 		}
 		
 		public MatrixHistogram(int[] r, int[] r1e, int[] c, int[] c1e, int rmax, int cmax) {

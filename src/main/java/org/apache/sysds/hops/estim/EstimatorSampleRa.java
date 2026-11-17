@@ -127,7 +127,12 @@ public class EstimatorSampleRa extends SparsityEstimator
 		return OptimizerUtils.getSparsity(
 			m1.getNumRows(), m2.getNumColumns(), nnz);
 	}
-	
+
+	@Override
+	public MMNode getInputMMNode(MatrixBlock mb) {
+		throw new UnsupportedOperationException();
+	}
+
 	private void initHashArrays(int m, int n, int l) {
 		if( h1 == null ) {
 			h1 = new double[m];

@@ -85,7 +85,9 @@ public abstract class SparsityEstimator
 	 * @return sparsity
 	 */
 	public abstract double estim(MatrixBlock m, OpCode op);
-	
+
+	public abstract MMNode getInputMMNode(MatrixBlock mb);
+
 	protected boolean isExactMetadataOp(OpCode op) {
 		return ArrayUtils.contains(EXACT_META_DATA_OPS, op);
 	}

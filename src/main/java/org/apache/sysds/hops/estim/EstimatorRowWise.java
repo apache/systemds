@@ -72,6 +72,13 @@ public class EstimatorRowWise extends SparsityEstimator {
 		return DoubleStream.of(rsOut).average().orElse(0);
 	}
 
+	@Override
+	public MMNode getInputMMNode(MatrixBlock mb) {
+		MMNode node = new MMNode(mb);
+		throw new UnsupportedOperationException("TODO: Implement getCachedSynopsis similar to MatrixHistorgram");
+		// return node;
+	}
+
 	private double[] estimInternChain(MMNode node) {
 		return estimInternChain(node, null, null);
 	}

@@ -38,6 +38,7 @@ import org.apache.sysds.hops.estim.MMNode;
 import org.apache.sysds.hops.estim.SparsityEstimator;
 import org.apache.sysds.hops.estim.SparsityEstimator.OpCode;
 import org.apache.sysds.hops.estim.EstimationUtils.EstimatorType;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.utils.Explain;
 
@@ -323,7 +324,8 @@ public class SparsityOptimizer {
 			// inputMetaAvail &= (currentHop.getNnz() != -1);
 			inputMetaAvail &= ec.containsVariable(currentHop.getName());
 			if(inputMetaAvail) {
-				sketchArray[counter] =_estim.getInputMMNode(ec.getMatrixInput(currentHop.getName()));
+				MatrixObject mo = ec.getMatrixObject(currentHop.getName());
+				sketchArray[counter] =_estim.getInputMMNode(mo.acquireReadAndRelease());
 			}
 			else
 				break;

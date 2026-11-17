@@ -21,7 +21,6 @@ package org.apache.sysds.test.functions.builtin.part1;
 
 import static org.junit.Assert.assertTrue;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.TreeMap;
 

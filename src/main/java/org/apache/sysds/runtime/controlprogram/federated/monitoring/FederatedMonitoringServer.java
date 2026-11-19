@@ -20,6 +20,8 @@
 package org.apache.sysds.runtime.controlprogram.federated.monitoring;
 
 import org.apache.log4j.Logger;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.utils.PortUtils;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -88,12 +90,20 @@ public class FederatedMonitoringServer {
 			ChannelFuture f = server.bind(_port).sync();
 			log.info("Started Federated Monitoring Backend at port: " + _port);
 			f.channel().closeFuture().sync();
-		} catch(Exception e) {
+		}
+		catch(InterruptedException e) {
 			log.info("Federated Monitoring Backend Interrupted");
-			if (_debug) {
-				log.error(e.getMessage());
+			if(_debug)
 				e.printStackTrace();
-			}
+		}
+		catch(Exception e) {
+			// report why the backend stops, e.g., an occupied or reserved port, otherwise it exits
+			// silently and signals success
+			final String msg = "Federated Monitoring Backend stopped: " + PortUtils.explainBindFailure(_port, e);
+			log.error(msg);
+			if(_debug)
+				e.printStackTrace();
+			throw new DMLRuntimeException(msg, e);
 		} finally{
 			log.info("Federated Monitoring Backend Shutting down.");
 			workerGroup.shutdownGracefully();

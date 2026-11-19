@@ -40,12 +40,20 @@ public abstract class SparsityEstimator
 		OpCode.EQZERO, OpCode.NEQZERO, OpCode.CBIND,
 		OpCode.RBIND, OpCode.TRANS, OpCode.DIAG, OpCode.RESHAPE
 	};
-	
+
+	private static OpCode[] BINARY_OPS = new OpCode[] {
+		OpCode.MM, OpCode.MULT, OpCode.PLUS, OpCode.CBIND, OpCode.RBIND,
+	};
+
 	public static enum OpCode {
 		MM, 
 		MULT, PLUS, EQZERO, NEQZERO,
 		CBIND, RBIND, 
 		TRANS, DIAG, RESHAPE;
+
+		public boolean isBinaryOp() {
+			return ArrayUtils.contains(BINARY_OPS, this);
+		}
 	}
 	
 	/**

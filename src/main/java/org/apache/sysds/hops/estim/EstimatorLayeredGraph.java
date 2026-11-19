@@ -117,7 +117,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 
 	@Override
 	public MMNode getInputMMNode(MatrixBlock mb) {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
 	private static LayeredGraph estimInternal(LayeredGraph lg1, LayeredGraph lg2, OpCode op) {

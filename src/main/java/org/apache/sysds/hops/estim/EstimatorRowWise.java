@@ -75,7 +75,7 @@ public class EstimatorRowWise extends SparsityEstimator {
 	@Override
 	public MMNode getInputMMNode(MatrixBlock mb) {
 		MMNode node = new MMNode(mb);
-		throw new UnsupportedOperationException("TODO: Implement getCachedSynopsis similar to MatrixHistorgram");
+		throw new UnsupportedOperationException("TODO: Implement getCachedSynopsis similarly to EstimatorMatrixHistogram.");
 		// return node;
 	}
 

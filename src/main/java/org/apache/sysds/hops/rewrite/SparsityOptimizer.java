@@ -54,7 +54,6 @@ public class SparsityOptimizer {
 
 	public static boolean optimizeAndExecute(ArrayList<Hop> roots, ExecutionContext ec) {
 		SparsityOptimizer spOpt = new SparsityOptimizer();
-		// spOpt.ensureInputSparsity(roots, ec);
 		roots = spOpt.optimizeHops(roots, ec);
 		// boolean wasExecuted = execute();
 		return false;
@@ -291,8 +290,6 @@ public class SparsityOptimizer {
 	// This method can modify the mm chain completely, even re-creating it from scratch is allowed.
 	// NOTE: This method should return the new mm hop when re-creating it from scratch.
 	private Hop sculptMMChain(Hop mmHop, List<Hop> mmChain, List<Hop> mmOperators, ExecutionContext ec) {
-		// (new RewriteMatrixMultChainOptimizationSparse()).optimizeMMChain(mmHop, mmChain, mmOperators, null);
-
 		// Step 2: construct dims array and input matrices
 		double[] dimsArray = new double[mmChain.size() + 1];
 		boolean dimsKnown = getDimsArray(mmHop, mmChain, dimsArray );
@@ -313,8 +310,7 @@ public class SparsityOptimizer {
 		return null;
 	}
 
-	private boolean getInputMatrixCharacteristics(List<Hop> chain, MMNode[] sketchArray,
-		ExecutionContext ec) {
+	private boolean getInputMatrixCharacteristics(List<Hop> chain, MMNode[] sketchArray, ExecutionContext ec) {
 		boolean inputMetaAvail = true;
 
 		for(int counter = 0; counter < chain.size(); counter++) {
@@ -341,8 +337,7 @@ public class SparsityOptimizer {
 	 * Thomas H. Cormen, Charles E. Leiserson, Ronald L. Rivest, Clifford Stein
 	 * Introduction to Algorithms, Third Edition, MIT Press, page 395.
 	 */
-	private static int[][] mmChainDPSparse(double[] dimArray, MMNode[] sketchArray, int size)
-	{
+	private static int[][] mmChainDPSparse(double[] dimArray, MMNode[] sketchArray, int size) {
 		double[][] dpMatrix = new double[size][size]; //min cost table
 		MMNode[][] dpMatrixS = new MMNode[size][size]; //min sketch table
 		int[][] split = new int[size][size]; //min cost index table

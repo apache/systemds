@@ -200,7 +200,7 @@ public class EstimatorSample extends SparsityEstimator
 
 	@Override
 	public MMNode getInputMMNode(MatrixBlock mb) {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
 	private static int[] computeRowNnz(MatrixBlock in, int[] ix) {

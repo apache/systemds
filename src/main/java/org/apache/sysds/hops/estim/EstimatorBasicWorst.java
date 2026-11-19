@@ -66,7 +66,16 @@ public class EstimatorBasicWorst extends SparsityEstimator
 	}
 
 	protected void obtainSparsityInformation(MMNode node) {
-		throw new UnsupportedOperationException();
+		MatrixBlock mb = node.getData();
+		if(mb != null && mb.getDataCharacteristics().getSparsity() == -1) {
+			if(mb.getNonZeros() != 0) {
+				mb.getDataCharacteristics().setNonZeros(mb.getNonZeros());
+			}
+			else {
+				mb.recomputeNonZeros();
+				mb.getDataCharacteristics().setNonZeros(mb.getNonZeros());
+			}
+		}
 	}
 
 	@Override

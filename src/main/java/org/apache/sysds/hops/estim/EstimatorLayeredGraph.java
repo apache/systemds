@@ -115,6 +115,11 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 			m1.getNumRows(), m2.getNumColumns(), graph.estimateNnz());
 	}
 
+	@Override
+	public MMNode getInputMMNode(MatrixBlock mb) {
+		throw new UnsupportedOperationException("Not implemented yet.");
+	}
+
 	private static LayeredGraph estimInternal(LayeredGraph lg1, LayeredGraph lg2, OpCode op) {
 		switch(op) {
 			case MM:	  return lg1.matMult(lg2);

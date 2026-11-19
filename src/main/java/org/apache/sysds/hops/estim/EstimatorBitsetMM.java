@@ -93,7 +93,14 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		return OptimizerUtils.getSparsity(outMap.getNumRows(),
 			outMap.getNumColumns(), outMap.getNonZeros());
 	}
-	
+
+	@Override
+	public MMNode getInputMMNode(MatrixBlock mb) {
+		MMNode node = new MMNode(mb);
+		getCachedSynopsis(node);
+		return node;
+	}
+
 	private BitsetMatrix getCachedSynopsis(MMNode node) {
 		if( node == null )
 			return null;
@@ -104,7 +111,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			estim(node); //recursively obtain synopsis
 		return (BitsetMatrix) node.getSynopsis();
 	}
-	
+
 	private static BitsetMatrix estimInternal(BitsetMatrix m1Map, BitsetMatrix m2Map, OpCode op) {
 		switch(op) {
 			case MM:      return m1Map.matMult(m2Map);

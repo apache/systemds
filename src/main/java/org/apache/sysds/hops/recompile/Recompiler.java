@@ -46,6 +46,7 @@ import org.apache.sysds.common.Types.ReOrgOp;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.DataGenOp;
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.FunctionOp;
@@ -61,6 +62,7 @@ import org.apache.sysds.hops.UnaryOp;
 import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.hops.rewrite.ProgramRewriter;
+import org.apache.sysds.hops.rewrite.SparsityOptimizer;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.lops.rewrite.LopRewriter;
@@ -337,7 +339,7 @@ public class Recompiler {
 			for( Hop hopRoot : hops )
 				rClearLops( hopRoot );
 		}
-		
+
 		// get max parallelism constraint, see below
 		Hop.resetVisitStatus(hops);
 		int maxK = rGetMaxParallelism(hops);
@@ -396,7 +398,14 @@ public class Recompiler {
 			hops = SpoofCompiler.optimize(hops,
 				(status==null || !status.isInitialCodegen()));
 		}
-		
+
+		if(ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.SPARSITY_RECOMPILE)) {
+			Hop.resetVisitStatus(hops);
+			boolean executed = SparsityOptimizer.optimizeAndExecute(hops, ec);
+			if(executed)
+				return null;
+		}
+
 		// set max parallelism constraint to ensure compilation 
 		// incl rewrites does not lose these hop-lop constraints
 		Hop.resetVisitStatus(hops);

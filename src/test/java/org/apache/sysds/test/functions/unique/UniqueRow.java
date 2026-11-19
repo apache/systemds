@@ -76,4 +76,58 @@ public class UniqueRow extends UniqueBase {
 		double[][] expectedMatrix = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
 		uniqueTest(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
 	}
+
+	/**
+	 * The cases above stay below the 16,384 cell threshold of the multi-threaded implementation and therefore only
+	 * exercise the sequential path. This one is above it, so the row partitions are actually deduplicated in parallel.
+	 */
+	@Test
+	public void testMultiThreadedCP() {
+		uniqueTest(constantRows(400, 64), expectedConstantRows(400), Types.ExecType.CP, 0.0);
+	}
+
+	/**
+	 * Selects the batched path: with 8 threads and a 4 MB local memory budget, one live row set per thread no longer
+	 * fits, while the budget still holds several rows worth of values so batching remains applicable.
+	 */
+	@Test
+	public void testBatchedCP() {
+		uniqueTestConstrainedMemory(constantRows(8, 4096), expectedConstantRows(8), Types.ExecType.CP, 0.0,
+			4 * 1024 * 1024, 8);
+	}
+
+	/**
+	 * Same as the multi-threaded case, but with an input that is read in sparse format, so unique() reaches the values
+	 * through the sparse block lookup rather than the dense array. Only every eighth row is populated, and every row
+	 * still holds a single distinct value, either its filler or zero.
+	 */
+	@Test
+	public void testSparseMultiThreadedCP() {
+		int rlen = 400, clen = 64;
+		double[][] inputMatrix = new double[rlen][clen];
+		double[][] expectedMatrix = new double[rlen][1];
+		for(int i = 0; i < rlen; i++) {
+			double value = (i % 8 == 0) ? i + 1 : 0;
+			for(int j = 0; j < clen; j++)
+				inputMatrix[i][j] = value;
+			expectedMatrix[i][0] = value;
+		}
+		uniqueTest(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
+	}
+
+	/** Every row holds a single distinct value, so the expected result is one column. */
+	private static double[][] constantRows(int rlen, int clen) {
+		double[][] ret = new double[rlen][clen];
+		for(int i = 0; i < rlen; i++)
+			for(int j = 0; j < clen; j++)
+				ret[i][j] = i + 1;
+		return ret;
+	}
+
+	private static double[][] expectedConstantRows(int rlen) {
+		double[][] ret = new double[rlen][1];
+		for(int i = 0; i < rlen; i++)
+			ret[i][0] = i + 1;
+		return ret;
+	}
 }

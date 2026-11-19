@@ -70,4 +70,60 @@ public class UniqueRowCol extends UniqueBase {
 		double[][] expectedMatrix = {{1,6,9,4,2,0}};
 		uniqueTest(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
 	}
+
+	/**
+	 * Large enough to take the multi-threaded path. The result is a single column, so the comparison is unaffected by
+	 * the order in which the merged hash set is iterated.
+	 */
+	@Test
+	public void testMultiThreadedCP() {
+		uniqueTest(cyclicValues(500, 40, 37), expectedCyclicValues(37), Types.ExecType.CP, 0.0);
+	}
+
+	/**
+	 * Same input, but with a local memory budget that is too small to hold the thread-local sets and the merged set at
+	 * once. This selects the batched path from an end-to-end script run.
+	 */
+	@Test
+	public void testBatchedCP() {
+		uniqueTestConstrainedMemory(cyclicValues(500, 40, 37), expectedCyclicValues(37), Types.ExecType.CP, 0.0,
+			8 * 1024 * 1024, 8);
+	}
+
+	/**
+	 * Sparse counterpart of the multi-threaded case: only every tenth cell is populated, so the input is read in sparse
+	 * format. The result is a single column holding zero plus the fillers.
+	 */
+	@Test
+	public void testSparseMultiThreadedCP() {
+		int rlen = 500, clen = 40, distinct = 36;
+		double[][] inputMatrix = new double[rlen][clen];
+		for(int i = 0; i < rlen; i++)
+			for(int j = 0; j < clen; j++) {
+				long pos = (long) i * clen + j;
+				inputMatrix[i][j] = (pos % 10 == 0) ? (pos / 10) % distinct + 1 : 0;
+			}
+
+		// zero plus the fillers 1..distinct
+		double[][] expectedMatrix = new double[distinct + 1][1];
+		for(int i = 0; i <= distinct; i++)
+			expectedMatrix[i][0] = i;
+
+		uniqueTest(inputMatrix, expectedMatrix, Types.ExecType.CP, 0.0);
+	}
+
+	private static double[][] cyclicValues(int rlen, int clen, int distinct) {
+		double[][] ret = new double[rlen][clen];
+		for(int i = 0; i < rlen; i++)
+			for(int j = 0; j < clen; j++)
+				ret[i][j] = ((long) i * clen + j) % distinct;
+		return ret;
+	}
+
+	private static double[][] expectedCyclicValues(int distinct) {
+		double[][] ret = new double[distinct][1];
+		for(int i = 0; i < distinct; i++)
+			ret[i][0] = i;
+		return ret;
+	}
 }

@@ -57,11 +57,11 @@ public class EstimatorBitsetMM extends SparsityEstimator
 	
 	@Override
 	public DataCharacteristics estim(MMNode root) {
-		BitsetMatrix m1Map = getCachedSynopsis(root.getLeft());
-		BitsetMatrix m2Map = getCachedSynopsis(root.getRight());
+		BitsetMatrix m1Map = getCachedSparsityInformation(root.getLeft());
+		BitsetMatrix m2Map = getCachedSparsityInformation(root.getRight());
 		
 		BitsetMatrix outMap = estimInternal(m1Map, m2Map, root.getOp());
-		root.setSynopsis(outMap); // memorize boolean matrix
+		root.setSparsityInformation(outMap); // memorize boolean matrix
 		return root.setDataCharacteristics(new MatrixCharacteristics(
 			outMap.getNumRows(), outMap.getNumColumns(), outMap.getNonZeros()));
 	}
@@ -97,19 +97,19 @@ public class EstimatorBitsetMM extends SparsityEstimator
 	@Override
 	public MMNode getInputMMNode(MatrixBlock mb) {
 		MMNode node = new MMNode(mb);
-		getCachedSynopsis(node);
+		getCachedSparsityInformation(node);
 		return node;
 	}
 
-	private BitsetMatrix getCachedSynopsis(MMNode node) {
+	private BitsetMatrix getCachedSparsityInformation(MMNode node) {
 		if( node == null )
 			return null;
 		//ensure synopsis is properly cached and reused
-		if( node.isLeaf() && node.getSynopsis() == null )
-			node.setSynopsis(createBitset(node.getData()));
+		if( node.isLeaf() && node.getSparsityInformation() == null )
+			node.setSparsityInformation(createBitset(node.getData()));
 		else if( !node.isLeaf() )
 			estim(node); //recursively obtain synopsis
-		return (BitsetMatrix) node.getSynopsis();
+		return (BitsetMatrix) node.getSparsityInformation();
 	}
 
 	private static BitsetMatrix estimInternal(BitsetMatrix m1Map, BitsetMatrix m2Map, OpCode op) {
@@ -131,23 +131,16 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		}
 	}
 
-	public abstract static class BitsetMatrix {
-		protected final int _rlen;
-		protected final int _clen;
+	public abstract static class BitsetMatrix extends SparsityInformation {
 		protected long _nonZeros;
 	
 		public BitsetMatrix(int rlen, int clen) {
-			_rlen = rlen;
-			_clen = clen;
+			super(rlen, clen);
 			_nonZeros = 0;
 		}
-		
-		public int getNumRows() {
-			return _rlen;
-		}
 
-		public int getNumColumns() {
-			return _clen;
+		public BitsetMatrix(MatrixBlock mb) {
+			super(mb);
 		}
 
 		public long getNonZeros() {

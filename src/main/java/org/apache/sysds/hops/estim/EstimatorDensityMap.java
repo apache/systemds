@@ -56,12 +56,12 @@ public class EstimatorDensityMap extends SparsityEstimator
 	
 	@Override
 	public DataCharacteristics estim(MMNode root) {
-		DensityMap m1Map = getCachedSynopsis(root.getLeft());
-		DensityMap m2Map = getCachedSynopsis(root.getRight());
+		DensityMap m1Map = getCachedSparsityInformation(root.getLeft());
+		DensityMap m2Map = getCachedSparsityInformation(root.getRight());
 		
 		//estimate output density map and sparsity
 		DensityMap outMap = estimIntern(m1Map, m2Map, root.getOp());
-		root.setSynopsis(outMap); //memoize density map
+		root.setSparsityInformation(outMap); //memoize density map
 		return root.setDataCharacteristics(new MatrixCharacteristics(
 			outMap.getNumRowsOrig(), outMap.getNumColumnsOrig(), outMap.getNonZeros()));
 	}
@@ -92,19 +92,19 @@ public class EstimatorDensityMap extends SparsityEstimator
 	@Override
 	public MMNode getInputMMNode(MatrixBlock mb) {
 		MMNode node = new MMNode(mb);
-		getCachedSynopsis(node);
+		getCachedSparsityInformation(node);
 		return node;
 	}
 
-	private DensityMap getCachedSynopsis(MMNode node) {
+	private DensityMap getCachedSparsityInformation(MMNode node) {
 		if( node == null )
 			return null;
 		//ensure synopsis is properly cached and reused
-		if( node.isLeaf() && node.getSynopsis() == null )
-			node.setSynopsis(new DensityMap(node.getData(), _b));
+		if( node.isLeaf() && node.getSparsityInformation() == null )
+			node.setSparsityInformation(new DensityMap(node.getData(), _b));
 		else if( !node.isLeaf() )
 			estim(node); //recursively obtain synopsis
-		return (DensityMap) node.getSynopsis();
+		return (DensityMap) node.getSparsityInformation();
 	}
 	
 	/**
@@ -227,16 +227,13 @@ public class EstimatorDensityMap extends SparsityEstimator
 			m1Map.getNumColumnsOrig(), _b, m1Map._scaled);
 	}
 	
-	public static class DensityMap {
+	public static class DensityMap extends SparsityInformation {
 		private final MatrixBlock _map;
-		private final int _rlen;
-		private final int _clen;
 		private final int _b;
 		private boolean _scaled; //false->nnz, true->sp
 		
 		public DensityMap(MatrixBlock in, int b) {
-			_rlen = in.getNumRows();
-			_clen = in.getNumColumns();
+			super(in);
 			_b = b;
 			_map = init(in);
 			_scaled = false;
@@ -245,8 +242,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 		}
 		
 		public DensityMap(MatrixBlock map, int rlenOrig, int clenOrig, int b, boolean scaled) {
-			_rlen = rlenOrig;
-			_clen = clenOrig;
+			super(rlenOrig, clenOrig);
 			_b = b;
 			_map = map;
 			_scaled = scaled;

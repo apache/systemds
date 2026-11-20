@@ -287,7 +287,7 @@ class BaseLoader(ABC):
         try:
             file_size = os.path.getsize(file)
         except:
-            raise ValueError(f"Error: File {0} not found!".format(file))
+            raise ValueError(f"Error: File {file} not found!")
 
         if file_size == 0:
             raise ValueError("File {0} is empty".format(file))

@@ -28,6 +28,17 @@ from systemds.scuro.dataloader.base_loader import BaseLoader
 from systemds.scuro.modality.type import ModalityType
 
 
+def _import_wfdb():
+    try:
+        import wfdb
+    except ImportError as error:
+        raise ImportError(
+            "Reading WFDB records requires the optional 'wfdb' package. "
+            "Install it with 'pip install wfdb'."
+        ) from error
+    return wfdb
+
+
 @dataclass
 class TimeseriesStats:
     max_length: int

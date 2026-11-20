@@ -22,8 +22,10 @@
 import json
 import os
 import shutil
+import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 import numpy as np
 
 from tests.scuro.data_generator import setup_data
@@ -35,6 +37,7 @@ from systemds.scuro.dataloader.text_loader import TextLoader, TextStats
 from systemds.scuro.dataloader.timeseries_loader import (
     TimeseriesLoader,
     TimeseriesStats,
+    _import_wfdb,
 )
 from systemds.scuro.dataloader.video_loader import VideoLoader, VideoStats
 from systemds.scuro.modality.type import ModalityType
@@ -264,6 +267,13 @@ class TestTimeseriesLoaderFormats(unittest.TestCase):
 
         self.assertEqual(loader.stats.max_length, 10)
         np.testing.assert_array_equal(data[0], values[:, 1])
+
+
+class TestTimeseriesLoaderWfdb(unittest.TestCase):
+    def test_missing_wfdb_names_the_package(self):
+        with patch.dict(sys.modules, {"wfdb": None}):
+            with self.assertRaisesRegex(ImportError, "pip install wfdb"):
+                _import_wfdb()
 
 
 class TestJSONLoaderFields(unittest.TestCase):

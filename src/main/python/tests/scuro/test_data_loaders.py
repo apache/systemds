@@ -22,14 +22,20 @@
 import json
 import os
 import shutil
+import tempfile
 import unittest
 import numpy as np
 
 from tests.scuro.data_generator import setup_data
 from systemds.scuro.dataloader.audio_loader import AudioLoader, AudioStats
+from systemds.scuro.dataloader.base_loader import BaseLoader
 from systemds.scuro.dataloader.image_loader import ImageLoader, ImageStats
 from systemds.scuro.dataloader.json_loader import JSONLoader
 from systemds.scuro.dataloader.text_loader import TextLoader, TextStats
+from systemds.scuro.dataloader.timeseries_loader import (
+    TimeseriesLoader,
+    TimeseriesStats,
+)
 from systemds.scuro.dataloader.video_loader import VideoLoader, VideoStats
 from systemds.scuro.modality.type import ModalityType
 
@@ -200,31 +206,64 @@ class TestDataLoadersLoadFromFiles(unittest.TestCase):
         self.assertEqual(stats.max_height, 120)
         self.assertEqual(stats.max_channels, 3)
 
-    # def test_timeseries_loader_loads_all_instances(self):
-    #     loader = TimeseriesLoader(
-    #         self.data_generator.get_modality_path(ModalityType.TIMESERIES),
-    #         self.data_generator.indices,
-    #     )
-    #     data, metadata = loader.load()
+    def test_timeseries_loader_loads_all_instances(self):
+        loader = TimeseriesLoader(
+            self.data_generator.get_modality_path(ModalityType.TIMESERIES),
+            self.data_generator.indices,
+            ["x", "y"],
+        )
+        data, metadata = loader.load()
 
-    #     self.assertEqual(len(data), self.num_instances)
-    #     self.assertEqual(len(metadata), self.num_instances)
+        self.assertEqual(len(data), self.num_instances)
+        self.assertEqual(len(metadata), self.num_instances)
 
-    #     for arr in data:
-    #         self.assertIsInstance(arr, np.ndarray)
-    #         self.assertEqual(arr.ndim, 2)
+        for arr in data:
+            self.assertIsInstance(arr, np.ndarray)
+            self.assertEqual(arr.ndim, 2)
 
-    # def test_timeseries_loader_stats(self):
-    #     loader = TimeseriesLoader(
-    #         self.data_generator.get_modality_path(ModalityType.TIMESERIES),
-    #         self.data_generator.indices,
-    #     )
-    #     stats = loader.stats
+    def test_timeseries_loader_stats(self):
+        loader = TimeseriesLoader(
+            self.data_generator.get_modality_path(ModalityType.TIMESERIES),
+            self.data_generator.indices,
+            ["x", "y"],
+        )
+        stats = loader.stats
 
-    #     self.assertIsInstance(stats, TimeseriesStats)
-    #     self.assertEqual(stats.num_instances, 2)
-    #     self.assertEqual(stats.max_length, 10)
-    #     self.assertEqual(stats.num_signals, 2)
+        self.assertIsInstance(stats, TimeseriesStats)
+        self.assertEqual(stats.num_instances, 2)
+        self.assertEqual(stats.max_length, 10)
+        self.assertEqual(stats.num_signals, 2)
+
+
+class TestFileSanityCheck(unittest.TestCase):
+    def test_missing_file_is_named_in_the_error(self):
+        with self.assertRaisesRegex(ValueError, "missing_file.npy"):
+            BaseLoader.file_sanity_check("missing_file.npy")
+
+
+class TestTimeseriesLoaderFormats(unittest.TestCase):
+    def setUp(self):
+        self.path = tempfile.mkdtemp() + "/"
+        self.addCleanup(shutil.rmtree, self.path)
+
+    def test_unsupported_formats_are_rejected(self):
+        for file_format in ("mat", "hdf5", "xyz"):
+            with self.subTest(file_format=file_format):
+                with self.assertRaisesRegex(ValueError, "Unsupported file format"):
+                    TimeseriesLoader(self.path, ["0"], ["x"], file_format=file_format)
+
+    def test_csv_columns_are_selected_by_signal_name(self):
+        values = np.arange(20, dtype=np.float32).reshape(10, 2)
+        np.savetxt(
+            self.path + "0.csv", values, delimiter=",", header="x,y", comments=""
+        )
+        loader = TimeseriesLoader(
+            self.path, ["0"], ["y"], file_format="csv", normalize=False
+        )
+        data, _ = loader.load()
+
+        self.assertEqual(loader.stats.max_length, 10)
+        np.testing.assert_array_equal(data[0], values[:, 1])
 
 
 class TestJSONLoaderFields(unittest.TestCase):

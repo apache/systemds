@@ -22,7 +22,6 @@ from dataclasses import dataclass
 import os
 import numpy as np
 from typing import List, Optional, Union
-import h5py
 
 
 from systemds.scuro.dataloader.base_loader import BaseLoader
@@ -60,7 +59,8 @@ class TimeseriesLoader(BaseLoader):
         self.normalize = normalize
         self.channel_index = channel_index
         self.file_format = file_format.lower()
-        self.channel_index = channel_index
+        if self.file_format not in ["npy", "txt", "csv"]:
+            raise ValueError(f"Unsupported file format: {self.file_format}")
         files = [source_path + name + "." + self.file_format for name in self.indices]
         self.stats = self.cached_stats(
             files,
@@ -73,8 +73,6 @@ class TimeseriesLoader(BaseLoader):
             },
             lambda: self.get_stats(source_path, sampling_rate),
         )
-        if self.file_format not in ["npy", "mat", "hdf5", "txt"]:
-            raise ValueError(f"Unsupported file format: {self.file_format}")
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)

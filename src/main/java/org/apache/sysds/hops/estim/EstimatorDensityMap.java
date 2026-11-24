@@ -58,6 +58,8 @@ public class EstimatorDensityMap extends SparsityEstimator
 		DensityMap m1Map = getCachedSparsityInformation(root.getLeft());
 		DensityMap m2Map = getCachedSparsityInformation(root.getRight());
 		
+		if(m1Map == null || (m2Map == null && root.getOp().isBinaryOp()))
+			return null;
 		//estimate output density map and sparsity
 		DensityMap outMap = estimIntern(m1Map, m2Map, root.getOp());
 		root.setSparsityInformation(outMap); //memoize density map

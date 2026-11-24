@@ -58,7 +58,9 @@ public class EstimatorBitsetMM extends SparsityEstimator
 	public BitsetMatrix estim(MMNode root) {
 		BitsetMatrix m1Map = getCachedSparsityInformation(root.getLeft());
 		BitsetMatrix m2Map = getCachedSparsityInformation(root.getRight());
-		
+
+		if(m1Map == null || (m2Map == null && root.getOp().isBinaryOp()))
+			return null;
 		BitsetMatrix outMap = estimInternal(m1Map, m2Map, root.getOp());
 		root.setSparsityInformation(outMap); // memorize boolean matrix
 		return outMap;

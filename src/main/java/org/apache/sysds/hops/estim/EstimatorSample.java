@@ -27,7 +27,6 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
@@ -201,7 +200,7 @@ public class EstimatorSample extends SparsityEstimator
 
 	@Override
 	public MMNode getInputMMNode(MatrixBlock mb) {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		throw new NotImplementedException("Not implemented yet.");
 	}
 
 	private static int[] computeRowNnz(MatrixBlock in, int[] ix) {

@@ -27,8 +27,6 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -66,6 +64,8 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		MatrixHistogram h1 = getCachedSparsityInformation(root.getLeft());
 		MatrixHistogram h2 = getCachedSparsityInformation(root.getRight());
 		
+		if(h1 == null || (h2 == null && root.getOp().isBinaryOp()))
+			return null;
 		//estimate output sparsity based on input histograms
 		double ret = estimIntern(h1, h2, root.getOp(), root.getMisc());
 		if(topLevel) { // fast-path final result
@@ -116,7 +116,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 	private MatrixHistogram getCachedSparsityInformation(MMNode node) {
 		if( node == null )
 			return null;
-		//ensure synopsis is properly cached and reused
+		//ensure sparsity information is properly cached and reused
 		if(node.isLeaf() && node.getSparsityInformation() == null && node.getData() != null)
 			node.setSparsityInformation(new MatrixHistogram(node.getData(), _useExtended));
 		else if( !node.isLeaf() )

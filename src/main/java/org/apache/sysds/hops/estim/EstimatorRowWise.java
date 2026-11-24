@@ -23,6 +23,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.estim.EstimatorBasicAvg.ScalarSparsity;
+import org.apache.sysds.hops.estim.EstimatorMatrixHistogram.MatrixHistogram;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -76,8 +77,19 @@ public class EstimatorRowWise extends SparsityEstimator {
 	@Override
 	public MMNode getInputMMNode(MatrixBlock mb) {
 		MMNode node = new MMNode(mb);
-		throw new UnsupportedOperationException("TODO: Implement getCachedSparsityInformation similarly to EstimatorMatrixHistogram.");
-		// return node;
+		getCachedSparsityInformation(node);
+		return node;
+	}
+
+	private SparsityInformation getCachedSparsityInformation(MMNode node) {
+		if( node == null )
+			return null;
+		//ensure sparsity information is properly cached and reused
+		if(node.isLeaf() && node.getSparsityInformation() == null && node.getData() != null)
+			node.setSparsityInformation(new RowwiseSparsity(node.getData()));
+		else if(!node.isLeaf())
+			estim(node); //recursively obtain synopsis
+		return node.getSparsityInformation();
 	}
 
 	private RowwiseSparsity estimInternChain(MMNode node) {
@@ -99,6 +111,8 @@ public class EstimatorRowWise extends SparsityEstimator {
 			switch(node.getOp()) {
 				case MM:
 					RowwiseSparsity rsRightMM = estimInternChain(nodeRight, rsRightNeighbor, opRightNeighbor);
+					if(rsRightMM == null)
+						return null;
 					rsOut = estimInternChain(nodeLeft, rsRightMM, node.getOp());
 					break;
 				case CBIND:
@@ -108,6 +122,8 @@ public class EstimatorRowWise extends SparsityEstimator {
 					 */
 					RowwiseSparsity rsLeftCBind = estimInternChain(nodeLeft);
 					RowwiseSparsity rsRightCBind = estimInternChain(nodeRight);
+					if(rsRightCBind == null || rsLeftCBind == null)
+						return null;
 					RowwiseSparsity rsCBind = estimInternCBind(rsLeftCBind, rsRightCBind);
 					if(rsRightNeighbor != null) {
 						rsOut = estimInternMMFallback(rsCBind, rsRightNeighbor);
@@ -125,6 +141,8 @@ public class EstimatorRowWise extends SparsityEstimator {
 					 */
 					RowwiseSparsity rsLeftRBind = estimInternChain(nodeLeft);
 					RowwiseSparsity rsRightRBind = estimInternChain(nodeRight);
+					if(rsRightRBind == null || rsLeftRBind == null)
+						return null;
 					RowwiseSparsity rsRBind = estimInternRBind(rsLeftRBind, rsRightRBind);
 					if(rsRightNeighbor != null) {
 						rsOut = estimInternMMFallback(rsRBind, rsRightNeighbor);
@@ -142,6 +160,8 @@ public class EstimatorRowWise extends SparsityEstimator {
 					 */
 					RowwiseSparsity rsLeftPlus = estimInternChain(nodeLeft);
 					RowwiseSparsity rsRightPlus = estimInternChain(nodeRight);
+					if(rsRightPlus == null || rsLeftPlus == null)
+						return null;
 					RowwiseSparsity rsPlus = estimInternPlus(rsLeftPlus, rsRightPlus);
 					if(rsRightNeighbor != null) {
 						rsOut = estimInternMMFallback(rsPlus, rsRightNeighbor);
@@ -159,6 +179,8 @@ public class EstimatorRowWise extends SparsityEstimator {
 					 */
 					RowwiseSparsity rsLeftMult = estimInternChain(nodeLeft);
 					RowwiseSparsity rsRightMult = estimInternChain(nodeRight);
+					if(rsRightMult == null || rsLeftMult == null)
+						return null;
 					RowwiseSparsity rsMult = estimInternMult(rsLeftMult, rsRightMult);
 					if(rsRightNeighbor != null) {
 						rsOut = estimInternMMFallback(rsMult, rsRightNeighbor);

@@ -130,7 +130,7 @@ public class EstimatorSampleRa extends SparsityEstimator
 
 	@Override
 	public MMNode getInputMMNode(MatrixBlock mb) {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		throw new NotImplementedException("Not implemented yet.");
 	}
 
 	private void initHashArrays(int m, int n, int l) {

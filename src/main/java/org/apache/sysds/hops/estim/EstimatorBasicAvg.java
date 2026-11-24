@@ -32,10 +32,13 @@ public class EstimatorBasicAvg extends SparsityEstimator
 	@Override
 	public ScalarSparsity estim(MMNode root) {
 		SparsityInformation spInf1 = !root.getLeft().isLeaf() ?
-			estim(root.getLeft()) : root.getLeft().getSparsityInformation();
+			estim(root.getLeft()) : obtainSparsityInformation(root.getLeft());
 		SparsityInformation spInf2 = root.getRight()==null ? null :
 			!root.getRight().isLeaf() ? estim(root.getRight()) : 
-			root.getRight().getSparsityInformation();
+			obtainSparsityInformation(root.getRight());
+		if(spInf1 == null || (spInf2 == null && root.getOp().isBinaryOp())) {
+			return null;
+		}
 		ScalarSparsity spEst = estimIntern(spInf1, spInf2, root.getOp());
 		root.setSparsityInformation(spEst);
 		return spEst;
@@ -56,17 +59,19 @@ public class EstimatorBasicAvg extends SparsityEstimator
 		return estimIntern(new ScalarSparsity(m), null, op).getAvgSparsity();
 	}
 
-	protected void obtainSparsityInformation(MMNode node) {
+	protected SparsityInformation obtainSparsityInformation(MMNode node) {
 		MatrixBlock mb = node.getData();
-		if(mb != null && mb.getDataCharacteristics().getSparsity() == -1) {
-			if(mb.getNonZeros() != 0) {
+		if(mb != null) {
+			if(mb.getDataCharacteristics().getSparsity() == -1) {
+				node.setSparsityInformation(new ScalarSparsity(mb));
 				mb.getDataCharacteristics().setNonZeros(mb.getNonZeros());
 			}
 			else {
-				mb.recomputeNonZeros();
-				mb.getDataCharacteristics().setNonZeros(mb.getNonZeros());
+				node.setSparsityInformation(new ScalarSparsity(mb.getNumRows(), mb.getNumColumns(),
+					mb.getDataCharacteristics().getSparsity()));
 			}
 		}
+		return node.getSparsityInformation();
 	}
 
 	@Override
@@ -117,7 +122,7 @@ public class EstimatorBasicAvg extends SparsityEstimator
 
 		public ScalarSparsity(MatrixBlock mb) {
 			super(mb);
-			if(mb.getSparsity() < 0)
+			if(mb.getSparsity() <= 0)
 				mb.recomputeNonZeros();
 			_sparsityValue = mb.getSparsity();
 		}

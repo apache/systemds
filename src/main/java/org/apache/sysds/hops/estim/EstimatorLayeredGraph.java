@@ -26,8 +26,6 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -82,6 +80,8 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 		right = (node.getRight().getData() == null)
 			? retR : new LayeredGraph(node.getRight().getData(), _rounds, _seeds.nextInt());
 
+		if(left == null || (right == null && node.getOp().isBinaryOp()))
+			return null;
 		ret = estimInternal(left, right, node.getOp());
 
 		return ret;
@@ -116,7 +116,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 
 	@Override
 	public MMNode getInputMMNode(MatrixBlock mb) {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		throw new NotImplementedException("Not implemented yet.");
 	}
 
 	private static LayeredGraph estimInternal(LayeredGraph lg1, LayeredGraph lg2, OpCode op) {
@@ -233,8 +233,11 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 			}
 		}
 
+		@Override
 		public long getNonZeros() {
-			throw new NotImplementedException("Not implemented yet.");
+			if(_data != null)
+				return _data.getNonZeros();
+			return estimateNnz();
 		}
 
 		public long estimateNnz() {

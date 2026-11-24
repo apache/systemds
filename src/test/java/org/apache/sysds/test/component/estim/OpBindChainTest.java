@@ -171,7 +171,7 @@ public class OpBindChainTest extends AutomatedTestBase
 		}
 		MatrixBlock m5 = m3.aggregateBinaryOperations(m3, m4,
 				new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
-		double est = estim.estim(new MMNode(new MMNode(new MMNode(m1), new MMNode(m2), op), new MMNode(m4), OpCode.MM)).getSparsity();
+		double est = estim.estim(new MMNode(new MMNode(new MMNode(m1), new MMNode(m2), op), new MMNode(m4), OpCode.MM)).getAvgSparsity();
 		//compare estimated and real sparsity
 		TestUtils.compareScalars(est, m5.getSparsity(),
 			(estim instanceof EstimatorBasicWorst) ? 5e-1 :

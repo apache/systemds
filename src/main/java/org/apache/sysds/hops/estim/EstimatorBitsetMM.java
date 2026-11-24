@@ -22,11 +22,10 @@ package org.apache.sysds.hops.estim;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.hops.HopsException;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.estim.EstimatorBasicAvg.ScalarSparsity;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 import java.util.BitSet;
@@ -56,14 +55,13 @@ public class EstimatorBitsetMM extends SparsityEstimator
 	}
 	
 	@Override
-	public DataCharacteristics estim(MMNode root) {
+	public BitsetMatrix estim(MMNode root) {
 		BitsetMatrix m1Map = getCachedSparsityInformation(root.getLeft());
 		BitsetMatrix m2Map = getCachedSparsityInformation(root.getRight());
 		
 		BitsetMatrix outMap = estimInternal(m1Map, m2Map, root.getOp());
 		root.setSparsityInformation(outMap); // memorize boolean matrix
-		return root.setDataCharacteristics(new MatrixCharacteristics(
-			outMap.getNumRows(), outMap.getNumColumns(), outMap.getNonZeros()));
+		return outMap;
 	}
 
 	@Override
@@ -73,9 +71,9 @@ public class EstimatorBitsetMM extends SparsityEstimator
 	
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
-		if( isExactMetadataOp(op) )
-			return estimExactMetaData(m1.getDataCharacteristics(),
-				m2.getDataCharacteristics(), op).getSparsity();
+		if(isExactMetadataOp(op))
+			return estimExactMetaData(new ScalarSparsity(m1),
+				new ScalarSparsity(m2), op).getAvgSparsity();
 		BitsetMatrix m1Map = createBitset(m1);
 		BitsetMatrix m2Map = (m1 == m2) ? //self product
 			m1Map : createBitset(m2);
@@ -87,7 +85,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 	@Override
 	public double estim(MatrixBlock m, OpCode op) {
 		if( isExactMetadataOp(op) )
-			return estimExactMetaData(m.getDataCharacteristics(), null, op).getSparsity();
+			return estimExactMetaData(new ScalarSparsity(m), null, op).getAvgSparsity();
 		BitsetMatrix m1Map = createBitset(m);
 		BitsetMatrix outMap = estimInternal(m1Map, null, op);
 		return OptimizerUtils.getSparsity(outMap.getNumRows(),

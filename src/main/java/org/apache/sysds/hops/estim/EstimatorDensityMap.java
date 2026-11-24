@@ -21,12 +21,11 @@ package org.apache.sysds.hops.estim;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.estim.EstimatorBasicAvg.ScalarSparsity;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
@@ -55,15 +54,14 @@ public class EstimatorDensityMap extends SparsityEstimator
 	}
 	
 	@Override
-	public DataCharacteristics estim(MMNode root) {
+	public DensityMap estim(MMNode root) {
 		DensityMap m1Map = getCachedSparsityInformation(root.getLeft());
 		DensityMap m2Map = getCachedSparsityInformation(root.getRight());
 		
 		//estimate output density map and sparsity
 		DensityMap outMap = estimIntern(m1Map, m2Map, root.getOp());
 		root.setSparsityInformation(outMap); //memoize density map
-		return root.setDataCharacteristics(new MatrixCharacteristics(
-			outMap.getNumRowsOrig(), outMap.getNumColumnsOrig(), outMap.getNonZeros()));
+		return outMap;
 	}
 
 	@Override
@@ -73,9 +71,9 @@ public class EstimatorDensityMap extends SparsityEstimator
 	
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
-		if( isExactMetadataOp(op) )
-			return estimExactMetaData(m1.getDataCharacteristics(), m2 != null ?
-				m2.getDataCharacteristics() : null, op).getSparsity();
+		if(isExactMetadataOp(op))
+			return estimExactMetaData(new ScalarSparsity(m1), m2 != null ?
+				new ScalarSparsity(m2) : null, op).getAvgSparsity();
 		DensityMap m1Map = new DensityMap(m1, _b);
 		DensityMap m2Map = (m1 == m2 || m2 == null) ? //self product
 			m1Map : new DensityMap(m2, _b);
@@ -271,7 +269,8 @@ public class EstimatorDensityMap extends SparsityEstimator
 		}
 		
 		public long getNonZeros() {
-			if( _scaled ) toNnz();
+			if(_scaled)
+				toNnz();
 			return Math.round(_map.sum());
 		}
 		

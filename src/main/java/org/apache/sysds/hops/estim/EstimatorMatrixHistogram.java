@@ -22,6 +22,7 @@ package org.apache.sysds.hops.estim;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.estim.EstimatorBasicAvg.ScalarSparsity;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
@@ -56,32 +57,29 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 	}
 	
 	@Override
-	public DataCharacteristics estim(MMNode root) {
+	public SparsityInformation estim(MMNode root) {
 		return estim(root, true);
 	}
 	
-	public DataCharacteristics estim(MMNode root, boolean topLevel) {
+	public SparsityInformation estim(MMNode root, boolean topLevel) {
 		//NOTE: not estimateInputs due to handling of topLevel
 		MatrixHistogram h1 = getCachedSparsityInformation(root.getLeft());
 		MatrixHistogram h2 = getCachedSparsityInformation(root.getRight());
 		
 		//estimate output sparsity based on input histograms
 		double ret = estimIntern(h1, h2, root.getOp(), root.getMisc());
-		if( topLevel ) { //fast-path final result
-			return MatrixHistogram.deriveOutputCharacteristics(
+		if(topLevel) { // fast-path final result
+			return MatrixHistogram.deriveAverageSparsity(
 				h1, h2, ret, root.getOp(), root.getMisc());
 		}
 		
 		//sketch propagation for intermediates other than final result
-		if( h2 != null && root.getRight() != null )
+		if(h2 != null && root.getRight() != null)
 			h2.setData(root.getRight().isLeaf() ? root.getRight().getData() : null);
 		MatrixHistogram outMap = MatrixHistogram
 			.deriveOutputHistogram(h1, h2, ret, root.getOp(), root.getMisc());
 		root.setSparsityInformation(outMap);
-		if(outMap == null)
-			return null;
-		return root.setDataCharacteristics(new MatrixCharacteristics(
-			outMap.getNumRows(), outMap.getNumColumns(), outMap.getNonZeros()));
+		return outMap;
 	}
 	
 	@Override 
@@ -92,8 +90,8 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
 		if( isExactMetadataOp(op) )
-			return estimExactMetaData(m1.getDataCharacteristics(),
-				m2.getDataCharacteristics(), op).getSparsity();
+			return estimExactMetaData(new ScalarSparsity(m1),
+				new ScalarSparsity(m2), op).getAvgSparsity();
 		MatrixHistogram h1 = new MatrixHistogram(m1, _useExtended);
 		MatrixHistogram h2 = (m1 == m2) ? //self product
 			h1 : new MatrixHistogram(m2, _useExtended);
@@ -103,7 +101,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 	@Override
 	public double estim(MatrixBlock m1, OpCode op) {
 		if( isExactMetadataOp(op) )
-			return estimExactMetaData(m1.getDataCharacteristics(), null, op).getSparsity();
+			return estimExactMetaData(new ScalarSparsity(m1), null, op).getAvgSparsity();
 		MatrixHistogram h1 = new MatrixHistogram(m1, _useExtended);
 		return estimIntern(h1, null, op, null);
 	}
@@ -379,47 +377,47 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			}
 		}
 		
-		public static DataCharacteristics deriveOutputCharacteristics(MatrixHistogram h1, MatrixHistogram h2, double spOut, OpCode op, long[] misc) {
+		public static ScalarSparsity deriveAverageSparsity(MatrixHistogram h1, MatrixHistogram h2, double spOut, OpCode op, long[] misc) {
 			switch(op) {
 				case MM:
 					if(h1 == null || h2 == null)
 						return null;
-					return new MatrixCharacteristics(h1.getNumRows(), h2.getNumColumns(),
+					return new ScalarSparsity(h1.getNumRows(), h2.getNumColumns(),
 						OptimizerUtils.getNnz(h1.getNumRows(), h2.getNumColumns(), spOut));
 				case MULT:
 				case PLUS:
 				case NEQZERO:
 				case EQZERO:
 					if(h1 != null)
-						return new MatrixCharacteristics(h1.getNumRows(), h1.getNumColumns(),
+						return new ScalarSparsity(h1.getNumRows(), h1.getNumColumns(),
 							OptimizerUtils.getNnz(h1.getNumRows(), h1.getNumColumns(), spOut));
 					else if(h2 != null)
-						return new MatrixCharacteristics(h2.getNumRows(), h2.getNumColumns(),
+						return new ScalarSparsity(h2.getNumRows(), h2.getNumColumns(),
 							OptimizerUtils.getNnz(h2.getNumRows(), h2.getNumColumns(), spOut));
 					else
 						return null;
 				case RBIND:
 					if(h1 == null || h2 == null)
 						return null;
-					return new MatrixCharacteristics(h1.getNumRows()+h2.getNumRows(), h1.getNumColumns(),
+					return new ScalarSparsity(h1.getNumRows()+h2.getNumRows(), h1.getNumColumns(),
 						OptimizerUtils.getNnz(h1.getNumRows()+h2.getNumRows(), h1.getNumColumns(), spOut));
 				case CBIND:
 					if(h1 == null || h2 == null)
 						return null;
-					return new MatrixCharacteristics(h1.getNumRows(), h1.getNumColumns()+h2.getNumColumns(),
+					return new ScalarSparsity(h1.getNumRows(), h1.getNumColumns()+h2.getNumColumns(),
 						OptimizerUtils.getNnz(h1.getNumRows(), h1.getNumColumns()+h2.getNumColumns(), spOut));
 				case DIAG:
 					if(h1 == null)
 						return null;
 					int ncol = h1.getNumColumns()==1 ? h1.getNumRows() : 1;
-					return new MatrixCharacteristics(h1.getNumRows(), ncol,
+					return new ScalarSparsity(h1.getNumRows(), ncol,
 						OptimizerUtils.getNnz(h1.getNumRows(), ncol, spOut));
 				case TRANS:
 					if(h1 == null)
 						return null;
-					return new MatrixCharacteristics(h1.getNumColumns(), h1.getNumRows(), h1.getNonZeros());
+					return new ScalarSparsity(h1.getNumColumns(), h1.getNumRows(), h1.getNonZeros());
 				case RESHAPE:
-					return new MatrixCharacteristics((int)misc[0], (int)misc[1],
+					return new ScalarSparsity((int)misc[0], (int)misc[1],
 						OptimizerUtils.getNnz((int)misc[0], (int)misc[1], spOut));
 				default:
 					throw new NotImplementedException();

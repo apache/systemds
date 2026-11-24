@@ -21,9 +21,8 @@ package org.apache.sysds.hops.estim;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.estim.EstimatorBasicAvg.ScalarSparsity;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 /**
  * Basic average case estimator for matrix sparsity:
@@ -33,21 +32,21 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
  * estimate is equivalent to the average case estimate and
  * the exact output sparsity.
  */
-public class EstimatorBasicWorst extends SparsityEstimator
-{
+public class EstimatorBasicWorst extends SparsityEstimator {
 	@Override
-	public DataCharacteristics estim(MMNode root) {
+	public ScalarSparsity estim(MMNode root) {
 		if (!root.getLeft().isLeaf())
-			estim(root.getLeft()); // obtain synopsis
+			estim(root.getLeft()); // obtain sparsity information
 		if (root.getRight()!=null && !root.getRight().isLeaf())
-			estim(root.getRight()); // obtain synopsis
-		DataCharacteristics mc1 = !root.getLeft().isLeaf() ?
-			estim(root.getLeft()) : root.getLeft().getDataCharacteristics();
-		DataCharacteristics mc2 = root.getRight()==null ? null :
+			estim(root.getRight()); // obtain sparsity information
+		SparsityInformation spInf1 = !root.getLeft().isLeaf() ?
+			estim(root.getLeft()) : root.getLeft().getSparsityInformation();
+		SparsityInformation spInf2 = root.getRight()==null ? null :
 			!root.getRight().isLeaf() ? estim(root.getRight()) : 
-			root.getRight().getDataCharacteristics();
-		return root.setDataCharacteristics(
-			estimIntern(mc1, mc2, root.getOp()));
+			root.getRight().getSparsityInformation();
+		ScalarSparsity spEst = estimIntern(spInf1, spInf2, root.getOp());
+		root.setSparsityInformation(spEst);
+		return spEst;
 	}
 
 	@Override
@@ -57,12 +56,12 @@ public class EstimatorBasicWorst extends SparsityEstimator
 
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
-		return estimIntern(m1.getDataCharacteristics(), m2.getDataCharacteristics(), op).getSparsity();
+		return estimIntern(new ScalarSparsity(m1), new ScalarSparsity(m2), op).getAvgSparsity();
 	}
 
 	@Override
 	public double estim(MatrixBlock m, OpCode op) {
-		return estimIntern(m.getDataCharacteristics(), null, op).getSparsity();
+		return estimIntern(new ScalarSparsity(m), null, op).getAvgSparsity();
 	}
 
 	protected void obtainSparsityInformation(MMNode node) {
@@ -85,20 +84,20 @@ public class EstimatorBasicWorst extends SparsityEstimator
 		return node;
 	}
 
-	private DataCharacteristics estimIntern(DataCharacteristics mc1, DataCharacteristics mc2, OpCode op) {
+	private ScalarSparsity estimIntern(SparsityInformation spInf1, SparsityInformation spInf2, OpCode op) {
 		switch (op) {
 			case MM:
-				return new MatrixCharacteristics(mc1.getRows(), mc2.getCols(),
-					OptimizerUtils.getMatMultNnz(mc1.getSparsity(), mc2.getSparsity(),
-					mc1.getRows(), mc1.getCols(), mc2.getCols(), true));
+				return new ScalarSparsity(spInf1.getNumRows(), spInf2.getNumColumns(),
+					OptimizerUtils.getMatMultNnz(spInf1.getAvgSparsity(), spInf2.getAvgSparsity(),
+					spInf1.getNumRows(), spInf1.getNumColumns(), spInf2.getNumColumns(), true));
 			case MULT:
-				return new MatrixCharacteristics(mc1.getRows(), mc1.getCols(),
-					OptimizerUtils.getNnz(mc1.getRows(), mc1.getCols(),
-						Math.min(mc1.getSparsity(), mc2.getSparsity())));
+				return new ScalarSparsity(spInf1.getNumRows(), spInf1.getNumColumns(),
+					OptimizerUtils.getNnz(spInf1.getNumRows(), spInf1.getNumColumns(),
+						Math.min(spInf1.getAvgSparsity(), spInf2.getAvgSparsity())));
 			case PLUS:
-				return new MatrixCharacteristics(mc1.getRows(), mc1.getCols(),
-					OptimizerUtils.getNnz(mc1.getRows(), mc1.getCols(), 
-						Math.min(mc1.getSparsity() + mc2.getSparsity(), 1)));
+				return new ScalarSparsity(spInf1.getNumRows(), spInf1.getNumColumns(),
+					OptimizerUtils.getNnz(spInf1.getNumRows(), spInf1.getNumColumns(), 
+						Math.min(spInf1.getAvgSparsity() + spInf2.getAvgSparsity(), 1)));
 			case EQZERO:
 			case DIAG:
 			case CBIND:
@@ -106,7 +105,7 @@ public class EstimatorBasicWorst extends SparsityEstimator
 			case NEQZERO:
 			case TRANS:
 			case RESHAPE:
-				return estimExactMetaData(mc1, mc2, op);
+				return estimExactMetaData(spInf1, spInf2, op);
 			default:
 				throw new NotImplementedException();
 		}

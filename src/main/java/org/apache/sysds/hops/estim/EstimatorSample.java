@@ -21,6 +21,7 @@ package org.apache.sysds.hops.estim;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.estim.EstimatorBasicAvg.ScalarSparsity;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -63,7 +64,7 @@ public class EstimatorSample extends SparsityEstimator
 	}
 	
 	@Override
-	public DataCharacteristics estim(MMNode root) {
+	public ScalarSparsity estim(MMNode root) {
 		LOG.warn("Recursive estimates not supported by EstimatorSample, falling back to EstimatorBasicAvg.");
 		return new EstimatorBasicAvg().estim(root);
 	}
@@ -157,9 +158,9 @@ public class EstimatorSample extends SparsityEstimator
 			case TRANS:
 			case DIAG:
 			case RESHAPE:
-				DataCharacteristics mc1 = m1.getDataCharacteristics();
-				DataCharacteristics mc2 = m2.getDataCharacteristics();
-				return OptimizerUtils.getSparsity(estimExactMetaData(mc1, mc2, op));
+				ScalarSparsity ssp1 = new ScalarSparsity(m1);
+				ScalarSparsity ssp2 = new ScalarSparsity(m2);
+				return estimExactMetaData(ssp1, ssp2, op).getAvgSparsity();
 			default:
 				throw new NotImplementedException();
 		}

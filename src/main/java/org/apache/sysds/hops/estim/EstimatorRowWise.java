@@ -22,6 +22,7 @@ package org.apache.sysds.hops.estim;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.estim.EstimatorBasicAvg.ScalarSparsity;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -43,12 +44,8 @@ import java.util.stream.IntStream;
  */
 public class EstimatorRowWise extends SparsityEstimator {
 	@Override
-	public DataCharacteristics estim(MMNode root) {
-		estimInternChain(root);
-		double sparsity = root.getSparsityInformation().getAvgSparsity();
-
-		DataCharacteristics outputCharacteristics = deriveOutputCharacteristics(root, sparsity);
-		return root.setDataCharacteristics(outputCharacteristics);
+	public RowwiseSparsity estim(MMNode root) {
+		return estimInternChain(root);
 	}
 
 	@Override
@@ -59,8 +56,8 @@ public class EstimatorRowWise extends SparsityEstimator {
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
 		if( isExactMetadataOp(op, m1.getNumColumns()) ) {
-			return estimExactMetaData(m1.getDataCharacteristics(),
-				m2.getDataCharacteristics(), op).getSparsity();
+			return estimExactMetaData(new ScalarSparsity(m1),
+				new ScalarSparsity(m2), op).getAvgSparsity();
 		}
 
 		RowwiseSparsity rsOut = estimIntern(m1, m2, op);
@@ -69,8 +66,8 @@ public class EstimatorRowWise extends SparsityEstimator {
 
 	@Override
 	public double estim(MatrixBlock m1, OpCode op) {
-		if( isExactMetadataOp(op, m1.getNumColumns()) )
-			return estimExactMetaData(m1.getDataCharacteristics(), null, op).getSparsity();
+		if(isExactMetadataOp(op, m1.getNumColumns()))
+			return estimExactMetaData(new ScalarSparsity(m1), null, op).getAvgSparsity();
 
 		RowwiseSparsity rsOut = estimIntern(m1, op);
 		return rsOut.getAvgSparsity();
@@ -386,7 +383,7 @@ public class EstimatorRowWise extends SparsityEstimator {
 
 		@Override
 		public long getNonZeros() {
-			return Double.valueOf(DoubleStream.of(rSpar).average().orElse(0) * getNumRows() * getNumColumns())
+			return Double.valueOf(getAvgSparsity() * getNumRows() * getNumColumns())
 				.longValue();
 		}
 

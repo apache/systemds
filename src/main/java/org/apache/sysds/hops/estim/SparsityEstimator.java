@@ -23,9 +23,8 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.HopsException;
+import org.apache.sysds.hops.estim.EstimatorBasicAvg.ScalarSparsity;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 public abstract class SparsityEstimator 
 {
@@ -61,9 +60,9 @@ public abstract class SparsityEstimator
 	 * for the given operator graph of a single root node.
 	 * 
 	 * @param root DAG root node
-	 * @return output data characteristics
+	 * @return output sparsity
 	 */
-	public abstract DataCharacteristics estim(MMNode root);
+	public abstract SparsityInformation estim(MMNode root);
 	
 	
 	/**
@@ -105,28 +104,28 @@ public abstract class SparsityEstimator
 			&& (op != OpCode.DIAG || clen == 1);
 	}
 
-	protected DataCharacteristics estimExactMetaData(DataCharacteristics dc1, DataCharacteristics dc2, OpCode op) {
+	protected ScalarSparsity estimExactMetaData(SparsityInformation ssp1, SparsityInformation ssp2, OpCode op) {
 		switch( op ) {
 			case EQZERO:
-				return new MatrixCharacteristics(dc1.getRows(), dc1.getCols(),
-					dc1.getRows() * dc1.getCols() - dc1.getNonZeros());
+				return new ScalarSparsity(ssp1.getNumRows(), ssp1.getNumColumns(),
+					ssp1.getNumRows() * ssp1.getNumColumns() - ssp1.getNonZeros());
 			case DIAG:
-				return (dc1.getCols() == 1) ?
-					new MatrixCharacteristics(dc1.getRows(), dc1.getRows(), dc1.getNonZeros()) :
-					new MatrixCharacteristics(dc1.getRows(), 1, Math.min(dc1.getRows(), dc1.getNonZeros()));
+				return (ssp1.getNumColumns() == 1) ?
+					new ScalarSparsity(ssp1.getNumRows(), ssp1.getNumRows(), ssp1.getNonZeros()) :
+					new ScalarSparsity(ssp1.getNumRows(), 1, Math.min(ssp1.getNumRows(), ssp1.getNonZeros()));
 			// binary operations that preserve sparsity exactly
 			case CBIND:
-				return new MatrixCharacteristics(dc1.getRows(),
-					dc1.getCols() + dc2.getCols(), dc1.getNonZeros() + dc2.getNonZeros());
+				return new ScalarSparsity(ssp1.getNumRows(),
+					ssp1.getNumColumns() + ssp2.getNumColumns(), ssp1.getNonZeros() + ssp2.getNonZeros());
 			case RBIND:
-				return new MatrixCharacteristics(dc1.getRows() + dc2.getRows(),
-					dc1.getCols(), dc1.getNonZeros() + dc2.getNonZeros());
+				return new ScalarSparsity(ssp1.getNumRows() + ssp2.getNumRows(),
+					ssp1.getNumColumns(), ssp1.getNonZeros() + ssp2.getNonZeros());
 			case TRANS:
-				return new MatrixCharacteristics(dc1.getCols(), dc1.getRows(), dc1.getNonZeros());
+				return new ScalarSparsity(ssp1.getNumColumns(), ssp1.getNumRows(), ssp1.getNonZeros());
 			// unary operation that preserve sparsity exactly
 			case NEQZERO:
 			case RESHAPE:
-				return dc1;
+				return new ScalarSparsity(ssp1.getNumRows(), ssp1.getNumColumns(), ssp1.getNonZeros());
 			default:
 				throw new HopsException("Opcode is not an exact meta data operation: "+op.name());
 		}

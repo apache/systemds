@@ -63,14 +63,12 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 	}
 	
 	@Override
-	public DataCharacteristics estim(MMNode root) {
+	public LayeredGraph estim(MMNode root) {
 		//List<MatrixBlock> leafs = getMatrices(root, new ArrayList<>());
 		//List<OpCode> ops = getOps(root, new ArrayList<>());
 		//List<LayeredGraph> LGs = new ArrayList<>();
 		LayeredGraph ret = traverse(root);
-		long nnz = ret.estimateNnz();
-		return root.setDataCharacteristics(new MatrixCharacteristics(
-			ret._nodes.get(0).length, ret._nodes.get(ret._nodes.size() - 1).length, nnz));
+		return ret;
 	}
 
 	public LayeredGraph traverse(MMNode node) {
@@ -110,7 +108,8 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 	
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2) {
-		LayeredGraph graph = new LayeredGraph(Arrays.asList(m1,m2), _rounds, _seeds.nextInt());
+		LayeredGraph graph = new LayeredGraph(Arrays.asList(m1,m2), m1.getNumRows(), m2.getNumColumns(),
+			_rounds, _seeds.nextInt());
 		return OptimizerUtils.getSparsity(
 			m1.getNumRows(), m2.getNumColumns(), graph.estimateNnz());
 	}
@@ -162,24 +161,29 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 		return ops;
 	}
 
-	public static class LayeredGraph {
+	public static class LayeredGraph extends SparsityInformation {
 		private final List<Node[]> _nodes; //nodes partitioned by graph level
 		private final int _rounds;         //length of propagated r-vectors 
 		private final Random _seeds;
-		
+
 		public LayeredGraph(int r, int seed) {
+			this(List.of(), -1, -1, r, seed);
+		}
+
+		public LayeredGraph(List<MatrixBlock> chain, int nRowsFirst, int nColsLast, int r, int seed) {
+			super(nRowsFirst, nColsLast);
 			_nodes = new ArrayList<>();
 			_rounds = r;
 			_seeds = new Random(seed);
-		}
-		
-		public LayeredGraph(List<MatrixBlock> chain, int r, int seed) {
-			this(r, seed);
 			chain.forEach(i -> buildNext(i));
 		}
 
 		public LayeredGraph(MatrixBlock m, int r, int seed) {
-			this(r, seed);
+			super(m);
+
+			_nodes = new ArrayList<>();
+			_rounds = r;
+			_seeds = new Random(seed);
 			buildNext(m);
 		}
 		
@@ -228,7 +232,11 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 				}
 			}
 		}
-		
+
+		public long getNonZeros() {
+			throw new NotImplementedException("Not implemented yet.");
+		}
+
 		public long estimateNnz() {
 			//step 1: assign random vectors ~exp(lambda=1) to all leaf nodes
 			//(lambda is not the mean, if lambda is 2 mean is 1/2)
@@ -252,7 +260,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 		}
 
 		public LayeredGraph rbind(LayeredGraph lg) {
-			LayeredGraph ret = new LayeredGraph(List.of(), _rounds, _seeds.nextInt());
+			LayeredGraph ret = new LayeredGraph(_rounds, _seeds.nextInt());
 
 			Node[] rows = new Node[_nodes.get(0).length + lg._nodes.get(0).length];
 			Node[] columns = _nodes.get(1).clone();
@@ -276,7 +284,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 		}
 
 		public LayeredGraph cbind(LayeredGraph lg) {
-			LayeredGraph ret = new LayeredGraph(List.of(), _rounds, _seeds.nextInt());
+			LayeredGraph ret = new LayeredGraph(_rounds, _seeds.nextInt());
 			int colLength = _nodes.get(1).length + lg._nodes.get(1).length;
 
 			Node[] rows = _nodes.get(0).clone();
@@ -304,11 +312,12 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 			List<MatrixBlock> m = Stream.concat(
 				this.toMatrixBlockList().stream(), lg.toMatrixBlockList().stream())
 				.collect(Collectors.toList());
-			return new LayeredGraph(m, _rounds, _seeds.nextInt());
+			return new LayeredGraph(m, m.get(0).getNumRows(), m.get(m.size()-1).getNumColumns(),
+				_rounds, _seeds.nextInt());
 		}
 
 		public LayeredGraph or(LayeredGraph lg) {
-			LayeredGraph ret = new LayeredGraph(List.of(), _rounds, _seeds.nextInt());
+			LayeredGraph ret = new LayeredGraph(_rounds, _seeds.nextInt());
 			Node[] rows = new Node[_nodes.get(0).length];
 			for (int i = 0; i < _nodes.get(0).length; i++)
 				rows[i] = new Node();
@@ -337,7 +346,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 		}
 
 		public LayeredGraph and(LayeredGraph lg) {
-			LayeredGraph ret = new LayeredGraph(List.of(), _rounds, _seeds.nextInt());
+			LayeredGraph ret = new LayeredGraph(_rounds, _seeds.nextInt());
 			Node[] rows = new Node[_nodes.get(0).length];
 			for (int i = 0; i < _nodes.get(0).length; i++)
 				rows[i] = new Node();
@@ -366,7 +375,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 		}
 
 		public LayeredGraph transpose() {
-			LayeredGraph ret = new LayeredGraph(List.of(), _rounds, _seeds.nextInt());
+			LayeredGraph ret = new LayeredGraph(_rounds, _seeds.nextInt());
 			Node[] rows = new Node[_nodes.get(_nodes.size() - 1).length];
 			for (int i = 0; i < rows.length; i++)
 				rows[i] = new Node();
@@ -395,7 +404,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 		}
 
 		public LayeredGraph diag() {
-			LayeredGraph ret = new LayeredGraph(List.of(), _rounds, _seeds.nextInt());
+			LayeredGraph ret = new LayeredGraph(_rounds, _seeds.nextInt());
 			Node[] rowsOld = _nodes.get(0);
 			Node[] columnsOld = _nodes.get(1);
 

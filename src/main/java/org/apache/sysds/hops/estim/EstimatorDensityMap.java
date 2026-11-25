@@ -269,13 +269,21 @@ public class EstimatorDensityMap extends SparsityEstimator
 		public int getNumColumnsOrig() {
 			return _clen;
 		}
-		
+
+		@Override
 		public long getNonZeros() {
 			if(_scaled)
 				toNnz();
 			return Math.round(_map.sum());
 		}
-		
+
+		@Override
+		public double getAvgSparsity() {
+			if(!_scaled)
+				toSparsity();
+			return _map.mean();
+		}
+
 		public int getRowBlockize(int r) {
 			return UtilFunctions.computeBlockSize(_rlen, r+1, _b);
 		}

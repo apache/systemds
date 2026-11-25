@@ -37,7 +37,8 @@ import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 public class TransposePerf {
 
 	public enum Mode {
-		DENSE_DENSE(false, false), DENSE_SPARSE(false, true);
+		DENSE_DENSE(false, false), DENSE_SPARSE(false, true),
+		SPARSE_DENSE(true, false);
 
 		public final boolean sparseIn;
 		public final boolean sparseOut;
@@ -50,7 +51,7 @@ public class TransposePerf {
 
 	private static final int[][] SHAPES = {{1000, 1000}, {3000, 3000}};
 	private static final double[] SPARSITIES = {0.5, 0.4, 0.3, 0.2, 0.1, 0.05, 0.01, 0.001, 0.0001};
-	private static final Mode[] MODES = {Mode.DENSE_DENSE, Mode.DENSE_SPARSE};
+	private static final Mode[] MODES = {Mode.DENSE_DENSE, Mode.DENSE_SPARSE, Mode.SPARSE_DENSE};
 
 	private final int reps;
 	private final int warmup;

@@ -134,7 +134,7 @@ public class SquaredProductChainTest extends AutomatedTestBase
 		
 		//compare estimated and real sparsity
 		double est = estim.estim(new MMNode(new MMNode(new MMNode(m1), new MMNode(m2),
-			OpCode.MM), new MMNode(m3), OpCode.MM)).getSparsity();
+			OpCode.MM), new MMNode(m3), OpCode.MM)).getAvgSparsity();
 		TestUtils.compareScalars(est, m5.getSparsity(),
 			(estim instanceof EstimatorBitsetMM) ? 0 : //exact
 			(estim instanceof EstimatorBasicWorst) ? 1.0 : 1e-4);

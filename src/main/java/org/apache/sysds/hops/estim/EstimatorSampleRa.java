@@ -22,11 +22,11 @@ package org.apache.sysds.hops.estim;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.estim.EstimatorBasicAvg.ScalarSparsity;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.LibMatrixDatagen;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -90,7 +90,7 @@ public class EstimatorSampleRa extends SparsityEstimator
 	}
 	
 	@Override
-	public DataCharacteristics estim(MMNode root) {
+	public ScalarSparsity estim(MMNode root) {
 		LOG.warn("Recursive estimates not supported by EstimatorSampleRa,"
 			+ " falling back to EstimatorBasicAvg.");
 		return new EstimatorBasicAvg().estim(root);
@@ -130,7 +130,7 @@ public class EstimatorSampleRa extends SparsityEstimator
 
 	@Override
 	public MMNode getInputMMNode(MatrixBlock mb) {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		throw new NotImplementedException("Not implemented yet.");
 	}
 
 	private void initHashArrays(int m, int n, int l) {

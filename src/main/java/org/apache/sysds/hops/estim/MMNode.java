@@ -35,7 +35,7 @@ public class MMNode
 	private final MMNode _m2;
 	private final MatrixBlock _data;
 	private final DataCharacteristics _mc;
-	private Object _synops = null;
+	private SparsityInformation _sparsityInfo = null;
 	private final OpCode _op;
 	private final long[] _misc;
 	
@@ -83,7 +83,7 @@ public class MMNode
 			_m1.reset();
 		if( _m2 != null )
 			_m2.reset();
-		_synops = null;
+		_sparsityInfo = null;
 	}
 	
 	public int getRows() {
@@ -128,12 +128,12 @@ public class MMNode
 		return _data;
 	}
 	
-	public void setSynopsis(Object obj) {
-		_synops = obj;
+	public void setSparsityInformation(SparsityInformation spInf) {
+		_sparsityInfo = spInf;
 	}
 	
-	public Object getSynopsis() {
-		return _synops;
+	public SparsityInformation getSparsityInformation() {
+		return _sparsityInfo;
 	}
 	
 	public OpCode getOp() {

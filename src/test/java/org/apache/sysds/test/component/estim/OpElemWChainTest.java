@@ -168,7 +168,7 @@ public class OpElemWChainTest extends AutomatedTestBase
 		m1.binaryOperations(bOp, m2, m4);
 		MatrixBlock m5 = m4.aggregateBinaryOperations(m4, m3,
 				new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
-		double est = estim.estim(new MMNode(new MMNode(new MMNode(m1), new MMNode(m2), op), new MMNode(m3), OpCode.MM)).getSparsity();
+		double est = estim.estim(new MMNode(new MMNode(new MMNode(m1), new MMNode(m2), op), new MMNode(m3), OpCode.MM)).getAvgSparsity();
 
 		//compare estimated and real sparsity
 		TestUtils.compareScalars(est, m5.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 9e-1 :

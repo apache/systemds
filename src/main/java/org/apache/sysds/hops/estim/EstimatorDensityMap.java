@@ -21,12 +21,11 @@ package org.apache.sysds.hops.estim;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.estim.EstimatorBasicAvg.ScalarSparsity;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
@@ -55,15 +54,16 @@ public class EstimatorDensityMap extends SparsityEstimator
 	}
 	
 	@Override
-	public DataCharacteristics estim(MMNode root) {
-		DensityMap m1Map = getCachedSynopsis(root.getLeft());
-		DensityMap m2Map = getCachedSynopsis(root.getRight());
+	public DensityMap estim(MMNode root) {
+		DensityMap m1Map = getCachedSparsityInformation(root.getLeft());
+		DensityMap m2Map = getCachedSparsityInformation(root.getRight());
 		
+		if(m1Map == null || (m2Map == null && root.getOp().isBinaryOp()))
+			return null;
 		//estimate output density map and sparsity
 		DensityMap outMap = estimIntern(m1Map, m2Map, root.getOp());
-		root.setSynopsis(outMap); //memoize density map
-		return root.setDataCharacteristics(new MatrixCharacteristics(
-			outMap.getNumRowsOrig(), outMap.getNumColumnsOrig(), outMap.getNonZeros()));
+		root.setSparsityInformation(outMap); //memoize density map
+		return outMap;
 	}
 
 	@Override
@@ -73,9 +73,9 @@ public class EstimatorDensityMap extends SparsityEstimator
 	
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
-		if( isExactMetadataOp(op) )
-			return estimExactMetaData(m1.getDataCharacteristics(), m2 != null ?
-				m2.getDataCharacteristics() : null, op).getSparsity();
+		if(isExactMetadataOp(op))
+			return estimExactMetaData(new ScalarSparsity(m1), m2 != null ?
+				new ScalarSparsity(m2) : null, op).getAvgSparsity();
 		DensityMap m1Map = new DensityMap(m1, _b);
 		DensityMap m2Map = (m1 == m2 || m2 == null) ? //self product
 			m1Map : new DensityMap(m2, _b);
@@ -92,19 +92,19 @@ public class EstimatorDensityMap extends SparsityEstimator
 	@Override
 	public MMNode getInputMMNode(MatrixBlock mb) {
 		MMNode node = new MMNode(mb);
-		getCachedSynopsis(node);
+		getCachedSparsityInformation(node);
 		return node;
 	}
 
-	private DensityMap getCachedSynopsis(MMNode node) {
+	private DensityMap getCachedSparsityInformation(MMNode node) {
 		if( node == null )
 			return null;
 		//ensure synopsis is properly cached and reused
-		if( node.isLeaf() && node.getSynopsis() == null )
-			node.setSynopsis(new DensityMap(node.getData(), _b));
+		if( node.isLeaf() && node.getSparsityInformation() == null )
+			node.setSparsityInformation(new DensityMap(node.getData(), _b));
 		else if( !node.isLeaf() )
 			estim(node); //recursively obtain synopsis
-		return (DensityMap) node.getSynopsis();
+		return (DensityMap) node.getSparsityInformation();
 	}
 	
 	/**
@@ -227,16 +227,13 @@ public class EstimatorDensityMap extends SparsityEstimator
 			m1Map.getNumColumnsOrig(), _b, m1Map._scaled);
 	}
 	
-	public static class DensityMap {
+	public static class DensityMap extends SparsityInformation {
 		private final MatrixBlock _map;
-		private final int _rlen;
-		private final int _clen;
 		private final int _b;
 		private boolean _scaled; //false->nnz, true->sp
 		
 		public DensityMap(MatrixBlock in, int b) {
-			_rlen = in.getNumRows();
-			_clen = in.getNumColumns();
+			super(in);
 			_b = b;
 			_map = init(in);
 			_scaled = false;
@@ -245,8 +242,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 		}
 		
 		public DensityMap(MatrixBlock map, int rlenOrig, int clenOrig, int b, boolean scaled) {
-			_rlen = rlenOrig;
-			_clen = clenOrig;
+			super(rlenOrig, clenOrig);
 			_b = b;
 			_map = map;
 			_scaled = scaled;
@@ -273,12 +269,21 @@ public class EstimatorDensityMap extends SparsityEstimator
 		public int getNumColumnsOrig() {
 			return _clen;
 		}
-		
+
+		@Override
 		public long getNonZeros() {
-			if( _scaled ) toNnz();
+			if(_scaled)
+				toNnz();
 			return Math.round(_map.sum());
 		}
-		
+
+		@Override
+		public double getAvgSparsity() {
+			if(!_scaled)
+				toSparsity();
+			return _map.mean();
+		}
+
 		public int getRowBlockize(int r) {
 			return UtilFunctions.computeBlockSize(_rlen, r+1, _b);
 		}

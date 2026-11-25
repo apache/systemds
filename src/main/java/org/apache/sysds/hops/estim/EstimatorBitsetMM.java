@@ -22,11 +22,10 @@ package org.apache.sysds.hops.estim;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.hops.HopsException;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.estim.EstimatorBasicAvg.ScalarSparsity;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 import java.util.BitSet;
@@ -56,14 +55,15 @@ public class EstimatorBitsetMM extends SparsityEstimator
 	}
 	
 	@Override
-	public DataCharacteristics estim(MMNode root) {
-		BitsetMatrix m1Map = getCachedSynopsis(root.getLeft());
-		BitsetMatrix m2Map = getCachedSynopsis(root.getRight());
-		
+	public BitsetMatrix estim(MMNode root) {
+		BitsetMatrix m1Map = getCachedSparsityInformation(root.getLeft());
+		BitsetMatrix m2Map = getCachedSparsityInformation(root.getRight());
+
+		if(m1Map == null || (m2Map == null && root.getOp().isBinaryOp()))
+			return null;
 		BitsetMatrix outMap = estimInternal(m1Map, m2Map, root.getOp());
-		root.setSynopsis(outMap); // memorize boolean matrix
-		return root.setDataCharacteristics(new MatrixCharacteristics(
-			outMap.getNumRows(), outMap.getNumColumns(), outMap.getNonZeros()));
+		root.setSparsityInformation(outMap); // memorize boolean matrix
+		return outMap;
 	}
 
 	@Override
@@ -73,9 +73,9 @@ public class EstimatorBitsetMM extends SparsityEstimator
 	
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
-		if( isExactMetadataOp(op) )
-			return estimExactMetaData(m1.getDataCharacteristics(),
-				m2.getDataCharacteristics(), op).getSparsity();
+		if(isExactMetadataOp(op))
+			return estimExactMetaData(new ScalarSparsity(m1),
+				new ScalarSparsity(m2), op).getAvgSparsity();
 		BitsetMatrix m1Map = createBitset(m1);
 		BitsetMatrix m2Map = (m1 == m2) ? //self product
 			m1Map : createBitset(m2);
@@ -87,7 +87,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 	@Override
 	public double estim(MatrixBlock m, OpCode op) {
 		if( isExactMetadataOp(op) )
-			return estimExactMetaData(m.getDataCharacteristics(), null, op).getSparsity();
+			return estimExactMetaData(new ScalarSparsity(m), null, op).getAvgSparsity();
 		BitsetMatrix m1Map = createBitset(m);
 		BitsetMatrix outMap = estimInternal(m1Map, null, op);
 		return OptimizerUtils.getSparsity(outMap.getNumRows(),
@@ -97,19 +97,19 @@ public class EstimatorBitsetMM extends SparsityEstimator
 	@Override
 	public MMNode getInputMMNode(MatrixBlock mb) {
 		MMNode node = new MMNode(mb);
-		getCachedSynopsis(node);
+		getCachedSparsityInformation(node);
 		return node;
 	}
 
-	private BitsetMatrix getCachedSynopsis(MMNode node) {
+	private BitsetMatrix getCachedSparsityInformation(MMNode node) {
 		if( node == null )
 			return null;
 		//ensure synopsis is properly cached and reused
-		if( node.isLeaf() && node.getSynopsis() == null )
-			node.setSynopsis(createBitset(node.getData()));
+		if( node.isLeaf() && node.getSparsityInformation() == null )
+			node.setSparsityInformation(createBitset(node.getData()));
 		else if( !node.isLeaf() )
 			estim(node); //recursively obtain synopsis
-		return (BitsetMatrix) node.getSynopsis();
+		return (BitsetMatrix) node.getSparsityInformation();
 	}
 
 	private static BitsetMatrix estimInternal(BitsetMatrix m1Map, BitsetMatrix m2Map, OpCode op) {
@@ -131,23 +131,16 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		}
 	}
 
-	public abstract static class BitsetMatrix {
-		protected final int _rlen;
-		protected final int _clen;
+	public abstract static class BitsetMatrix extends SparsityInformation {
 		protected long _nonZeros;
 	
 		public BitsetMatrix(int rlen, int clen) {
-			_rlen = rlen;
-			_clen = clen;
+			super(rlen, clen);
 			_nonZeros = 0;
 		}
-		
-		public int getNumRows() {
-			return _rlen;
-		}
 
-		public int getNumColumns() {
-			return _clen;
+		public BitsetMatrix(MatrixBlock mb) {
+			super(mb);
 		}
 
 		public long getNonZeros() {
@@ -171,7 +164,10 @@ public class EstimatorBitsetMM extends SparsityEstimator
 				//single-threaded bitset construction
 				buildIntern(in, 0, in.getNumRows());
 			}
-			_nonZeros = in.getNonZeros();
+			if((_nonZeros = in.getNonZeros()) <= 0) {
+				in.recomputeNonZeros();
+				_nonZeros = in.getNonZeros();
+			}
 		}
 
 		public BitsetMatrix matMult(BitsetMatrix m2) {

@@ -164,7 +164,10 @@ public class EstimatorBitsetMM extends SparsityEstimator
 				//single-threaded bitset construction
 				buildIntern(in, 0, in.getNumRows());
 			}
-			_nonZeros = in.getNonZeros();
+			if((_nonZeros = in.getNonZeros()) <= 0) {
+				in.recomputeNonZeros();
+				_nonZeros = in.getNonZeros();
+			}
 		}
 
 		public BitsetMatrix matMult(BitsetMatrix m2) {

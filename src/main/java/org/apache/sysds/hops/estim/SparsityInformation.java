@@ -52,6 +52,6 @@ public abstract class SparsityInformation {
 	public abstract long getNonZeros();
 
 	public double getAvgSparsity() {
-		return getNonZeros() / (getNumRows()*getNumColumns());
+		return (double)getNonZeros() / (getNumRows()*getNumColumns());
 	}
 }

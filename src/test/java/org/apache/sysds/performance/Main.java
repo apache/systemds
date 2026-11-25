@@ -40,6 +40,7 @@ import org.apache.sysds.performance.matrix.MatrixReplacePerf;
 import org.apache.sysds.performance.matrix.MatrixStorage;
 import org.apache.sysds.performance.matrix.ReshapePerf;
 import org.apache.sysds.performance.matrix.SparseAppend;
+import org.apache.sysds.performance.matrix.TransposePerf;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -146,6 +147,9 @@ public class Main {
 				break;
 			case 1009:
 				MatrixMultiplicationPerf.main(args);
+				break;
+			case 1010:
+				TransposePerf.main(args);
 				break;
 			default:
 				break;

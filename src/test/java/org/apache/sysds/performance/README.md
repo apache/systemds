@@ -103,3 +103,10 @@ matrix multiplication
 ```bash
 ./src/test/scripts/performance/matrixMultiplication.sh
 ```
+
+
+transpose dense/sparse formats
+
+```bash
+java -jar -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html target/systemds-3.4.0-SNAPSHOT-perf.jar 1010 30 10 1
+```

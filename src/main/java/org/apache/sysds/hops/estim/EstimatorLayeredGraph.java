@@ -68,7 +68,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 		//List<OpCode> ops = getOps(root, new ArrayList<>());
 		//List<LayeredGraph> LGs = new ArrayList<>();
 		LayeredGraph ret = traverse(root);
-		long nnz = ret.estimateNnz();
+		long nnz = ret.getNnz();
 		return root.setDataCharacteristics(new MatrixCharacteristics(
 			ret._nodes.get(0).length, ret._nodes.get(ret._nodes.size() - 1).length, nnz));
 	}
@@ -97,7 +97,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 		LayeredGraph lg2 = new LayeredGraph(m2, _rounds, _seeds.nextInt());
 		LayeredGraph output = estimInternal(lg1, lg2, op);
 		return OptimizerUtils.getSparsity(
-			output._nodes.get(0).length, output._nodes.get(output._nodes.size() - 1).length, output.estimateNnz());
+			output._nodes.get(0).length, output._nodes.get(output._nodes.size() - 1).length, output.getNnz());
 	}
 
 	@Override
@@ -105,14 +105,14 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 		LayeredGraph lg1 = new LayeredGraph(m, _rounds, _seeds.nextInt());
 		LayeredGraph output = estimInternal(lg1, null, op);
 		return OptimizerUtils.getSparsity(
-			output._nodes.get(0).length, output._nodes.get(output._nodes.size() - 1).length, output.estimateNnz());
+			output._nodes.get(0).length, output._nodes.get(output._nodes.size() - 1).length, output.getNnz());
 	}
 	
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2) {
 		LayeredGraph graph = new LayeredGraph(Arrays.asList(m1,m2), _rounds, _seeds.nextInt());
 		return OptimizerUtils.getSparsity(
-			m1.getNumRows(), m2.getNumColumns(), graph.estimateNnz());
+			m1.getNumRows(), m2.getNumColumns(), graph.getNnz());
 	}
 
 	@Override
@@ -241,10 +241,6 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 
 		@Override
 		public long getNnz() {
-			return estimateNnz();
-		}
-
-		public long estimateNnz() {
 			//step 1: assign random vectors ~exp(lambda=1) to all leaf nodes
 			//(lambda is not the mean, if lambda is 2 mean is 1/2)
 			ExponentialDistribution random = new ExponentialDistribution(

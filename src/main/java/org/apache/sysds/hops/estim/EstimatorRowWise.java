@@ -22,11 +22,15 @@ package org.apache.sysds.hops.estim;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
+import java.util.Arrays;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
@@ -41,7 +45,7 @@ public class EstimatorRowWise extends SparsityEstimator {
 	@Override
 	public DataCharacteristics estim(MMNode root) {
 		estimInternChain(root);
-		double sparsity = DoubleStream.of((double[])root.getSynopsis()).average().orElse(0);
+		double sparsity = ((RowwiseSparsity)root.getSynopsis()).getAvgSparsity();
 
 		DataCharacteristics outputCharacteristics = deriveOutputCharacteristics(root, sparsity);
 		return root.setDataCharacteristics(outputCharacteristics);
@@ -59,8 +63,8 @@ public class EstimatorRowWise extends SparsityEstimator {
 				m2.getDataCharacteristics(), op).getSparsity();
 		}
 
-		double[] rsOut = estimIntern(m1, m2, op);
-		return DoubleStream.of(rsOut).average().orElse(0);
+		RowwiseSparsity rsOut = estimIntern(m1, m2, op);
+		return rsOut.getAvgSparsity();
 	}
 
 	@Override
@@ -68,36 +72,49 @@ public class EstimatorRowWise extends SparsityEstimator {
 		if( isExactMetadataOp(op, m1.getNumColumns()) )
 			return estimExactMetaData(m1.getDataCharacteristics(), null, op).getSparsity();
 
-		double[] rsOut = estimIntern(m1, op);
-		return DoubleStream.of(rsOut).average().orElse(0);
+		RowwiseSparsity rsOut = estimIntern(m1, op);
+		return rsOut.getAvgSparsity();
 	}
 
 	@Override
 	public MMNode getInputMMNode(MatrixBlock mb) {
 		MMNode node = new MMNode(mb);
-		throw new UnsupportedOperationException("TODO: Implement getCachedSynopsis similarly to EstimatorMatrixHistogram.");
-		// return node;
+		getCachedSynopsis(node);
+		return node;
 	}
 
-	private double[] estimInternChain(MMNode node) {
+	private RowwiseSparsity getCachedSynopsis(MMNode node) {
+		if( node == null )
+			return null;
+		//ensure synopsis is properly cached and reused
+		if( node.isLeaf() && node.getSynopsis() == null )
+			node.setSynopsis(new RowwiseSparsity(node.getData()));
+		else if( !node.isLeaf() )
+			estim(node); //recursively obtain synopsis
+		return (RowwiseSparsity) node.getSynopsis();
+	}
+
+	private RowwiseSparsity estimInternChain(MMNode node) {
 		return estimInternChain(node, null, null);
 	}
 
-	private double[] estimInternChain(MMNode node, double[] rsRightNeighbor, OpCode opRightNeighbor) {
-		double[] rsOut;
+	private RowwiseSparsity estimInternChain(MMNode node, RowwiseSparsity rsRightNeighbor, OpCode opRightNeighbor) {
+		RowwiseSparsity rsOut;
 		if(node.isLeaf()) {
 			MatrixBlock mb = node.getData();
 			if(rsRightNeighbor != null)
 				rsOut = estimIntern(mb, rsRightNeighbor, opRightNeighbor);
 			else
-				rsOut = getRowWiseSparsityVector(mb);
+				rsOut = new RowwiseSparsity(mb);
 		}
 		else {
 			MMNode nodeLeft = node.getLeft();
 			MMNode nodeRight = node.getRight();
 			switch(node.getOp()) {
 				case MM:
-					double[] rsRightMM = estimInternChain(nodeRight, rsRightNeighbor, opRightNeighbor);
+					RowwiseSparsity rsRightMM = estimInternChain(nodeRight, rsRightNeighbor, opRightNeighbor);
+					if(rsRightMM == null)
+						return null;
 					rsOut = estimInternChain(nodeLeft, rsRightMM, node.getOp());
 					break;
 				case CBIND:
@@ -105,9 +122,11 @@ public class EstimatorRowWise extends SparsityEstimator {
 					 * NOTE: considering the current node as new DAG for estimation (cut), since the row sparsity of
 					 * the right neighbor cannot be aggregated into a cbind operation when having only row sparsity vectors
 					 */
-					double[] rsLeftCBind = estimInternChain(nodeLeft);
-					double[] rsRightCBind = estimInternChain(nodeRight);
-					double[] rsCBind = estimInternCBind(rsLeftCBind, rsRightCBind);
+					RowwiseSparsity rsLeftCBind = estimInternChain(nodeLeft);
+					RowwiseSparsity rsRightCBind = estimInternChain(nodeRight);
+					if(rsRightCBind == null || rsLeftCBind == null)
+						return null;
+					RowwiseSparsity rsCBind = estimInternCBind(rsLeftCBind, rsRightCBind);
 					if(rsRightNeighbor != null) {
 						rsOut = estimInternMMFallback(rsCBind, rsRightNeighbor);
 						if(opRightNeighbor != OpCode.MM)
@@ -122,9 +141,11 @@ public class EstimatorRowWise extends SparsityEstimator {
 					 * NOTE: considering the current node as new DAG for estimation (cut), since the row sparsity of
 					 * the right neighbor cannot be aggregated into an rbind operation when having only row sparsity vectors
 					 */
-					double[] rsLeftRBind = estimInternChain(nodeLeft);
-					double[] rsRightRBind = estimInternChain(nodeRight);
-					double[] rsRBind = estimInternRBind(rsLeftRBind, rsRightRBind);
+					RowwiseSparsity rsLeftRBind = estimInternChain(nodeLeft);
+					RowwiseSparsity rsRightRBind = estimInternChain(nodeRight);
+					if(rsRightRBind == null || rsLeftRBind == null)
+						return null;
+					RowwiseSparsity rsRBind = estimInternRBind(rsLeftRBind, rsRightRBind);
 					if(rsRightNeighbor != null) {
 						rsOut = estimInternMMFallback(rsRBind, rsRightNeighbor);
 						if(opRightNeighbor != OpCode.MM)
@@ -139,9 +160,11 @@ public class EstimatorRowWise extends SparsityEstimator {
 					 * NOTE: considering the current node as new DAG for estimation (cut), since the row sparsity of
 					 * the right neighbor cannot be aggregated into an element-wise operation when having only row sparsity vectors
 					 */
-					double[] rsLeftPlus = estimInternChain(nodeLeft);
-					double[] rsRightPlus = estimInternChain(nodeRight);
-					double[] rsPlus = estimInternPlus(rsLeftPlus, rsRightPlus);
+					RowwiseSparsity rsLeftPlus = estimInternChain(nodeLeft);
+					RowwiseSparsity rsRightPlus = estimInternChain(nodeRight);
+					if(rsRightPlus == null || rsLeftPlus == null)
+						return null;
+					RowwiseSparsity rsPlus = estimInternPlus(rsLeftPlus, rsRightPlus);
 					if(rsRightNeighbor != null) {
 						rsOut = estimInternMMFallback(rsPlus, rsRightNeighbor);
 						if(opRightNeighbor != OpCode.MM)
@@ -156,9 +179,11 @@ public class EstimatorRowWise extends SparsityEstimator {
 					 * NOTE: considering the current node as new DAG for estimation (cut), since the row sparsity of
 					 * the right neighbor cannot be aggregated into an element-wise operation when having only row sparsity vectors
 					 */
-					double[] rsLeftMult = estimInternChain(nodeLeft);
-					double[] rsRightMult = estimInternChain(nodeRight);
-					double[] rsMult = estimInternMult(rsLeftMult, rsRightMult);
+					RowwiseSparsity rsLeftMult = estimInternChain(nodeLeft);
+					RowwiseSparsity rsRightMult = estimInternChain(nodeRight);
+					if(rsRightMult == null || rsLeftMult == null)
+						return null;
+					RowwiseSparsity rsMult = estimInternMult(rsLeftMult, rsRightMult);
 					if(rsRightNeighbor != null) {
 						rsOut = estimInternMMFallback(rsMult, rsRightNeighbor);
 						if(opRightNeighbor != OpCode.MM)
@@ -174,33 +199,33 @@ public class EstimatorRowWise extends SparsityEstimator {
 			}
 		}
 		node.setSynopsis(rsOut);
-		node.setDataCharacteristics(deriveOutputCharacteristics(node, DoubleStream.of(rsOut).average().orElse(0)));
+		node.setDataCharacteristics(deriveOutputCharacteristics(node, rsOut.getAvgSparsity()));
 		return rsOut;
 	}
 
-	private double[] estimIntern(MatrixBlock m1, MatrixBlock m2, OpCode op) {
-		double[] rsM2 = getRowWiseSparsityVector(m2);
+	private RowwiseSparsity estimIntern(MatrixBlock m1, MatrixBlock m2, OpCode op) {
+		RowwiseSparsity rsM2 = new RowwiseSparsity(m2);
 		return estimIntern(m1, rsM2, op);
 	}
 
-	private double[] estimIntern(MatrixBlock m1, double[] rsM2, OpCode op) {
+	private RowwiseSparsity estimIntern(MatrixBlock m1, RowwiseSparsity rsM2, OpCode op) {
 		switch(op) {
 			case MM:
 				return estimInternMM(m1, rsM2);
 			case CBIND:
-				return estimInternCBind(getRowWiseSparsityVector(m1), rsM2);
+				return estimInternCBind(new RowwiseSparsity(m1), rsM2);
 			case RBIND:
-				return estimInternRBind(getRowWiseSparsityVector(m1), rsM2);
+				return estimInternRBind(new RowwiseSparsity(m1), rsM2);
 			case PLUS:
-				return estimInternPlus(getRowWiseSparsityVector(m1), rsM2);
+				return estimInternPlus(new RowwiseSparsity(m1), rsM2);
 			case MULT:
-				return estimInternMult(getRowWiseSparsityVector(m1), rsM2);
+				return estimInternMult(new RowwiseSparsity(m1), rsM2);
 			default:
 				throw new NotImplementedException("Sparsity estimation for operation " + op.toString() + " not supported yet.");
 		}
 	}
 
-	private double[] estimIntern(MatrixBlock mb, OpCode op) {
+	private RowwiseSparsity estimIntern(MatrixBlock mb, OpCode op) {
 		switch(op) {
 			case DIAG:
 				return estimInternDiag(mb);
@@ -212,14 +237,14 @@ public class EstimatorRowWise extends SparsityEstimator {
 	/**
 	 * Corresponds to Algorithm 1 in the publication
 	 */
-	private double[] estimInternMM(MatrixBlock m1, double[] rsM2) {
-		double[] rsOut = new double[m1.getNumRows()];
+	private RowwiseSparsity estimInternMM(MatrixBlock m1, RowwiseSparsity rsM2) {
+		RowwiseSparsity rsOut = new RowwiseSparsity(m1.getNumRows(), rsM2.getNumColumns());
 		for(int rIdx = 0; rIdx < m1.getNumRows(); rIdx++) {
 			double currentVal = 1;
 			for(int cIdx : getNonZeroColumnIndices(m1, rIdx)) {
-				currentVal *= 1.0 - rsM2[cIdx];
+				currentVal *= 1.0 - rsM2.get(cIdx);
 			}
-			rsOut[rIdx] = 1 - currentVal;
+			rsOut.set(rIdx, 1 - currentVal);
 		}
 		return rsOut;
 	}
@@ -229,78 +254,63 @@ public class EstimatorRowWise extends SparsityEstimator {
 	 * the case when we are limited to the row sparsity vectors of both inputs
 	 * NOTE: Considering the average of the second matrix would probably not be far off while saving computing time
 	 */
-	private double[] estimInternMMFallback(double[] rsM1, double[] rsM2) {
-		double[] rsOut = new double[rsM1.length];
-		for(int i = 0; i < rsM1.length; i++) {
-			double rsM1i = rsM1[i];
+	private RowwiseSparsity estimInternMMFallback(RowwiseSparsity rsM1, RowwiseSparsity rsM2) {
+		RowwiseSparsity rsOut = new RowwiseSparsity(rsM1.getNumRows(), rsM2.getNumColumns());
+		for(int i = 0; i < rsOut.getNumRows(); i++) {
+			double rsM1i = rsM1.get(i);
 			if(rsM1i == 0) {
-				rsOut[i] = 0;
+				rsOut.set(i,0);
 			}
 			else {
 				double currentVal = 1;
-				for(int j = 0; j < rsM2.length; j++) {
-					currentVal *= 1.0 - (rsM1i * rsM2[j]);
+				for(int j = 0; j < rsM2.getNumRows(); j++) {
+					currentVal *= 1.0 - (rsM1i * rsM2.get(j));
 				}
-				rsOut[i] = 1.0 - currentVal;
+				rsOut.set(i, 1.0 - currentVal);
 			}
 		}
 		return rsOut;
 	}
 
-	private double[] estimInternCBind(double[] rsM1, double[] rsM2) {
-		// FIXME: this estimate assumes that the number of columns is equivalent for both inputs
-		double[] rsOut = new double[rsM1.length];
-		for(int idx = 0; idx < rsM1.length; idx++) {
-			rsOut[idx] = (rsM1[idx] + rsM2[idx]) / 2.0;
+	private RowwiseSparsity estimInternCBind(RowwiseSparsity rsM1, RowwiseSparsity rsM2) {
+		RowwiseSparsity rsOut = new RowwiseSparsity(rsM1.getNumRows(), rsM1.getNumColumns() + rsM2.getNumColumns());
+		for(int idx = 0; idx < rsOut.getNumRows(); idx++) {
+			rsOut.set(idx, (rsM1.getNumColumns() * rsM1.get(idx))
+				+ (rsM2.getNumColumns() * rsM2.get(idx)) / rsOut.getNumColumns());
 		}
 		return rsOut;
 	}
 
-	private double[] estimInternRBind(double[] rsM1, double[] rsM2) {
-		return ArrayUtils.addAll(rsM1, rsM2);
+	private RowwiseSparsity estimInternRBind(RowwiseSparsity rsM1, RowwiseSparsity rsM2) {
+		RowwiseSparsity rsOut = new RowwiseSparsity(rsM1.getNumRows() + rsM2.getNumRows(), rsM1.getNumColumns());
+		rsOut.setVector(ArrayUtils.addAll(rsM1.getVector(), rsM2.getVector()));
+		return rsOut;
 	}
 
-	private double[] estimInternPlus(double[] rsM1, double[] rsM2) {
+	private RowwiseSparsity estimInternPlus(RowwiseSparsity rsM1, RowwiseSparsity rsM2) {
 		// row-wise average case estimates
 		// rsM1 + rsM2 - (rsM1 * rsM2)
-		double[] rsOut = new double[rsM1.length];
-		for(int idx = 0; idx < rsM1.length; idx++) {
-			rsOut[idx] = rsM1[idx] + rsM2[idx] - (rsM1[idx] * rsM2[idx]);
+		RowwiseSparsity rsOut = new RowwiseSparsity(rsM1.getNumRows(), rsM1.getNumColumns());
+		for(int idx = 0; idx < rsOut.getNumRows(); idx++) {
+			rsOut.set(idx, rsM1.get(idx) + rsM2.get(idx) - (rsM1.get(idx) * rsM2.get(idx)));
 		}
 		return rsOut;
 	}
 
-	private double[] estimInternMult(double[] rsM1, double[] rsM2) {
+	private RowwiseSparsity estimInternMult(RowwiseSparsity rsM1, RowwiseSparsity rsM2) {
 		// row-wise average case estimates
 		// rsM1 * rsM2
-		double[] rsOut = new double[rsM1.length];
-		for(int idx = 0; idx < rsM1.length; idx++) {
-			rsOut[idx] = rsM1[idx] * rsM2[idx];
+		RowwiseSparsity rsOut = new RowwiseSparsity(rsM1.getNumRows(), rsM1.getNumColumns());
+		for(int idx = 0; idx < rsOut.getNumRows(); idx++) {
+			rsOut.set(idx, rsM1.get(idx) * rsM2.get(idx));
 		}
 		return rsOut;
 	}
 
-	private double[] estimInternDiag(MatrixBlock mb) {
-		double[] rsOut = new double[mb.getNumRows()];
+	private RowwiseSparsity estimInternDiag(MatrixBlock mb) {
+		RowwiseSparsity rsOut = new RowwiseSparsity(mb.getNumRows(), 1);
 		for(int rIdx = 0; rIdx < mb.getNumRows(); rIdx++) {
-			rsOut[rIdx] = (mb.get(rIdx, rIdx) == 0) ? 0 : 1;
-		}
-		return rsOut;
-	}
-
-	private double[] getRowWiseSparsityVector(MatrixBlock mb) {
-		int numRows = mb.getNumRows();
-		double[] rsOut = new double[numRows];
-		if(mb.isInSparseFormat()) {
-			for(int rIdx = 0; rIdx < numRows; rIdx++) {
-				SparseRow sparseRow = mb.getSparseBlock().get(rIdx);
-				rsOut[rIdx] = (sparseRow == null) ? 0 : (double) sparseRow.size() / mb.getNumColumns();
-			}
-		}
-		else {
-			for(int rIdx = 0; rIdx < numRows; rIdx++) {
-				rsOut[rIdx] = (double) mb.getDenseBlock().countNonZeros(rIdx) / mb.getNumColumns();
-			}
+			rsOut.set(rIdx, (mb.get(rIdx, rIdx) == 0) ? 0 : 1);
 		}
 		return rsOut;
 	}
@@ -358,6 +368,67 @@ public class EstimatorRowWise extends SparsityEstimator {
 					"implemented yet, but could be implemented similar to EstimatorMatrixHistogram.java");
 			default:
 				throw new NotImplementedException();
+		}
+	}
+
+	public static class RowwiseSparsity extends SparsityInformation{
+		private double[] _row_spar;
+
+		public RowwiseSparsity(int rlen, int clen) {
+			super(rlen, clen);
+
+			_row_spar = new double[rlen];
+		}
+
+		public RowwiseSparsity(MatrixBlock mb) {
+			super(mb);
+
+			if(mb.getLength() == mb.getNonZeros()) {
+				// fully dense: constant row/column counts
+				_row_spar = new double[mb.getNumRows()];
+				Arrays.fill(_row_spar, 1);
+			}
+			else if(!mb.isEmpty()) {
+				if(mb.isInSparseFormat()) {
+					SparseBlock a = mb.getSparseBlock();
+					_row_spar = IntStream.range(0, mb.getNumRows())
+						.mapToDouble(idx -> (double)a.size(idx) / mb.getNumColumns()).toArray();
+				}
+				else {
+					DenseBlock a = mb.getDenseBlock();
+					_row_spar = IntStream.range(0, mb.getNumRows())
+						.mapToDouble(idx -> (double)a.countNonZeros(idx) / mb.getNumColumns()).toArray();
+				}
+			}
+			else {
+				throw new DMLRuntimeException("Matrix Block should not be empty at this point.");
+			}
+		}
+
+		@Override
+		public long getNnz() {
+			return Double.valueOf(getAvgSparsity() * getNumRows() * getNumColumns()).longValue();
+		}
+
+		@Override
+		public double getAvgSparsity() {
+			return DoubleStream.of(_row_spar).average().orElse(-1);
+		}
+
+		public double get(int rIdx) {
+			return _row_spar[rIdx];
+		}
+
+		public void set(int rIdx, double val) {
+			_row_spar[rIdx] = val;
+		}
+
+		public double[] getVector() {
+			return _row_spar;
+		}
+
+		public void setVector(double[] vec) {
+			_row_spar = vec;
 		}
 	}
 };

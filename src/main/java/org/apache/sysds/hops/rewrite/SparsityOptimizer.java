@@ -321,7 +321,8 @@ public class SparsityOptimizer {
 			inputMetaAvail &= ec.containsVariable(currentHop.getName());
 			if(inputMetaAvail) {
 				MatrixObject mo = ec.getMatrixObject(currentHop.getName());
-				sketchArray[counter] =_estim.getInputMMNode(mo.acquireReadAndRelease());
+				if(!(inputMetaAvail &= mo.isPartitioned()))
+					sketchArray[counter] =_estim.getInputMMNode(mo.acquireReadAndRelease());
 			}
 			else
 				break;

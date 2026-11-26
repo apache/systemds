@@ -50,11 +50,11 @@ public abstract class SparsityInformation {
 		return _clen;
 	}
 
-	public abstract long getNonZeros();
+	public abstract long getNnz();
 
 	public double getAvgSparsity() {
 		// FIXME: do not return sparsity of 1 when nnz is unknown
 		// return (double)getNonZeros() / (getNumRows()*getNumColumns());
-		return OptimizerUtils.getSparsity(getNumRows(), getNumColumns(), getNonZeros());
+		return OptimizerUtils.getSparsity(getNumRows(), getNumColumns(), getNnz());
 	}
 }

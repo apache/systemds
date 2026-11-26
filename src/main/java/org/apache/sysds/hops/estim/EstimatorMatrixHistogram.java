@@ -79,7 +79,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			.deriveOutputHistogram(h1, h2, ret, root.getOp(), root.getMisc());
 		root.setSynopsis(outMap);
 		return root.setDataCharacteristics(new MatrixCharacteristics(
-			outMap.getNumRows(), outMap.getNumColumns(), outMap.getNonZeros()));
+			outMap.getNumRows(), outMap.getNumColumns(), outMap.getNnz()));
 	}
 	
 	@Override 
@@ -132,7 +132,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			case MULT: {
 				final double scale = IntStream.range(0, h1.getNumColumns())
 					.mapToDouble(j -> (double)h1.cNnz[j] * h2.cNnz[j]).sum()
-					/ h1.getNonZeros() / h2.getNonZeros();
+					/ h1.getNnz() / h2.getNnz();
 				return IntStream.range(0, h1.getNumRows())
 					.mapToDouble(i -> (double)h1.rNnz[i] * h2.rNnz[i] * scale) //collisions
 					.sum() / msize;
@@ -140,7 +140,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			case PLUS: {
 				final double scale = IntStream.range(0, h1.getNumColumns())
 					.mapToDouble(j -> (double)h1.cNnz[j] * h2.cNnz[j]).sum()
-					/ h1.getNonZeros() / h2.getNonZeros();
+					/ h1.getNnz() / h2.getNnz();
 				return IntStream.range(0, h1.getNumRows())
 					.mapToDouble(i -> (double)h1.rNnz[i] + h2.rNnz[i] //all minus collisions
 						- (double)h1.rNnz[i] * h2.rNnz[i] * scale)
@@ -150,15 +150,15 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 				return 1D - h1.getAvgSparsity();
 			case DIAG:
 				return (h1.getNumColumns()==1) ?
-					OptimizerUtils.getSparsity(h1.getNumRows(), h1.getNumRows(), h1.getNonZeros()) :
-					OptimizerUtils.getSparsity(h1.getNumRows(), 1, Math.min(h1.getNumRows(), h1.getNonZeros()));
+					OptimizerUtils.getSparsity(h1.getNumRows(), h1.getNumRows(), h1.getNnz()) :
+					OptimizerUtils.getSparsity(h1.getNumRows(), 1, Math.min(h1.getNumRows(), h1.getNnz()));
 			//binary operations that preserve sparsity exactly
 			case CBIND:
 				return OptimizerUtils.getSparsity(h1.getNumRows(),
-					h1.getNumColumns()+h2.getNumColumns(), h1.getNonZeros() + h2.getNonZeros());
+					h1.getNumColumns()+h2.getNumColumns(), h1.getNnz() + h2.getNnz());
 			case RBIND:
 				return OptimizerUtils.getSparsity(h1.getNumRows()+h2.getNumRows(),
-					h1.getNumColumns(), h1.getNonZeros() + h2.getNonZeros());
+					h1.getNumColumns(), h1.getNnz() + h2.getNnz());
 			//unary operation that preserve sparsity exactly
 			case NEQZERO:
 			case TRANS:
@@ -351,7 +351,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		}
 
 		@Override
-		public long getNonZeros() {
+		public long getNnz() {
 			return getNumRows() < getNumColumns() ?
 				IntStream.range(0, getNumRows()).mapToLong(i-> rNnz[i]).sum() :
 				IntStream.range(0, getNumColumns()).mapToLong(i-> cNnz[i]).sum();
@@ -400,7 +400,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 					return new MatrixCharacteristics(h1.getNumRows(), ncol,
 						OptimizerUtils.getNnz(h1.getNumRows(), ncol, spOut));
 				case TRANS:
-					return new MatrixCharacteristics(h1.getNumColumns(), h1.getNumRows(), h1.getNonZeros());
+					return new MatrixCharacteristics(h1.getNumColumns(), h1.getNumRows(), h1.getNnz());
 				case RESHAPE:
 					return new MatrixCharacteristics((int)misc[0], (int)misc[1],
 						OptimizerUtils.getNnz((int)misc[0], (int)misc[1], spOut));
@@ -416,8 +416,8 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			if( h2.fullDiag ) return h1;
 			
 			//get input/output nnz for scaling
-			long nnz1 = h1.getNonZeros();
-			long nnz2 = h2.getNonZeros();
+			long nnz1 = h1.getNnz();
+			long nnz2 = h2.getNnz();
 			double nnzOut = spOut * h1.getNumRows() * h2.getNumColumns();
 			
 			//propagate h1.r and h2.c to output via simple scaling
@@ -458,10 +458,10 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		private static MatrixHistogram deriveMultHistogram(MatrixHistogram h1, MatrixHistogram h2) {
 			final double scaler = IntStream.range(0, h1.getNumColumns())
 				.mapToDouble(j -> (double)h1.cNnz[j] * h2.cNnz[j])
-				.sum() / h1.getNonZeros() / h2.getNonZeros();
+				.sum() / h1.getNnz() / h2.getNnz();
 			final double scalec = IntStream.range(0, h1.getNumRows())
 				.mapToDouble(j -> (double)h1.rNnz[j] * h2.rNnz[j])
-				.sum() / h1.getNonZeros() / h2.getNonZeros();
+				.sum() / h1.getNnz() / h2.getNnz();
 			int rMaxNnz = 0, cMaxNnz = 0;
 			Random rn = new Random();
 			int[] rNnz = new int[h1.getNumRows()];
@@ -480,10 +480,10 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		private static MatrixHistogram derivePlusHistogram(MatrixHistogram h1, MatrixHistogram h2) {
 			final double scaler = IntStream.range(0, h1.getNumColumns())
 				.mapToDouble(j -> (double)h1.cNnz[j] * h2.cNnz[j])
-				.sum() / h1.getNonZeros() / h2.getNonZeros();
+				.sum() / h1.getNnz() / h2.getNnz();
 			final double scalec = IntStream.range(0, h1.getNumRows())
 				.mapToDouble(j -> (double)h1.rNnz[j] * h2.rNnz[j])
-				.sum() / h1.getNonZeros() / h2.getNonZeros();
+				.sum() / h1.getNnz() / h2.getNnz();
 			int rMaxNnz = 0, cMaxNnz = 0;
 			Random rn = new Random();
 			int[] rNnz = new int[h1.getNumRows()];
@@ -549,7 +549,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 				int[] rNnz = new int[m], cNnz = new int[1];
 				int rMaxNnz = 0; Random rand = new Random();
 				for(int i=0; i<m; i++) {
-					rNnz[i] = probRound((double)h1.getNonZeros()/n, rand);
+					rNnz[i] = probRound((double)h1.getNnz()/n, rand);
 					rMaxNnz = Math.max(rMaxNnz, rNnz[i]);
 					cNnz[0] += rNnz[i];
 				}

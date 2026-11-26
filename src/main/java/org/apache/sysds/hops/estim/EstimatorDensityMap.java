@@ -63,7 +63,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 		DensityMap outMap = estimIntern(m1Map, m2Map, root.getOp());
 		root.setSynopsis(outMap); //memoize density map
 		return root.setDataCharacteristics(new MatrixCharacteristics(
-			outMap.getNumRows(), outMap.getNumColumns(), outMap.getNonZeros()));
+			outMap.getNumRows(), outMap.getNumColumns(), outMap.getNnz()));
 	}
 
 	@Override
@@ -81,7 +81,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 			m1Map : new DensityMap(m2, _b);
 		DensityMap outMap = estimIntern(m1Map, m2Map, op);
 		return OptimizerUtils.getSparsity( //aggregate output histogram
-			outMap.getNumRows(), outMap.getNumColumns(), outMap.getNonZeros());
+			outMap.getNumRows(), outMap.getNumColumns(), outMap.getNnz());
 	}
 	
 	@Override
@@ -211,7 +211,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 	}
 	
 	private static DensityMap estimInternReshape(DensityMap m1Map) {
-		MatrixBlock out = new MatrixBlock(1,1,(double)m1Map.getNonZeros());
+		MatrixBlock out = new MatrixBlock(1,1,(double)m1Map.getNnz());
 		int b = Math.max(m1Map.getNumRows(), m1Map.getNumColumns());
 		return new DensityMap(out, m1Map.getNumRows(),
 			m1Map.getNumColumns(), b, false);
@@ -264,7 +264,8 @@ public class EstimatorDensityMap extends SparsityEstimator
 			return _map.getNumColumns();
 		}
 
-		public long getNonZeros() {
+		@Override
+		public long getNnz() {
 			if( _scaled ) toNnz();
 			return Math.round(_map.sum());
 		}

@@ -26,7 +26,6 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 import java.util.BitSet;
@@ -62,8 +61,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		
 		BitsetMatrix outMap = estimInternal(m1Map, m2Map, root.getOp());
 		root.setSparsityInformation(outMap); // memorize boolean matrix
-		return root.setDataCharacteristics(new MatrixCharacteristics(
-			outMap.getNumRows(), outMap.getNumColumns(), outMap.getNnz()));
+		return root.setDataCharacteristics(outMap.deriveDataCharacteristics());
 	}
 
 	@Override

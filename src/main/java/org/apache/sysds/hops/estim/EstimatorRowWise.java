@@ -364,7 +364,7 @@ public class EstimatorRowWise extends SparsityEstimator {
 
 		@Override
 		public long getNnz() {
-			return Double.valueOf(getAvgSparsity() * getNumRows() * getNumColumns()).longValue();
+			return Math.round(getAvgSparsity() * getNumRows() * getNumColumns());
 		}
 
 		@Override

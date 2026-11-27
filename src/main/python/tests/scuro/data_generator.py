@@ -530,7 +530,7 @@ class TestDataGenerator:
 
     def __create_timeseries_data(self, idx, duration, speed_factor):
         path = f"{self.path}/TIMESERIES/{idx}.npy"
-        data = np.random.rand(duration, 1)
+        data = np.random.rand(10, 2)
         np.save(path, data)
 
     def __create_visual_data(self, idx, duration, fps, speed_factor, modality_type):

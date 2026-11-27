@@ -22,14 +22,24 @@
 import json
 import os
 import shutil
+import sys
+import tempfile
 import unittest
+from importlib.util import find_spec
+from unittest.mock import patch
 import numpy as np
 
 from tests.scuro.data_generator import setup_data
 from systemds.scuro.dataloader.audio_loader import AudioLoader, AudioStats
+from systemds.scuro.dataloader.base_loader import BaseLoader
 from systemds.scuro.dataloader.image_loader import ImageLoader, ImageStats
 from systemds.scuro.dataloader.json_loader import JSONLoader
 from systemds.scuro.dataloader.text_loader import TextLoader, TextStats
+from systemds.scuro.dataloader.timeseries_loader import (
+    TimeseriesLoader,
+    TimeseriesStats,
+    _import_wfdb,
+)
 from systemds.scuro.dataloader.video_loader import VideoLoader, VideoStats
 from systemds.scuro.modality.type import ModalityType
 
@@ -200,31 +210,157 @@ class TestDataLoadersLoadFromFiles(unittest.TestCase):
         self.assertEqual(stats.max_height, 120)
         self.assertEqual(stats.max_channels, 3)
 
-    # def test_timeseries_loader_loads_all_instances(self):
-    #     loader = TimeseriesLoader(
-    #         self.data_generator.get_modality_path(ModalityType.TIMESERIES),
-    #         self.data_generator.indices,
-    #     )
-    #     data, metadata = loader.load()
+    def test_timeseries_loader_loads_all_instances(self):
+        loader = TimeseriesLoader(
+            self.data_generator.get_modality_path(ModalityType.TIMESERIES),
+            self.data_generator.indices,
+            ["x", "y"],
+        )
+        data, metadata = loader.load()
 
-    #     self.assertEqual(len(data), self.num_instances)
-    #     self.assertEqual(len(metadata), self.num_instances)
+        self.assertEqual(len(data), self.num_instances)
+        self.assertEqual(len(metadata), self.num_instances)
 
-    #     for arr in data:
-    #         self.assertIsInstance(arr, np.ndarray)
-    #         self.assertEqual(arr.ndim, 2)
+        for arr in data:
+            self.assertIsInstance(arr, np.ndarray)
+            self.assertEqual(arr.ndim, 2)
 
-    # def test_timeseries_loader_stats(self):
-    #     loader = TimeseriesLoader(
-    #         self.data_generator.get_modality_path(ModalityType.TIMESERIES),
-    #         self.data_generator.indices,
-    #     )
-    #     stats = loader.stats
+    def test_timeseries_loader_stats(self):
+        loader = TimeseriesLoader(
+            self.data_generator.get_modality_path(ModalityType.TIMESERIES),
+            self.data_generator.indices,
+            ["x", "y"],
+        )
+        stats = loader.stats
 
-    #     self.assertIsInstance(stats, TimeseriesStats)
-    #     self.assertEqual(stats.num_instances, 2)
-    #     self.assertEqual(stats.max_length, 10)
-    #     self.assertEqual(stats.num_signals, 2)
+        self.assertIsInstance(stats, TimeseriesStats)
+        self.assertEqual(stats.num_instances, 2)
+        self.assertEqual(stats.max_length, 10)
+        self.assertEqual(stats.num_signals, 2)
+
+
+class TestFileSanityCheck(unittest.TestCase):
+    def test_missing_file_is_named_in_the_error(self):
+        with self.assertRaisesRegex(ValueError, "missing_file.npy"):
+            BaseLoader.file_sanity_check("missing_file.npy")
+
+
+class TestTimeseriesLoaderFormats(unittest.TestCase):
+    def setUp(self):
+        self.path = tempfile.mkdtemp() + "/"
+        self.addCleanup(shutil.rmtree, self.path)
+
+    def test_unsupported_formats_are_rejected(self):
+        for file_format in ("mat", "hdf5", "xyz"):
+            with self.subTest(file_format=file_format):
+                with self.assertRaisesRegex(ValueError, "Unsupported file format"):
+                    TimeseriesLoader(self.path, ["0"], ["x"], file_format=file_format)
+
+    def test_csv_columns_are_selected_by_signal_name(self):
+        values = np.arange(20, dtype=np.float32).reshape(10, 2)
+        np.savetxt(
+            self.path + "0.csv", values, delimiter=",", header="x,y", comments=""
+        )
+        loader = TimeseriesLoader(
+            self.path, ["0"], ["y"], file_format="csv", normalize=False
+        )
+        data, _ = loader.load()
+
+        self.assertEqual(loader.stats.max_length, 10)
+        np.testing.assert_array_equal(data[0], values[:, 1])
+
+
+class TestTimeseriesLoaderWfdb(unittest.TestCase):
+    def test_missing_wfdb_names_the_package(self):
+        with patch.dict(sys.modules, {"wfdb": None}):
+            with self.assertRaisesRegex(ImportError, "pip install wfdb"):
+                _import_wfdb()
+
+
+@unittest.skipUnless(find_spec("wfdb"), "wfdb is not installed")
+class TestTimeseriesLoaderWfdbRecords(unittest.TestCase):
+    """A WFDB record is a .hea header and a .dat signal file. The stats only
+    need the headers, so the signals are not read before load()."""
+
+    signal_names = ["I", "II", "V1"]
+
+    def setUp(self):
+        self.path = tempfile.mkdtemp() + "/"
+        self.addCleanup(shutil.rmtree, self.path)
+        self.signals = {}
+        self._write_record("0", 50, 100)
+        self._write_record("1", 40, 100)
+
+    def _write_record(self, name, length, fs):
+        import wfdb
+
+        self.signals[name] = np.random.rand(length, 3)
+        wfdb.wrsamp(
+            name,
+            fs=fs,
+            units=["mV"] * 3,
+            sig_name=self.signal_names,
+            p_signal=self.signals[name],
+            fmt=["16"] * 3,
+            write_dir=self.path,
+        )
+
+    def _loader(self, indices=("0", "1"), **kwargs):
+        return TimeseriesLoader(
+            self.path, list(indices), self.signal_names, file_format="wfdb", **kwargs
+        )
+
+    def test_stats_are_read_from_the_headers(self):
+        with patch("wfdb.rdrecord", side_effect=AssertionError("signal was read")):
+            stats = self._loader().stats
+
+        self.assertEqual(stats.num_instances, 2)
+        self.assertEqual(stats.max_length, 50)
+        self.assertEqual(stats.avg_length, 45)
+        self.assertEqual(stats.num_signals, 3)
+
+    def test_sampling_rate_is_taken_from_the_header(self):
+        for sampling_rate in (None, 100):
+            with self.subTest(sampling_rate=sampling_rate):
+                loader = self._loader(sampling_rate=sampling_rate)
+                self.assertEqual(loader.sampling_rate, 100)
+                self.assertEqual(loader.stats.sampling_rate, 100)
+
+    def test_sampling_rate_mismatch_raises(self):
+        with self.assertRaisesRegex(ValueError, "does not match"):
+            self._loader(sampling_rate=500)
+
+        self._write_record("2", 50, 500)
+        with self.assertRaisesRegex(ValueError, "different sampling rates"):
+            self._loader(indices=("0", "2"))
+
+    def test_loads_all_records(self):
+        data, metadata = self._loader(normalize=False).load()
+
+        self.assertEqual(len(data), 2)
+        self.assertEqual(len(metadata), 2)
+        for arr, name in zip(data, ("0", "1")):
+            self.assertEqual(arr.dtype, np.float32)
+            np.testing.assert_allclose(arr, self.signals[name], atol=1e-4)
+
+    def test_signals_keep_the_given_data_type(self):
+        for data_type in (np.float64, np.float16, "float64"):
+            with self.subTest(data_type=data_type):
+                data, _ = self._loader(data_type=data_type, normalize=False).load()
+                self.assertEqual(data[0].dtype, np.dtype(data_type))
+                np.testing.assert_allclose(data[0], self.signals["0"], atol=1e-3)
+
+        with self.assertRaisesRegex(ValueError, "only be loaded as float"):
+            self._loader(data_type=np.int32)
+
+    def test_chunked_load_matches_full_load(self):
+        full_data, _ = self._loader().load()
+        chunks = list(self._loader(chunk_size=1).iter_loaded_chunks())
+
+        self.assertEqual(len(chunks), 2)
+        for (data, _, _), expected in zip(chunks, full_data):
+            self.assertEqual(len(data), 1)
+            np.testing.assert_array_equal(data[0], expected)
 
 
 class TestJSONLoaderFields(unittest.TestCase):

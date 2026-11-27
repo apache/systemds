@@ -78,8 +78,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		MatrixHistogram outMap = MatrixHistogram
 			.deriveOutputHistogram(h1, h2, ret, root.getOp(), root.getMisc());
 		root.setSynopsis(outMap);
-		return root.setDataCharacteristics(new MatrixCharacteristics(
-			outMap.getNumRows(), outMap.getNumColumns(), outMap.getNnz()));
+		return root.setDataCharacteristics(outMap.deriveDataCharacteristics());
 	}
 	
 	@Override 

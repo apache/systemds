@@ -21,6 +21,8 @@ package org.apache.sysds.hops.estim;
 
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 public abstract class SparsityInformation {
 	protected MatrixBlock _data = null;
@@ -56,5 +58,9 @@ public abstract class SparsityInformation {
 		// FIXME: do not return sparsity of 1 when nnz is unknown
 		// return (double)getNonZeros() / (getNumRows()*getNumColumns());
 		return OptimizerUtils.getSparsity(getNumRows(), getNumColumns(), getNnz());
+	}
+
+	public DataCharacteristics deriveDataCharacteristics() {
+		return new MatrixCharacteristics(getNumRows(), getNumColumns(), getNnz());
 	}
 }

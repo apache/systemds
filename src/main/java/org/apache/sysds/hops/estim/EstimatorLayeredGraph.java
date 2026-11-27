@@ -27,7 +27,6 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,9 +67,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 		//List<OpCode> ops = getOps(root, new ArrayList<>());
 		//List<LayeredGraph> LGs = new ArrayList<>();
 		LayeredGraph ret = traverse(root);
-		long nnz = ret.getNnz();
-		return root.setDataCharacteristics(new MatrixCharacteristics(
-			ret._nodes.get(0).length, ret._nodes.get(ret._nodes.size() - 1).length, nnz));
+		return root.setDataCharacteristics(ret.deriveDataCharacteristics());
 	}
 
 	public LayeredGraph traverse(MMNode node) {

@@ -26,7 +26,6 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
@@ -62,8 +61,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 		//estimate output density map and sparsity
 		DensityMap outMap = estimIntern(m1Map, m2Map, root.getOp());
 		root.setSynopsis(outMap); //memoize density map
-		return root.setDataCharacteristics(new MatrixCharacteristics(
-			outMap.getNumRows(), outMap.getNumColumns(), outMap.getNnz()));
+		return root.setDataCharacteristics(outMap.deriveDataCharacteristics());
 	}
 
 	@Override

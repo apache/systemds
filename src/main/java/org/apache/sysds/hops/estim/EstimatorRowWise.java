@@ -21,14 +21,12 @@ package org.apache.sysds.hops.estim;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 import java.util.Arrays;
 import java.util.stream.DoubleStream;
@@ -45,9 +43,8 @@ public class EstimatorRowWise extends SparsityEstimator {
 	@Override
 	public DataCharacteristics estim(MMNode root) {
 		estimInternChain(root);
-		double sparsity = ((RowwiseSparsity)root.getSynopsis()).getAvgSparsity();
 
-		DataCharacteristics outputCharacteristics = deriveOutputCharacteristics(root, sparsity);
+		DataCharacteristics outputCharacteristics = root.getSynopsis().deriveDataCharacteristics();
 		return root.setDataCharacteristics(outputCharacteristics);
 	}
 
@@ -199,7 +196,7 @@ public class EstimatorRowWise extends SparsityEstimator {
 			}
 		}
 		node.setSynopsis(rsOut);
-		node.setDataCharacteristics(deriveOutputCharacteristics(node, rsOut.getAvgSparsity()));
+		node.setDataCharacteristics(node.getSynopsis().deriveDataCharacteristics());
 		return rsOut;
 	}
 
@@ -308,6 +305,9 @@ public class EstimatorRowWise extends SparsityEstimator {
 	}
 
 	private RowwiseSparsity estimInternDiag(MatrixBlock mb) {
+		if(mb.getNumColumns() == 1)
+			throw new DMLRuntimeException("Sparsity of creating a diagonal matrix from a " +
+				"can be derived exactly instead of estimating.");
 		RowwiseSparsity rsOut = new RowwiseSparsity(mb.getNumRows(), 1);
 		for(int rIdx = 0; rIdx < mb.getNumRows(); rIdx++) {
 			rsOut.set(rIdx, (mb.get(rIdx, rIdx) == 0) ? 0 : 1);
@@ -326,49 +326,6 @@ public class EstimatorRowWise extends SparsityEstimator {
 				.filter(cIdx -> mb.get(rIdx, cIdx) != 0).toArray();
 		}
 		return nonZeroCols;
-	}
-
-	public static DataCharacteristics deriveOutputCharacteristics(MMNode node, double spOut) {
-		if(node.isLeaf() ||
-			(node.getDataCharacteristics() != null && node.getDataCharacteristics().getNonZeros() != -1)) {
-			return node.getDataCharacteristics();
-		}
-
-		MMNode nodeLeft = node.getLeft();
-		MMNode nodeRight = node.getRight();
-		int leftNRow = nodeLeft.getRows();
-		int leftNCol = nodeLeft.getCols();
-		int rightNRow = nodeRight.getRows();
-		int rightNCol = nodeRight.getCols();
-		switch(node.getOp()) {
-			case MM:
-				return new MatrixCharacteristics(leftNRow, rightNCol,
-					OptimizerUtils.getNnz(leftNRow, rightNCol, spOut));
-			case MULT:
-			case PLUS:
-			case NEQZERO:
-			case EQZERO:
-				return new MatrixCharacteristics(leftNRow, leftNCol,
-					OptimizerUtils.getNnz(leftNRow, leftNCol, spOut));
-			case RBIND:
-				return new MatrixCharacteristics(leftNRow+rightNRow, leftNCol,
-					OptimizerUtils.getNnz(leftNRow+rightNRow, leftNCol, spOut));
-			case CBIND:
-				return new MatrixCharacteristics(leftNRow, leftNCol+rightNCol,
-					OptimizerUtils.getNnz(leftNRow, leftNCol+rightNCol, spOut));
-			case DIAG:
-				int ncol = (leftNCol == 1) ? leftNRow : 1;
-				return new MatrixCharacteristics(leftNRow, ncol,
-					OptimizerUtils.getNnz(leftNRow, ncol, spOut));
-			case TRANS:
-				return new MatrixCharacteristics(leftNCol, leftNRow,
-					OptimizerUtils.getNnz(leftNCol, leftNRow, spOut));
-			case RESHAPE:
-				throw new NotImplementedException("Characteristics derivation for " + node.getOp() +" has not been " +
-					"implemented yet, but could be implemented similar to EstimatorMatrixHistogram.java");
-			default:
-				throw new NotImplementedException();
-		}
 	}
 
 	public static class RowwiseSparsity extends SparsityInformation{

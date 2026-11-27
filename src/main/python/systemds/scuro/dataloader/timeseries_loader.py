@@ -73,6 +73,11 @@ class TimeseriesLoader(BaseLoader):
         if self.file_format not in ["npy", "txt", "csv", "wfdb"]:
             raise ValueError(f"Unsupported file format: {self.file_format}")
         if self.file_format == "wfdb":
+            if np.dtype(data_type).kind != "f":
+                raise ValueError(
+                    f"WFDB records can only be loaded as float, got {data_type}"
+                )
+            self._ext = ""
             files = [self._record_path(name) + ".hea" for name in self.indices]
         else:
             files = [
@@ -93,7 +98,7 @@ class TimeseriesLoader(BaseLoader):
             self.sampling_rate = self.stats.sampling_rate
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
-        self.file_sanity_check(file)
+        self.file_sanity_check(file + ".hea" if self.file_format == "wfdb" else file)
 
         data = self._load_data(file)
 
@@ -131,6 +136,8 @@ class TimeseriesLoader(BaseLoader):
                 data = self._load_csv_with_header(file)
             else:
                 data = self._load_txt(file)
+        elif self.file_format == "wfdb":
+            data = self._load_wfdb(file)
         return data
 
     def _record_path(self, name: str) -> str:
@@ -142,6 +149,14 @@ class TimeseriesLoader(BaseLoader):
                 f"Sampling rate {self.sampling_rate} does not match the rate "
                 f"{record_rate} of record {record}"
             )
+
+    def _load_wfdb(self, file: str) -> np.ndarray:
+        data_type = np.dtype(self._data_type)
+        # return_res=16 overflows for records with a non-zero baseline
+        record = _import_wfdb().rdrecord(
+            file, return_res=64 if data_type.itemsize == 8 else 32
+        )
+        return record.p_signal.astype(data_type, copy=False)
 
     def _normalize_signals(self, data: np.ndarray) -> np.ndarray:
         if data.ndim == 1:

@@ -287,18 +287,20 @@ class TestTimeseriesLoaderWfdbRecords(unittest.TestCase):
     def setUp(self):
         self.path = tempfile.mkdtemp() + "/"
         self.addCleanup(shutil.rmtree, self.path)
+        self.signals = {}
         self._write_record("0", 50, 100)
         self._write_record("1", 40, 100)
 
     def _write_record(self, name, length, fs):
         import wfdb
 
+        self.signals[name] = np.random.rand(length, 3)
         wfdb.wrsamp(
             name,
             fs=fs,
             units=["mV"] * 3,
             sig_name=self.signal_names,
-            p_signal=np.random.rand(length, 3),
+            p_signal=self.signals[name],
             fmt=["16"] * 3,
             write_dir=self.path,
         )
@@ -331,6 +333,34 @@ class TestTimeseriesLoaderWfdbRecords(unittest.TestCase):
         self._write_record("2", 50, 500)
         with self.assertRaisesRegex(ValueError, "different sampling rates"):
             self._loader(indices=("0", "2"))
+
+    def test_loads_all_records(self):
+        data, metadata = self._loader(normalize=False).load()
+
+        self.assertEqual(len(data), 2)
+        self.assertEqual(len(metadata), 2)
+        for arr, name in zip(data, ("0", "1")):
+            self.assertEqual(arr.dtype, np.float32)
+            np.testing.assert_allclose(arr, self.signals[name], atol=1e-4)
+
+    def test_signals_keep_the_given_data_type(self):
+        for data_type in (np.float64, np.float16, "float64"):
+            with self.subTest(data_type=data_type):
+                data, _ = self._loader(data_type=data_type, normalize=False).load()
+                self.assertEqual(data[0].dtype, np.dtype(data_type))
+                np.testing.assert_allclose(data[0], self.signals["0"], atol=1e-3)
+
+        with self.assertRaisesRegex(ValueError, "only be loaded as float"):
+            self._loader(data_type=np.int32)
+
+    def test_chunked_load_matches_full_load(self):
+        full_data, _ = self._loader().load()
+        chunks = list(self._loader(chunk_size=1).iter_loaded_chunks())
+
+        self.assertEqual(len(chunks), 2)
+        for (data, _, _), expected in zip(chunks, full_data):
+            self.assertEqual(len(data), 1)
+            np.testing.assert_array_equal(data[0], expected)
 
 
 class TestJSONLoaderFields(unittest.TestCase):

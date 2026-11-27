@@ -25,6 +25,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+from importlib.util import find_spec
 from unittest.mock import patch
 import numpy as np
 
@@ -274,6 +275,62 @@ class TestTimeseriesLoaderWfdb(unittest.TestCase):
         with patch.dict(sys.modules, {"wfdb": None}):
             with self.assertRaisesRegex(ImportError, "pip install wfdb"):
                 _import_wfdb()
+
+
+@unittest.skipUnless(find_spec("wfdb"), "wfdb is not installed")
+class TestTimeseriesLoaderWfdbRecords(unittest.TestCase):
+    """A WFDB record is a .hea header and a .dat signal file. The stats only
+    need the headers, so the signals are not read before load()."""
+
+    signal_names = ["I", "II", "V1"]
+
+    def setUp(self):
+        self.path = tempfile.mkdtemp() + "/"
+        self.addCleanup(shutil.rmtree, self.path)
+        self._write_record("0", 50, 100)
+        self._write_record("1", 40, 100)
+
+    def _write_record(self, name, length, fs):
+        import wfdb
+
+        wfdb.wrsamp(
+            name,
+            fs=fs,
+            units=["mV"] * 3,
+            sig_name=self.signal_names,
+            p_signal=np.random.rand(length, 3),
+            fmt=["16"] * 3,
+            write_dir=self.path,
+        )
+
+    def _loader(self, indices=("0", "1"), **kwargs):
+        return TimeseriesLoader(
+            self.path, list(indices), self.signal_names, file_format="wfdb", **kwargs
+        )
+
+    def test_stats_are_read_from_the_headers(self):
+        with patch("wfdb.rdrecord", side_effect=AssertionError("signal was read")):
+            stats = self._loader().stats
+
+        self.assertEqual(stats.num_instances, 2)
+        self.assertEqual(stats.max_length, 50)
+        self.assertEqual(stats.avg_length, 45)
+        self.assertEqual(stats.num_signals, 3)
+
+    def test_sampling_rate_is_taken_from_the_header(self):
+        for sampling_rate in (None, 100):
+            with self.subTest(sampling_rate=sampling_rate):
+                loader = self._loader(sampling_rate=sampling_rate)
+                self.assertEqual(loader.sampling_rate, 100)
+                self.assertEqual(loader.stats.sampling_rate, 100)
+
+    def test_sampling_rate_mismatch_raises(self):
+        with self.assertRaisesRegex(ValueError, "does not match"):
+            self._loader(sampling_rate=500)
+
+        self._write_record("2", 50, 500)
+        with self.assertRaisesRegex(ValueError, "different sampling rates"):
+            self._loader(indices=("0", "2"))
 
 
 class TestJSONLoaderFields(unittest.TestCase):

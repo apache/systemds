@@ -70,9 +70,14 @@ class TimeseriesLoader(BaseLoader):
         self.normalize = normalize
         self.channel_index = channel_index
         self.file_format = file_format.lower()
-        if self.file_format not in ["npy", "txt", "csv"]:
+        if self.file_format not in ["npy", "txt", "csv", "wfdb"]:
             raise ValueError(f"Unsupported file format: {self.file_format}")
-        files = [source_path + name + "." + self.file_format for name in self.indices]
+        if self.file_format == "wfdb":
+            files = [self._record_path(name) + ".hea" for name in self.indices]
+        else:
+            files = [
+                source_path + name + "." + self.file_format for name in self.indices
+            ]
         self.stats = self.cached_stats(
             files,
             {
@@ -84,6 +89,8 @@ class TimeseriesLoader(BaseLoader):
             },
             lambda: self.get_stats(source_path, sampling_rate),
         )
+        if self.sampling_rate is None:
+            self.sampling_rate = self.stats.sampling_rate
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
@@ -125,6 +132,16 @@ class TimeseriesLoader(BaseLoader):
             else:
                 data = self._load_txt(file)
         return data
+
+    def _record_path(self, name: str) -> str:
+        return os.path.join(self.source_path, name)
+
+    def _check_sampling_rate(self, record_rate, record: str):
+        if self.sampling_rate is not None and self.sampling_rate != record_rate:
+            raise ValueError(
+                f"Sampling rate {self.sampling_rate} does not match the rate "
+                f"{record_rate} of record {record}"
+            )
 
     def _normalize_signals(self, data: np.ndarray) -> np.ndarray:
         if data.ndim == 1:
@@ -176,6 +193,8 @@ class TimeseriesLoader(BaseLoader):
 
     def get_stats(self, source_path: str, sampling_rate: int):
         self.file_sanity_check(source_path)
+        if self.file_format == "wfdb":
+            return self._get_wfdb_stats()
         max_length = 0
         num_instances = 0
         num_signals = 0
@@ -201,4 +220,31 @@ class TimeseriesLoader(BaseLoader):
             True,
             avg_length / num_instances,
             sampling_rate,
+        )
+
+    def _get_wfdb_stats(self):
+        wfdb = _import_wfdb()
+        max_length = 0
+        avg_length = 0
+        num_signals = 0
+        sampling_rates = set()
+        for name in self.indices:
+            header = wfdb.rdheader(self._record_path(name))
+            self._check_sampling_rate(header.fs, name)
+            max_length = max(max_length, header.sig_len)
+            avg_length += header.sig_len
+            num_signals = max(num_signals, header.n_sig)
+            sampling_rates.add(header.fs)
+        if len(sampling_rates) > 1:
+            raise ValueError(
+                f"Records have different sampling rates: {sorted(sampling_rates)}"
+            )
+        return TimeseriesStats(
+            max_length,
+            len(self.indices),
+            num_signals,
+            (max_length,),
+            True,
+            avg_length / len(self.indices),
+            sampling_rates.pop(),
         )

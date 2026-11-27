@@ -23,7 +23,6 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 /**
  * Basic average case estimator for matrix sparsity:
@@ -33,13 +32,12 @@ public class EstimatorBasicAvg extends SparsityEstimator
 {
 	@Override
 	public DataCharacteristics estim(MMNode root) {
-		DataCharacteristics dc1 = !root.getLeft().isLeaf() ?
-			estim(root.getLeft()) : root.getLeft().getDataCharacteristics();
-		DataCharacteristics dc2 = root.getRight()==null ? null :
-			!root.getRight().isLeaf() ? estim(root.getRight()) : 
-			root.getRight().getDataCharacteristics();
-		return root.setDataCharacteristics(
-				estimIntern(dc1, dc2, root.getOp()));
+		ScalarSparsity leftSparsity = getCachedSparsityInformation(root.getLeft());
+		ScalarSparsity rightSparsity = getCachedSparsityInformation(root.getRight());
+
+		ScalarSparsity outSparsity = estimIntern(leftSparsity, rightSparsity, root.getOp());
+		root.setSparsityInformation(outSparsity);
+		return root.setDataCharacteristics(outSparsity.deriveDataCharacteristics());
 	}
 
 	@Override
@@ -49,12 +47,29 @@ public class EstimatorBasicAvg extends SparsityEstimator
 
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
-		return estimIntern(m1.getDataCharacteristics(), m2.getDataCharacteristics(), op).getSparsity();
+		return estimIntern(m1, m2, op).getAvgSparsity();
 	}
 
 	@Override
 	public double estim(MatrixBlock m, OpCode op) {
-		return estimIntern(m.getDataCharacteristics(), null, op).getSparsity();
+		return estimIntern(m, null, op).getAvgSparsity();
+	}
+
+	private ScalarSparsity getCachedSparsityInformation(MMNode node) {
+		if(node == null)
+			return null;
+		// ensure sparsity information is properly cached and reused
+		if(node.isLeaf() && node.getSparsityInformation() == null) {
+			if(node.getData() != null)
+				node.setSparsityInformation(new ScalarSparsity(node.getData()));
+			else if(node.getDataCharacteristics() != null)
+				node.setSparsityInformation(new ScalarSparsity((int)node.getDataCharacteristics().getRows(),
+					(int)node.getDataCharacteristics().getCols(), node.getDataCharacteristics().getSparsity()));
+		}
+		else if(!node.isLeaf()) {
+			estim(node); // recursively obtain sparsity information
+		}
+		return (ScalarSparsity)node.getSparsityInformation();
 	}
 
 	protected void obtainSparsityInformation(MMNode node) {
@@ -77,20 +92,35 @@ public class EstimatorBasicAvg extends SparsityEstimator
 		return node;
 	}
 
-	private DataCharacteristics estimIntern(DataCharacteristics dc1, DataCharacteristics dc2, OpCode op) {
+	private ScalarSparsity estimIntern(MatrixBlock mb1, MatrixBlock mb2, OpCode op) {
+		if(mb1 == null)
+			return null;
+		if(mb2 == null)
+			return estimIntern((int)mb1.getNumRows(), (int)mb1.getNumColumns(), mb1.getSparsity(), -1, -1, -1, op);
+		return estimIntern((int)mb1.getNumRows(), (int)mb1.getNumColumns(), mb1.getSparsity(),
+			(int)mb2.getNumRows(), (int)mb2.getNumColumns(), mb2.getSparsity(), op);
+	}
+
+	private ScalarSparsity estimIntern(ScalarSparsity ssp1, ScalarSparsity ssp2, OpCode op) {
+		if(ssp1 == null)
+			return null;
+		if(ssp2 == null)
+			return estimIntern((int)ssp1.getNumRows(), (int)ssp1.getNumColumns(), ssp1.getAvgSparsity(), -1, -1, -1, op);
+		return estimIntern((int)ssp1.getNumRows(), (int)ssp1.getNumColumns(), ssp1.getAvgSparsity(),
+			(int)ssp2.getNumRows(), (int)ssp2.getNumColumns(), ssp2.getAvgSparsity(), op);
+	}
+
+	private ScalarSparsity estimIntern(int r1, int c1, double sp1,
+		int r2, int c2, double sp2, OpCode op) {
 		switch (op) {
 			case MM:
-				return new MatrixCharacteristics(dc1.getRows(), dc2.getCols(),
-					OptimizerUtils.getMatMultNnz(dc1.getSparsity(), dc2.getSparsity(),
-					dc1.getRows(), dc1.getCols(), dc2.getCols(), false));
+				return new ScalarSparsity(r1, c2,
+					OptimizerUtils.getMatMultSparsity(sp1, sp2,
+					r1, c1, c2, false));
 			case MULT:
-				return new MatrixCharacteristics(dc1.getRows(), dc1.getCols(),
-					OptimizerUtils.getNnz(dc1.getRows(), dc1.getCols(),
-						dc1.getSparsity() * dc2.getSparsity()));
+				return new ScalarSparsity(r1, c1, sp1 * sp2);
 			case PLUS:
-				return new MatrixCharacteristics(dc1.getRows(), dc1.getCols(),
-					OptimizerUtils.getNnz(dc1.getRows(), dc1.getCols(),
-						dc1.getSparsity() + dc2.getSparsity() - dc1.getSparsity() * dc2.getSparsity()));
+				return new ScalarSparsity(r1, c1, sp1 + sp2 - sp1 * sp2);
 			case EQZERO:
 			case DIAG:
 			case CBIND:
@@ -98,9 +128,35 @@ public class EstimatorBasicAvg extends SparsityEstimator
 			case NEQZERO:
 			case TRANS:
 			case RESHAPE:
-				return estimExactMetaData(dc1, dc2, op);
+				return estimExactMetaData(r1, c1, sp1, r2, c2, sp2, op);
 			default:
 				throw new NotImplementedException();
+		}
+	}
+
+	public static class ScalarSparsity extends SparsityInformation {
+		private double _spar_val;
+
+		public ScalarSparsity(int rlen, int clen, double val) {
+			super(rlen, clen);
+
+			_spar_val = val;
+		}
+
+		public ScalarSparsity(MatrixBlock mb) {
+			super(mb);
+
+			_spar_val = mb.getSparsity();
+		}
+
+		@Override
+		public long getNnz() {
+			return Math.round(_spar_val * getNumRows() * getNumColumns());
+		}
+
+		@Override
+		public double getAvgSparsity() {
+			return _spar_val;
 		}
 	}
 }

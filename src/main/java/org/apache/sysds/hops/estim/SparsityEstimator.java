@@ -23,9 +23,10 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.HopsException;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.estim.EstimatorBasicAvg.ScalarSparsity;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 public abstract class SparsityEstimator 
 {
@@ -97,28 +98,48 @@ public abstract class SparsityEstimator
 			&& (op != OpCode.DIAG || clen == 1);
 	}
 
-	protected DataCharacteristics estimExactMetaData(DataCharacteristics dc1, DataCharacteristics dc2, OpCode op) {
+	protected ScalarSparsity estimExactMetaData(DataCharacteristics dc1, DataCharacteristics dc2, OpCode op) {
+		if(dc1 == null)
+			return null;
+		if(dc2 == null)
+			return estimExactMetaData((int)dc1.getRows(), (int)dc1.getCols(), dc1.getNonZeros(), -1, -1, -1, op);
+		return estimExactMetaData((int)dc1.getRows(), (int)dc1.getCols(), dc1.getNonZeros(),
+			(int)dc2.getRows(), (int)dc2.getCols(), dc2.getNonZeros(), op);
+	}
+
+	protected ScalarSparsity estimExactMetaData(SparsityInformation spInfo1, SparsityInformation spInfo2, OpCode op) {
+		return estimExactMetaData(spInfo1.getNumRows(), spInfo1.getNumColumns(), spInfo1.getNnz(),
+			spInfo2.getNumRows(), spInfo2.getNumColumns(), spInfo2.getNnz(), op);
+	}
+
+	protected ScalarSparsity estimExactMetaData(int r1, int c1, double sp1,
+		int r2, int c2, double sp2, OpCode op) {
+		return estimExactMetaData(r1, c1, OptimizerUtils.getNnz(r1, c1, sp1),
+			r2, c2, OptimizerUtils.getNnz(r2, c2, sp2), op);
+	}
+
+	// TODO: change to return type sparsity information (ScalarSparsity)
+	protected ScalarSparsity estimExactMetaData(int r1, int c1, long nnz1,
+		int r2, int c2, long nnz2, OpCode op) {
 		switch( op ) {
 			case EQZERO:
-				return new MatrixCharacteristics(dc1.getRows(), dc1.getCols(),
-					dc1.getRows() * dc1.getCols() - dc1.getNonZeros());
+				return new ScalarSparsity(r1, c1,
+					OptimizerUtils.getSparsity(r1, c1, r1 * c1 - nnz1));
 			case DIAG:
-				return (dc1.getCols() == 1) ?
-					new MatrixCharacteristics(dc1.getRows(), dc1.getRows(), dc1.getNonZeros()) :
-					new MatrixCharacteristics(dc1.getRows(), 1, Math.min(dc1.getRows(), dc1.getNonZeros()));
+				return (c1 == 1) ?
+					new ScalarSparsity(r1, r1, OptimizerUtils.getSparsity(r1, r1, nnz1)) :
+					new ScalarSparsity(r1, 1, OptimizerUtils.getSparsity(r1, 1, Math.min(r1, nnz1)));
 			// binary operations that preserve sparsity exactly
 			case CBIND:
-				return new MatrixCharacteristics(dc1.getRows(),
-					dc1.getCols() + dc2.getCols(), dc1.getNonZeros() + dc2.getNonZeros());
+				return new ScalarSparsity(r1, c1 + c2, OptimizerUtils.getSparsity(r1, c1 + c2, nnz1 + nnz2));
 			case RBIND:
-				return new MatrixCharacteristics(dc1.getRows() + dc2.getRows(),
-					dc1.getCols(), dc1.getNonZeros() + dc2.getNonZeros());
+				return new ScalarSparsity(r1 + r2, c1, OptimizerUtils.getSparsity(r1 + r2, c1, nnz1 + nnz2));
 			case TRANS:
-				return new MatrixCharacteristics(dc1.getCols(), dc1.getRows(), dc1.getNonZeros());
+				return new ScalarSparsity(c1, r1, OptimizerUtils.getSparsity(c1, r1, nnz1));
 			// unary operation that preserve sparsity exactly
 			case NEQZERO:
 			case RESHAPE:
-				return dc1;
+				return new ScalarSparsity(r1, c1, OptimizerUtils.getSparsity(r1, c1, nnz1));
 			default:
 				throw new HopsException("Opcode is not an exact meta data operation: "+op.name());
 		}

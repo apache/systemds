@@ -159,7 +159,7 @@ public class EstimatorSample extends SparsityEstimator
 			case RESHAPE:
 				DataCharacteristics mc1 = m1.getDataCharacteristics();
 				DataCharacteristics mc2 = m2.getDataCharacteristics();
-				return OptimizerUtils.getSparsity(estimExactMetaData(mc1, mc2, op));
+				return estimExactMetaData(mc1, mc2, op).getAvgSparsity();
 			default:
 				throw new NotImplementedException();
 		}

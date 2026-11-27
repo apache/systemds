@@ -21,6 +21,7 @@ package org.apache.sysds.hops.estim;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.estim.EstimatorBasicAvg.ScalarSparsity;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -106,7 +107,8 @@ public class EstimatorBasicWorst extends SparsityEstimator
 			case NEQZERO:
 			case TRANS:
 			case RESHAPE:
-				return estimExactMetaData(mc1, mc2, op);
+				ScalarSparsity outSparsity = estimExactMetaData(mc1, mc2, op);
+				return outSparsity.deriveDataCharacteristics();
 			default:
 				throw new NotImplementedException();
 		}

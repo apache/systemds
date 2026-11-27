@@ -90,7 +90,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
 		if( isExactMetadataOp(op) )
 			return estimExactMetaData(m1.getDataCharacteristics(),
-				m2.getDataCharacteristics(), op).getSparsity();
+				m2.getDataCharacteristics(), op).getAvgSparsity();
 		MatrixHistogram h1 = new MatrixHistogram(m1, _useExtended);
 		MatrixHistogram h2 = (m1 == m2) ? //self product
 			h1 : new MatrixHistogram(m2, _useExtended);
@@ -100,7 +100,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 	@Override
 	public double estim(MatrixBlock m1, OpCode op) {
 		if( isExactMetadataOp(op) )
-			return estimExactMetaData(m1.getDataCharacteristics(), null, op).getSparsity();
+			return estimExactMetaData(m1.getDataCharacteristics(), null, op).getAvgSparsity();
 		MatrixHistogram h1 = new MatrixHistogram(m1, _useExtended);
 		return estimIntern(h1, null, op, null);
 	}

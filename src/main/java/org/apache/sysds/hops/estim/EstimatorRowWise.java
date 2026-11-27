@@ -57,7 +57,7 @@ public class EstimatorRowWise extends SparsityEstimator {
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
 		if( isExactMetadataOp(op, m1.getNumColumns()) ) {
 			return estimExactMetaData(m1.getDataCharacteristics(),
-				m2.getDataCharacteristics(), op).getSparsity();
+				m2.getDataCharacteristics(), op).getAvgSparsity();
 		}
 
 		RowwiseSparsity rsOut = estimIntern(m1, m2, op);
@@ -67,7 +67,7 @@ public class EstimatorRowWise extends SparsityEstimator {
 	@Override
 	public double estim(MatrixBlock m1, OpCode op) {
 		if( isExactMetadataOp(op, m1.getNumColumns()) )
-			return estimExactMetaData(m1.getDataCharacteristics(), null, op).getSparsity();
+			return estimExactMetaData(m1.getDataCharacteristics(), null, op).getAvgSparsity();
 
 		RowwiseSparsity rsOut = estimIntern(m1, op);
 		return rsOut.getAvgSparsity();

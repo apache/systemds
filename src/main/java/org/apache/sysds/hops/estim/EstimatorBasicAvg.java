@@ -128,8 +128,7 @@ public class EstimatorBasicAvg extends SparsityEstimator
 			case NEQZERO:
 			case TRANS:
 			case RESHAPE:
-				DataCharacteristics ret = estimExactMetaData(r1, c1, sp1, r2, c2, sp2, op);
-				return new ScalarSparsity((int)ret.getRows(), (int)ret.getCols(), ret.getSparsity());
+				return estimExactMetaData(r1, c1, sp1, r2, c2, sp2, op);
 			default:
 				throw new NotImplementedException();
 		}

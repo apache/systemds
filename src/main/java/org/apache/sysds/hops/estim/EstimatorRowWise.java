@@ -44,7 +44,7 @@ public class EstimatorRowWise extends SparsityEstimator {
 	public DataCharacteristics estim(MMNode root) {
 		estimInternChain(root);
 
-		DataCharacteristics outputCharacteristics = root.getSynopsis().deriveDataCharacteristics();
+		DataCharacteristics outputCharacteristics = root.getSparsityInformation().deriveDataCharacteristics();
 		return root.setDataCharacteristics(outputCharacteristics);
 	}
 
@@ -76,19 +76,19 @@ public class EstimatorRowWise extends SparsityEstimator {
 	@Override
 	public MMNode getInputMMNode(MatrixBlock mb) {
 		MMNode node = new MMNode(mb);
-		getCachedSynopsis(node);
+		getCachedSparsityInformation(node);
 		return node;
 	}
 
-	private RowwiseSparsity getCachedSynopsis(MMNode node) {
+	private RowwiseSparsity getCachedSparsityInformation(MMNode node) {
 		if( node == null )
 			return null;
-		//ensure synopsis is properly cached and reused
-		if( node.isLeaf() && node.getSynopsis() == null )
-			node.setSynopsis(new RowwiseSparsity(node.getData()));
+		//ensure sparity information is properly cached and reused
+		if( node.isLeaf() && node.getSparsityInformation() == null )
+			node.setSparsityInformation(new RowwiseSparsity(node.getData()));
 		else if( !node.isLeaf() )
-			estim(node); //recursively obtain synopsis
-		return (RowwiseSparsity) node.getSynopsis();
+			estim(node); //recursively obtain sparity information
+		return (RowwiseSparsity) node.getSparsityInformation();
 	}
 
 	private RowwiseSparsity estimInternChain(MMNode node) {
@@ -195,8 +195,8 @@ public class EstimatorRowWise extends SparsityEstimator {
 					" is not supported yet.");
 			}
 		}
-		node.setSynopsis(rsOut);
-		node.setDataCharacteristics(node.getSynopsis().deriveDataCharacteristics());
+		node.setSparsityInformation(rsOut);
+		node.setDataCharacteristics(node.getSparsityInformation().deriveDataCharacteristics());
 		return rsOut;
 	}
 

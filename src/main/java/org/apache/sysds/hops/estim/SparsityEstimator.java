@@ -99,6 +99,10 @@ public abstract class SparsityEstimator
 	}
 
 	protected ScalarSparsity estimExactMetaData(DataCharacteristics dc1, DataCharacteristics dc2, OpCode op) {
+		if(dc1 == null)
+			return null;
+		if(dc2 == null)
+			return estimExactMetaData((int)dc1.getRows(), (int)dc1.getCols(), dc1.getNonZeros(), -1, -1, -1, op);
 		return estimExactMetaData((int)dc1.getRows(), (int)dc1.getCols(), dc1.getNonZeros(),
 			(int)dc2.getRows(), (int)dc2.getCols(), dc2.getNonZeros(), op);
 	}
@@ -131,7 +135,7 @@ public abstract class SparsityEstimator
 			case RBIND:
 				return new ScalarSparsity(r1 + r2, c1, OptimizerUtils.getSparsity(r1 + r2, c1, nnz1 + nnz2));
 			case TRANS:
-				return new ScalarSparsity(c1, r1, OptimizerUtils.getSparsity(c1, r1, (nnz1)));
+				return new ScalarSparsity(c1, r1, OptimizerUtils.getSparsity(c1, r1, nnz1));
 			// unary operation that preserve sparsity exactly
 			case NEQZERO:
 			case RESHAPE:

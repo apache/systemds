@@ -63,7 +63,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		BitsetMatrix outMap = estimInternal(m1Map, m2Map, root.getOp());
 		root.setSynopsis(outMap); // memorize boolean matrix
 		return root.setDataCharacteristics(new MatrixCharacteristics(
-			outMap.getNumRows(), outMap.getNumColumns(), outMap.getNonZeros()));
+			outMap.getNumRows(), outMap.getNumColumns(), outMap.getNnz()));
 	}
 
 	@Override
@@ -81,7 +81,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			m1Map : createBitset(m2);
 		BitsetMatrix outMap = estimInternal(m1Map, m2Map, op);
 		return OptimizerUtils.getSparsity(outMap.getNumRows(),
-			outMap.getNumColumns(), outMap.getNonZeros());
+			outMap.getNumColumns(), outMap.getNnz());
 	}
 	
 	@Override
@@ -91,7 +91,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		BitsetMatrix m1Map = createBitset(m);
 		BitsetMatrix outMap = estimInternal(m1Map, null, op);
 		return OptimizerUtils.getSparsity(outMap.getNumRows(),
-			outMap.getNumColumns(), outMap.getNonZeros());
+			outMap.getNumColumns(), outMap.getNnz());
 	}
 
 	@Override
@@ -131,26 +131,16 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		}
 	}
 
-	public abstract static class BitsetMatrix {
-		protected final int _rlen;
-		protected final int _clen;
+	public abstract static class BitsetMatrix extends SparsityInformation {
 		protected long _nonZeros;
 	
 		public BitsetMatrix(int rlen, int clen) {
-			_rlen = rlen;
-			_clen = clen;
+			super(rlen, clen);
 			_nonZeros = 0;
 		}
-		
-		public int getNumRows() {
-			return _rlen;
-		}
 
-		public int getNumColumns() {
-			return _clen;
-		}
-
-		public long getNonZeros() {
+		@Override
+		public long getNnz() {
 			return _nonZeros;
 		}
 		
@@ -176,7 +166,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 
 		public BitsetMatrix matMult(BitsetMatrix m2) {
 			BitsetMatrix out = createBitSetMatrix(_rlen, m2._clen);
-			if( this.getNonZeros() == 0 || m2.getNonZeros() == 0 )
+			if( this.getNnz() == 0 || m2.getNnz() == 0 )
 				return out;
 			long size = (long)_rlen*_clen+(long)m2._rlen*m2._clen;
 			if( MULTI_THREADED_ESTIM && size > MIN_PAR_THRESHOLD ) {
@@ -392,7 +382,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			BitsetMatrix1 ret = new BitsetMatrix1(getNumRows(), getNumColumns());
 			for(int i=0; i<_data.length; i++)
 				ret._data[i] = ~_data[i];
-			ret._nonZeros = (long)getNumRows() * getNumColumns() - getNonZeros();
+			ret._nonZeros = (long)getNumRows() * getNumColumns() - getNnz();
 			return ret;
 		}
 		
